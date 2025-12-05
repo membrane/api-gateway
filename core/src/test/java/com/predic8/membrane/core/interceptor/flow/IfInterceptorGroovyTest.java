@@ -48,7 +48,7 @@ public class IfInterceptorGroovyTest extends ConditionalEvaluationTestContext {
     @Test
     void hasHeader() throws Exception {
         assertEquals(CONTINUE,eval("""
-            header.getFirstValue("X-Foo-Bar").equals("Baz")
+            header["X-Foo-Bar"].equals("Baz")
             """, new Builder().header("X-Foo-Bar", "Baz"),true));
     }
 

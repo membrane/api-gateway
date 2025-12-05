@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
+import java.util.*;
+
 import static java.lang.Math.min;
 
 public class StringUtil {
@@ -60,6 +62,10 @@ public class StringUtil {
             sb.append(String.format("%4d: %s\n", i++, line));
         }
         return sb.toString();
+    }
+
+    public static List<String> splitByComma(String s) {
+        return s == null ? Collections.emptyList() : Arrays.asList(s.split(",\\s*"));
     }
 
 }

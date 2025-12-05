@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.util.HttpUtil.readLine;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.stream;
 import static java.util.regex.Pattern.*;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.codec.binary.Base64.*;
 
 /**
@@ -113,7 +114,7 @@ public class Header {
 	private static final Pattern timeoutPattern = compile("timeout\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
 	private static final Pattern maxPattern = compile("max\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
 
-	private final ArrayList<HeaderField> fields = new ArrayList<>();
+	private final List<HeaderField> fields = new ArrayList<>();
 
 	public Header() {
 	}
@@ -188,11 +189,17 @@ public class Header {
 		fields.remove(field);
 	}
 
+    /**
+     * Removes the specified header field from this header.
+     *
+     * @param object content of the field to remove
+     */
+    public void remove(Object object) {
+        fields.remove(object);
+    }
+
 	public void removeFields(String name) {
-		List<HeaderField> deleteValues = fields.stream()
-				.filter(f -> f.getHeaderName().hasName(name))
-				.toList();
-		fields.removeAll(deleteValues);
+        fields.removeAll(filterByHeaderName(name).toList());
 	}
 
 	/**
@@ -207,7 +214,17 @@ public class Header {
 				.toList();
 	}
 
-	/**
+    public String getValuesAsString(String name) {
+        var list = filterByHeaderName(name).map(hf -> hf.getValue()).toList();
+        if (list.isEmpty()) return null;
+        return String.join(", ", list);
+    }
+
+    private @NotNull Stream<HeaderField> filterByHeaderName(String name) {
+        return fields.stream().filter(hf -> hf.getHeaderName().hasName(name));
+    }
+
+    /**
 	 * Retrieves the first header value corresponding to the specified header name.
 	 *
 	 * Iterates through the header fields and returns the value of the first field that matches the given name.
@@ -217,8 +234,7 @@ public class Header {
 	 * @return the value of the matching header field, or {@code null} if not present
 	 */
 	public String getFirstValue(String name) {
-		return fields.stream()
-				.filter(field -> field.getHeaderName().hasName(name))
+		return filterByHeaderName(name)
 				.findFirst()
 				.map(HeaderField::getValue)
 				.orElse(null);
@@ -233,8 +249,7 @@ public class Header {
 	}
 
 	public boolean contains(String header) {
-		return fields.stream()
-				.anyMatch(headerField -> headerField.getHeaderName().hasName(header));
+		return fields.stream().anyMatch(hf -> hf.getHeaderName().hasName(header));
 	}
 
 	public boolean contains(HeaderName header) {
@@ -466,8 +481,7 @@ public class Header {
 	}
 
 	public int getNumberOf(String headerName) {
-		return (int) fields.stream()
-				.filter(f -> f.getHeaderName().hasName(headerName))
+		return (int) filterByHeaderName(headerName)
 				.count();
 	}
 
@@ -514,8 +528,7 @@ public class Header {
 	}
 
 	public String getNormalizedValue(String headerName) {
-		var s = fields.stream()
-				.filter(f -> f.getHeaderName().hasName(headerName))
+		var s = filterByHeaderName(headerName)
 				.map(HeaderField::getValue)
 				.collect(Collectors.joining(","));
 		return s.isEmpty() ? null : s;
@@ -600,5 +613,26 @@ public class Header {
 			return null;
 		return getFirstValue(UPGRADE);
 	}
+
+    public int size() {
+        return fields.size();
+    }
+
+    public boolean isEmpty() {
+        return fields.isEmpty();
+    }
+
+    public List<HeaderField> getFields() {
+        return fields;
+    }
+
+    /**
+     * No guaranteed order of field names
+     * @return
+     */
+    public Set<String> getUniqueHeaderNames() {
+        return fields.stream().map(HeaderField::getHeaderName).map(HeaderName::getName).collect(toSet());
+    }
+
 
 }

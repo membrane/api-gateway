@@ -52,7 +52,7 @@ class ConditionalEvaluationTestContext {
             throw new IllegalStateException("Unexpected value: " + builder);
         }
         if (mockInt.isCalled() != shouldCallNested) {
-            throw new RuntimeException("Mock");
+            throw new RuntimeException("Mock not satisfied. Is called: %s shouldCallNested: %s".formatted(mockInt.isCalled(),shouldCallNested));
         }
         return outcome;
     }

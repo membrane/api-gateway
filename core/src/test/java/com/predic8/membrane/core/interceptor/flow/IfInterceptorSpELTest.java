@@ -71,7 +71,8 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
 
     @Test
     void headerNullTrue() throws Exception {
-        assertEquals(CONTINUE,performEval("headers['X-Does-Not-Exist'] == null", new Builder().header("X-Foo-Bar", "Baz"),SPEL, true));
+        assertEquals(CONTINUE,performEval("headers['X-Does-Not-Exist'] == null",
+                new Builder().header("X-Foo-Bar", "Baz"),SPEL, true));
     }
 
     @Test

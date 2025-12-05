@@ -16,7 +16,7 @@
 # 7.0.1
 
 - Adding a configuration flag to enable/disable colorized output
-- Constant to centralize color formatting: ANSIColors
+- Constant or methods to centralize color formatting: ANSIColors
 - Detecting terminal support before applying colors (e.g., check if System.console() is available)
 
 
@@ -26,7 +26,7 @@
 
 ## (Breaking) Interface Changes
 
-- HttpClient TB
+- HttpClient TB (done)
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
 - Remove xmlSessionIdExtractor if we have a replacement with language TB
@@ -36,11 +36,14 @@
     - SpEL headers.foo should return comma separated list of all values.
 - Delete unneeded proxies.xml in examples CG
 - for distribution: README with Link to Github for XML-based example configurations TB
-- update schema reference to 7.0.0, integrate into ConsistentVersionNumbers.java
+- update schema reference to 7.0.0, integrate into ConsistentVersionNumbers.java (done)
 - improve error output on
   - schema validation error
   - bean setter exception
-  - port occupied
+  - port occupied (done)
+
+- header['x-unknown'] returns null instead of empty string !!!!!!!!!!!!
+- SpEL: header is now of class HeaderMap insteadof SpelHeader
 
 ## Changes
 

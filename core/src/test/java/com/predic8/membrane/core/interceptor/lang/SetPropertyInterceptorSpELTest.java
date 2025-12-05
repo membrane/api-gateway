@@ -71,7 +71,7 @@ class SetPropertyInterceptorSpELTest extends AbstractSetPropertyInterceptorTest 
         interceptor.setValue("${header}");
         interceptor.init(router);
         interceptor.handleRequest(exc);
-        assertInstanceOf(Header.class, exc.getProperty("header"));
+        assertInstanceOf(HeaderMap.class, exc.getProperty("header"));
     }
 
     @Test

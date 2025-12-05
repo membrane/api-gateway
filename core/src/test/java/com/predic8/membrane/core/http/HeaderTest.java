@@ -19,6 +19,8 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
+import java.util.*;
+
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
@@ -36,6 +38,9 @@ class HeaderTest {
         header.add(HOST, "127.0.0.1:2000");
         header.setAccept("application/soap+xml, application/dime, multipart/related, text/*");
         header.setAuthorization("alice", "secret");
+        header.add("X-Multiple","foo");
+        header.add("X-Multiple","bar");
+        header.add("X-Multiple","baz");
 
         h1 = new Header();
 
@@ -234,5 +239,15 @@ class HeaderTest {
         h.add(COOKIE, "TOKEN=xyz; PATH=/");
         assertEquals("xyz", h.getFirstCookie("TOKEN"));
         assertEquals("/", h.getFirstCookie("PATH"));
+    }
+
+    @Test
+    void headerNames() {
+        assertEquals(new HashSet(List.of(CONTENT_TYPE, HOST, ACCEPT, AUTHORIZATION,"X-Multiple")), header.getUniqueHeaderNames());
+    }
+
+    @Test
+    void valuesAsString() {
+        assertEquals("foo, bar, baz", header.getValuesAsString("X-Multiple"));
     }
 }

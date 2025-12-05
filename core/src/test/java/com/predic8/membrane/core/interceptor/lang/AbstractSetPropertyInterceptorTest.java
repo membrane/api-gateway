@@ -24,6 +24,7 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.Request.get;
 
 abstract class AbstractSetPropertyInterceptorTest {
 
@@ -38,7 +39,7 @@ abstract class AbstractSetPropertyInterceptorTest {
         interceptor = new SetPropertyInterceptor();
         interceptor.setLanguage(getLanguage());
         router = new Router();
-        exc = Request.get("/dummy")
+        exc = get("/dummy")
                 .contentType(APPLICATION_JSON)
                 .body("""
                         {

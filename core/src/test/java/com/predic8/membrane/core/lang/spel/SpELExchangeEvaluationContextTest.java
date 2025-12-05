@@ -158,7 +158,7 @@ public class SpELExchangeEvaluationContextTest {
 
     @Test
     void jsonUnknown() {
-        assertEquals("", keyExpression("json['unknown']"));
+        assertEquals(null, keyExpression("json['unknown']"));
     }
 
     @Test

@@ -40,7 +40,9 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Test
     void string() {
-        assertEquals("Jelly Fish", evalString("header.getFirstValue('name')"));
+        assertEquals("Jelly Fish", evalString("header.name"));
+        assertEquals("Jelly Fish", evalString("header['name']"));
+        assertEquals("Jelly Fish", evalString("header.get('name')"));
     }
 
     @Test
