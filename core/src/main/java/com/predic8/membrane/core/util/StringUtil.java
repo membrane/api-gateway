@@ -46,8 +46,6 @@ public class StringUtil {
 
     /**
      * Adds lines numbers like a code listing
-     * @param s
-     * @return
      */
     public static String addLineNumbers(String s) {
         StringBuilder sb = new StringBuilder();
