@@ -1,4 +1,4 @@
-# Configration 
+# Configuration 
 
 This folder contains the Membrane configuration. More configuration samples could be found in the [tutorial](../tutorials) and [examples](../examples) folders.
 
