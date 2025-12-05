@@ -23,7 +23,6 @@
 - HttpClient
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
-- Remove HttpClientInterceptor.setAdjustHostHeader(boolean) it is already in HttpClientConfiguration ✅
 - Remove xmlSessionIdExtractor if we have a replacement with language 
 - Remove HttpUtil.getHTMLErrorBody()
 - LogInterceptor:
