@@ -21,6 +21,8 @@ import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.StringAssertions.*;
 import static io.restassured.RestAssured.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AccessLogExampleTest extends DistributionExtractingTestcase {
@@ -52,10 +54,16 @@ public class AccessLogExampleTest extends DistributionExtractingTestcase {
 
     @Test
     void rollingFile() throws Exception {
-        try (var ignore = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-            ha.getAndAssert200("http://localhost:2000");
+        try (var ignore = startServiceProxyScript()) {
+            given()
+                    .when()
+                    .get("http://localhost:2000")
+                    .then()
+                    .statusCode(200);
         }
-        assertContains("\"GET / HTTP/1.1\" 200 0 [application/json]", readFile("access.log"));
+
+        var log = readFile("access.log");
+        assertThat(log, containsString("\"GET / HTTP/1.1\" 200 0 [application/json]"));
     }
 
     @Test

@@ -630,11 +630,9 @@ public class Header {
      * @return a set containing the unique header field names
      */
     public Set<String> getUniqueHeaderNames() {
+        // First Set to use the equals method of HeaderField to get unique header names even if they differ in case.
+        // Then the HeaderNames are turned into Strings
         return fields.stream().map(HeaderField::getHeaderName)
-                .map(HeaderName::getName)
-                .map(String::toLowerCase)
-                .collect(toSet());
+                .collect(toSet()).stream().map(HeaderName::getName).collect(toSet());
     }
-
-
 }
