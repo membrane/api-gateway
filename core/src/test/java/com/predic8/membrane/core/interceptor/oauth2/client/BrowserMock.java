@@ -13,36 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.log.LogInterceptor;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import org.jetbrains.annotations.NotNull;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.jose4j.jwt.consumer.JwtConsumer;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import org.jetbrains.annotations.*;
+import org.jose4j.jwt.*;
+import org.jose4j.jwt.consumer.*;
+import org.slf4j.*;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.net.*;
+import java.util.*;
+import java.util.function.*;
+import java.util.regex.*;
 
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.net.URLEncoder.*;
+import static java.nio.charset.StandardCharsets.*;
 import static java.util.stream.Collectors.*;
-import static org.apache.commons.text.StringEscapeUtils.unescapeXml;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class BrowserMock implements Function<Exchange, Exchange> {
 
@@ -368,7 +357,8 @@ public class BrowserMock implements Function<Exchange, Exchange> {
             @Override
             public Exchange apply(Exchange exchange) {
                 try {
-                    return httpClient.call(exchange);
+                    httpClient.call(exchange);
+                    return exchange;
                 } catch (Exception e) {
                     throw new RuntimeException("while calling " + exchange.getRequestURI(), e);
                 }
