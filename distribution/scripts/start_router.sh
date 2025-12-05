@@ -21,11 +21,14 @@ normalize_java_opts() {
       -D*=*)
         key=${tok%%=*}
         val=${tok#*=}
-        case "$val" in
-          /*|~/*|[A-Za-z]:/*|\\\\*|file:*|*://*) : ;;
-          *) val="$MEMBRANE_HOME/$val" ;;
-        esac
-        tok="$key=$val"
+        # Only normalize when the key is log4j.configurationFile
+        if [ "$key" = "-Dlog4j.configurationFile" ]; then
+          case "$val" in
+            /*|~/*|[A-Za-z]:/*|\\\\*|file:*|*://*) : ;;
+            *) val="$MEMBRANE_HOME/$val" ;;
+          esac
+          tok="$key=$val"
+        fi
         ;;
     esac
     NEW_OPTS="$NEW_OPTS $tok"
