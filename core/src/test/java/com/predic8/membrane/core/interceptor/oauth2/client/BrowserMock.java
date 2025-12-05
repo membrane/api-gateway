@@ -368,7 +368,8 @@ public class BrowserMock implements Function<Exchange, Exchange> {
             @Override
             public Exchange apply(Exchange exchange) {
                 try {
-                    return httpClient.call(exchange);
+                    httpClient.call(exchange);
+                    return exchange;
                 } catch (Exception e) {
                     throw new RuntimeException("while calling " + exchange.getRequestURI(), e);
                 }

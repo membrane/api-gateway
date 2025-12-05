@@ -93,18 +93,15 @@ public class ChunkedBodyTest {
             });
             t.start();
 
-            Exchange e;
-            try (HttpClient hc = new HttpClient()) {
-                e = hc.call(get("http://localhost:3058").buildExchange());
+            Exchange e = get("http://localhost:3058").buildExchange();
+            try (var hc = new HttpClient()) {
+                hc.call(e);
             }
             e.getResponse().getBodyAsStringDecoded(); // read body
-
             assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", e.getResponse().getBody().getTrailer().getFirstValue("Expires"));
-
             t.interrupt();
         }
     }
-
 
     @Test
     void testWriteTrailer() throws IOException {

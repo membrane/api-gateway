@@ -28,6 +28,7 @@ import com.predic8.membrane.core.transport.ssl.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.post;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
@@ -80,15 +81,14 @@ public class GateKeeperClientInterceptor implements SSLInterceptor {
     }
 
     private Map getResult(String body) throws Exception {
-        Exchange exc2 = httpClient.call(new Request.Builder().post(this.url).contentType(APPLICATION_JSON).body(
-                body
-        ).buildExchange());
+        var exc = post(this.url).contentType(APPLICATION_JSON).body(body).buildExchange();
+        httpClient.call(exc);
 
 
-        if(exc2.getResponse().getStatusCode() != 200)
-            return ImmutableMap.of("error", "status " + exc2.getResponse().getStatusCode());
+        if(exc.getResponse().getStatusCode() != 200)
+            return ImmutableMap.of("error", "status " + exc.getResponse().getStatusCode());
 
-        return ImmutableMap.copyOf(om.readValue(exc2.getResponse().getBodyAsStreamDecoded(), Map.class));
+        return ImmutableMap.copyOf(om.readValue(exc.getResponse().getBodyAsStreamDecoded(), Map.class));
     }
 
     private Outcome createResponse(SSLExchange exc) {
