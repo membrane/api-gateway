@@ -32,8 +32,6 @@ import static java.nio.charset.StandardCharsets.*;
  * @description Converts JSON message bodies into XML.
  * The converter wraps the JSON document into a root element. The name of the
  * root element is configurable. If unset, JSON objects default to "root" and JSON arrays default to "array".
- *
- * @explanation
  * This interceptor reads the JSON body, converts it into XML and updates the message
  * body and Content-Type header. The resulting XML is always UTF-8 encoded and starts with an XML prolog.
  *
