@@ -52,6 +52,7 @@ import static com.predic8.membrane.core.Constants.USERAGENT;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Response.badRequest;
 import static com.predic8.membrane.core.http.Response.internalServerError;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.authorizationCodeBodyBuilder;
@@ -210,9 +211,9 @@ public abstract class AuthorizationService {
         logHelper.handleRequest(e);
         if (sslContext != null)
             e.setProperty(Exchange.SSL_CONTEXT, sslContext);
-        Response response = getHttpClient().call(e).getResponse();
+        getHttpClient().call(e);
         logHelper.handleResponse(e);
-        return response;
+        return e.getResponse();
     }
 
     public SSLParser getSslParser() {
@@ -323,8 +324,11 @@ public abstract class AuthorizationService {
     public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
         url = ResolverMap.combine(baseLocation, url);
         // ask the internal httpClient (might be proxied/authenticated), if HTTP
-        if (url.startsWith("http"))
-            return httpClient.call(Request.get(url).buildExchange()).getResponse().getBodyAsStreamDecoded();
+        if (url.startsWith("http")) {
+            var exc = get(url).buildExchange();
+            httpClient.call(exc);
+            return exc.getResponse().getBodyAsStreamDecoded();
+        }
         return rm.resolve(url);
     }
 

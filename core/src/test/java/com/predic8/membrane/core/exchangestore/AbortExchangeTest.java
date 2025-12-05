@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.lang.Thread.sleep;
 import static org.junit.jupiter.api.Assertions.*;
@@ -115,9 +116,10 @@ public class AbortExchangeTest {
     }
 
     private Response performRequest() throws Exception {
-        try (HttpClient hc = new HttpClient()) {
-            return hc.call(new Request.Builder().get("http://localhost:3031/").header("Connection", "close")
-                    .buildExchange()).getResponse();
+        try (var hc = new HttpClient()) {
+            var exc1 = get("http://localhost:3031/").header("Connection", "close").buildExchange();
+            hc.call(exc1);
+            return exc1.getResponse();
         }
     }
 

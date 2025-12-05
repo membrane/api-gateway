@@ -13,6 +13,13 @@
 - Rename in apis.yaml
 
 
+# 7.0.1
+
+- Adding a configuration flag to enable/disable colorized output
+- Constant to centralize color formatting: ANSIColors
+- Detecting terminal support before applying colors (e.g., check if System.console() is available)
+
+
 # 7.0.0
 
 - Use colors in the startup log
@@ -23,8 +30,7 @@
 
 ## (Breaking) Interface Changes
 
-- Remove WADLInterceptor
-- HttpClient
+- HttpClient TB
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
 - Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
@@ -39,9 +45,19 @@
 - Groovy:
   - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
     - Difference to SpEL
-- Remove Starter:
-  -  External scripts using the `Starter.jar` to start membrane will no longer work.
-  -  Migration: use the `RouterCLI` to start membrane (e.g. see `distribution/scripts/start_router.sh`). 
+    - SpEL headers.foo should return comma separated list of all values.
+- Delete unneeded proxies.xml in examples CG
+- for distribution: README with Link to Github for XML-based example configurations TB
+- update schema reference to 7.0.0, integrate into ConsistentVersionNumbers.java
+- improve error output on
+  - schema validation error
+  - bean setter exception
+  - port occupied
+
+## Changes
+
+- YAML Configuration as default
+- Use of colors in logs
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured

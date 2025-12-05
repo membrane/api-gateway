@@ -54,7 +54,8 @@ public class AuthenticationApi {
         Exchange exc = tokenExchange();
         String responseBody = null;
         try {
-            responseBody = http.call(exc).getResponse().getBodyAsStringDecoded();
+            http.call(exc);
+            responseBody = exc.getResponse().getBodyAsStringDecoded();
             return new ObjectMapper()
                     .readTree(responseBody)
                     .get("access_token")
