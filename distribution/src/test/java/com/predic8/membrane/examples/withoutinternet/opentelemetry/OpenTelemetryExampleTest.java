@@ -47,14 +47,12 @@ public class OpenTelemetryExampleTest extends AbstractSampleMembraneStartStopTes
     void getTraceIds() {
         // @formatter:off
         given()
-                .get("http://localhost:2000")
+            .get("http://localhost:2000")
         .then().assertThat()
-                .statusCode(200);
+            .statusCode(200);
         // @formatter:on
 
-        String string = logger.toString();
-        System.out.println("string = " + string);
-        List<Traceparent> traceparents = parse(string);
+        List<Traceparent> traceparents = parse(logger.toString());
         assertEquals(4, traceparents.size());
         assertTrue(traceparents.get(0).sameTraceId(traceparents.get(1)));
     }

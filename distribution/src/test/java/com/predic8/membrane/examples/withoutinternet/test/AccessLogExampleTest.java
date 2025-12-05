@@ -21,6 +21,7 @@ import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AccessLogExampleTest extends DistributionExtractingTestcase {
@@ -31,16 +32,27 @@ public class AccessLogExampleTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    void testConsole() throws Exception {
-        try (var process = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-            var console = new WaitableConsoleEvent(process, p -> p.contains("\"GET / HTTP/1.1\" 200 0 [application/json]"));
-            ha.getAndAssert200("http://localhost:2000");
+    void console() throws Exception {
+        try (var process = startServiceProxyScript()) {
+
+            var console = new WaitableConsoleEvent(
+                    process,
+                    p -> p.contains("\"GET / HTTP/1.1\" 200 0 [application/json]")
+            );
+
+            given()
+                .when()
+                .get("http://localhost:2000")
+            .then()
+                .log().ifValidationFails()
+                .statusCode(200);
+
             assertTrue(console.occurred());
         }
     }
 
     @Test
-    void testRollingFile() throws Exception {
+    void rollingFile() throws Exception {
         try (var ignore = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
             ha.getAndAssert200("http://localhost:2000");
         }
@@ -48,10 +60,18 @@ public class AccessLogExampleTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    void testHeader() throws Exception {
-        try (var ignore = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-            ha.getAndAssert200("http://localhost:2000");
+    void header() throws Exception {
+        try (var ignore = startServiceProxyScript()) {
+            given()
+                    .when()
+                    .get("http://localhost:2000")
+                    .then()
+                    .statusCode(200);
         }
-        assertContains("X-Forwarded-For: 127.0.0.1", readFile("access.log"));
+
+        assertContains(
+                "X-Forwarded-For: 127.0.0.1",
+                readFile("access.log")
+        );
     }
 }

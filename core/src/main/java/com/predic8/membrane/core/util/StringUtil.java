@@ -59,7 +59,7 @@ public class StringUtil {
     }
 
     public static List<String> splitByComma(String s) {
-        return s == null ? Collections.emptyList() : Arrays.asList(s.split(",\\s*"));
+        return s == null ? Collections.emptyList() : Arrays.asList(s.split("\\s*,\\s*"));
     }
 
 }

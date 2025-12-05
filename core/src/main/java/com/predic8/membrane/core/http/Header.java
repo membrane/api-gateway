@@ -33,6 +33,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.stream;
+import static java.util.Collections.unmodifiableList;
 import static java.util.regex.Pattern.*;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
@@ -241,7 +242,7 @@ public class Header {
 	}
 
 	public boolean contains(String header) {
-		return fields.stream().anyMatch(hf -> hf.getHeaderName().hasName(header));
+        return filterByHeaderName(header).findAny().isPresent();
 	}
 
 	public boolean contains(HeaderName header) {
@@ -613,13 +614,21 @@ public class Header {
         return fields.isEmpty();
     }
 
+    /**
+     * Retrieves an unmodifiable list of header fields contained in this header.
+     * The state of this class should not be modified directly.
+     *
+     * @return an unmodifiable list of HeaderField objects representing the header fields
+     */
     public List<HeaderField> getFields() {
-        return fields;
+        return unmodifiableList(fields);
     }
 
     /**
-     * No guaranteed order of field names
-     * @return
+     * Returns a set of all unique header field names present in this header.
+     * The order of names in the set is not guaranteed.
+     *
+     * @return a set containing the unique header field names
      */
     public Set<String> getUniqueHeaderNames() {
         return fields.stream().map(HeaderField::getHeaderName).map(HeaderName::getName).collect(toSet());

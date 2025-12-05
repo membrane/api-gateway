@@ -52,7 +52,7 @@ class HeaderMapTest {
     }
 
     @Test
-    void testPutAndGetSingleValue() {
+    void putAndGetSingleValue() {
         Header h = newHeader();
         HeaderMap map = new HeaderMap(h);
 

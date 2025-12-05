@@ -15,12 +15,11 @@
 
 package com.predic8.membrane.core.lang.spel.spelable;
 
-import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.*;
 
 public class SpELMessageWrapper {
 
-    private SpELHeader headers;
+    private SpELMap headers;
     private AbstractBody body;
     private String version;
     private String errorMessage;
@@ -30,13 +29,17 @@ public class SpELMessageWrapper {
             return;
         }
 
-        this.headers = new SpELHeader(message.getHeader());
+        this.headers = new SpELMap( new HeaderMap(message.getHeader()));
         this.body = message.getBody();
         this.version = message.getVersion();
         this.errorMessage = message.getErrorMessage();
     }
 
-    public SpELHeader getHeaders() {
+    public SpELMap getHeader() {
+        return headers;
+    }
+
+    public SpELMap getHeaders() {
         return headers;
     }
 
