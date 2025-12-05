@@ -16,6 +16,8 @@ package com.predic8.membrane.core.interceptor.xml;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import io.restassured.path.json.*;
+import io.restassured.path.xml.*;
 import org.junit.jupiter.api.*;
 import org.xml.sax.*;
 
@@ -69,8 +71,8 @@ public class Json2XmlInterceptorTest {
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
         Message msg = exc.getRequest();
         assertTrue(msg.isXML());
-        assertEquals("Mike", xPath(msg.getBodyAsStringDecoded(), "/person/name"));
-        assertEquals("San Francisco", xPath(msg.getBodyAsStringDecoded(), "/person/city"));
+        assertXPath("Mike", msg, "/person/name");
+        assertXPath("San Francisco", msg, "/person/city");
         assertTrue(msg.getBodyAsStringDecoded().contains(UTF_8.name()));
     }
 
@@ -81,8 +83,8 @@ public class Json2XmlInterceptorTest {
         assertEquals(CONTINUE,  interceptor.handleResponse(exc));
         Message msg = exc.getResponse();
         assertTrue(msg.isXML());
-        assertEquals("Mike", xPath(msg.getBodyAsStringDecoded(), "/person/name"));
-        assertEquals("San Francisco", xPath(msg.getBodyAsStringDecoded(), "/person/city"));
+        assertXPath("Mike", msg, "/person/name");
+        assertXPath("San Francisco", msg, "/person/city");
     }
 
     @Test
@@ -91,7 +93,35 @@ public class Json2XmlInterceptorTest {
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
         Message msg = exc.getRequest();
         assertTrue(msg.isXML());
-        assertEquals("Berlin", xPath(msg.getBodyAsStringDecoded(), "/place"));
+        assertXPath("Berlin", msg, "/place");
+    }
+
+    @Test
+    void nested() throws URISyntaxException {
+        Exchange exc = put("/nested").json("""
+            {
+                "one": [1],
+                "nested": [[2]],
+                "three": [[[3]]]
+            }
+            """).buildExchange();
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        String xml = exc.getRequest().getBodyAsStringDecoded();
+        XmlPath xp = new XmlPath(xml);
+
+        // one = [1]
+        assertEquals(1, xp.getInt("root.one.array.item"));
+        assertEquals(1, xp.getList("root.one.array.item").size());
+
+        // nested = [[2]]
+        assertEquals(2, xp.getInt("root.nested.array.item.array.item"));
+        assertEquals(1, xp.getList("root.nested.array.item.array.item").size());
+
+        // three = [[[3]]]
+        assertEquals(3, xp.getInt("root.three.array.item.array.item.array.item"));
+        assertEquals(1, xp.getList("root.three.array.item.array.item.array.item").size());
     }
 
     @Test
@@ -100,31 +130,73 @@ public class Json2XmlInterceptorTest {
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
         Message msg = exc.getRequest();
         assertTrue(msg.isXML());
-        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/root/a"));
-        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/root/b"));
+        assertXPath("1", msg, "/root/a");
+        assertXPath("2", msg, "/root/b");
     }
 
     @Test
     void noRootWithRootNameSpecified() throws Exception {
         interceptor.setRoot("top");
+        interceptor.init();
         Exchange exc = put("/no-root").json(noRoot).buildExchange();
         assertEquals(CONTINUE,  interceptor.handleRequest(exc));
         Message msg = exc.getRequest();
         assertTrue(msg.isXML());
-        assertEquals("1", xPath(msg.getBodyAsStringDecoded(), "/top/a"));
-        assertEquals("2", xPath(msg.getBodyAsStringDecoded(), "/top/b"));
+        assertXPath("1", msg, "/top/a");
+        assertXPath("2", msg, "/top/b");
     }
 
     @Test
-    void invalidJSON() throws URISyntaxException {
-        Exchange exc = put("/invalid").json("{ invalid").buildExchange();
+    void array() throws URISyntaxException, XPathExpressionException {
+        Exchange exc = put("/array").json("[1,2,3]").buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertXPath("1",msg,"/array/item[1]");
+        assertXPath("2",msg,"/array/item[2]");
+        assertXPath("3",msg,"/array/item[3]");
+    }
+
+    @Test
+    void arrayWithRoot() throws URISyntaxException, XPathExpressionException {
+        interceptor.setRoot("myRoot");
+        interceptor.init();
+        Exchange exc = put("/array").json("[1,2,3]").buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        var msg = exc.getRequest();
+        assertXPath("1",msg,"/myRoot/array/item[1]");
+        assertXPath("2",msg,"/myRoot/array/item[2]");
+        assertXPath("3",msg,"/myRoot/array/item[3]");
+    }
+
+    @Test
+    void arrayOneElement() throws Exception {
+        Exchange exc = put("/array").json("[1]").buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        assertXPath("1", (Message) exc.getRequest(),"/array/item[1]");
+    }
+
+    @Test
+    void number() throws Exception {
+        Exchange exc = put("/number").json("1").buildExchange();
+        assertEquals(CONTINUE,  interceptor.handleRequest(exc));
+        Message msg = exc.getRequest();
+        assertXPath("1", msg, "/root");
+    }
+
+    @Test
+    void invalid() throws URISyntaxException {
+        Exchange exc = put("/invalid").json("{").buildExchange();
         assertEquals(ABORT,  interceptor.handleRequest(exc));
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Error parsing JSON"));
+        Response res = exc.getResponse();
+        assertEquals(500, res.getStatusCode());
+        assertEquals("Error parsing JSON",     new JsonPath(res.getBodyAsStringDecoded()).get("title"));
     }
 
     private static String xPath(String body, String expression) throws XPathExpressionException {
-        System.out.println("body = " + body);
         return xPathFactory.newXPath().evaluate(expression, new InputSource(new StringReader(body)));
     }
 
+    private void assertXPath(String expected, Message msg, String xpath) throws XPathExpressionException {
+        assertEquals(expected, xPath(msg.getBodyAsStringDecoded(), xpath));
+    }
 }
