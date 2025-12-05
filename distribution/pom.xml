@@ -177,6 +177,35 @@
 					<mainClass>${mainClass}</mainClass>
 					<commandlineArgs>${mainArgs}</commandlineArgs>
 				</configuration>
+
+				<executions>
+					<execution>
+						<id>prepare-examples-without-proxies</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>bash</executable>
+							<arguments>
+								<argument>-c</argument>
+								<argument>
+									<![CDATA[
+									  set -e
+									  src="${project.basedir}/examples"
+									  dest="${project.build.directory}/examples-filtered"
+									  rm -rf "$dest"
+									  if [ -d "$src" ]; then
+										mkdir -p "$dest"
+										cp -R "$src/." "$dest/"
+										find "$dest" -name apis.yaml -execdir rm -f proxies.xml \;
+									  fi
+									]]>
+								</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
