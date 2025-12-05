@@ -17,7 +17,6 @@ package com.predic8.membrane.annot.yaml;
 import com.predic8.membrane.annot.*;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -133,11 +132,15 @@ public final class McYamlIntrospector {
     public static <T> Method getChildSetter(Class<T> clazz, Class<?> valueClass) {
         return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
+                .filter(McYamlIntrospector::isStructured)
                 .filter(method -> method.getParameterTypes().length == 1)
                 .filter(method -> method.getParameterTypes()[0].isAssignableFrom(valueClass))
-                .findFirst()
+                .reduce((a, b) -> {
+                    throw new RuntimeException("Multiple potential setters found on "
+                            + clazz.getName() + " for value of type " + valueClass.getName());
+                })
                 .orElseThrow(() -> new RuntimeException("Could not find child setter on "
-                        + clazz.getName() + " for value of type " + valueClass.getName()));
+                    + clazz.getName() + " for value of type " + valueClass.getName()));
     }
 
     public static boolean isReferenceAttribute(Method setter) {

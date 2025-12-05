@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Request.put;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.stream.Collectors.*;
@@ -170,7 +171,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
         Request.Builder builder = new Request.Builder().post(location  + "/" + "_search")
                 .contentType(APPLICATION_JSON);
         Exchange clientExc = builder.body(getFilterDistinctQueryJson(propertyName).toString()).buildExchange();
-        clientExc = client.call(clientExc);
+        client.call(clientExc);
         return getDistinctValues(clientExc.getResponse().getBodyAsStringDecoded());
     }
 
@@ -207,7 +208,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
                     .body(body)
                     .contentType(APPLICATION_JSON)
                     .buildExchange();
-            exc = client.call(exc);
+            client.call(exc);
             Map excJson = getSourceElementFromElasticSearchResponse(responseToMap(exc)).getFirst();
             return mapper.readValue(mapper.writeValueAsString(excJson),AbstractExchangeSnapshot.class);
         } catch (Exception e) {
@@ -356,7 +357,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
                     .body(body)
                     .contentType(APPLICATION_JSON)
                     .buildExchange();
-            exc = client.call(exc);
+            client.call(exc);
 
             List<Map> source = getSourceElementFromElasticSearchResponse(responseToMap(exc));
             AbstractExchangeSnapshot[] snapshots = mapper.readValue(mapper.writeValueAsString(source), AbstractExchangeSnapshot[].class);
@@ -387,7 +388,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
                     .contentType(APPLICATION_JSON)
                     .body(body)
                     .buildExchange();
-            exc = client.call(exc);
+            client.call(exc);
 
             if(!exc.getResponse().isOk())
                 return new ArrayList<>();
@@ -414,9 +415,9 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
     public ExchangeQueryResult getFilteredSortedPaged(QueryParameter params, boolean useXForwardedForAsClientAddr) throws Exception {
         JSONObject req = getJsonElasticQuery(params);
 
-        Exchange exc = new Request.Builder().post(getElasticSearchExchangesPath() + "_search").contentType(APPLICATION_JSON)
+        Exchange exc = post(getElasticSearchExchangesPath() + "_search").contentType(APPLICATION_JSON)
                 .body(req.toString()).buildExchange();
-        exc = client.call(exc);
+        client.call(exc);
 
         return new ExchangeQueryResult(getAbstractExchangeListFromExchange(exc), getTotalHitCountFromExchange(exc),
                 this.getLastModified());
@@ -497,10 +498,9 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
     private void setUpIndex() {
         try {
             log.info("Setting up elastic search index");
-            JSONObject indexRes = new JSONObject(client.call(put(getElasticSearchIndexPath())
-                    .body("")
-                    .buildExchange()).getResponse().getBodyAsStringDecoded());
-
+            Exchange exc = put(getElasticSearchIndexPath()).body("").buildExchange();
+            client.call(exc);
+            JSONObject indexRes = new JSONObject(exc.getResponse().getBodyAsStringDecoded());
 
             try {
                 if( isElasticAcked(indexRes)){
@@ -515,26 +515,25 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
                     log.error("Error happened. Reply from elastic search is below");
                     log.error(indexRes.toString());
                 }
-
-
             }
 
             log.info("Setting up elastic search mappings");
             String mapping = IOUtils.toString(getClass().getClassLoader().getResourceAsStream("com.predic8.membrane.core.exchangestore/mapping.json"), UTF_8);
 
-            Exchange currentMappingExc = client.call(new Request.Builder().get(getElasticSearchIndexPath() + "_mapping")
-                    .buildExchange());
-            String currentMapping = client.call(currentMappingExc).getResponse().getBodyAsStringDecoded();
+            Exchange currentMappingExc = new Builder().get(getElasticSearchIndexPath() + "_mapping").buildExchange();
+            client.call(currentMappingExc);
+
+            String currentMapping = currentMappingExc.getResponse().getBodyAsStringDecoded();
 
             if(!new JSONObject(currentMapping).getJSONObject(index).getJSONObject("mappings").isEmpty()){
                 log.info("Mapping already set skipping");
                 return;
             }
 
-            Exchange exc = client.call(new Request.Builder().put(getElasticSearchIndexPath() + "_mapping").
-                            contentType(APPLICATION_JSON).body(mapping).buildExchange());
+            Exchange exc1 = put(getElasticSearchIndexPath() + "_mapping").contentType(APPLICATION_JSON).body(mapping).buildExchange();
+            client.call(exc1);
 
-            JSONObject res = new JSONObject(exc.getResponse().getBodyAsStringDecoded());
+            JSONObject res = new JSONObject(exc1.getResponse().getBodyAsStringDecoded());
 
             try {
                 if (isElasticAcked(res)){

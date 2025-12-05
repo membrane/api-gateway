@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.azure.api.tablestorage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.*;
 
 import java.util.Map;
 
@@ -35,12 +36,11 @@ public class TableStorageCommandExecutor {
                 "TableName", api.config().getTableName()
         );
 
-        var exc = api.http().call(
-                api.requestBuilder(null)
-                        .post(path)
-                        .body(new ObjectMapper().writeValueAsString(payload))
-                        .buildExchange()
-        );
+        Exchange exc = api.requestBuilder(null)
+                .post(path)
+                .body(new ObjectMapper().writeValueAsString(payload))
+                .buildExchange();
+        api.http().call(exc);
 
         var response = exc.getResponse();
 

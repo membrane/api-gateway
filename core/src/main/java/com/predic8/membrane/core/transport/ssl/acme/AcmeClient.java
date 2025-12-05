@@ -63,6 +63,7 @@ import java.util.stream.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.transport.ssl.acme.Challenge.*;
 import static com.predic8.membrane.core.transport.ssl.acme.Identifier.*;
 import static java.lang.System.*;
@@ -138,11 +139,12 @@ public class AcmeClient {
     }
 
     public void loadDirectory() throws Exception {
-        Exchange e = hc.call(new Request.Builder().get(directoryUrl).header("User-Agent", VERSION).buildExchange());
-        handleError(e);
+        Exchange exc = new Request.Builder().get(directoryUrl).header("User-Agent", VERSION).buildExchange();
+        hc.call(exc);
+        handleError(exc);
 
         @SuppressWarnings("rawtypes")
-        Map dir = om.readValue(e.getResponse().getBodyAsStreamDecoded(), Map.class);
+        Map dir = om.readValue(exc.getResponse().getBodyAsStreamDecoded(), Map.class);
 
         keyChangeUrl = (String) dir.get("keyChange");
         newAccountUrl = (String) dir.get("newAccount");
@@ -183,10 +185,11 @@ public class AcmeClient {
     }
 
     public String retrieveNewNonce() throws Exception {
-        Exchange e = hc.call(createHeadRequest());
-        handleError(e);
-        String replayNonce = getReplayNonce(e);
-        e.getResponse().getBodyAsStringDecoded(); // Do not delete! Probably to read the content of the body in order to work with keep alive
+        var headRequest = createHeadRequest();
+        hc.call(headRequest);
+        handleError(headRequest);
+        String replayNonce = getReplayNonce(headRequest);
+        headRequest.getResponse().getBodyAsStringDecoded(); // Do not delete! Probably to read the content of the body in order to work with keep alive
         return replayNonce;
     }
 
@@ -344,12 +347,13 @@ public class AcmeClient {
     }
 
     private Exchange createExchange(String url, String nonce, JWSParametrizer c) throws Exception {
-        return hc.call(new Request.Builder()
-                .post(url)
-                .header(CONTENT_TYPE, APPLICATION_JOSE_JSON)
+        Exchange exc = post(url)
+                .contentType(APPLICATION_JOSE_JSON)
                 .header(USER_AGENT, VERSION)
                 .body(convert2String(getMyJsonWebSignature(url, nonce, c)))
-                .buildExchange());
+                .buildExchange();
+        hc.call(exc);
+        return exc;
     }
 
     private static String convert2String(MyJsonWebSignature jws) {
