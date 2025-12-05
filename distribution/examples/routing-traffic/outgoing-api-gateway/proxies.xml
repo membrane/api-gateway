@@ -47,7 +47,7 @@
 				<log message="Header: ${header}"/>
 			 	<template contentType="text/plain" pretty="true">
 				<![CDATA[
-					Headers exposed to external API: <%= headers.allHeaderFields.headerName %>
+					Headers exposed to external API: <%= headers.keySet() %>
 				]]>
 				</template>
 			</request>

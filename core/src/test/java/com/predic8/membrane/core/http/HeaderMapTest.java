@@ -167,7 +167,7 @@ class HeaderMapTest {
 
         HeaderMap map = new HeaderMap(h);
 
-        // HeaderMap sollte Komma-separiert zurückgeben (abhängig von Header)
+        // HeaderMap should return comma-separated values
         String result = map.get("X");
 
         assertTrue(result.equals("1,2") || result.equals("1, 2"));

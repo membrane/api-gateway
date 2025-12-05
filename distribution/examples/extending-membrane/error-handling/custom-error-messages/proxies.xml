@@ -60,7 +60,7 @@
                     <template contentType="application/xml"><![CDATA[
                           <error>
                             <case>b</case>
-                            <message>WSDL validation of ${headers.getFirstValue('X-Validation-Error-Source')} failed!</message>
+                            <message>WSDL validation of ${headers['X-Validation-Error-Source'])} failed!</message>
                         </error>]]>
                     </template>
                 </if>

@@ -243,7 +243,7 @@ class HeaderTest {
 
     @Test
     void headerNames() {
-        assertEquals(new HashSet(List.of(CONTENT_TYPE, HOST, ACCEPT, AUTHORIZATION,"X-Multiple")), header.getUniqueHeaderNames());
+        assertEquals(new HashSet<>(List.of(CONTENT_TYPE, HOST, ACCEPT, AUTHORIZATION,"X-Multiple")), header.getUniqueHeaderNames());
     }
 
     @Test

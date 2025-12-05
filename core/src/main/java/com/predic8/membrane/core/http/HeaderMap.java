@@ -84,9 +84,9 @@ public class HeaderMap implements Map<String, String> {
 
     /**
      * Alias to keep compatibility with groovy scripting variables before version 7
-     * @param key
-     * @param value
-     * @return
+     * @param key the header name
+     * @param value the header value
+     * @return the previous value associated with the key, or null if there was no mapping
      */
     public @Nullable String add(String key, String value) {
         return put(key, value);
@@ -105,11 +105,10 @@ public class HeaderMap implements Map<String, String> {
         if (!(key instanceof String k))
             return null;
 
-        String old = null;
+        String old = header.getValuesAsString(k);
         List<HeaderField> toRemove = new ArrayList<>();
         for(HeaderField hf : header.getFields()) {
             if(hf.getHeaderName().hasName(k)) {
-                old = hf.getValue();
                 toRemove.add(hf);
             }
         }

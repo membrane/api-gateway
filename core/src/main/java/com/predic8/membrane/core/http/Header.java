@@ -189,15 +189,6 @@ public class Header {
 		fields.remove(field);
 	}
 
-    /**
-     * Removes the specified header field from this header.
-     *
-     * @param object content of the field to remove
-     */
-    public void remove(Object object) {
-        fields.remove(object);
-    }
-
 	public void removeFields(String name) {
         fields.removeAll(filterByHeaderName(name).toList());
 	}
