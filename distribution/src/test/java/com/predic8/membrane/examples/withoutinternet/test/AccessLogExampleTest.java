@@ -15,14 +15,13 @@
 
 package com.predic8.membrane.examples.withoutinternet.test;
 
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.WaitableConsoleEvent;
-import com.predic8.membrane.test.HttpAssertions;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.test.*;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.StringAssertions.assertContains;
-import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.test.StringAssertions.*;
+import static io.restassured.RestAssured.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AccessLogExampleTest extends DistributionExtractingTestcase {
 

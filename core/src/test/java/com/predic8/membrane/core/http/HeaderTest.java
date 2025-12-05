@@ -243,11 +243,27 @@ class HeaderTest {
 
     @Test
     void headerNames() {
-        assertEquals(new HashSet<>(List.of(CONTENT_TYPE, HOST, ACCEPT, AUTHORIZATION,"X-Multiple")), header.getUniqueHeaderNames());
+        assertEquals(new HashSet<>(List.of(CONTENT_TYPE.toLowerCase(),
+                HOST.toLowerCase(),
+                ACCEPT.toLowerCase(),
+                AUTHORIZATION.toLowerCase(),
+                "x-multiple")), header.getUniqueHeaderNames());
     }
 
     @Test
     void valuesAsString() {
         assertEquals("foo, bar, baz", header.getValuesAsString("X-Multiple"));
+    }
+
+    @Test
+    void unique() {
+        Header h = new Header();
+        h.add("x-foo", "1");
+        h.add("X-Foo", "2");
+        h.add("X-Bar", "3");
+        h.add("x-Bar","4");
+        assertEquals(2, h.getUniqueHeaderNames().size());
+        assertEquals("1, 2", h.getValuesAsString("X-Foo"));
+        assertEquals("3, 4", h.getValuesAsString("X-BAR"));
     }
 }

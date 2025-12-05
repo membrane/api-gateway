@@ -630,7 +630,10 @@ public class Header {
      * @return a set containing the unique header field names
      */
     public Set<String> getUniqueHeaderNames() {
-        return fields.stream().map(HeaderField::getHeaderName).map(HeaderName::getName).collect(toSet());
+        return fields.stream().map(HeaderField::getHeaderName)
+                .map(HeaderName::getName)
+                .map(String::toLowerCase)
+                .collect(toSet());
     }
 
 

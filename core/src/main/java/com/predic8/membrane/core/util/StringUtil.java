@@ -58,8 +58,17 @@ public class StringUtil {
         return sb.toString();
     }
 
+    /**
+     * Splits a comma-separated string into a list of trimmed values.
+     * Whitespace around commas is ignored.
+     *
+     * @param s the string to split, may be null
+     * @return a list of values; empty list if input is null or empty.
+     *         Note: consecutive commas produce empty strings in the result.
+     *         The returned list is fixed-size and cannot be modified.
+     */
     public static List<String> splitByComma(String s) {
-        return s == null ? Collections.emptyList() : Arrays.asList(s.split("\\s*,\\s*"));
+        return s == null || s.isEmpty() ? Collections.emptyList() : Arrays.asList(s.split("\\s*,\\s*"));
     }
 
 }
