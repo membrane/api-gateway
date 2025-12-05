@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - prometheus: {}
+
+---
+
+api:
+  port: 2001
+  flow:
+    - return:
+        statusCode: 200
+
+---
+
+api:
+  port: 2002
+  flow:
+    - return:
+        statusCode: 404
+
+---
+
+api:
+  port: 2003
+  flow:
+    - return:
+        statusCode: 500

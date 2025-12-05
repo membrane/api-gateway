@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+#
+# Membrane Tutorial: JSON Template
+#
+# Using a template, you can transform incoming JSON into a different JSON shape.
+#
+# 1.) Inspect ../data/order.json
+#   Notice it contains an "items" array.
+#
+# 2.) Send a request with a sample payload
+#   curl -d @../data/order.json -H "Content-Type: application/json" http://localhost:2000
+#
+# 3.) Observe how the response structure has changed.
+#
+# Troubleshooting:
+#   Always send the header: Content-Type: application/json
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - setProperty:
+            name: id
+            value: ${$.id}
+            language: jsonpath
+        - setProperty:
+            name: items
+            value: ${$.items}
+            language: jsonpath
+    - response:
+        - template:
+            contentType: application/json
+            pretty: true
+            src: |
+              {
+                "number": ${property.id},
+                "positions": [
+                  <%
+                    def list = property.items
+                    for (i = 0; i < list.size(); i++) {
+                      def item = list[i]
+                  %>
+                  {
+                    "product": "<%= item.article %>",
+                    "quantity": <%= item.quantity %>,
+                    "amount": <%= item.quantity * item.price %>
+                  }
+                  <%= i < list.size()-1 ? ',' : '' /* Add trailing comma if not last item */ %> 
+                  <% } %>
+                ]
+              }
+    - return:
+        statusCode: 200

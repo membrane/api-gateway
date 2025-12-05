@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 2000
+  flow:
+    - request:
+        - json2Xml: {}
+  target:
+    url: http://localhost:3000
+
+---
+
+api:
+  name: echo
+  port: 3000
+  flow:
+    - log: {}
+    - return: {}

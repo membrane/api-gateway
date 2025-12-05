@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+#
+# Membrane Tutorial: Redirects
+#
+# 1.) Browser redirect:
+#
+#     Open http://localhost:2000/fruits/7 in your browser.
+#
+#     You should be redirected to:
+#       https://api.predic8.de/shop/v2/products/7
+#
+# 2.) Examine the response:
+#
+#       curl -v localhost:2000/fruits/7
+#
+#     Check the HTTP 'Location' header.
+
+api:
+  port: 2000
+  flow:
+    - request:
+      - log:
+          message: Requested ${path}
+      - rewriter:
+          - map:
+              from: "/fruits/(.*)"
+              to: "https://api.predic8.de/shop/v2/products/$1"
+              do: redirect_permanent

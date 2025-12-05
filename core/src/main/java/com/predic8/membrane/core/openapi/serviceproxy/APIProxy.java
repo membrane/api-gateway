@@ -92,6 +92,14 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         }
         key = new APIProxyKey(key, exchangeExpression, !specs.isEmpty());
         initOpenAPI();
+
+        for(Interceptor interceptor: interceptors) {
+            if(interceptor instanceof OpenAPIInterceptor oai) {
+                oai.setApiProxy(this);
+            } else if(interceptor instanceof OpenAPIPublisherInterceptor opi) {
+                opi.setApiProxy(this);
+            }
+        }
     }
 
     private void initOpenAPI() {

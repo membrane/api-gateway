@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+api:
+  port: 8080
+  flow:
+    - oauth2Resource2:
+        google:
+          clientId: Enter client ID from Google here
+          clientSecret: Enter client Secret from Google here
+    # this will act as the secret resource to make the example simple. See below in the comments for an alternative
+    - groovy:
+        src: |
+          def email = exc.properties.'membrane.oauth2'.userinfo.email
+          exc.response = Response.ok("Hello " + email + ".").build()
+          RETURN
+    # Use the 'target' instead of the 'groovy' interceptor to forward requests to another host:
+    # target:
+    #   host: membrane-soa.org
+    #   port: 80

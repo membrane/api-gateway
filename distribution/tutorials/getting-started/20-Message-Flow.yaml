@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 #
 # Membrane Tutorial: Message Flow
 #
@@ -14,10 +14,10 @@
 #     curl localhost:2000
 #
 #    Watch the console output. The message is printed twice: once during the
-#    request and once during the response flow. The status code appears
-#    only in the second log message, after the backend has responded.
+#    request and once during the response flow. A valid status code appears
+#    only in the second log message after the backend has responded.
 
-spec:
+api:
   port: 2000
   flow:
     # executed during the request and response flow

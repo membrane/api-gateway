@@ -35,11 +35,7 @@ Solve even complex custom API requirements with simple configurations.
 
 **YAML Configuration (beta):**
 ```yaml
-apiVersion: membrane-api.io/v1beta2
-kind: api
-metadata:
-  name: log
-spec:
+api:
   port: 2000
   interceptors:
     - log:
@@ -48,11 +44,11 @@ spec:
     url: https://api.predic8.de
 ```
 
-See: [YAML configuration](distribution/examples/yaml-configuration#YAML-Configuration)
+See: [YAML configuration](distribution/examples/yaml-configuration#yaml-configuration)
 
 **Issue JSON Web Tokens for API Keys:**
 
-Simple implementation of a token server. A request is authenticated by API key and a JWT for the user is created, signed and returned. By changing the template you can decide whats included in the JWT. 
+Simple implementation of a token server. A request is authenticated by API key and a JWT for the user is created, signed and returned. By changing the template you can decide whats included in the JWT.
 
 ```xml
 <api port="2000">

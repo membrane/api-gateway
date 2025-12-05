@@ -22,7 +22,7 @@
         </fileSet>
         <fileSet>
             <!-- examples fileSet: bod build folder or .sh scripts -->
-            <directory>examples</directory>
+            <directory>${project.build.directory}/examples-filtered</directory>
             <outputDirectory>/examples</outputDirectory>
             <excludes>
                 <exclude>**/build/</exclude>
@@ -31,7 +31,7 @@
         </fileSet>
         <fileSet>
             <!-- examples fileSet: .sh scripts (execute permissions) -->
-            <directory>examples</directory>
+            <directory>${project.build.directory}/examples-filtered</directory>
             <outputDirectory>/examples</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
@@ -40,7 +40,7 @@
         </fileSet>
         <fileSet>
             <!-- examples fileSet: build folder -->
-            <directory>examples</directory>
+            <directory>${project.build.directory}/examples-filtered</directory>
             <outputDirectory>/examples</outputDirectory>
             <includes>
                 <include>custom-interceptor/build/**/*</include>

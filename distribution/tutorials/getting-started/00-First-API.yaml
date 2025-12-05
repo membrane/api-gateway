@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 #
 # Membrane Tutorial: First API
 #
@@ -11,7 +11,7 @@
 #    Linux/Mac:
 #      membrane.sh -c 00-First-API.yaml
 #    Windows:
-#      membrane.bat -c 00-First-API.yaml
+#      membrane.cmd -c 00-First-API.yaml
 #
 #    Membrane will print a log message indicating that the API is running.
 #
@@ -30,7 +30,7 @@
 #
 #      curl https://api.predic8.de
 
-spec:
+api:
   port: 2000 # Listing port
   target:
     url: https://api.predic8.de
