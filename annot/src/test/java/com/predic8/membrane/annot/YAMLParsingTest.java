@@ -15,11 +15,15 @@
 package com.predic8.membrane.annot;
 
 import com.predic8.membrane.annot.util.CompilerHelper;
+import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.InvocationTargetException;
 
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
 import static com.predic8.membrane.annot.util.StructureAssertionUtil.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class YAMLParsingTest {
     @Test
@@ -364,6 +368,126 @@ public class YAMLParsingTest {
                                                     property("attr", value("here")),
                                                     property("content", value("here2"))
                                             ))))))))));
+    }
+
+    @Test
+    public void errorInSecondLevelWord() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="demo")
+        public class DemoElement {
+            Child1Element child;
+        
+            public Child1Element getChild() {
+                return child;
+            }
+        
+            @MCChildElement
+            public void setChild(Child1Element child) {
+                this.child = child;
+            }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="child1", topLevel=false)
+        public class Child1Element {
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="demo2")
+        public class Demo2Element {
+        }
+        ---
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        try {
+            parseYAML(result, """
+                    demo:
+                        errorHere: {}
+                    """);
+            throw new AssertionError("Parsing did not throw a nested YamlSchemaValidationException.");
+        } catch (RuntimeException e) {
+            YamlSchemaValidationException e2 = (YamlSchemaValidationException) getCause(e);
+            assertEquals(1, e2.getErrors().size());
+            assertEquals("/demo: property 'errorHere' is not defined in the schema and the schema does not allow additional properties",
+                    e2.getErrors().getFirst().toString());
+        }
+    }
+
+    @Test
+    public void errorInListItemUniqueness() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="demo")
+        public class DemoElement {
+            List<ChildElement> children;
+        
+            public List<ChildElement> getChildren() {
+                return children;
+            }
+        
+            @MCChildElement
+            public void setChildren(List<ChildElement> children) {
+                this.children = children;
+            }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        public abstract class ChildElement {
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="a")
+        public class Child1Element extends ChildElement {
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="b")
+        public class Child2Element extends ChildElement {
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="demo2")
+        public class Demo2Element {
+        }
+        ---
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        try {
+            parseYAML(result, """
+                    demo:
+                        children:
+                        - a: {}
+                          b: {}
+                    """);
+            throw new AssertionError("Parsing did not throw a nested YamlSchemaValidationException.");
+        } catch (RuntimeException e) {
+            YamlSchemaValidationException e2 = (YamlSchemaValidationException) getCause(e);
+            assertEquals(1, e2.getErrors().size());
+            assertEquals("/demo: property 'errorHere' is not defined in the schema and the schema does not allow additional properties",
+                    e2.getErrors().getFirst().toString());
+        }
+    }
+
+    private Throwable getCause(Throwable e) {
+        if (e.getCause() != null)
+            return getCause(e.getCause());
+        if (e instanceof InvocationTargetException ite)
+            return getCause(ite.getTargetException());
+        return e;
     }
 
 }
