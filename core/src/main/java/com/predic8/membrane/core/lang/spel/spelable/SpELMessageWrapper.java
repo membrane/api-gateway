@@ -19,7 +19,7 @@ import com.predic8.membrane.core.http.*;
 
 public class SpELMessageWrapper {
 
-    private SpELMap headers;
+    private SpELMap<String,String> headers;
     private AbstractBody body;
     private String version;
     private String errorMessage;
@@ -29,17 +29,17 @@ public class SpELMessageWrapper {
             return;
         }
 
-        this.headers = new SpELMap( new HeaderMap(message.getHeader()));
+        this.headers = new SpELMap<>( new HeaderMap(message.getHeader()));
         this.body = message.getBody();
         this.version = message.getVersion();
         this.errorMessage = message.getErrorMessage();
     }
 
-    public SpELMap getHeader() {
+    public SpELMap<String,String> getHeader() {
         return headers;
     }
 
-    public SpELMap getHeaders() {
+    public SpELMap<String,String> getHeaders() {
         return headers;
     }
 

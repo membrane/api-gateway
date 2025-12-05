@@ -24,13 +24,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HeaderMapTest {
 
-    private Header newHeader() {
-        return new Header();
-    }
-
     @Test
     void empty() {
-        HeaderMap map = new HeaderMap(newHeader());
+        HeaderMap map = new HeaderMap(new Header());
 
         assertEquals(0, map.size());
         assertTrue(map.isEmpty());
@@ -41,7 +37,7 @@ class HeaderMapTest {
 
     @Test
     void read() {
-        Header h = newHeader();
+        Header h = new Header();
         h.add(CONTENT_TYPE, APPLICATION_JSON);
         HeaderMap map = new HeaderMap(h);
         assertEquals(APPLICATION_JSON, map.get(CONTENT_TYPE));
@@ -53,7 +49,7 @@ class HeaderMapTest {
 
     @Test
     void putAndGetSingleValue() {
-        Header h = newHeader();
+        Header h = new Header();
         HeaderMap map = new HeaderMap(h);
 
         assertNull(map.put("X", "1"));
@@ -65,7 +61,7 @@ class HeaderMapTest {
 
     @Test
     void putReplacesValue() {
-        Header h = newHeader();
+        Header h = new Header();
         HeaderMap map = new HeaderMap(h);
 
         map.put("X", "1");
@@ -76,7 +72,7 @@ class HeaderMapTest {
 
     @Test
     void remove() {
-        Header h = newHeader();
+        Header h = new Header();
         HeaderMap map = new HeaderMap(h);
 
         map.put("X", "1");
@@ -89,7 +85,7 @@ class HeaderMapTest {
 
     @Test
     void putAll() {
-        HeaderMap map = new HeaderMap(newHeader());
+        HeaderMap map = new HeaderMap(new Header());
 
         Map<String, String> input = Map.of(
                 "A", "a",
@@ -105,7 +101,7 @@ class HeaderMapTest {
 
     @Test
     void clear() {
-        HeaderMap map = new HeaderMap(newHeader());
+        HeaderMap map = new HeaderMap(new Header());
         map.put("X", "1");
         map.put("Y", "2");
 
@@ -117,7 +113,7 @@ class HeaderMapTest {
 
     @Test
     void keySet() {
-        HeaderMap map = new HeaderMap(newHeader());
+        HeaderMap map = new HeaderMap(new Header());
         map.put("X", "1");
         map.put("Y", "2");
 
@@ -146,7 +142,7 @@ class HeaderMapTest {
 
     @Test
     void entrySet() {
-        HeaderMap map = new HeaderMap(newHeader());
+        HeaderMap map = new HeaderMap(new Header());
 
         map.put("A", "1");
         map.put("B", "2");
@@ -160,7 +156,7 @@ class HeaderMapTest {
 
     @Test
     void multiValueHeaderIsJoinedCorrectly() {
-        Header h = newHeader();
+        Header h = new Header();
 
         h.add("X", "1");
         h.add("X", "2");

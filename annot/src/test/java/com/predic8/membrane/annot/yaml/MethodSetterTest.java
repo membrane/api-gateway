@@ -22,14 +22,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MethodSetterTest {
 
-    public class A {
+    @SuppressWarnings("unused")
+    static class A {
         public void setA1(B b) {}
         public void setA2(B b) {}
         @MCChildElement
         public void setA3(B b) {}
     }
 
-    public class A2 {
+    @SuppressWarnings("unused")
+    static class A2 {
         @MCChildElement
         public void setA1(B b) {}
         @MCChildElement
