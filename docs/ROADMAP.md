@@ -13,6 +13,13 @@
 - Rename in apis.yaml
 
 
+# 7.0.1
+
+- Adding a configuration flag to enable/disable colorized output
+- Constant to centralize color formatting: ANSIColors
+- Detecting terminal support before applying colors (e.g., check if System.console() is available)
+
+
 # 7.0.0
 
 - Register JSON Schema for YAML at: https://www.schemastore.org/
@@ -34,6 +41,11 @@
   - schema validation error
   - bean setter exception
   - port occupied
+
+## Changes
+
+- YAML Configuration as default
+- Use of colors in logs
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured
