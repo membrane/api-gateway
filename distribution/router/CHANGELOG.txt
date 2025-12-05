@@ -1,5 +1,0 @@
-Membrane Service Proxy Change Log
-=============================================================================
-
-Please see https://github.com/membrane/api-gateway/releases for the latest
-release notes.
