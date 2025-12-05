@@ -191,4 +191,4 @@ This project uses a structured Javadoc format to document classes, methods, and 
 > The table lists custom tags used in this project. In addition, all standard Javadoc tags (such as `@param`, `@return`,
 > and `@throws`) are fully supported according to the official Javadoc specification.
 
-See e.g. [CallInterceptor](https://www.google.com/search?q=../core/src/main/java/com/predic8/membrane/core/interceptor/flow/CallInterceptor.java) for usage.
+See e.g. [CallInterceptor](../core/src/main/java/com/predic8/membrane/core/interceptor/flow/CallInterceptor.java) for usage.
