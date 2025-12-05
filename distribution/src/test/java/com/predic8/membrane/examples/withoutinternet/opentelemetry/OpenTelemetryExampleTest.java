@@ -52,7 +52,9 @@ public class OpenTelemetryExampleTest extends AbstractSampleMembraneStartStopTes
                 .statusCode(200);
         // @formatter:on
 
-        List<Traceparent> traceparents = parse(logger.toString());
+        String string = logger.toString();
+        System.out.println("string = " + string);
+        List<Traceparent> traceparents = parse(string);
         assertEquals(4, traceparents.size());
         assertTrue(traceparents.get(0).sameTraceId(traceparents.get(1)));
     }

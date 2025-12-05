@@ -40,7 +40,7 @@
                      in the exchange.                   -->
                 <groovy>
                     println "Request headers:"
-                    header.entrySet().each {
+                    message.header.allHeaderFields.each {
                         println it
                     }
                 </groovy>

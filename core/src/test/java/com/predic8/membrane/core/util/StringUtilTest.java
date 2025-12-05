@@ -34,6 +34,8 @@ class StringUtilTest {
         assertEquals(List.of(), splitByComma(null));
         assertEquals(List.of(""), splitByComma(""));
         assertEquals(List.of(), splitByComma(","));
+        assertEquals(List.of("foo", "bar"), splitByComma("foo, bar"));
+        assertEquals(List.of("foo", "bar"), splitByComma("foo    ,    bar"));
     }
 
     @Nested

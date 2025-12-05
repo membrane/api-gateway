@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.util.HttpUtil.readLine;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.stream;
 import static java.util.regex.Pattern.*;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.codec.binary.Base64.*;
 
@@ -254,7 +255,7 @@ public class Header {
 	public void write(OutputStream out) throws IOException {
 		byte[] bytes = fields.stream()
 				.map(f -> "%s: %s%s".formatted(f.getHeaderName(), f.getValue(), Constants.CRLF))
-				.collect(Collectors.joining()).getBytes(ISO_8859_1);
+				.collect(joining()).getBytes(ISO_8859_1);
 		out.write(bytes);
 	}
 
@@ -392,7 +393,7 @@ public class Header {
 	public String toString() {
 		return fields.stream()
 				.map(HeaderField::toString)
-				.collect(Collectors.joining());
+				.collect(joining());
 	}
 
 	/**
@@ -472,8 +473,7 @@ public class Header {
 	}
 
 	public int getNumberOf(String headerName) {
-		return (int) filterByHeaderName(headerName)
-				.count();
+		return (int) filterByHeaderName(headerName).count();
 	}
 
 	/**
@@ -521,7 +521,7 @@ public class Header {
 	public String getNormalizedValue(String headerName) {
 		var s = filterByHeaderName(headerName)
 				.map(HeaderField::getValue)
-				.collect(Collectors.joining(","));
+				.collect(joining(","));
 		return s.isEmpty() ? null : s;
 	}
 
