@@ -421,6 +421,60 @@ public class YAMLParsingTest {
         }
     }
 
+    @Test
+    public void requiredChild() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="demo")
+        public class DemoElement {
+            ChildElement child;
+        
+            public ChildElement getChild() {
+                return child;
+            }
+        
+            @Required
+            @MCChildElement
+            public void setChild(ChildElement child) {
+                this.child = child;
+            }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        public abstract class ChildElement {
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="a")
+        public class Child1Element extends ChildElement {
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="b")
+        public class Child2Element extends ChildElement {
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        parseYAML(result, """
+                    demo:
+                        a: {}
+                    """);
+
+        try {
+            parseYAML(result, """
+                    demo: {}
+                    """);
+            throw new AssertionError("Parsing did not throw an Exception.");
+        } catch (RuntimeException e) {
+        }
+    }
+
     @Disabled("This test currently fails, but because of the wrong reason. Disabling it.")
     @Test
     public void errorInListItemUniqueness() {
