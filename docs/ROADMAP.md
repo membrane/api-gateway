@@ -26,22 +26,21 @@
 
 ## (Breaking) Interface Changes
 
-- Remove WADLInterceptor
-- HttpClient
+- HttpClient TB
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
-- Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
-- Remove xmlSessionIdExtractor if we have a replacement with language 
-- LogInterceptor:
-  - Remove: headerOnly
-- Groovy:
+- Remove xmlSessionIdExtractor if we have a replacement with language TB
+- Groovy: TB
   - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
     - Difference to SpEL
     - SpEL headers.foo should return comma separated list of all values.
-- Delete unneeded proxies.xml in examples
-- Remove Starter:
-  -  External scripts using the `Starter.jar` to start membrane will no longer work.
-  -  Migration: use the `RouterCLI` to start membrane (e.g. see `distribution/scripts/start_router.sh`). 
+- Delete unneeded proxies.xml in examples CG
+- for distribution: README with Link to Github for XML-based example configurations TB
+- update schema reference to 7.0.0, integrate into ConsistentVersionNumbers.java
+- improve error output on
+  - schema validation error
+  - bean setter exception
+  - port occupied
 
 ## Changes
 
