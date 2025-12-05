@@ -72,7 +72,9 @@ public class TableEntityCommandExecutor {
 
     public JsonNode get() throws Exception {
         try (HttpClient hc = api.http()) {
-            var res =hc.call(api.requestBuilder(path).get(path).buildExchange()).getResponse();
+            Exchange exc = api.requestBuilder(path).get(path).buildExchange();
+            hc.call(exc);
+            var res =exc.getResponse();
 
             var response = new ObjectMapper().readTree(res.getBodyAsStringDecoded());
 
@@ -85,12 +87,11 @@ public class TableEntityCommandExecutor {
 
     public void insertOrReplace(String data) throws Exception {
         try (HttpClient hc = api.http()) {
-            var exc = hc.call(
-                    api.requestBuilder(path)
-                            .put(path)
-                            .body(new ObjectMapper().writeValueAsString(Map.of("data", data)))
-                            .buildExchange()
-            );
+            Exchange exc = api.requestBuilder(path)
+                    .put(path)
+                    .body(new ObjectMapper().writeValueAsString(Map.of("data", data)))
+                    .buildExchange();
+            hc.call(exc);
             if (exc.getResponse().getStatusCode() != 204) {
                 throw new RuntimeException(exc.getResponse().toString());
             }
@@ -99,12 +100,11 @@ public class TableEntityCommandExecutor {
 
     public void delete() throws Exception {
         try (HttpClient hc = api.http()) {
-            var exc = hc.call(
-                    api.requestBuilder(path)
-                            .delete(path)
-                            .header("If-Match", "*")
-                            .buildExchange()
-            );
+            Exchange exc = api.requestBuilder(path)
+                    .delete(path)
+                    .header("If-Match", "*")
+                    .buildExchange();
+            hc.call(exc);
             if (exc.getResponse().getStatusCode() != 204) {
                 throw new RuntimeException(exc.getResponse().toString());
             }
@@ -134,7 +134,8 @@ public class TableEntityCommandExecutor {
         private void preparePageForIteration() {
             Response res;
             try(HttpClient hc = api.http()) {
-                res = hc.call(exc).getResponse();
+                hc.call(exc);
+                res = exc.getResponse();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

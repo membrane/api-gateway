@@ -1,4 +1,5 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
 # Membrane Tutorial: XML to JSON
 #

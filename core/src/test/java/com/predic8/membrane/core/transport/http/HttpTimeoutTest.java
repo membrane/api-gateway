@@ -96,7 +96,8 @@ public class HttpTimeoutTest {
         Stopwatch watch = createStarted();
 
         try (HttpClient client = new HttpClient(hcc)) {
-            var exc = client.call(get("http://localhost:3023").buildExchange());
+            Exchange exc = get("http://localhost:3023").buildExchange();
+            client.call(exc);
 
             assertEquals(500, exc.getResponse().getStatusCode());
             System.out.println(exc.getResponse());

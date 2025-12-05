@@ -16,7 +16,7 @@ package com.predic8.membrane.core.openapi.validators.parameters;
 
 import com.fasterxml.jackson.databind.*;
 
-import static com.predic8.membrane.core.util.JsonUtil.*;
+import static com.predic8.membrane.core.util.json.JsonUtil.*;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
 
