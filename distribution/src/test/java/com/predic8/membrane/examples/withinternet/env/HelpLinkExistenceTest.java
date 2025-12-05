@@ -20,6 +20,7 @@ import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
+import com.predic8.membrane.core.exchange.*;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -67,7 +68,9 @@ public class HelpLinkExistenceTest {
 					Interceptor i = (Interceptor) clazz.getDeclaredConstructor().newInstance();
 					String helpId = i.getHelpId();
 
-					Response r = hc.call(new Request.Builder().get(getDocumentationReferenceURL(helpId)).buildExchange()).getResponse();
+                    var exc = new Request.Builder().get(getDocumentationReferenceURL(helpId)).buildExchange();
+                    hc.call(exc);
+                    Response r = exc.getResponse();
 
 					if (r.getStatusCode() != 200)
 						errors.append(getDocumentationReferenceURL(helpId))

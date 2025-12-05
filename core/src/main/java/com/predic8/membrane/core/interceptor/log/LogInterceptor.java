@@ -221,19 +221,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         this.category = category;
     }
 
-    /**
-     * Deprecated and sunsetted!
-     * Do not use this attribute. It is only there for the proxies.xml to be compatible with versions prior to 6.X.X
-     * It has no effect at all!
-     *
-     * @default false
-     * @description Ignored. Still there for compatibility.
-     */
-    @MCAttribute
-    public void setHeaderOnly(boolean headerOnly) {
-        LoggerFactory.getLogger(this.getClass()).warn("Configuration option `headerOnly` is not supported anymore. Use `body` instead.");
-    }
-
     public boolean isBody() {
         return body;
     }
@@ -259,7 +246,4 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         return category;
     }
 
-    public boolean isHeaderOnly() {
-        return false;
-    }
 }

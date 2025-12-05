@@ -24,7 +24,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.util.JsonUtil.*;
+import static com.predic8.membrane.core.util.json.JsonUtil.*;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
 

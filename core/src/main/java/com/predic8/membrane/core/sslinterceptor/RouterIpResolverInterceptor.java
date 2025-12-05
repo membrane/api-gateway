@@ -37,6 +37,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+
 /**
  * Checks, whether the exchange's remoteIp is one of the routers.
  * If yes, sends a POST to <a href="https://$router:$port/">https://$router:$port/</a> with a body of {"port":$remotePort, "ip":$remoteIp}, expecting an HTTP 200 application/json {"ip":$realIp} in return.
@@ -47,7 +49,7 @@ import java.util.Map;
 @MCElement(id = "sslProxy-routerIpResolver", name = "routerIpResolver", topLevel = false)
 public class RouterIpResolverInterceptor implements SSLInterceptor {
 
-    private final Logger LOG = LoggerFactory.getLogger(RouterIpResolverInterceptor.class);
+    private final Logger log = LoggerFactory.getLogger(RouterIpResolverInterceptor.class);
 
     private List<String> routerIps = new ArrayList<>();
     private final ObjectMapper om = new ObjectMapper();
@@ -120,31 +122,32 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
     public Outcome handleRequest(SSLExchange exc) throws Exception {
         String remoteIp = exc.getRemoteAddrIp();
         if (!routerIps.contains(remoteIp))
-            return Outcome.CONTINUE;
+            return CONTINUE;
 
         try {
             int port = exc.getRemotePort();
 
-            LOG.debug("remoteIp is a router, resolving port=" + port + " ip=" + exc.getRemoteAddrIp());
+            log.debug("remoteIp is a router, resolving port=" + port + " ip=" + exc.getRemoteAddrIp());
 
             String body = om.writeValueAsString(ImmutableMap.of("port", port, "ip", exc.getRemoteAddrIp()));
 
             Exchange exchange = new Request.Builder().post("https://" + remoteIp + (this.port == 0 ? "" : ":" + this.port)).body(body).buildExchange();
             if (sslContext != null)
                 exchange.setProperty(Exchange.SSL_CONTEXT, sslContext);
-            Response r = httpClient.call(exchange).getResponse();
+            httpClient.call(exchange);
+            Response r = exchange.getResponse();
             String res = r.getBodyAsStringDecoded();
             if (r.getStatusCode() == 200) {
                 remoteIp = (String) om.readValue(res, Map.class).get("ip");
                 exc.setRemoteAddrIp(remoteIp);
             } else {
-                LOG.warn("Error during remote IP lookup on router " + remoteIp);
+                log.warn("Error during remote IP lookup on router " + remoteIp);
                 return errorOutcome;
             }
 
-            return Outcome.CONTINUE;
+            return CONTINUE;
         } catch (Exception e) {
-            LOG.error("", e);
+            log.error("", e);
             return errorOutcome;
         }
     }
