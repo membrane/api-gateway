@@ -22,8 +22,8 @@ public class FilterExamples {
         Path dest = Paths.get(args[1]);
 
         if (!Files.exists(src)) {
-            System.out.println("Source directory does not exist: " + src);
-            return;
+            System.err.println("Source directory does not exist: " + src);
+            System.exit(1);
         }
 
         // Clean destination
