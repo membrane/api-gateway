@@ -18,37 +18,44 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.json.*;
-import org.slf4j.*;
-
-import java.io.*;
+import com.predic8.membrane.core.util.json.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.util.StringUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
-
 /**
- * @description Converts body payload from JSON to XML. The JSON must be an object other JSON documents e.g. arrays are not supported.
- * @explanation Resulting XML will be in UTF-8 encoding.
+ * @description Converts JSON message bodies into XML.
+ * The converter wraps the JSON document into a root element. The name of the
+ * root element is configurable. If unset, JSON objects default to "root" and JSON arrays default to "array".
+ * This interceptor reads the JSON body, converts it into XML and updates the message
+ * body and Content-Type header. The resulting XML is always UTF-8 encoded and starts with an XML prolog.
+ *
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(Json2XmlInterceptor.class);
-
-
-    // Prolog is needed to provide the UTF-8 encoding
-    private static final String PROLOG = """
-            <?xml version="1.0" encoding="UTF-8"?>""";
-
+    // --- Configuration properties ---
     private String root;
+    private String array = "array";
+    private String item = "item";
+
+    // --- Converter instance (created once) ---
+    private JsonToXml converter;
+
+    @Override
+    public void init() {
+        super.init();
+        converter = new JsonToXml().arrayName(array).itemName(item).rootName(root);
+
+        // root gets handled dynamically at runtime because it depends on json document type
+        // unless explicitly set via @MCAttribute
+    }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -66,27 +73,15 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
             return CONTINUE;
 
         try {
-            msg.setBodyContent(json2Xml(msg.getBodyAsStream()));
-        } catch (JSONException e) {
-            log.info("Error parsing JSON: {}",e.getMessage());
-            user(router.isProduction(), getDisplayName())
-                    .title("Error parsing JSON")
-                    .addSubType("validation/json")
-                    .exception(e)
-                    .stacktrace(false)
-                    .internal("flow", flow)
-                    .internal("body", StringUtil.truncateAfter(msg.getBodyAsStringDecoded(), 200))
-                    .buildAndSetResponse(exchange);
-            return ABORT;
-        }
-        catch (Exception e) {
+            msg.setBodyContent(json2Xml(msg));
+        } catch (Exception e) {
             internal(router.isProduction(), getDisplayName())
                     .title("Error parsing JSON")
                     .addSubType("validation/json")
-                    .exception(e)
-                    .stacktrace(true)
+                    .exception(e) // Message contains a meaningful error message
+                    .stacktrace(false)
                     .internal("flow", flow)
-                    .internal("body", StringUtil.truncateAfter(msg.getBodyAsStringDecoded(), 200))
+                    .internal("body", truncateAfter(msg.getBodyAsStringDecoded(), 200))
                     .buildAndSetResponse(exchange);
             return ABORT;
         }
@@ -95,33 +90,8 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    private byte[] json2Xml(InputStream body) {
-        return (PROLOG + XML.toString(getJSONRoot(body))).getBytes(UTF_8);
-    }
-
-    private @NotNull JSONObject getJSONRoot(InputStream body) {
-        if (root != null) {
-            return createRoot(root, convertToJsonObject(body));
-        }
-        JSONObject json = convertToJsonObject(body);
-
-        // If there is exactly one element, then we can use that as root
-        if (json.length() == 1) {
-            return json;
-        } else {
-            // Otherwise we must wrap the fields into a single root element
-            return createRoot("root", json);
-        }
-    }
-
-    private JSONObject createRoot(String name, JSONObject jsonObject) {
-        JSONObject root = new JSONObject();
-        root.put(name, jsonObject);
-        return root;
-    }
-
-    private JSONObject convertToJsonObject(InputStream body) {
-        return new JSONObject(new JSONTokener(new InputStreamReader(body, UTF_8)));
+    private byte[] json2Xml(Message msg) {
+        return converter.toXml(msg.getBodyAsStringDecoded()).getBytes(UTF_8);
     }
 
     @Override
@@ -139,13 +109,41 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * A JSON object can have multiple keys. When transforming that to XML a single root element is needed.
-     * If set a root element with this name will wrap the content.
+     * XML always needs a single root element. A JSON object can have multiple properties or an array can have multiple items.
+     * The converter therefore wraps the document into a root element if necessary. With this property you can set the name of the root element.
+     * If the property is set, the XML is always wrapped into an element with the given name.
      *
      * @param root Name of the element to wrap the content in
+     * @default "root" for objects and "array" for arrays
      */
     @MCAttribute
     public void setRoot(String root) {
         this.root = root;
+    }
+
+    public String getArray() {
+        return array;
+    }
+
+    /**
+     * Sets the XML tag name used to represent JSON arrays.
+     * @default "array"
+     */
+    @MCAttribute
+    public void setArray(String array) {
+        this.array = array;
+    }
+
+    public String getItem() {
+        return item;
+    }
+
+    /**
+     * Sets the XML tag name used for array items.
+     * Default is "item".
+     */
+    @MCAttribute
+    public void setItem(String item) {
+        this.item = item;
     }
 }
