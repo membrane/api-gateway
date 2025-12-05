@@ -57,17 +57,16 @@ public class Http2DowngradeTest {
      */
     @Test
     void rfc7540UpgradeIsRemovedFromRequests() throws Exception {
-        try (HttpClient hc = new HttpClient()) {
-            var exc = hc.call(get("http://localhost:3064/")
+        try (var hc = new HttpClient()) {
+            var exc = get("http://localhost:3064/")
                     .header(CONNECTION, "Upgrade, HTTP2-Settings")
                     .header(UPGRADE, HTTP2_CLEAR_PROTOCOL)
                     .header("HTTP2-Settings", "AAEAAEAAAAIAAAABAAMAAABkAAQBAAAAAAUAAEAA")
                     .header("X-A", "B")
-                    .buildExchange());
+                    .buildExchange();
+            hc.call(exc);
 
             String body = exc.getResponse().getBodyAsStringDecoded();
-
-            System.out.println(body);
 
             assertTrue(body.contains("X-A: B\r\n"));
             assertFalse(body.contains("Connection"));
