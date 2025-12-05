@@ -32,16 +32,13 @@
     =>  public void call(Exchange exc) throws Exception {
 - Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
 - Remove xmlSessionIdExtractor if we have a replacement with language 
-- Remove HttpUtil.getHTMLErrorBody()
 - LogInterceptor:
   - Remove: headerOnly
-- ValidatorInterceptor: remove FailureHandler
-  - Predominantly used for logging; move logging into validators.
-  - Migration: replace FailureHandler usages with validator-level logging; ensure correlation IDs/Exchange context remain available for logs.
-  - Check if it is used by customer installations
 - Groovy:
   - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
     - Difference to SpEL
+    - SpEL headers.foo should return comma separated list of all values.
+- Delete unneeded proxies.xml in examples
 - Remove Starter:
   -  External scripts using the `Starter.jar` to start membrane will no longer work.
   -  Migration: use the `RouterCLI` to start membrane (e.g. see `distribution/scripts/start_router.sh`). 
