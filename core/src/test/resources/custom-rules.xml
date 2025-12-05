@@ -68,7 +68,6 @@
 				<regExReplacer regex="Hallo" replace="Hello" />
 				<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register"
 					port="4000" protocol="http" host="localhost" />
-				<wadlRewriter port="443" protocol="https" host="abc.de" />
 			</response>		
 			<target host="www.thomas-bayer.com" port="88" url="http://predic8.de/membrane.htm" />
 		</serviceProxy>

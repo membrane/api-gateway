@@ -23,7 +23,7 @@ import org.slf4j.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
-import static com.predic8.membrane.core.util.JsonUtil.*;
+import static com.predic8.membrane.core.util.json.JsonUtil.*;
 import static java.net.URLDecoder.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.*;
