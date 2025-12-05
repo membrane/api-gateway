@@ -29,8 +29,15 @@
 - HttpClient TB
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
-- Remove xmlSessionIdExtractor if we have a replacement with language TB
-- Groovy: TB
+- Remove xmlSessionIdExtractor if we have a replacement with language 
+- Remove HttpUtil.getHTMLErrorBody()
+- LogInterceptor:
+  - Remove: headerOnly
+- ValidatorInterceptor: remove FailureHandler
+  - Predominantly used for logging; move logging into validators.
+  - Migration: replace FailureHandler usages with validator-level logging; ensure correlation IDs/Exchange context remain available for logs.
+  - Check if it is used by customer installations
+- Groovy:
   - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
     - Difference to SpEL
     - SpEL headers.foo should return comma separated list of all values.
