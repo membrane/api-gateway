@@ -120,8 +120,9 @@ class MassivelyParallelTest {
             cdl.countDown();
             cdl.await();
 
-            String uuid = UUID.randomUUID().toString();
-            var exchange = client.call(get("http://localhost:3067/api/" + uuid).buildExchange());
+            var uuid = UUID.randomUUID().toString();
+            var exchange = get("http://localhost:3067/api/" + uuid).buildExchange();
+            client.call(exchange);
 
             assertEquals(200, exchange.getResponse().getStatusCode());
             var body = exchange.getResponse().getBodyAsStringDecoded();

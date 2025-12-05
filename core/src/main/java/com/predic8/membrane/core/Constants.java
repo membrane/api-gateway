@@ -64,7 +64,6 @@ public class Constants {
 	public static final QName WSDL11_ADDRESS_SOAP12 = new QName(WSDL_SOAP12_NS,	"address");
 	public static final QName WSDL11_ADDRESS_HTTP = new QName(WSDL_HTTP_NS, "address");
 
-	public static final String WADL_NS = "http://wadl.dev.java.net/2009/02";
 	public static final String XSD_NS = "http://www.w3.org/2001/XMLSchema";
 
 	public static final String SOAP11_NS = "http://schemas.xmlsoap.org/soap/envelope/";
