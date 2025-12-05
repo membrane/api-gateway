@@ -42,6 +42,7 @@ import static com.google.common.io.Resources.getResource;
 import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.Header.USER_AGENT;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.jose4j.lang.HashUtil.SHA_256;
@@ -258,9 +259,10 @@ public class AcmeServerSimulator {
                 Thread.sleep(1000);
                 if (actuallyPerformChallenge) {
                     String token = "79123-1234itunehnhtudixnhudindih-34hty5dn74";
-                    Exchange e = hc.call(new Request.Builder().get("http://localhost:" + challengePort + "/.well-known/acme-challenge/" + token).buildExchange());
-                    assertEquals(200, e.getResponse().getStatusCode());
-                    String result = e.getResponse().getBodyAsStringDecoded();
+                    Exchange exc = get("http://localhost:" + challengePort + "/.well-known/acme-challenge/" + token).buildExchange();
+                    hc.call(exc);
+                    assertEquals(200, exc.getResponse().getStatusCode());
+                    String result = exc.getResponse().getBodyAsStringDecoded();
                     assertTrue(result.startsWith(token + "."));
                     String hash = result.substring(token.length() + 1);
                     PublicJsonWebKey jwk;
