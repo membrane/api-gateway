@@ -27,7 +27,7 @@ import static java.util.List.*;
 
 class ConditionalEvaluationTestContext {
 
-    static Outcome performEval(String condition, Object builder, Language lang, boolean shouldCallNested) throws Exception {
+    static Outcome performEval(String condition, Object builder, Language lang, boolean shouldCallNested) {
         var exc = new Exchange(null);
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
         var ifInt = new IfInterceptor();

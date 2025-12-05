@@ -215,7 +215,7 @@ public class Header {
 	}
 
     public String getValuesAsString(String name) {
-        var list = filterByHeaderName(name).map(hf -> hf.getValue()).toList();
+        var list = filterByHeaderName(name).map(HeaderField::getValue).toList();
         if (list.isEmpty()) return null;
         return String.join(", ", list);
     }

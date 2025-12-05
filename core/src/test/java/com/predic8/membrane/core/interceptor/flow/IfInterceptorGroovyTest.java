@@ -41,7 +41,7 @@ public class IfInterceptorGroovyTest extends ConditionalEvaluationTestContext {
     }
 
     @Test
-    void invalidGroovy() throws Exception {
+    void invalidGroovy() {
         assertThrows(ConfigurationException.class, () -> eval("foobar;()", new Builder(),false));
     }
 
