@@ -74,13 +74,13 @@
 		<serviceProxy name="FullChain0" port="3028">
 			<interceptor refid="Mock1" />
 			<interceptor refid="Mock2" />
-			<target url="internal:FullChain1" />
+			<target url="internal://FullChain1" />
 		</serviceProxy>
 	
 		<serviceProxy name="FullChain1" port="3028">
 			<interceptor refid="Mock3" />
 			<interceptor refid="Mock4" />
-			<target url="internal:FullChain2" />
+			<target url="internal://FullChain2" />
 		</serviceProxy>
 	
 		<serviceProxy name="FullChain2" port="3028">
@@ -92,14 +92,14 @@
 		<serviceProxy name="ReturnedChain0" port="3029">
 			<interceptor refid="Mock1" />
 			<interceptor refid="Mock2" />
-			<target url="internal:ReturnedChain1" />
+			<target url="internal://ReturnedChain1" />
 		</serviceProxy>
 	
 		<serviceProxy name="ReturnedChain1" port="3029">
 			<interceptor refid="Mock3" />
 			<echo/>
 			<interceptor refid="Mock4" />
-			<target url="internal:ReturnedChain2" />
+			<target url="internal://ReturnedChain2" />
 		</serviceProxy>
 	
 		<serviceProxy name="ReturnedChain2" port="3029">
