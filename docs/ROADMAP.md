@@ -53,10 +53,11 @@
 - header['x-unknown'] returns null instead of empty string !!!!!!!!!!!!
 - SpEL: header is now of class HeaderMap insteadof SpelHeader
 
-## Changes
+## Breaking Changes
 
 - YAML Configuration as default
 - Use of colors in logs
+- Removed camelCase conversion of header access in Groovy scripts instead of header.contentType use header['Content-Type']
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured
