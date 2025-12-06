@@ -35,8 +35,8 @@ import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapCon
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
 import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.*;
 import static com.predic8.membrane.core.transport.http.HttpServerThreadFactory.DEFAULT_THREAD_NAME;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
-import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static com.predic8.membrane.core.util.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.StringUtil.truncateAfter;
 import static java.lang.Thread.currentThread;
 
 public class HttpServerHandler extends AbstractHttpHandler implements Runnable, TwoWayStreaming {

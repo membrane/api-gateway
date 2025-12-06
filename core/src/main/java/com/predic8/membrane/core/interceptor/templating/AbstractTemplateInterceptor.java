@@ -31,7 +31,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
-import static com.predic8.membrane.core.util.text.StringUtil.*;
+import static com.predic8.membrane.core.util.StringUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 

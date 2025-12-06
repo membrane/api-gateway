@@ -31,7 +31,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.text.StringUtil.addLineNumbers;
+import static com.predic8.membrane.core.util.StringUtil.addLineNumbers;
 import static java.nio.charset.StandardCharsets.*;
 
 /**

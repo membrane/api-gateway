@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.lang.javascript;
 
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.text.*;
 import org.slf4j.*;
 
@@ -21,6 +22,8 @@ import javax.script.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
+
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 
 public class RhinoJavascriptLanguageSupport implements LanguageSupport {
 
@@ -49,7 +52,7 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
                 return script.eval(javascriptCode);
             } catch (ScriptException e) {
                 log.error("Error compiling script: {}", e.getMessage());
-                log.error("Error in Line: {}", TextUtil.getLineFromMultilineString(javascriptCode,e.getLineNumber()));
+                log.error("Error in Line: {}", getLineFromMultilineString(javascriptCode,e.getLineNumber()));
                 log.error("Script:\n{}", javascriptCode);
                 throw new RuntimeException("Error compiling script:", e);
             }

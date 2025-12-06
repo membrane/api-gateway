@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.text.*;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
@@ -36,6 +37,7 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -313,7 +315,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Serves static files from<br/>" + TextUtil.linkURL(docBase) + " .";
+        return "Serves static files from<br/>" + linkURL(docBase) + " .";
     }
 
 }

@@ -69,4 +69,23 @@ public class StringUtil {
         return s == null || s.isEmpty() ? Collections.emptyList() : Arrays.asList(s.split("\\s*,\\s*"));
     }
 
+    public static boolean yes(String override) {
+        if (override == null)
+            return false;
+
+        return switch (override.trim().toLowerCase()) {
+            case "on", "yes", "y", "true", "1", "enable", "enabled" -> true;
+            default -> false;
+        };
+    }
+
+    public static boolean no(String override) {
+        if (override == null)
+            return false;
+
+        return switch (override.trim().toLowerCase()) {
+            case "off", "no", "n", "false", "0", "disable", "disabled" -> true;
+            default -> false;
+        };
+    }
 }
