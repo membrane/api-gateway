@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.util.text;
+package com.predic8.membrane.core.util;
 
 
 import com.predic8.xml.beautifier.*;
@@ -31,9 +31,11 @@ import static java.nio.charset.StandardCharsets.*;
 
 
 public class TextUtil {
-    
     private static final Logger log = LoggerFactory.getLogger(TextUtil.class.getName());
-    
+
+    // Guess for a very short XML
+    private static final int STRING_BUFFER_INITIAL_CAPACITY_FOR_XML = 250;
+
     private static final char[] source;
     private static final String[] replace;
 
@@ -80,12 +82,47 @@ public class TextUtil {
         return charset == null ? UTF_8 : charset;
     }
 
-    public static String camelToKebab(String string) {
-        // lower/digit to uppercase
-        String kebab = string.replaceAll("([a-z0-9])([A-Z])", "$1-$2");
-        // uppercase followed by uppercase to lowercase
-        kebab = kebab.replaceAll("([A-Z])([A-Z][a-z])", "$1-$2");
-        return kebab.toLowerCase();
+    /**
+     * @param reader
+     * @return
+     * @throws Exception
+     */
+    public static String formatXML(Reader reader) throws Exception {
+        return formatXML(reader, false);
+    }
+
+    /**
+     * As HTML is needed for the AdminConsole
+     *
+     * @param reader XML
+     * @param asHTML Should output formatted as XML
+     * @return Formatted string
+     * @throws Exception
+     */
+    public static String formatXML(Reader reader, boolean asHTML) throws Exception {
+        try {
+            StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
+            new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(reader);
+            return out.toString();
+        } catch (XMLStreamException e) {
+            log.info("Error parsing XML: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public static String formatXML(InputStream inputStream, boolean asHTML) throws Exception {
+        try {
+            StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
+            new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(inputStream);
+            return out.toString();
+        } catch (IOException e) {
+            log.info("Error parsing XML: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    private static @NotNull XMLBeautifierFormatter getXmlBeautifierFormatter(boolean asHTML, StringWriter out) {
+        return asHTML ? new HtmlBeautifierFormatter(out, 0) : new StandardXMLBeautifierFormatter(out, 4);
     }
 
     public static boolean isNullOrEmpty(String str) {
@@ -135,6 +172,31 @@ public class TextUtil {
         if (s.isEmpty())
             return "";
         return (s.charAt(0)+"").toUpperCase() + s.substring(1);
+    }
+
+    /**
+     * Checks whether s is a valid (well-formed and balanced) XML snippet.
+     */
+    public static boolean isValidXMLSnippet(String s) {
+        try {
+            XMLEventReader parser = XMLInputFactoryFactory.inputFactory()
+                    .createXMLEventReader(new StringReader("<a>" + s + "</a>"));
+            XMLEvent event = null;
+            try {
+                while (parser.hasNext()) {
+                    event = parser.nextEvent();
+                }
+                return event != null && event.isEndDocument();
+            } finally {
+                try {
+                    parser.close();
+                } catch (Exception ignore) {
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Invalid XML snippet.", e);
+            return false;
+        }
     }
 
     public static String linkURL(String url) {

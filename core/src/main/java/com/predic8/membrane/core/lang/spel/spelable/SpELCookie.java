@@ -16,8 +16,6 @@ package com.predic8.membrane.core.lang.spel.spelable;
 import com.predic8.membrane.core.http.*;
 import org.springframework.expression.*;
 
-import static com.predic8.membrane.core.util.text.TextUtil.*;
-
 public class SpELCookie implements SpELLablePropertyAware {
 
     private final Header header;
@@ -28,13 +26,7 @@ public class SpELCookie implements SpELLablePropertyAware {
 
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) {
-        var v = header.getFirstCookie(name);
-        if (v != null)
-            return new TypedValue(v);
-        v = header.getFirstCookie(camelToKebab(name));
-
-        // return v even if it is null
-        return new TypedValue(v);
+        return new TypedValue(header.getFirstCookie(name));
     }
 
     @Override

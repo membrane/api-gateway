@@ -75,7 +75,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
         pathParam = new SpELPathParameters(exchange);
         properties = new SpELProperties(exchange.getProperties());
-        headers = new SpELHeader(message.getHeader());
+        headers = new SpELMap<>(new HeaderMap(message.getHeader()));
         cookies = new SpELCookie(message.getHeader());
 
         extractFromRequest(exchange);
@@ -92,7 +92,6 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
     private void addTypeConverters() {
         GenericConversionService cs = new DefaultConversionService();
-        cs.addConverter(new SpELHeaderToStringTypeConverter());
         cs.addConverter(new SpELMapToStringTypeConverter());
         cs.addConverter(new SpELBodyToStringTypeConverter());
         cs.addConverter(new ListToStringTypeConverter());

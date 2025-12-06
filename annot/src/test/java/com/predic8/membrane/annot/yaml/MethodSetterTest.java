@@ -18,18 +18,21 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.util.GrammarMock;
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
 import static org.junit.jupiter.api.Assertions.*;
 
 class MethodSetterTest {
 
-    public class A {
+    @SuppressWarnings("unused")
+    static class A {
         public void setA1(B b) {}
         public void setA2(B b) {}
         @MCChildElement
         public void setA3(B b) {}
     }
 
-    public class A2 {
+    @SuppressWarnings("unused")
+    static class A2 {
         @MCChildElement
         public void setA1(B b) {}
         @MCChildElement
@@ -42,7 +45,7 @@ class MethodSetterTest {
 
     @Test
     public void dontUseMethodsWithoutChildElementAnnotation() {
-        MethodSetter ms = MethodSetter.getMethodSetter(new ParsingContext("foo", null,
+        MethodSetter ms = getMethodSetter(new ParsingContext("foo", null,
                         new GrammarMock().withGlobalElement("b", B.class)),
                 A.class, "b");
         assertEquals("setA3", ms.getSetter().getName());
@@ -50,20 +53,16 @@ class MethodSetterTest {
 
     @Test
     public void multiplePotentialSettersFound() {
-        assertThrowsExactly(RuntimeException.class, () -> {
-            MethodSetter.getMethodSetter(new ParsingContext("foo", null,
-                            new GrammarMock().withGlobalElement("b", B.class)),
-                    A2.class, "b");
-        });
+        assertThrowsExactly(RuntimeException.class, () -> getMethodSetter(new ParsingContext("foo", null,
+                        new GrammarMock().withGlobalElement("b", B.class)),
+                A2.class, "b"));
     }
 
     @Test
     public void noPotentialSetterFound() {
-        assertThrowsExactly(RuntimeException.class, () -> {
-            MethodSetter.getMethodSetter(new ParsingContext("foo", null,
-                            new GrammarMock().withGlobalElement("c", C.class)),
-                    A2.class, "c");
-        });
+        assertThrowsExactly(RuntimeException.class, () -> getMethodSetter(new ParsingContext("foo", null,
+                        new GrammarMock().withGlobalElement("c", C.class)),
+                A2.class, "c"));
     }
 
 }

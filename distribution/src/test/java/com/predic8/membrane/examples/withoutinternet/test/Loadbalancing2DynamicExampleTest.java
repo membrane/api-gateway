@@ -31,7 +31,12 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 
 	@Test
 	public void addingNodesDynamicallyUsingTheAdminConsole() throws Exception {
-		replaceInFile2("proxies.xml", "8080", "3023");
+
+        try {
+            replaceInFile2("proxies.xml", "8080", "3023");
+        } catch (Exception ignored) {
+            log.warn("proxies.xml not there!");
+        }
 		replaceInFile2("apis.yaml", "8080", "3023");
 
 		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
@@ -64,7 +69,12 @@ public class Loadbalancing2DynamicExampleTest extends DistributionExtractingTest
 
 	@Test
 	public void addingNodesDynamicallyUsingTheCluserAPI() throws Exception {
-		replaceInFile2("proxies.xml", "8080", "3023");
+
+        try {
+            replaceInFile2("proxies.xml", "8080", "3023");
+        } catch (Exception ignored) {
+            log.warn("proxies.xml not there!");
+        }
 		replaceInFile2("apis.yaml", "8080", "3023");
 
 		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
