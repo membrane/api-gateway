@@ -175,7 +175,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         i.getAis().forEach(ai -> {
 
             // skip attributes marked with @MCExcludeFromSchema
-            if (ai.isExcludedFromJsonSchema())
+            if (ai.excludedFromJsonSchema())
                 return;
 
             // hide id only on top-level elements
