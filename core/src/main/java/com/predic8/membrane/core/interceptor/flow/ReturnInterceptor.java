@@ -39,7 +39,7 @@ import static java.lang.String.*;
  * 2. If there is no response in the exchange, the body and contentType of the request is copied into a new response.
  * </p>
  * <p>
- * The options <i>statusCode</i> and <i>contentType</i> will overwrite the values from the messages.
+ * The options <i>status</i> and <i>contentType</i> will overwrite the values from the messages.
  * </p>
  * <p>
  * This plugin is useful together with the template plugin. See examples/template.
@@ -122,14 +122,14 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     /**
      * @deprecated Use status instead.
-     * @description HTTP status code to be returned.
+     * @description HTTP status code to be returned. statusCode is kept only for backward compatibility use status instead.
      * @default 200
      * @example 400
      */
-    @MCExcludeFromSchema(json = true)
-    @MCAttribute
+    @Deprecated
+    @MCAttribute(excludeFromJson = true)
     public void setStatusCode(int statusCode) {
-        // Gets included in JSON schema but not XSD schema.
+        // Is excluded from the JSON schema. But will be included in the XSD schema.
         this.status = statusCode;
     }
 

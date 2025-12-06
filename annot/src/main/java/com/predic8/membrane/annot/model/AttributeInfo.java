@@ -201,8 +201,8 @@ public class AttributeInfo extends AbstractJavadocedInfo {
      * @return {@code true} if the field or method is excluded from the JSON schema; {@code false} otherwise.
      */
     public boolean isExcludedFromJsonSchema() {
-        MCExcludeFromSchema ann = getE().getAnnotation(MCExcludeFromSchema.class);
-        return ann != null && ann.json();
+        MCAttribute ann = getE().getAnnotation(MCAttribute.class);
+        return ann != null && ann.excludeFromJson();
     }
 
 
@@ -217,8 +217,8 @@ public class AttributeInfo extends AbstractJavadocedInfo {
      */
     @SuppressWarnings("unused")
     public boolean isExcludedFromXsdSchema() {
-        MCExcludeFromSchema ann = getE().getAnnotation(MCExcludeFromSchema.class);
-        return ann != null && ann.xsd();
+        MCAttribute ann = getE().getAnnotation(MCAttribute.class);
+        return ann != null && ann.excludeFromXsd();
     }
 
 }
