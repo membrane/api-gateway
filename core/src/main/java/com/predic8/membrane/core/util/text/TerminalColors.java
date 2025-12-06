@@ -19,6 +19,7 @@ import com.predic8.membrane.core.util.*;
 import static com.predic8.membrane.core.util.text.StringUtil.no;
 import static com.predic8.membrane.core.util.text.StringUtil.yes;
 
+@SuppressWarnings("unused")
 public final class TerminalColors {
 
     private static volatile boolean enabled;

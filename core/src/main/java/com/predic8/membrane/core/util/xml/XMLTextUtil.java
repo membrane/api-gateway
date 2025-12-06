@@ -31,11 +31,6 @@ public class XMLTextUtil {
     // Guess for a very short XML
     private static final int STRING_BUFFER_INITIAL_CAPACITY_FOR_XML = 250;
 
-    /**
-     * @param reader
-     * @return
-     * @throws Exception
-     */
     public static String formatXML(Reader reader) throws Exception {
         return formatXML(reader, false);
     }

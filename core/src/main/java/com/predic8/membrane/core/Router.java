@@ -668,23 +668,9 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return globalInterceptor;
     }
 
-    public synchronized boolean isAsynchronousInitialization() {
-        return asynchronousInitialization;
-    }
-
     public synchronized void setAsynchronousInitialization(boolean asynchronousInitialization) {
         this.asynchronousInitialization = asynchronousInitialization;
         notifyAll();
-    }
-
-    public synchronized void waitForAsynchronousInitialization() {
-        while (asynchronousInitialization) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
     }
 
     public void handleAsynchronousInitializationResult(boolean success) {
@@ -697,11 +683,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     @Override
     public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) throws IOException {
-        if (!(bean instanceof Proxy)) {
+        if (!(bean instanceof Proxy newProxy)) {
             throw new IllegalArgumentException("Bean must be a Proxy instance, but got: " + bean.getClass().getName());
         }
 
-        Proxy newProxy = (Proxy) bean;
         if (newProxy.getName() == null)
             newProxy.setName(bd.getName());
 

@@ -264,7 +264,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
     }
 
-    private void process() throws TerminateException, IOException {
+    private void process() throws IOException {
         try {
 
             DNSCache dnsCache = getTransport().getRouter().getDnsCache();

@@ -636,9 +636,9 @@ public class AdminPageBuilder extends Html {
 
             String iid = "i" + id;
             div().id("i" + id);
-            createHelpIcon(i, id);
+            createHelpIcon(i);
             if (!shortDescription.isEmpty() && !longDescription.equals(shortDescription)) {
-                createExpandIcon(i, id);
+                createExpandIcon(id);
             }
             end();
             createShowIconsScript(did, iid);
@@ -700,7 +700,7 @@ public class AdminPageBuilder extends Html {
         end();
     }
 
-    private void createExpandIcon(Interceptor i, String id) {
+    private void createExpandIcon(String id) {
         div().style("float:right;");
         span().id("e" + id).classAttr("ui-icon ui-icon-triangle-1-w").title("expand").end();
         end();
@@ -709,7 +709,7 @@ public class AdminPageBuilder extends Html {
         end();
     }
 
-    private void createHelpIcon(Interceptor i, String id) {
+    private void createHelpIcon(Interceptor i) {
         String helpId = i.getHelpId();
         if (helpId != null) {
             div().style("float:right;");
