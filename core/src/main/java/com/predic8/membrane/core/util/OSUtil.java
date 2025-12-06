@@ -20,7 +20,7 @@ import static com.predic8.membrane.core.util.OSUtil.OS.*;
 
 public class OSUtil {
     public static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase().contains("win");
+        return System.getProperty("os.name").toLowerCase().contains("windows");
     }
 
     public static boolean isMac() {
