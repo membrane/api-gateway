@@ -30,4 +30,4 @@ api:
                 "success": true
               }
     - return:
-        statusCode: 200
+        status: 200

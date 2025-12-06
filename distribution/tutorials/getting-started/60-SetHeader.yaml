@@ -22,4 +22,4 @@ api:
             name: X-Method
             value: ${method} # Variable or computed value
     - return:
-        statusCode: 200
+        status: 200

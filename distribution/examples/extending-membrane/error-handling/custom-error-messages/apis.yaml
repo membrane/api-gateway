@@ -104,7 +104,7 @@ api:
                   contentType: text/plain
                   src: Ordinary error!
               - return:
-                  statusCode: 500
+                  status: 500
         - if:
             test: param.case == 'd'
             flow:
@@ -115,6 +115,6 @@ api:
                         <description>XML Fehler Meldung vom Backend!</description>
                     </failure>
               - return:
-                  statusCode: 500
+                  status: 500
     # SOAP Service Mock for Debugging
     - sampleSoapService: {}
