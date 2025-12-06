@@ -118,7 +118,7 @@ public class SpELExchangeEvaluationContextTest {
 
     @Test
     void headerGet() {
-        assertEquals(APPLICATION_JSON.toString(), keyExpression("header.get['content-Type']"));
+        assertEquals(APPLICATION_JSON.toString(), keyExpression("header['content-Type']"));
     }
 
     @Test
