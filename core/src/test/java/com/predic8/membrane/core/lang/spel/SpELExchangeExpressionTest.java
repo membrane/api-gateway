@@ -186,6 +186,11 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
     }
 
     @Test
+    void headerMultiple() {
+        assertEquals("foo, bar, baz", evalString("header.multiple"));
+    }
+
+    @Test
     void booleanConversion() {
         assertEquals(TRUE, toBoolean("true"));
         assertEquals(TRUE, toBoolean("TRUE"));

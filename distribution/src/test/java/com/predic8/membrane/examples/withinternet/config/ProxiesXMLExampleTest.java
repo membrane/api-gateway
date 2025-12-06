@@ -114,7 +114,7 @@ public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestca
         process.addConsoleWatcher((error, line) -> {
             if (line.contains("Request headers"))
                 headingFound.set(true);
-            if (line.contains("Host: localhost:2000"))
+            if (line.contains("Host=localhost:2000"))
                 hostFound.set(true);
         });
 

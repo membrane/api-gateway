@@ -77,8 +77,9 @@ public class ScriptingUtils {
         if (msg != null) {
             params.put("message", msg);
             params.put("body", new LazyBody(msg));
-            params.put("header", msg.getHeader());
-            params.put("headers", msg.getHeader());
+            var headerMap = new HeaderMap(msg.getHeader());
+            params.put("header", headerMap);
+            params.put("headers", headerMap);
             if (includeJsonObject) {
                 try {
                     log.info("Parsing body as JSON for scripting plugins");
