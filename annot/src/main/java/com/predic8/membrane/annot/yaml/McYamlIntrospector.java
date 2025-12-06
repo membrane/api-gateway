@@ -17,10 +17,10 @@ package com.predic8.membrane.annot.yaml;
 import com.predic8.membrane.annot.*;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.lang.Character.toLowerCase;
 import static java.util.Arrays.stream;
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
@@ -106,6 +106,19 @@ public final class McYamlIntrospector {
                 .filter(method -> matchesJsonKey(method, key))
                 .findFirst()
                 .orElse(null);
+    }
+
+    public static <T> List<Method> findRequiredSetters(Class<T> clazz) {
+        return stream(clazz.getMethods())
+                .filter(McYamlIntrospector::isSetter)
+                .collect(Collectors.toList());
+    }
+
+    public static String getSetterName(Method setter) {
+        if (setter.getName().length() < 3)
+            throw new IllegalArgumentException("Setter name must be at least 3 characters long: " + setter.getName());
+        String property = setter.getName().substring(3);
+        return toLowerCase(property.charAt(0)) + property.substring(1);
     }
 
     public static <T> Method getAnySetter(Class<T> clazz) {

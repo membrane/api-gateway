@@ -24,6 +24,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.networknt.schema.SpecificationVersion.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
@@ -167,6 +168,8 @@ public class GenericYamlParser {
             if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
 
+            List<Method> required = findRequiredSetters(clazz);
+
             for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
                 String key = it.next();
                 try {
@@ -176,11 +179,15 @@ public class GenericYamlParser {
                         continue;
                     }
 
-                    getMethodSetter(ctx, clazz, key).setSetter(configObj,ctx,node,key);
+                    MethodSetter methodSetter = getMethodSetter(ctx, clazz, key);
+                    required.remove(methodSetter.getSetter());
+                    methodSetter.setSetter(configObj,ctx,node,key);
                 } catch (Throwable cause) {
                     throw new ParsingException(cause, node.get(key));
                 }
             }
+            if (!required.isEmpty())
+                throw new ParsingException("Missing required fields: " + required.stream().map(McYamlIntrospector::getSetterName).toList(), node);
             return configObj;
         } catch (Throwable cause) {
             throw new ParsingException(cause, node);
