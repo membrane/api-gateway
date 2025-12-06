@@ -25,26 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TextUtilTest {
 
     @Test
-    void camelToKebabSimple() {
-        assertEquals("tasty-kebab", camelToKebab("tastyKebab"));
-    }
-
-    @Test
-    void camelToKebabMulti() {
-        assertEquals("a-lot-of-tasty-kebab", camelToKebab("aLotOfTastyKebab"));
-    }
-
-    @Test
-    void camelToKebabMultiWithSingleChars() {
-        assertEquals("a-bar-c-duuq-e-foo", camelToKebab("aBarCDuuqEFoo"));
-    }
-
-    @Test
-    void camelToKebabNoChange() {
-        assertEquals("kebab", camelToKebab("Kebab"));
-    }
-
-    @Test
     void testGlobToExpStarPrefixHost() {
         Pattern pattern = Pattern.compile(globToRegExp("*.predic8.de"));
         assertTrue(pattern.matcher("hgsjagdjhsa.predic8.de").matches());

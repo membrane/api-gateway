@@ -41,6 +41,9 @@ public abstract class AbstractExchangeExpressionTest {
                 .header("name","Jelly Fish")
                 .header("foo","42")
                 .header("x-city","Tokio")
+                .header("multiple","foo")
+                .header("multiple","bar")
+                .header("multiple","baz")
                 .contentType(APPLICATION_JSON)
                 .buildExchange();
         flow = REQUEST;

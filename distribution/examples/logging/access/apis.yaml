@@ -11,5 +11,6 @@ api:
           - additionalVariable:
               name: forwarded
               expression: headers['x-forwarded-for']
-  target:
-    ssl: {}
+    - return:
+        statusCode: 200
+        contentType: application/json

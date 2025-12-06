@@ -41,14 +41,14 @@ public class IfInterceptorGroovyTest extends ConditionalEvaluationTestContext {
     }
 
     @Test
-    void invalidGroovy() throws Exception {
+    void invalidGroovy() {
         assertThrows(ConfigurationException.class, () -> eval("foobar;()", new Builder(),false));
     }
 
     @Test
     void hasHeader() throws Exception {
         assertEquals(CONTINUE,eval("""
-            header.getFirstValue("X-Foo-Bar").equals("Baz")
+            header["X-Foo-Bar"].equals("Baz")
             """, new Builder().header("X-Foo-Bar", "Baz"),true));
     }
 
@@ -68,7 +68,7 @@ public class IfInterceptorGroovyTest extends ConditionalEvaluationTestContext {
         assertEquals(CONTINUE,eval("exchange != null", new Builder(),true));
     }
 
-    private static Outcome eval(String condition, Object builder, boolean shouldCallNested) throws Exception {
+    private static Outcome eval(String condition, Object builder, boolean shouldCallNested) {
         return performEval(condition, builder, GROOVY,shouldCallNested);
     }
 }

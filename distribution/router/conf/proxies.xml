@@ -57,11 +57,10 @@
 			<path>/header</path>
 			<request>
 				<groovy>
-					println "Request headers:"
-					header.allHeaderFields.each {
-						print it
-					}
-					CONTINUE
+                    println "Request headers:"
+                    header.entrySet().each {
+                        println it
+                    }
 				</groovy>
 			</request>
 			<template contentType="application/json">{ "ok": 1 }</template>
