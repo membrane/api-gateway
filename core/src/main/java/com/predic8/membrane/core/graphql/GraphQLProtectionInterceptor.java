@@ -20,7 +20,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.text.*;
 import org.slf4j.*;
 
 import java.security.*;

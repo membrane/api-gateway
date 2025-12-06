@@ -71,6 +71,8 @@ import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
 import static com.predic8.membrane.core.Constants.VERSION;
 import static com.predic8.membrane.core.jmx.JmxExporter.JMX_EXPORTER_NAME;
 import static com.predic8.membrane.core.util.DLPUtil.displayTraceWarning;
+import static com.predic8.membrane.core.util.text.TerminalColors.BRIGHT_CYAN;
+import static com.predic8.membrane.core.util.text.TerminalColors.RESET;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
@@ -355,7 +357,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
         if (!asynchronousInitialization)
-            log.info("\u001B[94m{} {} up and running!\u001B[0m", PRODUCT_NAME, VERSION);
+            logStartupMessage();
+    }
+
+    private static void logStartupMessage() {
+        log.info("{}{} {} up and running!{}", BRIGHT_CYAN(), PRODUCT_NAME, VERSION, RESET());
     }
 
     private void startJmx() {
@@ -685,7 +691,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         if (!success && !retryInit)
             System.exit(1);
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        log.info("\u001B[94m{} {} up and running!\u001B[0m", PRODUCT_NAME, VERSION);
+        logStartupMessage();
         setAsynchronousInitialization(false);
     }
 

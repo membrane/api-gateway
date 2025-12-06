@@ -16,7 +16,7 @@ package com.predic8.membrane.core.util;
 
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.util.StringUtil.*;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StringUtilTest {

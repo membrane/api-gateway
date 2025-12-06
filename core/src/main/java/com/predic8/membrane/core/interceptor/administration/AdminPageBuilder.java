@@ -24,7 +24,6 @@ import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
 import org.apache.commons.text.*;
 
 import java.io.*;
@@ -36,6 +35,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static com.predic8.membrane.core.util.xml.XMLTextUtil.isValidXMLSnippet;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.time.DurationFormatUtils.*;
@@ -618,12 +618,12 @@ public class AdminPageBuilder extends Html {
             String longDescription = i.getLongDescription();
             boolean same = longDescription.equals(shortDescription);
 
-            if (!TextUtil.isValidXMLSnippet(shortDescription)) {
+            if (!isValidXMLSnippet(shortDescription)) {
                 shortDescription = StringEscapeUtils.escapeHtml4(shortDescription).replace("\n", "<br/>");
                 if (same)
                     longDescription = shortDescription;
             }
-            if (!same && !TextUtil.isValidXMLSnippet(longDescription)) {
+            if (!same && !isValidXMLSnippet(longDescription)) {
                 longDescription = StringEscapeUtils.escapeHtml4(longDescription).replace("\n", "<br/>");
             }
 

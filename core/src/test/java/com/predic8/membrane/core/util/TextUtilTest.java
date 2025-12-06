@@ -13,12 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.util.text.*;
 import org.junit.jupiter.api.*;
 
 import java.nio.charset.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 

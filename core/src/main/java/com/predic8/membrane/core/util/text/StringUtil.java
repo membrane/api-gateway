@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.util;
+package com.predic8.membrane.core.util.text;
 
 import static java.lang.Math.min;
 
@@ -61,5 +61,26 @@ public class StringUtil {
         }
         return sb.toString();
     }
+
+    public static boolean yes(String override) {
+        if (override == null)
+            return false;
+
+        return switch (override.trim().toLowerCase()) {
+            case "on", "yes", "y", "true", "1", "enable", "enabled" -> true;
+            default -> false;
+        };
+    }
+
+    public static boolean no(String override) {
+        if (override == null)
+            return false;
+
+        return switch (override.trim().toLowerCase()) {
+            case "off", "no", "n", "false", "0", "disable", "disabled" -> true;
+            default -> false;
+        };
+    }
+
 
 }

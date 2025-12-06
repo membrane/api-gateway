@@ -15,11 +15,13 @@ package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.util.text.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.util.stream.Collectors.joining;
 
 public class ApiInfo {
@@ -34,7 +36,7 @@ public class ApiInfo {
         }
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
         manager.getRules().forEach(proxy ->
-                log.info(" \u001B[92m{} {}\u001B[0m{}", proxyKind(proxy), proxy.getName(), additionalProxyInfo(proxy))
+                log.info(" {}{} {}{}{}", BRIGHT_GREEN(), proxyKind(proxy), proxy.getName(), RESET(), additionalProxyInfo(proxy))
         );
     }
 

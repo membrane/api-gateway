@@ -18,6 +18,9 @@
 - Adding a configuration flag to enable/disable colorized output
 - Constant to centralize color formatting: ANSIColors
 - Detecting terminal support before applying colors (e.g., check if System.console() is available)
+- Central desciption of MEMBRANE_* environment variables
+  - Like MEMBRANE_HOME...
+  - @coderabbitai look through the code base for usages of these variables and suggest documentation
 
 
 # 7.0.0

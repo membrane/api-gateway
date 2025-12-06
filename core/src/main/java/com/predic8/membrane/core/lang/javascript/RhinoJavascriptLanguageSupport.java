@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.lang.javascript;
 
 import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.text.*;
 import org.slf4j.*;
 
 import javax.script.*;

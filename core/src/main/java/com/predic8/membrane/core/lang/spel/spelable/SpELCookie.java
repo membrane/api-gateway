@@ -16,7 +16,7 @@ package com.predic8.membrane.core.lang.spel.spelable;
 import com.predic8.membrane.core.http.*;
 import org.springframework.expression.*;
 
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 
 public class SpELCookie implements SpELLablePropertyAware {
 

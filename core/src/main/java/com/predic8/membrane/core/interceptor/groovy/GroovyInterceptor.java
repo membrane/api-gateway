@@ -28,7 +28,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
