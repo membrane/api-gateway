@@ -76,10 +76,7 @@ public class HeaderMap implements Map<String, String> {
     public String get(Object key) {
         if (!(key instanceof String k))
             return null;
-        var value = header.getValuesAsString(k);
-        if (value != null)
-            return value;
-        return header.getValuesAsString(TextUtil.camelToKebab(k));
+        return header.getValuesAsString(k);
     }
 
     /**

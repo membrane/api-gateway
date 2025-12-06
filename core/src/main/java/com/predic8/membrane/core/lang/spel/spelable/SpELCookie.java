@@ -28,13 +28,7 @@ public class SpELCookie implements SpELLablePropertyAware {
 
     @Override
     public TypedValue read(EvaluationContext context, Object target, String name) {
-        var v = header.getFirstCookie(name);
-        if (v != null)
-            return new TypedValue(v);
-        v = header.getFirstCookie(camelToKebab(name));
-
-        // return v even if it is null
-        return new TypedValue(v);
+        return new TypedValue(header.getFirstCookie(name));
     }
 
     @Override

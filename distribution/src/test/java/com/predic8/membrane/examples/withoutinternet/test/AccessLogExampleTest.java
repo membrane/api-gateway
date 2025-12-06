@@ -16,13 +16,11 @@
 package com.predic8.membrane.examples.withoutinternet.test;
 
 import com.predic8.membrane.examples.util.*;
-import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.StringAssertions.*;
 import static io.restassured.RestAssured.*;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AccessLogExampleTest extends DistributionExtractingTestcase {
@@ -76,9 +74,6 @@ public class AccessLogExampleTest extends DistributionExtractingTestcase {
                     .statusCode(200);
         }
 
-        assertContains(
-                "X-Forwarded-For: 127.0.0.1",
-                readFile("access.log")
-        );
+        assertThat(readFile("access.log"), containsString("X-Forwarded-For: 127.0.0.1"));
     }
 }

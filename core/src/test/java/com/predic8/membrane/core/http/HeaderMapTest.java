@@ -43,8 +43,6 @@ class HeaderMapTest {
         assertEquals(APPLICATION_JSON, map.get(CONTENT_TYPE));
         assertEquals(APPLICATION_JSON, map.get("content-type"));
         assertEquals(APPLICATION_JSON, map.get("cOnteNt-TyPe"));
-        assertEquals(APPLICATION_JSON, map.get("ContentType"));
-        assertEquals(APPLICATION_JSON, map.get("contentType"));
     }
 
     @Test
