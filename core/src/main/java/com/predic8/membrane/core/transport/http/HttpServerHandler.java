@@ -174,9 +174,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
     }
 
-    private RequestProcessingResult processSingleRequest(Connection con) throws IOException, EndOfStreamException, TerminateException {
+    private RequestProcessingResult processSingleRequest(Connection con) throws IOException, EndOfStreamException {
 
-        // Needed to mark connection as IDLE for reloads
+        // Needed to mark the connection as IDLE for reloads
         if (isSrcInEndOfFileAndSetIdleStatus()) {
             return terminate();
         }
@@ -205,7 +205,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
     }
 
-    private @NotNull RequestProcessingResult processHttp1Request(Connection con) throws EndOfStreamException, IOException, TerminateException {
+    private @NotNull RequestProcessingResult processHttp1Request(Connection con) throws EndOfStreamException, IOException {
 
         // Prepare
         srcReq = new Request();

@@ -36,19 +36,20 @@ public class XMLTextUtil {
     }
 
     /**
-     * As HTML is needed for the AdminConsole
+     * As HTML is needed for the AdminConsole.
      *
-     * @param reader XML
-     * @param asHTML Should output formatted as XML
-     * @return Formatted string
-     * @throws Exception
+     * @param reader XML input
+     * @param asHTML if {@code true}, format for HTML display (e.g. in the AdminConsole);
+     *               otherwise format as plain XML.
+     * @return formatted string
+     * @throws Exception if parsing or formatting fails
      */
     public static String formatXML(Reader reader, boolean asHTML) throws Exception {
         try {
             StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
             new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(reader);
             return out.toString();
-        } catch (XMLStreamException e) {
+        } catch (IOException e) {
             log.info("Error parsing XML: {}", e.getMessage());
             throw e;
         }

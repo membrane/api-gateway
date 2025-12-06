@@ -156,6 +156,6 @@ public final class TerminalColors {
 
         // LAST resort:
         // System.console() is NOT reliable (IDE == null, Docker == null)
-        return true;
+        return false;
     }
 }
