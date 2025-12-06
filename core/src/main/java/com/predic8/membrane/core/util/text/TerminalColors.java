@@ -15,10 +15,8 @@
 package com.predic8.membrane.core.util.text;
 
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.StringUtil;
 
-import static com.predic8.membrane.core.util.StringUtil.no;
-import static com.predic8.membrane.core.util.StringUtil.yes;
+import static com.predic8.membrane.core.util.StringUtil.*;
 
 //import static com.predic8.membrane.core.util.StringUtil.no;
 //import static com.predic8.membrane.core.util.text.StringUtil.yes;
