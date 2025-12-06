@@ -131,7 +131,7 @@ public class JavascriptInterceptorTest {
     @ParameterizedTest
     @ValueSource(classes = {GraalVMJavascriptSupport.class, RhinoJavascriptLanguageSupport.class})
     void setRequestHeader(Class<LanguageSupport> engine) {
-        executeScript("header.setValue('baz','7');", engine);
+        executeScript("header.put('baz','7');", engine);
         assertEquals("7", exc.getRequest().getHeader().getFirstValue("baz"));
     }
 
