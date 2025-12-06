@@ -17,13 +17,13 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.xml.XMLTextUtil.formatXML;
 import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -155,7 +155,7 @@ public class SOAPMessageValidatorInterceptorTest {
 	}
 
 	private String getContent(String fileName) throws Exception {
-		return TextUtil.formatXML(new InputStreamReader(requireNonNull(this.getClass().getResourceAsStream(fileName))));
+		return formatXML(new InputStreamReader(requireNonNull(this.getClass().getResourceAsStream(fileName))));
 	}
 
 	private ValidatorInterceptor createValidatorInterceptor(String wsdl) {

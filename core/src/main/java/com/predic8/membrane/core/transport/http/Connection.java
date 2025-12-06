@@ -29,7 +29,7 @@ import java.util.Random;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 
 /**
  * A {@link Connection} is an outbound TCP/IP (with or without TLS) connection, possibly managed

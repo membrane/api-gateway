@@ -39,6 +39,8 @@ import static javax.tools.StandardLocation.*;
  */
 public class JsonSchemaGenerator extends AbstractGrammar {
 
+    public static final String MEMBRANE_SCHEMA_JSON_FILENAME = "membrane.schema.json";
+
     private final Map<String, Boolean> topLevelAdded = new HashMap<>();
 
     public JsonSchemaGenerator(ProcessingEnvironment processingEnv) {
@@ -166,7 +168,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .createResource(
                         CLASS_OUTPUT,
                         main.getAnnotation().outputPackage().replaceAll("\\.spring$", ".json"),
-                        "membrane.schema.json",
+                        MEMBRANE_SCHEMA_JSON_FILENAME,
                         sources.toArray(new Element[0])
                 );
     }

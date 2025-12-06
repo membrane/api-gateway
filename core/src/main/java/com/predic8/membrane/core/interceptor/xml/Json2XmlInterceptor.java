@@ -24,7 +24,6 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.util.StringUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -83,7 +82,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
                     .internal("flow", flow)
                     .internal("body", truncateAfter(msg.getBodyAsStringDecoded(), 200))
                     .buildAndSetResponse(exchange);
-            return ABORT;
+            return Outcome.ABORT;
         }
 
         msg.getHeader().setContentType(APPLICATION_XML);

@@ -22,7 +22,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.util.TextUtil;
+import com.predic8.membrane.core.util.text.TextUtil;
 
 import java.io.IOException;
 import java.io.InputStream;

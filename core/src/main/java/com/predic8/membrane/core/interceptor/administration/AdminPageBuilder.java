@@ -24,7 +24,6 @@ import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
 import org.apache.commons.text.*;
 
 import java.io.*;
@@ -36,6 +35,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static com.predic8.membrane.core.util.xml.XMLTextUtil.isValidXMLSnippet;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.time.DurationFormatUtils.*;
@@ -618,12 +618,12 @@ public class AdminPageBuilder extends Html {
             String longDescription = i.getLongDescription();
             boolean same = longDescription.equals(shortDescription);
 
-            if (!TextUtil.isValidXMLSnippet(shortDescription)) {
+            if (!isValidXMLSnippet(shortDescription)) {
                 shortDescription = StringEscapeUtils.escapeHtml4(shortDescription).replace("\n", "<br/>");
                 if (same)
                     longDescription = shortDescription;
             }
-            if (!same && !TextUtil.isValidXMLSnippet(longDescription)) {
+            if (!same && !isValidXMLSnippet(longDescription)) {
                 longDescription = StringEscapeUtils.escapeHtml4(longDescription).replace("\n", "<br/>");
             }
 
@@ -636,9 +636,9 @@ public class AdminPageBuilder extends Html {
 
             String iid = "i" + id;
             div().id("i" + id);
-            createHelpIcon(i, id);
+            createHelpIcon(i);
             if (!shortDescription.isEmpty() && !longDescription.equals(shortDescription)) {
-                createExpandIcon(i, id);
+                createExpandIcon(id);
             }
             end();
             createShowIconsScript(did, iid);
@@ -700,7 +700,7 @@ public class AdminPageBuilder extends Html {
         end();
     }
 
-    private void createExpandIcon(Interceptor i, String id) {
+    private void createExpandIcon(String id) {
         div().style("float:right;");
         span().id("e" + id).classAttr("ui-icon ui-icon-triangle-1-w").title("expand").end();
         end();
@@ -709,7 +709,7 @@ public class AdminPageBuilder extends Html {
         end();
     }
 
-    private void createHelpIcon(Interceptor i, String id) {
+    private void createHelpIcon(Interceptor i) {
         String helpId = i.getHelpId();
         if (helpId != null) {
             div().style("float:right;");

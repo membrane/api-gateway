@@ -19,7 +19,7 @@ import org.jetbrains.annotations.*;
 import java.io.*;
 import java.nio.charset.*;
 
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static java.lang.Integer.*;
 
 public class TextPrettifier implements Prettifier {

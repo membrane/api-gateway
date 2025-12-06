@@ -2,7 +2,15 @@
 <Configuration>
     <Appenders>
         <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout charset="UTF-8"
+                           disableAnsi="false"
+                           pattern="%d{ABSOLUTE} %highlight{%5p}{ERROR=red, WARN=yellow, INFO=cyan} %tid %tn %c{1}:%L %X - %m%n"/>
+            <!--
+                To disable colors, use the PatternLayout below:
+            -->
+            <!--
             <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n" />
+            -->
         </Console>
         <RollingFile name="FILE" fileName="membrane.log" filePattern="membrane.log.%i">
             <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n" />

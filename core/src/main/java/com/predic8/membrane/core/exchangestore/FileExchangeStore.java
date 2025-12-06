@@ -29,7 +29,7 @@ import java.text.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.xml.XMLTextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Calendar.*;
 

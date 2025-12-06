@@ -25,7 +25,7 @@ import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.*;
-import static com.predic8.membrane.core.util.TextUtil.getCharset;
+import static com.predic8.membrane.core.util.text.TextUtil.getCharset;
 
 /**
  * A HTTP message (request or response).
