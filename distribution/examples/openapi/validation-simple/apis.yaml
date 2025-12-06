@@ -22,6 +22,6 @@ api:
             contentType: application/json
             src: '{ "success": true }'
     - return:
-        statusCode: 201
+        status: 201
 
 # See examples/openapi-validator for a more detailed example

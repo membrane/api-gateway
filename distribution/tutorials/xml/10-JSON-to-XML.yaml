@@ -19,4 +19,4 @@ api:
             root: zoo # XML root element
         - beautifier: {} # Format
     - return:
-        statusCode: 200
+        status: 200

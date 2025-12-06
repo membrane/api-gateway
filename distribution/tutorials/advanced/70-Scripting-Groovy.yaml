@@ -17,7 +17,7 @@ api:
         src: |
           println "I'm executed in the ${flow} flow"
     - return:
-        statusCode: 200
+        status: 200
 
 ---
 api:
