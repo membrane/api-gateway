@@ -20,6 +20,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.text.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -28,6 +29,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
+import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static org.slf4j.LoggerFactory.*;
 
 /**
@@ -133,13 +135,12 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private void writeLog(String msg) {
-
         switch (level) {
             case TRACE -> getLogger(category).trace(msg);
             case DEBUG -> getLogger(category).debug(msg);
-            case INFO -> getLogger(category).info(msg);
-            case WARN -> getLogger(category).warn(msg);
-            case ERROR, FATAL -> getLogger(category).error(msg);
+            case INFO -> getLogger(category).info(brightBlue( msg));
+            case WARN -> getLogger(category).warn(brightMagenta( msg));
+            case ERROR, FATAL -> getLogger(category).error(brightRed(msg));
         }
     }
 

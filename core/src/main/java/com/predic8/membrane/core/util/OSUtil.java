@@ -16,19 +16,25 @@
 
 package com.predic8.membrane.core.util;
 
+import org.jetbrains.annotations.*;
+
 import static com.predic8.membrane.core.util.OSUtil.OS.*;
 
 public class OSUtil {
+
+    public static final String TERM_PROGRAM_ENV = "TERM_PROGRAM";
+    public static final String OS_NAME_PROPERTY = "os.name";
+
     public static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase().contains("windows");
+        return System.getProperty(OS_NAME_PROPERTY).toLowerCase().contains("windows");
     }
 
     public static boolean isMac() {
-        return System.getProperty("os.name").toLowerCase().contains("mac");
+        return System.getProperty(OS_NAME_PROPERTY).toLowerCase().contains("mac");
     }
 
     public static boolean isLinux() {
-        return System.getProperty("os.name").toLowerCase().contains("inx");
+        return System.getProperty(OS_NAME_PROPERTY).toLowerCase().contains("inx");
     }
 
     public static OS getOS() {
@@ -48,5 +54,30 @@ public class OSUtil {
         if (OSUtil.isWindows())
             return windows;
         return linux;
+    }
+
+    public static @NotNull String getJvmArgs() {
+        return String.join(" ",
+                java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments());
+    }
+
+    public static boolean runsInIntelliJ() {
+        // IntelliJ Run / Debug / Test
+        if (OSUtil.getJvmArgs().contains("idea_rt")
+            || System.getProperty("idea.version") != null
+            || System.getProperty("idea.paths.selector") != null
+            || System.getProperty("intellij.debug.agent") != null)
+            return true;
+
+        // IntelliJ Terminal + VSCode Terminal
+        if (System.getenv("JETBRAINS_IDE") != null
+            || System.getenv("IDEA_INITIAL_DIRECTORY") != null
+            || "vscode".equalsIgnoreCase(System.getenv(TERM_PROGRAM_ENV)))
+            return true;
+        return false;
+    }
+
+    public static boolean runsInVSCodeTErminal() {
+        return  "vscode".equalsIgnoreCase(System.getenv(TERM_PROGRAM_ENV));
     }
 }
