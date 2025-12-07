@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.util.text;
 
+import static com.predic8.membrane.core.Constants.MEMBRANE_COLORS_ENV;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.StringUtil.*;
 
@@ -221,12 +222,12 @@ public final class TerminalColors {
     public static boolean detectAnsiSupport() {
 
         // User override always wins
-        String override = System.getenv("MEMBRANE_COLORS");
+        String override = System.getenv(MEMBRANE_COLORS_ENV);
         if (yes(override)) return true;
         if (no(override)) return false;
 
         // CI environments usually strip ANSI
-        if (System.getenv("CI") != null)
+        if (System.getenv(CI_ENV) != null)
             return false;
 
         if (runsInIntelliJ()) return true;
@@ -235,18 +236,17 @@ public final class TerminalColors {
 
         if (isMac()) {
             // macOS terminal / iTerm2 / xterm / gnome-terminal
-            return System.getenv("TERM_PROGRAM") != null;
+            return System.getenv(TERM_PROGRAM_ENV) != null;
         }
         if (isWindows()) {
             // Windows Terminal
-            if (System.getenv("WT_SESSION") != null) return true;
-            return System.getenv("TERM_PROGRAM") != null; // classic cmd/powershell
+            if (System.getenv(WT_SESSION_ENV) != null) return true;
+            return System.getenv(TERM_PROGRAM_ENV) != null; // classic cmd/powershell
         }
 
-        // Linux / Unix: TERM must not be "dumb"
-        String term = System.getenv("TERM");
-        if (term != null && !term.equals("dumb"))
-            return true;
+        // Probably Linux
+
+        if (isDumbTerminal()) return true;
 
         // Fallback: do NOT enable by default
         return false;

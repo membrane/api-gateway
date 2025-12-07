@@ -23,6 +23,10 @@ import static com.predic8.membrane.core.util.OSUtil.OS.*;
 public class OSUtil {
 
     public static final String TERM_PROGRAM_ENV = "TERM_PROGRAM";
+    public static final String CI_ENV = "CI";
+    public static final String WT_SESSION_ENV = "WT_SESSION";
+    public static final String TERM_ENV = "TERM";
+
     public static final String OS_NAME_PROPERTY = "os.name";
 
     public static boolean isWindows() {
@@ -79,5 +83,13 @@ public class OSUtil {
 
     public static boolean runsInVSCodeTerminal() {
         return  "vscode".equalsIgnoreCase(System.getenv(TERM_PROGRAM_ENV));
+    }
+
+    public static boolean isDumbTerminal() {
+        // Linux / Unix: TERM must not be "dumb"
+        String term = System.getenv(TERM_ENV);
+        if (term != null && !term.equals("dumb"))
+            return true;
+        return false;
     }
 }
