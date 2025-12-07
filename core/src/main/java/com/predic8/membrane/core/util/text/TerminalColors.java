@@ -16,6 +16,16 @@ package com.predic8.membrane.core.util.text;
 
 import static com.predic8.membrane.core.Constants.*;
 
+/**
+ * Provides ANSI terminal color codes with runtime enable/disable support.
+ * <p>
+ * Color output is controlled by the {@code membrane.disable.term.colors} system property,
+ * typically set by the start script based on terminal capability detection.
+ * When the property is not set, colors are disabled by default.
+ * <p>
+ * All color code getters return empty strings when colors are disabled, allowing
+ * safe concatenation without conditional logic.
+ */
 @SuppressWarnings("unused")
 public final class TerminalColors {
 
