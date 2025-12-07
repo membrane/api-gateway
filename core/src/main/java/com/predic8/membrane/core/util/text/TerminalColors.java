@@ -14,12 +14,9 @@
 
 package com.predic8.membrane.core.util.text;
 
-import static com.predic8.membrane.core.Constants.MEMBRANE_COLORS_ENV;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.StringUtil.*;
-
-//import static com.predic8.membrane.core.util.StringUtil.no;
-//import static com.predic8.membrane.core.util.text.StringUtil.yes;
 
 @SuppressWarnings("unused")
 public final class TerminalColors {
@@ -222,7 +219,11 @@ public final class TerminalColors {
     public static boolean detectAnsiSupport() {
 
         // User override always wins
-        String override = System.getenv(MEMBRANE_COLORS_ENV);
+        String override = System.getenv(MEMBRANE_TERM_COLORS_ENV);
+        if (yes(override)) return true;
+        if (no(override)) return false;
+
+        override = System.getProperty(MEMBRANE_TERM_COLORS);
         if (yes(override)) return true;
         if (no(override)) return false;
 

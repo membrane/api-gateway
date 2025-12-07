@@ -24,7 +24,10 @@ import java.util.*;
 public class Constants {
 
 	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
-    public static final String MEMBRANE_COLORS_ENV = "MEMBRANE_COLORS";
+    public static final String MEMBRANE_TERM_COLORS_ENV = "MEMBRANE_TERM_COLORS";
+
+    // Java System Properties
+    public static final String MEMBRANE_TERM_COLORS = "membrane.term.colors";
 
 	public static final String CRLF = "" + ((char) 13) + ((char) 10);
 
@@ -43,7 +46,7 @@ public class Constants {
 				Properties p = new Properties(); // Development
 				p.load(new FileInputStream("target/maven-archiver/pom.properties"));
 				version = p.getProperty("version") + " - DEVELOPMENT";
-			} catch (Exception e2) {
+			} catch (Exception ignored) {
 			}
 		}
 		VERSION = version;
