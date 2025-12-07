@@ -247,7 +247,9 @@ public final class TerminalColors {
 
         // Probably Linux
 
-        if (isDumbTerminal()) return true;
+        // If a terminal is set and it is not dumb, enable colors
+        String term = System.getenv(TERM_ENV);
+        if ((term != null && !term.equals("dumb"))) return true;
 
         // Fallback: do NOT enable by default
         return false;

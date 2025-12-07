@@ -85,11 +85,4 @@ public class OSUtil {
         return  "vscode".equalsIgnoreCase(System.getenv(TERM_PROGRAM_ENV));
     }
 
-    public static boolean isDumbTerminal() {
-        // Linux / Unix: TERM must not be "dumb"
-        String term = System.getenv(TERM_ENV);
-        if (term != null && !term.equals("dumb"))
-            return true;
-        return false;
-    }
 }
