@@ -52,6 +52,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.TimerManager;
 import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.text.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -67,8 +68,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 
-import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
-import static com.predic8.membrane.core.Constants.VERSION;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.JMX_EXPORTER_NAME;
 import static com.predic8.membrane.core.util.DLPUtil.displayTraceWarning;
 import static com.predic8.membrane.core.util.text.TerminalColors.BRIGHT_CYAN;

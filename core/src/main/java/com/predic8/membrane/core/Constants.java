@@ -24,10 +24,10 @@ import java.util.*;
 public class Constants {
 
 	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
-    public static final String MEMBRANE_TERM_COLORS_ENV = "MEMBRANE_TERM_COLORS";
+    public static final String MEMBRANE_DISABLE_TERM_COLORS_ENV = "MEMBRANE_DISABLE_TERM_COLORS";
 
     // Java System Properties
-    public static final String MEMBRANE_TERM_COLORS = "membrane.term.colors";
+    public static final String MEMBRANE_DISABLE_TERM_COLORS_PROPERTY = "membrane.disable.term.colors";
 
 	public static final String CRLF = "" + ((char) 13) + ((char) 10);
 

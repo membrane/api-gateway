@@ -2,15 +2,15 @@
 <Configuration>
     <Appenders>
         <Console name="STDOUT" target="SYSTEM_OUT">
+            <!--
+            To turn off the colors in the log set the environment variable MEMBRANE_DISABLE_TERM_COLORS
+            Otherwise there are still colors in some statements.
+            e.g. export MEMBRANE_DISABLE_TERM_COLORS=true
+            -->
             <PatternLayout charset="UTF-8"
-                           disableAnsi="false"
+                           disableAnsi="${env:MEMBRANE_DISABLE_TERM_COLORS:-false}"
                            pattern="%d{ABSOLUTE} %highlight{%5p}{ERROR=red, WARN=yellow, INFO=cyan} %tid %tn %c{1}:%L %X - %m%n"/>
-            <!--
-                To disable colors, use the PatternLayout below:
-            -->
-            <!--
-            <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n" />
-            -->
+
         </Console>
         <RollingFile name="FILE" fileName="membrane.log" filePattern="membrane.log.%i">
             <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n" />

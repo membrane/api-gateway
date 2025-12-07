@@ -219,13 +219,13 @@ public final class TerminalColors {
     public static boolean detectAnsiSupport() {
 
         // User override always wins
-        String override = System.getenv(MEMBRANE_TERM_COLORS_ENV);
-        if (yes(override)) return true;
-        if (no(override)) return false;
+        String override = System.getenv(MEMBRANE_DISABLE_TERM_COLORS_ENV);
+        if (yes(override)) return false; // Logik is reverse here! We need to use DISABLE to be able to use it easily in log4j2.xml!
+        if (no(override)) return true;
 
-        override = System.getProperty(MEMBRANE_TERM_COLORS);
-        if (yes(override)) return true;
-        if (no(override)) return false;
+        override = System.getProperty(MEMBRANE_DISABLE_TERM_COLORS_PROPERTY);
+        if (yes(override)) return false; // Logik is reverse here!
+        if (no(override)) return true;
 
         // CI environments usually strip ANSI
         if (System.getenv(CI_ENV) != null)
