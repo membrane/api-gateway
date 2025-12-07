@@ -24,12 +24,16 @@ import java.util.*;
 public class Constants {
 
 	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
-    public static final String MEMBRANE_DISABLE_TERM_COLORS_ENV = "MEMBRANE_DISABLE_TERM_COLORS";
 
     // Java System Properties
+
+    /**
+     * System property set by start script based on MEMBRANE_DISABLE_TERM_COLORS detection.
+     * Users should use the environment variable instead.
+     */
     public static final String MEMBRANE_DISABLE_TERM_COLORS_PROPERTY = "membrane.disable.term.colors";
 
-	public static final String CRLF = "" + ((char) 13) + ((char) 10);
+    public static final String CRLF = "" + ((char) 13) + ((char) 10);
 
 	public static final byte[] CRLF_BYTES = { 13, 10 };
 

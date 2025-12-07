@@ -22,11 +22,6 @@ import static com.predic8.membrane.core.util.OSUtil.OS.*;
 
 public class OSUtil {
 
-    public static final String TERM_PROGRAM_ENV = "TERM_PROGRAM";
-    public static final String CI_ENV = "CI";
-    public static final String WT_SESSION_ENV = "WT_SESSION";
-    public static final String TERM_ENV = "TERM";
-
     public static final String OS_NAME_PROPERTY = "os.name";
 
     public static boolean isWindows() {
@@ -59,30 +54,4 @@ public class OSUtil {
             return windows;
         return linux;
     }
-
-    public static @NotNull String getJvmArgs() {
-        return String.join(" ",
-                java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments());
-    }
-
-    public static boolean runsInIntelliJ() {
-        // IntelliJ Run / Debug / Test
-        if (getJvmArgs().contains("idea_rt")
-            || System.getProperty("idea.version") != null
-            || System.getProperty("idea.paths.selector") != null
-            || System.getProperty("intellij.debug.agent") != null)
-            return true;
-
-        // IntelliJ Terminal
-        if (System.getenv("JETBRAINS_IDE") != null
-            || System.getenv("IDEA_INITIAL_DIRECTORY") != null )
-            return true;
-
-        return false;
-    }
-
-    public static boolean runsInVSCodeTerminal() {
-        return  "vscode".equalsIgnoreCase(System.getenv(TERM_PROGRAM_ENV));
-    }
-
 }

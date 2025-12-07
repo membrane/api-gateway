@@ -15,17 +15,11 @@
 package com.predic8.membrane.core.util.text;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.util.OSUtil.*;
-import static com.predic8.membrane.core.util.StringUtil.*;
 
 @SuppressWarnings("unused")
 public final class TerminalColors {
 
-    private static volatile boolean enabled;
-
-    static {
-        enabled = detectAnsiSupport();
-    }
+    private static volatile boolean enabled = detectAnsiSupport();
 
     private TerminalColors() {
     }
@@ -216,42 +210,14 @@ public final class TerminalColors {
         return BRIGHT_WHITE() + s + RESET();
     }
 
-    public static boolean detectAnsiSupport() {
-
-        // User override always wins
-        String override = System.getenv(MEMBRANE_DISABLE_TERM_COLORS_ENV);
-        if (yes(override)) return false; // Logik is reverse here! We need to use DISABLE to be able to use it easily in log4j2.xml!
-        if (no(override)) return true;
-
-        override = System.getProperty(MEMBRANE_DISABLE_TERM_COLORS_PROPERTY);
-        if (yes(override)) return false; // Logik is reverse here!
-        if (no(override)) return true;
-
-        // CI environments usually strip ANSI
-        if (System.getenv(CI_ENV) != null)
-            return false;
-
-        if (runsInIntelliJ()) return true;
-
-        if (runsInVSCodeTerminal()) return true;
-
-        if (isMac()) {
-            // macOS terminal / iTerm2 / xterm / gnome-terminal
-            return System.getenv(TERM_PROGRAM_ENV) != null;
+    private static boolean detectAnsiSupport() {
+        // Only check the system property that was set by the shell script
+        String prop = System.getProperty(MEMBRANE_DISABLE_TERM_COLORS_PROPERTY);
+        if (prop != null) {
+            // The name of the property is "disable", so we need to invert
+            return !Boolean.parseBoolean(prop);
         }
-        if (isWindows()) {
-            // Windows Terminal
-            if (System.getenv(WT_SESSION_ENV) != null) return true;
-            return System.getenv(TERM_PROGRAM_ENV) != null; // classic cmd/powershell
-        }
-
-        // Probably Linux
-
-        // If a terminal is set and it is not dumb, enable colors
-        String term = System.getenv(TERM_ENV);
-        if ((term != null && !term.equals("dumb"))) return true;
-
-        // Fallback: do NOT enable by default
+        // Default: disable colors if property not set
         return false;
     }
 }
