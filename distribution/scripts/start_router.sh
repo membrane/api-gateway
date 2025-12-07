@@ -55,7 +55,7 @@ detect_colors() {
   # Check for known IDE/terminal environments
   [ -n "$TERM_PROGRAM" ] && {
     case "$TERM_PROGRAM" in
-      vscode|iTerm.app|Apple_Terminal|Hyper) return 0 ;;
+      vscode|iTerm.app|Apple_Terminal|Hyper|WezTerm|Alacritty|kitty) return 0 ;;
     esac
   }
 
