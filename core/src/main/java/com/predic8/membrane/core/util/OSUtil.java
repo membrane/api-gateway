@@ -26,15 +26,15 @@ public class OSUtil {
     public static final String OS_NAME_PROPERTY = "os.name";
 
     public static boolean isWindows() {
-        return System.getProperty(OS_NAME_PROPERTY).toLowerCase().contains("windows");
+        return System.getProperty(OS_NAME_PROPERTY,"").toLowerCase().contains("windows");
     }
 
     public static boolean isMac() {
-        return System.getProperty(OS_NAME_PROPERTY).toLowerCase().contains("mac");
+        return System.getProperty(OS_NAME_PROPERTY,"").toLowerCase().contains("mac");
     }
 
     public static boolean isLinux() {
-        return System.getProperty(OS_NAME_PROPERTY).toLowerCase().contains("inx");
+        return System.getProperty(OS_NAME_PROPERTY,"").toLowerCase().contains("inx");
     }
 
     public static OS getOS() {
@@ -69,16 +69,15 @@ public class OSUtil {
             || System.getProperty("intellij.debug.agent") != null)
             return true;
 
-        // IntelliJ Terminal + VSCode Terminal
+        // IntelliJ Terminal
         if (System.getenv("JETBRAINS_IDE") != null
-            || System.getenv("IDEA_INITIAL_DIRECTORY") != null
-            || "vscode".equalsIgnoreCase(System.getenv(TERM_PROGRAM_ENV)))
+            || System.getenv("IDEA_INITIAL_DIRECTORY") != null )
             return true;
 
         return false;
     }
 
-    public static boolean runsInVSCodeTErminal() {
+    public static boolean runsInVSCodeTerminal() {
         return  "vscode".equalsIgnoreCase(System.getenv(TERM_PROGRAM_ENV));
     }
 }

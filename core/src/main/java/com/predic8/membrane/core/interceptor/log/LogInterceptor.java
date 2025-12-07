@@ -41,6 +41,8 @@ import static org.slf4j.LoggerFactory.*;
  *   <li>Operational visibility in production (metadata-only, masked values, message, body).</li>
  * </ul>
  * </p>
+ * When supported, the log uses terminal colors to make the output easier to read and find. To overwrite the detection
+ * of color support, set the system property <code>MEMBRANE_COLORS</code> to <code>true</code> or <code>false</code>.
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "log")

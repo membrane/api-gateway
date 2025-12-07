@@ -231,7 +231,7 @@ public final class TerminalColors {
 
         if (runsInIntelliJ()) return true;
 
-        if (runsInVSCodeTErminal()) return true;
+        if (runsInVSCodeTerminal()) return true;
 
         if (isMac()) {
             // macOS terminal / iTerm2 / xterm / gnome-terminal
