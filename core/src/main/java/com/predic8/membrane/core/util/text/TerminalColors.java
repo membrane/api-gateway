@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core.util.text;
 
-import com.predic8.membrane.core.util.*;
-
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.StringUtil.*;
 
@@ -235,21 +233,20 @@ public final class TerminalColors {
 
         if (runsInVSCodeTErminal()) return true;
 
-        if (OSUtil.isMac()) {
+        if (isMac()) {
             // macOS terminal / iTerm2 / xterm / gnome-terminal
-            if (System.getenv("TERM_PROGRAM") != null)
-                return true;
-        } else if (OSUtil.isWindows()) {
+            return System.getenv("TERM_PROGRAM") != null;
+        }
+        if (isWindows()) {
             // Windows Terminal
             if (System.getenv("WT_SESSION") != null) return true;
-            if (System.getenv("TERM_PROGRAM") != null) return true;
-            return false; // classic cmd/powershell
-        } else {
-            // Linux / Unix: TERM must not be "dumb"
-            String term = System.getenv("TERM");
-            if (term != null && !term.equals("dumb"))
-                return true;
+            return System.getenv("TERM_PROGRAM") != null; // classic cmd/powershell
         }
+
+        // Linux / Unix: TERM must not be "dumb"
+        String term = System.getenv("TERM");
+        if (term != null && !term.equals("dumb"))
+            return true;
 
         // Fallback: do NOT enable by default
         return false;

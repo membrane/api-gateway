@@ -63,7 +63,7 @@ public class OSUtil {
 
     public static boolean runsInIntelliJ() {
         // IntelliJ Run / Debug / Test
-        if (OSUtil.getJvmArgs().contains("idea_rt")
+        if (getJvmArgs().contains("idea_rt")
             || System.getProperty("idea.version") != null
             || System.getProperty("idea.paths.selector") != null
             || System.getProperty("intellij.debug.agent") != null)
@@ -74,6 +74,7 @@ public class OSUtil {
             || System.getenv("IDEA_INITIAL_DIRECTORY") != null
             || "vscode".equalsIgnoreCase(System.getenv(TERM_PROGRAM_ENV)))
             return true;
+
         return false;
     }
 
