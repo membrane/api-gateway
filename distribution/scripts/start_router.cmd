@@ -44,6 +44,8 @@ set "DISABLE_COLORS=true"
 
 :color_detection_done
 
+set "JAVA_OPTS=%JAVA_OPTS% -Dmembrane.disable.term.colors=%DISABLE_COLORS%"
+
 java %JAVA_OPTS% -cp "%CLASSPATH%" com.predic8.membrane.core.cli.RouterCLI %*
 set "status=%ERRORLEVEL%"
 if not "%status%"=="0" (
