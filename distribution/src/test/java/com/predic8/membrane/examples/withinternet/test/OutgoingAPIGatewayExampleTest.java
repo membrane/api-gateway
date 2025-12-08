@@ -39,6 +39,7 @@ public class OutgoingAPIGatewayExampleTest extends DistributionExtractingTestcas
             .when()
                     .get("/")
             .then()
+                    .log().ifValidationFails()
                     .statusCode(200)
                     .body(containsString("X-Api-Key"))
                     .body(not(containsString("User-Agent")))

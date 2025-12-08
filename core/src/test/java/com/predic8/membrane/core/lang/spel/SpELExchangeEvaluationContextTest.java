@@ -113,17 +113,12 @@ public class SpELExchangeEvaluationContextTest {
 
     @Test
     void conversion() {
-        assertEquals(APPLICATION_JSON.toString(), keyExpression("request.headers.contentType"));
+        assertEquals(APPLICATION_JSON.toString(), keyExpression("request.headers['content-Type']"));
     }
 
     @Test
-    void headers() {
-        assertEquals(APPLICATION_JSON.toString(), keyExpression("headers.contentType"));
-    }
-
-    @Test
-    void headerWithOutS() {
-        assertEquals(APPLICATION_JSON.toString(), keyExpression("header.contentType"));
+    void headerGet() {
+        assertEquals(APPLICATION_JSON.toString(), keyExpression("header['content-Type']"));
     }
 
     @Test
@@ -158,7 +153,7 @@ public class SpELExchangeEvaluationContextTest {
 
     @Test
     void jsonUnknown() {
-        assertEquals("", keyExpression("json['unknown']"));
+        assertNull(keyExpression("json['unknown']"));
     }
 
     @Test
