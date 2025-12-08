@@ -90,7 +90,13 @@ public class SensitiveDataFilter {
     }
 
     private String maskField(HeaderField headerField) {
-        return "*".repeat(headerField.getValue().length());
+        int length = headerField.getValue().length();
+
+        if (length <= 20) {
+            return "*".repeat(length);
+        } else {
+            return "*".repeat(20) + " (total: " + length + ")";
+        }
     }
 
     String maskStartLine(Message msg) {
