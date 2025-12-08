@@ -68,10 +68,10 @@ api:
 
 Example of issued token:
 
-```json
+```text
 {
   "typ": "JWT",
-  "alg": "RS256",
+  "alg": "RS256"
 }
 .
 {
@@ -403,7 +403,6 @@ api:
     - return:
         statusCode: 404
 ---
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
   port: 2000
   flow:
