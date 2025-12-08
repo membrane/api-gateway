@@ -250,7 +250,7 @@ For even more samples have a look at the `examples` folder.
 To forward requests from the API Gateway to a backend, use a simple `api` configuration. The example below routes requests received on port `2000` with a path starting with `/shop` to the backend at `https://api.predic8.de`:
 
 ```yaml
-spec:
+api:
   port: 2000
   path:
     uri: /shop
@@ -270,14 +270,14 @@ Membrane natively supports OpenAPI, allowing you to easily configure the gateway
 Membrane allows you to configure APIs directly from OpenAPI documents in the `proxies.xml` file. Backend addresses and other details are automatically derived from the OpenAPI description.
 
 #### Example Configuration
-The snippet below shows how to deploy an API using an OpenAPI (`fruitshop.oas.yml`) with request validation enabled:
+The snippet below shows how to deploy an API using an OpenAPI (`openapi/fruitshop-v2-2-0.oas.yml`) with request validation enabled:
 
 ```yaml
-spec:
+api:
   port: 2000
   specs:
     - openapi:
-        location: fruitshop.oas.yml
+        location: openapi/fruitshop-v2-2-0.oas.yml
         validateRequests: true
 ```  
 
@@ -302,7 +302,7 @@ The configuration below demonstrates several routing rules:
 
 ```yaml
 # POST requests
-spec:
+api:
   port: 2000
   method: POST 
   flow:
@@ -313,7 +313,7 @@ spec:
         statusCode: 405
 ---
 # Regex path matching
-spec:
+api:
   port: 2000
   path:
     uri: /shop/v2/products/.*
@@ -322,7 +322,7 @@ spec:
     url: https://api.predic8.de
 ---
 # Requests whose HOST header is "www.predic8.de"
-spec:
+api:
   port: 2000
   host: www.predic8.de
   flow:
@@ -333,7 +333,7 @@ spec:
         statusCode: 200
 ---
 # Requests with a query parameter city and value Paris
-spec:
+api:
   port: 2000
   test: params.city == 'Paris'
   flow:
@@ -346,13 +346,13 @@ spec:
 
 ### Configuration Options
 
-| Option   | Description                                                                   |
-|----------|-------------------------------------------------------------------------------|
-| `port`   | port Membrane listens for incoming connections.                               |
-| `method` | - HTTP method (e.g., `GET`, `POST`, `DELETE`).<br>- `*` matches any method.   |
-| `host`   | - Hostname e.g. `api.predic8.de`<br> - Supports basic globbing with `*`       |
-| `test` | - Custum script e.g. `$pathParam.id == '42'`, `$header.contentType == '...'`  |
-| `path`   | - Request path<br>- Regular expressions can be used with `isRegExp="true"`    |
+| Option   | Description                                                                  |
+|----------|------------------------------------------------------------------------------|
+| `port`   | port Membrane listens for incoming connections.                              |
+| `method` | - HTTP method (e.g., `GET`, `POST`, `DELETE`).<br>- `*` matches any method.  |
+| `host`   | - Hostname e.g. `api.predic8.de`<br> - Supports basic globbing with `*`      |
+| `test` | - Custom script e.g. `$pathParam.id == '42'`, `$header.contentType == '...'` |
+| `path`   | - Request path<br>- Regular expressions can be used with `isRegExp="true"`   |
 
 For more routing options, see the [Membrane API documentation](https://www.membrane-api.io/docs/current/api.html).
 
@@ -364,7 +364,7 @@ Membrane lets you create endpoints that return immediately without forwarding re
 The following configuration creates a health check endpoint that responds to requests at [http://localhost:2000/health](http://localhost:2000/health):
 
 ```yaml
-spec:
+api:
   port: 2000
   path:
     uri: /health
@@ -382,7 +382,7 @@ Block paths (e.g., `/nothing`) while allowing other calls to pass through.
 **Routing Note:** APIs are matched from top to bottom. When multiple APIs share the same port, place the APIs with stricter routing conditions higher in the configuration.
 
 ```yaml
-spec:
+api:
   port: 2000
   path:
     uri: /nothing
@@ -394,7 +394,7 @@ spec:
         statusCode: 404
 ---
 # yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
-spec:
+api:
   port: 2000
   flow:
     - static:
