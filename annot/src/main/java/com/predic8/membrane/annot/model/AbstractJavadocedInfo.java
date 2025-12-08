@@ -14,7 +14,9 @@
 package com.predic8.membrane.annot.model;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -24,7 +26,8 @@ import com.predic8.membrane.annot.model.doc.Doc;
  * Common behavior of Javadoc handling for {@link MCAttribute}, {@link MCElement}, etc.
  */
 public abstract class AbstractJavadocedInfo {
-	private Element docedE;
+    public static final String JAVA_LANG_DEPRECATED = "java.lang.Deprecated";
+    private Element docedE;
 	private boolean docGenerated;
 	private Doc doc;
 
@@ -49,5 +52,12 @@ public abstract class AbstractJavadocedInfo {
 
 		return doc = new Doc(processingEnv, javadoc, getDocedE());
 	}
+
+    public boolean isDeprecated() {
+        for (AnnotationMirror am : docedE.getAnnotationMirrors())
+            if (((TypeElement) am.getAnnotationType().asElement()).getQualifiedName().toString().equals(JAVA_LANG_DEPRECATED))
+                return true;
+        return false;
+    }
 
 }

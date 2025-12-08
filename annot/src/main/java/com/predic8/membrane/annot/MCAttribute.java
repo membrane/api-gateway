@@ -29,12 +29,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Attributes:
  * - attributeName: Specifies the name of the attribute. If not defined, a default naming convention might apply.
  * - excludeFromJson: Indicates whether the attribute should be excluded from JSON Schema representation (default is false).
- * - excludeFromXsd: Indicates whether the attribute should be excluded from XML Schema (XSD) representation (default is false).
  */
 @Target(METHOD)
 @Retention(RUNTIME)
 public @interface MCAttribute {
 	String attributeName() default "";
     boolean excludeFromJson() default false;  // excludes from JSON Schema (YAML)
-    boolean excludeFromXsd() default false;   // excludes from XSD (XML configuration)
 }

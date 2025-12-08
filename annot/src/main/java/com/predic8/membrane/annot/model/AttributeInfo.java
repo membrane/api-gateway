@@ -202,19 +202,4 @@ public class AttributeInfo extends AbstractJavadocedInfo {
         return annotation != null && annotation.excludeFromJson();
     }
 
-
-    /**
-     * Determines whether the current field or method should be excluded from the XSD schema during schema generation.
-     *
-     * The exclusion is determined based on the configuration of the {@code MCAttribute} annotation.
-     *
-     * @return {@code true} if the field or method is excluded from the XSD schema; {@code false} otherwise.
-     *
-     * Hint: Not implemented yet in XSD Schema Generator
-     */
-    @SuppressWarnings("unused")
-    public boolean excludedFromXsdSchema() {
-        return annotation != null && annotation.excludeFromXsd();
-    }
-
 }
