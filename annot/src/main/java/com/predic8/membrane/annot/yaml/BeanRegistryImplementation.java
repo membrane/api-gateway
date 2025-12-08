@@ -57,7 +57,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
      *   <li>This method is expected to be called from a single thread.</li>
      *   <li>It publishes initialization events into the internal change queue but does not
      *       perform any activation work itself.</li>
-     *   <li>Callers must ensure that no other thread invokes {@link #registerBeanDefinitions(List)}
+     *   <li>Callers must ensure that no other thread invokes this method
      *       concurrently.</li>
      *   <li>Dynamic updates (e.g. from Kubernetes watchers) must use {@link #handle(WatchAction, JsonNode)}
      *       instead; these calls are thread-safe because they only enqueue events.</li>
@@ -85,7 +85,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
      * <p>Thread–safety model:</p>
      * <ul>
      *   <li>This method must be called by exactly one thread.</li>
-     *   <li>No other thread may call {@link #start()} concurrently.</li>
+     *   <li>No other thread may call this method concurrently.</li>
      *   <li>All mutating work on the registry (creation, modification, deletion,
      *       activation of beans) is performed exclusively inside this method.</li>
      *   <li>Other threads may safely invoke {@link #handle(WatchAction, JsonNode)} or
@@ -145,7 +145,6 @@ public class BeanRegistryImplementation implements BeanRegistry {
 
     /**
      * May be called from multiple threads.
-     *
      * TODO remove action?
      */
     public void handle(WatchAction action, BeanDefinition bd) {

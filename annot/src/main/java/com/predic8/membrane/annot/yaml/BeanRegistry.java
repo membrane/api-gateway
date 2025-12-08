@@ -32,8 +32,7 @@ public interface BeanRegistry {
      *   <li>This method is expected to be called from a single thread.</li>
      *   <li>It publishes initialization events into the internal change queue but does not
      *       perform any activation work itself.</li>
-     *   <li>Callers must ensure that no other thread invokes {@link #registerBeanDefinitions(List)}
-     *       concurrently.</li>
+     *   <li>Callers must ensure that no other thread invokes this method concurrently.</li>
      * </ul>
      *
      * <p>Lifecycle expectations:</p>
@@ -55,7 +54,7 @@ public interface BeanRegistry {
      * <p>Thread–safety model:</p>
      * <ul>
      *   <li>This method must be called by exactly one thread.</li>
-     *   <li>No other thread may call {@link #start()} concurrently.</li>
+     *   <li>No other thread may call this method concurrently.</li>
      *   <li>All mutating work on the registry (creation, modification, deletion,
      *       activation of beans) is performed exclusively inside this method.</li>
      * </ul>
