@@ -19,11 +19,20 @@ import static java.lang.annotation.ElementType.*;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Injects an XML attribute using a setter method.
+ * Annotation for marking a method to represent an attribute in the Membrane configuration.
+ * Primarily used for defining properties and their representation across different configuration grammars,
+ * such as JSON Schema or XML Schema (XSD).
+ *
+ * Methods annotated with this are typically setters with specific behavior or constraints
+ * controlled by the annotation's attributes.
+ *
+ * Attributes:
+ * - attributeName: Specifies the name of the attribute. If not defined, a default naming convention might apply.
+ * - excludeFromJson: Indicates whether the attribute should be excluded from JSON Schema representation (default is false).
  */
 @Target(METHOD)
 @Retention(RUNTIME)
 public @interface MCAttribute {
-
 	String attributeName() default "";
+    boolean excludeFromJson() default false;  // excludes from JSON Schema (YAML)
 }

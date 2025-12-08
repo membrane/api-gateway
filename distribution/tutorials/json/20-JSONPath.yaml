@@ -51,4 +51,4 @@ api:
           # Log the query parameter
           message: "First: ${params.animal}"
       - return:
-          statusCode: 200
+          status: 200

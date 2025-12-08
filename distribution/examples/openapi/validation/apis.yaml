@@ -30,7 +30,7 @@ api:
                   "email": "foo@baz.org"
               }
     - return:
-        statusCode: 201
+        status: 201
 
 ---
 
@@ -53,7 +53,7 @@ api:
                   }
               ] }
     - return:
-        statusCode: 200
+        status: 200
 
 ---
 # Monitoring endpoint for prometheus

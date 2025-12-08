@@ -83,7 +83,7 @@ class EnvelopeTest {
                   contentType: application/json
                   src: '{ "ok": 1 }'
               - return:
-                  statusCode: 200
+                  status: 200
         ---
         api:
           port: 2000

@@ -18,4 +18,4 @@ api:
         - xml2Json: {}
         - beautifier: {} # Format
     - return:
-        statusCode: 200
+        status: 200
