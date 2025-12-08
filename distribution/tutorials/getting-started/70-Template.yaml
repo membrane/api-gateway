@@ -24,4 +24,4 @@ api:
               Path: ${path},
               Date: ${new Date()}
     - return:
-        statusCode: 200
+        status: 200

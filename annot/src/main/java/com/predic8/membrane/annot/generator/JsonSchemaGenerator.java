@@ -175,6 +175,11 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private void processMCAttributes(ElementInfo i, SchemaObject so) {
         i.getAis().forEach(ai -> {
+
+            // skip attributes marked with @MCExcludeFromSchema
+            if (ai.excludedFromJsonSchema())
+                return;
+
             // hide id only on top-level elements
             if ("id".equals(ai.getXMLName()) && i.getAnnotation().topLevel()) {
                 return;
@@ -253,7 +258,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private AbstractSchema<?> processList(ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
-
         SchemaObject items = object("items");
 
         if (shouldGenerateParserType(cei)) {
@@ -293,7 +297,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                             .ref("#/$defs/" + ei.getXSDTypeName(m)))
                     .description(getDescriptionContent(ei))
                     .required(cei.isRequired());
-
         }
     }
 

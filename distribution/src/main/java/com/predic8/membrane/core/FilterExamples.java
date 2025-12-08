@@ -17,7 +17,9 @@ package com.predic8.membrane.core;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 
 import static java.nio.file.FileVisitResult.CONTINUE;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
@@ -74,20 +76,24 @@ public class FilterExamples {
         });
 
         // Remove proxies.xml in directories that contain apis.yaml
+        List<Path> toRemove = new ArrayList<>();
         try (var stream = Files.walk(dest)) {
             stream.filter(p -> p.getFileName().toString().equals("apis.yaml"))
                     .forEach(apis -> {
                         Path dir = apis.getParent();
                         Path proxies = dir.resolve("proxies.xml");
                         if (Files.exists(proxies)) {
-                            try {
-                                Files.delete(proxies);
-                                System.out.println("Deleted " + proxies);
-                            } catch (IOException e) {
-                                throw new RuntimeException("Failed to delete " + proxies, e);
-                            }
+                            toRemove.add(proxies);
                         }
                     });
         }
+        toRemove.forEach(proxies -> {
+            try {
+                Files.delete(proxies);
+                System.out.println("Deleted " + proxies);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete " + proxies, e);
+            }
+        });
     }
 }

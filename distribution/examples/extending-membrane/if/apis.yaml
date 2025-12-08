@@ -69,4 +69,4 @@ api:
     - template:
         src: Success
     - return:
-        statusCode: 302
+        status: 302
