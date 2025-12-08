@@ -15,9 +15,11 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.networknt.schema.Error;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class YamlSchemaValidationException extends Exception {
     private final List<Error> errors;
@@ -52,9 +54,8 @@ public class YamlSchemaValidationException extends Exception {
     static Integer extractNumberBeforeAdditionalProperties(Error error) {
         String path = error.getEvaluationPath().toString();
         if (!path.endsWith("/additionalProperties")) return null;
-        String part = getSecondLastPathPart(path);
         try {
-            return Integer.parseInt(part);
+            return Integer.parseInt(getSecondLastPathPart(path));
         } catch (NumberFormatException e) {
             return -1;
         }
@@ -62,8 +63,7 @@ public class YamlSchemaValidationException extends Exception {
 
     private static String getSecondLastPathPart(String path) {
         String[] parts = path.split("/");
-        String part = parts[parts.length - 2];
-        return part;
+        return parts[parts.length - 2];
     }
 
     /**
@@ -94,38 +94,79 @@ public class YamlSchemaValidationException extends Exception {
      * of $i .
      */
     static List<Error> reduceAdditionalPropertiesGroups(List<Error> errors) {
-        //
-        return errors.stream()
-                // step 1: group by basePath
-                .collect(Collectors.groupingBy(YamlSchemaValidationException::getBasePath,
-                        LinkedHashMap::new,
-                        Collectors.toList())).values().stream()
-                // step 2: handle groups
+        return groupByBasePath(errors)
                 .map(group -> {
-                    // step 2a: collect numberBeforeAdditionalProperties frequencies
-                    Map<Integer, Long> numberFrequency = group.stream()
-                            .map(YamlSchemaValidationException::extractNumberBeforeAdditionalProperties)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.groupingBy(i -> i, Collectors.counting()));
-
+                    Map<Integer, Long> numberFrequency = collectFrequenciesOfNumberBeforeAdditionalProperties(group);
                     if (numberFrequency.isEmpty()) return group;
-
-                    // step 2b: compute "rare" numbers (=with lowest frequency)
-                    Long minFrequency = numberFrequency.values().stream().min(Long::compareTo).orElse(0L);
-                    Set<Integer> rareNumbers = numberFrequency.entrySet().stream()
-                            .filter(e -> e.getValue().equals(minFrequency))
-                            .map(Map.Entry::getKey)
-                            .collect(Collectors.toSet());
-
-                    // step 2c: only return Errors with rare numbers
-                    return group.stream()
-                            .filter(error -> {
-                                Integer num = extractNumberBeforeAdditionalProperties(error);
-                                return num == null || rareNumbers.contains(num);
-                            })
-                            .toList();
+                    return filterByNumberBeforeAdditionalProperties(group, getKeysWithLowestValues(numberFrequency));
                 })
                 .flatMap(List::stream)
                 .toList();
+    }
+
+    /**
+     * Removes all Errors from the given group that have a number before '/additionalProperties' that is not in the given set.
+     * Example:
+     *   Input: group:
+     *      * /abc
+     *      * /1/additionalProperties,
+     *      * /2/additionalProperties,
+     *      * /2/additionalProperties,
+     *      * /$ref/additionalProperties
+     *     rareNumbers: -1, 1
+     *   Output: /abc, /1/additionalProperties, /$ref/additionalProperties
+     */
+    static List<Error> filterByNumberBeforeAdditionalProperties(List<Error> group, Set<Integer> rareNumbers) {
+        return group.stream()
+                .filter(error -> {
+                    Integer num = extractNumberBeforeAdditionalProperties(error);
+                    return num == null || rareNumbers.contains(num);
+                })
+                .toList();
+    }
+
+    /**
+     * @return the keys of the given map with the lowest value.
+     */
+    static @NotNull Set<Integer> getKeysWithLowestValues(Map<Integer, Long> numberFrequency) {
+        Long minFrequency = numberFrequency.values().stream().min(Long::compareTo).orElse(0L);
+        return numberFrequency.entrySet().stream()
+                .filter(e -> e.getValue().equals(minFrequency))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Counts how many times the number before '/additionalProperties' occurs in the given group.
+     * Example:
+     * /1/additionalProperties,
+     * /2/additionalProperties,
+     * /2/additionalProperties,
+     * /$ref/additionalProperties
+     *
+     * Number 1 occours once, 2 occours twice and '$ref' (number -1) occurs also once.
+     * @return a map from number to frequency
+     */
+    static @NotNull Map<Integer, Long> collectFrequenciesOfNumberBeforeAdditionalProperties(List<Error> group) {
+        return group.stream()
+                .map(YamlSchemaValidationException::extractNumberBeforeAdditionalProperties)
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(i -> i, Collectors.counting()));
+    }
+
+    /**
+     * Groups Errors by their base path (see {@link #getBasePath(Error)}).
+     *
+     * Example:
+     * /1/additionalProperties -> basePath '/' -> group 1,
+     * /2/additionalProperties -> basePath '/' -> group 1,
+     * /bar/2/additionalProperties -> basePath '/bar' -> group 2,
+     * /bar/$ref/additionalProperties -> basePath '/bar' -> group 2
+     */
+    static Stream<List<Error>> groupByBasePath(List<Error> errors) {
+        return errors.stream()
+                .collect(Collectors.groupingBy(YamlSchemaValidationException::getBasePath,
+                        LinkedHashMap::new,
+                        Collectors.toList())).values().stream();
     }
 }

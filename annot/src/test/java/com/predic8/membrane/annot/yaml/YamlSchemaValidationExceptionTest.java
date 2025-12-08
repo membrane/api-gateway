@@ -5,6 +5,11 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import static com.networknt.schema.Error.builder;
 import static com.networknt.schema.path.PathType.JSON_POINTER;
 import static com.predic8.membrane.annot.yaml.YamlSchemaValidationException.*;
@@ -58,6 +63,80 @@ class YamlSchemaValidationExceptionTest {
         public void numberAndAdditionalProperties() {
             assertEquals(12,
                     extractNumberBeforeAdditionalProperties(builder().evaluationPath(np().append(12).append("additionalProperties")).build()));
+        }
+    }
+
+    @Nested
+    public class FilterByNumberBeforeAdditionalPropertiesTests {
+        @Test
+        public void run() {
+            assertEquals(1,
+                filterByNumberBeforeAdditionalProperties(of(
+                        builder().evaluationPath(np().append(3).append("additionalProperties")).build(), // kept
+                        builder().evaluationPath(np().append(4).append("additionalProperties")).build(), // dropped
+                        builder().evaluationPath(np().append(4).append("additionalProperties")).build() // dropped
+                ), Set.of(3)).size());
+        }
+    }
+
+    @Nested
+    public class GetKeysWithLowestValuesTest {
+        @Test
+        public void run() {
+            assertEquals(Set.of(12), getKeysWithLowestValues(Map.of(12, 1L, 13, 2L)));
+            assertEquals(Set.of(13), getKeysWithLowestValues(Map.of(12, 3L, 13, 2L)));
+            assertEquals(Set.of(12, 14), getKeysWithLowestValues(Map.of(12, 1L, 13, 2L, 14, 1L)));
+        }
+    }
+
+    @Nested
+    public class CollectFrequenciesOfNumberBeforeAdditionalPropertiesTest {
+        @Test
+        public void run() {
+            assertEquals(Map.of(-1, 1L, 1, 1L, 2, 2L),
+                collectFrequenciesOfNumberBeforeAdditionalProperties(of(
+                        builder().evaluationPath(np().append(1).append("additionalProperties")).build(),
+                        builder().evaluationPath(np().append(2).append("additionalProperties")).build(),
+                        builder().evaluationPath(np().append(2).append("additionalProperties")).build(),
+                        builder().evaluationPath(np().append("$ref").append("additionalProperties")).build()
+                )));
+        }
+    }
+
+    @Nested
+    public class GroupByBasePathTest {
+        @Test
+        public void singleGroup() {
+            assertEquals(
+                    of(of(
+                            builder().evaluationPath(np().append(1).append("additionalProperties")).build(),
+                            builder().evaluationPath(np().append(2).append("additionalProperties")).build(),
+                            builder().evaluationPath(np().append(2).append("additionalProperties")).build(),
+                            builder().evaluationPath(np().append("$ref").append("additionalProperties")).build())),
+                    groupByBasePath(of(
+                            builder().evaluationPath(np().append(1).append("additionalProperties")).build(),
+                            builder().evaluationPath(np().append(2).append("additionalProperties")).build(),
+                            builder().evaluationPath(np().append(2).append("additionalProperties")).build(),
+                            builder().evaluationPath(np().append("$ref").append("additionalProperties")).build()
+                    )).collect(Collectors.toUnmodifiableList()));
+        }
+
+        @Test
+        public void twoGroups() {
+            assertEquals(
+                    of(
+                            of(
+                                builder().evaluationPath(np().append(1).append("additionalProperties")).build(),
+                                builder().evaluationPath(np().append(2).append("additionalProperties")).build()),
+                            of(
+                                builder().evaluationPath(np().append("bar").append(2).append("additionalProperties")).build(),
+                                builder().evaluationPath(np().append("bar").append("$ref").append("additionalProperties")).build())),
+                    groupByBasePath(of(
+                            builder().evaluationPath(np().append(1).append("additionalProperties")).build(),
+                            builder().evaluationPath(np().append(2).append("additionalProperties")).build(),
+                            builder().evaluationPath(np().append("bar").append(2).append("additionalProperties")).build(),
+                            builder().evaluationPath(np().append("bar").append("$ref").append("additionalProperties")).build()
+                    )).collect(Collectors.toUnmodifiableList()));
         }
     }
 
