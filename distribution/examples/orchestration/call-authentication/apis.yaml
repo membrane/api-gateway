@@ -46,4 +46,4 @@ api:
     - static:
         src: Please log in!
     - return:
-        statusCode: 401
+        status: 401

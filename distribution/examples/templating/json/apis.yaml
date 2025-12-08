@@ -15,7 +15,7 @@ api:
               }
     # To forward to backend use target below instead of return
     - return:
-        statusCode: 200
+        status: 200
   # target:
   #   host: YourBackendHost
   #   port: YourBackendPort

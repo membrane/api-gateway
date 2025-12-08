@@ -19,7 +19,7 @@ api:
               - static:
                   src: Please set X-Id header
               - return:
-                  statusCode: 400
+                  status: 400
         - if:
             test: path.startsWith("/foo")
             language: groovy

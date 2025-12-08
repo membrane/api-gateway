@@ -30,4 +30,4 @@ api:
     - template:
         src: Success!
     - return:
-        statusCode: 200
+        status: 200

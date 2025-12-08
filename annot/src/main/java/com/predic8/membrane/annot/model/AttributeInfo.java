@@ -75,7 +75,6 @@ public class AttributeInfo extends AbstractJavadocedInfo {
     /**
      * It is not checked how many values the enum has. There are enums link validateRequests of OpenAPIValidator
      * that have more than 2 values but they are also booleans at the configuration level
-     * @return
      */
     private boolean isEnumBoolean(Types typeUtils) {
         return getEnumValues(typeUtils).contains("TRUE") && getEnumValues(typeUtils).contains("FALSE");
@@ -98,7 +97,6 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 
     /**
      * Sets as side effect instance variables e.g. xsdType, isEnum, isBeanReference.
-     * @param typeUtils
      */
     private void analyze(Types typeUtils) {
         if (xsdType != null) // already analyzed?
@@ -195,4 +193,13 @@ public class AttributeInfo extends AbstractJavadocedInfo {
     public void setRequired(boolean required) {
         this.required = required;
     }
+
+    /**
+     * Determines whether the current field or method should be excluded from the JSON schema during schema generation.
+     * @return {@code true} if the field or method is excluded from the JSON schema; {@code false} otherwise.
+     */
+    public boolean excludedFromJsonSchema() {
+        return annotation != null && annotation.excludeFromJson();
+    }
+
 }

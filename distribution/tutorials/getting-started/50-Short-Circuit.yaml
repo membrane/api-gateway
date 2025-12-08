@@ -27,4 +27,4 @@ api:
     # Reverses the flow.
     # If there is no response yet it will copy the body from the request.
     - return:
-        statusCode: 200
+        status: 200
