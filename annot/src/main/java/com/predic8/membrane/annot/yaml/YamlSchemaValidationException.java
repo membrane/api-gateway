@@ -47,7 +47,7 @@ public class YamlSchemaValidationException extends Exception {
     /**
      * If the evaluationPath of the Error ends with "/12/additionalProperties", this method returns the number '12'.
      * (or any other number).
-     * @throws RuntimeException if the second last path part cannot be parsed as an integer.
+     * @return the number 12, or -1 if the second last path part cannot be parsed as an integer.
      */
     static Integer extractNumberBeforeAdditionalProperties(Error error) {
         String path = error.getEvaluationPath().toString();
