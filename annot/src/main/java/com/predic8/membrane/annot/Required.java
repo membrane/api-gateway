@@ -13,10 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.annot;
 
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
  * Marks properties as 'required'.
  * <p>
  * Used to enhance the Membrane configuration grammar. Also used for validation.
  */
+@Retention(RUNTIME)
 public @interface Required {
 }
