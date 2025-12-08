@@ -143,6 +143,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
                 uidsToRemove.add(bd.getUid());
             } catch (Exception e) {
                 log.error("Could not handle {} {}/{}", bd.getAction(), bd.getNamespace(), bd.getName(), e);
+                throw new RuntimeException(e);
             }
         }
         for (String uid : uidsToRemove)

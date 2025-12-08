@@ -1,15 +1,13 @@
-
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
-# Membrane Tutorial: SetHeader
+# Membrane Tutorial: setHeader
 #
-# 1.) Try the requests:
+# 1.) Try:
 #
 #       curl -v http://localhost:2000
-#       curl -v -X POST http://localhost:2000
+#       curl -v -d "Hugo" http://localhost:2000
 #
-#     Check the response header 'X-Powered-By' and 'X-Method'.
-#
+#     Check the response headers.
 
 api:
   port: 2000
@@ -21,5 +19,8 @@ api:
         - setHeader:
             name: X-Method
             value: ${method} # Variable or computed value
+        - setHeader:
+            name: X-Name
+            value: Hi ${body}!
     - return:
         status: 200

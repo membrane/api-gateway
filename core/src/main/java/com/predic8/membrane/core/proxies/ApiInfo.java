@@ -15,11 +15,13 @@ package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.util.text.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.util.stream.Collectors.joining;
 
 public class ApiInfo {
@@ -34,7 +36,7 @@ public class ApiInfo {
         }
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
         manager.getRules().forEach(proxy ->
-                log.info("  {} {}{}", proxyKind(proxy), proxy.getName(), additionalProxyInfo(proxy))
+                log.info(" {}{} {}{}{}", BRIGHT_GREEN(), proxyKind(proxy), proxy.getName(), RESET(), additionalProxyInfo(proxy))
         );
     }
 
@@ -42,7 +44,7 @@ public class ApiInfo {
         if (proxy instanceof APIProxy a) {
             Map<String,OpenAPIRecord> recs = a.getApiRecords();
             if (!recs.isEmpty()) {
-                return " using OpenAPI specifications:\n" + formatLocationInfo(recs);
+                return "\n" + formatLocationInfo(recs);
             }
         } else if (proxy instanceof SOAPProxy s) {
             return " %s\n    using WSDL @ %s".formatted(getPathString(s),s.getWsdl());
@@ -68,17 +70,17 @@ public class ApiInfo {
 
     private static String proxyKind(Proxy proxy) {
         if (proxy instanceof APIProxy) {
-            return "API";
+            return "";
         }
         if (proxy instanceof ServiceProxy) {
-            return "Service";
+            return "Service:";
         }
         if (proxy instanceof SOAPProxy) {
-            return "SOAP";
+            return "SOAP:";
         }
         if (proxy instanceof InternalProxy) {
-            return "Internal";
+            return "Internal:";
         }
-        return "Proxy";
+        return "Proxy:";
     }
 }

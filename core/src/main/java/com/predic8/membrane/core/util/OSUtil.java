@@ -16,19 +16,24 @@
 
 package com.predic8.membrane.core.util;
 
+import org.jetbrains.annotations.*;
+
 import static com.predic8.membrane.core.util.OSUtil.OS.*;
 
 public class OSUtil {
+
+    public static final String OS_NAME_PROPERTY = "os.name";
+
     public static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase().contains("windows");
+        return System.getProperty(OS_NAME_PROPERTY,"").toLowerCase().contains("windows");
     }
 
     public static boolean isMac() {
-        return System.getProperty("os.name").toLowerCase().contains("mac");
+        return System.getProperty(OS_NAME_PROPERTY,"").toLowerCase().contains("mac");
     }
 
     public static boolean isLinux() {
-        return System.getProperty("os.name").toLowerCase().contains("inx");
+        return System.getProperty(OS_NAME_PROPERTY,"").toLowerCase().contains("inx");
     }
 
     public static OS getOS() {

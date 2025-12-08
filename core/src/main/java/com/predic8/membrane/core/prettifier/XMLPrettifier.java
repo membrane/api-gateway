@@ -21,7 +21,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.nio.charset.*;
 
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class XMLPrettifier implements Prettifier {
