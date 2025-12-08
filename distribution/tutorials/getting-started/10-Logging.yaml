@@ -9,7 +9,7 @@
 # 1.) Start Membrane:
 #
 #     Linux/Mac:
-#       membrane.sh -c 10-Logging.yaml
+#       ./membrane.sh -c 10-Logging.yaml
 #     Windows:
 #       membrane.cmd -c 10-Logging.yaml
 #

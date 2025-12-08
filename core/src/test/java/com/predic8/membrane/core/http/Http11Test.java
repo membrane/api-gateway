@@ -23,7 +23,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.util.NetworkUtil.*;
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
 import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;

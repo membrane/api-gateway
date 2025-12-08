@@ -52,6 +52,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.TimerManager;
 import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.text.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -67,10 +68,11 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 
-import static com.predic8.membrane.core.Constants.PRODUCT_NAME;
-import static com.predic8.membrane.core.Constants.VERSION;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.JMX_EXPORTER_NAME;
 import static com.predic8.membrane.core.util.DLPUtil.displayTraceWarning;
+import static com.predic8.membrane.core.util.text.TerminalColors.BRIGHT_CYAN;
+import static com.predic8.membrane.core.util.text.TerminalColors.RESET;
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 /**
@@ -355,7 +357,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
         if (!asynchronousInitialization)
-            log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+            logStartupMessage();
+    }
+
+    private static void logStartupMessage() {
+        log.info("{}{} {} up and running!{}", BRIGHT_CYAN(), PRODUCT_NAME, VERSION, RESET());
     }
 
     private void startJmx() {
@@ -662,40 +668,25 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return globalInterceptor;
     }
 
-    public synchronized boolean isAsynchronousInitialization() {
-        return asynchronousInitialization;
-    }
-
     public synchronized void setAsynchronousInitialization(boolean asynchronousInitialization) {
         this.asynchronousInitialization = asynchronousInitialization;
         notifyAll();
-    }
-
-    public synchronized void waitForAsynchronousInitialization() {
-        while (asynchronousInitialization) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
     }
 
     public void handleAsynchronousInitializationResult(boolean success) {
         if (!success && !retryInit)
             System.exit(1);
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        log.info("{} {} up and running!", PRODUCT_NAME, VERSION);
+        logStartupMessage();
         setAsynchronousInitialization(false);
     }
 
     @Override
     public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) throws IOException {
-        if (!(bean instanceof Proxy)) {
+        if (!(bean instanceof Proxy newProxy)) {
             throw new IllegalArgumentException("Bean must be a Proxy instance, but got: " + bean.getClass().getName());
         }
 
-        Proxy newProxy = (Proxy) bean;
         if (newProxy.getName() == null)
             newProxy.setName(bd.getName());
 

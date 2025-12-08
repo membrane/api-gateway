@@ -29,6 +29,7 @@ api:
   path:
     uri: /fact
   target:
+    # API can fail sometimes with 503
     url: https://catfact.ninja/fact
 
 ---
@@ -37,4 +38,5 @@ api:
 api:
   port: 2000
   target:
+    # Can take a couple of seconds to respond
     url: https://httpbin.org
