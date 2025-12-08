@@ -35,27 +35,80 @@ public class BeanRegistryImplementation implements BeanRegistry {
     /**
      * TODO Rename give meaningful name
      */
-    private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>(); // Order is here not critical
 
     private final BlockingQueue<ChangeEvent> changeEvents = new LinkedBlockingDeque<>();
 
     // uid -> bean definition
-    private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>();
-    private final Set<String> uidsToActivate = ConcurrentHashMap.newKeySet();
+    private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
+    private final List<String> uidsToActivate = new ArrayList<>();
 
     public BeanRegistryImplementation(BeanCacheObserver observer, Grammar grammar) {
         this.observer = observer;
         this.grammar = grammar;
     }
 
+    /**
+     * Registers a set of {@link BeanDefinition}s originating from static configuration
+     * (for example YAML files on startup).
+     *
+     * <p>Thread–safety model:</p>
+     * <ul>
+     *   <li>This method is expected to be called from a single thread.</li>
+     *   <li>It publishes initialization events into the internal change queue but does not
+     *       perform any activation work itself.</li>
+     *   <li>Callers must ensure that no other thread invokes {@link #registerBeanDefinitions(List)}
+     *       concurrently.</li>
+     *   <li>Dynamic updates (e.g. from Kubernetes watchers) must use {@link #handle(WatchAction, JsonNode)}
+     *       instead; these calls are thread-safe because they only enqueue events.</li>
+     * </ul>
+     *
+     * <p>Lifecycle expectations:</p>
+     * <ul>
+     *   <li>After publishing all static configuration events, this method signals that
+     *       the configuration stream has finished by inserting a {@code StaticConfigurationLoaded}
+     *       marker event.</li>
+     *   <li>The caller must invoke {@link #start()} exactly once after registration to process all
+     *       pending events and activate the beans.</li>
+     * </ul>
+     *
+     * @param bds the list of static {@link BeanDefinition}s to register
+     */
     public void registerBeanDefinitions(List<BeanDefinition> bds) {
         bds.forEach(bd -> handle(ADDED, bd));
         fireConfigurationLoaded(); // Only put event in the queue
-        start();
     }
 
     /**
-     * Blocks until all events have been processed. For Kubernets use that block in a separate thread e.g. in KubernetsWatcher.
+     * Processes all pending change events and activates the corresponding beans.
+     *
+     * <p>Thread–safety model:</p>
+     * <ul>
+     *   <li>This method must be called by exactly one thread.</li>
+     *   <li>No other thread may call {@link #start()} concurrently.</li>
+     *   <li>All mutating work on the registry (creation, modification, deletion,
+     *       activation of beans) is performed exclusively inside this method.</li>
+     *   <li>Other threads may safely invoke {@link #handle(WatchAction, JsonNode)} or
+     *       {@link #handle(WatchAction, BeanDefinition)}; these methods only enqueue events
+     *       and do not perform activation.</li>
+     * </ul>
+     *
+     * <p>Execution model:</p>
+     * <ul>
+     *   <li>This method acts as the single consumer of the internal change-event queue.</li>
+     *   <li>It blocks until the queue is empty and processes all events in order.</li>
+     *   <li>The activation logic uses the insertion order of queued events to guarantee a
+     *       deterministic activation sequence.</li>
+     *   <li>Callers are responsible for scheduling this method in a dedicated thread when used
+     *       with asynchronous producers (such as Kubernetes watchers).</li>
+     * </ul>
+     *
+     * <p>Usage constraints:</p>
+     * <ul>
+     *   <li>Call this exactly once during startup for static configuration.</li>
+     *   <li>In Kubernetes mode, run this method in a dedicated long-running thread to consume
+     *       update events as they arrive.</li>
+     * </ul>
      */
     public void start() {
         while (!changeEvents.isEmpty()) {
