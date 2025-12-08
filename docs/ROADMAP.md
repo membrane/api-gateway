@@ -12,15 +12,29 @@
 - Correct YAML example on GitHub README
 - Rename in apis.yaml
 
+# 7.1.0
+
+- Register JSON Schema for YAML at: https://www.schemastore.org
+
+# 7.0.1
+
+- Adding a configuration flag to enable/disable colorized output
+- Constant or methods to centralize color formatting: ANSIColors
+- Detecting terminal support before applying colors (e.g., check if System.console() is available)
+- Central desciption of MEMBRANE_* environment variables
+  - Like MEMBRANE_HOME...
+  - @coderabbitai look through the code base for usages of these variables and suggest documentation
+
 
 # 7.0.0
 
-- Register JSON Schema for YAML at: https://www.schemastore.org/
+- Use colors in the startup log
+
+  
 
 ## (Breaking) Interface Changes
 
-- Remove WADLInterceptor
-- HttpClient
+- HttpClient TB (done)
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
 - Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
@@ -35,9 +49,23 @@
 - Groovy:
   - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
     - Difference to SpEL
-- Remove Starter:
-  -  External scripts using the `Starter.jar` to start membrane will no longer work.
-  -  Migration: use the `RouterCLI` to start membrane (e.g. see `distribution/scripts/start_router.sh`). 
+    - SpEL headers.foo should return comma separated list of all values.
+- Delete unneeded proxies.xml in examples CG
+- for distribution: README with Link to Github for XML-based example configurations TB
+- update schema reference to 7.0.0, integrate into ConsistentVersionNumbers.java (done)
+- improve error output on
+  - schema validation error
+  - bean setter exception
+  - port occupied (done)
+
+- header['x-unknown'] returns null instead of empty string !!!!!!!!!!!!
+- SpEL: header is now of class HeaderMap insteadof SpelHeader
+
+## Breaking Changes
+
+- YAML Configuration as default
+- Use of colors in logs
+- Removed camelCase conversion of header access in Groovy scripts instead of header.contentType use header['Content-Type']
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured

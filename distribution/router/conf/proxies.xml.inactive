@@ -1,16 +1,10 @@
 <!--
-	 *** Membrane Configuration ***
+	 *** XML Configuration Sample ***
 
-	 Try the new experimental YAML configuration in apis.yaml!
+     How to use the XML configuration:
 
-	 Stay with the XML in case you have complicated setups with beans till YAML supports all the functions of Membrane.
-
-	 For more see:
-	 - The examples/* folders with working samples
-	 - Configuration Reference: https://www.membrane-api.io/docs/
-
-     Use an XML editor with XML Schema syntax completion for easy editing like
-	 Visual Studio Code or Intellij.
+     1.) Rename this file to proxies.xml
+     2.) Delete the apis.yaml file
 
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
@@ -57,11 +51,10 @@
 			<path>/header</path>
 			<request>
 				<groovy>
-					println "Request headers:"
-					header.allHeaderFields.each {
-						print it
-					}
-					CONTINUE
+                    println "Request headers:"
+                    header.entrySet().each {
+                        println it
+                    }
 				</groovy>
 			</request>
 			<template contentType="application/json">{ "ok": 1 }</template>

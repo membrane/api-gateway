@@ -1,4 +1,5 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 api:
   port: 2000
   flow:
@@ -10,5 +11,6 @@ api:
           - additionalVariable:
               name: forwarded
               expression: headers['x-forwarded-for']
-  target:
-    ssl: {}
+    - return:
+        statusCode: 200
+        contentType: application/json

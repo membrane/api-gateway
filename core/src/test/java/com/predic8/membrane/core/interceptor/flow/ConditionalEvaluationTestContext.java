@@ -24,15 +24,16 @@ import com.predic8.membrane.core.security.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 import static java.util.List.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ConditionalEvaluationTestContext {
 
-    static Outcome performEval(String condition, Object builder, Language lang, boolean shouldCallNested) throws Exception {
+    static Outcome performEval(String condition, Object builder, Language lang, boolean shouldCallNested) {
         var exc = new Exchange(null);
         var mockInt = new ConditionalEvaluationTestContext.MockInterceptor();
         var ifInt = new IfInterceptor();
 
-        new ApiKeySecurityScheme(HEADER,"x-api-key").scopes("test", "main").add(exc);
+        new ApiKeySecurityScheme(HEADER, "x-api-key").scopes("test", "main").add(exc);
 
         exc.setProperty("bar", "123");
 
@@ -51,9 +52,7 @@ class ConditionalEvaluationTestContext {
         } else {
             throw new IllegalStateException("Unexpected value: " + builder);
         }
-        if (mockInt.isCalled() != shouldCallNested) {
-            throw new RuntimeException("Mock");
-        }
+        assertEquals(shouldCallNested, mockInt.isCalled(), "Mock not satisfied. Is called: %s shouldCallNested: %s".formatted(mockInt.isCalled(), shouldCallNested));
         return outcome;
     }
 

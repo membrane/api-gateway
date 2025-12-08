@@ -39,7 +39,7 @@ import static java.lang.String.*;
  * 2. If there is no response in the exchange, the body and contentType of the request is copied into a new response.
  * </p>
  * <p>
- * The options <i>statusCode</i> and <i>contentType</i> will overwrite the values from the messages.
+ * The options <i>status</i> and <i>contentType</i> will overwrite the values from the messages.
  * </p>
  * <p>
  * This plugin is useful together with the template plugin. See examples/template.
@@ -51,7 +51,7 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(ReturnInterceptor.class.getName());
 
-    private int statusCode = 200;
+    private int status = 200;
     private String contentType = null;
 
     @Override
@@ -76,9 +76,9 @@ public class ReturnInterceptor extends AbstractInterceptor {
             response = createResponseFromRequest(exc);
         }
 
-        if (statusCode != 0) {
-            response.setStatusCode(statusCode);
-            response.setStatusMessage(getMessageForStatusCode(statusCode));
+        if (status != 0) {
+            response.setStatusCode(status);
+            response.setStatusMessage(getMessageForStatusCode(status));
         }
 
         if (contentType!=null) {
@@ -92,7 +92,7 @@ public class ReturnInterceptor extends AbstractInterceptor {
     }
 
     private Response createResponseFromRequest(Exchange exc) throws IOException {
-        Response.ResponseBuilder builder = new Response.ResponseBuilder().status(statusCode);
+        Response.ResponseBuilder builder = new Response.ResponseBuilder().status(status);
         String reqContentType = exc.getRequest().getHeader().getContentType();
         if (reqContentType != null) {
             builder.contentType(reqContentType);
@@ -112,7 +112,7 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return (contentType != null) ? format("Sends a response with a status code of %d and a content type of %s.", statusCode, contentType) : format("Sends a response with a status code of %d.", statusCode);
+        return (contentType != null) ? format("Sends a response with a status code of %d and a content type of %s.", status, contentType) : format("Sends a response with a status code of %d.", status);
     }
 
     @Override
@@ -121,21 +121,38 @@ public class ReturnInterceptor extends AbstractInterceptor {
     }
 
     /**
+     * @deprecated Use status instead.
+     * @description HTTP status code to be returned. statusCode is kept only for backward compatibility use status instead.
+     * @default 200
+     * @example 400
+     */
+    @Deprecated
+    @MCAttribute(excludeFromJson = true)
+    public void setStatusCode(int statusCode) {
+        // Is excluded from the JSON schema. But will be included in the XSD schema.
+        this.status = statusCode;
+    }
+
+    public int getStatusCode() {
+        return status;
+    }
+
+    /**
      * @description HTTP status code to be returned.
      * @default 200
      * @example 400
      */
     @MCAttribute
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
+    public void setStatus(int status) {
+        this.status = status;
     }
 
-    public int getStatusCode() {
-        return statusCode;
+    public int getStatus() {
+        return status;
     }
 
     /**
-     * @description Content type of the response. If not set, the content type of the request (if available) or no content type will be used.
+     * @description Content-Type of the response. If not set, the content type of the request (if available) or no content type will be used.
      * @default null
      * @example application/json; charset=utf-8
      */

@@ -25,7 +25,15 @@ public class Constants {
 
 	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
 
-	public static final String CRLF = "" + ((char) 13) + ((char) 10);
+    // Java System Properties
+
+    /**
+     * System property set by start script based on MEMBRANE_DISABLE_TERM_COLORS detection.
+     * Users should use the environment variable instead.
+     */
+    public static final String MEMBRANE_DISABLE_TERM_COLORS_PROPERTY = "membrane.disable.term.colors";
+
+    public static final String CRLF = "" + ((char) 13) + ((char) 10);
 
 	public static final byte[] CRLF_BYTES = { 13, 10 };
 
@@ -42,7 +50,7 @@ public class Constants {
 				Properties p = new Properties(); // Development
 				p.load(new FileInputStream("target/maven-archiver/pom.properties"));
 				version = p.getProperty("version") + " - DEVELOPMENT";
-			} catch (Exception e2) {
+			} catch (Exception ignored) {
 			}
 		}
 		VERSION = version;
@@ -64,7 +72,6 @@ public class Constants {
 	public static final QName WSDL11_ADDRESS_SOAP12 = new QName(WSDL_SOAP12_NS,	"address");
 	public static final QName WSDL11_ADDRESS_HTTP = new QName(WSDL_HTTP_NS, "address");
 
-	public static final String WADL_NS = "http://wadl.dev.java.net/2009/02";
 	public static final String XSD_NS = "http://www.w3.org/2001/XMLSchema";
 
 	public static final String SOAP11_NS = "http://schemas.xmlsoap.org/soap/envelope/";

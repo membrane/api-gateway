@@ -1,4 +1,5 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 # Configures Membrane as an API Gateway for the given OpenAPI specification
 api:
   port: 2000
@@ -29,7 +30,7 @@ api:
                   "email": "foo@baz.org"
               }
     - return:
-        statusCode: 201
+        status: 201
 
 ---
 
@@ -52,7 +53,7 @@ api:
                   }
               ] }
     - return:
-        statusCode: 200
+        status: 200
 
 ---
 # Monitoring endpoint for prometheus

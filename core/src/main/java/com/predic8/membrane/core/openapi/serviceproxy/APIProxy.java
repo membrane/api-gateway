@@ -29,7 +29,6 @@ import com.predic8.membrane.core.openapi.util.UriUtil;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.xml.*;
 import io.swagger.v3.oas.models.servers.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

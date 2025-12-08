@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.acl.matchers;
 
 import com.predic8.membrane.core.interceptor.acl.TypeMatcher;
 
-import static com.predic8.membrane.core.util.TextUtil.globToRegExp;
+import static com.predic8.membrane.core.util.text.TextUtil.globToRegExp;
 import static java.util.regex.Pattern.compile;
 
 public class GlobMatcher implements TypeMatcher {
