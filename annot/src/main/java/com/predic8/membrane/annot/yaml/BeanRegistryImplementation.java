@@ -41,7 +41,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
 
     // uid -> bean definition
     private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
-    private final List<String> uidsToActivate = new ArrayList<>();
+    private final Set<String> uidsToActivate = new LinkedHashSet<>(); // Provides order
 
     public BeanRegistryImplementation(BeanCacheObserver observer, Grammar grammar) {
         this.observer = observer;
