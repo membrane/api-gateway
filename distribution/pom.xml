@@ -27,7 +27,7 @@
 		<groupId>org.membrane-soa</groupId>
 		<artifactId>service-proxy-parent</artifactId>
 		<relativePath>../pom.xml</relativePath>
-		<version>6.3.11-SNAPSHOT</version>
+		<version>7.0.0</version>
 	</parent>
 
 	<dependencies>
@@ -191,9 +191,7 @@
 						</goals>
 						<configuration>
 							<target>
-								<java classname="com.predic8.membrane.core.FilterExamples"
-									  fork="true"
-									  failonerror="true">
+								<java classname="com.predic8.membrane.core.FilterExamples" failonerror="true" fork="true">
 									<arg value="${project.basedir}/examples"/>
 									<arg value="${project.build.directory}/examples-filtered"/>
 
