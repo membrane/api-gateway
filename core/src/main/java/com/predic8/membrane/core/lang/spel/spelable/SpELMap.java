@@ -30,7 +30,7 @@ public class SpELMap<K, V> implements SpELLablePropertyAware {
         if (data.containsKey(name))
             return new TypedValue(data.get(name));
 
-        return new TypedValue("");
+        return new TypedValue(null);
     }
 
     @Override

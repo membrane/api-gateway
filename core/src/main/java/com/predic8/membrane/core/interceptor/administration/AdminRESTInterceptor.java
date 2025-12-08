@@ -36,7 +36,7 @@ import static com.predic8.membrane.core.http.Response.noContent;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
 import static com.predic8.membrane.core.util.ComparatorFactory.*;
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.xml.XMLTextUtil.formatXML;
 import static java.nio.charset.StandardCharsets.*;
 
 @SuppressWarnings("unused")

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
 # Membrane Tutorial: Basic Path Routing
 #
@@ -29,6 +29,7 @@ api:
   path:
     uri: /fact
   target:
+    # API can fail sometimes with 503
     url: https://catfact.ninja/fact
 
 ---
@@ -37,4 +38,5 @@ api:
 api:
   port: 2000
   target:
+    # Can take a couple of seconds to respond
     url: https://httpbin.org

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
 # Membrane Tutorial: Message Flow 2
 #
@@ -8,7 +8,7 @@
 #
 # 1.) Start Membrane:
 #
-#     membrane.sh -c 30-Message-Flow2.yaml
+#     ./membrane.sh -c 30-Message-Flow2.yaml
 #
 # 2.) Call the API:
 #
@@ -21,6 +21,7 @@
 #     Open in your browser: http://localhost:9000
 #
 #     Click on the API 'Message Flow Logging' and view the diagram
+
 api:
   port: 2000
   flow:

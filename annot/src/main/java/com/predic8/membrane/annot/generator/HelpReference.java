@@ -123,6 +123,7 @@ public class HelpReference {
 			xew.writeAttribute("mixed", "true");
 		xew.writeAttribute("topLevel", Boolean.toString(ei.getAnnotation().topLevel()));
 		xew.writeAttribute("id", ei.getId());
+        xew.writeAttribute("deprecated", Boolean.toString(ei.isDeprecated()));
 		if (!ei.getAnnotation().topLevel()) {
 			String primaryParentId = getPrimaryParentId(m, main, ei);
 			if (primaryParentId != null)
@@ -198,6 +199,7 @@ public class HelpReference {
 		xew.writeStartElement("child");
 		xew.writeAttribute("min", cei.isRequired() ? "1" : "0");
 		xew.writeAttribute("max", cei.isList() ? "unbounded" : "1");
+        xew.writeAttribute("deprecated", Boolean.toString(cei.isDeprecated()));
 
 		handleDoc(cei);
 
@@ -228,6 +230,8 @@ public class HelpReference {
 		xew.writeStartElement("attribute");
 		xew.writeAttribute("name", ai.getXMLName());
 		xew.writeAttribute("required", Boolean.toString(ai.isRequired()));
+        xew.writeAttribute("excludeFromJson", Boolean.toString(ai.excludedFromJsonSchema()));
+        xew.writeAttribute("deprecated", Boolean.toString(ai.isDeprecated()));
 		handleDoc(ai);
 		xew.writeEndElement();
 	}

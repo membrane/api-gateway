@@ -53,12 +53,9 @@
 				<javascript>
 					console.log("Request headers:")
 
-					var fields = header.getAllHeaderFields();
-
-					for(i=0;i &lt; fields.length;i++) {
-						console.log(fields[i]);
-					}
-					CONTINUE
+                    for (var entry of header.entrySet()) {
+                        console.log(entry.getKey() + ": " + entry.getValue());
+                    }
 				</javascript>
 			</request>
 			<!-- Execute groovy-Interceptor in response flow -->

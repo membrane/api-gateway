@@ -17,9 +17,11 @@ package com.predic8.membrane.annot.yaml;
 import com.predic8.membrane.annot.*;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static java.lang.Character.toLowerCase;
+import static java.util.Arrays.stream;
 import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 public final class McYamlIntrospector {
@@ -74,12 +76,12 @@ public final class McYamlIntrospector {
         if (annotation == null || !annotation.noEnvelope()) {
             throw new RuntimeException("Class " + clazz.getName() + " has properties, and is not a list.");
         }
-        if (Arrays.stream(clazz.getMethods())
+        if (stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .anyMatch(method -> findAnnotation(method, MCAttribute.class) != null)) {
             throw new RuntimeException("Class " + clazz.getName() + " should not have any @MCAttribute setters, because it is a @MCElement with noEnvelope=true .");
         }
-        List<Method> childSetters = Arrays.stream(clazz.getMethods())
+        List<Method> childSetters = stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .filter(method -> findAnnotation(method, MCChildElement.class) != null)
                 .toList();
@@ -99,15 +101,33 @@ public final class McYamlIntrospector {
     }
 
     public static <T> Method findSetterForKey(Class<T> clazz, String key) {
-        return Arrays.stream(clazz.getMethods())
+        return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .filter(method -> matchesJsonKey(method, key))
                 .findFirst()
                 .orElse(null);
     }
 
+    public static <T> List<Method> findRequiredSetters(Class<T> clazz) {
+        return stream(clazz.getMethods())
+                .filter(McYamlIntrospector::isSetter)
+                .filter(method -> isRequired(method))
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isRequired(Method method) {
+        return method.getAnnotation(Required.class) != null;
+    }
+
+    public static String getSetterName(Method setter) {
+        if (!setter.getName().startsWith("set"))
+            throw new IllegalArgumentException("Method is not a setter: " + setter.getName());
+        String property = setter.getName().substring(3);
+        return toLowerCase(property.charAt(0)) + property.substring(1);
+    }
+
     public static <T> Method getAnySetter(Class<T> clazz) {
-        return Arrays.stream(clazz.getMethods())
+        return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .filter(method -> findAnnotation(method, MCOtherAttributes.class) != null)
                 .findFirst()
@@ -115,13 +135,17 @@ public final class McYamlIntrospector {
     }
 
     public static <T> Method getChildSetter(Class<T> clazz, Class<?> valueClass) {
-        return Arrays.stream(clazz.getMethods())
+        return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
+                .filter(McYamlIntrospector::isStructured)
                 .filter(method -> method.getParameterTypes().length == 1)
                 .filter(method -> method.getParameterTypes()[0].isAssignableFrom(valueClass))
-                .findFirst()
+                .reduce((a, b) -> {
+                    throw new RuntimeException("Multiple potential setters found on "
+                            + clazz.getName() + " for value of type " + valueClass.getName());
+                })
                 .orElseThrow(() -> new RuntimeException("Could not find child setter on "
-                        + clazz.getName() + " for value of type " + valueClass.getName()));
+                    + clazz.getName() + " for value of type " + valueClass.getName()));
     }
 
     public static boolean isReferenceAttribute(Method setter) {

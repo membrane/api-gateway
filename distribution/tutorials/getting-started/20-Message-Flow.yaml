@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
 # Membrane Tutorial: Message Flow
 #
@@ -7,7 +7,7 @@
 #
 # 1.) Start Membrane:
 #
-#     membrane.sh -c 20-Message-Flow.yaml
+#     ./membrane.sh -c 20-Message-Flow.yaml
 #
 # 2.) Call the API:
 #
