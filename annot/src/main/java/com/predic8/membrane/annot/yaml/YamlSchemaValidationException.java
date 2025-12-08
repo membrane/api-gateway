@@ -56,7 +56,7 @@ public class YamlSchemaValidationException extends Exception {
         try {
             return Integer.parseInt(part);
         } catch (NumberFormatException e) {
-            throw new RuntimeException(e);
+            return -1;
         }
     }
 

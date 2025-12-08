@@ -111,12 +111,17 @@ public final class McYamlIntrospector {
     public static <T> List<Method> findRequiredSetters(Class<T> clazz) {
         return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
+                .filter(method -> isRequired(method))
                 .collect(Collectors.toList());
     }
 
+    private static boolean isRequired(Method method) {
+        return method.getAnnotation(Required.class) != null;
+    }
+
     public static String getSetterName(Method setter) {
-        if (setter.getName().length() < 3)
-            throw new IllegalArgumentException("Setter name must be at least 3 characters long: " + setter.getName());
+        if (!setter.getName().startsWith("set"))
+            throw new IllegalArgumentException("Method is not a setter: " + setter.getName());
         String property = setter.getName().substring(3);
         return toLowerCase(property.charAt(0)) + property.substring(1);
     }
