@@ -23,7 +23,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 
 public class XSLTTransformer {
 	private static final Logger log = LoggerFactory.getLogger(XSLTTransformer.class.getName());

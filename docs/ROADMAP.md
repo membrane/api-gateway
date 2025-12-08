@@ -12,17 +12,25 @@
 - Correct YAML example on GitHub README
 - Rename in apis.yaml
 
+# 7.1.0
+
+- Register JSON Schema for YAML at: https://www.schemastore.org
 
 # 7.0.1
 
 - Adding a configuration flag to enable/disable colorized output
 - Constant or methods to centralize color formatting: ANSIColors
 - Detecting terminal support before applying colors (e.g., check if System.console() is available)
+- Central desciption of MEMBRANE_* environment variables
+  - Like MEMBRANE_HOME...
+  - @coderabbitai look through the code base for usages of these variables and suggest documentation
 
 
 # 7.0.0
 
-- Register JSON Schema for YAML at: https://www.schemastore.org/
+- Use colors in the startup log
+
+  
 
 ## (Breaking) Interface Changes
 

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.*;
 import java.nio.charset.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -75,11 +75,11 @@ public class TextUtilTest {
 
     @Test
     void getLineFromMultilineStringTest() {
-        assertEquals("a", TextUtil.getLineFromMultilineString("a\nb", 1));
-        assertEquals("b", TextUtil.getLineFromMultilineString("a\nb", 2));
-        assertEquals("a", TextUtil.getLineFromMultilineString("a\r\nb", 1));
-        assertEquals("b", TextUtil.getLineFromMultilineString("a\r\nb", 2));
-        assertEquals("ccc ccc", TextUtil.getLineFromMultilineString("""
+        assertEquals("a", getLineFromMultilineString("a\nb", 1));
+        assertEquals("b", getLineFromMultilineString("a\nb", 2));
+        assertEquals("a", getLineFromMultilineString("a\r\nb", 1));
+        assertEquals("b", getLineFromMultilineString("a\r\nb", 2));
+        assertEquals("ccc ccc", getLineFromMultilineString("""
                 aaa aaa
                 bb bb
                 ccc ccc
@@ -89,7 +89,7 @@ public class TextUtilTest {
 
     @Test
     void getLineFromMultilineStringOneLine() {
-        assertEquals("aaa aaa", TextUtil.getLineFromMultilineString("""
+        assertEquals("aaa aaa", getLineFromMultilineString("""
                 aaa aaa
                 """, 1));
     }
@@ -225,13 +225,13 @@ public class TextUtilTest {
     }
 
     @Test
-    void removeFinalChar() {
-        assertEquals("", TextUtil.removeFinalChar(null));
-        assertEquals("", TextUtil.removeFinalChar(""));
-        assertEquals("", TextUtil.removeFinalChar("a"));
-        assertEquals("abced", TextUtil.removeFinalChar("abcedf"));
-        assertEquals("", TextUtil.removeFinalChar("😀"));          // single code point
-        assertEquals("ab", TextUtil.removeFinalChar("ab😀"));      // last is emoji
+    void remove_Final_Char() {
+        assertEquals("", removeFinalChar(null));
+        assertEquals("", removeFinalChar(""));
+        assertEquals("", removeFinalChar("a"));
+        assertEquals("abced", removeFinalChar("abcedf"));
+        assertEquals("", removeFinalChar("😀"));          // single code point
+        assertEquals("ab", removeFinalChar("ab😀"));      // last is emoji
     }
 
     @Nested

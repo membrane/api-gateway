@@ -25,7 +25,15 @@ public class Constants {
 
 	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
 
-	public static final String CRLF = "" + ((char) 13) + ((char) 10);
+    // Java System Properties
+
+    /**
+     * System property set by start script based on MEMBRANE_DISABLE_TERM_COLORS detection.
+     * Users should use the environment variable instead.
+     */
+    public static final String MEMBRANE_DISABLE_TERM_COLORS_PROPERTY = "membrane.disable.term.colors";
+
+    public static final String CRLF = "" + ((char) 13) + ((char) 10);
 
 	public static final byte[] CRLF_BYTES = { 13, 10 };
 
@@ -42,7 +50,7 @@ public class Constants {
 				Properties p = new Properties(); // Development
 				p.load(new FileInputStream("target/maven-archiver/pom.properties"));
 				version = p.getProperty("version") + " - DEVELOPMENT";
-			} catch (Exception e2) {
+			} catch (Exception ignored) {
 			}
 		}
 		VERSION = version;

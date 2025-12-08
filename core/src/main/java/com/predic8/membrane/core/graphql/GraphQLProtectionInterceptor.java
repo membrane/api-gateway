@@ -21,6 +21,7 @@ import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.text.*;
 import org.slf4j.*;
 
 import java.security.*;
@@ -29,6 +30,7 @@ import java.util.*;
 import static com.predic8.membrane.core.http.Request.METHOD_GET;
 import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 
 /**
  * @description Check GraphQL-over-HTTP requests, enforcing several limits and/or restrictions. This effectively helps to reduce
@@ -187,7 +189,7 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
                 "graphql-over-http/blob/a1e6d8ca248c9a19eb59a2eedd988c204909ee3f/spec/GraphQLOverHTTP.md\">" +
                 "GraphQL-over-HTTP</a> specs).<br/>" +
                 "GraphQL extensions: " + (allowExtensions ? "Allowed." : "Forbidden.") + "<br/>" +
-                "Allowed HTTP verbs: " + TextUtil.toEnglishList("and", allowedMethods.toArray(new String[0])) + ".<br/>" +
+                "Allowed HTTP verbs: " + toEnglishList("and", allowedMethods.toArray(new String[0])) + ".<br/>" +
                 "Maximum allowed nested query levels: " + maxDepth + "<br/>" +
                 "Maximum allowed recursion levels (nested repetitions of the same word): " + maxRecursion + ".</div>";
     }
