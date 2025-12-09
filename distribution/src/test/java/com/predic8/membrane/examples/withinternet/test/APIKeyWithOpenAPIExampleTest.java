@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.examples.withoutinternet.test;
+package com.predic8.membrane.examples.withinternet.test;
 
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;

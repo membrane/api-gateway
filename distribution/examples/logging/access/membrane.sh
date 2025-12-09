@@ -6,8 +6,8 @@ start() {
     membrane_home="$1"
     shift
     export CLASSPATH="$membrane_home/conf:$membrane_home/lib/*"
-    if [ "$#" -eq 0 ] && [ -f proxies.xml ]; then
-      set -- -c proxies.xml
+    if [ "$#" -eq 0 ] && [ -f apis.yaml ]; then
+      set -- -c apis.yaml
     fi
 
     # Next line is different from other membrane.sh files!
