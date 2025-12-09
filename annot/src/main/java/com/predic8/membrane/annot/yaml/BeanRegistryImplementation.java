@@ -80,7 +80,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
     }
 
     /**
-     * Processes all pending change events and activates the corresponding beans.
+     * Processes all currently pending change events and activates the corresponding beans.
      *
      * <p>Thread–safety model:</p>
      * <ul>
@@ -88,26 +88,24 @@ public class BeanRegistryImplementation implements BeanRegistry {
      *   <li>No other thread may call this method concurrently.</li>
      *   <li>All mutating work on the registry (creation, modification, deletion,
      *       activation of beans) is performed exclusively inside this method.</li>
-     *   <li>Other threads may safely invoke {@link #handle(WatchAction, JsonNode)} or
-     *       {@link #handle(WatchAction, BeanDefinition)}; these methods only enqueue events
-     *       and do not perform activation.</li>
      * </ul>
      *
      * <p>Execution model:</p>
      * <ul>
-     *   <li>This method acts as the single consumer of the internal change-event queue.</li>
-     *   <li>It blocks until the queue is empty and processes all events in order.</li>
+     *   <li>This method processes all events currently in the queue and then returns.</li>
+     *   <li>It does not block waiting for future events; it exits when the queue becomes empty.</li>
      *   <li>The activation logic uses the insertion order of queued events to guarantee a
      *       deterministic activation sequence.</li>
-     *   <li>Callers are responsible for scheduling this method in a dedicated thread when used
-     *       with asynchronous producers (such as Kubernetes watchers).</li>
+     *   <li>After initial startup, dynamic configuration updates (e.g., from Kubernetes watchers)
+     *       are processed immediately in {@link #handle(BeanDefinition)} when the queue is empty,
+     *       bypassing this method.</li>
      * </ul>
      *
-     * <p>Usage constraints:</p>
+     * <p>Usage:</p>
      * <ul>
-     *   <li>Call this exactly once during startup for static configuration.</li>
-     *   <li>In Kubernetes mode, run this method in a dedicated long-running thread to consume
-     *       update events as they arrive.</li>
+     *   <li>Call this exactly once during startup after {@link #registerBeanDefinitions(List)}
+     *       to process static configuration.</li>
+     *   <li>Do not call this method repeatedly or in a loop; it is not designed as a long-running consumer.</li>
      * </ul>
      */
     public void start() {
