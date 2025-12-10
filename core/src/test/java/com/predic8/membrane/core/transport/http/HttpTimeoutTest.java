@@ -45,7 +45,7 @@ public class HttpTimeoutTest {
     private void setupMembrane() {
         HttpClientConfiguration hcc = new HttpClientConfiguration();
         hcc.getConnection().setSoTimeout(1);
-        hcc.setMaxRetries(1);
+        hcc.getRetryHandler().setRetries(1);
 
         proxyRouter = new HttpRouter();
         proxyRouter.setHotDeploy(false);
@@ -91,7 +91,7 @@ public class HttpTimeoutTest {
     @Test
     void httpTimeout() throws Exception {
         HttpClientConfiguration hcc = new HttpClientConfiguration();
-        hcc.setMaxRetries(1);
+        hcc.getRetryHandler().setRetries(1);
 
         Stopwatch watch = createStarted();
 
