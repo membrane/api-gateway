@@ -61,11 +61,8 @@ class WebServerInterceptorTest {
         ws.handleRequest(exc);
         // No index file is set, but index page is being generated. Body lists the page.html resource.
         String body = exc.getResponse().getBodyAsStringDecoded();
-//        System.out.println("body = " + body);
+        // System.out.println("body = " + body);
 
-        JsonNode json = om.readTree(body);
-
-        assertEquals("Could not resolve file",json.get("title").asText());
-        assertEquals("https://membrane-api.io/problems/internal",json.get("type").asText());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("page.html"));
     }
 }

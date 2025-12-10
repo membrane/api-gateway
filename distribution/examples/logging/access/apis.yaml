@@ -7,10 +7,10 @@ api:
         additionalPatternList:
           - additionalVariable:
               name: res.contentType
-              expression: response?.headers.contentType
+              expression: response?.header['Content-Type']
           - additionalVariable:
               name: forwarded
               expression: headers['x-forwarded-for']
     - return:
-        statusCode: 200
+        status: 200
         contentType: application/json
