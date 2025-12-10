@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.tutorials.getting_started;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -21,6 +22,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.IsNull.notNullValue;
 
+@Disabled // Disabled until target is replaced with a more reliable one
 public class BasicPathRoutingTutorialTest extends AbstractGettingStartedTutorialTest{
 
     @Override
