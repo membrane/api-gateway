@@ -29,7 +29,6 @@ import java.util.*;
  * Most of its sub-elements are optional.
  * <p>YAML:</p>
  * <pre><code>httpClientConfig:
- *   maxRetries: 5
  *   adjustHostHeader: true
  *   connection:
  *     timeout: 10000
@@ -128,22 +127,6 @@ public class HttpClientConfiguration implements ApplicationContextAware {
     @MCChildElement(order = 3)
     public void setAuthentication(AuthenticationConfiguration authentication) {
         this.authentication = authentication;
-    }
-
-    public int getMaxRetries() {
-        return retryHandler.getRetries();
-    }
-
-    /**
-     * @description Total number of connection attempts before giving up.
-     * This includes the first attempt, so 5 means 1 try + 4 retries.
-     * Used for failover and load balancing logic.
-     * @default 2
-     * @example 3
-     */
-    @MCAttribute
-    public void setMaxRetries(int maxRetries) {
-        this.retryHandler.setRetries(maxRetries);
     }
 
     public SSLParser getSslParser() {
