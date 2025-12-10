@@ -19,8 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.text.*;
+import com.predic8.membrane.core.util.URI;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -37,6 +36,7 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.WebServerUtil.getContentType;
 import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static java.lang.System.currentTimeMillis;
 
@@ -55,15 +55,14 @@ import static java.lang.System.currentTimeMillis;
 @MCElement(name = "webServer")
 public class WebServerInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(WebServerInterceptor.class
-            .getName());
+    private static final Logger log = LoggerFactory.getLogger(WebServerInterceptor.class.getName());
 
     private static final String[] EMPTY = new String[0];
 
-    String docBase = "docBase";
-    boolean docBaseIsNormalized = false;
-    String[] index = EMPTY;
-    boolean generateIndex;
+    private String docBase = "docBase";
+    private boolean docBaseIsNormalized = false;
+    private String[] index = EMPTY;
+    private boolean generateIndex;
 
     public WebServerInterceptor() {
         name = "web server";
@@ -83,16 +82,15 @@ public class WebServerInterceptor extends AbstractInterceptor {
     private void normalizeDocBase() {
         // deferred init of docBase because router is needed
         docBase = docBase.replaceAll(Pattern.quote("\\"), "/");
-        if (!docBaseIsNormalized) {
-            if (!docBase.endsWith(File.separator))
-                docBase += "/";
-            try {
-                this.docBase = getAbsolutePathWithSchemePrefix(docBase);
-            } catch (Exception e) {
-                log.error("While handling docBase={}", this.docBase, e);
-            }
-            docBaseIsNormalized = true;
+        if (docBaseIsNormalized) return;
+        if (!docBase.endsWith("/"))
+            docBase += "/";
+        try {
+            this.docBase = getAbsolutePathWithSchemePrefix(docBase);
+        } catch (Exception e) {
+            log.error("While handling docBase={}", this.docBase, e);
         }
+        docBaseIsNormalized = true;
     }
 
     @Override
@@ -101,7 +99,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (IOException e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.isProduction(), getDisplayName())
                     .flow(Flow.REQUEST)
                     .detail("Error serving document")
                     .exception(e)
@@ -113,18 +111,20 @@ public class WebServerInterceptor extends AbstractInterceptor {
     private @NotNull Outcome handleRequestInternal(Exchange exc) throws IOException {
         normalizeDocBase();
 
-        String uri;
-        try {
-            uri = getUri(exc);
-        } catch (URISyntaxException e) {
-            internal(router.isProduction(),getDisplayName())
-                    .addSubSee("uri-creation")
-                    .detail("Could not create uri")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
+        String uri = getUri(exc);
         if (uri == null) return ABORT;
+
+        if (generateIndex) {
+            if (router.getResolverMap().getChildren(combine(router.getBaseLocation(), docBase, uri)) != null) {
+                if (tryToReceiveResource(exc, uri))
+                    return RETURN;
+                if (tryToReceiveResource(exc, uri + "/"))
+                    return RETURN;
+                Outcome outcome = generateHtmlResponseFromChildren(exc, uri);
+                if (outcome != null)
+                    return outcome;
+            }
+        }
 
         try {
             exc.setTimeReqSent(currentTimeMillis());
@@ -150,33 +150,62 @@ public class WebServerInterceptor extends AbstractInterceptor {
         return ABORT;
     }
 
-    private boolean tryToReceiveResource(Exchange exc, String uri) {
-        for (String i : index) {
-            try {
-                exc.setResponse(createResponse(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri + i)));
-                exc.setReceived();
-                exc.setTimeResReceived(currentTimeMillis());
-                return true;
-            } catch (Exception ignored) {}
-        }
-        return false;
-    }
+    private @Nullable String getUri(Exchange exc) {
+        URI requestUri = getRequestUri(exc);
+        if (requestUri == null)
+            return null;
 
-    private @Nullable String getUri(Exchange exc) throws URISyntaxException {
-        String uri = router.getUriFactory().create(exc.getDestinations().getFirst()).getPath();
-
-        log.debug("request: {}", uri);
-
-        if (escapesPath(uri) || escapesPath(router.getUriFactory().create(uri).getPath())) {
+        String path = requestUri.getPath();
+        if (path == null) {
             exc.setResponse(Response.badRequest().body("").build());
             return null;
         }
+        log.debug("request: {}", path);
 
-        if (uri.startsWith("/"))
-            uri = uri.substring(1);
-        return uri;
+        String encodedPath = path.replace(" ", "%20");
+        try {
+            if (escapesPath(encodedPath) || escapesPath(router.getUriFactory().create(encodedPath).getPath())) {
+                exc.setResponse(Response.badRequest().body("").build());
+                return null;
+            }
+        } catch (URISyntaxException e) {
+            exc.setResponse(Response.badRequest().body("").build());
+            return null;
+        }
+        return encodedPath.startsWith("/") ? encodedPath.substring(1) : encodedPath;
     }
 
+
+    private @Nullable URI getRequestUri(Exchange exc) {
+        try {
+            return router.getUriFactory().create(exc.getDestinations().getFirst());
+        } catch (URISyntaxException e) {
+            internal(router.isProduction(), getDisplayName())
+                    .addSubSee("uri-creation")
+                    .detail("Could not create uri")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return null;
+        }
+    }
+
+    private boolean tryToReceiveResource(Exchange exc, String uri) {
+        for (String i : index) {
+            Response response = createResponse(
+                    router.getResolverMap(),
+                    combine(router.getBaseLocation(), docBase, uri + i)
+            );
+
+            if (!response.isOk())
+                continue;
+
+            exc.setResponse(response);
+            exc.setReceived();
+            exc.setTimeResReceived(currentTimeMillis());
+            return true;
+        }
+        return false;
+    }
 
     private Outcome generateHtmlResponseFromChildren(Exchange exc, String uri) throws FileNotFoundException {
         List<String> children = router.getResolverMap().getChildren(combine(router.getBaseLocation(), docBase, uri));
@@ -224,37 +253,12 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     .body(rr.resolve(resPath), true)
                     .build();
         } catch (Exception e) {
-            return internal(router.isProduction(),getDisplayName())
+            return internal(router.isProduction(), getDisplayName())
                     .title("Could not resolve file")
-                    .topLevel("path",resPath)
+                    .topLevel("path", resPath)
                     .exception(e)
                     .build();
         }
-    }
-
-    // @TODO Move to Util
-    private static String getContentType(String uri) {
-        if (uri.endsWith(".css"))
-            return "text/css";
-        if (uri.endsWith(".js"))
-            return "application/javascript";
-        if (uri.endsWith(".wsdl"))
-            return "text/xml";
-        if (uri.endsWith(".xml"))
-            return "text/xml";
-        if (uri.endsWith(".xsd"))
-            return "text/xml";
-        if (uri.endsWith(".html"))
-            return "text/html";
-        if (uri.endsWith(".jpg"))
-            return "image/jpeg";
-        if (uri.endsWith(".png"))
-            return "image/png";
-        if (uri.endsWith(".json"))
-            return APPLICATION_JSON;
-        if (uri.endsWith(".svg"))
-            return "image/svg+xml";
-        return null;
     }
 
     public String getDocBase() {
@@ -304,6 +308,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
             index = i.split(",");
     }
 
+    @SuppressWarnings("unused")
     public boolean isGenerateIndex() {
         return generateIndex;
     }
