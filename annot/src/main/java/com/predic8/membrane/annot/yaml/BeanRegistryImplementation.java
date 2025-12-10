@@ -35,13 +35,13 @@ public class BeanRegistryImplementation implements BeanRegistry {
     /**
      * TODO Rename give meaningful name
      */
-    private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Object> uuidMap = new ConcurrentHashMap<>(); // Order is here not critical
 
     private final BlockingQueue<ChangeEvent> changeEvents = new LinkedBlockingDeque<>();
 
     // uid -> bean definition
-    private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>();
-    private final Set<String> uidsToActivate = ConcurrentHashMap.newKeySet();
+    private final Map<String, BeanDefinition> bds = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
+    private final Set<String> uidsToActivate = new LinkedHashSet<>(); // Provides order
 
     public BeanRegistryImplementation(BeanCacheObserver observer, Grammar grammar) {
         this.observer = observer;
@@ -51,12 +51,8 @@ public class BeanRegistryImplementation implements BeanRegistry {
     public void registerBeanDefinitions(List<BeanDefinition> bds) {
         bds.forEach(bd -> handle(ADDED, bd));
         fireConfigurationLoaded(); // Only put event in the queue
-        start();
     }
 
-    /**
-     * Blocks until all events have been processed. For Kubernets use that block in a separate thread e.g. in KubernetsWatcher.
-     */
     public void start() {
         while (!changeEvents.isEmpty()) {
             try {
@@ -92,7 +88,6 @@ public class BeanRegistryImplementation implements BeanRegistry {
 
     /**
      * May be called from multiple threads.
-     *
      * TODO remove action?
      */
     public void handle(WatchAction action, BeanDefinition bd) {
