@@ -114,6 +114,18 @@ public class WebServerInterceptor extends AbstractInterceptor {
         String uri = getUri(exc);
         if (uri == null) return ABORT;
 
+        if (generateIndex) {
+            if (router.getResolverMap().getChildren(combine(router.getBaseLocation(), docBase, uri)) != null) {
+                if (tryToReceiveResource(exc, uri))
+                    return RETURN;
+                if (tryToReceiveResource(exc, uri + "/"))
+                    return RETURN;
+                Outcome outcome = generateHtmlResponseFromChildren(exc, uri);
+                if (outcome != null)
+                    return outcome;
+            }
+        }
+
         try {
             exc.setTimeReqSent(currentTimeMillis());
             exc.setResponse(createResponse(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri)));
@@ -178,13 +190,18 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
     private boolean tryToReceiveResource(Exchange exc, String uri) {
         for (String i : index) {
-            try {
-                exc.setResponse(createResponse(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri + i)));
-                exc.setReceived();
-                exc.setTimeResReceived(currentTimeMillis());
-                return true;
-            } catch (Exception ignored) {
-            }
+            Response response = createResponse(
+                    router.getResolverMap(),
+                    combine(router.getBaseLocation(), docBase, uri + i)
+            );
+
+            if (!response.isOk())
+                continue;
+
+            exc.setResponse(response);
+            exc.setReceived();
+            exc.setTimeResReceived(currentTimeMillis());
+            return true;
         }
         return false;
     }
