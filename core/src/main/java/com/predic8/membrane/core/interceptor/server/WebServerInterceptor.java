@@ -162,9 +162,9 @@ public class WebServerInterceptor extends AbstractInterceptor {
         }
         log.debug("request: {}", path);
 
+        String encodedPath = path.replace(" ", "%20");
         try {
-            String normalizedPath = router.getUriFactory().create(path).getPath();
-            if (escapesPath(path) || escapesPath(normalizedPath)) {
+            if (escapesPath(encodedPath) || escapesPath(router.getUriFactory().create(encodedPath).getPath())) {
                 exc.setResponse(Response.badRequest().body("").build());
                 return null;
             }
@@ -172,8 +172,9 @@ public class WebServerInterceptor extends AbstractInterceptor {
             exc.setResponse(Response.badRequest().body("").build());
             return null;
         }
-        return path.startsWith("/") ? path.substring(1) : path;
+        return encodedPath.startsWith("/") ? encodedPath.substring(1) : encodedPath;
     }
+
 
     private @Nullable URI getRequestUri(Exchange exc) {
         try {
