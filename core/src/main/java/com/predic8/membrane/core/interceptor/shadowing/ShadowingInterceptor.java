@@ -120,7 +120,8 @@ public class ShadowingInterceptor extends AbstractInterceptor {
 
     static Exchange performCall(Exchange exchange) {
         try {
-            return client.call(exchange);
+            client.call(exchange);
+            return exchange;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

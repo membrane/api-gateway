@@ -65,12 +65,11 @@ public class HttpClient implements AutoCloseable {
         protocolHandlerFactory = new ProtocolHandlerFactory(configuration, connectionFactory);
     }
 
-    public Exchange call(Exchange exc) throws Exception {
+    public void call(Exchange exc) throws Exception {
         ProtocolHandler ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
         configuration.getRetryHandler().executeWithRetries(exc, this::dispatchCall);
         ph.cleanup(exc);
-        return exc;
     }
 
     private boolean dispatchCall(Exchange exc, String target, int attempt) throws Exception {

@@ -94,8 +94,9 @@ public class HttpKeepAliveTest {
 	}
 
 	private int issueRequest(HttpClient client) throws Exception {
-		Exchange exchange = createExchange();
-		Response response = client.call(exchange).getResponse();
+		var exchange = createExchange();
+        client.call(exchange);
+		var response = exchange.getResponse();
 		response.readBody();
 		return response.getStatusCode();
 	}

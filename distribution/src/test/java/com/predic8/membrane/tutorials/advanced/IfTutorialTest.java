@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.tutorials.advanced;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -23,7 +24,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
+@Disabled // Disabled until target is replaced with a more reliable one
 public class IfTutorialTest extends AbstractAdvancedTutorialTest {
 
     @Override

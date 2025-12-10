@@ -108,10 +108,13 @@ public class NtlmInterceptor extends AbstractInterceptor {
     }
 
     private Exchange authenticate(Connection stableConnection, String originalRequestUrl, String user, String pass, String domain, String workstation) throws Exception {
-        Exchange resT1 = httpClient.call(createT1MessageRequest(stableConnection, originalRequestUrl));
+        var resT1 = createT1MessageRequest(stableConnection, originalRequestUrl);
+        httpClient.call(resT1);
         prepareStreamByEmptyingIt(resT1);
 
-        return httpClient.call(createT3MessageRequest(stableConnection, originalRequestUrl, user, pass, domain, workstation, resT1));
+        var t3MessageRequest = createT3MessageRequest(stableConnection, originalRequestUrl, user, pass, domain, workstation, resT1);
+        httpClient.call(t3MessageRequest);
+        return t3MessageRequest;
     }
 
     private Exchange createT3MessageRequest(Connection stableConnection, String originalRequestUrl, String user, String pass, String domain, String workstation, Exchange resT1) throws URISyntaxException, NTLMEngineException {

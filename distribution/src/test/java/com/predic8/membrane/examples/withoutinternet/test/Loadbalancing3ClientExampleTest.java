@@ -41,7 +41,11 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 	@Test
 	public void test() throws Exception {
 
-		replaceInFile2("proxies.xml", "8080", "3023");
+        try {
+            replaceInFile2("proxies.xml", "8080", "3023");
+        } catch (Exception ignored) {
+            log.warn("proxies.xml not there!");
+        }
 		replaceInFile2("lb-client-secured.proxies.xml", "8080", "3023");
 		replaceInFile2("apis.yaml", "8080", "3023");
 

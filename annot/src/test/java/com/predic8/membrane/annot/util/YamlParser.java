@@ -50,6 +50,7 @@ public class YamlParser {
         beanRegistry = new BeanRegistryImplementation(getLatchObserver(cdl),generator);
         beanRegistry.registerBeanDefinitions(GenericYamlParser.parseMembraneResources(
                 requireNonNull(cl.getResourceAsStream(normalized)), generator));
+        beanRegistry.start();
 
         cdl.await();
     }

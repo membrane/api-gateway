@@ -67,7 +67,9 @@ public class HTTPSchemaResolver implements SchemaResolver {
                     try {
                         for (String url : watchedUrlMd5s.keySet()) {
                             md.reset();
-                            Response response = client.call(createResolveExchange(url)).getResponse();
+                            var resolveExchange = createResolveExchange(url);
+                            client.call(resolveExchange);
+                            Response response = resolveExchange.getResponse();
                             if (response.getStatusCode() != 200) {
                                 throw new ResourceRetrievalException(url, response.getStatusCode());
                             }
@@ -122,7 +124,9 @@ public class HTTPSchemaResolver implements SchemaResolver {
 
     public InputStream resolve(String url) throws ResourceRetrievalException {
         try {
-            Response response = getHttpClient().call(createResolveExchange(url)).getResponse();
+            var resolveExchange = createResolveExchange(url);
+            getHttpClient().call(resolveExchange);
+            Response response = resolveExchange.getResponse();
             response.readBody();
 
             if (response.getStatusCode() != 200) {

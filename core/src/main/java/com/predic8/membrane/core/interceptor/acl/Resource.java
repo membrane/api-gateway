@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
-import com.predic8.membrane.core.util.TextUtil;
+import com.predic8.membrane.core.util.text.TextUtil;
 
 public class Resource extends AbstractXmlElement {
 

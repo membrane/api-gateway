@@ -34,6 +34,9 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     }
 
     public SchemaObject property(AbstractSchema<?> as) {
+        for (AbstractSchema<?> p : properties)
+            if (p.getName().equals(as.getName()))
+                throw new IllegalArgumentException("Duplicate property: " + as.getName());
         properties.add(as);
         return this;
     }

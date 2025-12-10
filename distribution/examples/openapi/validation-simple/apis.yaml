@@ -1,4 +1,5 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 # Configures Membrane as an API Gateway for the specified OpenAPI specifications
 api:
   port: 2000
@@ -21,6 +22,6 @@ api:
             contentType: application/json
             src: '{ "success": true }'
     - return:
-        statusCode: 201
+        status: 201
 
 # See examples/openapi-validator for a more detailed example

@@ -18,22 +18,24 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.io.*;
 import java.security.*;
 import java.util.*;
-import java.util.function.Predicate;
+import java.util.ArrayList;
+import java.util.function.*;
 import java.util.regex.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.HttpUtil.readLine;
+import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.nio.charset.StandardCharsets.*;
-import static java.util.Arrays.stream;
+import static java.util.Arrays.*;
+import static java.util.Collections.*;
 import static java.util.regex.Pattern.*;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.codec.binary.Base64.*;
 
 /**
@@ -113,7 +115,7 @@ public class Header {
 	private static final Pattern timeoutPattern = compile("timeout\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
 	private static final Pattern maxPattern = compile("max\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
 
-	private final ArrayList<HeaderField> fields = new ArrayList<>();
+	private final List<HeaderField> fields = new ArrayList<>();
 
 	public Header() {
 	}
@@ -189,10 +191,7 @@ public class Header {
 	}
 
 	public void removeFields(String name) {
-		List<HeaderField> deleteValues = fields.stream()
-				.filter(f -> f.getHeaderName().hasName(name))
-				.toList();
-		fields.removeAll(deleteValues);
+        fields.removeAll(filterByHeaderName(name).toList());
 	}
 
 	/**
@@ -207,7 +206,17 @@ public class Header {
 				.toList();
 	}
 
-	/**
+    public String getValuesAsString(String name) {
+        var list = filterByHeaderName(name).map(HeaderField::getValue).toList();
+        if (list.isEmpty()) return null;
+        return String.join(", ", list);
+    }
+
+    private @NotNull Stream<HeaderField> filterByHeaderName(String name) {
+        return fields.stream().filter(hf -> hf.getHeaderName().hasName(name));
+    }
+
+    /**
 	 * Retrieves the first header value corresponding to the specified header name.
 	 *
 	 * Iterates through the header fields and returns the value of the first field that matches the given name.
@@ -217,8 +226,7 @@ public class Header {
 	 * @return the value of the matching header field, or {@code null} if not present
 	 */
 	public String getFirstValue(String name) {
-		return fields.stream()
-				.filter(field -> field.getHeaderName().hasName(name))
+		return filterByHeaderName(name)
 				.findFirst()
 				.map(HeaderField::getValue)
 				.orElse(null);
@@ -233,8 +241,7 @@ public class Header {
 	}
 
 	public boolean contains(String header) {
-		return fields.stream()
-				.anyMatch(headerField -> headerField.getHeaderName().hasName(header));
+        return filterByHeaderName(header).findAny().isPresent();
 	}
 
 	public boolean contains(HeaderName header) {
@@ -248,7 +255,7 @@ public class Header {
 	public void write(OutputStream out) throws IOException {
 		byte[] bytes = fields.stream()
 				.map(f -> "%s: %s%s".formatted(f.getHeaderName(), f.getValue(), Constants.CRLF))
-				.collect(Collectors.joining()).getBytes(ISO_8859_1);
+				.collect(joining()).getBytes(ISO_8859_1);
 		out.write(bytes);
 	}
 
@@ -386,7 +393,7 @@ public class Header {
 	public String toString() {
 		return fields.stream()
 				.map(HeaderField::toString)
-				.collect(Collectors.joining());
+				.collect(joining());
 	}
 
 	/**
@@ -466,9 +473,7 @@ public class Header {
 	}
 
 	public int getNumberOf(String headerName) {
-		return (int) fields.stream()
-				.filter(f -> f.getHeaderName().hasName(headerName))
-				.count();
+		return (int) filterByHeaderName(headerName).count();
 	}
 
 	/**
@@ -514,10 +519,9 @@ public class Header {
 	}
 
 	public String getNormalizedValue(String headerName) {
-		var s = fields.stream()
-				.filter(f -> f.getHeaderName().hasName(headerName))
+		var s = filterByHeaderName(headerName)
 				.map(HeaderField::getValue)
-				.collect(Collectors.joining(","));
+				.collect(joining(","));
 		return s.isEmpty() ? null : s;
 	}
 
@@ -601,4 +605,34 @@ public class Header {
 		return getFirstValue(UPGRADE);
 	}
 
+    public int size() {
+        return fields.size();
+    }
+
+    public boolean isEmpty() {
+        return fields.isEmpty();
+    }
+
+    /**
+     * Retrieves an unmodifiable list of header fields contained in this header.
+     * The state of this class should not be modified directly.
+     *
+     * @return an unmodifiable list of HeaderField objects representing the header fields
+     */
+    public List<HeaderField> getFields() {
+        return unmodifiableList(fields);
+    }
+
+    /**
+     * Returns a set of all unique header field names present in this header.
+     * The order of names in the set is not guaranteed.
+     *
+     * @return a set containing the unique header field names
+     */
+    public Set<String> getUniqueHeaderNames() {
+        // First Set to use the equals method of HeaderField to get unique header names even if they differ in case.
+        // Then the HeaderNames are turned into Strings
+        return fields.stream().map(HeaderField::getHeaderName)
+                .collect(toSet()).stream().map(HeaderName::getName).collect(toSet());
+    }
 }

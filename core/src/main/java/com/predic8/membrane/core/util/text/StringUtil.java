@@ -14,16 +14,12 @@
 
 package com.predic8.membrane.core.util;
 
+import java.util.*;
+
 import static java.lang.Math.min;
 
 public class StringUtil {
 
-    /**
-     *
-     * @param s
-     * @param maxLength
-     * @return
-     */
     public static String truncateAfter(String s, int maxLength) {
         return s.substring(0, min(s.length(), maxLength));
     }
@@ -50,8 +46,6 @@ public class StringUtil {
 
     /**
      * Adds lines numbers like a code listing
-     * @param s
-     * @return
      */
     public static String addLineNumbers(String s) {
         StringBuilder sb = new StringBuilder();
@@ -62,4 +56,36 @@ public class StringUtil {
         return sb.toString();
     }
 
+    /**
+     * Splits a comma-separated string into a list of trimmed values.
+     * Whitespace around commas is ignored.
+     *
+     * @param s the string to split, may be null
+     * @return a list of values; empty list if input is null or empty.
+     *         Note: consecutive commas produce empty strings in the result.
+     *         The returned list is fixed-size and cannot be modified.
+     */
+    public static List<String> splitByComma(String s) {
+        return s == null || s.isEmpty() ? Collections.emptyList() : Arrays.asList(s.split("\\s*,\\s*"));
+    }
+
+    public static boolean yes(String override) {
+        if (override == null)
+            return false;
+
+        return switch (override.trim().toLowerCase()) {
+            case "on", "yes", "y", "true", "1", "enable", "enabled" -> true;
+            default -> false;
+        };
+    }
+
+    public static boolean no(String override) {
+        if (override == null)
+            return false;
+
+        return switch (override.trim().toLowerCase()) {
+            case "off", "no", "n", "false", "0", "disable", "disabled" -> true;
+            default -> false;
+        };
+    }
 }
