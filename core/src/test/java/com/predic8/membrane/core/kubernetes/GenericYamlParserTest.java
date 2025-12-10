@@ -346,6 +346,11 @@ public class GenericYamlParserTest {
         }
 
         @Override
+        public void start() {
+
+        }
+
+        @Override
         public Grammar getGrammar() {
             return null;
         }
