@@ -301,7 +301,7 @@ public class ProblemDetails {
         }
         internalMap.put(SEE, getFullType(type));
         internalMap.put(ATTENTION, """
-                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+                Membrane is in development mode. Set 'production' to 'true' in your configuration to hide detailed error information in production.""");
         return internalMap;
     }
 
