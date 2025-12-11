@@ -129,19 +129,4 @@ public class Bean {
 
     }
 
-
-    // -------- legacy kubernetes bean --------
-    // TODO
-
-    Object bean;
-
-    public Object getBean() {
-        return bean;
-    }
-
-    @MCChildElement(excludeFromJson = true)
-    public void setBean(Object bean) {
-        this.bean = bean;
-    }
-
 }

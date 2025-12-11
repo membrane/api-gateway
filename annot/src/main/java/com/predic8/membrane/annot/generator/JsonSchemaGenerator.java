@@ -90,9 +90,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         schema.additionalProperties(false);
         List<AbstractSchema<?>> kinds = new ArrayList<>();
 
-        main.getElements().values().forEach(e -> {
-            if (!e.getAnnotation().topLevel())
-                return;
+        main.getElements().values().stream().filter(e -> e.getAnnotation().rootDef()).forEach(e -> {
 
             String name = e.getAnnotation().name();
             String refName = "#/$defs/" + e.getXSDTypeName(m);
@@ -126,7 +124,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
         String parserName = elementInfo.getXSDTypeName(m);
-
         // e.g. to prevent a request from needing a flow child noEnvelope=true is used
         if (elementInfo.getAnnotation().noEnvelope()) {
             // With noEnvelope=true, there should be exactly one child element
@@ -134,7 +131,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             ChildElementInfo child = elementInfo.getChildElementSpecs().getFirst();
             var childName = child.getPropertyName();
 
-            if (!topLevelAdded.containsKey(childName) && !shouldGenerateParserType(child)) {
+            if (!topLevelAdded.containsKey(childName) && !shouldGenerateFlowParserType(child)) {
                 SchemaArray array = array(childName + "Parser");
                 processMCChilds(m, main, child.getEi(), array);
                 schema.definition(array);
@@ -231,7 +228,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             AbstractSchema<?> parent2 = so;
 
             if (cei.isList()) {
-                if (shouldGenerateParserType(cei)) {
+                if (shouldGenerateFlowParserType(cei)) {
                     var sos = new ArrayList<SchemaObject>();
                     for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
                         if (excludeFromFlow.contains(ei.getAnnotation().name()))
@@ -254,7 +251,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private boolean shouldGenerateParserType(ChildElementInfo cei) {
+    private boolean shouldGenerateFlowParserType(ChildElementInfo cei) {
         return "flow".equals(cei.getPropertyName()) && !isFlowFromWebSocket(cei);
     }
 
@@ -266,7 +263,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private AbstractSchema<?> processList(ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
         SchemaObject items = object("items");
 
-        if (shouldGenerateParserType(cei)) {
+        if (shouldGenerateFlowParserType(cei)) {
             addFlowParserRef(so, sos);
             return items;
         }

@@ -217,10 +217,20 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
                     if (ii.getAnnotation().topLevel())
                         main.getTopLevels().put(ii.getAnnotation().name(), ii);
+                    // TODO check that the real-top-level are not noEnvelope
+
+                    /**
+                     *  TODO Do we really need to ensure this? We would need an root level element with noEnvelope to realize:
+                     *  components:
+                     *   - bean:
+                     *       id: ...
+                     *   - basicAuthentication:
+                     *       id: ...
+                     */
 
                     if (ii.getAnnotation().noEnvelope()) {
-                        if (ii.getAnnotation().topLevel())
-                            throw new ProcessingException("@MCElement(..., noEnvelope=true, topLevel=true) is invalid.", ii.getElement());
+//                        if (ii.getAnnotation().topLevel())
+//                            throw new ProcessingException("@MCElement(..., noEnvelope=true, topLevel=true) is invalid.", ii.getElement());
                         if (ii.getAnnotation().mixed())
                             throw new ProcessingException("@MCElement(..., noEnvelope=true, mixed=true) is invalid.", ii.getElement());
                         if (ii.getChildElementSpecs().size() != 1)
