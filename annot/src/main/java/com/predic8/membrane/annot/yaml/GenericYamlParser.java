@@ -73,13 +73,14 @@ public class GenericYamlParser {
                         location.getLineNr(),
                         location.getColumnNr()), e);
             }
-
+            String kind = getBeanType(jsonNode);
             beanDefs.add(new BeanDefinition(
-                    getBeanType(jsonNode),
-                    "bean-" + idx++,
+                    kind,
+                    extractIdOrDefault(jsonNode, kind, idx),
                     "default",
                     randomUUID().toString(),
                     jsonNode));
+            idx++;
         }
     }
 
@@ -228,4 +229,22 @@ public class GenericYamlParser {
             return ctx.registry().resolveReference(node.asText());
         return createAndPopulateNode(ctx.updateContext(key), ctx.resolveClass(key), node);
     }
+
+    private static String extractIdOrDefault(JsonNode root, String kind, int idx) {
+        JsonNode kindNode = root.get(kind);
+        if (kindNode != null) {
+            JsonNode idNode = kindNode.get("id");
+            if (idNode != null && !idNode.isNull()) {
+                if (idNode.isTextual()) {
+                    String v = idNode.asText();
+                    if (!v.isBlank())
+                        return v;
+                } else {
+                    return idNode.toString();
+                }
+            }
+        }
+        return "bean-" + idx;
+    }
+
 }
