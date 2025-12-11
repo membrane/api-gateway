@@ -17,14 +17,15 @@ package com.predic8.membrane.core.transport.http.client;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Base for refactorings of the HttpClientConfiguration and Router.
- *
- *
+ * <p>
+ * <p>
  * Also tests Router.initFromXMLString
  */
 class HttpClientConfigurationTest {
@@ -118,19 +119,14 @@ class HttpClientConfigurationTest {
 
     @Test
     void startWithSimpleConfig() {
-        router = Router.initFromXMLString(empty);
-        assertNotNull(router.getHttpClientConfig());
-        assertNotNull(router.getResolverMap().getHTTPSchemaResolver().getHttpClientConfig());
+        setupRouter(empty);
     }
 
     @Test
     void inGlobal() {
-        router = Router.initFromXMLString(globalHcc);
-        assertNotNull(router.getHttpClientConfig());
-        assertNotNull(router.getResolverMap().getHTTPSchemaResolver().getHttpClientConfig());
-        Proxy api = router.getRules().stream().filter(proxy -> proxy.getName().equals("API1")).findFirst().orElseThrow();
-        assertNotNull(api);
-        Interceptor i = api.getFlow().get(0);
+        setupRouter(globalHcc);
+        Proxy api = getApi1();
+        Interceptor i = api.getFlow().getFirst();
         if (i instanceof HTTPClientInterceptor hci) {
             var hcc = hci.getHttpClientConfig();
             assertNotNull(hcc);
@@ -139,14 +135,24 @@ class HttpClientConfigurationTest {
 
     @Test
     void outsideRouter() {
-        router = Router.initFromXMLString(hccOutsideOfRouter);
-        assertNotNull(router.getHttpClientConfig());
-        assertNotNull(router.getResolverMap().getHTTPSchemaResolver().getHttpClientConfig());
-        Proxy api = router.getRules().stream().filter(proxy -> proxy.getName().equals("API1")).findFirst().orElseThrow();
-        Interceptor i = api.getFlow().get(0);
+        setupRouter(hccOutsideOfRouter);
+        Proxy api = getApi1();
+        Interceptor i = api.getFlow().getFirst();
         if (i instanceof HTTPClientInterceptor hci) {
             var hcc = hci.getHttpClientConfig();
             assertNotNull(hcc);
         }
+    }
+
+    private @NotNull Proxy getApi1() {
+        Proxy api1 = router.getRules().stream().filter(proxy -> proxy.getName().equals("API1")).findFirst().orElseThrow();
+        assertNotNull(api1);
+        return api1;
+    }
+
+    private void setupRouter(String globalHcc) {
+        router = Router.initFromXMLString(globalHcc);
+        assertNotNull(router.getHttpClientConfig());
+        assertNotNull(router.getResolverMap().getHTTPSchemaResolver().getHttpClientConfig());
     }
 }
