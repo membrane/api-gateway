@@ -53,6 +53,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     JwtRetriever jwtRetriever;
     Jwks jwks;
     String expectedAud;
+    String expectedTid;
 
     // should be used read only after init
     // Hashmap done on purpose as only here the read only thread safety is guaranteed
@@ -163,6 +164,10 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                         .setExpectedAudience(expectedAud);
         }
 
+        if (expectedTid != null && !expectedTid.isEmpty())
+            jwtConsumerBuilder
+                    .registerValidator(new TidValidator(expectedTid));
+
         return jwtConsumerBuilder.build();
     }
 
@@ -192,6 +197,10 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         return expectedAud;
     }
 
+    public String getExpectedTid() {
+        return expectedTid;
+    }
+
     /**
      * @description
      * <p>Expected audience ('aud') value of the token.</p>
@@ -200,6 +209,16 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     @MCAttribute
     public JwtAuthInterceptor setExpectedAud(String expectedAud) {
         this.expectedAud = expectedAud;
+        return this;
+    }
+
+    /**
+     * @description
+     * <p>Expected tenant ID ('tid') value of the token.</p>
+     */
+    @MCAttribute
+    public JwtAuthInterceptor setExpectedTid(String expectedTid) {
+        this.expectedTid = expectedTid;
         return this;
     }
 
