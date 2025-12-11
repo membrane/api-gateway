@@ -31,7 +31,7 @@ public class LoadTester {
     /**
      * Specifies the maximum number of concurrent requests allowed during the load testing process.
      */
-    public static final int CONCURRENCY = 10000;
+    public static final int CONCURRENCY = 200;
 
     Router r = new HttpRouter();
 
