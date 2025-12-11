@@ -36,7 +36,7 @@ public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestca
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c conf/proxies.xml").waitForMembrane().start();
+        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c conf/proxies.inactive.xml").waitForMembrane().start();
     }
 
     @SuppressWarnings("JsonSchemaCompliance")

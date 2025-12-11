@@ -43,7 +43,7 @@ public class LargeBodyTest {
 
         // streaming only works for maxRetries = 1
         hcc = new HttpClientConfiguration();
-        hcc.setMaxRetries(1);
+        hcc.getRetryHandler().setRetries(1);
 
         ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3040), "thomas-bayer.com", 80);
         proxy.getFlow().add(new AbstractInterceptor() {

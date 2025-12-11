@@ -21,19 +21,20 @@
 - Adding a configuration flag to enable/disable colorized output
 - Constant or methods to centralize color formatting: ANSIColors
 - Detecting terminal support before applying colors (e.g., check if System.console() is available)
+- Central description of Membrane Languages, Cheat Sheets, links to their docs.
 - Central desciption of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
+- Restore Kubernetes Startup Thread
+- Fix `YAMLParsingTest.errorInListItemUniqueness()`
 
-
-# 7.0.0
-
-- Use colors in the startup log
 
   
 
 ## (Breaking) Interface Changes
 
+- Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
+- Remove WADLInterceptor
 - HttpClient TB (done)
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {

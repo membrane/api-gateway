@@ -9,67 +9,77 @@
 
 Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy SOAP Web Services**, easily extended with powerful plugins and Java.
 
-Solve even complex custom API requirements with simple configurations.
+Solve complex API requirements with simple configurations.
+
+The following YAML configuration samples require Membrane version 7.0.0 or newer.
 
 **Forwarding Requests from Port 2000 to a Backend:** 
-```xml
-<api port="2000">
-  <target url="https://api.predic8.de"/>
-</api>
-```
 
-**Path Rewriting with an URI Template:**
-```xml
-<api port="2000">
-    <path>/fruit/{id}</path>
-    <target url="https://api.predic8.de/shop/v2/products/${pathParam.id}"/>
-</api>
-```
-
-**Deploy OpenAPI and enable Request Validation:** 
-```xml
-<api port="2000">
-    <openapi location="fruitshop-api.yml" validateRequests="yes"/>
-</api>
-```
-
-**YAML Configuration (beta):**
 ```yaml
 api:
   port: 2000
-  interceptors:
-    - log:
-        message: Header ${header}
   target:
     url: https://api.predic8.de
 ```
 
-See: [YAML configuration](distribution/examples/yaml-configuration#yaml-configuration)
+**Path Rewriting with an URI Template:**
+```yaml
+api:
+  port: 2000
+  path:
+    uri: /fruit/{id}
+  target:
+    url: https://api.predic8.de/shop/v2/products/${pathParam.id}
+```
 
-**Issue JSON Web Tokens for API Keys:**
+**Deploy OpenAPI and enable Request Validation:** 
+```yaml
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: "fruitshop-api.yml"
+        validateRequests: yes
+```
 
-Simple implementation of a token server. A request is authenticated by API key and a JWT for the user is created, signed and returned. By changing the template you can decide whats included in the JWT.
+**Issue JSON Web Tokens:**
 
-```xml
-<api port="2000">
-   <apiKey required="true">
-       <apiKeyFileStore location="keys.txt" />
-   </apiKey>
-   <request>
-       <setProperty name="scopes" value="${scopes()}"/> 
-       <template>
-           {
-              "sub": "user@example.com",
-              "aud": "order",
-              "scope": "${property.scopes}"   <!-- Scopes defined in keys.txt -->
-           }
-       </template>
-       <jwtSign>
-           <jwk location="jwk.json"/> <!-- Sign with RS256 -->
-       </jwtSign>
-   </request>
-   <return /> <!-- return token-->
-</api>
+A minimal token-issuing endpoint built with Membrane plugins. Clients authenticate with HTTP Basic Authentication. After successful authentication, Membrane creates a signed JWT. The template defines the payload, so you control which claims are included.
+
+```yaml
+api:
+  port: 2000
+  flow:
+    - basicAuthentication:
+        fileUserDataProvider:
+          htpasswdPath: .htpasswd
+    - request:
+        - template:
+            src: |
+              {
+                "sub": "${fn.user()}" // username from HTTP Basic Auth
+              }
+        - jwtSign:
+            jwk:
+              location: jwk.json
+    - return:
+        status: 200
+```
+
+Example of issued token:
+
+```text
+{
+  "typ": "JWT",
+  "alg": "RS256"
+}
+.
+{
+  "sub": "alice",
+  "iat": 1765222877,
+  "exp": 1765223177
+}
+.hTL_0-AS8IZgiDUJ6Kg...
 ```
 
 These are just a few examples; see the descriptions below for more.
@@ -393,7 +403,6 @@ api:
     - return:
         statusCode: 404
 ---
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
   port: 2000
   flow:
@@ -410,14 +419,16 @@ The URLs of request can be rewritten dynamically before forwarding them to the b
 #### Example
 The following configuration rewrites requests starting with `/fruitshop` to `/shop/v2`, preserving the remainder of the path:
 
-```xml
-<api port="2000">
-    <path>/fruitshop</path>
-    <rewriter>
-        <map from="^/fruitshop(.*)" to="/shop/v2/$1"/>
-    </rewriter>
-    <target url="https://api.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - rewriter:
+       - map:
+          from: ^/fruitshop/(.*)
+          to: /shop/v2/$1
+  target:
+    url: https://api.predic8.de
 ```
 
 #### Testing
@@ -445,14 +456,16 @@ Membrane has powerful scripting features that allow to modify the desired of an 
 
 The following API executes a Groovy script during the request and the response. 
 
-```xml
-<api port="2000">
-  <groovy>
-    println "I'm executed in the ${flow} flow" 
-    println "HTTP Headers:\n${header}"
-  </groovy>
-  <target url="https://api.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - groovy:
+        src: |
+          println "I'm executed in the ${flow} flow"
+          println "HTTP Headers:\n${header}"
+  target:
+    url: https://api.predic8.de
 ```
 
 After invoking [http://localhost:2000](http://localhost:2000) you can see the following output in the console where you have started Membrane:
@@ -474,17 +487,16 @@ Content-Type: application/json
 
 You can realize a load balancer by setting the destination randomly.  
 
-```xml
-<api port="2000">
-  <request>
-    <groovy>
-      sites = ["https://api.predic8.de","https://membrane-api.io","https://predic8.de"]
-      Collections.shuffle sites
-      exchange.setDestinations(sites)
-    </groovy>
-  </request>
-  <target/> <!-- No details needed target uses destinations from exchange -->
-</api>
+```yaml
+api:
+  port: 2013
+  flow:
+    - groovy:
+        src: |
+          sites = ["https://api.predic8.de","https://membrane-api.io","https://predic8.de"]
+          Collections.shuffle sites
+          exchange.destinations = sites
+  target: {} # No details needed target uses destinations from exchange
 ```
 
 ### Creating Responses with Groovy
@@ -494,20 +506,20 @@ The `groovy` plugin in Membrane allows you to dynamically generate custom respon
 #### Example
 The following example creates a custom JSON response with a status code of `200`, a specific content type, and a custom header:
 
-```xml
-<api port="2000">
-  <groovy>
-    Response.ok() 
-      .contentType("application/json")   
-      .header("X-Foo", "bar")           
-      .body("""
-        {
-            "success": true
-        }
-        """)                             
-    .build()
-  </groovy>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - groovy:
+        src: |
+          Response.ok()
+            .contentType("application/json")
+            .header("X-Foo", "bar")
+            .body("""
+              {
+                "success": true
+              }""")
+            .build()
 ```  
 
 #### How It Works
@@ -543,20 +555,19 @@ In addition to Groovy, Membrane supports JavaScript for implementing custom beha
 #### Example
 The following example logs all HTTP headers from incoming requests and responses to the console:
 
-```xml
-<api port="2000">
-  <javascript>
-    console.log("------------ Headers: -------------");
-
-    var fields = header.getAllHeaderFields();
-    for (var i = 0; i < fields.length; i++) {
-        console.log(fields[i]);
-    }
-      
-    CONTINUE;
-  </javascript>
-  <target url="https://api.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - javascript:
+        src: |
+          console.log("------------ Headers: -------------");
+          var fields = header.getAllHeaderFields();
+          for (var i = 0; i < fields.length; i++) {
+            console.log(fields[i]);
+          }
+  target:
+    url: https://api.predic8.de
 ```  
 
 The `CONTINUE` keyword ensures that the request continues processing and is forwarded to the target URL.
@@ -565,17 +576,17 @@ When a JavaScript script returns a `Response` object as the last line of code, t
 
 The following example generates a JSON response and sends it directly to the client:
 
-```xml
-<api port="2000">
-  <javascript>
-    var body = JSON.stringify({
-      foo: 7,
-      bar: 42
-    });
-
-   Response.ok(body).contentType("application/json").build();
-  </javascript>
-</api>
+```yaml
+spec:
+  port: 2000
+  flow:
+    - javascript:
+        src: |
+          var body = JSON.stringify({
+            foo: 7,
+            bar: 42
+          });
+          Response.ok(body).contentType("application/json").build();
 ```
 
 #### Learn More
@@ -590,14 +601,19 @@ You can modify HTTP headers in requests or responses using Membrane's `setHeader
 #### Example: Adding CORS Headers
 The following configuration adds `CORS` headers to the responses received from the backend:
 
-```xml
-<api port="2000">
-    <response>
-        <setHeader name="Access-Control-Allow-Origin" value="*" />
-        <setHeader name="Access-Control-Allow-Methods" value="GET" />
-    </response>
-    <target url="https://api.predic8.de" />
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+        - setHeader:
+            name: Access-Control-Allow-Origin
+            value: "*"
+        - setHeader:
+            name: Access-Control-Allow-Methods
+            value: GET
+  target:
+    url: https://api.predic8.de
 ```
 
 ### Example: Setting Headers from JSON Body Content
@@ -607,17 +623,21 @@ Membrane allows dynamic extraction of values from the JSON body of a request or 
 #### Example Configuration
 The following example extracts the `id` and `name` fields from a JSON body and sets them as custom headers in the response:
 
-```xml
-<api port="2000">
-    <response>
-        <!-- Extract the "id" field from the JSON body and set it as the X-Product-Id header -->
-        <setHeader name="X-Product-Id" value="${jsonPath('$.id')}"/>
-        
-        <!-- Extract the "name" field from the JSON body and set it as the X-Product-Name header -->
-        <setHeader name="X-Product-Name" value="${jsonPath('$.name')}"/>
-    </response>
-    <target url="https://api.predic8.de" />
-</api>  
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+      - setHeader:
+          name: X-Product-Id
+          value: ${jsonPath('$.id')}
+          language: spel
+      - setHeader:
+          name: X-Product-Name
+          value: ${$.name}
+          language: jsonpath
+  target:
+    url: https://api.predic8.de
 ```
 
 ### Removing HTTP Headers
@@ -627,16 +647,19 @@ You can easily remove specific HTTP headers from requests or responses (or both)
 #### Example: Header Filtering
 The following configuration demonstrates how to manage headers:
 
-```xml
-<api port="2000">
-  <response>
-  <headerFilter>
-    <include>X-XSS-Protection</include> <!-- Keep the X-XSS-Protection header -->
-    <exclude>X-.*</exclude>             <!-- Remove all headers starting with "X-" except those explicitly included -->
-  </headerFilter>
-  </response>
-  <target url="https://www.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+      - headerFilter:
+          rules:
+            - include:
+                pattern: "X-XSS-Protection"
+            - exclude:
+                pattern: "X-.*"
+  target:
+    url: https://www.predic8.de
 ```  
 
 - **`<include>`:** Specifies headers to retain.
@@ -646,18 +669,21 @@ The first matching rule will be acted upon by the filter.
 
 ### Create JSON from Query Parameters
 
-```xml
-<api port="2000" method="GET">
-  <request>
-    <template contentType="application/json" pretty="yes">
-      { "answer": ${params.answer} }
-    </template>
-  </request>
-  <return/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            contentType: application/json
+            pretty: true
+            src: |
+              { "answer": ${params.answer} }
+    - return:
+        status: 200
 ```
 
-Call this API with `http://localhost:2000?answer=42` . Replace `<return.../>` with your `<target url="backend-server"/>`.
+Call this API with `http://localhost:2000?answer=42`.
 
 ## Transform JSON into TEXT, JSON or XML with Templates
 
@@ -669,40 +695,51 @@ curl -d '{"city":"Berlin"}' -H "Content-Type: application/json" "http://localhos
 
 This template will transform the JSON input into plain text:
 
-```xml
-
-<api port="2000" method="POST">
-    <request>
-        <template contentType="text/plain">
-            City: ${json.city}
-        </template>
-    </request>
-    <return statusCode="200"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            contentType: text/plain
+            src: |
+              City: ${json.city}
+        - return:
+            status: 200
 ```
 
-...into JSON:
+...into a different JSON:
 
-```xml
-
-<template contentType="application/json" pretty="true">
-    {
-    "destination": "${json.city}"
-    }
-</template>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "destination": "${json.city}"
+              }
+    - return:
+        status: 200
 ```
 
-...and into XML:
+...or into XML:
 
-```xml
-
-<template contentType="application/xml">
-    <![CDATA[
-    <places>
-        <place>${json.city}</place>
-    </places>
-    ]]>
-</template>
+```yaml
+spec:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            contentType: application/xml
+            src: |
+              <places>
+                  <place>${json.city}</place>
+              </places>            
+    - return:
+        status: 200
 ```
 
 ### Transform XML into Text or JSON
@@ -727,16 +764,17 @@ See: [message-transformation examples](./distribution/examples/message-transform
 
 Use the Javascript or Groovy plugin for more powerful yet simple transformations.
 
-```xml
-
-<api port="2000">
-    <request>
-        <javascript>
-            ({ id:7, place: json.city })
-        </javascript>
-    </request>
-    <return contentType="application/json"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - javascript:
+            src: |
+              ({ id:7, place: json.city })
+    - return:
+        status: 200
+        contentType: application/json
 ```
 
 Call the API with this curl command:
@@ -749,31 +787,30 @@ curl -d '{"city":"Berlin"}' -H "Content-Type: application/json" "http://localhos
 
 This script transforms the input and adds some calculations.
 
-```xml
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - javascript:
+            src: |
+              function convertDate(d) {
+                return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2);
+              }
 
-<api port="2000">
-    <request>
-        <javascript>
-
-            function convertDate(d) {
-            return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2);
-            }
-
-            ({
-            id: json.id,
-            date: convertDate(new Date(json.date)),
-            client: json.customer,
-            total: json.items.map(i => i.quantity * i.price).reduce((a,b) => a+b),
-            positions: json.items.map(i => ({
-            pieces: i.quantity,
-            price: i.price,
-            article: i.description
-            }))
-            })
-        </javascript>
-    </request>
-    <return/>
-</api>
+              ({
+                id: json.id,
+                date: convertDate(new Date(json.date)),
+                client: json.customer,
+                total: json.items.map(i => i.quantity * i.price).reduce((a,b) => a+b),
+                positions: json.items.map(i => ({
+                pieces: i.quantity,
+                price: i.price,
+                article: i.description
+              }))
+              })
+    - return:
+        status: 200
 ```
 
 See [examples/javascript](distribution/examples/scripting/javascript) for a detailed explanation. The same transformation can also be realized with [Groovy](distribution/examples/scripting/groovy)
@@ -783,7 +820,6 @@ See [examples/javascript](distribution/examples/scripting/javascript) for a deta
 You can beautify a JSON or XML using the `<beautifier/>` plugin.
 
 ```xml
-
 <api port="2000">
     <template contentType="application/xml"><![CDATA[
         <foo><bar>baz</bar></foo>
@@ -798,7 +834,6 @@ You can beautify a JSON or XML using the `<beautifier/>` plugin.
 Returns:
 
 ```xml
-
 <foo>
     <bar>baz</bar>
 </foo>
