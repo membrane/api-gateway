@@ -14,6 +14,10 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
+import com.predic8.membrane.core.interceptor.log.LogInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import org.hamcrest.*;
 import org.junit.jupiter.api.*;
@@ -72,6 +76,37 @@ class InternalProxyTest {
             interceptors.add(RETURN);
         }});
 
+        router.add(new APIProxy() {{
+            key = new APIProxyKey(2100);
+            target = new Target() {{
+                setUrl("internal://tservice");
+            }};
+        }});
+
+        router.add(new APIProxy() {{
+            key = new APIProxyKey(2101);
+            target = new Target() {{
+                setUrl("internal://tservice/");
+            }};
+        }});
+
+        router.add(new APIProxy() {{
+            key = new APIProxyKey(2102);
+            target = new Target() {{
+                setUrl("internal://tservice/a");
+            }};
+        }});
+
+        router.add(new InternalProxy() {{
+            name = "tservice";
+            interceptors.add(new ResponseInterceptor() {{
+                interceptors.add(new GroovyInterceptor() {{
+                    setSrc("exc.getResponse().setBodyContent(exc.getRequest().getUri().getBytes())");
+                }});
+            }});
+            interceptors.add(RETURN);
+        }});
+
         router.init();
 
     }
@@ -100,6 +135,52 @@ class InternalProxyTest {
             .post("http://localhost:2000/to-external")
         .then()
             .body(Matchers.equalTo("client>c>d>e<e<d<c"));
-        // @formatter:off
+        // @formatter:on
     }
+
+    @Test
+    void internalUrl_noTrailingSlash() {
+        // @formatter:off
+        when()
+            .get("http://localhost:2100/")
+        .then()
+            .body(Matchers.equalTo("/"));
+
+        when()
+            .get("http://localhost:2100/foo")
+        .then()
+            .body(Matchers.equalTo("/foo"));
+        // @formatter:on
+    }
+
+    @Test
+    void internalUrl_withTrailingSlash() {
+        // @formatter:off
+        when()
+            .get("http://localhost:2101/")
+        .then()
+            .body(Matchers.equalTo("/"));
+
+        when()
+            .get("http://localhost:2101/foo")
+        .then()
+            .body(Matchers.equalTo("/foo"));
+        // @formatter:on
+    }
+
+    @Test
+    void internalUrl_withFixedPathSegment() {
+        // @formatter:off
+        when()
+            .get("http://localhost:2102/")
+        .then()
+            .body(Matchers.equalTo("/a"));
+
+        when()
+            .get("http://localhost:2102/foo")
+        .then()
+            .body(Matchers.equalTo("/a"));
+        // @formatter:on
+    }
+
 }
