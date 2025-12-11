@@ -728,7 +728,7 @@ api:
 ...or into XML:
 
 ```yaml
-spec:
+api:
   port: 2000
   flow:
     - request:

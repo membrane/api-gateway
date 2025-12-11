@@ -6,19 +6,20 @@ import com.predic8.membrane.core.proxies.*;
 import org.asynchttpclient.*;
 
 import java.io.*;
+import java.time.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.atomic.*;
 
-import static org.asynchttpclient.Dsl.asyncHttpClient;
+import static org.asynchttpclient.Dsl.*;
 
 /**
  * LoadTest tool to measure the throughput of a Membrane and the maximum number of concurrent requests allowed.
- *
+ * <p>
  * Results:
  * - 2025-12-11 on MacOS MacBook Pro Apple M1 Max 2021
- *   > 20.000 RPS
- *   > Max number of concurrent clients = 10,000
- *     Then the limits of the OS are limiting the number of concurrent connections.
+ * > 20.000 RPS
+ * > Max number of concurrent clients = 10,000
+ * Then the limits of the OS are limiting the number of concurrent connections.
  */
 public class LoadTester {
 
@@ -30,7 +31,7 @@ public class LoadTester {
     /**
      * Specifies the maximum number of concurrent requests allowed during the load testing process.
      */
-    public static final int CONCURRENCY = 10_000;
+    public static final int CONCURRENCY = 10000;
 
     Router r = new HttpRouter();
 
@@ -63,7 +64,11 @@ public class LoadTester {
 
         Semaphore semaphore = new Semaphore(CONCURRENCY);
 
-        AsyncHttpClient client = asyncHttpClient();
+        AsyncHttpClient client = asyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
+                .setConnectTimeout(Duration.ofMillis(60000))
+                .setRequestTimeout(Duration.ofMillis(60000))
+                .setMaxConnections(CONCURRENCY)
+                .setMaxConnectionsPerHost(CONCURRENCY).build());
 
         ExecutorService submitters =
                 Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
@@ -72,7 +77,7 @@ public class LoadTester {
         LongAdder err = new LongAdder();
         CountDownLatch latch = new CountDownLatch(TOTAL);
 
-        int maxParallelClient = 0;
+        final AtomicInteger minAvailablePermits = new AtomicInteger(CONCURRENCY);
 
         long start = System.nanoTime();
 
@@ -87,6 +92,7 @@ public class LoadTester {
                         else
                             err.increment();
                         latch.countDown();
+                        calculateMinAvailablePermits();
                         semaphore.release();
                         return null;
                     }
@@ -95,11 +101,16 @@ public class LoadTester {
                     public void onThrowable(Throwable t) {
                         err.increment();
                         latch.countDown();
+                        calculateMinAvailablePermits();
                         semaphore.release();
+                    }
+
+                    private void calculateMinAvailablePermits() {
+                        minAvailablePermits.updateAndGet(current -> Math.min(current, semaphore.availablePermits()));
                     }
                 });
             });
-            maxParallelClient = Math.max(maxParallelClient,  semaphore.availablePermits());
+
         }
 
         latch.await();
@@ -108,7 +119,7 @@ public class LoadTester {
         double seconds = (end - start) / 1_000_000_000.0;
         System.out.println("RPS: " + (TOTAL / seconds));
         System.out.println("OK=" + ok.sum() + " ERR=" + err.sum());
-        System.out.println("Max number of concurrent clients = " + maxParallelClient);
+        System.out.println("Max number of concurrent clients = " + (CONCURRENCY - minAvailablePermits.get()));
 
         submitters.close();
         client.close();

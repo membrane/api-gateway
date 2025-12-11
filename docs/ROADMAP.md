@@ -12,9 +12,16 @@
 - Correct YAML example on GitHub README
 - Rename in apis.yaml
 
+
 # 7.1.0
 
 - Register JSON Schema for YAML at: https://www.schemastore.org
+- Killer Grafana Dashboard to import
+  -> Screenshot for README.md
+
+# 7.0.2
+
+- Rename WebSocketInterceptor.flow to something else to avoid confusion with flowParser
 
 # 7.0.1
 
@@ -27,8 +34,7 @@
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
 - Restore Kubernetes Startup Thread
 - Fix `YAMLParsingTest.errorInListItemUniqueness()`
-
-
+- Check 404 in AdminConsole => Client Requests
   
 
 ## (Breaking) Interface Changes
