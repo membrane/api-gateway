@@ -22,6 +22,7 @@ import com.predic8.membrane.annot.model.doc.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
+import javax.lang.model.type.TypeKind;
 import javax.tools.*;
 import java.io.*;
 import java.util.*;
@@ -333,10 +334,11 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     /**
      * Ensures that:
      * - every @MCElement either has no setId(...) at all OR
-     * - exactly one setId(String) method annotated with @MCAttribute(name="id" or default)
+     * - exactly one void setId(String) method annotated with @MCAttribute(name="id" or default)
      */
     private void ensureValidIdSetter(ElementInfo elementInfo) {
         if (!(elementInfo.getElement() instanceof TypeElement type)) return;
+
         var elements = processingEnv.getElementUtils();
 
         List<ExecutableElement> idSetters = new ArrayList<>();
@@ -348,11 +350,13 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             if (!m.getSimpleName().contentEquals("setId"))
                 continue;
 
-            if (m.getParameters().size() != 1 || !processingEnv.getTypeUtils().isSameType(
-                    m.getParameters().getFirst().asType(),
-                    elements.getTypeElement("java.lang.String").asType())
-            ) {
-                throw new ProcessingException("setId(...) on %s must be exactly setId(String).".formatted(type.getQualifiedName()), m);
+            if (m.getParameters().size() != 1
+                    || m.getReturnType().getKind() != TypeKind.VOID
+                    || !processingEnv.getTypeUtils().isSameType(
+                        m.getParameters().getFirst().asType(),
+                        elements.getTypeElement("java.lang.String").asType()
+            )) {
+                throw new ProcessingException("setId(...) on %s must be exactly 'void setId(String)'.".formatted(type.getQualifiedName()), m);
             }
             idSetters.add(m);
         }
@@ -361,20 +365,17 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             return;  // no setId(String) present => OK
 
         if (idSetters.size() > 1)
-            throw new ProcessingException("Multiple setId(String) methods found on "+ type.getQualifiedName(), idSetters.getFirst());
+            throw new ProcessingException("Multiple setId(String) methods found on " + type.getQualifiedName(),idSetters.getFirst());
 
         ExecutableElement setId = idSetters.getFirst();
         MCAttribute attr = setId.getAnnotation(MCAttribute.class);
         if (attr == null) {
-            throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must be annotated with @MCAttribute(name=\"id\").", setId);
+            throw new ProcessingException("setId(String) on " + type.getQualifiedName()+ " must be annotated with @MCAttribute(name=\"id\").",setId);
         }
 
-        String xmlName = attr.attributeName().isEmpty() ? "id" : attr.attributeName();
-        if (!"id".equals(xmlName)) {
-            throw new ProcessingException(
-                    "setId(String) on " + type.getQualifiedName()
-                            + " must use @MCAttribute(name=\"id\") or default name \"id\", but is \"" + xmlName + "\".",
-                    setId);
+        String attrName = attr.attributeName().isEmpty() ? "id" : attr.attributeName();
+        if (!"id".equals(attrName)) {
+            throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must use @MCAttribute(name=\"id\") or default name \"id\", but is \"" + attrName + "\".", setId);
         }
     }
 
