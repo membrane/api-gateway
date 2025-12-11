@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.equalTo;
 
 class InternalProxyTest {
 
@@ -122,7 +123,7 @@ class InternalProxyTest {
         when()
             .get("http://localhost:2000/foo")
         .then()
-            .body(Matchers.equalTo(">a>b<b<a"));
+            .body(equalTo(">a>b<b<a"));
         // @formatter:on
     }
 
@@ -134,7 +135,7 @@ class InternalProxyTest {
         .when()
             .post("http://localhost:2000/to-external")
         .then()
-            .body(Matchers.equalTo("client>c>d>e<e<d<c"));
+            .body(equalTo("client>c>d>e<e<d<c"));
         // @formatter:on
     }
 
@@ -144,12 +145,12 @@ class InternalProxyTest {
         when()
             .get("http://localhost:2100/")
         .then()
-            .body(Matchers.equalTo("/"));
+            .body(equalTo("/"));
 
         when()
             .get("http://localhost:2100/foo")
         .then()
-            .body(Matchers.equalTo("/foo"));
+            .body(equalTo("/foo"));
         // @formatter:on
     }
 
@@ -159,12 +160,12 @@ class InternalProxyTest {
         when()
             .get("http://localhost:2101/")
         .then()
-            .body(Matchers.equalTo("/"));
+            .body(equalTo("/"));
 
         when()
             .get("http://localhost:2101/foo")
         .then()
-            .body(Matchers.equalTo("/foo"));
+            .body(equalTo("/foo"));
         // @formatter:on
     }
 
@@ -174,12 +175,12 @@ class InternalProxyTest {
         when()
             .get("http://localhost:2102/")
         .then()
-            .body(Matchers.equalTo("/a"));
+            .body(equalTo("/a"));
 
         when()
             .get("http://localhost:2102/foo")
         .then()
-            .body(Matchers.equalTo("/a"));
+            .body(equalTo("/a"));
         // @formatter:on
     }
 
