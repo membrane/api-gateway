@@ -29,7 +29,7 @@ public class Bean {
         return bean;
     }
 
-    @MCChildElement
+    @MCChildElement(excludeFromJson = true)
     public void setBean(Object bean) {
         this.bean = bean;
     }

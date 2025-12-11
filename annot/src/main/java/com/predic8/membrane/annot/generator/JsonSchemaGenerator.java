@@ -222,6 +222,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private void processMCChilds(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
 
+            if (cei.excludedFromJsonSchema())
+                return;
+
             AbstractSchema<?> parent2 = so;
 
             if (cei.isList()) {
