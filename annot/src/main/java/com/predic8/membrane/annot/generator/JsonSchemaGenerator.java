@@ -147,6 +147,11 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .additionalProperties(elementInfo.getOai() != null)
                 .description(getDescriptionContent(elementInfo));
         collectProperties(m, main, elementInfo, parser);
+
+        if (elementInfo.getAnnotation().topLevel()) {
+            ensureValidIdSetter(elementInfo);
+            addIdPropertyToTopLevelIfMissing(elementInfo, parser);
+        }
         return parser;
     }
 
@@ -323,6 +328,61 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         try (BufferedWriter w = new BufferedWriter(createFile(main).openWriter())) {
             w.write(writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
         }
+    }
+
+    /**
+     * Ensures that:
+     * - every @MCElement either has no setId(...) at all OR
+     * - exactly one setId(String) method annotated with @MCAttribute(name="id" or default)
+     */
+    private void ensureValidIdSetter(ElementInfo elementInfo) {
+        if (!(elementInfo.getElement() instanceof TypeElement type)) return;
+        var elements = processingEnv.getElementUtils();
+
+        List<ExecutableElement> idSetters = new ArrayList<>();
+
+        for (Element e : elements.getAllMembers(type)) {
+            if (e.getKind() != ElementKind.METHOD)
+                continue;
+            ExecutableElement m = (ExecutableElement) e;
+            if (!m.getSimpleName().contentEquals("setId"))
+                continue;
+
+            if (m.getParameters().size() != 1 || !processingEnv.getTypeUtils().isSameType(
+                    m.getParameters().getFirst().asType(),
+                    elements.getTypeElement("java.lang.String").asType())
+            ) {
+                throw new ProcessingException("setId(...) on %s must be exactly setId(String).".formatted(type.getQualifiedName()), m);
+            }
+            idSetters.add(m);
+        }
+
+        if (idSetters.isEmpty())
+            return;  // no setId(String) present => OK
+
+        if (idSetters.size() > 1)
+            throw new ProcessingException("Multiple setId(String) methods found on "+ type.getQualifiedName(), idSetters.getFirst());
+
+        ExecutableElement setId = idSetters.getFirst();
+        MCAttribute attr = setId.getAnnotation(MCAttribute.class);
+        if (attr == null) {
+            throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must be annotated with @MCAttribute(name=\"id\").", setId);
+        }
+
+        String xmlName = attr.attributeName().isEmpty() ? "id" : attr.attributeName();
+        if (!"id".equals(xmlName)) {
+            throw new ProcessingException(
+                    "setId(String) on " + type.getQualifiedName()
+                            + " must use @MCAttribute(name=\"id\") or default name \"id\", but is \"" + xmlName + "\".",
+                    setId);
+        }
+    }
+
+    private void addIdPropertyToTopLevelIfMissing(ElementInfo elementInfo, SchemaObject parser) {
+        if (elementInfo.getAis().stream().anyMatch(ai -> "id".equals(ai.getXMLName())))
+            return; // already defined via @MCAttribute -> nothing to do
+
+        parser.property(string("id").required(false));
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
