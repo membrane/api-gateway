@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.adminApi;
+package com.predic8.membrane.core.interceptor.adminapi;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.predic8.membrane.core.transport.ws.WebSocketConnectionCollection;
@@ -19,14 +19,13 @@ import com.predic8.membrane.core.util.TimerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.TimerTask;
 
 import static com.google.common.collect.ImmutableMap.of;
 
-public class DiskWatcher {
+public class MemoryWatcher {
 
-    private final static Logger LOG = LoggerFactory.getLogger(DiskWatcher.class.getName());
+    private final static Logger LOG = LoggerFactory.getLogger(MemoryWatcher.class.getName());
 
     private WebSocketConnectionCollection connections;
     private int intervalMilliseconds = 10000;
@@ -36,19 +35,19 @@ public class DiskWatcher {
         timerManager.schedulePeriodicTask(new TimerTask() {
             @Override
             public void run() {
-                getDiskStats();
+                getMemoryStats();
             }
-        }, intervalMilliseconds, "DiskWatcher");
+        }, intervalMilliseconds, "MemoryWatcher");
     }
 
-    private void getDiskStats() {
+    private void getMemoryStats() {
         try {
             connections.broadcast(of(
                     "subject", "metricUpdate",
                     "data", of(
                             "metrics", of(
-                                    "totalDiskSpace", new File("/").getTotalSpace(),
-                                    "freeDiskSpace", new File("/").getFreeSpace()
+                                "totalMemory", Runtime.getRuntime().totalMemory(),
+                                "freeMemory", Runtime.getRuntime().freeMemory()
                             )
                     )
             ));

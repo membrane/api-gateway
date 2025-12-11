@@ -52,7 +52,6 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.TimerManager;
 import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.text.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -61,10 +60,12 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
-import org.springframework.context.support.AbstractRefreshableApplicationContext;
+import org.springframework.context.support.*;
+import org.springframework.core.io.*;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
+import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 
@@ -174,6 +175,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         bf.start();
 
         return bf.getBean("router", Router.class);
+    }
+
+    public static Router initFromXMLString(String xmlString) {
+        GenericXmlApplicationContext ctx = new GenericXmlApplicationContext();
+        ctx.load(new ByteArrayResource(xmlString.getBytes(StandardCharsets.UTF_8)));
+        ctx.refresh();
+        ctx.start();
+        return ctx.getBean(Router.class);
     }
 
     @SuppressWarnings("NullableProblems")
