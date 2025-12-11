@@ -180,10 +180,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             if (ai.excludedFromJsonSchema())
                 return;
 
-            // hide id only on top-level elements
-            if ("id".equals(ai.getXMLName()) && i.getAnnotation().topLevel()) {
-                return;
-            }
             so.property(createProperty(ai));
         });
     }
