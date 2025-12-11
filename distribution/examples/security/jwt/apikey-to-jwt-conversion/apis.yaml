@@ -1,4 +1,3 @@
-
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.1.json
 # If caller provides a valid API key it will receive a signed JWT.
 api:
