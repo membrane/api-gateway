@@ -59,7 +59,7 @@ api:
         - template:
             src: |
               {
-                "sub": "${fn.user()}" // username from HTTP Basic Auth
+                "sub": "${fn.user()}"
               }
         - jwtSign:
             jwk:
