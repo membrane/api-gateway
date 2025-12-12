@@ -113,7 +113,7 @@ public class SpringConfigXSDErrorsTest {
         var result = CompilerHelper.compile(sources, false);
 
         assertCompilerResult(false, of(
-                error("Duplicate component @MCElement name. Make at least one @MCElement(component=false,...) ."),
+                error("Duplicate top-level @MCElement name. Make at least one @MCElement(component=false,...) ."),
                 error("also here")
         ), result);
     }
