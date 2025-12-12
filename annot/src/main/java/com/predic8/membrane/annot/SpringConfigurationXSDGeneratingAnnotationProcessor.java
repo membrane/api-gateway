@@ -215,8 +215,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
                     scan(main, ii);
 
-                    if (ii.getAnnotation().topLevel())
-                        main.getTopLevels().put(ii.getAnnotation().name(), ii);
+                    if (ii.getAnnotation().component())
+                        main.getComponents().put(ii.getAnnotation().name(), ii);
                     // TODO check that the real-top-level are not noEnvelope
 
                     /**
@@ -229,8 +229,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                      */
 
                     if (ii.getAnnotation().noEnvelope()) {
-//                        if (ii.getAnnotation().topLevel())
-//                            throw new ProcessingException("@MCElement(..., noEnvelope=true, topLevel=true) is invalid.", ii.getElement());
+//                        if (ii.getAnnotation().component())
+//                            throw new ProcessingException("@MCElement(..., noEnvelope=true, component=true) is invalid.", ii.getElement());
                         if (ii.getAnnotation().mixed())
                             throw new ProcessingException("@MCElement(..., noEnvelope=true, mixed=true) is invalid.", ii.getElement());
                         if (ii.getChildElementSpecs().size() != 1)
@@ -264,8 +264,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                             for (Entry<TypeElement, ElementInfo> e : main.getElements().entrySet()) {
                                 if (!processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()))
                                     continue;
-                                if (targetIsObject && !isTopLevelMCElement(e.getKey()))
-                                    continue; // only allow topLevel MCElements for Object
+                                if (targetIsObject && !isComponent(e.getKey()))
+                                    continue; // only allow component MCElements for Object
                                 cedi.getElementInfo().add(e.getValue());
                             }
                         }
@@ -282,9 +282,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
                 for (MainInfo main : m.getMains()) {
                     for (Entry<TypeElement, ElementInfo> f : main.getElements().entrySet()) {
-                        ElementInfo ei2 = main.getTopLevels().get(f.getKey().getAnnotation(MCElement.class).name());
-                        if (ei2 != null && f.getValue() != ei2 && f.getValue().getAnnotation().topLevel())
-                            throw new ProcessingException("Duplicate top-level @MCElement name. Make at least one @MCElement(topLevel=false,...) .", f.getKey(), ei2.getElement());
+                        ElementInfo ei2 = main.getComponents().get(f.getKey().getAnnotation(MCElement.class).name());
+                        if (ei2 != null && f.getValue() != ei2 && f.getValue().getAnnotation().component())
+                            throw new ProcessingException("Duplicate component @MCElement name. Make at least one @MCElement(component=false,...) .", f.getKey(), ei2.getElement());
 
                         List<String> uniquenessErrors = getUniquenessError(f.getValue(), main);
                         if (!uniquenessErrors.isEmpty())
@@ -309,9 +309,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         }
     }
 
-    private boolean isTopLevelMCElement(TypeElement type) {
+    private boolean isComponent(TypeElement type) {
         MCElement mcElement = type.getAnnotation(MCElement.class);
-        return (mcElement != null) && mcElement.topLevel();
+        return (mcElement != null) && mcElement.component();
     }
 
     private List<String> getUniquenessError(ElementInfo ii, MainInfo main) {

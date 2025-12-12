@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.kubernetes;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 
 import java.util.ArrayList;
@@ -106,7 +105,7 @@ public class Bean {
         WEBSOCKET;
     }
 
-    @MCElement(name = "constructorArg", topLevel = false)
+    @MCElement(name = "constructorArg", component = false)
     public static class ConstructorArg {
 
         // TODO
@@ -116,7 +115,7 @@ public class Bean {
         private String ref;
     }
 
-    @MCElement(name = "property", topLevel = false)
+    @MCElement(name = "property", component = false)
     public static class Property {
 
         // TODO

@@ -71,7 +71,7 @@ import static java.nio.charset.StandardCharsets.*;
  *              </ul>
  *              </p>
  */
-@MCElement(name="telekomSMSTokenProvider", topLevel=false)
+@MCElement(name="telekomSMSTokenProvider", component =false)
 public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	private static final Logger log = LoggerFactory.getLogger(TelekomSMSTokenProvider.class.getName());
 

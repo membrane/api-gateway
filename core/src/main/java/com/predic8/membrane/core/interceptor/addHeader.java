@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.http.HeaderField;
 
-@MCElement(name = "addHeader", topLevel = false)
+@MCElement(name = "addHeader", component = false)
 public class addHeader {
 
     private String name;
