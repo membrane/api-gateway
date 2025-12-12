@@ -121,7 +121,17 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
             schema.definition(createParser(m, main, elementInfo));
         }
+
+        // Additional component-only parsers (id allowed only in components-list context)
+        for (ElementInfo elementInfo : main.getElements().values()) {
+            if (!elementInfo.getAnnotation().component())
+                continue;
+
+            ensureValidIdSetter(elementInfo);
+            schema.definition(createComponentParser(m, main, elementInfo));
+        }
     }
+
 
     private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
         String parserName = elementInfo.getXSDTypeName(m);
@@ -146,11 +156,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .additionalProperties(elementInfo.getOai() != null)
                 .description(getDescriptionContent(elementInfo));
         collectProperties(m, main, elementInfo, parser);
-
-        if (elementInfo.getAnnotation().component()) {
-            ensureValidIdSetter(elementInfo);
-            addIdPropertyToComponentsIfMissing(elementInfo, parser);
-        }
         return parser;
     }
 
@@ -248,8 +253,15 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                     // parent2.addProperty(new SchemaObject("$ref").attribute("type", "string"));
                 }
             }
-            addChildsAsProperties(m, main, cei, (SchemaObject) parent2);
+
+            addChildsAsProperties(m, main, cei, (SchemaObject) parent2, isComponentsList(i, cei));
         }
+    }
+
+    private boolean isComponentsList(ElementInfo parent, ChildElementInfo cei) {
+        return "components".equals(parent.getAnnotation().name())
+                && parent.getAnnotation().noEnvelope()
+                && "components".equals(cei.getPropertyName());
     }
 
     private boolean shouldGenerateFlowParserType(ChildElementInfo cei) {
@@ -295,10 +307,17 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2) {
+    private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2, boolean componentsContext) {
         for (ElementInfo ei : getChildElementDeclarationInfo(main, cei).getElementInfo()) {
+
+            String defName = ei.getXSDTypeName(m);
+
+            if (componentsContext && ei.getAnnotation().component()) {
+                defName = componentDefName(defName);
+            }
+
             parent2.property(ref(ei.getAnnotation().name())
-                            .ref("#/$defs/" + ei.getXSDTypeName(m)))
+                            .ref("#/$defs/" + defName))
                     .description(getDescriptionContent(ei))
                     .required(cei.isRequired());
         }
@@ -329,6 +348,42 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             w.write(writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
         }
     }
+
+    private AbstractSchema<?> createComponentParser(Model m, MainInfo main, ElementInfo elementInfo) {
+        String baseName = elementInfo.getXSDTypeName(m);
+        String compName = componentDefName(baseName);
+
+        // noEnvelope components cannot "gain" an object property like id -> just alias base
+        // TODO: Decide if/how noEnvelope components should support IDs
+        if (elementInfo.getAnnotation().noEnvelope()) {
+            return ref(compName).ref("#/$defs/" + baseName);
+        }
+
+        // If it already has a real id attribute, just alias the base schema
+        if (hasRealIdAttribute(elementInfo)) {
+            return ref(compName).ref("#/$defs/" + baseName);
+        }
+
+        SchemaObject parser = object(compName)
+                .additionalProperties(elementInfo.getOai() != null)
+                .description(getDescriptionContent(elementInfo));
+
+        collectProperties(m, main, elementInfo, parser);
+
+        parser.property(string("id").required(false));
+
+        return parser;
+    }
+
+
+    private static String componentDefName(String baseDefName) {
+        return baseDefName + "Component";
+    }
+
+    private boolean hasRealIdAttribute(ElementInfo elementInfo) {
+        return elementInfo.getAis().stream().anyMatch(ai -> "id".equals(ai.getXMLName()));
+    }
+
 
     /**
      * Ensures that:
