@@ -129,6 +129,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
             ensureValidIdSetter(elementInfo);
             schema.definition(createComponentParser(m, main, elementInfo));
+            schema.definition(createComponentOrRefParser(m, elementInfo));
         }
     }
 
@@ -236,12 +237,20 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             if (cei.isList()) {
                 if (shouldGenerateFlowParserType(cei)) {
                     var sos = new ArrayList<SchemaObject>();
+
                     for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
                         if (excludeFromFlow.contains(ei.getAnnotation().name()))
                             continue;
+
+                        String defName = ei.getXSDTypeName(m);
+                        if (ei.getAnnotation().component()) {
+                            defName = componentOrRefDefName(defName);
+                        }
+
                         sos.add(object()
                                 .additionalProperties(false)
-                                .property(ref(ei.getAnnotation().name()).ref("#/$defs/" + ei.getXSDTypeName(m))));
+                                .property(ref(ei.getAnnotation().name())
+                                        .ref("#/$defs/" + defName)));
                     }
                     processList(i, so, cei, sos);
                     continue;
@@ -312,8 +321,10 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
             String defName = ei.getXSDTypeName(m);
 
-            if (componentsContext && ei.getAnnotation().component()) {
-                defName = componentDefName(defName);
+            if (ei.getAnnotation().component()) {
+                defName = componentsContext
+                        ? componentDefName(defName)          // in components: id-allowed parser
+                        : componentOrRefDefName(defName);    // everywhere else: inline OR $ref
             }
 
             parent2.property(ref(ei.getAnnotation().name())
@@ -438,6 +449,33 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             return; // already defined via @MCAttribute -> nothing to do
 
         parser.property(string("id").required(false));
+    }
+
+    private AbstractSchema<?> createComponentOrRefParser(Model m, ElementInfo elementInfo) {
+        String baseName = elementInfo.getXSDTypeName(m);
+        String orRefName = componentOrRefDefName(baseName);
+
+        // noEnvelope roots are arrays/refs -> keep it simple for now
+        // TODO: Support $ref for noEnvelope components properly (needs schema without forcing "type: object").
+        if (elementInfo.getAnnotation().noEnvelope()) {
+            return ref(orRefName).ref("#/$defs/" + baseName);
+        }
+
+        SchemaRef inline = ref("inline").ref("#/$defs/" + baseName);
+
+        SchemaObject refOnly = object(orRefName + "Ref")
+                .additionalProperties(false)
+                .property(string("$ref").required(true));
+
+        // oneOf: inline object OR {$ref: string}
+        SchemaObject orRef = object(orRefName);
+        orRef.oneOf(List.of(inline, refOnly));
+
+        return orRef;
+    }
+
+    private static String componentOrRefDefName(String baseDefName) {
+        return baseDefName + "OrRef";
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
