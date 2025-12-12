@@ -21,7 +21,7 @@
 
 # 7.0.2
 
-- Rename WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
 
 # 7.0.1
 
