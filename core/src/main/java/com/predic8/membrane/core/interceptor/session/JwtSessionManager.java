@@ -232,7 +232,7 @@ public class JwtSessionManager extends SessionManager {
         this.jwk = jwk;
     }
 
-    @MCElement(name = "jwk", mixed = true, topLevel = false, id = "jwtSessionManager-jwk")
+    @MCElement(name = "jwk", mixed = true, component = false, id = "jwtSessionManager-jwk")
     public static class Jwk extends Blob {
 
     }

@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name="google", topLevel=false)
+@MCElement(name="google", component =false)
 public class GoogleAuthorizationService extends AuthorizationService {
 
     @Override

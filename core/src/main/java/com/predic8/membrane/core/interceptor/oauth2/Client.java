@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 
-@MCElement(name="client", topLevel=false, id="staticClientList-client")
+@MCElement(name="client", component =false, id="staticClientList-client")
 public class Client {
     private String clientId;
     private String clientSecret;

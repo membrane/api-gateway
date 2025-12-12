@@ -46,7 +46,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * <p>
  * This interceptor is helpful in scenarios with multiple redundant routers for inbound HTTP requests.
  */
-@MCElement(id = "sslProxy-routerIpResolver", name = "routerIpResolver", topLevel = false)
+@MCElement(id = "sslProxy-routerIpResolver", name = "routerIpResolver", component = false)
 public class RouterIpResolverInterceptor implements SSLInterceptor {
 
     private final Logger log = LoggerFactory.getLogger(RouterIpResolverInterceptor.class);

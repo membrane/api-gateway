@@ -96,7 +96,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
      * Supports dynamic destinations through expressions.
      * </p>
      */
-    @MCElement(name = "target", topLevel = false)
+    @MCElement(name = "target", component = false)
     public static class Target implements XMLSupport {
         private String host;
         private int port = -1;

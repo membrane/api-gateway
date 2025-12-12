@@ -21,7 +21,7 @@ import com.predic8.membrane.core.config.security.acme.AcmeValidation;
  * @description Configures Azure DNS for ACME DNS-01 validation.
  * @topic 8. ACME
  */
-@MCElement(topLevel = false, name = "azureDns")
+@MCElement(component = false, name = "azureDns")
 public class AzureDns extends AcmeValidation {
 
     private String dnsZoneName;

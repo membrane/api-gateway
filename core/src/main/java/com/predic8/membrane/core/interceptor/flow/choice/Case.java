@@ -26,7 +26,7 @@ import org.slf4j.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
-@MCElement(name = "case", topLevel = false)
+@MCElement(name = "case", component = false)
 public class Case extends InterceptorContainer implements XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(Case.class);

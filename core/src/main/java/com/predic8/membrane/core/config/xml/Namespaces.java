@@ -21,7 +21,7 @@ import java.util.*;
 
 import static javax.xml.XMLConstants.NULL_NS_URI;
 
-@MCElement(name="namespaces", topLevel = false)
+@MCElement(name="namespaces", component = false)
 public class Namespaces {
 
     private List<Namespace> namespaces;
@@ -43,7 +43,7 @@ public class Namespaces {
         return namespaces;
     }
 
-    @MCElement(name = "namespace", topLevel = false, id = "xml-namespace")
+    @MCElement(name = "namespace", component = false, id = "xml-namespace")
     public static class Namespace {
 
         public String prefix;

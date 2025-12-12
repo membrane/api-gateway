@@ -67,7 +67,7 @@ public class MainInfo {
 		return elements;
 	}
 
-	public Map<String, ElementInfo> getTopLevels() {
+	public Map<String, ElementInfo> getComponents() {
 		return globals;
 	}
 

@@ -19,7 +19,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.acme.AcmeSynchronizedStorage;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 
-@MCElement(name = "azureTableStorage", topLevel = false)
+@MCElement(name = "azureTableStorage", component = false)
 public class AzureTableStorage implements AcmeSynchronizedStorage {
 
     private String storageAccountName;

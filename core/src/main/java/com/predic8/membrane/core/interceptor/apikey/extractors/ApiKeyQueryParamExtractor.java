@@ -41,7 +41,7 @@ import static java.util.Optional.*;
  * </apiKey></code></pre>
  * @topic 3. Security and Validation
  */
-@MCElement(name="queryParamExtractor", topLevel = false)
+@MCElement(name="queryParamExtractor", component = false)
 public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
 
     private static final Logger log = LoggerFactory.getLogger(ApiKeyQueryParamExtractor.class);

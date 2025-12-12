@@ -47,7 +47,7 @@ import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESS
  * </p>
  * @topic 3. Security and Validation
  */
-@MCElement(name="expressionExtractor", topLevel = false)
+@MCElement(name="expressionExtractor", component = false)
 public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XMLSupport {
 
     private String expression = "";

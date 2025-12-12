@@ -85,7 +85,7 @@ public class OAuth2PermissionCheckerInterceptor extends AbstractInterceptor {
         public abstract Object evaluate(Exchange exc);
     }
 
-    @MCElement(topLevel = false, name = "userInfo")
+    @MCElement(component = false, name = "userInfo")
     public static class UserInfoValueSource extends ValueSource {
         String field;
 

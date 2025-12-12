@@ -28,6 +28,9 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
 
     private List<AbstractSchema<?>> oneOf;
 
+    private List<AbstractSchema<?>> allOf;
+    private final Map<String, AbstractSchema<?>> patternProperties = new LinkedHashMap<>();
+
     SchemaObject(String name) {
         super(name);
         type = OBJECT;
@@ -46,6 +49,11 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         return this;
     }
 
+    public SchemaObject patternProperty(String pattern, AbstractSchema<?> schema) {
+        patternProperties.put(pattern, schema);
+        return this;
+    }
+
     public ObjectNode json(ObjectNode node) {
         super.json(node);
 
@@ -54,6 +62,22 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         }
 
         jsonProperties(node);
+
+        if (!patternProperties.isEmpty()) {
+            ObjectNode pp = jnf.objectNode();
+            for (var e : patternProperties.entrySet()) {
+                pp.set(e.getKey(), e.getValue().json(jnf.objectNode()));
+            }
+            node.set("patternProperties", pp);
+        }
+
+        if (allOf != null && !allOf.isEmpty()) {
+            var allOfArray = jnf.arrayNode();
+            for (AbstractSchema<?> s : allOf) {
+                allOfArray.add(s.json(jnf.objectNode()));
+            }
+            node.set("allOf", allOfArray);
+        }
 
         if (oneOf != null && !oneOf.isEmpty()) {
             var oneOfArray = jnf.arrayNode();
@@ -109,5 +133,18 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     public SchemaObject oneOf(List<AbstractSchema<?>> oneOf) {
         this.oneOf = oneOf;
         return this;
+    }
+
+    public SchemaObject allOf(List<AbstractSchema<?>> allOf) {
+        this.allOf = allOf;
+        return this;
+    }
+
+    public boolean hasProperty(String name) {
+        for (AbstractSchema<?> p : properties) {
+            if (name.equals(p.getName()))
+                return true;
+        }
+        return false;
     }
 }

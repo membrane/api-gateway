@@ -62,13 +62,13 @@ public abstract class AbstractGrammar {
         return new WritableNames(ei);
     }
 
-    protected Stream<ElementInfo> getTopLevelStream(MainInfo main) {
+    protected Stream<ElementInfo> getComponentStream(MainInfo main) {
         return main.getElements().values().stream()
-                .filter(ei -> ei.getAnnotation().topLevel());
+                .filter(ei -> ei.getAnnotation().component());
     }
 
-    protected List<ElementInfo> getTopLevelElementInfos(MainInfo main) {
-        return getTopLevelStream(main)
+    protected List<ElementInfo> getComponentElementInfos(MainInfo main) {
+        return getComponentStream(main)
                 .collect(Collectors.toList());
     }
 

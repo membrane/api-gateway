@@ -18,7 +18,7 @@ import com.predic8.membrane.annot.MCElement;
 
 import java.util.Objects;
 
-@MCElement(name = "fileStorage", topLevel = false)
+@MCElement(name = "fileStorage", component = false)
 public class FileStorage implements AcmeSynchronizedStorage {
 
     String dir;

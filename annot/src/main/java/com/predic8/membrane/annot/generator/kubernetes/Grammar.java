@@ -157,7 +157,7 @@ public class Grammar extends AbstractGrammar {
         return concat(
                 // global
                 main.getIis().stream()
-                .filter(ei -> ei.getAnnotation().topLevel())
+                .filter(ei -> ei.getAnnotation().component())
                 .map(ei -> String.format("        elementMapping.put(\"%s\", %s.class);" + System.lineSeparator()
                                 + "        elementMapping.put(\"%s\", %s.class);",
                         ei.getAnnotation().name(),
@@ -169,7 +169,7 @@ public class Grammar extends AbstractGrammar {
                         .flatMap(ei -> ei.getChildElementSpecs().stream().map(cei -> Pair.of(ei, cei)))
                         .flatMap(p -> main.getChildElementDeclarations().get(p.y.getTypeDeclaration())
                                 .getElementInfo().stream().map(ei -> Pair.of(p.x, ei)))
-                        .filter(p -> !p.y.getAnnotation().topLevel())
+                        .filter(p -> !p.y.getAnnotation().component())
                         .map(p -> String.format("        localElementMappingPut(\"%s\", \"%s\", %s.class);",
                                 p.x.getAnnotation().name(),
                                 p.y.getAnnotation().name(),
@@ -178,7 +178,7 @@ public class Grammar extends AbstractGrammar {
     }
 
     private String assembleCrdSingularNames(MainInfo main) {
-        return getTopLevelStream(main)
+        return getComponentStream(main)
                 .map(ei -> ei.getAnnotation().name().toLowerCase())
                 .map(s -> "        crdSingularNames.add(\"" + s + "\");")
                 .collect(Collectors.joining(System.lineSeparator()));

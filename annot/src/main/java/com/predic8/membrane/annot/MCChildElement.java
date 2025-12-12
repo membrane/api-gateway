@@ -31,4 +31,6 @@ public @interface MCChildElement {
      * Allows the child to come from a schema other than Membrane core. Used for spring beans, e.g. ref to ssl bean
      */
 	boolean allowForeign() default false;
+
+    boolean excludeFromJson() default false;  // excludes from JSON Schema (YAML)
 }

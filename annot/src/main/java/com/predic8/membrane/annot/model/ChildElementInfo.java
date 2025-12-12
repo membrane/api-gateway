@@ -105,4 +105,12 @@ public class ChildElementInfo extends AbstractJavadocedInfo implements Comparabl
                ", required=" + required +
                '}';
     }
+
+	/**
+	 * Determines whether the current field or method should be excluded from the JSON schema during schema generation.
+	 * @return {@code true} if the field or method is excluded from the JSON schema; {@code false} otherwise.
+	 */
+	public boolean excludedFromJsonSchema() {
+		return annotation != null && annotation.excludeFromJson();
+	}
 }

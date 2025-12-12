@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.annotation.*;
 import com.predic8.membrane.annot.*;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.ASINOPENAPI;
@@ -24,7 +23,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOp
 /**
  * @description Reads an OpenAPI description and deploys an API with the information of it.
  */
-@MCElement(name = "openapi", topLevel = false)
+@MCElement(name = "openapi", component = false)
 public class OpenAPISpec implements Cloneable {
 
     public String location;

@@ -78,7 +78,7 @@ public class BlueprintParsers {
                             "\r\n" +
                             "	public void init() {\r\n");
                     for (ElementInfo i : main.getIis()) {
-                        if (i.getAnnotation().topLevel()) {
+                        if (i.getAnnotation().component()) {
                             bw.write("		registerGlobalBeanDefinitionParser(\"" + i.getAnnotation().name() + "\", new " + i.getParserClassSimpleName() + "());\r\n");
                         } else {
                             for (ChildElementDeclarationInfo cedi : i.getUsedBy()) {

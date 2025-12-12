@@ -22,6 +22,7 @@ import com.predic8.membrane.annot.model.doc.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
+import javax.lang.model.type.TypeKind;
 import javax.tools.*;
 import java.io.*;
 import java.util.*;
@@ -41,7 +42,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     public static final String MEMBRANE_SCHEMA_JSON_FILENAME = "membrane.schema.json";
 
-    private final Map<String, Boolean> topLevelAdded = new HashMap<>();
+    private final Map<String, Boolean> componentAdded = new HashMap<>();
 
     public JsonSchemaGenerator(ProcessingEnvironment processingEnv) {
         super(processingEnv);
@@ -77,7 +78,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         // Reset so multiple calls would be possible
         flowDefCreated = false;
         schema = schema("membrane");
-        topLevelAdded.clear();
+        componentAdded.clear();
 
         addParserDefinitions(m, main);
         addTopLevelProperties(m, main);
@@ -85,13 +86,12 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         writeSchema(main, schema);
     }
 
+    // Uses rootDef to define the elements configurable at top-level
     private void addTopLevelProperties(Model m, MainInfo main) {
         schema.additionalProperties(false);
         List<AbstractSchema<?>> kinds = new ArrayList<>();
 
-        main.getElements().values().forEach(e -> {
-            if (!e.getAnnotation().topLevel())
-                return;
+        main.getElements().values().stream().filter(e -> e.getAnnotation().topLevel()).forEach(e -> {
 
             String name = e.getAnnotation().name();
             String refName = "#/$defs/" + e.getXSDTypeName(m);
@@ -121,33 +121,61 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
             schema.definition(createParser(m, main, elementInfo));
         }
+
+        // Additional component-only parsers (id allowed only in components-list context)
+        for (ElementInfo elementInfo : main.getElements().values()) {
+            if (!elementInfo.getAnnotation().component())
+                continue;
+
+            ensureValidIdSetter(elementInfo);
+            schema.definition(createComponentParser(m, main, elementInfo));
+        }
     }
+
 
     private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
         String parserName = elementInfo.getXSDTypeName(m);
 
+        if (isComponentsMap(elementInfo)) {
+            return createComponentsMapParser(m, main, elementInfo, parserName);
+        }
+
         // e.g. to prevent a request from needing a flow child noEnvelope=true is used
         if (elementInfo.getAnnotation().noEnvelope()) {
             // With noEnvelope=true, there should be exactly one child element
-
             ChildElementInfo child = elementInfo.getChildElementSpecs().getFirst();
             var childName = child.getPropertyName();
 
-            if (!topLevelAdded.containsKey(childName) && !shouldGenerateParserType(child)) {
+            if (!componentAdded.containsKey(childName) && !shouldGenerateFlowParserType(child)) {
                 SchemaArray array = array(childName + "Parser");
                 processMCChilds(m, main, child.getEi(), array);
                 schema.definition(array);
-                topLevelAdded.put(childName, true);
+                componentAdded.put(childName, true);
             }
 
             return ref(parserName).ref("#/$defs/%sParser".formatted(childName));
         }
 
         SchemaObject parser = object(parserName)
-                .additionalProperties(elementInfo.getOai() != null)
+                .additionalProperties(elementInfo.getOai() != null && elementInfo.getOai().getValueType() == OtherAttributesInfo.ValueType.STRING)
                 .description(getDescriptionContent(elementInfo));
+
         collectProperties(m, main, elementInfo, parser);
+
+        // Allow object-level component reference if any setter expects a component.
+        if (hasComponentChild(elementInfo, main) && !parser.hasProperty("$ref")) {
+            parser.property(string("$ref")
+                    .description("JSON Pointer to a component.")
+                    .required(false));
+        }
+
         return parser;
+    }
+
+    private boolean isComponentsMap(ElementInfo ei) {
+        return "components".equals(ei.getAnnotation().name())
+                && ei.getOai() != null
+                && ei.getOai().getValueType() == OtherAttributesInfo.ValueType.OBJECT;
     }
 
     private String getDescriptionContent(AbstractJavadocedInfo elementInfo) {
@@ -180,10 +208,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             if (ai.excludedFromJsonSchema())
                 return;
 
-            // hide id only on top-level elements
-            if ("id".equals(ai.getXMLName()) && i.getAnnotation().topLevel()) {
-                return;
-            }
             so.property(createProperty(ai));
         });
     }
@@ -222,18 +246,35 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private void processMCChilds(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
 
+            // TODO has to be in the schema. Otherwise the schema validation will fail
+//            if (cei.excludedFromJsonSchema())
+//                return;
+
             AbstractSchema<?> parent2 = so;
 
             if (cei.isList()) {
-                if (shouldGenerateParserType(cei)) {
+                if (shouldGenerateFlowParserType(cei)) {
                     var sos = new ArrayList<SchemaObject>();
+
                     for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
                         if (excludeFromFlow.contains(ei.getAnnotation().name()))
                             continue;
+
+                        String defName = ei.getXSDTypeName(m);
+
                         sos.add(object()
                                 .additionalProperties(false)
-                                .property(ref(ei.getAnnotation().name()).ref("#/$defs/" + ei.getXSDTypeName(m))));
+                                .property(ref(ei.getAnnotation().name())
+                                        .ref("#/$defs/" + defName)
+                                        .required(true)));
                     }
+                    // Allow referencing a component instance directly on list-item level:
+                    // flow:
+                    //   - $ref: ...
+                    sos.add(object()
+                            .additionalProperties(false)
+                            .property(string("$ref").required(true)));
+
                     processList(i, so, cei, sos);
                     continue;
                 }
@@ -244,11 +285,18 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                     // parent2.addProperty(new SchemaObject("$ref").attribute("type", "string"));
                 }
             }
-            addChildsAsProperties(m, main, cei, (SchemaObject) parent2);
+
+            addChildsAsProperties(m, main, cei, (SchemaObject) parent2, isComponentsList(i, cei), cei.isList());
         }
     }
 
-    private boolean shouldGenerateParserType(ChildElementInfo cei) {
+    private boolean isComponentsList(ElementInfo parent, ChildElementInfo cei) {
+        return "components".equals(parent.getAnnotation().name())
+                && parent.getAnnotation().noEnvelope()
+                && "components".equals(cei.getPropertyName());
+    }
+
+    private boolean shouldGenerateFlowParserType(ChildElementInfo cei) {
         return "flow".equals(cei.getPropertyName()) && !isFlowFromWebSocket(cei);
     }
 
@@ -260,7 +308,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private AbstractSchema<?> processList(ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
         SchemaObject items = object("items");
 
-        if (shouldGenerateParserType(cei)) {
+        if (shouldGenerateFlowParserType(cei)) {
             addFlowParserRef(so, sos);
             return items;
         }
@@ -291,10 +339,27 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2) {
-        for (ElementInfo ei : getChildElementDeclarationInfo(main, cei).getElementInfo()) {
+    private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2, boolean componentsContext, boolean listItemContext) {
+        var eis = getChildElementDeclarationInfo(main, cei).getElementInfo();
+
+
+        // Generic list-item reference support:
+        // If this list can contain at least one @MCElement(component=true) type,
+        // allow "- $ref: ..." as an alternative list item shape.
+        if (listItemContext && !componentsContext && eis.stream().anyMatch(ei -> ei.getAnnotation().component())) {
+            parent2.property(string("$ref").required(false));
+        }
+
+        for (ElementInfo ei : eis) {
+            String defName = ei.getXSDTypeName(m);
+
+            // Only the components-list gets the id-augmented schema
+            if (componentsContext && ei.getAnnotation().component()) {
+                defName = componentDefName(defName);
+            }
+
             parent2.property(ref(ei.getAnnotation().name())
-                            .ref("#/$defs/" + ei.getXSDTypeName(m)))
+                            .ref("#/$defs/" + defName))
                     .description(getDescriptionContent(ei))
                     .required(cei.isRequired());
         }
@@ -325,6 +390,126 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             w.write(writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
         }
     }
+
+    private AbstractSchema<?> createComponentParser(Model m, MainInfo main, ElementInfo elementInfo) {
+        String baseName = elementInfo.getXSDTypeName(m);
+        String compName = componentDefName(baseName);
+
+        if (elementInfo.getAnnotation().noEnvelope()) {
+            return ref(compName).ref("#/$defs/" + baseName);
+        }
+
+        // If it already has a real id attribute, just alias the base schema
+        if (hasRealIdAttribute(elementInfo)) {
+            return ref(compName).ref("#/$defs/" + baseName);
+        }
+
+        SchemaObject parser = object(compName)
+                .additionalProperties(elementInfo.getOai() != null)
+                .description(getDescriptionContent(elementInfo));
+
+        collectProperties(m, main, elementInfo, parser);
+
+        parser.property(string("id").required(false));
+
+        return parser;
+    }
+
+
+    private static String componentDefName(String baseDefName) {
+        return baseDefName + "Component";
+    }
+
+    private boolean hasRealIdAttribute(ElementInfo elementInfo) {
+        return elementInfo.getAis().stream().anyMatch(ai -> "id".equals(ai.getXMLName()));
+    }
+
+
+    /**
+     * Ensures that:
+     * - every @MCElement either has no setId(...) at all OR
+     * - exactly one void setId(String) method annotated with @MCAttribute(name="id" or default)
+     */
+    private void ensureValidIdSetter(ElementInfo elementInfo) {
+        if (!(elementInfo.getElement() instanceof TypeElement type)) return;
+
+        var elements = processingEnv.getElementUtils();
+
+        List<ExecutableElement> idSetters = new ArrayList<>();
+
+        for (Element e : elements.getAllMembers(type)) {
+            if (e.getKind() != ElementKind.METHOD)
+                continue;
+            ExecutableElement m = (ExecutableElement) e;
+            if (!m.getSimpleName().contentEquals("setId"))
+                continue;
+
+            if (m.getParameters().size() != 1
+                    || m.getReturnType().getKind() != TypeKind.VOID
+                    || !processingEnv.getTypeUtils().isSameType(
+                    m.getParameters().getFirst().asType(),
+                    elements.getTypeElement("java.lang.String").asType()
+            )) {
+                throw new ProcessingException("setId(...) on %s must be exactly 'void setId(String)'.".formatted(type.getQualifiedName()), m);
+            }
+            idSetters.add(m);
+        }
+
+        if (idSetters.isEmpty())
+            return;  // no setId(String) present => OK
+
+        if (idSetters.size() > 1)
+            throw new ProcessingException("Multiple setId(String) methods found on " + type.getQualifiedName(), idSetters.getFirst());
+
+        ExecutableElement setId = idSetters.getFirst();
+        MCAttribute attr = setId.getAnnotation(MCAttribute.class);
+        if (attr == null) {
+            throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must be annotated with @MCAttribute(name=\"id\").", setId);
+        }
+
+        String attrName = attr.attributeName().isEmpty() ? "id" : attr.attributeName();
+        if (!"id".equals(attrName)) {
+            throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must use @MCAttribute(name=\"id\") or default name \"id\", but is \"" + attrName + "\".", setId);
+        }
+    }
+
+    private SchemaObject createComponentsMapParser(Model m, MainInfo main, ElementInfo elementInfo, String parserName) {
+        SchemaObject parser = object(parserName)
+                .additionalProperties(false) // only IDs via patternProperties
+                .description(getDescriptionContent(elementInfo));
+
+        var variants = new ArrayList<SchemaObject>();
+
+        for (ElementInfo comp : main.getElements().values()) {
+            if (!comp.getAnnotation().component())
+                continue;
+
+            String defName = comp.getXSDTypeName(m);
+
+            variants.add(object()
+                    .additionalProperties(false)
+                    .property(ref(comp.getAnnotation().name())
+                            .ref("#/$defs/" + defName)
+                            .required(true)));
+        }
+
+        // TODO keep this pattern or allow *?
+        parser.patternProperty("^[A-Za-z_][A-Za-z0-9_-]*$", anyOf(variants));
+
+        return parser;
+    }
+
+    private boolean hasComponentChild(ElementInfo parent, MainInfo main) {
+        for (ChildElementInfo cei : parent.getChildElementSpecs()) {
+            var decl = getChildElementDeclarationInfo(main, cei);
+            if (decl == null) continue;
+
+            if (decl.getElementInfo().stream().anyMatch(ei -> ei.getAnnotation().component()))
+                return true;
+        }
+        return false;
+    }
+
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
     private String getDescriptionAsText(AbstractJavadocedInfo elementInfo) {

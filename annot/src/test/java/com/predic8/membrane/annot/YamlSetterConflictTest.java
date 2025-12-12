@@ -42,7 +42,7 @@ public class YamlSetterConflictTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
 
-        @MCElement(name="b", topLevel = false, id = "b")
+        @MCElement(name="b", component = false, id = "b")
         public class B {
         }
         """);
@@ -81,7 +81,7 @@ public class YamlSetterConflictTest {
         import com.predic8.membrane.annot.*;
         import com.predic8.membrane.demo.AbstractC;
 
-        @MCElement(name="d", topLevel = false, id = "d1")
+        @MCElement(name="d", component = false, id = "d1")
         public class D extends AbstractC {
         }
         ---
@@ -89,7 +89,7 @@ public class YamlSetterConflictTest {
         import com.predic8.membrane.annot.*;
         import com.predic8.membrane.demo.AbstractF;
 
-        @MCElement(name="d", topLevel = false, id = "d2")
+        @MCElement(name="d", component = false, id = "d2")
         public class D extends AbstractF {
         }
         """);
@@ -122,7 +122,7 @@ public class YamlSetterConflictTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
 
-        @MCElement(name="child", topLevel = false, id = "child")
+        @MCElement(name="child", component = false, id = "child")
         public class ConcreteChild extends AbstractChild {
         }
         """);
@@ -152,7 +152,7 @@ public class YamlSetterConflictTest {
         import com.predic8.membrane.annot.*;
         import com.predic8.membrane.demo.AbstractChildElement;
 
-        @MCElement(name="child", topLevel = false, id = "child1")
+        @MCElement(name="child", component = false, id = "child1")
         public class ChildA extends AbstractChildElement {
         }
         ---
@@ -160,7 +160,7 @@ public class YamlSetterConflictTest {
         import com.predic8.membrane.annot.*;
         import com.predic8.membrane.demo.AbstractChildElement;
 
-        @MCElement(name="child", topLevel = false, id = "child2")
+        @MCElement(name="child", component = false, id = "child2")
         public class ChildB extends AbstractChildElement {
         }
         """);
@@ -187,7 +187,7 @@ public class YamlSetterConflictTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
 
-        @MCElement(name="b", topLevel = false, id = "b")
+        @MCElement(name="b", component = false, id = "b")
         public class B {
         }
         """);
@@ -225,7 +225,7 @@ public class YamlSetterConflictTest {
         import com.predic8.membrane.annot.*;
         import com.predic8.membrane.demo.AbstractC;
 
-        @MCElement(name="d", topLevel = false, id = "d1")
+        @MCElement(name="d", component = false, id = "d1")
         public class DFromC extends AbstractC {
         }
         ---
@@ -233,7 +233,7 @@ public class YamlSetterConflictTest {
         import com.predic8.membrane.annot.*;
         import com.predic8.membrane.demo.AbstractF;
 
-        @MCElement(name="d", topLevel = false, id = "d2")
+        @MCElement(name="d", component = false, id = "d2")
         public class DFromF extends AbstractF {
         }
         """);
@@ -265,7 +265,7 @@ public class YamlSetterConflictTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
 
-        @MCElement(name="child", topLevel = false, id = "child")
+        @MCElement(name="child", component = false, id = "child")
         public class ConcreteChild extends AbstractChild {
         }
         """);
@@ -295,7 +295,7 @@ public class YamlSetterConflictTest {
         import com.predic8.membrane.annot.*;
         import com.predic8.membrane.demo.AbstractChildElement;
 
-        @MCElement(name="child", topLevel = false, id = "child1")
+        @MCElement(name="child", component = false, id = "child1")
         public class ChildA extends AbstractChildElement {
         }
         ---
@@ -303,7 +303,7 @@ public class YamlSetterConflictTest {
         import com.predic8.membrane.annot.*;
         import com.predic8.membrane.demo.AbstractChildElement;
 
-        @MCElement(name="child", topLevel = false, id = "child2")
+        @MCElement(name="child", component = false, id = "child2")
         public class ChildB extends AbstractChildElement {
         }
         """);
@@ -332,7 +332,7 @@ public class YamlSetterConflictTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
 
-        @MCElement(name="a", topLevel = false, id = "child")
+        @MCElement(name="a", component = false, id = "child")
         public class Child {
         }
         """);

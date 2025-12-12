@@ -19,7 +19,7 @@ import com.predic8.membrane.annot.MCElement;
  * @description
  * For testing purposes only.
  */
-@MCElement(name = "memoryStorage", topLevel = false)
+@MCElement(name = "memoryStorage", component = false)
 public class MemoryStorage implements AcmeSynchronizedStorage {
 
     @Override

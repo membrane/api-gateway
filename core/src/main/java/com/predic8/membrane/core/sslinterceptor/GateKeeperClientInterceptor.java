@@ -18,8 +18,6 @@ import com.google.common.cache.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
@@ -34,7 +32,7 @@ import static java.util.concurrent.TimeUnit.*;
 /**
  * Connects to the predic8 Gatekeeper to check, whether access is allowed or not.
  */
-@MCElement(id = "sslProxy-gatekeeper", name = "gatekeeper", topLevel = false)
+@MCElement(id = "sslProxy-gatekeeper", name = "gatekeeper", component = false)
 public class GateKeeperClientInterceptor implements SSLInterceptor {
 
     protected final String name;

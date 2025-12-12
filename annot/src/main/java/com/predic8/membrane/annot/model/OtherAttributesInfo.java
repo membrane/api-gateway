@@ -14,6 +14,9 @@
 package com.predic8.membrane.annot.model;
 
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
 
 import com.predic8.membrane.annot.AnnotUtils;
 import com.predic8.membrane.annot.ProcessingException;
@@ -21,6 +24,7 @@ import com.predic8.membrane.annot.ProcessingException;
 public class OtherAttributesInfo extends AbstractJavadocedInfo {
 
 	private ExecutableElement otherAttributesSetter;
+	private TypeElement mapValueType;
 
 	public ExecutableElement getOtherAttributesSetter() {
 		return otherAttributesSetter;
@@ -29,6 +33,13 @@ public class OtherAttributesInfo extends AbstractJavadocedInfo {
 	public void setOtherAttributesSetter(ExecutableElement otherAttributesSetter) {
 		this.otherAttributesSetter = otherAttributesSetter;
 		setDocedE(otherAttributesSetter);
+
+        var typeArgs = ((DeclaredType) otherAttributesSetter.getParameters().getFirst().asType()).getTypeArguments();
+		if (typeArgs.size() != 2) {
+			throw new ProcessingException("@MCOtherAttributes must use Map<String, T>.", otherAttributesSetter);
+		}
+
+        mapValueType = (TypeElement) ((DeclaredType) typeArgs.get(1)).asElement();
 	}
 
 	public String getSpringName() {
@@ -39,4 +50,18 @@ public class OtherAttributesInfo extends AbstractJavadocedInfo {
 		return AnnotUtils.dejavaify(s);
 	}
 
+	public ValueType getValueType() {
+		if (mapValueType.getQualifiedName().toString().equals("java.lang.String")) {
+			return ValueType.STRING;
+		}
+		if (mapValueType.getQualifiedName().toString().equals("java.lang.Object")) {
+			return ValueType.OBJECT;
+		}
+		throw new IllegalArgumentException("Not supported: @McOtherAttributes void setAttr(Map<String, T> attrs) where T is neither String nor Object.");
+	}
+
+	public enum ValueType {
+		STRING,
+		OBJECT
+	}
 }

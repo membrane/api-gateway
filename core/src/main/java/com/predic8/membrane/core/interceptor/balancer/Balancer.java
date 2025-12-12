@@ -20,7 +20,7 @@ import org.slf4j.*;
 
 import java.util.*;
 
-@MCElement(name="clusters", topLevel=false, noEnvelope = true)
+@MCElement(name="clusters", component =false, noEnvelope = true)
 public class Balancer extends AbstractXmlElement {
 	public static final String DEFAULT_NAME = "Default";
 	private static final Logger log = LoggerFactory.getLogger(Balancer.class.getName());

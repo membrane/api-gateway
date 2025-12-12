@@ -57,7 +57,7 @@ public class SSLProxy implements Proxy {
     private boolean useAsDefault = true;
     private List<SSLInterceptor> sslInterceptors = new ArrayList<>();
 
-    @MCElement(id = "sslProxy-target", name="target", topLevel = false)
+    @MCElement(id = "sslProxy-target", name="target", component = false)
     public static class Target {
         private int port = -1;
         private String host;

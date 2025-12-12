@@ -28,9 +28,14 @@ public @interface MCElement {
     boolean mixed() default false;
 
     /**
+     * Whether the element can be defined at the top-level of the config.
+     */
+    boolean topLevel() default false;
+
+    /**
      * Whether the element can be a separate bean in the XML schema, or a separate document in YAML/JSON.
      */
-    boolean topLevel() default true;
+    boolean component() default true;
 
     String configPackage() default "";
 

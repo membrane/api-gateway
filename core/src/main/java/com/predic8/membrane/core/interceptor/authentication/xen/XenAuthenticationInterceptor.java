@@ -106,7 +106,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         String createSessionId(String xenSessionId);
     }
 
-    @MCElement(name = "inMemorySessionManager", topLevel = false)
+    @MCElement(name = "inMemorySessionManager", component = false)
     public static class InMemorySessionManager implements XenSessionManager {
         private final Map<String, String> ourSessionIds = new ConcurrentHashMap<>();
         private final Map<String, String> xenSessionIds = new ConcurrentHashMap<>();
@@ -130,7 +130,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         }
     }
 
-    @MCElement(name = "jwtSessionManager", topLevel = false, id = "xenAuthentication-jwtSessionManager")
+    @MCElement(name = "jwtSessionManager", component = false, id = "xenAuthentication-jwtSessionManager")
     public static class JwtSessionManager implements XenSessionManager {
         private String audience;
 
@@ -225,7 +225,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
             this.jwk = jwk;
         }
 
-        @MCElement(name="jwk", mixed = true, topLevel = false, id="xenAuthentication-jwtSessionManager-jwk")
+        @MCElement(name="jwk", mixed = true, component = false, id="xenAuthentication-jwtSessionManager-jwk")
         public static class Jwk extends Blob {
 
         }
