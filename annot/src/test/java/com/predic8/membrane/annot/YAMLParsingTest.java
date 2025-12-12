@@ -103,7 +103,7 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child1", topLevel=false)
+        @MCElement(name="child1", component=false)
         public class Child1Element {
         }
         """);
@@ -167,7 +167,7 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child1", topLevel=false)
+        @MCElement(name="child1", component=false)
         public class Child1Element {
             Child2Element child;
         
@@ -183,7 +183,7 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child2", topLevel=false)
+        @MCElement(name="child2", component=false)
         public class Child2Element {
         }
         """);
@@ -237,7 +237,7 @@ public class YAMLParsingTest {
                 this.child = child;
             }
         
-            @MCElement(name="child2", topLevel=false)
+            @MCElement(name="child2", component=false)
             public static class Child2Element {
                 public String attr;
             
@@ -323,7 +323,7 @@ public class YAMLParsingTest {
                 this.child = child;
             }
         
-            @MCElement(name="child2", mixed=true, topLevel=false)
+            @MCElement(name="child2", mixed=true, component=false)
             public static class Child2Element {
                 public String attr;
                 public String content;
@@ -393,7 +393,7 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child1", topLevel=false)
+        @MCElement(name="child1", component=false)
         public class Child1Element {
         }
         ---

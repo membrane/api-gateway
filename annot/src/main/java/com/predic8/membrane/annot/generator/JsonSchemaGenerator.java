@@ -42,7 +42,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     public static final String MEMBRANE_SCHEMA_JSON_FILENAME = "membrane.schema.json";
 
-    private final Map<String, Boolean> topLevelAdded = new HashMap<>();
+    private final Map<String, Boolean> componentAdded = new HashMap<>();
 
     public JsonSchemaGenerator(ProcessingEnvironment processingEnv) {
         super(processingEnv);
@@ -78,7 +78,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         // Reset so multiple calls would be possible
         flowDefCreated = false;
         schema = schema("membrane");
-        topLevelAdded.clear();
+        componentAdded.clear();
 
         addParserDefinitions(m, main);
         addRootLevelProperties(m, main);
@@ -132,11 +132,11 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             ChildElementInfo child = elementInfo.getChildElementSpecs().getFirst();
             var childName = child.getPropertyName();
 
-            if (!topLevelAdded.containsKey(childName) && !shouldGenerateFlowParserType(child)) {
+            if (!componentAdded.containsKey(childName) && !shouldGenerateFlowParserType(child)) {
                 SchemaArray array = array(childName + "Parser");
                 processMCChilds(m, main, child.getEi(), array);
                 schema.definition(array);
-                topLevelAdded.put(childName, true);
+                componentAdded.put(childName, true);
             }
 
             return ref(parserName).ref("#/$defs/%sParser".formatted(childName));
@@ -147,9 +147,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .description(getDescriptionContent(elementInfo));
         collectProperties(m, main, elementInfo, parser);
 
-        if (elementInfo.getAnnotation().topLevel()) {
+        if (elementInfo.getAnnotation().component()) {
             ensureValidIdSetter(elementInfo);
-            addIdPropertyToTopLevelIfMissing(elementInfo, parser);
+            addIdPropertyToComponentsIfMissing(elementInfo, parser);
         }
         return parser;
     }
@@ -378,7 +378,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private void addIdPropertyToTopLevelIfMissing(ElementInfo elementInfo, SchemaObject parser) {
+    private void addIdPropertyToComponentsIfMissing(ElementInfo elementInfo, SchemaObject parser) {
         if (elementInfo.getAis().stream().anyMatch(ai -> "id".equals(ai.getXMLName())))
             return; // already defined via @MCAttribute -> nothing to do
 

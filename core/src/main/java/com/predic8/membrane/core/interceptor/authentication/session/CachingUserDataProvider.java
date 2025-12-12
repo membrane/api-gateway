@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @description Caching User Data provider caches previous successful logins in order to make authentication faster
  */
-@MCElement(name="cachingUserDataProvider", topLevel=false)
+@MCElement(name="cachingUserDataProvider", component =false)
 public class CachingUserDataProvider implements UserDataProvider {
 
     private static final Logger log = LoggerFactory.getLogger(CachingUserDataProvider.class.getName());

@@ -35,7 +35,7 @@ public @interface MCElement {
     /**
      * Whether the element can be a separate bean in the XML schema, or a separate document in YAML/JSON.
      */
-    boolean topLevel() default true;
+    boolean component() default true;
 
     String configPackage() default "";
 

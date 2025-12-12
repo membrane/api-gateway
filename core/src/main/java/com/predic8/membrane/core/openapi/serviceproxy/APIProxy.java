@@ -258,7 +258,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         this.language = language;
     }
 
-    @MCElement(name = "description", topLevel = false, mixed = true)
+    @MCElement(name = "description", component = false, mixed = true)
     public static class ApiDescription {
         private String content;
 

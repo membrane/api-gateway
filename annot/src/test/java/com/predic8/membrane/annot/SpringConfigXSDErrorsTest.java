@@ -113,7 +113,7 @@ public class SpringConfigXSDErrorsTest {
         var result = CompilerHelper.compile(sources, false);
 
         assertCompilerResult(false, of(
-                error("Duplicate top-level @MCElement name. Make at least one @MCElement(topLevel=false,...) ."),
+                error("Duplicate component @MCElement name. Make at least one @MCElement(component=false,...) ."),
                 error("also here")
         ), result);
     }
@@ -122,7 +122,7 @@ public class SpringConfigXSDErrorsTest {
     class NoEnvelope {
 
         @Test
-        public void topLevel() {
+        public void component() {
             var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
@@ -133,7 +133,7 @@ public class SpringConfigXSDErrorsTest {
             var result = CompilerHelper.compile(sources, false);
 
             assertCompilerResult(false, of(
-                    error("@MCElement(..., noEnvelope=true, topLevel=true) is invalid.")
+                    error("@MCElement(..., noEnvelope=true, component=true) is invalid.")
             ), result);
         }
 
@@ -142,7 +142,7 @@ public class SpringConfigXSDErrorsTest {
             var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
-            @MCElement(name="demo", noEnvelope=true, topLevel=false, mixed=true)
+            @MCElement(name="demo", noEnvelope=true, component=false, mixed=true)
             public class DemoElement {
             }
             """);
@@ -158,7 +158,7 @@ public class SpringConfigXSDErrorsTest {
             var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
-            @MCElement(name="demo", noEnvelope=true, topLevel=false)
+            @MCElement(name="demo", noEnvelope=true, component=false)
             public class DemoElement {
             }
             """);
@@ -176,7 +176,7 @@ public class SpringConfigXSDErrorsTest {
             import com.predic8.membrane.annot.MCElement;
             import com.predic8.membrane.annot.MCChildElement;
             import java.util.List;
-            @MCElement(name="demo", noEnvelope=true, topLevel=false)
+            @MCElement(name="demo", noEnvelope=true, component=false)
             public class DemoElement {
                 @MCChildElement(order=1)
                 public void setChild1(List<DemoElement> s) {}
@@ -197,7 +197,7 @@ public class SpringConfigXSDErrorsTest {
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.MCElement;
             import com.predic8.membrane.annot.MCChildElement;
-            @MCElement(name="demo", noEnvelope=true, topLevel=false)
+            @MCElement(name="demo", noEnvelope=true, component=false)
             public class DemoElement {
                 @MCChildElement
                 public void setChild1(DemoElement s) {}
@@ -216,7 +216,7 @@ public class SpringConfigXSDErrorsTest {
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
             import java.util.List;
-            @MCElement(name="demo", noEnvelope=true, topLevel=false)
+            @MCElement(name="demo", noEnvelope=true, component=false)
             public class DemoElement {
                 @MCChildElement
                 public void setChild1(List<DemoElement> s) {}
@@ -238,7 +238,7 @@ public class SpringConfigXSDErrorsTest {
             import com.predic8.membrane.annot.*;
             import java.util.List;
             import java.util.Map;
-            @MCElement(name="demo", noEnvelope=true, topLevel=false)
+            @MCElement(name="demo", noEnvelope=true, component=false)
             public class DemoElement {
                 @MCChildElement
                 public void setChild1(List<DemoElement> s) {}
@@ -260,7 +260,7 @@ public class SpringConfigXSDErrorsTest {
             import com.predic8.membrane.annot.*;
             import java.util.List;
             import java.util.Map;
-            @MCElement(name="demo", noEnvelope=true, topLevel=false)
+            @MCElement(name="demo", noEnvelope=true, component=false)
             public class DemoElement {
                 @MCChildElement
                 public void setChild1(List<DemoElement> s) {}
@@ -354,13 +354,13 @@ public class SpringConfigXSDErrorsTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child", topLevel=false, id="child1")
+        @MCElement(name="child", component=false, id="child1")
         public class Child1 extends AbstractDemoChildElement {
         }
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child", topLevel=false, id="child2")
+        @MCElement(name="child", component=false, id="child2")
         public class Child2 extends AbstractDemoChildElement {
         }
         """);

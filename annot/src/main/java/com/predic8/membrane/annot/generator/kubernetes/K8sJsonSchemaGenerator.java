@@ -45,7 +45,7 @@ public class K8sJsonSchemaGenerator extends AbstractGrammar {
     }
 
     private void assemble(Model m, MainInfo main) throws IOException {
-        for (ElementInfo elementInfo : getTopLevelElementInfos(main)) {
+        for (ElementInfo elementInfo : getComponentElementInfos(main)) {
             String name = elementInfo.getAnnotation().name().toLowerCase();
             FileObject fo = createFileObject(main, name + ".schema.json");
             try (BufferedWriter w = new BufferedWriter(fo.openWriter())) {

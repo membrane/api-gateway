@@ -24,7 +24,6 @@ import org.slf4j.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.networknt.schema.SpecificationVersion.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
@@ -176,7 +175,7 @@ public class GenericYamlParser {
                 try {
 
                     if ("$ref".equals(key)) {
-                        handleTopLevelRefs(clazz, node.get(key), ctx.registry(), configObj);
+                        handleComponentRefs(clazz, node.get(key), ctx.registry(), configObj);
                         continue;
                     }
 
@@ -195,7 +194,7 @@ public class GenericYamlParser {
         }
     }
 
-    private static <T> void handleTopLevelRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
+    private static <T> void handleComponentRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
         ensureTextual(node, "Expected a string after the '$ref' key.");
         Object o = registry.resolveReference(node.asText());
         getChildSetter(clazz, o.getClass()).invoke(obj, o);

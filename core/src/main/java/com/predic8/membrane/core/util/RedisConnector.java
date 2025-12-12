@@ -24,7 +24,7 @@ import redis.clients.jedis.params.GetExParams;
 import java.util.HashSet;
 import java.util.Set;
 
-@MCElement(name = "redis", topLevel = true)
+@MCElement(name = "redis", component = true)
 public class RedisConnector  implements InitializingBean {
     private JedisPool pool;
     private JedisSentinelPool sentinelPool;
