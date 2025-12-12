@@ -248,6 +248,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
+    /**
+     * api and webSocket have a flow kid.
+     */
     private boolean shouldGenerateParserType(ChildElementInfo cei) {
         return "flow".equals(cei.getPropertyName()) && !isFlowFromWebSocket(cei);
     }

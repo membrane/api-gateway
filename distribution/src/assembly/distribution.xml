@@ -8,7 +8,10 @@
     <dependencySets>
         <dependencySet>
             <excludes>
-                <exclude>org.membrane-soa:membrane-service-proxy</exclude>
+                <!-- Exclude this project from the distribution. It only contains helper for
+                     creating a distribution, development or testing.
+                 -->
+                <exclude>org.membrane-soa:membrane-api-gateway</exclude>
             </excludes>
             <unpack>false</unpack>
             <outputDirectory>/lib</outputDirectory>
