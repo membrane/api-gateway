@@ -29,6 +29,7 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     private List<AbstractSchema<?>> oneOf;
 
     private List<AbstractSchema<?>> allOf;
+    private final Map<String, AbstractSchema<?>> patternProperties = new LinkedHashMap<>();
 
     SchemaObject(String name) {
         super(name);
@@ -48,6 +49,11 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         return this;
     }
 
+    public SchemaObject patternProperty(String pattern, AbstractSchema<?> schema) {
+        patternProperties.put(pattern, schema);
+        return this;
+    }
+
     public ObjectNode json(ObjectNode node) {
         super.json(node);
 
@@ -56,6 +62,14 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         }
 
         jsonProperties(node);
+
+        if (!patternProperties.isEmpty()) {
+            ObjectNode pp = jnf.objectNode();
+            for (var e : patternProperties.entrySet()) {
+                pp.set(e.getKey(), e.getValue().json(jnf.objectNode()));
+            }
+            node.set("patternProperties", pp);
+        }
 
         if (allOf != null && !allOf.isEmpty()) {
             var allOfArray = jnf.arrayNode();

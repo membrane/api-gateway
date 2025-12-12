@@ -136,6 +136,10 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
         String parserName = elementInfo.getXSDTypeName(m);
 
+        if (isComponentsMap(elementInfo)) {
+            return createComponentsMapParser(m, main, elementInfo, parserName);
+        }
+
         // e.g. to prevent a request from needing a flow child noEnvelope=true is used
         if (elementInfo.getAnnotation().noEnvelope()) {
             // With noEnvelope=true, there should be exactly one child element
@@ -153,10 +157,17 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
 
         SchemaObject parser = object(parserName)
-                .additionalProperties(elementInfo.getOai() != null)
+                .additionalProperties(elementInfo.getOai() != null && elementInfo.getOai().getValueType() == OtherAttributesInfo.ValueType.STRING)
                 .description(getDescriptionContent(elementInfo));
+
         collectProperties(m, main, elementInfo, parser);
         return parser;
+    }
+
+    private boolean isComponentsMap(ElementInfo ei) {
+        return "components".equals(ei.getAnnotation().name())
+                && ei.getOai() != null
+                && ei.getOai().getValueType() == OtherAttributesInfo.ValueType.OBJECT;
     }
 
     private String getDescriptionContent(AbstractJavadocedInfo elementInfo) {
@@ -452,6 +463,32 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         if (!"id".equals(attrName)) {
             throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must use @MCAttribute(name=\"id\") or default name \"id\", but is \"" + attrName + "\".", setId);
         }
+    }
+
+    private SchemaObject createComponentsMapParser(Model m, MainInfo main, ElementInfo elementInfo, String parserName) {
+        SchemaObject parser = object(parserName)
+                .additionalProperties(false) // only IDs via patternProperties
+                .description(getDescriptionContent(elementInfo));
+
+        var variants = new ArrayList<SchemaObject>();
+
+        for (ElementInfo comp : main.getElements().values()) {
+            if (!comp.getAnnotation().component())
+                continue;
+
+            String defName = comp.getXSDTypeName(m);
+
+            variants.add(object()
+                    .additionalProperties(false)
+                    .property(ref(comp.getAnnotation().name())
+                            .ref("#/$defs/" + defName)
+                            .required(true)));
+        }
+
+        // TODO keep this pattern or allow *?
+        parser.patternProperty("^[A-Za-z_][A-Za-z0-9_-]*$", anyOf(variants));
+
+        return parser;
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
