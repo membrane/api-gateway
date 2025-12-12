@@ -32,6 +32,7 @@ public class RequireAuth extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(RequireAuth.class.getName());
 
     private String expectedAud;
+    private String expectedTid;
     private OAuth2Resource2Interceptor oauth2;
     private JwtAuthInterceptor jwtAuth;
     private boolean required = true;
@@ -53,6 +54,7 @@ public class RequireAuth extends AbstractInterceptor {
         jwtAuth = new JwtAuthInterceptor();
         jwtAuth.setJwks(jwks);
         jwtAuth.setExpectedAud(expectedAud);
+        jwtAuth.setExpectedTid(expectedTid);
 
         jwtAuth.init(router);
     }
@@ -63,6 +65,7 @@ public class RequireAuth extends AbstractInterceptor {
             if (errorStatus != null)
                 exc.setProperty(ERROR_STATUS, errorStatus);
             exc.setProperty(EXPECTED_AUDIENCE, expectedAud);
+            exc.setProperty(EXPECTED_TENANT_ID, expectedTid);
             exc.setProperty(WANTED_SCOPE, scope);
             var outcome = oauth2.handleRequest(exc);
             if (outcome != Outcome.CONTINUE) {
@@ -84,12 +87,24 @@ public class RequireAuth extends AbstractInterceptor {
         return expectedAud;
     }
 
+    public String getExpectedTid() {
+        return expectedTid;
+    }
+
     @Required
     @MCAttribute
     public void setExpectedAud(String expectedAud) {
         this.expectedAud = expectedAud;
         if (jwtAuth != null) {
             jwtAuth.setExpectedAud(expectedAud);
+        }
+    }
+
+    @MCAttribute
+    public void setExpectedTid(String expectedTid) {
+        this.expectedTid = expectedTid;
+        if (jwtAuth != null) {
+            jwtAuth.setExpectedTid(expectedTid);
         }
     }
 
