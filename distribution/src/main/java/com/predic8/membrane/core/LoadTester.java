@@ -64,64 +64,69 @@ public class LoadTester {
 
         Semaphore semaphore = new Semaphore(CONCURRENCY);
 
-        AsyncHttpClient client = asyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
+        try (AsyncHttpClient client = asyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
                 .setConnectTimeout(Duration.ofMillis(60000))
                 .setRequestTimeout(Duration.ofMillis(60000))
                 .setMaxConnections(CONCURRENCY)
-                .setMaxConnectionsPerHost(CONCURRENCY).build());
+                .setMaxConnectionsPerHost(CONCURRENCY).build())) {
 
-        ExecutorService submitters =
-                Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
+            ExecutorService submitters =
+                    Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
 
-        LongAdder ok = new LongAdder();
-        LongAdder err = new LongAdder();
-        CountDownLatch latch = new CountDownLatch(TOTAL);
+            LongAdder ok = new LongAdder();
+            LongAdder err = new LongAdder();
+            CountDownLatch latch = new CountDownLatch(TOTAL);
 
-        final AtomicInteger minAvailablePermits = new AtomicInteger(CONCURRENCY);
+            final AtomicInteger minAvailablePermits = new AtomicInteger(CONCURRENCY);
 
-        long start = System.nanoTime();
+            long start = System.nanoTime();
 
-        for (int i = 0; i < TOTAL; i++) {
-            semaphore.acquire();
-            submitters.submit(() -> {
-                client.preparePost(url).setBody("Dummy").execute(new AsyncCompletionHandler<Void>() {
-                    @Override
-                    public Void onCompleted(Response r) {
-                        if (r.getStatusCode() < 400)
-                            ok.increment();
-                        else
-                            err.increment();
-                        latch.countDown();
-                        calculateMinAvailablePermits();
-                        semaphore.release();
-                        return null;
-                    }
-
-                    @Override
-                    public void onThrowable(Throwable t) {
-                        err.increment();
-                        latch.countDown();
-                        calculateMinAvailablePermits();
-                        semaphore.release();
-                    }
-
-                    private void calculateMinAvailablePermits() {
-                        minAvailablePermits.updateAndGet(current -> Math.min(current, semaphore.availablePermits()));
-                    }
+            for (int i = 0; i < TOTAL; i++) {
+                semaphore.acquire();
+                submitters.submit(() -> {
+                    prepareCall(client, url, ok, err, latch, semaphore, minAvailablePermits);
                 });
-            });
 
+            }
+
+
+            latch.await();
+            long end = System.nanoTime();
+
+            double seconds = (end - start) / 1_000_000_000.0;
+            System.out.println("RPS: " + (TOTAL / seconds));
+            System.out.println("OK=" + ok.sum() + " ERR=" + err.sum());
+            System.out.println("Max number of concurrent clients = " + (CONCURRENCY - minAvailablePermits.get()));
+
+            submitters.close();
         }
+    }
 
-        latch.await();
-        long end = System.nanoTime();
+    private static void prepareCall(AsyncHttpClient client, String url, LongAdder ok, LongAdder err, CountDownLatch latch, Semaphore semaphore, AtomicInteger minAvailablePermits) {
+        client.preparePost(url).setBody("Dummy").execute(new AsyncCompletionHandler<Void>() {
+            @Override
+            public Void onCompleted(Response r) {
+                if (r.getStatusCode() < 400)
+                    ok.increment();
+                else
+                    err.increment();
+                latch.countDown();
+                calculateMinAvailablePermits();
+                semaphore.release();
+                return null;
+            }
 
-        double seconds = (end - start) / 1_000_000_000.0;
-        System.out.println("RPS: " + (TOTAL / seconds));
-        System.out.println("OK=" + ok.sum() + " ERR=" + err.sum());
-        System.out.println("Max number of concurrent clients = " + (CONCURRENCY - minAvailablePermits.get()));
+            @Override
+            public void onThrowable(Throwable t) {
+                err.increment();
+                latch.countDown();
+                calculateMinAvailablePermits();
+                semaphore.release();
+            }
 
-        submitters.close();
-        client.close();
+            private void calculateMinAvailablePermits() {
+                minAvailablePermits.updateAndGet(current -> Math.min(current, semaphore.availablePermits()));
+            }
+        });
     }
 }

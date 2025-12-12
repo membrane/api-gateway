@@ -35,6 +35,7 @@
 - Restore Kubernetes Startup Thread
 - Fix `YAMLParsingTest.errorInListItemUniqueness()`
 - Check 404 in AdminConsole => Client Requests
+  - API to get client requests returns 404, if called without admin console access 
   
 
 ## (Breaking) Interface Changes
