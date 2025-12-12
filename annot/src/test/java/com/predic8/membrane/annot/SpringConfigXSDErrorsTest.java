@@ -122,22 +122,6 @@ public class SpringConfigXSDErrorsTest {
     class NoEnvelope {
 
         @Test
-        public void component() {
-            var sources = splitSources(MC_MAIN_DEMO + """
-            package com.predic8.membrane.demo;
-            import com.predic8.membrane.annot.MCElement;
-            @MCElement(name="demo", noEnvelope=true)
-            public class DemoElement {
-            }
-            """);
-            var result = CompilerHelper.compile(sources, false);
-
-            assertCompilerResult(false, of(
-                    error("@MCElement(..., noEnvelope=true, component=true) is invalid.")
-            ), result);
-        }
-
-        @Test
         public void mixed() {
             var sources = splitSources(MC_MAIN_DEMO + """
             package com.predic8.membrane.demo;
