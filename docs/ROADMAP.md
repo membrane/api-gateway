@@ -16,6 +16,11 @@
 
 - Register JSON Schema for YAML at: https://www.schemastore.org
 
+# 7.0.4
+
+- Remove GroovyTemplateInterceptor (Not Template Interceptor)
+  - Old an unused
+
 # 7.0.1
 
 - Adding a configuration flag to enable/disable colorized output

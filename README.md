@@ -127,13 +127,13 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 # Content
 
 1. [Getting Started](#Getting-Started)
-   - [Java](#java)
-   - [Docker](#docker)
+    - [Java](#java)
+    - [Docker](#docker)
 2. [Basics](#Basics) Routing, rewriting
-   - [API Definition and Configuration](#API-Definition-and-Configuration)
-   - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
+    - [API Definition and Configuration](#API-Definition-and-Configuration)
+    - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
 3. [OpenAPI Support](#openapi-support)
-   - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
+    - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
 4. [Routing](#routing)
     - [Short Circuit](#short-circuit)
     - [URL Rewriting](#url-rewriting)
@@ -154,9 +154,9 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
     - [SSL/TLS](#ssltls)
     - [JSON Web Tokens](#json-web-tokens) JWT
     - [OAuth2](#oauth2)
-      - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
-      - [Membrane as Authorization Server](#membrane-as-authorization-server)
-    - [XML and JSON Protection](#xml-and-json-protection)
+    - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
+        - [Membrane as Authorization Server](#membrane-as-authorization-server)
+        - [XML and JSON Protection](#xml-and-json-protection)
 9. [Traffic Control](#Traffic-Control) Rate limiting, Load balancing
     - [Rate Limiting](#rate-limiting)
     - [Load Balancing](#load-balancing)
@@ -164,9 +164,10 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
     - [API configuration from WSDL](#api-configuration-from-wsdl)
     - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
 11. [Operation](#Operation)
-   - [Logging](#log-http)
-   - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
-   - [OpenTelemetry](#opentelemetry-integration)
+    - [Logging](#log-http)
+    - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
+    - [OpenTelemetry](#opentelemetry-integration)
+12. [Community and professional Support](#support)
 
 # Installation
 
@@ -175,19 +176,19 @@ You can run Membrane as Docker container, standalone Java application or install
 ## Java
 
 1. **Download and extract**
-  - [Download a release](https://github.com/membrane/api-gateway/releases) and unzip it.
+    - [Download a release](https://github.com/membrane/api-gateway/releases) and unzip it.
 2. **Start the Gateway**
-  - Open a terminal in the extracted folder.
-  - Make sure Java 21 or newer is installed:
+    - Open a terminal in the extracted folder.
+    - Make sure Java 21 or newer is installed:
     ```bash
     java -version
     ```
-  - Start:
-    - **Linux/Mac:** `./membrane.sh`
-    - **Windows:** `membrane.cmd`
-4. **Access the Gateway**
-  - Open [http://localhost:2000](http://localhost:2000)
-5. **Change the Configuration**
+    - Start:
+        - **Linux/Mac:** `./membrane.sh`
+        - **Windows:** `membrane.cmd`
+3. **Access the Gateway**
+    - Open [http://localhost:2000](http://localhost:2000)
+4. **Change the Configuration**
 
    Modify the preconfigured APIs or add APIs by editing the `proxies.xml` file in the `conf` folder.
 
@@ -1163,3 +1164,16 @@ The configuration below shows Membrane forwarding requests to a backend, while e
 ```  
 
 For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/monitoring-tracing/opentelemetry).
+
+# Support
+
+## Community Support
+
+To get support from our community, please post your questions to our [https://github.com/membrane/api-gateway/discussions](Discussions) page @GitHub.
+
+If you find a bug, please report it using [GitHub Issues](https://github.com/membrane/api-gateway/issues). Please provide a minimal example that reproduces the issue and the version of Membrane you are using.
+
+
+## Enterprise Grade Support
+
+Information about our commercial support options and pricing can be found [here.](https://www.membrane-api.io/api-gateway-pricing.html).
