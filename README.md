@@ -126,11 +126,11 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 
 # Content
 
-1. [Getting Started](#Getting-Started)
+1. [Getting Started](#getting-started)
     - [Java](#java)
     - [Docker](#docker)
-2. [Basics](#Basics) Routing, rewriting
-    - [API Definition and Configuration](#API-Definition-and-Configuration)
+2. [Basics](#basics) Routing, rewriting
+    - [API Definition and Configuration](#api-definition-and-configuration)
     - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
 3. [OpenAPI Support](#openapi-support)
     - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
@@ -157,13 +157,13 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
     - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
         - [Membrane as Authorization Server](#membrane-as-authorization-server)
         - [XML and JSON Protection](#xml-and-json-protection)
-9. [Traffic Control](#Traffic-Control) Rate limiting, Load balancing
+9. [Traffic Control](#traffic-control) Rate limiting, Load balancing
     - [Rate Limiting](#rate-limiting)
     - [Load Balancing](#load-balancing)
 10. [Legacy Web Services](#soap-web-services) SOAP and WSDL
     - [API configuration from WSDL](#api-configuration-from-wsdl)
     - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
-11. [Operation](#Operation)
+11. [Operation](#operation)
     - [Logging](#log-http)
     - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
     - [OpenTelemetry](#opentelemetry-integration)
