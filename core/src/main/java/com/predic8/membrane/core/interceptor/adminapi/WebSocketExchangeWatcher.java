@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.adminApi;
+package com.predic8.membrane.core.interceptor.adminapi;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 import static com.google.common.collect.ImmutableMap.of;
-import static com.predic8.membrane.core.interceptor.adminApi.AdminApiInterceptor.writeExchange;
+import static com.predic8.membrane.core.interceptor.adminapi.AdminApiInterceptor.writeExchange;
 
 public class WebSocketExchangeWatcher implements IExchangesStoreListener {
 
