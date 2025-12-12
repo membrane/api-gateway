@@ -81,12 +81,13 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         topLevelAdded.clear();
 
         addParserDefinitions(m, main);
-        addTopLevelProperties(m, main);
+        addRootLevelProperties(m, main);
 
         writeSchema(main, schema);
     }
 
-    private void addTopLevelProperties(Model m, MainInfo main) {
+    // Uses rootDef to define the elements configurable at root level
+    private void addRootLevelProperties(Model m, MainInfo main) {
         schema.additionalProperties(false);
         List<AbstractSchema<?>> kinds = new ArrayList<>();
 
@@ -124,10 +125,10 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
         String parserName = elementInfo.getXSDTypeName(m);
+
         // e.g. to prevent a request from needing a flow child noEnvelope=true is used
         if (elementInfo.getAnnotation().noEnvelope()) {
             // With noEnvelope=true, there should be exactly one child element
-
             ChildElementInfo child = elementInfo.getChildElementSpecs().getFirst();
             var childName = child.getPropertyName();
 
