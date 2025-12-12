@@ -1176,7 +1176,6 @@ To get support from our community, please post your questions to our [Discussion
 
 If you find a bug, please report it using [GitHub Issues](https://github.com/membrane/api-gateway/issues). Please provide a minimal example that reproduces the issue and the version of Membrane you are using.
 
+## Enterprise-grade Support
 
-## Enterprise Grade Support
-
-Information about our commercial support options and pricing can be found [here.](https://www.membrane-api.io/api-gateway-pricing.html).
+See [commercial support options and pricing](https://www.membrane-api.io/api-gateway-pricing.html).
