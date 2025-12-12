@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Response.*;
-import com.predic8.membrane.core.interceptor.adminApi.AdminApiInterceptor;
+import com.predic8.membrane.core.interceptor.adminapi.AdminApiInterceptor;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.interceptor.statistics.util.*;
 import com.predic8.membrane.core.proxies.*;
