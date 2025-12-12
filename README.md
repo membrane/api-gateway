@@ -1142,6 +1142,9 @@ This API will expose metrics for Prometheus at [http://localhost:2000/metrics](h
   <prometheus />
 </api>
 ```
+
+![Grafana Dashborad for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
+Grafana dashboard from Membrane metrics.
  
 See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus).
 
