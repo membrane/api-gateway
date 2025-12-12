@@ -161,6 +161,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .description(getDescriptionContent(elementInfo));
 
         collectProperties(m, main, elementInfo, parser);
+
+        // Allow object-level component reference if any setter expects a component.
+        if (hasComponentChild(elementInfo, main) && !parser.hasProperty("$ref")) {
+            parser.property(string("$ref")
+                    .description("JSON Pointer to a component.")
+                    .required(false));
+        }
+
         return parser;
     }
 
@@ -490,6 +498,18 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         return parser;
     }
+
+    private boolean hasComponentChild(ElementInfo parent, MainInfo main) {
+        for (ChildElementInfo cei : parent.getChildElementSpecs()) {
+            var decl = getChildElementDeclarationInfo(main, cei);
+            if (decl == null) continue;
+
+            if (decl.getElementInfo().stream().anyMatch(ei -> ei.getAnnotation().component()))
+                return true;
+        }
+        return false;
+    }
+
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
     private String getDescriptionAsText(AbstractJavadocedInfo elementInfo) {

@@ -139,4 +139,12 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         this.allOf = allOf;
         return this;
     }
+
+    public boolean hasProperty(String name) {
+        for (AbstractSchema<?> p : properties) {
+            if (name.equals(p.getName()))
+                return true;
+        }
+        return false;
+    }
 }
