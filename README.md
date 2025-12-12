@@ -1169,7 +1169,7 @@ For a working example and detailed setup, see the [OpenTelemetry Example](./dist
 
 ## Community Support
 
-To get support from our community, please post your questions to our [https://github.com/membrane/api-gateway/discussions](Discussions) page @GitHub.
+To get support from our community, please post your questions to our [Discussions](https://github.com/membrane/api-gateway/discussions) page @GitHub.
 
 If you find a bug, please report it using [GitHub Issues](https://github.com/membrane/api-gateway/issues). Please provide a minimal example that reproduces the issue and the version of Membrane you are using.
 
