@@ -6,7 +6,7 @@ import com.predic8.membrane.annot.MCElement;
 import java.util.List;
 
 @MCElement(name = "components"
-        //, noEnvelope = true
+        , noEnvelope = true
         , rootDef = true
 )
 public class Components {
