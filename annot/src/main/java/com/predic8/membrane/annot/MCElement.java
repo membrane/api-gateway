@@ -28,9 +28,9 @@ public @interface MCElement {
     boolean mixed() default false;
 
     /**
-     * Whether the element can be defined at the root level of the config.
+     * Whether the element can be defined at the top-level of the config.
      */
-    boolean rootDef() default false;
+    boolean topLevel() default false;
 
     /**
      * Whether the element can be a separate bean in the XML schema, or a separate document in YAML/JSON.

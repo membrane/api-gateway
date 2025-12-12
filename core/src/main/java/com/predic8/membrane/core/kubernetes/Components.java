@@ -7,7 +7,7 @@ import java.util.List;
 
 @MCElement(name = "components"
         , noEnvelope = true
-        , rootDef = true
+        , topLevel = true
 )
 public class Components {
 

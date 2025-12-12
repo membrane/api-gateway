@@ -91,7 +91,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         schema.additionalProperties(false);
         List<AbstractSchema<?>> kinds = new ArrayList<>();
 
-        main.getElements().values().stream().filter(e -> e.getAnnotation().rootDef()).forEach(e -> {
+        main.getElements().values().stream().filter(e -> e.getAnnotation().topLevel()).forEach(e -> {
 
             String name = e.getAnnotation().name();
             String refName = "#/$defs/" + e.getXSDTypeName(m);
