@@ -44,11 +44,13 @@ api:
 
 **Issue JSON Web Tokens:**
 
-A minimal token-issuing endpoint built with Membrane plugins. Clients authenticate with HTTP Basic Authentication. After successful authentication, Membrane creates a signed JWT. The template defines the payload, so you control which claims are included.
+To issue a JWT for a user, create an API that acts as a simple token endpoint:
 
 ```yaml
 api:
   port: 2000
+  path:
+    uri: /token
   flow:
     - basicAuthentication:
         fileUserDataProvider:
@@ -66,7 +68,7 @@ api:
         status: 200
 ```
 
-Example of issued token:
+Authenticated requests to '/token' return a signed JWT in which the username from Basic Authentication is used as the sub claim.
 
 ```text
 {
@@ -82,7 +84,7 @@ Example of issued token:
 .hTL_0-AS8IZgiDUJ6Kg...
 ```
 
-These are just a few examples; see the descriptions below for more.
+This example is intentionally minimal, but it highlights the basic building blocks: authenticate the caller, shape the token payload, and sign the result. From there, you can extend it with additional claims, custom logic, or stricter policies to implement tailored API security flows.
 
 ## API Gateway eBook
 
