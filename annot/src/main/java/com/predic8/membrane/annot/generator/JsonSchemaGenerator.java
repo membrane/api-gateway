@@ -81,13 +81,13 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         componentAdded.clear();
 
         addParserDefinitions(m, main);
-        addRootLevelProperties(m, main);
+        addTopLevelProperties(m, main);
 
         writeSchema(main, schema);
     }
 
-    // Uses rootDef to define the elements configurable at root level
-    private void addRootLevelProperties(Model m, MainInfo main) {
+    // Uses rootDef to define the elements configurable at top-level
+    private void addTopLevelProperties(Model m, MainInfo main) {
         schema.additionalProperties(false);
         List<AbstractSchema<?>> kinds = new ArrayList<>();
 
