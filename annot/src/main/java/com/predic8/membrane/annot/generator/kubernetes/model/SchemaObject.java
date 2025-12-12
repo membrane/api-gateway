@@ -28,6 +28,8 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
 
     private List<AbstractSchema<?>> oneOf;
 
+    private List<AbstractSchema<?>> allOf;
+
     SchemaObject(String name) {
         super(name);
         type = OBJECT;
@@ -54,6 +56,14 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         }
 
         jsonProperties(node);
+
+        if (allOf != null && !allOf.isEmpty()) {
+            var allOfArray = jnf.arrayNode();
+            for (AbstractSchema<?> s : allOf) {
+                allOfArray.add(s.json(jnf.objectNode()));
+            }
+            node.set("allOf", allOfArray);
+        }
 
         if (oneOf != null && !oneOf.isEmpty()) {
             var oneOfArray = jnf.arrayNode();
@@ -108,6 +118,11 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
 
     public SchemaObject oneOf(List<AbstractSchema<?>> oneOf) {
         this.oneOf = oneOf;
+        return this;
+    }
+
+    public SchemaObject allOf(List<AbstractSchema<?>> allOf) {
+        this.allOf = allOf;
         return this;
     }
 }

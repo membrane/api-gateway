@@ -5,7 +5,10 @@ import com.predic8.membrane.annot.MCElement;
 
 import java.util.List;
 
-@MCElement(name = "components", noEnvelope = true, rootDef = true)
+@MCElement(name = "components"
+        //, noEnvelope = true
+        , rootDef = true
+)
 public class Components {
 
     List<Object> components;
