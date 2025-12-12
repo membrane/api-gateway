@@ -17,7 +17,7 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.interceptor.adminApi.AdminApiInterceptor;
+import com.predic8.membrane.core.interceptor.adminapi.AdminApiInterceptor;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.proxies.*;
 import org.springframework.beans.*;
