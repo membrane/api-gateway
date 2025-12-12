@@ -129,7 +129,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
             ensureValidIdSetter(elementInfo);
             schema.definition(createComponentParser(m, main, elementInfo));
-            schema.definition(createComponentOrRefParser(m, elementInfo));
         }
     }
 
@@ -243,15 +242,20 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                             continue;
 
                         String defName = ei.getXSDTypeName(m);
-                        if (ei.getAnnotation().component()) {
-                            defName = componentOrRefDefName(defName);
-                        }
 
                         sos.add(object()
                                 .additionalProperties(false)
                                 .property(ref(ei.getAnnotation().name())
-                                        .ref("#/$defs/" + defName)));
+                                        .ref("#/$defs/" + defName)
+                                        .required(true)));
                     }
+                    // Allow referencing a component instance directly on list-item level:
+                    // flow:
+                    //   - $ref: ...
+                    sos.add(object()
+                            .additionalProperties(false)
+                            .property(string("$ref").required(true)));
+
                     processList(i, so, cei, sos);
                     continue;
                 }
@@ -263,7 +267,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 }
             }
 
-            addChildsAsProperties(m, main, cei, (SchemaObject) parent2, isComponentsList(i, cei));
+            addChildsAsProperties(m, main, cei, (SchemaObject) parent2, isComponentsList(i, cei), cei.isList());
         }
     }
 
@@ -316,15 +320,23 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2, boolean componentsContext) {
-        for (ElementInfo ei : getChildElementDeclarationInfo(main, cei).getElementInfo()) {
+    private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2, boolean componentsContext, boolean listItemContext) {
+        var eis = getChildElementDeclarationInfo(main, cei).getElementInfo();
 
+
+        // Generic list-item reference support:
+        // If this list can contain at least one @MCElement(component=true) type,
+        // allow "- $ref: ..." as an alternative list item shape.
+        if (listItemContext && !componentsContext && eis.stream().anyMatch(ei -> ei.getAnnotation().component())) {
+            parent2.property(string("$ref").required(false));
+        }
+
+        for (ElementInfo ei : eis) {
             String defName = ei.getXSDTypeName(m);
 
-            if (ei.getAnnotation().component()) {
-                defName = componentsContext
-                        ? componentDefName(defName)          // in components: id-allowed parser
-                        : componentOrRefDefName(defName);    // everywhere else: inline OR $ref
+            // Only the components-list gets the id-augmented schema
+            if (componentsContext && ei.getAnnotation().component()) {
+                defName = componentDefName(defName);
             }
 
             parent2.property(ref(ei.getAnnotation().name())
@@ -364,8 +376,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         String baseName = elementInfo.getXSDTypeName(m);
         String compName = componentDefName(baseName);
 
-        // noEnvelope components cannot "gain" an object property like id -> just alias base
-        // TODO: Decide if/how noEnvelope components should support IDs
         if (elementInfo.getAnnotation().noEnvelope()) {
             return ref(compName).ref("#/$defs/" + baseName);
         }
@@ -418,8 +428,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             if (m.getParameters().size() != 1
                     || m.getReturnType().getKind() != TypeKind.VOID
                     || !processingEnv.getTypeUtils().isSameType(
-                        m.getParameters().getFirst().asType(),
-                        elements.getTypeElement("java.lang.String").asType()
+                    m.getParameters().getFirst().asType(),
+                    elements.getTypeElement("java.lang.String").asType()
             )) {
                 throw new ProcessingException("setId(...) on %s must be exactly 'void setId(String)'.".formatted(type.getQualifiedName()), m);
             }
@@ -430,52 +440,18 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             return;  // no setId(String) present => OK
 
         if (idSetters.size() > 1)
-            throw new ProcessingException("Multiple setId(String) methods found on " + type.getQualifiedName(),idSetters.getFirst());
+            throw new ProcessingException("Multiple setId(String) methods found on " + type.getQualifiedName(), idSetters.getFirst());
 
         ExecutableElement setId = idSetters.getFirst();
         MCAttribute attr = setId.getAnnotation(MCAttribute.class);
         if (attr == null) {
-            throw new ProcessingException("setId(String) on " + type.getQualifiedName()+ " must be annotated with @MCAttribute(name=\"id\").",setId);
+            throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must be annotated with @MCAttribute(name=\"id\").", setId);
         }
 
         String attrName = attr.attributeName().isEmpty() ? "id" : attr.attributeName();
         if (!"id".equals(attrName)) {
             throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must use @MCAttribute(name=\"id\") or default name \"id\", but is \"" + attrName + "\".", setId);
         }
-    }
-
-    private void addIdPropertyToComponentsIfMissing(ElementInfo elementInfo, SchemaObject parser) {
-        if (elementInfo.getAis().stream().anyMatch(ai -> "id".equals(ai.getXMLName())))
-            return; // already defined via @MCAttribute -> nothing to do
-
-        parser.property(string("id").required(false));
-    }
-
-    private AbstractSchema<?> createComponentOrRefParser(Model m, ElementInfo elementInfo) {
-        String baseName = elementInfo.getXSDTypeName(m);
-        String orRefName = componentOrRefDefName(baseName);
-
-        // noEnvelope roots are arrays/refs -> keep it simple for now
-        // TODO: Support $ref for noEnvelope components properly (needs schema without forcing "type: object").
-        if (elementInfo.getAnnotation().noEnvelope()) {
-            return ref(orRefName).ref("#/$defs/" + baseName);
-        }
-
-        SchemaRef inline = ref("inline").ref("#/$defs/" + baseName);
-
-        SchemaObject refOnly = object(orRefName + "Ref")
-                .additionalProperties(false)
-                .property(string("$ref").required(true));
-
-        // oneOf: inline object OR {$ref: string}
-        SchemaObject orRef = object(orRefName);
-        orRef.oneOf(List.of(inline, refOnly));
-
-        return orRef;
-    }
-
-    private static String componentOrRefDefName(String baseDefName) {
-        return baseDefName + "OrRef";
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
