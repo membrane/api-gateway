@@ -15,6 +15,8 @@ package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
@@ -72,6 +74,11 @@ public class GenericYamlParser {
                         location.getLineNr(),
                         location.getColumnNr()), e);
             }
+
+            if ("components".equals(getBeanType(jsonNode))) {
+                beanDefs.addAll(extractComponentBeanDefinitions(jsonNode.get("components")));
+            }
+
             beanDefs.add(new BeanDefinition(
                     getBeanType(jsonNode),
                     "bean-" + idx++,
@@ -190,6 +197,39 @@ public class GenericYamlParser {
         } catch (Throwable cause) {
             throw new ParsingException(cause, node);
         }
+    }
+
+    private static List<BeanDefinition> extractComponentBeanDefinitions(JsonNode componentsNode) {
+        if (componentsNode == null || componentsNode.isNull())
+            return List.of();
+
+        if (!componentsNode.isObject())
+            throw new ParsingException("Expected object for 'components'.", componentsNode);
+
+        List<BeanDefinition> res = new ArrayList<>();
+
+        Iterator<String> ids = componentsNode.fieldNames();
+        while (ids.hasNext()) {
+            String id = ids.next();
+            JsonNode def = componentsNode.get(id);
+
+            // Each component definition must have exactly one key (the component type)
+            ensureSingleKey(def);
+            String componentKind = def.fieldNames().next();
+
+            // Wrap it into a normal top-level node: { <kind>: <body> }
+            ObjectNode wrapped = JsonNodeFactory.instance.objectNode();
+            wrapped.set(componentKind, def.get(componentKind));
+
+            res.add(new BeanDefinition(
+                    componentKind,
+                    "#/components/" + id,
+                    "default",
+                    randomUUID().toString(),
+                    wrapped
+            ));
+        }
+        return res;
     }
 
     private static <T> void handleComponentRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {

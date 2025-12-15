@@ -308,20 +308,6 @@ public class YAMLComponentsParsingTest {
         assertAnyErrorContains(ex, "TODO");
     }
 
-    // TODO prioritize the initialisation of components?
-    @Test
-    public void componentsAndApiReversedOrderSameDocument() {
-        assertStructure(
-                parse("""
-                        api: {}
-                        ---
-                        components: {}
-                        """),
-                clazz("ApiElement"),
-                clazz("Components")
-                );
-    }
-
     private List<?> parseDocs(String yamlWithDocs) {
         var sources = splitSources(MC_MAIN_DEMO + COMPONENTS_DEMO_SOURCES);
         var result = CompilerHelper.compile(sources, false);

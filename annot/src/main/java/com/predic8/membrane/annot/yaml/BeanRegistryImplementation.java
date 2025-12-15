@@ -107,8 +107,9 @@ public class BeanRegistryImplementation implements BeanRegistry {
         // can see both metadata and the action (including DELETED).
         bds.put(bd.getUid(), bd);
 
-        if (observer.isActivatable(bd))
+        if (isNotComponent(bd) && observer.isActivatable(bd)) {
             uidsToActivate.add(bd.getUid());
+        }
 
         if (changeEvents.isEmpty())
             activationRun();
@@ -173,7 +174,11 @@ public class BeanRegistryImplementation implements BeanRegistry {
 
     @Override
     public List<Object> getBeans() {
-        return bds.values().stream().map(BeanDefinition::getBean).filter(Objects::nonNull).toList();
+        return bds.values().stream().filter(bd -> bd.getName() == null || isNotComponent(bd)).map(BeanDefinition::getBean).filter(Objects::nonNull).toList();
+    }
+
+    private static boolean isNotComponent(BeanDefinition bd) {
+        return !bd.getName().startsWith("#/components/");
     }
 
     @Override

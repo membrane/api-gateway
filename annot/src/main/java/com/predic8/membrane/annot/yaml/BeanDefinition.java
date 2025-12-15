@@ -27,6 +27,10 @@ public class BeanDefinition {
     private final JsonNode node;
     private final WatchAction action;
     private final String kind;
+
+    /**
+     * Constructed bean after initialization.
+     */
     private Object bean;
 
     /**
