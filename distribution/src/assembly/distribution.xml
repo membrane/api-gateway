@@ -15,6 +15,9 @@
             </excludes>
             <unpack>false</unpack>
             <outputDirectory>/lib</outputDirectory>
+
+            <!-- do NOT put this module's own jar into /lib -->
+            <useProjectArtifact>false</useProjectArtifact>
         </dependencySet>
     </dependencySets>
     <fileSets>

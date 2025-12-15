@@ -9,6 +9,7 @@ The module uses the Maven Assembly Plugin together with src/assembly/distributio
 - Build the Membrane API Gateway distribution ZIP archive
 - Providing static content for the distribution
 - Example tests
+- LoadTest (com.predic8.membrane.load.LoadTes)
 - Filtering out some proxies.xml example files
 
 ## Building the Distribution
