@@ -70,10 +70,6 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         return CONTINUE;
     }
 
-    /**
-     *
-     * @return
-     */
     protected abstract Class<?> getExpressionReturnType();
 
     protected abstract boolean shouldSetValue(Exchange exchange, Flow flow);
