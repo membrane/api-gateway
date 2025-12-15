@@ -77,17 +77,43 @@ public class CompilerHelper {
     }
 
     public static BeanRegistry parseYAML(CompilerResult cr, String yamlConfig) {
-        ClassLoader original = Thread.currentThread().getContextClassLoader();
         CompositeClassLoader cl = getCompositeClassLoader(cr, yamlConfig);
+        return withContextClassLoader(cl, () -> {
+            Class<?> parserClass = cl.loadClass(YAML_PARSER_CLASS_NAME);
+            return getBeanRegistry(parserClass, getParser(parserClass));
+        });
+    }
+
+    public static void parseXML(CompilerResult cr, String xmlSpringConfig) {
+        CompositeClassLoader cl = xmlClassLoader(cr, xmlSpringConfig);
+        withContextClassLoader(cl, () -> {
+            Class<?> ctx = cl.loadClass(APPLICATION_CONTEXT_CLASSNAME);
+            ctx.getConstructor(String.class).newInstance("demo.xml");
+            return null;
+        });
+    }
+
+    @FunctionalInterface
+    private interface ThrowingSupplier<T> {
+        T get() throws Exception;
+    }
+
+    private static <T> T withContextClassLoader(ClassLoader cl, ThrowingSupplier<T> action) {
+        ClassLoader original = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(cl);
-            Class<?> parserClass = cl.loadClass(YAML_PARSER_CLASS_NAME);
-            return getBeanRegistry(parserClass,getParser(parserClass));
+            return action.get();
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             Thread.currentThread().setContextClassLoader(original);
         }
+    }
+
+    private static CompositeClassLoader xmlClassLoader(CompilerResult cr, String xmlSpringConfig) {
+        InMemoryClassLoader inMemory = (InMemoryClassLoader) cr.classLoader();
+        inMemory.defineOverlay(new OverlayInMemoryFile("/demo.xml", xmlSpringConfig));
+        return new CompositeClassLoader(CompilerHelper.class.getClassLoader(), inMemory);
     }
 
     private static BeanRegistry getBeanRegistry(Class<?> parserClass, Object instance) throws Exception {
@@ -104,26 +130,6 @@ public class CompilerHelper {
 
     private static @NotNull Object getParser(Class<?> c) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         return c.getConstructor(String.class).newInstance("demo.yaml");
-    }
-
-    /**
-     * Parse the given XML Spring config.
-     * TODO Refactor: too much in common with parseYAML
-     */
-    public static void parse(CompilerResult cr, String xmlSpringConfig) {
-        ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
-        try {
-            InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
-            loaderA.defineOverlay(new OverlayInMemoryFile("/demo.xml", xmlSpringConfig));
-            CompositeClassLoader cl = new CompositeClassLoader(CompilerHelper.class.getClassLoader(),loaderA);
-            Thread.currentThread().setContextClassLoader(cl);
-            Class<?> c = cl.loadClass(APPLICATION_CONTEXT_CLASSNAME);
-            c.getConstructor(String.class).newInstance("demo.xml");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalClassloader);
-        }
     }
 
     private static List<JavaFileObject> getJavaSources(Iterable<? extends FileObject> sources) {
