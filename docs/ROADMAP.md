@@ -15,6 +15,12 @@
 # 7.1.0
 
 - Register JSON Schema for YAML at: https://www.schemastore.org
+- Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
+
+# 7.0.4
+
+- Remove GroovyTemplateInterceptor (Not Template Interceptor)
+  - Old an unused
 
 # 7.0.1
 
