@@ -25,17 +25,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
-
-      - name: Update $schema URL in YAML files
-        run: |
-          VERSION='${{ steps.get_version.outputs.VERSION }}'
-          echo "Updating schema URLs in YAML files to v${VERSION}.json"
-
-          find . \( -name "apis.yaml" -o -name "apis.yml" \) -print0 | while IFS= read -r -d '' file; do
-            echo "Fixing $file"
-            sed -i "s|\$schema=https://www\.membrane-api\.io/v[0-9\.]\+\.json|\$schema=https://www.membrane-api.io/v${VERSION}.json|g" "$file"
-          done
-
       - id: compile-membrane
         name: Compile Membrane
         run: |
@@ -72,6 +61,13 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
+      - name: Update $schema URL in YAML files
+        run: |
+          VERSION='${{ steps.get_version.outputs.VERSION }}'
+          echo "Updating schema URLs in YAML files to v${VERSION}.json"
+          find . \( -name "apis.yaml" -o -name "apis.yml" \) -print0 | while IFS= read -r -d '' file; do
+            sed -i "s|\$schema=https://www\.membrane-api\.io/v[0-9\.]\+\.json|\$schema=https://www.membrane-api.io/v${VERSION}.json|g" "$file"
+          done
       - id: install-secret-key
         name: Install gpg secret key
         run: |
@@ -111,7 +107,7 @@ jobs:
           VERSION='${{ steps.get_version.outputs.VERSION }}'
           echo "Triggering GitLab pipeline for membrane-api.io with VERSION=${VERSION}"
 
-          curl -X POST --fail --timeout 10 \
+          curl -X POST --fail \
             -F token="${GITLAB_TRIGGER_TOKEN}" \
             -F ref=main \
             -F "variables[MEMBRANE_VERSION]=${VERSION}" \
