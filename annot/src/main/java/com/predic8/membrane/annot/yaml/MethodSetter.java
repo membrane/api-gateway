@@ -14,19 +14,18 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.*;
+import java.lang.reflect.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.annot.yaml.GenericYamlParser.*;
+import static com.predic8.membrane.annot.yaml.GenericYamlParser.createAndPopulateNode;
+import static com.predic8.membrane.annot.yaml.GenericYamlParser.parseListIncludingStartEvent;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.findSetterForKey;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Integer.parseInt;
 import static java.lang.Long.parseLong;
@@ -86,7 +85,7 @@ public class MethodSetter {
         Class<?> wanted = getParameterType();
 
         if (Collection.class.isAssignableFrom(wanted)) {
-            List<Object> list = parseListIncludingStartEvent(ctx.updateContext(key), node);
+            List<Object> list = parseListIncludingStartEvent(ctx, node);
 
             Class<?> elemType = getCollectionElementType(setter);
             if (elemType != null) {
@@ -94,7 +93,7 @@ public class MethodSetter {
                     if (o == null) continue;
                     if (!elemType.isAssignableFrom(o.getClass())) {
                         throw new ParsingException("Value of type '%s' is not allowed in list '%s'. Expected '%s'."
-                                .formatted(McYamlIntrospector.getElementName(o.getClass()), key, elemType.getSimpleName()),node);
+                                        .formatted(McYamlIntrospector.getElementName(o.getClass()), key, elemType.getSimpleName()), node);
                     }
                 }
             }
@@ -138,11 +137,14 @@ public class MethodSetter {
 
     private static Class<?> getCollectionElementType(Method setter) {
         Type t = setter.getGenericParameterTypes()[0];
-        if (t instanceof ParameterizedType pt) {
-            Type arg = pt.getActualTypeArguments()[0];
-            if (arg instanceof Class<?> c) return c;
-            if (arg instanceof ParameterizedType p2 && p2.getRawType() instanceof Class<?> c2) return c2;
+        if (!(t instanceof ParameterizedType pt)) return null;
+        Type arg = pt.getActualTypeArguments()[0];
+        if (arg instanceof Class<?> c) return c;
+        if (arg instanceof WildcardType wt) {
+            Type[] upper = wt.getUpperBounds();
+            if (upper.length == 1 && upper[0] instanceof Class<?> uc) return uc;
         }
+        if (arg instanceof ParameterizedType p2 && p2.getRawType() instanceof Class<?> rc) return rc;
         return null;
     }
 }

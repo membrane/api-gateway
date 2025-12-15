@@ -233,21 +233,6 @@ public class GenericYamlParser {
         return res;
     }
 
-
-    private static <T> void handleComponentRefs(ParsingContext ctx, Class<T> clazz, JsonNode refNode, T obj) throws InvocationTargetException, IllegalAccessException, ParsingException {
-        ensureTextual(refNode, "Expected a string after the '$ref' key.");
-        Object referenced = ctx.registry().resolveReference(refNode.asText());
-
-        // Enforce schema-like rule: only locally allowed children may be injected via $ref
-        if (ctx.grammar().getLocal(ctx.context(), getElementName(referenced.getClass())) == null) {
-            throw new ParsingException(
-                    "Referenced component '%s' (type '%s') is not allowed in '%s'."
-                            .formatted(refNode.asText(), getElementName(referenced.getClass()), ctx.context()), refNode);
-        }
-
-        getChildSetter(clazz, referenced.getClass()).invoke(obj, referenced);
-    }
-
     private static <T> void applyObjectLevelRef(ParsingContext ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) throws ParsingException {
         try {
             ensureTextual(refNode, "Expected a string after the '$ref' key.");
