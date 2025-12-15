@@ -39,7 +39,11 @@ public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
     private Outcome handleInternal(Exchange exchange, Flow flow) {
         try {
             // The value is typically set from YAML there we can assume UTF-8
-            exchange.getMessage(flow).setBodyContent(exchangeExpression.evaluate(exchange, flow, String.class).getBytes(UTF_8));
+            var result = exchangeExpression.evaluate(exchange, flow, String.class);
+            if (result == null) {
+                result = "null";
+            }
+            exchange.getMessage(flow).setBodyContent(result.getBytes(UTF_8));
             return CONTINUE;
         } catch (Exception e) {
             var root = ExceptionUtil.getRootCause(e);
