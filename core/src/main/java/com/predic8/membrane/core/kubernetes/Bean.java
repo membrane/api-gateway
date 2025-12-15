@@ -34,8 +34,6 @@ public class Bean {
 
     private Scope scope = SINGLETON;
 
-    private Boolean lazyInit = false; // TODO
-
     private List<ConstructorArg> constructorArgs = new ArrayList<>();
 
     private List<Property> properties = new ArrayList<>();
@@ -65,15 +63,6 @@ public class Bean {
 
     public Scope getScope() {
         return scope;
-    }
-
-    @MCAttribute
-    public void setLazyInit(Boolean lazyInit) {
-        this.lazyInit = lazyInit;
-    }
-
-    public Boolean getLazyInit() {
-        return lazyInit;
     }
 
     @MCAttribute
