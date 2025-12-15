@@ -47,7 +47,7 @@ class SetBodyInterceptorTest {
     void response() {
         sbi.setValue("SC: ${statusCode}");
         sbi.init(new Router());
-        sbi.handleRequest(exc);
-        assertEquals("SC: 501", exc.getRequest().getBodyAsStringDecoded());
+        sbi.handleResponse(exc);
+        assertEquals("SC: 501", exc.getResponse().getBodyAsStringDecoded());
     }
 }
