@@ -151,10 +151,4 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
     private @NotNull SpelParserConfiguration getSpelParserConfiguration() {
         return new SpelParserConfiguration(MIXED, this.getClass().getClassLoader());
     }
-
-    public static class DollarBracketTemplateParserContext extends TemplateParserContext {
-        public DollarBracketTemplateParserContext() {
-            super("${","}");
-        }
-    }
 }

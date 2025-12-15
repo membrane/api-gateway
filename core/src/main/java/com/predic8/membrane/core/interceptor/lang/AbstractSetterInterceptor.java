@@ -59,7 +59,7 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
                 internal(getRouter().isProduction(), getDisplayName())
                         .title("Error evaluating expression!")
                         .internal("field", fieldName)
-                        .internal("value", expression)
+                        .internal("expression", expression)
                         .exception(root)
                         .stacktrace(false)
                         .buildAndSetResponse(exchange);
