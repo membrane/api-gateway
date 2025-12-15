@@ -16,12 +16,14 @@
 # 7.1.0
 
 - Register JSON Schema for YAML at: https://www.schemastore.org
-- Killer Grafana Dashboard to import
-  -> Screenshot for README.md
+- Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
+- Remove GroovyTemplateInterceptor (Not Template Interceptor)
+  - Old an unused
 
-# 7.0.2
+# 7.0.4
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+
 
 # 7.0.1
 
