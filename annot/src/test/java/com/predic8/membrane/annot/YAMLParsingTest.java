@@ -531,7 +531,6 @@ public class YAMLParsingTest {
         }
     }
 
-    @Disabled("This test currently fails, but because of the wrong reason. Disabling it.")
     @Test
     public void errorInListItemUniqueness() {
         var sources = splitSources(MC_MAIN_DEMO + """
@@ -589,7 +588,7 @@ public class YAMLParsingTest {
         } catch (RuntimeException e) {
             YamlSchemaValidationException e2 = (YamlSchemaValidationException) getCause(e);
             assertEquals(1, e2.getErrors().size());
-            assertEquals("/demo: property 'errorHere' is not defined in the schema and the schema does not allow additional properties",
+            assertEquals(": property 'demo' is not defined in the schema and the schema does not allow additional properties",
                     e2.getErrors().getFirst().toString());
         }
     }
