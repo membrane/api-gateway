@@ -2,7 +2,7 @@
 <Configuration>
     <Appenders>
         <Console name="STDOUT" target="SYSTEM_OUT">
-            <!--
+           <!--
            To turn off the colors in the log, set the environment variable:
            export MEMBRANE_DISABLE_TERM_COLORS=true
 
