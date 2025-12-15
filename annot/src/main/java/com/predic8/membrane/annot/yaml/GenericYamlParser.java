@@ -164,29 +164,30 @@ public class GenericYamlParser {
             T configObj = clazz.getConstructor().newInstance();
             if (node.isArray()) {
                 // when this is a list, we are on a @MCElement(..., noEnvelope=true)
-
                 Method method = getSingleChildSetter(clazz);
-                method.invoke(configObj, (Object) parseListExcludingStartEvent(ctx, node));
+                method.invoke(configObj, parseListExcludingStartEvent(ctx, node));
                 return configObj;
             }
             ensureMappingStart(node);
             if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
 
+            JsonNode refNode = node.get("$ref");
+            if (refNode != null) {
+                applyObjectLevelRef(ctx, clazz, node, refNode, configObj);
+            }
+
             List<Method> required = findRequiredSetters(clazz);
 
             for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
                 String key = it.next();
+                if ("$ref".equals(key))
+                    continue;
+
                 try {
-
-                    if ("$ref".equals(key)) {
-                        handleComponentRefs(clazz, node.get(key), ctx.registry(), configObj);
-                        continue;
-                    }
-
                     MethodSetter methodSetter = getMethodSetter(ctx, clazz, key);
                     required.remove(methodSetter.getSetter());
-                    methodSetter.setSetter(configObj,ctx,node,key);
+                    methodSetter.setSetter(configObj, ctx, node, key);
                 } catch (Throwable cause) {
                     throw new ParsingException(cause, node.get(key));
                 }
@@ -232,10 +233,45 @@ public class GenericYamlParser {
         return res;
     }
 
-    private static <T> void handleComponentRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
-        ensureTextual(node, "Expected a string after the '$ref' key.");
-        Object o = registry.resolveReference(node.asText());
-        getChildSetter(clazz, o.getClass()).invoke(obj, o);
+
+    private static <T> void handleComponentRefs(ParsingContext ctx, Class<T> clazz, JsonNode refNode, T obj) throws InvocationTargetException, IllegalAccessException, ParsingException {
+        ensureTextual(refNode, "Expected a string after the '$ref' key.");
+        Object referenced = ctx.registry().resolveReference(refNode.asText());
+
+        // Enforce schema-like rule: only locally allowed children may be injected via $ref
+        if (ctx.grammar().getLocal(ctx.context(), getElementName(referenced.getClass())) == null) {
+            throw new ParsingException(
+                    "Referenced component '%s' (type '%s') is not allowed in '%s'."
+                            .formatted(refNode.asText(), getElementName(referenced.getClass()), ctx.context()), refNode);
+        }
+
+        getChildSetter(clazz, referenced.getClass()).invoke(obj, referenced);
+    }
+
+    private static <T> void applyObjectLevelRef(ParsingContext ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) throws ParsingException {
+        try {
+            ensureTextual(refNode, "Expected a string after the '$ref' key.");
+
+            Object referenced = ctx.registry().resolveReference(refNode.asText());
+            String refKey = getElementName(referenced.getClass());
+
+            // Forbid inline + $ref for the same child
+            if (parentNode.has(refKey)) {
+                throw new ParsingException("Cannot use '$ref' together with inline '%s' in '%s'."
+                        .formatted(refKey, ctx.context()), parentNode.get(refKey));
+            }
+
+            getChildSetter(parentClass, referenced.getClass()).invoke(obj, referenced);
+
+        } catch (ParsingException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new ParsingException(
+                    "Referenced component '%s' (type '%s') is not allowed in '%s'."
+                            .formatted(refNode.asText(), getElementName(ctx.registry().resolveReference(refNode.asText()).getClass()), ctx.context()), refNode);
+        } catch (Throwable t) {
+            throw new ParsingException(t, refNode);
+        }
     }
 
     public static List<Object> parseListIncludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {

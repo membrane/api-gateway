@@ -272,7 +272,7 @@ public class YAMLComponentsParsingTest {
                           header: Inline
                         $ref: "#/components/manager"
                 """));
-        assertAnyErrorContains(ex, "TODO");
+        assertAnyErrorContains(ex, "Cannot use '$ref' together with inline 'bearerToken' in 'oauth2authserver'.");
     }
 
     @Test
@@ -290,7 +290,7 @@ public class YAMLComponentsParsingTest {
                         issuer: https://issuer
                         $ref: "#/components/manager"
                 """));
-        assertAnyErrorContains(ex, "TODO");
+        assertAnyErrorContains(ex, "Referenced component '#/components/manager' (type 'basicAuthentication') is not allowed in 'oauth2authserver'.");
     }
 
     @Test
@@ -305,7 +305,7 @@ public class YAMLComponentsParsingTest {
                   flow:
                     - $ref: "#/components/manager"
                 """));
-        assertAnyErrorContains(ex, "TODO");
+        assertAnyErrorContains(ex, "Value of type 'bearerToken' is not allowed in list 'flow'. Expected 'FlowItem'.");
     }
 
     private List<?> parseDocs(String yamlWithDocs) {

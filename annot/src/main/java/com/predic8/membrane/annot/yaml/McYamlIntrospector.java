@@ -158,4 +158,11 @@ public final class McYamlIntrospector {
         return findAnnotation(setter, MCOtherAttributes.class) != null;
     }
 
+    public static String getElementName(Class<?> type) {
+        MCElement ann = type.getAnnotation(MCElement.class);
+        if (ann != null && ann.name() != null && !ann.name().isBlank())
+            return ann.name();
+        return type.getSimpleName();
+    }
+
 }

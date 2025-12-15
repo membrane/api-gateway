@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.*;
 
 import static com.predic8.membrane.annot.yaml.GenericYamlParser.*;
@@ -82,8 +84,22 @@ public class MethodSetter {
 
     private Object resolveSetterValue(ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
         Class<?> wanted = getParameterType();
-        if (Collection.class.isAssignableFrom(wanted))
-            return parseListIncludingStartEvent(ctx, node);
+
+        if (Collection.class.isAssignableFrom(wanted)) {
+            List<Object> list = parseListIncludingStartEvent(ctx.updateContext(key), node);
+
+            Class<?> elemType = getCollectionElementType(setter);
+            if (elemType != null) {
+                for (Object o : list) {
+                    if (o == null) continue;
+                    if (!elemType.isAssignableFrom(o.getClass())) {
+                        throw new ParsingException("Value of type '%s' is not allowed in list '%s'. Expected '%s'."
+                                .formatted(McYamlIntrospector.getElementName(o.getClass()), key, elemType.getSimpleName()),node);
+                    }
+                }
+            }
+            return list;
+        }
 
         if (wanted.isEnum()) return parseEnum(wanted, node);
         if (wanted.equals(String.class)) return node.asText();
@@ -118,5 +134,15 @@ public class MethodSetter {
         } catch (IllegalArgumentException e) {
             throw new WrongEnumConstantException(enumClass, value);
         }
+    }
+
+    private static Class<?> getCollectionElementType(Method setter) {
+        Type t = setter.getGenericParameterTypes()[0];
+        if (t instanceof ParameterizedType pt) {
+            Type arg = pt.getActualTypeArguments()[0];
+            if (arg instanceof Class<?> c) return c;
+            if (arg instanceof ParameterizedType p2 && p2.getRawType() instanceof Class<?> c2) return c2;
+        }
+        return null;
     }
 }
