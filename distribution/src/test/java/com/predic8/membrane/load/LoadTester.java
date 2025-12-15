@@ -1,4 +1,4 @@
-package com.predic8.membrane.devtools;
+package com.predic8.membrane.load;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
@@ -32,7 +32,7 @@ public class LoadTester {
     /**
      * Specifies the maximum number of concurrent requests allowed during the load testing process.
      */
-    public static final int CONCURRENCY = 15000;
+    public static final int CONCURRENCY = 200;
 
     Router r = new HttpRouter();
 
@@ -69,10 +69,8 @@ public class LoadTester {
                 .setConnectTimeout(Duration.ofMillis(60000))
                 .setRequestTimeout(Duration.ofMillis(60000))
                 .setMaxConnections(CONCURRENCY)
-                .setMaxConnectionsPerHost(CONCURRENCY).build())) {
-
-            ExecutorService submitters =
-                    Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
+                .setMaxConnectionsPerHost(CONCURRENCY).build()); ExecutorService submitters =
+                     Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory())) {
 
             LongAdder ok = new LongAdder();
             LongAdder err = new LongAdder();

@@ -100,7 +100,7 @@
             <groupId>org.asynchttpclient</groupId>
             <artifactId>async-http-client</artifactId>
             <version>3.0.4</version>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -203,7 +203,6 @@
                                       fork="true">
                                     <arg value="${project.basedir}/examples"/>
                                     <arg value="${project.build.directory}/examples-filtered"/>
-
                                     <classpath>
                                         <pathelement path="${project.build.outputDirectory}"/>
                                     </classpath>
@@ -215,9 +214,7 @@
             </plugin>
         </plugins>
     </build>
-
     <profiles>
-
         <profile>
             <id>no-internet</id>
             <build>
