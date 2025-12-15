@@ -67,7 +67,10 @@ public class ComponentClassGenerator {
                                     
                                         @MCOtherAttributes
                                         public void setComponents(Map<String, Object> components) {
-                                            this.components.putAll(components);
+                                              if (this.components == null)
+                                                this.components = new java.util.LinkedHashMap<>();
+                                              if (components != null)
+                                                this.components.putAll(components);
                                         }
                                     }
                                     """);

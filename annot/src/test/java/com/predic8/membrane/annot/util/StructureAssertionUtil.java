@@ -30,6 +30,14 @@ public class StructureAssertionUtil {
         }
     }
 
+    public static void assertStructure(List<?> beans, Asserter... asserter) {
+        assertEquals(beans.size(), asserter.length);
+        for (int i = 0; i < asserter.length; i++) {
+            asserter[i].assertStructure(beans.get(i));
+        }
+    }
+
+
     public interface Asserter {
         void assertStructure(Object bean);
     }

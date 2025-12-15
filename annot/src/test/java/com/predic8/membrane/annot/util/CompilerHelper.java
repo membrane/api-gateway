@@ -13,26 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.annot.util;
 
-import com.predic8.membrane.annot.yaml.*;
-import org.hamcrest.*;
-import org.hamcrest.collection.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.annot.yaml.BeanRegistry;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.collection.IsIterableContainingInAnyOrder;
+import org.jetbrains.annotations.NotNull;
 
 import javax.tools.*;
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
-import java.util.stream.*;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-import static java.util.List.*;
-import static java.util.stream.StreamSupport.*;
+import static java.util.List.of;
+import static java.util.stream.StreamSupport.stream;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.Diagnostic.Kind.WARNING;
-import static javax.tools.StandardLocation.*;
-import static org.hamcrest.MatcherAssert.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CompilerHelper {
 
