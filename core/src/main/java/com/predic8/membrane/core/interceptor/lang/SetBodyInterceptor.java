@@ -18,6 +18,8 @@ import static java.nio.charset.StandardCharsets.*;
  * Different languages such as SpEL, Groovy, XMLPath or JsonPath are supported.
  * setBody does not support conditional processing or loops. When you need these features,
  * resort to the template plugin instead.
+ *
+ * The content of the message body is set as UTF-8 encoded bytes. Set a corresponding content type header if necessary.
  */
 @MCElement(name = "setBody")
 public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
@@ -36,6 +38,7 @@ public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private Outcome handleInternal(Exchange exchange, Flow flow) {
         try {
+            // The value is typically set from YAML there we can assume UTF-8
             exchange.getMessage(flow).setBodyContent(exchangeExpression.evaluate(exchange, flow, String.class).getBytes(UTF_8));
             return CONTINUE;
         } catch (Exception e) {
