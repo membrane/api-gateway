@@ -29,28 +29,11 @@
 		<relativePath>../pom.xml</relativePath>
 		<version>7.0.4-SNAPSHOT</version>
 	</parent>
-    <parent>
-        <groupId>org.membrane-soa</groupId>
-        <artifactId>service-proxy-parent</artifactId>
-        <relativePath>../pom.xml</relativePath>
-        <version>7.0.2-SNAPSHOT</version>
-    </parent>
 
     <dependencies>
         <dependency>
             <groupId>org.membrane-soa</groupId>
             <artifactId>service-proxy-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j2-impl</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <!-- Test Dependencies -->
