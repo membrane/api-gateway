@@ -28,8 +28,7 @@ public class IDEStarter {
 	public static void main(String[] args) {
 		// for testing or development purposes
 		// Start in "distribution" folder
-		try {
-			Configurator.initialize(null, new ConfigurationSource(new FileInputStream("log4j2.xml")));
+		try(var ignored = Configurator.initialize(null, new ConfigurationSource(new FileInputStream("log4j2.xml")))) {
 		} catch (IOException e) {
 			LoggerFactory.getLogger(IDEStarter.class).error("Error loading log configuration.");
 		}

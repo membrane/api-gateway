@@ -12,6 +12,14 @@ The module uses the Maven Assembly Plugin together with src/assembly/distributio
 - LoadTest (com.predic8.membrane.load.LoadTes)
 - Filtering out some proxies.xml example files
 
+## Starting Membrane in the IDE
+
+Run: com.predic8.membrane.devtools.IDEStarter
+
+## Logging
+
+Find the log configuration in: src/main/resources/log4j2.xml
+
 ## Building the Distribution
 
 mvn clean package
