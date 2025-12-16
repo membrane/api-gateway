@@ -15,7 +15,7 @@ To monitor APIs using Prometheus and Grafana, follow the steps below:
 1. Start the example environment with Docker Compose:
 
    ```bash
-   docker-compose up
+   docker compose up
    ```
 
 2. Access the following endpoints:
@@ -43,14 +43,16 @@ You can use cURL commands to access these endpoints, e.g.:
 
 ### Grafana
 
-1. Proceed to Grafana:
+1. Access [localhost:3000](http://localhost:3000) in your browser.
+2. Log in with the default credentials: username `admin` and password `admin`. (When prompted to change the password, press `skip`.)
+3. Click on `Dashboards` from the left-hand menu.
+4. Click on `New` and select `Import`.
+5. Navigate to the `dashboards` directory in this folder and pick a dashboard JSON file.
+  - `full.json` displays nearly all available metrics.
+  - `openapi.json` displays OpenAPI validation metrics. This requires the OpenAPI plugin to be active in an API.
+  - `minimal.json` is pictured below:
 
-- Access [localhost:3000](http://localhost:3000) in your browser.
-- Log in with the default credentials: username `admin` and password `admin`.
-- Click on "Explore" from the left-hand menu.
-- You can now select different queries to display the collected metrics.
-
-![Grafana example](prometheus-grafana-example.png)
+![Grafana example](grafana.png)
 
 **HOW IT IS DONE**
 
