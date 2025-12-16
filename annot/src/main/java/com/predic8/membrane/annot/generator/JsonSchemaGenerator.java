@@ -30,6 +30,7 @@ import java.util.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
+import static com.predic8.membrane.annot.model.OtherAttributesInfo.ValueType.OBJECT;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
@@ -42,6 +43,10 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
 public class JsonSchemaGenerator extends AbstractGrammar {
 
     public static final String MEMBRANE_SCHEMA_JSON_FILENAME = "membrane.schema.json";
+    public static final String COMPONENTS = "components";
+
+    // TODO keep this pattern or allow *?
+    public static final String COMPONENT_ID_PATTERN = "^[A-Za-z_][A-Za-z0-9_-]*$";
 
     private final Map<String, Boolean> componentAdded = new HashMap<>();
 
@@ -164,9 +169,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private boolean isComponentsMap(ElementInfo ei) {
-        return "components".equals(ei.getAnnotation().name())
+        return COMPONENTS.equals(ei.getAnnotation().name())
                 && ei.getOai() != null
-                && ei.getOai().getValueType() == OtherAttributesInfo.ValueType.OBJECT;
+                && ei.getOai().getValueType() == OBJECT;
     }
 
     private String getDescriptionContent(AbstractJavadocedInfo elementInfo) {
@@ -236,13 +241,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private void processMCChilds(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
-
-            // TODO has to be in the schema. Otherwise the schema validation will fail
-//            if (cei.excludedFromJsonSchema())
-//                return;
-
             AbstractSchema<?> parent2 = so;
-
             if (cei.isList()) {
                 if (shouldGenerateFlowParserType(cei)) {
                     var sos = new ArrayList<SchemaObject>();
@@ -282,9 +281,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private boolean isComponentsList(ElementInfo parent, ChildElementInfo cei) {
-        return "components".equals(parent.getAnnotation().name())
+        return COMPONENTS.equals(parent.getAnnotation().name())
                 && parent.getAnnotation().noEnvelope()
-                && "components".equals(cei.getPropertyName());
+                && COMPONENTS.equals(cei.getPropertyName());
     }
 
     private boolean shouldGenerateFlowParserType(ChildElementInfo cei) {
@@ -351,8 +350,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 defName = componentDefName(defName);
             }
 
-            parent2.property(ref(ei.getAnnotation().name())
-                            .ref("#/$defs/" + defName))
+            parent2.property(ref(ei.getAnnotation().name()).ref("#/$defs/" + defName))
                     .description(getDescriptionContent(ei))
                     .required(cei.isRequired());
         }
@@ -411,9 +409,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                             .required(true)));
         }
 
-        // TODO keep this pattern or allow *?
-        parser.patternProperty("^[A-Za-z_][A-Za-z0-9_-]*$", anyOf(variants));
-
+        parser.patternProperty(COMPONENT_ID_PATTERN, anyOf(variants));
         return parser;
     }
 
@@ -427,7 +423,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
         return false;
     }
-
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
     private String getDescriptionAsText(AbstractJavadocedInfo elementInfo) {
