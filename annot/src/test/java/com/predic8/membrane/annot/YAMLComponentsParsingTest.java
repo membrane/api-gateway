@@ -339,6 +339,85 @@ public class YAMLComponentsParsingTest {
         );
     }
 
+    @Test
+    public void topLevelElementNotAllowedAsNestedChild() {
+        var ex = assertThrows(RuntimeException.class, () -> parseWithTopLevelOnlySources("""
+            outer:
+              items:
+                - topThing: {}
+            """));
+        assertSchemaErrorContains(ex, "property 'topThing' is not defined in the schema and the schema does not allow additional properties");
+    }
+
+    @Test
+    public void topLevelElementStillAllowedAtRoot() {
+        assertStructure(
+                parseWithTopLevelOnlySources("""
+                    topThing: {}
+                    """),
+                clazz("TopThingElement")
+        );
+    }
+
+    @Test
+    public void nonTopLevelElementAllowedAsNestedChild() {
+        assertStructure(
+                parseWithTopLevelOnlySources("""
+                    outer:
+                      items:
+                        - inner: {}
+                    """),
+                clazz("OuterElement",
+                        property("items", list(
+                                clazz("InnerElement")
+                        )))
+        );
+    }
+
+    private BeanRegistry parseWithTopLevelOnlySources(String yaml) {
+        var sources = splitSources(MC_MAIN_DEMO + COMPONENTS_DEMO_SOURCES + TOPLEVEL_ONLY_SOURCES);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+        return parseYAML(result, yaml);
+    }
+
+    private static final String TOPLEVEL_ONLY_SOURCES = """
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+
+        @MCElement(name="outer", topLevel=true)
+        public class OuterElement {
+            List<ItemBase> items;
+
+            public List<ItemBase> getItems() {
+                return items;
+            }
+
+            @MCChildElement
+            public void setItems(List<ItemBase> items) {
+                this.items = items;
+            }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        public abstract class ItemBase {}
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+
+        @MCElement(name="inner")
+        public class InnerElement extends ItemBase {}
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+
+        @MCElement(name="topThing", topLevel=true)
+        public class TopThingElement extends ItemBase {}
+        """;
+
+
     private List<?> parseDocs(String yamlWithDocs) {
         var sources = splitSources(MC_MAIN_DEMO + COMPONENTS_DEMO_SOURCES);
         var result = CompilerHelper.compile(sources, false);

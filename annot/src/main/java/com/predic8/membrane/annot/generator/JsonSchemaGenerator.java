@@ -340,8 +340,10 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private void addChildsAsProperties(Model m, MainInfo main, ChildElementInfo cei, SchemaObject parent2, boolean componentsContext, boolean listItemContext) {
-        var eis = getChildElementDeclarationInfo(main, cei).getElementInfo();
-
+        var eis = getChildElementDeclarationInfo(main, cei).getElementInfo().stream()
+                // Top-level elements cannot be configurable as nested children
+                .filter(ei -> !ei.getAnnotation().topLevel())
+                .toList();
 
         // Generic list-item reference support:
         // If this list can contain at least one @MCElement(component=true) type,
@@ -482,6 +484,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         for (ElementInfo comp : main.getElements().values()) {
             if (!comp.getAnnotation().component())
+                continue;
+
+            if (comp.getAnnotation().topLevel())
                 continue;
 
             String defName = comp.getXSDTypeName(m);
