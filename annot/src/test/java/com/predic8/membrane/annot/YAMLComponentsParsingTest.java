@@ -308,6 +308,37 @@ public class YAMLComponentsParsingTest {
         assertAnyErrorContains(ex, "Value of type 'bearerToken' is not allowed in list 'flow'. Expected 'FlowItem'.");
     }
 
+    @Test
+    public void componentRefersToAnotherComponent() {
+        assertStructure(
+                parse("""
+                    components:
+                      manager:
+                        bearerToken:
+                          header: Authorization
+                      oauth1:
+                        oauth2authserver:
+                          issuer: https://issuer
+                          otherFields: abc
+                          $ref: "#/components/manager"
+                    ---
+                    api:
+                      flow:
+                        - $ref: "#/components/oauth1"
+                    """),
+                clazz("Components"),
+                clazz("ApiElement",
+                        property("flow", list(
+                                clazz("OAuth2AuthServerElement",
+                                        property("issuer", value("https://issuer")),
+                                        property("otherFields", value("abc")),
+                                        property("bearerToken",
+                                                clazz("BearerTokenElement",
+                                                        property("header", value("Authorization")))))
+                        )))
+        );
+    }
+
     private List<?> parseDocs(String yamlWithDocs) {
         var sources = splitSources(MC_MAIN_DEMO + COMPONENTS_DEMO_SOURCES);
         var result = CompilerHelper.compile(sources, false);
