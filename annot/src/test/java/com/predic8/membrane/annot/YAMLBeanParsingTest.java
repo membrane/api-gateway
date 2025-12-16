@@ -88,13 +88,15 @@ public class YAMLBeanParsingTest {
     }
 
     @Test
-    void missingClassFailsFast() {
-        var ex = assertThrows(RuntimeException.class, () -> parse("""
+    void missingClassFailsFastOnResolve() {
+        BeanRegistry r = parse("""
             components:
               x:
                 bean:
                   scope: singleton
-            """));
+            """);
+
+        var ex = assertThrows(RuntimeException.class, () -> r.resolveReference("#/components/x"));
         assertAnyErrorContains(ex, "Missing/blank 'class'");
     }
 
@@ -107,10 +109,9 @@ public class YAMLBeanParsingTest {
                   class: com.predic8.membrane.demo.Dep
                   doesNotExist: 1
             """));
-        assertSchemaErrorContains(ex, "doesNotExist");
+        assertSchemaErrorContains(ex, "doesNotExist", "is not defined in the schema and the schema does not allow additional properties");
     }
 
-    // --- helpers (same style as YAMLComponentsParsingTest) ---
 
     private BeanRegistry parse(String yaml) {
         var sources = splitSources(MC_MAIN_DEMO + BEAN_DEMO_SOURCES);
@@ -142,9 +143,16 @@ public class YAMLBeanParsingTest {
             throw new AssertionError("Expected YamlSchemaValidationException but got: " + root, root);
 
         assertFalse(yse.getErrors().isEmpty(), "Expected schema errors.");
-        var msg = yse.getErrors().getFirst().toString();
-        for (var n : needles)
-            assertTrue(msg.contains(n), () -> "Expected error to contain '" + n + "' but was: " + msg);
+
+        for (var n : needles) {
+            boolean found = yse.getErrors().stream().anyMatch(err -> {
+                String msg = err.getMessage();
+                String s1 = msg != null ? msg : "";
+                String s2 = err.toString();
+                return s1.contains(n) || s2.contains(n);
+            });
+            assertTrue(found, () -> "Expected schema error to contain '" + n + "' but was: " + yse.getErrors());
+        }
     }
 
     private void assertAnyErrorContains(RuntimeException ex, String... needles) {

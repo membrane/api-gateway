@@ -26,7 +26,7 @@ public final class BeanFactory {
 
         try {
             Object instance = instantiate(
-                    Class.forName(className),
+                    loadBeanClass(className),
                     parseConstructorArgList(beanBody.path("constructorArgs"))
             );
             applyProperties(instance, parsePropertyList(beanBody.path("properties")));
@@ -34,6 +34,26 @@ public final class BeanFactory {
         } catch (Exception e) {
             throw new RuntimeException("Could not create bean for class: " + className, e);
         }
+    }
+
+    // TODO keep this? Currently only used for YAMLBeanParsingTest
+    private Class<?> loadBeanClass(String className) throws ClassNotFoundException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        if (classLoader != null) {
+            try { return Class.forName(className, true, classLoader); } catch (ClassNotFoundException ignored) {}
+        }
+
+        ClassLoader grammarClassLoader = registry.getGrammar().getClass().getClassLoader();
+        if (grammarClassLoader != null) {
+            try { return Class.forName(className, true, grammarClassLoader); } catch (ClassNotFoundException ignored) {}
+        }
+
+        ClassLoader beanFactoryClassLoader = BeanFactory.class.getClassLoader();
+        if (beanFactoryClassLoader != null) {
+            try { return Class.forName(className, true, beanFactoryClassLoader); } catch (ClassNotFoundException ignored) {}
+        }
+
+        return Class.forName(className);
     }
 
     private record ConstructorArg(String value, String ref) {}
