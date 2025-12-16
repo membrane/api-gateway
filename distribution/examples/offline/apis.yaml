@@ -5,8 +5,8 @@
 # Use this configuration to try Membrane without direct internet access.
 #
 # Start Membrane:
-#   Linux/Mac:  ./membrane.sh -c offline.yaml
-#   Windows:    membrane.cmd -c offline.yaml
+#   Linux/Mac:  ./membrane.sh
+#   Windows:    membrane.cmd
 
 # ***** APIs *************************************************************
 
