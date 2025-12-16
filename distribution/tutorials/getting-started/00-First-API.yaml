@@ -6,7 +6,7 @@
 # to a public API.
 #
 # 1.) Start Membrane:
-#    Open a terminal in the folder that contains this file and run:
+#    Open a terminal in this folder and run:
 #
 #    Linux/Mac:
 #      ./membrane.sh -c 00-First-API.yaml
