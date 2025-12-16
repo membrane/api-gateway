@@ -58,20 +58,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private Schema schema;
 
     private static final Set<String> excludeFromFlow = Set.of(
-            "httpClient",
-            "ruleMatching",
-            "wadlRewriter",
-            "global",
-            "exchangeStore",
-            "accountRegistration",
-            "userFeature",
-            "tcp",
-            "wsaEndpointRewriter",
-            "flowInitiator",
-            "kubernetesValidation",
-            "dispatching",
-            "groovyTemplate",
-            "adminApi"
     );
 
     public void write(Model m) throws IOException {
@@ -92,7 +78,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         writeSchema(main, schema);
     }
 
-    // Uses rootDef to define the elements configurable at top-level
     private void addTopLevelProperties(Model m, MainInfo main) {
         schema.additionalProperties(false);
         List<AbstractSchema<?>> kinds = new ArrayList<>();
@@ -247,7 +232,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                     var sos = new ArrayList<SchemaObject>();
 
                     for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-                        if (excludeFromFlow.contains(ei.getAnnotation().name()))
+                        if (ei.getAnnotation().excludeFromFlow())
                             continue;
 
                         String defName = ei.getXSDTypeName(m);

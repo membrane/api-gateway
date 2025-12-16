@@ -59,4 +59,9 @@ public @interface MCElement {
      * This does not have any effect on the XML grammar.
      */
     boolean noEnvelope() default false;
+
+    /**
+     * Whether the element should be configurable as part of the interceptor flow
+     */
+    boolean excludeFromFlow() default false;
 }

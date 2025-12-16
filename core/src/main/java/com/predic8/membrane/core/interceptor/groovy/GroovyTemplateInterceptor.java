@@ -46,7 +46,7 @@ import static org.springframework.web.util.HtmlUtils.*;
  *
  * @topic 2. Enterprise Integration Patterns
  */
-@MCElement(name = "groovyTemplate", mixed = true)
+@MCElement(name = "groovyTemplate", mixed = true, excludeFromFlow = true)
 public class GroovyTemplateInterceptor extends AbstractInterceptor {
 
     String src = "";
