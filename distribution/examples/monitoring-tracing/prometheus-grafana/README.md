@@ -1,10 +1,11 @@
 # Monitoring with Prometheus and Grafana
 
+Membrane allows the observation of APIs traffic and other key metrics via Prometheus and Grafana.
+
+The Prometheus plugin provides an HTTP endpoint that exposes the metrics.
+
 Membrane supports monitoring through the integration with Prometheus.
 
-With the Prometheus plugin, Membrane enables the observation of APIs. It gathers metrics about the processes passing through it and makes them available for scraping by Prometheus. This data can then be used for monitoring and alerting purposes.
-
-To enable monitoring for an API, simply add the Prometheus plugin to it.
 
 ## Run the Example
 
@@ -12,19 +13,19 @@ To monitor APIs using Prometheus and Grafana, follow the steps below:
 
 ### Providing a Metrics Endpoint for Prometheus
 
-1. Start the example environment with Docker Compose:
+1. Start a setup of Membrane, Prometheus and Grafana with Docker Compose:
 
    ```bash
    docker compose up
    ```
 
-2. Access the following endpoints:
+2. Access the following endpoints to generate traffic:
 
-- [localhost:2001](http://localhost:2001) - Returns a status code of 200.
-- [localhost:2002](http://localhost:2002) - Returns a status code of 404.
-- [localhost:2003](http://localhost:2003) - Returns a status code of 500.
+   - [localhost:2001](http://localhost:2001) - Returns a status code of 200.
+   - [localhost:2002](http://localhost:2002) - Returns a status code of 404.
+   - [localhost:2003](http://localhost:2003) - Returns a status code of 500.
 
-You can use cURL commands to access these endpoints, e.g.:
+    You can use cURL commands to access these endpoints, e.g.:
 
    ```bash
    curl -v http://localhost:2001
@@ -39,7 +40,8 @@ You can use cURL commands to access these endpoints, e.g.:
 ### Quering Prometheus
 
 1. Open Prometheus at [http://localhost:9090](http://localhost:9090)
-2. Search for `membrane_count`
+2. Search for `membrane_count`.
+
 
 ### Grafana
 

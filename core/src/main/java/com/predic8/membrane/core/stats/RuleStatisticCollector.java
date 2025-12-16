@@ -14,12 +14,11 @@
 
 package com.predic8.membrane.core.stats;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.proxies.StatisticCollector;
-import com.predic8.membrane.core.proxies.TimeCollector;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.proxies.*;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 
 public class RuleStatisticCollector {
 
@@ -30,29 +29,12 @@ public class RuleStatisticCollector {
     private final ConcurrentHashMap<Integer, TimeCollector> timeCollector = new ConcurrentHashMap<>();
 
     private StatisticCollector getStatisticCollectorByStatusCode(int code) {
-        StatisticCollector sc = statusCodes.get(code);
-        if (sc == null) {
-            sc = new StatisticCollector(true);
-            StatisticCollector sc2 = statusCodes.putIfAbsent(code, sc);
-            if (sc2 != null)
-                sc = sc2;
-        }
-        return sc;
+        return statusCodes.computeIfAbsent(code, c -> new StatisticCollector(true));
     }
 
-    private TimeCollector getTimeCollectorByStatusCode(int code) {
-        code /= 100;
-
-        TimeCollector tc = timeCollector.get(code);
-
-        if (tc == null) {
-            tc = new TimeCollector(true);
-            TimeCollector tc2 = timeCollector.putIfAbsent(code, tc);
-            if (tc2 != null)
-                tc = tc2;
-        }
-
-        return tc;
+    private TimeCollector getTimeCollectorByStatusCode(int statusCode) {
+        int group = statusCode / 100;
+        return timeCollector.computeIfAbsent(group, c -> new TimeCollector(true));
     }
 
     public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
