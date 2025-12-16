@@ -1,15 +1,13 @@
 package com.predic8.membrane.annot.generator;
 
-import com.predic8.membrane.annot.model.*;
+import com.predic8.membrane.annot.model.MainInfo;
+import com.predic8.membrane.annot.model.Model;
 
 import javax.annotation.processing.FilerException;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class ComponentClassGenerator {
     private final ProcessingEnvironment processingEnv;
@@ -23,14 +21,10 @@ public class ComponentClassGenerator {
      */
     public boolean writeJava(Model m) throws IOException {
         for (MainInfo main : m.getMains()) {
-            List<Element> sources = new ArrayList<>();
-            sources.addAll(main.getInterceptorElements());
-            sources.add(main.getElement());
-
             try {
                 FileObject o = processingEnv.getFiler().createSourceFile(
-                        main.getAnnotation().outputPackage() + ".Components",
-                        new Element[0]);
+                        main.getAnnotation().outputPackage() + ".Components"
+                );
                 try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
                     String copyright = """
                             /* Copyright 2025 predic8 GmbH, www.predic8.com

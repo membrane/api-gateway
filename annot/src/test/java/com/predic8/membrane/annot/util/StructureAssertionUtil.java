@@ -28,7 +28,7 @@ public class StructureAssertionUtil {
     }
 
     public static void assertStructure(List<?> beans, Asserter... asserter) {
-        assertEquals(beans.size(), asserter.length);
+        assertEquals(asserter.length, beans.size());
 
         boolean[] used = new boolean[beans.size()];
         AssertionError failure = matchAnyOrder(beans, asserter, used, 0);

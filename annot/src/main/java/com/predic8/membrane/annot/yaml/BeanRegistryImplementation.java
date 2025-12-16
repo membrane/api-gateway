@@ -183,7 +183,8 @@ public class BeanRegistryImplementation implements BeanRegistry {
     }
 
     private static boolean isNotComponent(BeanDefinition bd) {
-        return !bd.getName().startsWith("#/components/");
+        String name = bd.getName();
+        return name == null || !name.startsWith("#/components/");
     }
 
     @Override

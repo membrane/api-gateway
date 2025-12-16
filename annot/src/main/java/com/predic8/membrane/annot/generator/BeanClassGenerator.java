@@ -5,12 +5,9 @@ import com.predic8.membrane.annot.model.Model;
 
 import javax.annotation.processing.FilerException;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
 import javax.tools.FileObject;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class BeanClassGenerator {
     private final ProcessingEnvironment processingEnv;
@@ -24,12 +21,9 @@ public class BeanClassGenerator {
      */
     public boolean writeJava(Model m) throws IOException {
         for (MainInfo main : m.getMains()) {
-            List<Element> sources = new ArrayList<>();
-            sources.addAll(main.getInterceptorElements());
-            sources.add(main.getElement());
             try {
                 FileObject o = processingEnv.getFiler().createSourceFile(
-                        "com.predic8.membrane.annot.bean.Bean"
+                        main.getAnnotation().outputPackage() + ".Bean"
                 );
 
                 try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
