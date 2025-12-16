@@ -512,6 +512,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
     public void process(Model m) throws IOException {
         if (new ComponentClassGenerator(processingEnv).writeJava(m))
             return; // we will be called again to handle the newly generated class.
+        if (new BeanClassGenerator(processingEnv).writeJava(m))
+            return; // we will be called again to handle the newly generated class.
         new Schemas(processingEnv).writeXSD(m);
         new KubernetesBootstrapper(processingEnv).boot(m);
         new JsonSchemaGenerator(processingEnv).write(m);
