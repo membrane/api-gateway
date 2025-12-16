@@ -58,7 +58,7 @@ public class YAMLComponentsParsingTest {
                 parse("""
                         components:
                           sad:
-                            bean: {}
+                            demoBean: {}
                         """),
                 clazz("Components")
         );
@@ -219,7 +219,7 @@ public class YAMLComponentsParsingTest {
         var ex = assertThrows(RuntimeException.class, () -> parse("""
                 components:
                   x:
-                    bean: {}
+                    demoBean: {}
                     basicAuthentication:
                       fileUserDataProvider:
                         htpasswdPath: /etc/htpasswd
@@ -598,7 +598,7 @@ public class YAMLComponentsParsingTest {
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
 
-            @MCElement(name="bean")
+            @MCElement(name="demoBean")
             public class BeanElement {
             }
             """;
