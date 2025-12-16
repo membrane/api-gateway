@@ -57,9 +57,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private boolean flowDefCreated = false;
     private Schema schema;
 
-    private static final Set<String> excludeFromFlow = Set.of(
-    );
-
     public void write(Model m) throws IOException {
         for (MainInfo main : m.getMains()) {
             assemble(m, main);
@@ -330,11 +327,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         for (ElementInfo ei : eis) {
             String defName = ei.getXSDTypeName(m);
 
-            // Only the components-list gets the id-augmented schema
-            if (componentsContext && ei.getAnnotation().component()) {
-                defName = componentDefName(defName);
-            }
-
             parent2.property(ref(ei.getAnnotation().name()).ref("#/$defs/" + defName))
                     .description(getDescriptionContent(ei))
                     .required(cei.isRequired());
@@ -365,10 +357,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         try (BufferedWriter w = new BufferedWriter(createFile(main).openWriter())) {
             w.write(writer.writeValueAsString(schema.json(JsonNodeFactory.instance.objectNode())));
         }
-    }
-
-    private static String componentDefName(String baseDefName) {
-        return baseDefName + "Component";
     }
 
     private SchemaObject createComponentsMapParser(Model m, MainInfo main, ElementInfo elementInfo, String parserName) {
@@ -414,7 +402,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim());
     }
 
-    // For description. Probably we'll include that later. (Temporarily deactivated!
+    // For description. Probably we'll include that later. (Temporarily deactivated!)
     private String getDescriptionAsHtml(AbstractJavadocedInfo elementInfo) {
         return escapeJsonContent(getDescriptionContent(elementInfo).replaceAll("\\s+", " ").trim());
     }
