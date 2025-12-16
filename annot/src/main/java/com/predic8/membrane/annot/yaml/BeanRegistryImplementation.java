@@ -15,6 +15,7 @@ package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.bean.BeanFactory;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -73,6 +74,9 @@ public class BeanRegistryImplementation implements BeanRegistry {
 
     private Object define(BeanDefinition bd) throws IOException, ParsingException {
         log.debug("defining bean: {}", bd.getNode());
+        if ("bean".equals(bd.getKind())) {
+            return new BeanFactory(this).createFromNode(bd.getNode().path("bean"));
+        }
         return GenericYamlParser.readMembraneObject(bd.getKind(),
                 grammar,
                 bd.getNode(),
@@ -150,22 +154,22 @@ public class BeanRegistryImplementation implements BeanRegistry {
     public Object resolveReference(String url) {
         BeanDefinition bd = getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url)));
 
-        Object envelope = null;
-        if (bd.getBean() != null)
-            envelope = bd.getBean();
-        if (envelope == null) {
-            try {
-                envelope = define(bd);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            if (!bd.isPrototype())
-                bd.setBean(envelope);
+        boolean prototype = isPrototype(bd);
+
+        if (!prototype && bd.getBean() != null)
+            return bd.getBean();
+
+        Object instance;
+        try {
+            instance = define(bd);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return envelope;
-        // TODO
-//            if (spec instanceof Bean)
-//                return ((Bean) spec).getBean();
+
+        if (!prototype)
+            bd.setBean(instance);
+
+        return instance;
     }
 
     private @NotNull Optional<BeanDefinition> getFirstByName(String url) {
@@ -184,5 +188,13 @@ public class BeanRegistryImplementation implements BeanRegistry {
     @Override
     public Grammar getGrammar() {
         return grammar;
+    }
+
+    private boolean isPrototype(BeanDefinition bd) {
+        if (!"bean".equals(bd.getKind()))
+            return bd.isPrototype();
+
+        JsonNode scope = bd.getNode().path("bean").path("scope");
+        return scope.isTextual() && "PROTOTYPE".equalsIgnoreCase(scope.asText());
     }
 }
