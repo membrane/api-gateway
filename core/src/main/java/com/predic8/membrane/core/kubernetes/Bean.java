@@ -21,14 +21,28 @@ import java.util.List;
 
 import static com.predic8.membrane.core.kubernetes.Bean.Scope.SINGLETON;
 
+
 /**
- * TODO add Documentation
+ * Spring-like bean definition usable in YAML components:
+ * @yaml
+ * <pre><code>
+ * components:
+ *   &lt;id&gt;:
+ *     bean:
+ *       class: com.example.MyInterceptor
+ *       scope: SINGLETON
+ *       constructorArgs:
+ *         - constructorArg:
+ *             value: foo
+ *       properties:
+ *         - property:
+ *             name: bar
+ *             value: baz
+ * </code></pre>
+ * See <a href="https://docs.spring.io/spring-framework/reference/core/beans/definition.html">Bean Overview</a>
  */
 @MCElement(name = "bean")
 public class Bean {
-
-
-    private String id;
 
     private String className;
 
@@ -37,15 +51,6 @@ public class Bean {
     private List<ConstructorArg> constructorArgs = new ArrayList<>();
 
     private List<Property> properties = new ArrayList<>();
-
-    @MCAttribute
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getId() {
-        return id;
-    }
 
     @MCAttribute
     public void setClass(String className) {
@@ -82,6 +87,7 @@ public class Bean {
     public List<Property> getProperties() {
         return properties;
     }
+
     /**
      * see <a href="https://docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html">Bean Scopes</a>
      */
@@ -96,25 +102,59 @@ public class Bean {
 
     @MCElement(name = "constructorArg", component = false)
     public static class ConstructorArg {
-
-        // TODO
-
         private String value;
-
         private String ref;
+
+        @MCAttribute
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        @MCAttribute
+        public void setRef(String ref) {
+            this.ref = ref;
+        }
+
+        public String getRef() {
+            return ref;
+        }
     }
 
     @MCElement(name = "property", component = false)
     public static class Property {
-
-        // TODO
-
         private String name;
-
         private String value;
-
         private String ref;
 
-    }
+        @MCAttribute
+        public void setName(String name) {
+            this.name = name;
+        }
 
+        public String getName() {
+            return name;
+        }
+
+        @MCAttribute
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        @MCAttribute
+        public void setRef(String ref) {
+            this.ref = ref;
+        }
+
+        public String getRef() {
+            return ref;
+        }
+    }
 }
