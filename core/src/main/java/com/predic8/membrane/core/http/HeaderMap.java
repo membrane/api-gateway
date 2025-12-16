@@ -198,4 +198,10 @@ public class HeaderMap implements Map<String, String> {
             }
         };
     }
+
+    @Override
+    public String toString() {
+        return header.toString();
+    }
+
 }
