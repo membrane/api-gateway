@@ -233,27 +233,33 @@ public class GenericYamlParser {
         return res;
     }
 
+    /**
+     * Applies an object-level "$ref" by resolving the referenced component and injecting it
+     * into the parent object via the matching @MCChildElement setter.
+     * Rejects "$ref" if the same child is already configured inline.
+     */
     private static <T> void applyObjectLevelRef(ParsingContext ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) throws ParsingException {
+        ensureTextual(refNode, "Expected a string after the '$ref' key.");
+        Object referenced;
         try {
-            ensureTextual(refNode, "Expected a string after the '$ref' key.");
+            referenced = ctx.registry().resolveReference(refNode.asText());
+        } catch (RuntimeException e) {
+            throw new ParsingException(e, refNode);
+        }
+        String refKey = getElementName(referenced.getClass());
 
-            Object referenced = ctx.registry().resolveReference(refNode.asText());
-            String refKey = getElementName(referenced.getClass());
+        // Forbid inline + $ref for the same child
+        if (parentNode.has(refKey)) {
+            throw new ParsingException("Cannot use '$ref' together with inline '%s' in '%s'."
+                    .formatted(refKey, ctx.context()), parentNode.get(refKey));
+        }
 
-            // Forbid inline + $ref for the same child
-            if (parentNode.has(refKey)) {
-                throw new ParsingException("Cannot use '$ref' together with inline '%s' in '%s'."
-                        .formatted(refKey, ctx.context()), parentNode.get(refKey));
-            }
-
+        try {
             getChildSetter(parentClass, referenced.getClass()).invoke(obj, referenced);
-
-        } catch (ParsingException e) {
-            throw e;
         } catch (RuntimeException e) {
             throw new ParsingException(
                     "Referenced component '%s' (type '%s') is not allowed in '%s'."
-                            .formatted(refNode.asText(), getElementName(ctx.registry().resolveReference(refNode.asText()).getClass()), ctx.context()), refNode);
+                            .formatted(refNode.asText(), refKey, ctx.context()), refNode);
         } catch (Throwable t) {
             throw new ParsingException(t, refNode);
         }
