@@ -121,11 +121,7 @@ public class BeanClassGenerator {
                                     
                                         public enum Scope {
                                             SINGLETON,
-                                            PROTOTYPE,
-                                            REQUEST,
-                                            SESSION,
-                                            APPLICATION,
-                                            WEBSOCKET
+                                            PROTOTYPE
                                         }
                                     
                                         @MCElement(name = "constructorArg", component = false)

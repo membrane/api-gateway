@@ -13,17 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.bean.BeanFactory;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 
-import static com.predic8.membrane.annot.yaml.BeanDefinition.*;
+import static com.predic8.membrane.annot.yaml.BeanDefinition.create4Kubernetes;
 import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
 public class BeanRegistryImplementation implements BeanRegistry {
@@ -72,15 +74,19 @@ public class BeanRegistryImplementation implements BeanRegistry {
         }
     }
 
-    private Object define(BeanDefinition bd) throws IOException, ParsingException {
+    private Object define(BeanDefinition bd)  {
         log.debug("defining bean: {}", bd.getNode());
-        if ("bean".equals(bd.getKind())) {
-            return new BeanFactory(this).createFromNode(bd.getNode().path("bean"));
+        try {
+            if ("bean".equals(bd.getKind())) {
+                return new BeanFactory(this).createFromNode(bd.getNode().path("bean"));
+            }
+            return GenericYamlParser.readMembraneObject(bd.getKind(),
+                    grammar,
+                    bd.getNode(),
+                    this);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return GenericYamlParser.readMembraneObject(bd.getKind(),
-                grammar,
-                bd.getNode(),
-                this);
     }
 
     /**
@@ -154,17 +160,12 @@ public class BeanRegistryImplementation implements BeanRegistry {
     public Object resolveReference(String url) {
         BeanDefinition bd = getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url)));
 
-        boolean prototype = isPrototype(bd);
+        boolean prototype = isPrototypeScope(bd);
 
         if (!prototype && bd.getBean() != null)
             return bd.getBean();
 
-        Object instance;
-        try {
-            instance = define(bd);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        Object instance = define(bd);
 
         if (!prototype)
             bd.setBean(instance);
@@ -190,11 +191,12 @@ public class BeanRegistryImplementation implements BeanRegistry {
         return grammar;
     }
 
-    private boolean isPrototype(BeanDefinition bd) {
+    private static boolean isPrototypeScope(BeanDefinition bd) {
         if (!"bean".equals(bd.getKind()))
             return bd.isPrototype();
 
-        JsonNode scope = bd.getNode().path("bean").path("scope");
-        return scope.isTextual() && "PROTOTYPE".equalsIgnoreCase(scope.asText());
+        return "PROTOTYPE".equalsIgnoreCase(
+                bd.getNode().path("bean").path("scope").asText("SINGLETON")
+        );
     }
 }
