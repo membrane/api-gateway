@@ -13,23 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.generator.kubernetes.*;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.predic8.membrane.annot.ProcessingException;
+import com.predic8.membrane.annot.generator.kubernetes.AbstractGrammar;
 import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.*;
-import com.predic8.membrane.annot.model.doc.*;
+import com.predic8.membrane.annot.model.doc.Doc;
 
-import javax.annotation.processing.*;
-import javax.lang.model.element.*;
-import javax.lang.model.type.TypeKind;
-import javax.tools.*;
-import java.io.*;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.tools.FileObject;
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.util.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
-import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.*;
-import static javax.tools.StandardLocation.*;
+import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
  * TODOs:
@@ -121,17 +122,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
             schema.definition(createParser(m, main, elementInfo));
         }
-
-        // Additional component-only parsers (id allowed only in components-list context)
-        for (ElementInfo elementInfo : main.getElements().values()) {
-            if (!elementInfo.getAnnotation().component())
-                continue;
-
-            ensureValidIdSetter(elementInfo);
-            schema.definition(createComponentParser(m, main, elementInfo));
-        }
     }
-
 
     private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
         String parserName = elementInfo.getXSDTypeName(m);
@@ -393,86 +384,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private AbstractSchema<?> createComponentParser(Model m, MainInfo main, ElementInfo elementInfo) {
-        String baseName = elementInfo.getXSDTypeName(m);
-        String compName = componentDefName(baseName);
-
-        if (elementInfo.getAnnotation().noEnvelope()) {
-            return ref(compName).ref("#/$defs/" + baseName);
-        }
-
-        // If it already has a real id attribute, just alias the base schema
-        if (hasRealIdAttribute(elementInfo)) {
-            return ref(compName).ref("#/$defs/" + baseName);
-        }
-
-        SchemaObject parser = object(compName)
-                .additionalProperties(elementInfo.getOai() != null)
-                .description(getDescriptionContent(elementInfo));
-
-        collectProperties(m, main, elementInfo, parser);
-
-        parser.property(string("id").required(false));
-
-        return parser;
-    }
-
-
     private static String componentDefName(String baseDefName) {
         return baseDefName + "Component";
-    }
-
-    private boolean hasRealIdAttribute(ElementInfo elementInfo) {
-        return elementInfo.getAis().stream().anyMatch(ai -> "id".equals(ai.getXMLName()));
-    }
-
-
-    /**
-     * Ensures that:
-     * - every @MCElement either has no setId(...) at all OR
-     * - exactly one void setId(String) method annotated with @MCAttribute(name="id" or default)
-     */
-    private void ensureValidIdSetter(ElementInfo elementInfo) {
-        if (!(elementInfo.getElement() instanceof TypeElement type)) return;
-
-        var elements = processingEnv.getElementUtils();
-
-        List<ExecutableElement> idSetters = new ArrayList<>();
-
-        for (Element e : elements.getAllMembers(type)) {
-            if (e.getKind() != ElementKind.METHOD)
-                continue;
-            ExecutableElement m = (ExecutableElement) e;
-            if (!m.getSimpleName().contentEquals("setId"))
-                continue;
-
-            if (m.getParameters().size() != 1
-                    || m.getReturnType().getKind() != TypeKind.VOID
-                    || !processingEnv.getTypeUtils().isSameType(
-                    m.getParameters().getFirst().asType(),
-                    elements.getTypeElement("java.lang.String").asType()
-            )) {
-                throw new ProcessingException("setId(...) on %s must be exactly 'void setId(String)'.".formatted(type.getQualifiedName()), m);
-            }
-            idSetters.add(m);
-        }
-
-        if (idSetters.isEmpty())
-            return;  // no setId(String) present => OK
-
-        if (idSetters.size() > 1)
-            throw new ProcessingException("Multiple setId(String) methods found on " + type.getQualifiedName(), idSetters.getFirst());
-
-        ExecutableElement setId = idSetters.getFirst();
-        MCAttribute attr = setId.getAnnotation(MCAttribute.class);
-        if (attr == null) {
-            throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must be annotated with @MCAttribute(name=\"id\").", setId);
-        }
-
-        String attrName = attr.attributeName().isEmpty() ? "id" : attr.attributeName();
-        if (!"id".equals(attrName)) {
-            throw new ProcessingException("setId(String) on " + type.getQualifiedName() + " must use @MCAttribute(name=\"id\") or default name \"id\", but is \"" + attrName + "\".", setId);
-        }
     }
 
     private SchemaObject createComponentsMapParser(Model m, MainInfo main, ElementInfo elementInfo, String parserName) {

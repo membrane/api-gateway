@@ -111,7 +111,7 @@ public final class McYamlIntrospector {
     public static <T> List<Method> findRequiredSetters(Class<T> clazz) {
         return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
-                .filter(method -> isRequired(method))
+                .filter(McYamlIntrospector::isRequired)
                 .collect(Collectors.toList());
     }
 
