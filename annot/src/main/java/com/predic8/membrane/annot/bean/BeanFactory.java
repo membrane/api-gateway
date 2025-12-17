@@ -80,14 +80,19 @@ public final class BeanFactory {
         return Class.forName(className);
     }
 
-    private record ConstructorArg(String value, String ref) {
+    private class ConstructorArg {
+        String value, ref;
+
+        public ConstructorArg(JsonNode node) {
+            var item = node.isObject() && node.has("constructorArg") ? node.get("constructorArg") : node;
+
+            value = getTextOrNull(item, "value");
+            ref = getTextOrNull(item, "ref");
+        }
     }
 
     private class Property {
-
-        String name;
-        String value;
-        String ref;
+        String name, value, ref;
 
         public Property(JsonNode node) {
             var item = node.isObject() && node.has("property") ? node.get("property") : node;
@@ -103,17 +108,11 @@ public final class BeanFactory {
     }
 
     private List<ConstructorArg> parseConstructorArgList(JsonNode arr) {
-        if (!arr.isArray()) return List.of();
-        List<ConstructorArg> res = new ArrayList<>();
-        for (JsonNode item : arr) {
-            JsonNode body = getItem(item);
-            res.add(new ConstructorArg(getTextOrNull(body, "value"), getTextOrNull(body, "ref")));
-        }
-        return res;
-    }
+        if (arr == null || !arr.isArray()) return List.of();
 
-    private static JsonNode getItem(JsonNode item) {
-        return item.isObject() && item.has("constructorArg") ? item.get("constructorArg") : item;
+        return StreamSupport.stream(arr.spliterator(), false)
+                .map(ConstructorArg::new)
+                .toList();
     }
 
     private List<Property> parsePropertyList(JsonNode arr) {
@@ -168,7 +167,7 @@ public final class BeanFactory {
         try {
             Object[] resolved = new Object[paramTypes.length];
             for (int i = 0; i < paramTypes.length; i++) {
-                resolved[i] = resolveValueOrRef(paramTypes[i], args.get(i).value(), args.get(i).ref());
+                resolved[i] = resolveValueOrRef(paramTypes[i], args.get(i).value, args.get(i).ref);
             }
             return resolved;
         } catch (Exception e) {
