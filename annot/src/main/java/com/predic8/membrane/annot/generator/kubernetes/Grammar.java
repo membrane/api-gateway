@@ -193,13 +193,5 @@ public class Grammar extends AbstractGrammar {
         public static <X, Y> Pair<X, Y> of(X x, Y y) {
             return new Pair<>(x, y);
         }
-
-        public X getX() {
-            return x;
-        }
-
-        public Y getY() {
-            return y;
-        }
     }
 }

@@ -68,7 +68,6 @@ public final class McYamlIntrospector {
      *
      * @param method       Method to check.
      * @param propertyName Property name to check.
-     * @return
      */
     private static boolean matchesPropertyName(Method method, String propertyName) {
         return method.getName().substring(3).equalsIgnoreCase(propertyName);

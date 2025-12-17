@@ -33,8 +33,8 @@ public class ElementInfo extends AbstractJavadocedInfo {
 
     private TextContentInfo tci;
 
-    private List<AttributeInfo> ais = new ArrayList<>();
-    private List<ChildElementInfo> ceis = new ArrayList<>();
+    private final List<AttributeInfo> ais = new ArrayList<>();
+    private final List<ChildElementInfo> ceis = new ArrayList<>();
 
     private OtherAttributesInfo oai;
 
@@ -59,10 +59,6 @@ public class ElementInfo extends AbstractJavadocedInfo {
         return ais;
     }
 
-    public void setAis(List<AttributeInfo> ais) {
-        this.ais = ais;
-    }
-
     public boolean isHasIdField() {
         return hasIdField;
     }
@@ -73,10 +69,6 @@ public class ElementInfo extends AbstractJavadocedInfo {
 
     public List<ChildElementInfo> getChildElementSpecs() {
         return ceis;
-    }
-
-    public void setCeis(List<ChildElementInfo> ceis) {
-        this.ceis = ceis;
     }
 
     public String getParserClassSimpleName() {
