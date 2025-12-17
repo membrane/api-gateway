@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.MCChildElement;
 import org.jetbrains.annotations.NotNull;
 
+import javax.lang.model.util.Types;
 import java.lang.reflect.*;
 import java.util.Collection;
 import java.util.List;
@@ -107,6 +108,24 @@ public class MethodSetter {
         if (wanted == Long.TYPE || wanted == Long.class) return parseLong(node.asText());
         if (wanted == Boolean.TYPE || wanted == Boolean.class) return parseBoolean(node.asText());
 
+        if (node.isTextual() && isBeanReference(wanted)) {
+            String ref = node.asText();
+            final Object resolved;
+            try {
+                resolved = ctx.registry().resolveReference(ref);
+            } catch (RuntimeException e) {
+                throw new ParsingException(e, node);
+            }
+            if (!wanted.isAssignableFrom(resolved.getClass())) {
+                throw new ParsingException(
+                        "Referenced bean '%s' has type '%s' but '%s' expects '%s'."
+                                .formatted(ref, resolved.getClass().getName(), key, wanted.getName()),
+                        node
+                );
+            }
+            return resolved;
+        }
+
         if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asText());
         if (McYamlIntrospector.isStructured(setter)) {
             if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);
@@ -114,6 +133,15 @@ public class MethodSetter {
         }
         if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolveReference(node.asText());
         throw new RuntimeException("Not implemented setter type " + wanted);
+    }
+
+    /**
+     * Mirrors {@link com.predic8.membrane.annot.model.AttributeInfo#analyze(Types)}.
+     */
+    private boolean isBeanReference(Class<?> wanted) {
+        if (wanted == Integer.TYPE || wanted == Long.TYPE || wanted == Float.TYPE || wanted == Double.TYPE || wanted == Boolean.TYPE || wanted == String.class)
+            return false;
+        return !wanted.isEnum();
     }
 
     public Method getSetter() {
