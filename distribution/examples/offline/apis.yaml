@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.3.json
+#
+# Offline Sample Configuration
+#
+# Use this configuration to try Membrane without direct internet access.
+#
+# Start Membrane:
+#   Linux/Mac:  ./membrane.sh
+#   Windows:    membrane.cmd
+
+# ***** APIs *************************************************************
+
+# Forward requests to the local backend on port 3000
+# Try: curl http://localhost:2000/foo
+api:
+  path:
+    uri: /foo
+  port: 2000
+  target:
+    url: http://localhost:3000
+
+---
+# Deploy an API from OpenAPI
+# API docs: http://localhost:2000/api-docs
+# Try: curl http://localhost:2000/shop/v2/
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
+        rewrite:
+          port: 3000
+          host: localhost
+  # Use this target instead of any server URL in the OpenAPI spec
+  target:
+    url: http://localhost:3000
+
+---
+# ***** Simulated Backends ***********************************************
+
+api:
+  name: Shop Backend
+  path:
+    uri: /shop
+  port: 3000
+  flow:
+    - template:
+        contentType: application/json
+        pretty: true
+        src: |
+          {
+            "fruits": ["apple","cherry","pear"]
+          }
+    - return:
+        status: 200
+
+---
+api:
+  name: Simple Backend
+  port: 3000
+  flow:
+    - template:
+        contentType: application/json
+        pretty: true
+        src: |
+          { "success": true }
+    - return:
+        status: 200
+
+---
+# ***** Admin Web Console ************************************************
+
+# Open http://localhost:9000 in the browser (login: admin / admin)
+api:
+  port: 9000
+  flow:
+    - adminConsole: {}

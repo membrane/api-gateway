@@ -270,12 +270,14 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			static final int mb = 1024*1024;
 			final DecimalFormat formatter = new DecimalFormat("#.00");
 
-			private String formatMemoryValue(float value){
-				float newValue = value / (float)mb;
+			private String formatMemoryValue(float value) {
+				float newValue = value / (float) mb;
 
 				String unit = "MB";
-				if(newValue > 1024)
+				if (newValue >= 1024f) {
+					newValue /= 1024f;
 					unit = "GB";
+				}
 
 				return formatter.format(newValue) + " " + unit;
 			}
