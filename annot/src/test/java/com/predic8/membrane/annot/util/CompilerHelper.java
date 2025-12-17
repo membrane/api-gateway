@@ -13,37 +13,33 @@
    limitations under the License. */
 package com.predic8.membrane.annot.util;
 
-import com.predic8.membrane.annot.yaml.BeanRegistry;
-import org.hamcrest.BaseMatcher;
-import org.hamcrest.Description;
-import org.hamcrest.collection.IsIterableContainingInAnyOrder;
-import org.jetbrains.annotations.NotNull;
+import com.predic8.membrane.annot.yaml.*;
+import org.hamcrest.*;
+import org.hamcrest.collection.*;
+import org.jetbrains.annotations.*;
 
 import javax.tools.*;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.regex.*;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
+import java.util.stream.*;
 
-import static java.util.List.of;
-import static java.util.stream.StreamSupport.stream;
-import static javax.tools.Diagnostic.Kind.ERROR;
-import static javax.tools.Diagnostic.Kind.WARNING;
-import static javax.tools.StandardLocation.CLASS_OUTPUT;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static java.util.List.*;
+import static java.util.stream.StreamSupport.*;
+import static javax.tools.Diagnostic.Kind.*;
+import static javax.tools.StandardLocation.*;
+import static org.hamcrest.MatcherAssert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class CompilerHelper {
 
     public static final String YAML_PARSER_CLASS_NAME = "com.predic8.membrane.annot.util.YamlParser";
-    private static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+([^;]+)\\s*;");
-    private static final Pattern CLASS_PATTERN = Pattern.compile("class\\s+([^\\s]+)\\s");
     public static final String ANNOTATION_PROCESSOR_CLASSNAME = "com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessor";
     public static final String APPLICATION_CONTEXT_CLASSNAME = "org.springframework.context.support.ClassPathXmlApplicationContext";
+    private static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+([^;]+)\\s*;");
+    private static final Pattern CLASS_PATTERN = Pattern.compile("class\\s+([^\\s]+)\\s");
 
     /**
      * Compile the given source files.
@@ -90,14 +86,14 @@ public class CompilerHelper {
         CompositeClassLoader cl = xmlClassLoader(cr, xmlSpringConfig);
         withContextClassLoader(cl, () -> {
             Class<?> ctx = cl.loadClass(APPLICATION_CONTEXT_CLASSNAME);
-            ctx.getConstructor(String.class).newInstance("demo.xml");
+            Object context = ctx.getConstructor(String.class).newInstance("demo.xml");
+            try {
+                // Context successfully created - validation passed
+            } finally {
+                ctx.getMethod("close").invoke(context);
+            }
             return null;
         });
-    }
-
-    @FunctionalInterface
-    private interface ThrowingSupplier<T> {
-        T get() throws Exception;
     }
 
     private static <T> T withContextClassLoader(ClassLoader cl, ThrowingSupplier<T> action) {
@@ -105,17 +101,13 @@ public class CompilerHelper {
         try {
             Thread.currentThread().setContextClassLoader(cl);
             return action.get();
+        } catch (RuntimeException | Error e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
             Thread.currentThread().setContextClassLoader(original);
         }
-    }
-
-    private static CompositeClassLoader xmlClassLoader(CompilerResult cr, String xmlSpringConfig) {
-        InMemoryClassLoader inMemory = (InMemoryClassLoader) cr.classLoader();
-        inMemory.defineOverlay(new OverlayInMemoryFile("/demo.xml", xmlSpringConfig));
-        return new CompositeClassLoader(CompilerHelper.class.getClassLoader(), inMemory);
     }
 
     private static BeanRegistry getBeanRegistry(Class<?> parserClass, Object instance) throws Exception {
@@ -124,10 +116,18 @@ public class CompilerHelper {
                 .invoke(instance);
     }
 
-    private static @NotNull CompositeClassLoader getCompositeClassLoader(CompilerResult cr, String yamlConfig) {
-        InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
-        loaderA.defineOverlay(new OverlayInMemoryFile("/demo.yaml", yamlConfig));
-        return new CompositeClassLoader(CompilerHelper.class.getClassLoader(), loaderA);
+    private static CompositeClassLoader getCompositeClassLoader(CompilerResult cr, String yamlConfig) {
+        return overlayClassLoader(cr, yamlConfig, "/demo.yaml");
+    }
+
+    private static CompositeClassLoader xmlClassLoader(CompilerResult cr, String xmlSpringConfig) {
+        return overlayClassLoader(cr, xmlSpringConfig, "/demo.xml");
+    }
+
+    private static CompositeClassLoader overlayClassLoader(CompilerResult cr, String content, String resourcePath) {
+        InMemoryClassLoader inMemory = (InMemoryClassLoader) cr.classLoader();
+        inMemory.defineOverlay(new OverlayInMemoryFile(resourcePath, content));
+        return new CompositeClassLoader(CompilerHelper.class.getClassLoader(), inMemory);
     }
 
     private static @NotNull Object getParser(Class<?> c) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
@@ -176,7 +176,6 @@ public class CompilerHelper {
 
         return new OverlayInMemoryFile(parts[0].substring("resource".length()).trim(), parts[1]);
     }
-
 
     static String @NotNull [] stripFirstLine(String content) {
         String[] parts;
@@ -247,5 +246,10 @@ public class CompilerHelper {
                 return false;
             }
         };
+    }
+
+    @FunctionalInterface
+    private interface ThrowingSupplier<T> {
+        T get() throws Exception;
     }
 }
