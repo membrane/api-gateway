@@ -73,7 +73,7 @@ public class StructureAssertionUtil {
 
     public static Asserter clazz(String clazzName, Property... properties) {
         return bean -> {
-            assertEquals(bean.getClass().getSimpleName(), clazzName);
+            assertEquals(clazzName, bean.getClass().getSimpleName());
             for (Property p : properties) {
                 p.assertStructure(bean);
             }
@@ -88,7 +88,7 @@ public class StructureAssertionUtil {
         return bean -> {
             assertInstanceOf(List.class, bean);
             List<?> list = (List<?>) bean;
-            assertEquals(list.size(), asserters.length);
+            assertEquals(asserters.length, list.size());
             for (int i = 0; i < asserters.length; i++) {
                 asserters[i].assertStructure(list.get(i));
             }

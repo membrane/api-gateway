@@ -174,7 +174,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
     }
 
     private @NotNull Optional<BeanDefinition> getFirstByName(String url) {
-        return bds.values().stream().filter(bd -> bd.getName().equals(url)).findFirst();
+        return bds.values().stream().filter(bd -> url.equals(bd.getName())).findFirst();
     }
 
     @Override
