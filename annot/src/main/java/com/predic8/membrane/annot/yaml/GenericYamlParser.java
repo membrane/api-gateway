@@ -54,10 +54,9 @@ public class GenericYamlParser {
      */
     public GenericYamlParser(Grammar grammar, String yaml) throws IOException {
         JsonLocationMap jsonLocationMap = new JsonLocationMap();
-        List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(yaml);
 
         var idx = 0;
-        for (JsonNode jsonNode : rootNodes) {
+        for (JsonNode jsonNode : jsonLocationMap.parseWithLocations(yaml)) {
             if (jsonNode == null) {
                 log.debug(GenericYamlParser.EMPTY_DOCUMENT_WARNING);
                 continue;
@@ -240,12 +239,7 @@ public class GenericYamlParser {
      */
     private static <T> void applyObjectLevelRef(ParsingContext ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) throws ParsingException {
         ensureTextual(refNode, "Expected a string after the '$ref' key.");
-        Object referenced;
-        try {
-            referenced = ctx.registry().resolveReference(refNode.asText());
-        } catch (RuntimeException e) {
-            throw new ParsingException(e, refNode);
-        }
+        Object referenced = getReferenced(ctx, refNode);
         String refKey = getElementName(referenced.getClass());
 
         // Forbid inline + $ref for the same child
@@ -265,13 +259,21 @@ public class GenericYamlParser {
         }
     }
 
+    private static Object getReferenced(ParsingContext ctx, JsonNode refNode) {
+        try {
+            return ctx.registry().resolveReference(refNode.asText());
+        } catch (RuntimeException e) {
+            throw new ParsingException(e, refNode);
+        }
+    }
+
     public static List<Object> parseListIncludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
         ensureArray(node);
         return parseListExcludingStartEvent(context, node);
     }
 
-    private static @NotNull ArrayList<Object> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
-        ArrayList<Object> res = new ArrayList<>();
+    private static @NotNull List<Object> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+        List<Object> res = new ArrayList<>();
         for (int i = 0; i < node.size(); i++) {
             res.add(parseMapToObj(context, node.get(i)));
         }

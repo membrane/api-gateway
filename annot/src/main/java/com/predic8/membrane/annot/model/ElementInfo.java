@@ -13,125 +13,141 @@
    limitations under the License. */
 package com.predic8.membrane.annot.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.predic8.membrane.annot.*;
 
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
+import java.util.*;
 
-import com.predic8.membrane.annot.AnnotUtils;
-import com.predic8.membrane.annot.MCElement;
+import static com.predic8.membrane.annot.model.OtherAttributesInfo.ValueType.*;
 
 /**
  * Mirrors {@link MCElement}.
  */
 public class ElementInfo extends AbstractJavadocedInfo {
-	private MCElement annotation;
-	private final List<ChildElementDeclarationInfo> usedBy = new ArrayList<>();
+    private MCElement annotation;
+    private final List<ChildElementDeclarationInfo> usedBy = new ArrayList<>();
 
 
-	private TypeElement element;
-	private boolean hasIdField;
+    private TypeElement element;
+    private boolean hasIdField;
 
-	private TextContentInfo tci;
+    private TextContentInfo tci;
 
-	private List<AttributeInfo> ais = new ArrayList<>();
-	private List<ChildElementInfo> ceis = new ArrayList<>();
+    private List<AttributeInfo> ais = new ArrayList<>();
+    private List<ChildElementInfo> ceis = new ArrayList<>();
 
-	private OtherAttributesInfo oai;
+    private OtherAttributesInfo oai;
 
-	public TypeElement getElement() {
-		return element;
-	}
-	public void setElement(TypeElement element) {
-		this.element = element;
-		setDocedE(element);
-	}
-	public TextContentInfo getTci() {
-		return tci;
-	}
-	public void setTci(TextContentInfo tci) {
-		this.tci = tci;
-	}
-	public List<AttributeInfo> getAis() {
-		return ais;
-	}
-	public void setAis(List<AttributeInfo> ais) {
-		this.ais = ais;
-	}
-	public boolean isHasIdField() {
-		return hasIdField;
-	}
-	public void setHasIdField(boolean hasIdField) {
-		this.hasIdField = hasIdField;
-	}
-	public List<ChildElementInfo> getChildElementSpecs() {
-		return ceis;
-	}
-	public void setCeis(List<ChildElementInfo> ceis) {
-		this.ceis = ceis;
-	}
+    public TypeElement getElement() {
+        return element;
+    }
 
-	public String getParserClassSimpleName() {
-		return AnnotUtils.javaify(getId().replace("-", "") + "Parser");
-	}
+    public void setElement(TypeElement element) {
+        this.element = element;
+        setDocedE(element);
+    }
 
-	public MainInfo getMain(Model m) {
-		for (MainInfo main : m.getMains()) {
-			if (main.getAnnotation().outputPackage().equals(getAnnotation().configPackage()))
-				return main;
-		}
-		return m.getMains().getFirst();
-	}
+    public TextContentInfo getTci() {
+        return tci;
+    }
 
-	public String getClassName(Model m) {
-		return getMain(m).getAnnotation().outputPackage() + "." + getParserClassSimpleName();
-	}
+    public void setTci(TextContentInfo tci) {
+        this.tci = tci;
+    }
 
-	public String getXSDTypeName(Model m) {
+    public List<AttributeInfo> getAis() {
+        return ais;
+    }
+
+    public void setAis(List<AttributeInfo> ais) {
+        this.ais = ais;
+    }
+
+    public boolean isHasIdField() {
+        return hasIdField;
+    }
+
+    public void setHasIdField(boolean hasIdField) {
+        this.hasIdField = hasIdField;
+    }
+
+    public List<ChildElementInfo> getChildElementSpecs() {
+        return ceis;
+    }
+
+    public void setCeis(List<ChildElementInfo> ceis) {
+        this.ceis = ceis;
+    }
+
+    public String getParserClassSimpleName() {
+        return AnnotUtils.javaify(getId().replace("-", "") + "Parser");
+    }
+
+    public MainInfo getMain(Model m) {
+        for (MainInfo main : m.getMains()) {
+            if (main.getAnnotation().outputPackage().equals(getAnnotation().configPackage()))
+                return main;
+        }
+        return m.getMains().getFirst();
+    }
+
+    public String getClassName(Model m) {
+        return getMain(m).getAnnotation().outputPackage() + "." + getParserClassSimpleName();
+    }
+
+    public String getXSDTypeName(Model m) {
         // There are JSON Schema parsers that do not accept names like a.b.c
-		return getClassName(m).replace(".","_");
-	}
+        return getClassName(m).replace(".", "_");
+    }
 
-	public MCElement getAnnotation() {
-		return annotation;
-	}
+    public MCElement getAnnotation() {
+        return annotation;
+    }
 
-	public void setAnnotation(MCElement annotation) {
-		this.annotation = annotation;
-	}
+    public void setAnnotation(MCElement annotation) {
+        this.annotation = annotation;
+    }
 
-	public void addUsedBy(ChildElementDeclarationInfo cedi) {
-		usedBy.add(cedi);
-	}
+    public void addUsedBy(ChildElementDeclarationInfo cedi) {
+        usedBy.add(cedi);
+    }
 
-	public List<ChildElementDeclarationInfo> getUsedBy() {
-		return usedBy;
-	}
+    public List<ChildElementDeclarationInfo> getUsedBy() {
+        return usedBy;
+    }
 
-	public String getId() {
-		if (!annotation.id().isEmpty())
-			return annotation.id();
-		return annotation.name();
-	}
+    public String getId() {
+        if (!annotation.id().isEmpty())
+            return annotation.id();
+        return annotation.name();
+    }
 
-	public void setOai(OtherAttributesInfo oai) {
-		this.oai = oai;
-	}
+    public void setOai(OtherAttributesInfo oai) {
+        this.oai = oai;
+    }
 
-	public OtherAttributesInfo getOai() {
-		return oai;
-	}
+    public OtherAttributesInfo getOai() {
+        return oai;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof ElementInfo other))
-			return false;
+    public boolean isString() {
+        return oai != null && oai.getValueType() == STRING;
+    }
+
+    public boolean isObject() {
+        return oai != null && oai.getValueType() == OBJECT;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ElementInfo other))
+            return false;
         return element.equals(other.element);
-	}
+    }
 
-	@Override
-	public int hashCode() {
-		return element.getQualifiedName().toString().hashCode();
-	}
+    @Override
+    public int hashCode() {
+        return element.getQualifiedName().toString().hashCode();
+    }
 
 }

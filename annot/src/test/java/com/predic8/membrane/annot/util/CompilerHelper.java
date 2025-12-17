@@ -52,7 +52,6 @@ public class CompilerHelper {
      * @param logCompilerOutput if true, print the compiler output to stderr
      */
     public static CompilerResult compile(Iterable<? extends FileObject> sourceFiles, boolean logCompilerOutput) {
-        var javaSources = getJavaSources(sourceFiles);
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
             throw new IllegalStateException("No system Java compiler found. Run tests with a JDK, not a JRE.");
@@ -68,7 +67,7 @@ public class CompilerHelper {
                 diagnostics,
                 of("-processor", ANNOTATION_PROCESSOR_CLASSNAME),
                 null,
-                javaSources
+                getJavaSources(sourceFiles)
         );
 
         boolean success = task.call();
@@ -173,7 +172,13 @@ public class CompilerHelper {
         if (!content.trim().startsWith("resource"))
             return toInMemoryJavaFile(content);
 
-        // TODO extract method
+        String[] parts = stripFistLine(content);
+
+        return new OverlayInMemoryFile(parts[0].substring("resource".length()).trim(), parts[1]);
+    }
+
+
+    static String @NotNull [] stripFistLine(String content) {
         String[] parts;
         while (true) {
             parts = content.split("\n", 2);
@@ -183,9 +188,7 @@ public class CompilerHelper {
                 break;
             content = parts[1];
         }
-
-        String name = parts[0].substring(9).trim(); // TODO Refactor and give meaningful name
-        return new OverlayInMemoryFile(name, parts[1]);
+        return parts;
     }
 
     private static JavaFileObject toInMemoryJavaFile(String source) {

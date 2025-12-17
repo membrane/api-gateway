@@ -16,7 +16,7 @@ package com.predic8.membrane.annot.yaml;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.bean.BeanFactory;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,7 +117,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
         // can see both metadata and the action (including DELETED).
         bds.put(bd.getUid(), bd);
 
-        if (isNotComponent(bd) && observer.isActivatable(bd)) {
+        if (!bd.isComponent() && observer.isActivatable(bd)) {
             uidsToActivate.add(bd.getUid());
         }
 
@@ -133,16 +133,12 @@ public class BeanRegistryImplementation implements BeanRegistry {
                 Object bean = define(bd);
                 bd.setBean(bean);
 
-                Object oldBean = null;
-                if (bd.getAction() == MODIFIED || bd.getAction() == DELETED)
-                    oldBean = uuidMap.get(bd.getUid());
-
                 // e.g. inform router about new proxy
-                observer.handleBeanEvent(bd, bean, oldBean);
+                observer.handleBeanEvent(bd, bean, getOldBean(bd));
 
-                if (bd.getAction() == ADDED || bd.getAction() == MODIFIED)
+                if (bd.isAdded() || bd.isModified())
                     uuidMap.put(bd.getUid(), bean);
-                if (bd.getAction() == DELETED) {
+                if (bd.isDeleted()) {
                     uuidMap.remove(bd.getUid());
                     bds.remove(bd.getUid());
                 }
@@ -154,6 +150,13 @@ public class BeanRegistryImplementation implements BeanRegistry {
         }
         for (String uid : uidsToRemove)
             uidsToActivate.remove(uid);
+    }
+
+    private @Nullable Object getOldBean(BeanDefinition bd) {
+        Object oldBean = null;
+        if (bd.isModified() || bd.isDeleted())
+            oldBean = uuidMap.get(bd.getUid());
+        return oldBean;
     }
 
     @Override
@@ -179,12 +182,10 @@ public class BeanRegistryImplementation implements BeanRegistry {
 
     @Override
     public List<Object> getBeans() {
-        return bds.values().stream().filter(bd -> bd.getName() == null || isNotComponent(bd)).map(BeanDefinition::getBean).filter(Objects::nonNull).toList();
-    }
-
-    private static boolean isNotComponent(BeanDefinition bd) {
-        String name = bd.getName();
-        return name == null || !name.startsWith("#/components/");
+        return bds.values().stream().filter(bd -> !bd.isComponent())
+                .map(BeanDefinition::getBean)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Override
@@ -193,7 +194,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
     }
 
     private static boolean isPrototypeScope(BeanDefinition bd) {
-        if (!"bean".equals(bd.getKind()))
+        if (!bd.isBean())
             return bd.isPrototype();
 
         return "PROTOTYPE".equalsIgnoreCase(

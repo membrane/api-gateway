@@ -15,12 +15,15 @@
 package com.predic8.membrane.annot.bean;
 
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.util.*;
 import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.*;
+
+import static com.predic8.membrane.annot.util.ReflectionUtil.isWrapperOfPrimitive;
 
 /**
  * Builds Java objects from a "bean" JSON node (YAML).
@@ -176,8 +179,6 @@ public final class BeanFactory {
     }
 
     private void applyProperties(Object target, List<Property> props) throws Exception {
-        if (props == null) return;
-
         for (Property p : props) {
             if (p.isBlank())
                 throw new IllegalArgumentException("Property name must not be blank.");
@@ -204,12 +205,16 @@ public final class BeanFactory {
     private Method findSetter(Class<?> clazz, String prop) {
         String setterName = getSetterName(prop);
         for (Method method : clazz.getMethods()) {
-            if (method.getName().equals(setterName) && method.getParameterCount() == 1) return method;
+            if (matchesSetter(method, setterName)) return method;
         }
         for (Method method : clazz.getDeclaredMethods()) {
-            if (method.getName().equals(setterName) && method.getParameterCount() == 1) return method;
+            if (matchesSetter(method, setterName)) return method;
         }
         return null;
+    }
+
+    private static boolean matchesSetter(Method method, String setterName) {
+        return method.getName().equals(setterName) && method.getParameterCount() == 1;
     }
 
     // e.g. bar -> setBar
@@ -242,49 +247,6 @@ public final class BeanFactory {
             }
             return o;
         }
-        return convert(value, targetType);
-    }
-
-    /**
-     * Converts a string literal to the target Java type.
-     */
-    private Object convert(String raw, Class<?> targetType) {
-        if (targetType == String.class) return raw;
-        if (raw == null) {
-            if (targetType.isPrimitive())
-                throw new IllegalArgumentException("Cannot assign null to primitive " + targetType.getName());
-            return null;
-        }
-
-        if (targetType == boolean.class || targetType == Boolean.class) return Boolean.parseBoolean(raw);
-        if (targetType == int.class || targetType == Integer.class) return Integer.parseInt(raw);
-        if (targetType == long.class || targetType == Long.class) return Long.parseLong(raw);
-        if (targetType == double.class || targetType == Double.class) return Double.parseDouble(raw);
-        if (targetType == float.class || targetType == Float.class) return Float.parseFloat(raw);
-        if (targetType == short.class || targetType == Short.class) return Short.parseShort(raw);
-        if (targetType == byte.class || targetType == Byte.class) return Byte.parseByte(raw);
-        if (targetType == char.class || targetType == Character.class) {
-            if (raw.length() != 1) throw new IllegalArgumentException("Expected single character, got: " + raw);
-            return raw.charAt(0);
-        }
-
-        if (targetType.isEnum()) {
-            @SuppressWarnings({"rawtypes", "unchecked"})
-            Object e = Enum.valueOf((Class<? extends Enum>) targetType, raw);
-            return e;
-        }
-
-        throw new IllegalArgumentException("Unsupported conversion to " + targetType.getName() + " from value: " + raw);
-    }
-
-    private boolean isWrapperOfPrimitive(Class<?> primitive, Class<?> wrapper) {
-        return (primitive == int.class && wrapper == Integer.class)
-               || (primitive == long.class && wrapper == Long.class)
-               || (primitive == boolean.class && wrapper == Boolean.class)
-               || (primitive == double.class && wrapper == Double.class)
-               || (primitive == float.class && wrapper == Float.class)
-               || (primitive == short.class && wrapper == Short.class)
-               || (primitive == byte.class && wrapper == Byte.class)
-               || (primitive == char.class && wrapper == Character.class);
+        return ReflectionUtil.convert(value, targetType);
     }
 }

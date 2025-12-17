@@ -14,14 +14,17 @@
 package com.predic8.membrane.annot.generator.kubernetes;
 
 import com.predic8.membrane.annot.model.*;
+import org.jetbrains.annotations.*;
 
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
 import java.io.*;
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.annot.generator.ClassGenerator.COPYRIGHT;
 import static java.util.stream.Stream.*;
 
 /**
@@ -44,12 +47,7 @@ public class Grammar extends AbstractGrammar {
             try {
                 List<Element> sources = new ArrayList<>(main.getInterceptorElements());
                 sources.add(main.getElement());
-
-                FileObject fileObject = processingEnv.getFiler().createSourceFile(
-                        main.getAnnotation().outputPackage() + "." + fileName(),
-                        sources.toArray(new Element[0]));
-
-                try (BufferedWriter w = new BufferedWriter(fileObject.openWriter())) {
+                try (BufferedWriter w = new BufferedWriter(getSourceFile(main, sources).openWriter())) {
                     assemble(w, main);
                 }
             } catch (IOException e) {
@@ -58,28 +56,19 @@ public class Grammar extends AbstractGrammar {
         });
     }
 
+    private JavaFileObject getSourceFile(MainInfo main, List<Element> sources) throws IOException {
+        return processingEnv.getFiler().createSourceFile(
+                main.getAnnotation().outputPackage() + "." + fileName(),
+                sources.toArray(new Element[0]));
+    }
+
     private void assemble(Writer w, MainInfo main) throws IOException {
         writeCopyright(w);
         writeClassContent(w, main);
     }
 
     private void writeCopyright(Writer w) throws IOException {
-        appendLine(w,
-                "/* Copyright 2021 predic8 GmbH, www.predic8.com",
-                "",
-                "   Licensed under the Apache License, Version 2.0 (the \"License\");",
-                "   you may not use this file except in compliance with the License.",
-                "   You may obtain a copy of the License at",
-                "",
-                "   http://www.apache.org/license/LICENSE-2.0",
-                "",
-                "   Unless required by applicable law or agreed to in writing, software",
-                "   distributed under the License is distributed on an \"AS IS\" BASIS,",
-                "   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
-                "   See the License for the specific language governing permissions and",
-                "   limitations under the License.",
-                "*/"
-        );
+        appendLine(w, COPYRIGHT);
     }
 
     private void writeClassContent(Writer w, MainInfo mainInfo) throws IOException {
@@ -158,23 +147,31 @@ public class Grammar extends AbstractGrammar {
                 // global
                 main.getIis().stream()
                 .filter(ei -> ei.getAnnotation().component())
-                .map(ei -> String.format("        elementMapping.put(\"%s\", %s.class);" + System.lineSeparator()
-                                + "        elementMapping.put(\"%s\", %s.class);",
-                        ei.getAnnotation().name(),
-                        ei.getElement().getQualifiedName(),
-                        ei.getAnnotation().name().toLowerCase(),
-                        ei.getElement().getQualifiedName())),
+                .map(generateElementMappingString()),
                 // non-global
                 main.getIis().stream()
                         .flatMap(ei -> ei.getChildElementSpecs().stream().map(cei -> Pair.of(ei, cei)))
                         .flatMap(p -> main.getChildElementDeclarations().get(p.y.getTypeDeclaration())
                                 .getElementInfo().stream().map(ei -> Pair.of(p.x, ei)))
                         .filter(p -> !p.y.getAnnotation().component())
-                        .map(p -> String.format("        localElementMappingPut(\"%s\", \"%s\", %s.class);",
-                                p.x.getAnnotation().name(),
-                                p.y.getAnnotation().name(),
-                                p.y.getElement().getQualifiedName())))
+                        .map(generateLocalElementMapping()))
                 .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    private static @NotNull Function<Pair<ElementInfo, ElementInfo>, String> generateLocalElementMapping() {
+        return p -> String.format("        localElementMappingPut(\"%s\", \"%s\", %s.class);",
+                p.x.getAnnotation().name(),
+                p.y.getAnnotation().name(),
+                p.y.getElement().getQualifiedName());
+    }
+
+    private static @NotNull Function<ElementInfo, String> generateElementMappingString() {
+        return ei -> String.format("        elementMapping.put(\"%s\", %s.class);" + System.lineSeparator()
+                                   + "        elementMapping.put(\"%s\", %s.class);",
+                ei.getAnnotation().name(),
+                ei.getElement().getQualifiedName(),
+                ei.getAnnotation().name().toLowerCase(),
+                ei.getElement().getQualifiedName());
     }
 
     private String assembleCrdSingularNames(MainInfo main) {
@@ -184,6 +181,7 @@ public class Grammar extends AbstractGrammar {
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 
+    // TODO Merge with Pair record of core
     private static class Pair<X, Y> {
         X x;
         Y y;

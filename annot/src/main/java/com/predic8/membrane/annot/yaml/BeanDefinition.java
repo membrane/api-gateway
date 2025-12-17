@@ -14,8 +14,12 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.bean.*;
 
 import java.util.*;
+
+import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
 public class BeanDefinition {
 
@@ -61,7 +65,7 @@ public class BeanDefinition {
         this.namespace = namespace;
         this.uid = uid;
         this.node = node;
-        this.action = WatchAction.ADDED;
+        this.action = ADDED;
     }
 
     public JsonNode getNode() {
@@ -107,7 +111,27 @@ public class BeanDefinition {
         return annotations.get("membrane-soa.org/scope").asText(); // TODO migrate to membrane-api.io
     }
 
+    public boolean isComponent() {
+        return name != null && name.startsWith("#/components/");
+    }
+
+    public boolean isBean() {
+        return "bean".equals(kind);
+    }
+
     public boolean isPrototype() {
         return PROTOTYPE.equals(getScope());
+    }
+
+    public boolean isDeleted() {
+        return action == DELETED;
+    }
+
+    public boolean isModified() {
+        return action == MODIFIED;
+    }
+
+    public boolean isAdded() {
+        return action == ADDED;
     }
 }
