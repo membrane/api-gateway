@@ -172,13 +172,13 @@ public class CompilerHelper {
         if (!content.trim().startsWith("resource"))
             return toInMemoryJavaFile(content);
 
-        String[] parts = stripFistLine(content);
+        String[] parts = stripFirstLine(content);
 
         return new OverlayInMemoryFile(parts[0].substring("resource".length()).trim(), parts[1]);
     }
 
 
-    static String @NotNull [] stripFistLine(String content) {
+    static String @NotNull [] stripFirstLine(String content) {
         String[] parts;
         while (true) {
             parts = content.split("\n", 2);

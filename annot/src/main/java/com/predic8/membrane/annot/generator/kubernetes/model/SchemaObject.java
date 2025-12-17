@@ -169,10 +169,6 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     }
 
     public boolean hasProperty(String name) {
-        for (AbstractSchema<?> p : properties) {
-            if (name.equals(p.getName()))
-                return true;
-        }
-        return false;
+        return properties.stream().anyMatch(p -> name.equals(p.getName()));
     }
 }
