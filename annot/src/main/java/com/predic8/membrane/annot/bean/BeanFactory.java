@@ -14,15 +14,16 @@
 
 package com.predic8.membrane.annot.bean;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.annot.yaml.BeanRegistry;
-import org.jetbrains.annotations.NotNull;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.yaml.*;
+import org.jetbrains.annotations.*;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.stream.*;
 
 /**
- * Builds Java objects from a "bean" JSON node.
+ * Builds Java objects from a "bean" JSON node (YAML).
  */
 public final class BeanFactory {
 
@@ -35,7 +36,7 @@ public final class BeanFactory {
     /**
      * Creates an instance described by the given bean node.
      */
-    public Object createFromNode(JsonNode beanBody) {
+    public Object create(JsonNode beanBody) {
         String className = getTextContent(beanBody, "class");
 
         try {
@@ -54,43 +55,73 @@ public final class BeanFactory {
     private Class<?> loadBeanClass(String className) throws ClassNotFoundException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         if (classLoader != null) {
-            try { return Class.forName(className, true, classLoader); } catch (ClassNotFoundException ignored) {}
+            try {
+                return Class.forName(className, true, classLoader);
+            } catch (ClassNotFoundException ignored) {
+            }
         }
 
-        ClassLoader grammarClassLoader = registry.getGrammar().getClass().getClassLoader();
-        if (grammarClassLoader != null) {
-            try { return Class.forName(className, true, grammarClassLoader); } catch (ClassNotFoundException ignored) {}
+        classLoader = registry.getGrammar().getClass().getClassLoader();
+        if (classLoader != null) {
+            try {
+                return Class.forName(className, true, classLoader);
+            } catch (ClassNotFoundException ignored) {
+            }
         }
 
-        ClassLoader beanFactoryClassLoader = BeanFactory.class.getClassLoader();
-        if (beanFactoryClassLoader != null) {
-            try { return Class.forName(className, true, beanFactoryClassLoader); } catch (ClassNotFoundException ignored) {}
+        classLoader = BeanFactory.class.getClassLoader();
+        if (classLoader != null) {
+            try {
+                return Class.forName(className, true, classLoader);
+            } catch (ClassNotFoundException ignored) {
+            }
         }
 
         return Class.forName(className);
     }
 
-    private record ConstructorArg(String value, String ref) {}
-    private record Property(String name, String value, String ref) {}
+    private record ConstructorArg(String value, String ref) {
+    }
+
+    private class Property {
+
+        String name;
+        String value;
+        String ref;
+
+        public Property(JsonNode node) {
+            var item = node.isObject() && node.has("property") ? node.get("property") : node;
+
+            name = getTextContent(item, "name");
+            value = getTextOrNull(item, "value");
+            ref = getTextOrNull(item, "ref");
+        }
+
+        public boolean isBlank() {
+            return name == null || name.isBlank();
+        }
+    }
 
     private List<ConstructorArg> parseConstructorArgList(JsonNode arr) {
         if (!arr.isArray()) return List.of();
         List<ConstructorArg> res = new ArrayList<>();
         for (JsonNode item : arr) {
-            JsonNode body = item.isObject() && item.has("constructorArg") ? item.get("constructorArg") : item;
+            JsonNode body = getItem(item);
             res.add(new ConstructorArg(getTextOrNull(body, "value"), getTextOrNull(body, "ref")));
         }
         return res;
     }
 
+    private static JsonNode getItem(JsonNode item) {
+        return item.isObject() && item.has("constructorArg") ? item.get("constructorArg") : item;
+    }
+
     private List<Property> parsePropertyList(JsonNode arr) {
         if (!arr.isArray()) return List.of();
-        List<Property> res = new ArrayList<>();
-        for (JsonNode item : arr) {
-            JsonNode body = item.isObject() && item.has("property") ? item.get("property") : item;
-            res.add(new Property(getTextContent(body, "name"), getTextOrNull(body, "value"), getTextOrNull(body, "ref")));
-        }
-        return res;
+
+        return StreamSupport.stream(arr.spliterator(), false)
+                .map(Property::new)
+                .toList();
     }
 
     private String getTextContent(JsonNode n, String key) {
@@ -126,8 +157,7 @@ public final class BeanFactory {
         }
 
         if (best == null) {
-            throw new IllegalArgumentException("No matching constructor found for " + type.getName()
-                    + " with " + n + " argument(s).");
+            throw new IllegalArgumentException("No matching constructor found for %s with %d argument(s).".formatted(type.getName(), n));
         }
 
         best.setAccessible(true);
@@ -150,27 +180,25 @@ public final class BeanFactory {
         if (props == null) return;
 
         for (Property p : props) {
-            String name = p.name();
-            if (name == null || name.isBlank())
+            if (p.isBlank())
                 throw new IllegalArgumentException("Property name must not be blank.");
 
-            Method setter = findSetter(target.getClass(), name);
+            Method setter = findSetter(target.getClass(), p.name);
             if (setter != null) {
                 Class<?> pt = setter.getParameterTypes()[0];
                 setter.setAccessible(true);
-                setter.invoke(target, resolveValueOrRef(pt, p.value(), p.ref()));
+                setter.invoke(target, resolveValueOrRef(pt, p.value, p.ref));
                 continue;
             }
 
-            Field f = findField(target.getClass(), name);
+            Field f = findField(target.getClass(), p.name);
             if (f != null) {
                 f.setAccessible(true);
-                f.set(target, resolveValueOrRef(f.getType(), p.value(), p.ref()));
+                f.set(target, resolveValueOrRef(f.getType(), p.value, p.ref));
                 continue;
             }
 
-            throw new IllegalArgumentException("No setter/field found for property '" + name
-                    + "' on " + target.getClass().getName());
+            throw new IllegalArgumentException("No setter/field found for property '%s' on %s".formatted(p.name, target.getClass().getName()));
         }
     }
 
@@ -237,7 +265,7 @@ public final class BeanFactory {
         }
 
         if (targetType.isEnum()) {
-            @SuppressWarnings({"rawtypes","unchecked"})
+            @SuppressWarnings({"rawtypes", "unchecked"})
             Object e = Enum.valueOf((Class<? extends Enum>) targetType, raw);
             return e;
         }
@@ -247,12 +275,12 @@ public final class BeanFactory {
 
     private boolean isWrapperOfPrimitive(Class<?> primitive, Class<?> wrapper) {
         return (primitive == int.class && wrapper == Integer.class)
-                || (primitive == long.class && wrapper == Long.class)
-                || (primitive == boolean.class && wrapper == Boolean.class)
-                || (primitive == double.class && wrapper == Double.class)
-                || (primitive == float.class && wrapper == Float.class)
-                || (primitive == short.class && wrapper == Short.class)
-                || (primitive == byte.class && wrapper == Byte.class)
-                || (primitive == char.class && wrapper == Character.class);
+               || (primitive == long.class && wrapper == Long.class)
+               || (primitive == boolean.class && wrapper == Boolean.class)
+               || (primitive == double.class && wrapper == Double.class)
+               || (primitive == float.class && wrapper == Float.class)
+               || (primitive == short.class && wrapper == Short.class)
+               || (primitive == byte.class && wrapper == Byte.class)
+               || (primitive == char.class && wrapper == Character.class);
     }
 }

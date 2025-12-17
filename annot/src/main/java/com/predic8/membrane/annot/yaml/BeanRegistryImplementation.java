@@ -78,7 +78,7 @@ public class BeanRegistryImplementation implements BeanRegistry {
         log.debug("defining bean: {}", bd.getNode());
         try {
             if ("bean".equals(bd.getKind())) {
-                return new BeanFactory(this).createFromNode(bd.getNode().path("bean"));
+                return new BeanFactory(this).create(bd.getNode().path("bean"));
             }
             return GenericYamlParser.readMembraneObject(bd.getKind(),
                     grammar,
