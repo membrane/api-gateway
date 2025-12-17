@@ -22,7 +22,7 @@ api:
 ---
 # Deploy an API from OpenAPI
 # API docs: http://localhost:2000/api-docs
-# Try: curl http://localhost:2000/shop
+# Try: curl http://localhost:2000/shop/v2/
 api:
   port: 2000
   specs:
