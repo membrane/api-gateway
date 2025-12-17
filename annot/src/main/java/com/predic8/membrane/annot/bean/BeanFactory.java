@@ -116,7 +116,7 @@ public final class BeanFactory {
     }
 
     private List<Property> parsePropertyList(JsonNode arr) {
-        if (!arr.isArray()) return List.of();
+        if (arr == null || !arr.isArray()) return List.of();
 
         return StreamSupport.stream(arr.spliterator(), false)
                 .map(Property::new)
@@ -138,7 +138,7 @@ public final class BeanFactory {
     private Object instantiate(Class<?> type, List<ConstructorArg> args) throws Exception {
         int n = args == null ? 0 : args.size();
 
-        List<Constructor<?>> constructors = new ArrayList<>();
+        Set<Constructor<?>> constructors = new LinkedHashSet<>();
         constructors.addAll(Arrays.asList(type.getConstructors()));
         constructors.addAll(Arrays.asList(type.getDeclaredConstructors()));
 
@@ -214,6 +214,9 @@ public final class BeanFactory {
 
     // e.g. bar -> setBar
     private static @NotNull String getSetterName(String prop) {
+        if (prop == null || prop.isEmpty()) {
+            throw new IllegalArgumentException("Property name cannot be null or empty");
+        }
         return "set" + Character.toUpperCase(prop.charAt(0)) + prop.substring(1);
     }
 
@@ -232,8 +235,10 @@ public final class BeanFactory {
     private Object resolveValueOrRef(Class<?> targetType, String value, String ref) {
         if (ref != null && !ref.isBlank()) {
             Object o = registry.resolveReference(ref);
-            if (o != null && !targetType.isInstance(o) && !(targetType.isPrimitive() && isWrapperOfPrimitive(targetType, o.getClass()))) {
-                throw new IllegalArgumentException("Ref '" + ref + "' is not assignable to " + targetType.getName());
+            if (o != null && !targetType.isInstance(o)) {
+                if (!(targetType.isPrimitive() && isWrapperOfPrimitive(targetType, o.getClass()))) {
+                    throw new IllegalArgumentException("Ref '%s' is not assignable to %s".formatted(ref, targetType.getName()));
+                }
             }
             return o;
         }
