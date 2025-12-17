@@ -107,6 +107,7 @@ public class MethodSetter {
         if (wanted == Integer.TYPE || wanted == Integer.class) return parseInt(node.asText());
         if (wanted == Long.TYPE || wanted == Long.class) return parseLong(node.asText());
         if (wanted == Boolean.TYPE || wanted == Boolean.class) return parseBoolean(node.asText());
+        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asText());
 
         if (node.isTextual() && isBeanReference(wanted)) {
             String ref = node.asText();
@@ -126,7 +127,6 @@ public class MethodSetter {
             return resolved;
         }
 
-        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asText());
         if (McYamlIntrospector.isStructured(setter)) {
             if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);
             return createAndPopulateNode(ctx.updateContext(key), wanted, node);
