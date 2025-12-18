@@ -13,7 +13,7 @@ import java.util.Map;
 @MCElement(name = "referenceSchemas")
 public class ReferenceSchemas {
 
-    List<Schema> schemas = new ArrayList<>();
+    private List<Schema> schemas = new ArrayList<>();
 
     public Map<String, String> getSchemaMap() {
         Map<String, String > referenceSchemas = new HashMap<>();
