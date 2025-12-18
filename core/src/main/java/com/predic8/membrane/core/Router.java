@@ -81,20 +81,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     private static final Logger log = LoggerFactory.getLogger(Router.class.getName());
 
     private ApplicationContext beanFactory;
+
+    //
+    // Configuration
+    //
+
+    private String id;
     private String baseLocation;
-
-    protected RuleManager ruleManager = new RuleManager();
-    protected final FlowController flowController;
-    protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
-    protected Transport transport;
-    protected GlobalInterceptor globalInterceptor = new GlobalInterceptor();
-    protected final ResolverMap resolverMap;
-    protected final DNSCache dnsCache = new DNSCache();
-    protected final ExecutorService backgroundInitializer =
-            newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializer"));
-
     protected URIFactory uriFactory = new URIFactory(false);
-    protected final Statistics statistics = new Statistics();
     protected String jmxRouterName;
 
     /**
@@ -104,18 +98,40 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
      */
     private boolean production;
 
-    private final Object lock = new Object();
-    @GuardedBy("lock")
-    private boolean running;
+    //
+    // Components
+    //
 
-    private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
-    private boolean retryInit;
-    private Timer reinitializer;
-    private String id;
+    protected RuleManager ruleManager = new RuleManager();
+    protected final FlowController flowController;
+    protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
+    protected Transport transport;
+    protected GlobalInterceptor globalInterceptor = new GlobalInterceptor();
+    protected final ResolverMap resolverMap;
+    protected final DNSCache dnsCache = new DNSCache();
     private final KubernetesWatcher kubernetesWatcher = new KubernetesWatcher(this);
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
+
+    protected final ExecutorService backgroundInitializer =
+            newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializer"));
+
+
+    protected final Statistics statistics = new Statistics();
+
+    private final Object lock = new Object();
+
+    @GuardedBy("lock")
+    private boolean running;
+
+    //
+    // Reinitialization
+    //
+
+    private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
+    private boolean retryInit;
+    private Timer reinitializer;
     private boolean asynchronousInitialization = false;
 
     private HotDeployer hotDeployer = new DefaultHotDeployer(this);
@@ -127,15 +143,19 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         flowController = new FlowController(this);
     }
 
-    public Collection<Proxy> getRules() {
-        return getRuleManager().getRulesBySource(RuleDefinitionSource.SPRING);
+    //
+    // Initialization
+    //
+
+    public void init() throws Exception {
+        initRemainingRules();
+        transport.init(this);
+        displayTraceWarning();
     }
 
-    @MCChildElement(order = 3)
-    public void setRules(Collection<Proxy> proxies) {
-        getRuleManager().removeAllRules();
-        for (Proxy proxy : proxies)
-            getRuleManager().addProxy(proxy, RuleDefinitionSource.SPRING);
+    private void initRemainingRules() throws Exception {
+        for (Proxy proxy : getRuleManager().getRules())
+            proxy.init(this);
     }
 
     public static Router init(String resource) {
@@ -155,6 +175,86 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         ctx.refresh();
         ctx.start();
         return ctx.getBean(Router.class);
+    }
+
+    @Override
+    public void start() {
+        try {
+            if (exchangeStore == null)
+                exchangeStore = new LimitedMemoryExchangeStore();
+            if (transport == null)
+                transport = new HttpTransport();
+            kubernetesWatcher.start();
+
+            init();
+            initJmx();
+            getRuleManager().openPorts();
+
+            try {
+                hotDeployer.start();
+            } catch (Exception e) {
+                shutdown();
+                throw e;
+            }
+
+            if (retryInitInterval > 0)
+                startAutoReinitializer();
+        } catch (DuplicatePathException e) {
+            System.err.printf("""
+                    ================================================================================================
+                    
+                    Configuration Error: Several OpenAPI Documents share the same path!
+                    
+                    An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
+                    Within one API the same path should be used only by one OpenAPI. Change the paths or place
+                    openapi-elements into separate api-elements.
+                    
+                    Shared path: %s
+                    %n""", e.getPath());
+            System.exit(1);
+        } catch (OpenAPIParsingException e) {
+            System.err.printf("""
+                    ================================================================================================
+                    
+                    Configuration Error: Could not read or parse OpenAPI Document
+                    
+                    Reason: %s
+                    
+                    Location: %s
+                    
+                    Have a look at the proxies.xml file.
+                    """, e.getMessage(), e.getLocation());
+            System.exit(1);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException)
+                throw (RuntimeException) e;
+            throw new RuntimeException(e);
+        }
+
+        startJmx();
+
+        synchronized (lock) {
+            running = true;
+        }
+
+        ApiInfo.logInfosAboutStartedProxies(ruleManager);
+        if (!asynchronousInitialization)
+            logStartupMessage();
+    }
+
+    private static void logStartupMessage() {
+        log.info("{}{} {} up and running!{}", BRIGHT_CYAN(), PRODUCT_NAME, VERSION, RESET());
+    }
+
+    public Collection<Proxy> getRules() {
+        return getRuleManager().getRulesBySource(RuleDefinitionSource.SPRING);
+    }
+
+    @MCChildElement(order = 3)
+    public void setRules(Collection<Proxy> proxies) {
+        getRuleManager().removeAllRules();
+        for (Proxy proxy : proxies)
+            getRuleManager().addProxy(proxy, RuleDefinitionSource.SPRING);
     }
 
     @SuppressWarnings("NullableProblems")
@@ -250,86 +350,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         }
     }
 
-    public void init() throws Exception {
-        initRemainingRules();
-        transport.init(this);
-        displayTraceWarning();
-    }
-
-    private void initRemainingRules() throws Exception {
-        for (Proxy proxy : getRuleManager().getRules())
-            proxy.init(this);
-    }
-
-    @Override
-    public void start() {
-        try {
-            if (exchangeStore == null)
-                exchangeStore = new LimitedMemoryExchangeStore();
-            if (transport == null)
-                transport = new HttpTransport();
-            kubernetesWatcher.start();
-
-            init();
-            initJmx();
-            getRuleManager().openPorts();
-
-            try {
-                hotDeployer.start();
-            } catch (Exception e) {
-                shutdown();
-                throw e;
-            }
-
-            if (retryInitInterval > 0)
-                startAutoReinitializer();
-        } catch (DuplicatePathException e) {
-            System.err.printf("""
-                    ================================================================================================
-                    
-                    Configuration Error: Several OpenAPI Documents share the same path!
-                    
-                    An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
-                    Within one API the same path should be used only by one OpenAPI. Change the paths or place
-                    openapi-elements into separate api-elements.
-                    
-                    Shared path: %s
-                    %n""", e.getPath());
-            System.exit(1);
-        } catch (OpenAPIParsingException e) {
-            System.err.printf("""
-                    ================================================================================================
-                    
-                    Configuration Error: Could not read or parse OpenAPI Document
-                    
-                    Reason: %s
-                    
-                    Location: %s
-                    
-                    Have a look at the proxies.xml file.
-                    """, e.getMessage(), e.getLocation());
-            System.exit(1);
-        } catch (Exception e) {
-            if (e instanceof RuntimeException)
-                throw (RuntimeException) e;
-            throw new RuntimeException(e);
-        }
-
-        startJmx();
-
-        synchronized (lock) {
-            running = true;
-        }
-
-        ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        if (!asynchronousInitialization)
-            logStartupMessage();
-    }
-
-    private static void logStartupMessage() {
-        log.info("{}{} {} up and running!{}", BRIGHT_CYAN(), PRODUCT_NAME, VERSION, RESET());
-    }
-
     private void startJmx() {
         if (getBeanFactory() == null)
             return;
@@ -355,6 +375,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         }
 
     }
+
+    //
+    // Reinitialization
+    //
 
     private void startAutoReinitializer() {
         if (getInactiveRules().isEmpty())
