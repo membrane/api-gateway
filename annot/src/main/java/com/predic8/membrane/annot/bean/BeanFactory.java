@@ -54,7 +54,7 @@ public final class BeanFactory {
         }
     }
 
-    // TODO keep this? Currently only used for YAMLBeanParsingTest
+    // TODO simplify this. 'normal' code should not be required to use classloader magic
     private Class<?> loadBeanClass(String className) throws ClassNotFoundException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         if (classLoader != null) {

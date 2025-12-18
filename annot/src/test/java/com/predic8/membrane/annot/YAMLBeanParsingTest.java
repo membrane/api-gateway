@@ -68,23 +68,30 @@ public class YAMLBeanParsingTest {
     }
 
     @Test
-    void singletonVsPrototypeViaResolveReference() {
+    void singletonResolveReference() {
         BeanRegistry r = parse("""
             components:
               s:
                 bean:
                   class: com.predic8.membrane.demo.Counting
                   scope: singleton
-              p:
-                bean:
-                  class: com.predic8.membrane.demo.Counting
-                  scope: prototype
             """);
 
         Object s1 = r.resolveReference("#/components/s");
         Object s2 = r.resolveReference("#/components/s");
         assertSame(s1, s2, "singleton must return same instance");
         assertEquals(call(s1, "getId"), call(s2, "getId"));
+    }
+
+    @Test
+    void prototypeResolveReference() {
+        BeanRegistry r = parse("""
+            components:
+              p:
+                bean:
+                  class: com.predic8.membrane.demo.Counting
+                  scope: prototype
+            """);
 
         Object p1 = r.resolveReference("#/components/p");
         Object p2 = r.resolveReference("#/components/p");
