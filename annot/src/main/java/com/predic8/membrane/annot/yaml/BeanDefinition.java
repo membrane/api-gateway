@@ -108,7 +108,8 @@ public class BeanDefinition {
         JsonNode annotations = meta.get("annotations");
         if (annotations == null)
             return null;
-        return annotations.get("membrane-api.io/scope").asText();
+        JsonNode scope = annotations.get("membrane-api.io/scope");
+        return scope == null ? null : scope.asText();
     }
 
     public boolean isComponent() {
