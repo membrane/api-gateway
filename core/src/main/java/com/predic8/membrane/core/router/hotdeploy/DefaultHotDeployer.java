@@ -3,7 +3,6 @@ package com.predic8.membrane.core.router.hotdeploy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
 import org.slf4j.*;
-import org.springframework.context.support.*;
 
 public class DefaultHotDeployer implements HotDeployer {
 
@@ -28,13 +27,9 @@ public class DefaultHotDeployer implements HotDeployer {
             return;
         }
 
-        synchronized (router.getLock()) {
-            if (!(router.getBeanFactory() instanceof AbstractRefreshableApplicationContext bf))
-                throw new RuntimeException("ApplicationContext is not a AbstractRefreshableApplicationContext. Please set <router hotDeploy=\"false\">.");
-            hdt = new HotDeploymentThread(bf);
-            hdt.setFiles(tac.getFiles());
-            hdt.start();
-        }
+        hdt = new HotDeploymentThread(router.getRef());
+        hdt.setFiles(tac.getFiles());
+        hdt.start();
     }
 
     @Override
@@ -42,22 +37,18 @@ public class DefaultHotDeployer implements HotDeployer {
         if (hdt == null)
             return;
 
-        synchronized (router.getLock()) {
-            router.stopAutoReinitializer();
-            hdt.stopASAP();
-            hdt = null;
-        }
+        router.stopAutoReinitializer();
+        hdt.stopASAP();
+        hdt = null;
+
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        synchronized (router.getLock()) {
-            if (enabled)
-                start();
-            else
-                stop();
-
-        }
+        if (enabled)
+            start();
+        else
+            stop();
     }
 
     @Override
