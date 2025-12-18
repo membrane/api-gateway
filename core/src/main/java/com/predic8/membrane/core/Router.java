@@ -136,7 +136,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     private boolean asynchronousInitialization = false;
 
     // not synchronized, since only modified during initialization
-    private HotDeployer hotDeployer = new DefaultHotDeployer(this);
+    private HotDeployer hotDeployer;
 
     public Router() {
         ruleManager.setRouter(this);
@@ -197,6 +197,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
             getRuleManager().openPorts();
 
             try {
+                if (hotDeployer == null)
+                    hotDeployer = new DefaultHotDeployer(this);
                 hotDeployer.start();
             } catch (Exception e) {
                 shutdown();
@@ -469,15 +471,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
      */
     @MCAttribute
     public void setHotDeploy(boolean hotDeploy) {
-        if (isRunning()) {
-            hotDeployer.setEnabled(hotDeploy);
-        }
-        if (hotDeploy) {
-            hotDeployer = new DefaultHotDeployer(this);
-            hotDeployer.start();
-            return;
-        }
-        hotDeployer = new NullHotDeployer();
+        hotDeployer = hotDeploy ? new DefaultHotDeployer(this) : new NullHotDeployer();
     }
 
     public boolean isHotDeploy() {
