@@ -442,10 +442,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         if (isRunning()) {
             hotDeployer.setEnabled(hotDeploy);
         }
-        if (hotDeploy)
+        if (hotDeploy) {
             hotDeployer = new DefaultHotDeployer(this);
-        else
-            hotDeployer = new NullHotDeployer();
+            hotDeployer.start();
+            return;
+        }
+        hotDeployer = new NullHotDeployer();
     }
 
     public boolean isHotDeploy() {
