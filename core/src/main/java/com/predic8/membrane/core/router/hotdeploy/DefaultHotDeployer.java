@@ -20,7 +20,7 @@ public class DefaultHotDeployer implements HotDeployer {
     protected static final HashSet<ApplicationContext> hotDeployingContexts = new HashSet<>();
 
     private HotDeploymentThread hdt;
-    private Router router;
+    private final Router router;
 
     public DefaultHotDeployer(Router router) {
         this.router = router;
