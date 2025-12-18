@@ -26,6 +26,7 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
+import javax.transaction.*;
 import java.io.*;
 import java.util.*;
 
@@ -243,7 +244,7 @@ public class RouterCLI {
                     System.exit(1);
                 }
             }
-            return getRulesFileFromRelativeSpec(rm, filename, "");
+            return getRulesFileFromRelativeSpec(rm, filename);
         }
         return getDefaultConfig();
     }
@@ -306,22 +307,11 @@ public class RouterCLI {
                cl.getCommand().isOptionSet("t");
     }
 
-    private static String getErrorNotice() {
-        String errorNotice = "Please specify the location of Membrane's proxies.xml configuration file using the -c command line option.";
-        if (System.getenv(MEMBRANE_HOME) != null) {
-            return errorNotice + " Or create the file in MEMBRANE_HOME/conf (" + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml).";
-        }
-        return errorNotice + """
-                You can also point the MEMBRANE_HOME environment variable to Membrane's distribution root directory
-                and ensure that MEMBRANE_HOME/conf/proxies.xml exists.
-                """;
-    }
-
     private static boolean shouldResolveFile(String s) {
         return s.startsWith("file:") || s.startsWith("/") || s.length() > 3 && s.startsWith(":/", 1);
     }
 
-    private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
+    private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile) {
         String try1 = pathFromFileURI(ResolverMap.combine(prefix(getUserDir()), relativeFile));
         try (InputStream ignored = rm.resolve(try1)) {
             return try1;
@@ -338,9 +328,8 @@ public class RouterCLI {
                 log.error("Could not resolve path to configuration (attempt 2).", e);
             }
         }
-        System.err.println("Could not find Membrane's configuration file at " + try1 + (try2 == null ? "" : " and not at " + try2) + " " + errorNotice);
-        System.exit(1);
-        throw new RuntimeException();
+        System.err.printf("Could not find Membrane's configuration file at %s%s%n", try1, try2 == null ? "" : " and not at " + try2);
+        throw new StartupException();
     }
 
     public static String getUserDir() {
