@@ -17,19 +17,22 @@ public class DefaultHotDeployer implements HotDeployer {
 
     @Override
     public void start() {
-        if (hdt != null)
-            throw new IllegalStateException("Hot deployment already started.");
+        // Prevent multiple threads from starting hot deployment at the same time.
+        synchronized (this) {
+            if (hdt != null)
+                throw new IllegalStateException("Hot deployment already started.");
 
-        if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
-            log.warn("""
-                    ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
-                    """);
-            return;
+            if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
+                log.warn("""
+                        ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
+                        """);
+                return;
+            }
+
+            hdt = new HotDeploymentThread(router.getRef());
+            hdt.setFiles(tac.getFiles());
+            hdt.start();
         }
-
-        hdt = new HotDeploymentThread(router.getRef());
-        hdt.setFiles(tac.getFiles());
-        hdt.start();
     }
 
     @Override
