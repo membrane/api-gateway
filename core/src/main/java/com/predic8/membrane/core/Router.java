@@ -422,10 +422,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     }
 
     public void stopAutoReinitializer() {
-        synchronized (lock) {
-            if (reinitializer != null) {
-                reinitializer.cancel();
-            }
+        if (reinitializer != null) {
+            reinitializer.cancel();
         }
     }
 
@@ -609,7 +607,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
      */
     public void waitFor() throws InterruptedException {
         synchronized (lock) {
-            while (isRunning())
+            while (running)
                 lock.wait();
         }
     }
@@ -679,10 +677,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     }
 
     public AbstractRefreshableApplicationContext getRef() {
-        synchronized (lock) {
-            if (beanFactory instanceof AbstractRefreshableApplicationContext bf)
-                return bf;
-        }
+        if (beanFactory instanceof AbstractRefreshableApplicationContext bf)
+            return bf;
         throw new RuntimeException("ApplicationContext is not a AbstractRefreshableApplicationContext. Please set <router hotDeploy=\"false\">.");
     }
 }
