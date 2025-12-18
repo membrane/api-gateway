@@ -48,7 +48,9 @@ public class RouterCLI {
     public static void main(String[] args) {
         try {
             start(args);
-        } catch (StartupException e) {
+        } catch (ExitException ignored) {
+            // Nothing logged on purpose. The exception is just to trigger exit at one place.
+            // Do logging where the exception is thrown.
             System.exit(1);
         }
     }
@@ -322,7 +324,7 @@ public class RouterCLI {
                 return try2;
         }
         System.err.printf("Could not find Membrane's configuration file at %s%s%n", try1, try2 == null ? "" : " and not at " + try2);
-        throw new StartupException();
+        throw new ExitException();
     }
 
     private static boolean tryToGetConfigurationFile(ResolverMap rm, String try1, int attempt) {

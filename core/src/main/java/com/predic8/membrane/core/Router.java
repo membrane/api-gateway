@@ -213,7 +213,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
                     
                     Shared path: %s
                     %n""", e.getPath());
-            throw new StartupException();
+            throw new ExitException();
         } catch (OpenAPIParsingException e) {
             System.err.printf("""
                     ================================================================================================
@@ -226,7 +226,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
                     
                     Have a look at the proxies.xml file.
                     """, e.getMessage(), e.getLocation());
-            throw new StartupException();
+            throw new ExitException();
         } catch (Exception e) {
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
