@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router.hotdeploy;
 
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.config.spring.CheckableBeanFactory.*;
