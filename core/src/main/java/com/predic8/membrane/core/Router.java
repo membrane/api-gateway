@@ -135,6 +135,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     private Timer reinitializer;
     private boolean asynchronousInitialization = false;
 
+    // not synchronized, since only modified during initialization
     private HotDeployer hotDeployer = new DefaultHotDeployer(this);
 
     public Router() {
