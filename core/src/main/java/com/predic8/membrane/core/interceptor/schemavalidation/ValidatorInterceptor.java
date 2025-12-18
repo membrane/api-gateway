@@ -66,6 +66,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private ResolverMap resourceResolver;
     private ApplicationContext applicationContext;
 
+    private ReferenceSchemas referenceSchemas;
+
     public ValidatorInterceptor() {
         name = "validator";
     }
@@ -95,10 +97,14 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
         }
         if (schema != null) {
+            if (referenceSchemas != null)
+                log.warn("Schema References are only for Json and Yaml"); // TODO improve log statement
             return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
-            return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion);
+            return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
+                setSchemaMappings(referenceSchemas.getSchemaMap());
+            }};
         }
         if (schematron != null) {
             return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
@@ -318,5 +324,15 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             return (message, exc) -> log.info("Validation failure: {}", message);
         throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
     }
+
+    @MCChildElement
+    public void setReferenceSchemas(ReferenceSchemas referenceSchemas) {
+        this.referenceSchemas = referenceSchemas;
+    }
+
+    public ReferenceSchemas getReferenceSchemas() {
+        return referenceSchemas;
+    }
+
 
 }
