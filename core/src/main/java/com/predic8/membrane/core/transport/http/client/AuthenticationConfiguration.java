@@ -32,7 +32,7 @@ import java.util.*;
  *
  * @topic 4. Transports and Clients
  */
-@MCElement(name="authentication", topLevel=false)
+@MCElement(name="authentication", component =false)
 public class AuthenticationConfiguration {
 
 	private String username;

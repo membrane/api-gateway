@@ -33,7 +33,7 @@ import static java.lang.String.format;
 /*
  * Otlp Implementation for the OpenTelemetry protocol
  */
-@MCElement(name = "otlpExporter", topLevel = false)
+@MCElement(name = "otlpExporter", component = false)
 public class OtlpExporter implements OtelExporter {
 
     private static final int TIMEOUT_SECONDS = 30;

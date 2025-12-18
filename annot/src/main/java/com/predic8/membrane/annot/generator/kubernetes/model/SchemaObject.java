@@ -28,9 +28,34 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
 
     private List<AbstractSchema<?>> oneOf;
 
+    private List<AbstractSchema<?>> allOf;
+    private final Map<String, AbstractSchema<?>> patternProperties = new LinkedHashMap<>();
+
     SchemaObject(String name) {
         super(name);
         type = OBJECT;
+    }
+
+    /**
+     * Populates the given {@code ObjectNode} with the JSON schema representation
+     * of this {@code SchemaObject}, including additional properties, pattern properties,
+     * and combinations (allOf, oneOf).
+     *
+     * @param node the {@code ObjectNode} to populate with schema details
+     * @return the modified {@code ObjectNode} containing the schema representation
+     */
+    public ObjectNode json(ObjectNode node) {
+        super.json(node);
+
+        if (!additionalProperties && isObject()) {
+            node.put("additionalProperties", false);
+        }
+
+        addProperties(node);
+        addPatternProperties(node);
+        addAllOf(node);
+        addOneOf(node);
+        return node;
     }
 
     public SchemaObject property(AbstractSchema<?> as) {
@@ -46,27 +71,54 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         return this;
     }
 
-    public ObjectNode json(ObjectNode node) {
-        super.json(node);
-
-        if (!additionalProperties && isObject()) {
-            node.put("additionalProperties", false);
-        }
-
-        jsonProperties(node);
-
-        if (oneOf != null && !oneOf.isEmpty()) {
-            var oneOfArray = jnf.arrayNode();
-            for (AbstractSchema<?> s : oneOf) {
-                oneOfArray.add(s.json(jnf.objectNode()));
-            }
-            node.set("oneOf", oneOfArray);
-        }
-
-        return node;
+    public SchemaObject patternProperty(String pattern, AbstractSchema<?> schema) {
+        patternProperties.put(pattern, schema);
+        return this;
     }
 
-    private void jsonProperties(ObjectNode node) {
+    private void addOneOf(ObjectNode node) {
+        if (oneOf == null || oneOf.isEmpty())
+            return;
+
+        var oneOfArray = jnf.arrayNode();
+        for (AbstractSchema<?> s : oneOf) {
+            oneOfArray.add(s.json(jnf.objectNode()));
+        }
+        node.set("oneOf", oneOfArray);
+
+    }
+
+    private void addAllOf(ObjectNode node) {
+        if (allOf == null || allOf.isEmpty())
+            return;
+
+        var allOfArray = jnf.arrayNode();
+        for (AbstractSchema<?> s : allOf) {
+            allOfArray.add(s.json(jnf.objectNode()));
+        }
+        node.set("allOf", allOfArray);
+
+    }
+
+    private void addPatternProperties(ObjectNode node) {
+        if (patternProperties.isEmpty())
+            return;
+
+        ObjectNode pp = jnf.objectNode();
+        for (var e : patternProperties.entrySet()) {
+            pp.set(e.getKey(), e.getValue().json(jnf.objectNode()));
+        }
+        node.set("patternProperties", pp);
+    }
+
+    /**
+     * Populates the specified {@code ObjectNode} with the properties of the JSON schema
+     * associated with this object. The method iterates over the defined properties, adding
+     * them to a "properties" node, and specifies any required properties in a "required" array.
+     *
+     * @param node the {@code ObjectNode} to populate with the properties and required fields
+     */
+    private void addProperties(ObjectNode node) {
         if (properties.isEmpty())
             return;
 
@@ -87,7 +139,7 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         node.set("properties", propertiesNode);
     }
 
-    private static ObjectNode createPropertyNode(AbstractSchema<?>property) {
+    private static ObjectNode createPropertyNode(AbstractSchema<?> property) {
         ObjectNode propertyNode = property.json(jnf.objectNode());
         if (property.getEnumValues() != null && !property.getEnumValues().isEmpty()) {
             propertyNode.set("enum", getEnumNode(property));
@@ -109,5 +161,14 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     public SchemaObject oneOf(List<AbstractSchema<?>> oneOf) {
         this.oneOf = oneOf;
         return this;
+    }
+
+    public SchemaObject allOf(List<AbstractSchema<?>> allOf) {
+        this.allOf = allOf;
+        return this;
+    }
+
+    public boolean hasProperty(String name) {
+        return properties.stream().anyMatch(p -> name.equals(p.getName()));
     }
 }
