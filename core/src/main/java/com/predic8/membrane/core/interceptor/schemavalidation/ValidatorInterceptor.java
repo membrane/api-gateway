@@ -46,6 +46,7 @@ import static com.predic8.membrane.core.util.TextUtil.linkURL;
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 
     private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
+    public static final String IGNORING_SCHEMA_LOG = "Ignoring 'referenceSchemas': schema references are only supported for JSON/YAML validators";
 
     private String wsdl;
     private String schema;
@@ -94,11 +95,13 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
     private MessageValidator getMessageValidator() throws Exception {
         if (wsdl != null) {
+            if (referenceSchemas != null)
+                log.warn(IGNORING_SCHEMA_LOG);
             return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
         }
         if (schema != null) {
             if (referenceSchemas != null)
-                log.warn("Schema References are only for Json and Yaml"); // TODO improve log statement
+                log.warn(IGNORING_SCHEMA_LOG);
             return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
@@ -107,6 +110,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             }};
         }
         if (schematron != null) {
+            if (referenceSchemas != null)
+                log.warn(IGNORING_SCHEMA_LOG);
             return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
         }
 
