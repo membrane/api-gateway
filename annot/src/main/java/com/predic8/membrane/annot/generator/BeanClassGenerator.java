@@ -33,6 +33,7 @@ public class BeanClassGenerator extends ClassGenerator{
                 import com.predic8.membrane.annot.MCAttribute;
                 import com.predic8.membrane.annot.MCChildElement;
                 import com.predic8.membrane.annot.MCElement;
+                import com.predic8.membrane.annot.generator.Scope;
                 
                 import java.util.ArrayList;
                 import java.util.List;
