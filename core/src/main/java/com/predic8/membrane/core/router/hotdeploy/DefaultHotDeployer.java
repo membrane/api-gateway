@@ -30,22 +30,26 @@ public class DefaultHotDeployer implements HotDeployer {
     public void start() {
         if (hdt != null)
             throw new IllegalStateException("Hot deployment already started.");
-        if (!(router.getBeanFactory() instanceof TrackingApplicationContext)) {
+
+        if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
             log.warn("""
                     ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
                     """);
             return;
         }
-        if (!(router.getBeanFactory() instanceof AbstractRefreshableApplicationContext))
-            throw new RuntimeException("ApplicationContext is not a AbstractRefreshableApplicationContext. Please set <router hotDeploy=\"false\">.");
-        synchronized (hotDeployingContexts) {
-            if (hotDeployingContexts.contains(router.getBeanFactory()))
-                return;
-            hotDeployingContexts.add(router.getBeanFactory());
+
+        synchronized (router.getLock()) {
+            if (!(router.getBeanFactory() instanceof AbstractRefreshableApplicationContext bf))
+                throw new RuntimeException("ApplicationContext is not a AbstractRefreshableApplicationContext. Please set <router hotDeploy=\"false\">.");
+            synchronized (hotDeployingContexts) {
+                if (hotDeployingContexts.contains(bf))
+                    return;
+                hotDeployingContexts.add(bf);
+            }
+            hdt = new HotDeploymentThread(bf);
+            hdt.setFiles(tac.getFiles());
+            hdt.start();
         }
-        hdt = new HotDeploymentThread((AbstractRefreshableApplicationContext) router.getBeanFactory());
-        hdt.setFiles(((TrackingApplicationContext) router.getBeanFactory()).getFiles());
-        hdt.start();
     }
 
     @Override
@@ -53,20 +57,23 @@ public class DefaultHotDeployer implements HotDeployer {
         if (hdt == null)
             return;
 
-        router.stopAutoReinitializer();
-        hdt.stopASAP();
-        hdt = null;
         synchronized (hotDeployingContexts) {
+            router.stopAutoReinitializer();
+            hdt.stopASAP();
+            hdt = null;
+
             hotDeployingContexts.remove(router.getBeanFactory());
         }
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        if (enabled)
-            start();
-        else
-            stop();
+        synchronized (hotDeployingContexts) {
+            if (enabled)
+                start();
+            else
+                stop();
+        }
     }
 
     @Override
