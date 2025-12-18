@@ -319,7 +319,7 @@ public class RouterCLI {
         if (System.getenv(MEMBRANE_HOME) != null) {
             try2 = pathFromFileURI(ResolverMap.combine(prefix(System.getenv(MEMBRANE_HOME)), relativeFile));
             if (tryToGetConfigurationFile(rm, try2, 2))
-            return try2;
+                return try2;
         }
         System.err.printf("Could not find Membrane's configuration file at %s%s%n", try1, try2 == null ? "" : " and not at " + try2);
         throw new StartupException();
@@ -329,7 +329,7 @@ public class RouterCLI {
         try (InputStream ignored = rm.resolve(try1)) {
             return true;
         } catch (Exception e) {
-            log.error("Could not resolve path to configuration (attempt {}).",attempt, e);
+            log.warn("Could not resolve path to configuration (attempt {}).", attempt, e);
         }
         return false;
     }
