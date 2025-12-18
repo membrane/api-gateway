@@ -314,20 +314,20 @@ public class RouterCLI {
 
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile) {
         String try1 = pathFromFileURI(ResolverMap.combine(prefix(getUserDir()), relativeFile));
-        if (tryToGetConfigurationFile(rm, try1, 1))
+        if (canResolveConfigurationFile(rm, try1, 1))
             return try1;
 
         String try2 = null;
         if (System.getenv(MEMBRANE_HOME) != null) {
             try2 = pathFromFileURI(ResolverMap.combine(prefix(System.getenv(MEMBRANE_HOME)), relativeFile));
-            if (tryToGetConfigurationFile(rm, try2, 2))
+            if (canResolveConfigurationFile(rm, try2, 2))
                 return try2;
         }
         System.err.printf("Could not find Membrane's configuration file at %s%s%n", try1, try2 == null ? "" : " and not at " + try2);
         throw new ExitException();
     }
 
-    private static boolean tryToGetConfigurationFile(ResolverMap rm, String try1, int attempt) {
+    private static boolean canResolveConfigurationFile(ResolverMap rm, String try1, int attempt) {
         try (InputStream ignored = rm.resolve(try1)) {
             return true;
         } catch (Exception e) {
