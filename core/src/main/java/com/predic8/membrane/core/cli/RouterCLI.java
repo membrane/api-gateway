@@ -16,6 +16,7 @@ package com.predic8.membrane.core.cli;
 
 import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.cli.util.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -45,6 +46,14 @@ public class RouterCLI {
     private static final Logger log = LoggerFactory.getLogger(RouterCLI.class);
 
     public static void main(String[] args) {
+        try {
+            start(args);
+        } catch (StartupException e) {
+            System.exit(1);
+        }
+    }
+
+    private static void start(String[] args) {
         MembraneCommandLine commandLine = getMembraneCommandLine(args);
         if (commandLine.getCommand().isOptionSet("h")) {
             commandLine.getCommand().printHelp();

@@ -17,6 +17,7 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.RuleManager.*;
+import com.predic8.membrane.core.cli.util.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchangestore.*;
@@ -212,7 +213,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
                     
                     Shared path: %s
                     %n""", e.getPath());
-            System.exit(1);
+            throw new StartupException();
         } catch (OpenAPIParsingException e) {
             System.err.printf("""
                     ================================================================================================
@@ -225,7 +226,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
                     
                     Have a look at the proxies.xml file.
                     """, e.getMessage(), e.getLocation());
-            System.exit(1);
+            throw new StartupException();
         } catch (Exception e) {
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
