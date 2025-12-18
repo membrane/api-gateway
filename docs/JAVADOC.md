@@ -82,9 +82,9 @@ Therefore, while most of the project historically used XML, everything can be ex
 
   `@MCElement` can only be used on classes. If you write `<foo>` or `foo:` in the configuration, this will cause the Java Class to be instantiated at startup.
 
-  If `@MCElement(name="foo",topLevel=true)` has `topLevel==true` (which it has by default), `<foo>`/`foo:` can be used as the top-level element in the configuration. The Foo instance will be created as a Spring Bean (in the XML case) and take part of its life cycle. The most basic example is using `<router>`/`router:` at the top level: This will create and start a `Router` instance which starts Membrane API Gateway.
+  If `@MCElement(name="foo",component=true)` has `component==true` (which it has by default), `<foo>`/`foo:` can be used as a component element in the configuration. The Foo instance will be created as a Spring Bean (in the XML case) and take part of its life cycle. The most basic example is using `<router>`/`router:` at the top level: This will create and start a `Router` instance which starts Membrane API Gateway.
 
-  Top-Level elements can carry a unique `id` attribute. This will register the instance Spring Bean with this ID.
+  Component elements can carry a unique `id` attribute. This will register the instance Spring Bean with this ID.
 
 * **`@MCAttribute`**
   Can be used on Setter methods. The Java Type of the Setter's parameter must be a simple type, enum, String or a `@MCElement` annotated class.

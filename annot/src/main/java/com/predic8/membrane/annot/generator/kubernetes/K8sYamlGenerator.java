@@ -59,7 +59,7 @@ public class K8sYamlGenerator extends AbstractGrammar {
 
     private void assemble(Writer w, MainInfo main) throws IOException {
 
-        for (ElementInfo element : getTopLevelElementInfos(main)) {
+        for (ElementInfo element : getComponentElementInfos(main)) {
             writeCRD(w, element);
             appendLine(w, "---");
         }

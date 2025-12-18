@@ -15,6 +15,8 @@ package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
@@ -24,7 +26,6 @@ import org.slf4j.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.networknt.schema.SpecificationVersion.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
@@ -53,10 +54,9 @@ public class GenericYamlParser {
      */
     public GenericYamlParser(Grammar grammar, String yaml) throws IOException {
         JsonLocationMap jsonLocationMap = new JsonLocationMap();
-        List<JsonNode> rootNodes = jsonLocationMap.parseWithLocations(yaml);
 
         var idx = 0;
-        for (JsonNode jsonNode : rootNodes) {
+        for (JsonNode jsonNode : jsonLocationMap.parseWithLocations(yaml)) {
             if (jsonNode == null) {
                 log.debug(GenericYamlParser.EMPTY_DOCUMENT_WARNING);
                 continue;
@@ -72,6 +72,10 @@ public class GenericYamlParser {
                         e.getErrors().getFirst().getMessage(),
                         location.getLineNr(),
                         location.getColumnNr()), e);
+            }
+
+            if ("components".equals(getBeanType(jsonNode))) {
+                beanDefs.addAll(extractComponentBeanDefinitions(jsonNode.get("components")));
             }
 
             beanDefs.add(new BeanDefinition(
@@ -159,29 +163,30 @@ public class GenericYamlParser {
             T configObj = clazz.getConstructor().newInstance();
             if (node.isArray()) {
                 // when this is a list, we are on a @MCElement(..., noEnvelope=true)
-
                 Method method = getSingleChildSetter(clazz);
-                method.invoke(configObj, (Object) parseListExcludingStartEvent(ctx, node));
+                method.invoke(configObj, parseListExcludingStartEvent(ctx, node));
                 return configObj;
             }
             ensureMappingStart(node);
             if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
 
+            JsonNode refNode = node.get("$ref");
+            if (refNode != null) {
+                applyObjectLevelRef(ctx, clazz, node, refNode, configObj);
+            }
+
             List<Method> required = findRequiredSetters(clazz);
 
             for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
                 String key = it.next();
+                if ("$ref".equals(key))
+                    continue;
+
                 try {
-
-                    if ("$ref".equals(key)) {
-                        handleTopLevelRefs(clazz, node.get(key), ctx.registry(), configObj);
-                        continue;
-                    }
-
                     MethodSetter methodSetter = getMethodSetter(ctx, clazz, key);
                     required.remove(methodSetter.getSetter());
-                    methodSetter.setSetter(configObj,ctx,node,key);
+                    methodSetter.setSetter(configObj, ctx, node, key);
                 } catch (Throwable cause) {
                     throw new ParsingException(cause, node.get(key));
                 }
@@ -194,10 +199,72 @@ public class GenericYamlParser {
         }
     }
 
-    private static <T> void handleTopLevelRefs(Class<T> clazz, JsonNode node, BeanRegistry registry, T obj) throws InvocationTargetException, IllegalAccessException {
-        ensureTextual(node, "Expected a string after the '$ref' key.");
-        Object o = registry.resolveReference(node.asText());
-        getChildSetter(clazz, o.getClass()).invoke(obj, o);
+    private static List<BeanDefinition> extractComponentBeanDefinitions(JsonNode componentsNode) {
+        if (componentsNode == null || componentsNode.isNull())
+            return List.of();
+
+        if (!componentsNode.isObject())
+            throw new ParsingException("Expected object for 'components'.", componentsNode);
+
+        List<BeanDefinition> res = new ArrayList<>();
+
+        Iterator<String> ids = componentsNode.fieldNames();
+        while (ids.hasNext()) {
+            String id = ids.next();
+            JsonNode def = componentsNode.get(id);
+
+            // Each component definition must have exactly one key (the component type)
+            ensureSingleKey(def);
+            String componentKind = def.fieldNames().next();
+
+            // Wrap it into a normal top-level node: { <kind>: <body> }
+            ObjectNode wrapped = JsonNodeFactory.instance.objectNode();
+            wrapped.set(componentKind, def.get(componentKind));
+
+            res.add(new BeanDefinition(
+                    componentKind,
+                    "#/components/" + id,
+                    "default",
+                    randomUUID().toString(),
+                    wrapped
+            ));
+        }
+        return res;
+    }
+
+    /**
+     * Applies an object-level "$ref" by resolving the referenced component and injecting it
+     * into the parent object via the matching @MCChildElement setter.
+     * Rejects "$ref" if the same child is already configured inline.
+     */
+    private static <T> void applyObjectLevelRef(ParsingContext ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) throws ParsingException {
+        ensureTextual(refNode, "Expected a string after the '$ref' key.");
+        Object referenced = getReferenced(ctx, refNode);
+        String refKey = getElementName(referenced.getClass());
+
+        // Forbid inline + $ref for the same child
+        if (parentNode.has(refKey)) {
+            throw new ParsingException("Cannot use '$ref' together with inline '%s' in '%s'."
+                    .formatted(refKey, ctx.context()), parentNode.get(refKey));
+        }
+
+        try {
+            getChildSetter(parentClass, referenced.getClass()).invoke(obj, referenced);
+        } catch (RuntimeException e) {
+            throw new ParsingException(
+                    "Referenced component '%s' (type '%s') is not allowed in '%s'."
+                            .formatted(refNode.asText(), refKey, ctx.context()), refNode);
+        } catch (Throwable t) {
+            throw new ParsingException(t, refNode);
+        }
+    }
+
+    private static Object getReferenced(ParsingContext ctx, JsonNode refNode) {
+        try {
+            return ctx.registry().resolveReference(refNode.asText());
+        } catch (RuntimeException e) {
+            throw new ParsingException(e, refNode);
+        }
     }
 
     public static List<Object> parseListIncludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
@@ -205,8 +272,8 @@ public class GenericYamlParser {
         return parseListExcludingStartEvent(context, node);
     }
 
-    private static @NotNull ArrayList<Object> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
-        ArrayList<Object> res = new ArrayList<>();
+    private static @NotNull List<Object> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+        List<Object> res = new ArrayList<>();
         for (int i = 0; i < node.size(); i++) {
             res.add(parseMapToObj(context, node.get(i)));
         }

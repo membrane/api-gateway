@@ -51,7 +51,7 @@ import java.net.URLEncoder;
  *              WhateverMobile SMS Gateway.
  *              </p>
  */
-@MCElement(name="whateverMobileSMSTokenProvider", topLevel=false)
+@MCElement(name="whateverMobileSMSTokenProvider", component =false)
 public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(WhateverMobileSMSTokenProvider.class.getName());

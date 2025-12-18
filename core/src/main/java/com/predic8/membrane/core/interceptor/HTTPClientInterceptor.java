@@ -40,7 +40,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * its outgoing HTTP connection that is different from the global
  * configuration in the transport.
  */
-@MCElement(name = "httpClient")
+@MCElement(name = "httpClient", excludeFromFlow= true)
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());

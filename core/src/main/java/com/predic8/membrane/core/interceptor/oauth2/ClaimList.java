@@ -33,7 +33,7 @@ public class ClaimList {
         this.supportedClaims = supportedClaims;
     }
 
-    @MCElement(name="scope", topLevel=false, id="claims-scope")
+    @MCElement(name="scope", component =false, id="claims-scope")
     public static class Scope{
         private String id;
         private String claims;
