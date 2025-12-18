@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNullElse;
 /**
  * @description
  */
-@MCElement(name = "rewrite", topLevel = false)
+@MCElement(name = "rewrite", component = false)
 public class Rewrite implements Cloneable {
 
     private static final Logger log = LoggerFactory.getLogger(Rewrite.class.getName());

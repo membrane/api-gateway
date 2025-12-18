@@ -25,7 +25,7 @@ import java.util.function.*;
 
 import static com.predic8.membrane.core.http.MimeType.isJson;
 
-@MCElement(name = "greaseJson", topLevel = false)
+@MCElement(name = "greaseJson", component = false)
 public class JsonGrease extends Greaser {
 
     private static final ObjectMapper om = new ObjectMapper();

@@ -263,7 +263,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         return sampleRate;
     }
 
-    @MCElement(name = "customAttribute", topLevel = false)
+    @MCElement(name = "customAttribute", component = false)
     public static class CustomAttribute {
 
         private String name;
