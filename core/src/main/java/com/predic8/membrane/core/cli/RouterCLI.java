@@ -26,7 +26,6 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
-import javax.transaction.*;
 import java.io.*;
 import java.util.*;
 
@@ -313,23 +312,26 @@ public class RouterCLI {
 
     private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile) {
         String try1 = pathFromFileURI(ResolverMap.combine(prefix(getUserDir()), relativeFile));
-        try (InputStream ignored = rm.resolve(try1)) {
+        if (tryToGetConfigurationFile(rm, try1, 1))
             return try1;
-        } catch (Exception e) {
-            log.error("Could not resolve path to configuration (attempt 1).", e);
-        }
 
         String try2 = null;
         if (System.getenv(MEMBRANE_HOME) != null) {
             try2 = pathFromFileURI(ResolverMap.combine(prefix(System.getenv(MEMBRANE_HOME)), relativeFile));
-            try (InputStream ignored = rm.resolve(try2)) {
-                return try2;
-            } catch (Exception e) {
-                log.error("Could not resolve path to configuration (attempt 2).", e);
-            }
+            if (tryToGetConfigurationFile(rm, try2, 2))
+            return try2;
         }
         System.err.printf("Could not find Membrane's configuration file at %s%s%n", try1, try2 == null ? "" : " and not at " + try2);
         throw new StartupException();
+    }
+
+    private static boolean tryToGetConfigurationFile(ResolverMap rm, String try1, int attempt) {
+        try (InputStream ignored = rm.resolve(try1)) {
+            return true;
+        } catch (Exception e) {
+            log.error("Could not resolve path to configuration (attempt {}).",attempt, e);
+        }
+        return false;
     }
 
     public static String getUserDir() {
