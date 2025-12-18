@@ -167,6 +167,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         bf.refresh();
         bf.start();
 
+        if (bf.getBeansOfType(Router.class).size() > 1) {
+            throw new RuntimeException("More than one router found in spring config (beans {}). This is not supported anymore.".formatted(bf.getBeanDefinitionNames()));
+        }
+
         return bf.getBean("router", Router.class);
     }
 
