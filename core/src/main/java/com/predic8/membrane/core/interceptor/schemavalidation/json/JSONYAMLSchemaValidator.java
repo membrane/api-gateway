@@ -99,7 +99,6 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     @Override
     public void init() {
         super.init();
-        System.out.println("schemaMappings = " + schemaMappings);
         jsonSchemaFactory = JsonSchemaFactory.getInstance(schemaId, builder ->
                 builder
                         .schemaLoaders(loaders -> loaders.add(new MembraneSchemaLoader(resolver)))

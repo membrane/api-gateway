@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:app:schema2000",
+  "type": "object",
+  "required": [
+    "param",
+    "timestamp"
+  ],
+  "properties": {
+    "param": {
+      "$ref": "urn:app:base_parameter_def#/$defs/BaseParameter"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
