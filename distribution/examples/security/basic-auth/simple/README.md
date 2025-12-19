@@ -75,4 +75,4 @@ Notice how the `Authorization` header is set with the hash of username and passw
 
 ---
 See:
-- [basicAuthentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm) reference
+- [basicAuthentication](https://www.membrane-api.io/docs/current/basicAuthentication.html) reference

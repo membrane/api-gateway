@@ -58,4 +58,4 @@ The successfully validated requests then get sent to the third `<api>` component
 ---
 See: 
 - [JSON Schema](https://json-schema.org/) documentation
-- [validator](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/validator.htm) reference
+- [validator](https://membrane-api.io/docs/current/validator.html) reference

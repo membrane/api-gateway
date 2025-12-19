@@ -28,4 +28,4 @@ To run the example execute the following steps:
 
 --- 
 See:
-- [rest2Soap](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rest2Soap.htm) reference
+- [rest2Soap](https://membrane-api.io/docs/current/rest2Soap.html) reference

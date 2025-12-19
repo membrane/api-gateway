@@ -46,4 +46,4 @@ It will also change content type of message to `application/json;charset=utf-8`.
 
 ---
 See:
-- [xml2Json](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/xml2Json.htm) reference
+- [xml2Json](https://membrane-api.io/docs/current/xml2Json.html) reference
