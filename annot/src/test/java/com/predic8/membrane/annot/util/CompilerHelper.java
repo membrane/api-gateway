@@ -28,8 +28,7 @@ import java.util.stream.*;
 
 import static java.util.List.*;
 import static java.util.stream.StreamSupport.*;
-import static javax.tools.Diagnostic.Kind.ERROR;
-import static javax.tools.Diagnostic.Kind.WARNING;
+import static javax.tools.Diagnostic.Kind.*;
 import static javax.tools.StandardLocation.*;
 import static org.hamcrest.MatcherAssert.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,10 +36,10 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CompilerHelper {
 
     public static final String YAML_PARSER_CLASS_NAME = "com.predic8.membrane.annot.util.YamlParser";
-    private static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+([^;]+)\\s*;");
-    private static final Pattern CLASS_PATTERN = Pattern.compile("class\\s+([^\\s]+)\\s");
     public static final String ANNOTATION_PROCESSOR_CLASSNAME = "com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessor";
     public static final String APPLICATION_CONTEXT_CLASSNAME = "org.springframework.context.support.ClassPathXmlApplicationContext";
+    private static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+([^;]+)\\s*;");
+    private static final Pattern CLASS_PATTERN = Pattern.compile("class\\s+([^\\s]+)\\s");
 
     /**
      * Compile the given source files.
@@ -49,7 +48,6 @@ public class CompilerHelper {
      * @param logCompilerOutput if true, print the compiler output to stderr
      */
     public static CompilerResult compile(Iterable<? extends FileObject> sourceFiles, boolean logCompilerOutput) {
-        var javaSources = getJavaSources(sourceFiles);
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         if (compiler == null) {
             throw new IllegalStateException("No system Java compiler found. Run tests with a JDK, not a JRE.");
@@ -65,7 +63,7 @@ public class CompilerHelper {
                 diagnostics,
                 of("-processor", ANNOTATION_PROCESSOR_CLASSNAME),
                 null,
-                javaSources
+                getJavaSources(sourceFiles)
         );
 
         boolean success = task.call();
@@ -77,12 +75,34 @@ public class CompilerHelper {
     }
 
     public static BeanRegistry parseYAML(CompilerResult cr, String yamlConfig) {
-        ClassLoader original = Thread.currentThread().getContextClassLoader();
         CompositeClassLoader cl = getCompositeClassLoader(cr, yamlConfig);
+        return withContextClassLoader(cl, () -> {
+            Class<?> parserClass = cl.loadClass(YAML_PARSER_CLASS_NAME);
+            return getBeanRegistry(parserClass, getParser(parserClass));
+        });
+    }
+
+    public static void parseXML(CompilerResult cr, String xmlSpringConfig) {
+        CompositeClassLoader cl = xmlClassLoader(cr, xmlSpringConfig);
+        withContextClassLoader(cl, () -> {
+            Class<?> ctx = cl.loadClass(APPLICATION_CONTEXT_CLASSNAME);
+            Object context = ctx.getConstructor(String.class).newInstance("demo.xml");
+            try {
+                // Context successfully created - validation passed
+            } finally {
+                ctx.getMethod("close").invoke(context);
+            }
+            return null;
+        });
+    }
+
+    private static <T> T withContextClassLoader(ClassLoader cl, ThrowingSupplier<T> action) {
+        ClassLoader original = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(cl);
-            Class<?> parserClass = cl.loadClass(YAML_PARSER_CLASS_NAME);
-            return getBeanRegistry(parserClass,getParser(parserClass));
+            return action.get();
+        } catch (RuntimeException | Error e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -96,34 +116,22 @@ public class CompilerHelper {
                 .invoke(instance);
     }
 
-    private static @NotNull CompositeClassLoader getCompositeClassLoader(CompilerResult cr, String yamlConfig) {
-        InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
-        loaderA.defineOverlay(new OverlayInMemoryFile("/demo.yaml", yamlConfig));
-        return new CompositeClassLoader(CompilerHelper.class.getClassLoader(), loaderA);
+    private static CompositeClassLoader getCompositeClassLoader(CompilerResult cr, String yamlConfig) {
+        return overlayClassLoader(cr, yamlConfig, "/demo.yaml");
+    }
+
+    private static CompositeClassLoader xmlClassLoader(CompilerResult cr, String xmlSpringConfig) {
+        return overlayClassLoader(cr, xmlSpringConfig, "/demo.xml");
+    }
+
+    private static CompositeClassLoader overlayClassLoader(CompilerResult cr, String content, String resourcePath) {
+        InMemoryClassLoader inMemory = (InMemoryClassLoader) cr.classLoader();
+        inMemory.defineOverlay(new OverlayInMemoryFile(resourcePath, content));
+        return new CompositeClassLoader(CompilerHelper.class.getClassLoader(), inMemory);
     }
 
     private static @NotNull Object getParser(Class<?> c) throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         return c.getConstructor(String.class).newInstance("demo.yaml");
-    }
-
-    /**
-     * Parse the given XML Spring config.
-     * TODO Refactor: too much in common with parseYAML
-     */
-    public static void parse(CompilerResult cr, String xmlSpringConfig) {
-        ClassLoader originalClassloader = Thread.currentThread().getContextClassLoader();
-        try {
-            InMemoryClassLoader loaderA = (InMemoryClassLoader) cr.classLoader();
-            loaderA.defineOverlay(new OverlayInMemoryFile("/demo.xml", xmlSpringConfig));
-            CompositeClassLoader cl = new CompositeClassLoader(CompilerHelper.class.getClassLoader(),loaderA);
-            Thread.currentThread().setContextClassLoader(cl);
-            Class<?> c = cl.loadClass(APPLICATION_CONTEXT_CLASSNAME);
-            c.getConstructor(String.class).newInstance("demo.xml");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalClassloader);
-        }
     }
 
     private static List<JavaFileObject> getJavaSources(Iterable<? extends FileObject> sources) {
@@ -164,7 +172,12 @@ public class CompilerHelper {
         if (!content.trim().startsWith("resource"))
             return toInMemoryJavaFile(content);
 
-        // TODO extract method
+        String[] parts = stripFirstLine(content);
+
+        return new OverlayInMemoryFile(parts[0].substring("resource".length()).trim(), parts[1]);
+    }
+
+    static String @NotNull [] stripFirstLine(String content) {
         String[] parts;
         while (true) {
             parts = content.split("\n", 2);
@@ -174,9 +187,7 @@ public class CompilerHelper {
                 break;
             content = parts[1];
         }
-
-        String name = parts[0].substring(9).trim(); // TODO Refactor and give meaningful name
-        return new OverlayInMemoryFile(name, parts[1]);
+        return parts;
     }
 
     private static JavaFileObject toInMemoryJavaFile(String source) {
@@ -235,5 +246,10 @@ public class CompilerHelper {
                 return false;
             }
         };
+    }
+
+    @FunctionalInterface
+    private interface ThrowingSupplier<T> {
+        T get() throws Exception;
     }
 }

@@ -25,12 +25,12 @@
     </properties>
     <packaging>jar</packaging>
 
-    <parent>
-        <groupId>org.membrane-soa</groupId>
-        <artifactId>service-proxy-parent</artifactId>
-        <relativePath>../pom.xml</relativePath>
-        <version>7.0.4-SNAPSHOT</version>
-    </parent>
+	<parent>
+		<groupId>org.membrane-soa</groupId>
+		<artifactId>service-proxy-parent</artifactId>
+		<relativePath>../pom.xml</relativePath>
+		<version>7.0.5-SNAPSHOT</version>
+	</parent>
 
     <dependencies>
         <dependency>

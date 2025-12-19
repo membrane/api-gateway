@@ -22,7 +22,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 /**
  * Handles features that are user-configured in proxies.xml .
  */
-@MCElement(name="userFeature")
+@MCElement(name="userFeature", excludeFromFlow = true)
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(UserFeatureInterceptor.class.getName());
