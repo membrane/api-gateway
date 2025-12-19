@@ -107,8 +107,12 @@ jobs:
         run: |
           VERSION='${{ steps.get_version.outputs.VERSION }}'
           echo "Triggering GitLab pipeline for membrane-api.io with VERSION=${VERSION}"
-          curl -X POST --fail \
-            -F token="${GITLAB_TRIGGER_TOKEN}" \
-            -F ref=main \
-            -F "variables[MEMBRANE_VERSION]=${VERSION}" \
+          curl --request POST \
+            --fail \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --form token="${GITLAB_TRIGGER_TOKEN}" \
+            --form ref=main \
+            --form "variables[MEMBRANE_VERSION]=${VERSION}" \
             https://gitlab.predic8.de/api/v4/projects/prod%2Fmembrane-api.io/trigger/pipeline
+              
