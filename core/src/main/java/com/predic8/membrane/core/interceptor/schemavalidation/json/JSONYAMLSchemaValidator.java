@@ -17,32 +17,31 @@ package com.predic8.membrane.core.interceptor.schemavalidation.json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import com.networknt.schema.InputFormat;
-import com.networknt.schema.JsonNodePath;
-import com.networknt.schema.JsonSchemaFactory;
-import com.networknt.schema.ValidationMessage;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.schemavalidation.AbstractMessageValidator;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
-import com.predic8.membrane.core.resolver.Resolver;
-import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.networknt.schema.*;
+import com.networknt.schema.Error;
+import com.networknt.schema.path.NodePath;
+import com.networknt.schema.resource.SchemaLoader;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.InputStream;
+import java.nio.charset.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.*;
 
 import static com.fasterxml.jackson.core.StreamReadFeature.STRICT_DUPLICATE_DETECTION;
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 
 public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
@@ -62,9 +61,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     private final AtomicLong invalid = new AtomicLong();
     private final SpecificationVersion schemaId;
 
-
     private Map<String, String> schemaMappings = new HashMap<>();
-
 
     /**
      * JsonSchemaFactory instances are thread-safe provided its configuration is not modified.
@@ -82,7 +79,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         this.resolver = resolver;
         this.jsonSchema = jsonSchema;
         this.failureHandler = failureHandler;
-        this.schemaId = JSONSchemaVersionParser.parse( schemaVersion);
+        this.schemaId = JSONSchemaVersionParser.parse(schemaVersion);
         this.inputFormat = inputFormat;
     }
 
@@ -102,16 +99,17 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     @Override
     public void init() {
         super.init();
-        jsonSchemaFactory = JsonSchemaFactory.getInstance(schemaId, builder ->
-                builder
-                        .schemaLoaders(loaders -> loaders.add(new MembraneSchemaLoader(resolver)))
-                        .schemaMappers(mappers -> mappers.mappings(schemaMappings))
 
-               // builder.schemaMappers(schemaMappers -> schemaMappers.mapPrefix("https://www.example.org/", "classpath:/"))
-        );
+        jsonSchemaFactory = SchemaRegistry.withDefaultDialect(schemaId, b -> b.schemaLoader(SchemaLoader.builder()
+                .schemaIdResolvers(r -> r.mappings(schemaMappings))
+                .resourceLoaders(rl -> rl.values(list -> list.addFirst(new MembraneSchemaLoader(resolver))))
+                .build()));
 
         try (InputStream in = resolver.resolve(jsonSchema)) {
-            schema = jsonSchemaFactory.getSchema((jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml") ? yamlObjectMapper: jsonObjectMapper).readTree(in));
+            InputFormat schemaFormat =
+                    (jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml")) ? YAML : JSON;
+
+            schema = jsonSchemaFactory.getSchema(SchemaLocation.of(jsonSchema), in, schemaFormat);
             schema.initializeValidators();
         } catch (IOException e) {
             throw new RuntimeException("Cannot read JSON Schema from: " + jsonSchema, e);
@@ -125,8 +123,8 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     public Outcome validateMessage(Exchange exc, Flow flow, Charset ignored) throws Exception {
 
         List<Error> assertions = inputFormat == YAML ?
-            handleMultipleYAMLDocuments(exc, flow) :
-            schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
+                handleMultipleYAMLDocuments(exc, flow) :
+                schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
 
         if (assertions.isEmpty()) {
             valid.incrementAndGet();

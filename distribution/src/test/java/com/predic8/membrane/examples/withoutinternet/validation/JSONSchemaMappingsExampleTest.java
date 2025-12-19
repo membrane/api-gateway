@@ -41,7 +41,7 @@ public class JSONSchemaMappingsExampleTest extends DistributionExtractingTestcas
                 .body(readFileFromBaseDir("good2000.json"))
             .when()
                 .post("http://localhost:2000")
-                .then()
+            .then()
                 .statusCode(200);
 
             // Test bad JSON
@@ -60,13 +60,15 @@ public class JSONSchemaMappingsExampleTest extends DistributionExtractingTestcas
 
                 // error 1: required value in param
                 .body("errors.find { it.pointer == '/properties/param/$ref/required' }.key", equalTo("required"))
-                .body("errors.find { it.pointer == '/properties/param/$ref/required' }.message", containsString("/param: required property 'value' not found"))
-                .body("errors.find { it.pointer == '/properties/param/$ref/required' }.code", equalTo("1028"))
+                .body("errors.find { it.pointer == '/properties/param/$ref/required' }.keyword", equalTo("required"))
+                .body("errors.find { it.pointer == '/properties/param/$ref/required' }.message", equalTo("required property 'value' not found"))
+                .body("errors.find { it.pointer == '/properties/param/$ref/required' }.details.property", equalTo("value"))
 
                 // error 2: extra additional property
                 .body("errors.find { it.pointer == '/additionalProperties' }.key", equalTo("additionalProperties"))
-                .body("errors.find { it.pointer == '/additionalProperties' }.message", containsString("property 'extra' is not defined in the schema"))
-                .body("errors.find { it.pointer == '/additionalProperties' }.code", equalTo("1001"))
+                .body("errors.find { it.pointer == '/additionalProperties' }.keyword", equalTo("additionalProperties"))
+                .body("errors.find { it.pointer == '/additionalProperties' }.message", equalTo("property 'extra' is not defined in the schema and the schema does not allow additional properties"))
+                .body("errors.find { it.pointer == '/additionalProperties' }.details.property", equalTo("extra"))
 
                 // meta fields
                 .body("see", equalTo("https://membrane-api.io/problems/user/validation/json-schema-validator"))
@@ -82,12 +84,12 @@ public class JSONSchemaMappingsExampleTest extends DistributionExtractingTestcas
             // @formatter:off
             // Test good JSON
             given()
-                    .contentType(JSON)
-                    .body(readFileFromBaseDir("good2001.json"))
-                    .when()
-                    .post("http://localhost:2001")
-                    .then()
-                    .statusCode(200);
+                .contentType(JSON)
+                .body(readFileFromBaseDir("good2001.json"))
+            .when()
+                .post("http://localhost:2001")
+            .then()
+                .statusCode(200);
 
             // Test bad JSON
             given()
@@ -105,18 +107,20 @@ public class JSONSchemaMappingsExampleTest extends DistributionExtractingTestcas
 
                 // error 1: unexpected additional property in params[0]
                 .body("errors.find { it.pointer == '/properties/params/items/$ref/additionalProperties' }.key", equalTo("additionalProperties"))
-                .body("errors.find { it.pointer == '/properties/params/items/$ref/additionalProperties' }.message", containsString("/params/0: property 'unexpected' is not defined in the schema"))
-                .body("errors.find { it.pointer == '/properties/params/items/$ref/additionalProperties' }.code", equalTo("1001"))
+                .body("errors.find { it.pointer == '/properties/params/items/$ref/additionalProperties' }.keyword", equalTo("additionalProperties"))
+                .body("errors.find { it.pointer == '/properties/params/items/$ref/additionalProperties' }.message", equalTo("property 'unexpected' is not defined in the schema and the schema does not allow additional properties"))
+                .body("errors.find { it.pointer == '/properties/params/items/$ref/additionalProperties' }.details.property", equalTo("unexpected"))
 
                 // error 2: meta.source minLength
                 .body("errors.find { it.pointer == '/properties/meta/$ref/properties/source/minLength' }.key", equalTo("minLength"))
-                .body("errors.find { it.pointer == '/properties/meta/$ref/properties/source/minLength' }.message", containsString("/meta/source: must be at least 1 characters long"))
-                .body("errors.find { it.pointer == '/properties/meta/$ref/properties/source/minLength' }.code", equalTo("1017"))
+                .body("errors.find { it.pointer == '/properties/meta/$ref/properties/source/minLength' }.keyword", equalTo("minLength"))
+                .body("errors.find { it.pointer == '/properties/meta/$ref/properties/source/minLength' }.message", equalTo("must be at least 1 characters long"))
 
                 // error 3: meta.requestId required
                 .body("errors.find { it.pointer == '/properties/meta/$ref/required' }.key", equalTo("required"))
-                .body("errors.find { it.pointer == '/properties/meta/$ref/required' }.message", containsString("/meta: required property 'requestId' not found"))
-                .body("errors.find { it.pointer == '/properties/meta/$ref/required' }.code", equalTo("1028"))
+                .body("errors.find { it.pointer == '/properties/meta/$ref/required' }.keyword", equalTo("required"))
+                .body("errors.find { it.pointer == '/properties/meta/$ref/required' }.message", equalTo("required property 'requestId' not found"))
+                .body("errors.find { it.pointer == '/properties/meta/$ref/required' }.details.property", equalTo("requestId"))
 
                 // meta fields
                 .body("see", equalTo("https://membrane-api.io/problems/user/validation/json-schema-validator"))
@@ -124,4 +128,5 @@ public class JSONSchemaMappingsExampleTest extends DistributionExtractingTestcas
             // @formatter:on
         }
     }
+
 }
