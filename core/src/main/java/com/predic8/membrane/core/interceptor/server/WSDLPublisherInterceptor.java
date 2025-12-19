@@ -45,6 +45,8 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(WSDLPublisherInterceptor.class);
     private WebServerInterceptor webServerInterceptor;
 
+    private SOAPProxy soapProxy;
+
     public WSDLPublisherInterceptor() {
         name = "wsdl publisher";
     }
@@ -155,10 +157,11 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     }
 
     private void getWSDLFromEmbeddingSOAPProxy() {
-        if (router.getParentProxy(this) instanceof SOAPProxy sp) {
-            wsdl = sp.getWsdl();
-            setWsdl(wsdl);
+        if (soapProxy == null) {
+            throw new ConfigurationException("<wsdlPublisher> can only be used within a <soapProxy> or needs to declare <wsdlPublisher wsdl='...'>");
         }
+        wsdl = soapProxy.getWsdl();
+        setWsdl(wsdl);
     }
 
     @Override
@@ -225,6 +228,10 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     @Override
     public String getShortDescription() {
         return "Publishes the WSDL at " + wsdl + " under \"?wsdl\" (as well as its dependent schemas under similar URLs).";
+    }
+
+    public void setSoapProxy(SOAPProxy soapProxy) {
+        this.soapProxy = soapProxy;
     }
 
 }

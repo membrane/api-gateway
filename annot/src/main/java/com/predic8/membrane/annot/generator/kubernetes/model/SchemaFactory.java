@@ -33,7 +33,7 @@ public class SchemaFactory {
         return new BasicSchema(name);
     }
 
-    public static AbstractSchema from(String type) {
+    public static AbstractSchema<?> from(String type) {
         if ("object".equals(type)) {
             return object();
         }

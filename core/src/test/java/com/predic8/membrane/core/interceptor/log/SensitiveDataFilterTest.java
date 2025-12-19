@@ -43,6 +43,7 @@ class SensitiveDataFilterTest {
         header.setValue(AUTHORIZATION, "Basic dGVzdDp0ZXN0");
         header.setValue(COOKIE, "foo=bar");
         header.setValue("X-Api-Key", "abc123");
+        header.setValue("Api-Key", "abc123456789A10B11C12D13E14F15G16H17I18J19K20L21M22N23O24P25Q26R27S28T29U30V31W32X33Y34Z35");
         header.setValue(CONTENT_TYPE, contentTypeVal);
 
         Header masked = filter.getMaskedHeader(header);
@@ -50,6 +51,7 @@ class SensitiveDataFilterTest {
         assertEquals("******************", masked.getAuthorization());
         assertEquals("*******", masked.getFirstValue(COOKIE));
         assertEquals("******", masked.getFirstValue("X-Api-Key"));
+        assertEquals("******************** (total: 90)", masked.getFirstValue("Api-Key"));
         assertEquals(contentTypeVal, masked.getContentType());
     }
 

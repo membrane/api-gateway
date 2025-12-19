@@ -22,8 +22,8 @@ import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.ConfigurationException;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.servers.*;
 import jakarta.mail.internet.*;
@@ -66,10 +66,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         if (apiProxy == null) {
-            Proxy parent = router.getParentProxy(this);
-            if (parent instanceof APIProxy ap) {
-                apiProxy = ap;
-            }
+            throw new ConfigurationException("<openapiValidator> can only be used within an <api>");
         }
     }
 
@@ -320,7 +317,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private String getSwaggerProtocol(String host) {
         if (!(host.contains("http://") || host.contains("https://"))) {
-            return router.getParentProxy(this).getProtocol();
+            return apiProxy.getProtocol() + "://";
         }
         return "";
     }
@@ -339,7 +336,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private RuleKey getKey() {
-        return router.getParentProxy(this).getKey();
+        return apiProxy.getKey();
     }
 
     private String buildValidationPropertiesDescription(Map<String, Object> props) {
@@ -381,5 +378,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     @Override
     public EnumSet<Flow> getAppliedFlow() {
         return REQUEST_RESPONSE_FLOW;
+    }
+
+    public void setApiProxy(APIProxy apiProxy) {
+        this.apiProxy = apiProxy;
     }
 }

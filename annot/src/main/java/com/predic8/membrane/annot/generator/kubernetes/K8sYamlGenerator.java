@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 /**
  * Generates ClusterRoles, ClusterRoleBindings and CustomResourceDefinitions for kubernetes integration.
  */
-public class K8sYamlGenerator extends AbstractK8sGenerator {
+public class K8sYamlGenerator extends AbstractGrammar {
 
     private final List<String> crdPlurals;
 
@@ -59,7 +59,7 @@ public class K8sYamlGenerator extends AbstractK8sGenerator {
 
     private void assemble(Writer w, MainInfo main) throws IOException {
 
-        for (ElementInfo element : getTopLevelElementInfos(main)) {
+        for (ElementInfo element : getComponentElementInfos(main)) {
             writeCRD(w, element);
             appendLine(w, "---");
         }

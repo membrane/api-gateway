@@ -67,7 +67,7 @@ public class Parsers {
                             "\r\n" +
                             "	public static void registerBeanDefinitionParsers(NamespaceHandler nh) {\r\n");
                     for (ElementInfo i : main.getIis()) {
-                        if (i.getAnnotation().topLevel()) {
+                        if (i.getAnnotation().component()) {
                             bw.write("		nh.registerGlobalBeanDefinitionParser(\"" + i.getAnnotation().name() + "\", new " + i.getParserClassSimpleName() + "());\r\n");
                         } else {
                             for (ChildElementDeclarationInfo cedi : i.getUsedBy()) {

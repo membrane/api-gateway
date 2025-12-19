@@ -207,7 +207,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
 
     public static String getResponse(String city) {
         try {
-            return xml2string(createResponse(city));
+            return xmlNode2String(createResponse(city));
         } catch (Exception e) {
             return getSoapFault("Not Found", "404", "Do not know %s. Try Bonn, London or New York".formatted(city));
         }

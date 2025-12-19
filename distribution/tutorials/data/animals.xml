@@ -1,0 +1,7 @@
+<animals>
+    <animal name="Skye" species="dog" legs="4"/>
+    <animal name="Molly" species="cat" legs="4"/>
+    <animal name="Biscuit" species="rabbit" legs="4"/>
+    <animal name="Sunny" species="parrot" legs="2"/>
+    <animal name="Bubbles" species="goldfish" legs="0"/>
+</animals>

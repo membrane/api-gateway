@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * request into a new response. The response has a status code of 200.
  * Useful for testing.
  */
-@MCElement(name="echo", topLevel = false)
+@MCElement(name="echo", component = false)
 public class EchoInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(EchoInterceptor.class.getName());

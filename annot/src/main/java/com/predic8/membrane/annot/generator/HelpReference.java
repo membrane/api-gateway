@@ -51,7 +51,7 @@ public class HelpReference {
 			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
 			if (path == null)
 				return;
-			path = path.replace("%VERSION%", "6.3");
+			path = path.replace("%VERSION%", "7.0");
 
 			System.out.println("Generating Reference in location: " + path);
 
@@ -121,9 +121,10 @@ public class HelpReference {
 		xew.writeAttribute("name", ei.getAnnotation().name());
 		if (ei.getAnnotation().mixed())
 			xew.writeAttribute("mixed", "true");
-		xew.writeAttribute("topLevel", Boolean.toString(ei.getAnnotation().topLevel()));
+		xew.writeAttribute("component", Boolean.toString(ei.getAnnotation().component()));
 		xew.writeAttribute("id", ei.getId());
-		if (!ei.getAnnotation().topLevel()) {
+        xew.writeAttribute("deprecated", Boolean.toString(ei.isDeprecated()));
+		if (!ei.getAnnotation().component()) {
 			String primaryParentId = getPrimaryParentId(m, main, ei);
 			if (primaryParentId != null)
 				xew.writeAttribute("primaryParentId", primaryParentId);
@@ -173,7 +174,7 @@ public class HelpReference {
 				}
 			}
 		for (ElementInfo ei2 : possibleParents)
-			if (ei2.getAnnotation().topLevel())
+			if (ei2.getAnnotation().component())
 				return ei2.getId();
 		possibleParents.remove(ei);
 		if (possibleParents.size() > 0)
@@ -198,6 +199,7 @@ public class HelpReference {
 		xew.writeStartElement("child");
 		xew.writeAttribute("min", cei.isRequired() ? "1" : "0");
 		xew.writeAttribute("max", cei.isList() ? "unbounded" : "1");
+        xew.writeAttribute("deprecated", Boolean.toString(cei.isDeprecated()));
 
 		handleDoc(cei);
 
@@ -228,6 +230,8 @@ public class HelpReference {
 		xew.writeStartElement("attribute");
 		xew.writeAttribute("name", ai.getXMLName());
 		xew.writeAttribute("required", Boolean.toString(ai.isRequired()));
+        xew.writeAttribute("excludeFromJson", Boolean.toString(ai.excludedFromJsonSchema()));
+        xew.writeAttribute("deprecated", Boolean.toString(ai.isDeprecated()));
 		handleDoc(ai);
 		xew.writeEndElement();
 	}

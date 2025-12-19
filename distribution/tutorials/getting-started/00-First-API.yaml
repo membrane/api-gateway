@@ -1,36 +1,38 @@
-# yaml-language-server: $schema=../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
 # Membrane Tutorial: First API
 #
 # This example starts a simple API that forwards requests from your machine
 # to a public API.
 #
-# 1) Start Membrane:
-#    Open a terminal in the folder that contains this file and run:
+# 1.) Start Membrane:
+#    Open a terminal in this folder and run:
 #
 #    Linux/Mac:
-#      membrane.sh -c 00-First-API.yaml
+#      ./membrane.sh -c 00-First-API.yaml
 #    Windows:
-#      membrane.bat -c 00-First-API.yaml
+#      membrane.cmd -c 00-First-API.yaml
 #
 #    Membrane will print a log message indicating that the API is running.
 #
-# 2) Call the API:
+# 2.) Call the API:
 #    Open http://localhost:2000 in your browser or run:
 #
 #      curl http://localhost:2000
 #
 #    You should see the list of public APIs from api.predic8.de.
 #
-#  3) Stop Membrane:
+#  3.) Stop Membrane:
 #     Press Ctrl+C in the terminal.
+#
+#  4.) Continue with file 10-Logging.yaml
 #
 # Troubleshooting:
 #    Check if your machine can reach the public API:
 #
 #      curl https://api.predic8.de
 
-spec:
+api:
   port: 2000 # Listing port
   target:
     url: https://api.predic8.de

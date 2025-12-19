@@ -14,6 +14,7 @@
 package com.predic8.membrane.examples;
 
 import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.SelectPackages;
 import org.junit.platform.suite.api.Suite;
 
 /**
@@ -22,6 +23,7 @@ import org.junit.platform.suite.api.Suite;
  * Mac OS:
  * sudo kill -9 $(lsof -i -n -P | grep LISTEN | grep "2000" | tr -s " " | cut -f 2 -d " ")
  */
+@SelectPackages("com.predic8.membrane.tutorials")
 @Suite
 @SelectClasses({
     ExampleTestsWithInternet.class,

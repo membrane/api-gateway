@@ -96,7 +96,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		return Crypt.crypt(password, "$" + algo + "$" + salt);
 	}
 
-	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
+	@MCElement(name="user", component =false, id="staticUserDataProvider-user")
 	public static class User {
 		final Map<String, String> attributes = new HashMap<>();
 

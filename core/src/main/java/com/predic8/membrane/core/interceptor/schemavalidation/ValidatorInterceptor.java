@@ -33,7 +33,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
-import static com.predic8.membrane.core.util.TextUtil.linkURL;
+import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -67,6 +67,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private ApplicationContext applicationContext;
 
     private SchemaMappings schemaMappings;
+
+    private SOAPProxy soapProxy;
 
     public ValidatorInterceptor() {
         name = "validator";
@@ -125,12 +127,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     private @Nullable WSDLValidator getWsdlValidatorFromSOAPProxy() {
-        if (router.getParentProxy(this) instanceof SOAPProxy sp) {
-            wsdl = sp.getWsdl();
-            name = "soap validator";
-            return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
-        }
-        return null;
+        if(soapProxy == null) return null;
+        wsdl = soapProxy.getWsdl();
+        name = "soap validator";
+        return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
     }
 
     private @Nullable String getBaseLocation() {
@@ -342,5 +342,9 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         return schemaMappings;
     }
 
+
+    public void setSoapProxy(SOAPProxy soapProxy) {
+        this.soapProxy = soapProxy;
+    }
 
 }

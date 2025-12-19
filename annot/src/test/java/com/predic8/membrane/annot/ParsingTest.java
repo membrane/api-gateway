@@ -30,9 +30,9 @@ public class ParsingTest {
                               xsi:schemaLocation="http://www.springframework.org/schema/beans
                                         http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
                                         http://membrane-soa.org/demo/1/ http://membrane-soa.org/schemas/demo-1.xsd">
-                """ + content + """
+                %s
                 </spring:beans>
-                """;
+                """.formatted(content);
     }
 
     @Test
@@ -48,7 +48,7 @@ public class ParsingTest {
         var result = CompilerHelper.compile(sources, false);
         assertCompilerResult(true, result);
 
-        parse(result, wrapSpring("""
+        parseXML(result, wrapSpring("""
                 <demo />
                 """));
     }
@@ -84,7 +84,7 @@ public class ParsingTest {
         var result = CompilerHelper.compile(sources, false);
         assertCompilerResult(true, result);
 
-        parse(result, wrapSpring("""
+        parseXML(result, wrapSpring("""
                 <root>
                     <child1 />
                 </root>

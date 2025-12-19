@@ -14,9 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.ProxyAware;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.proxies.Proxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,5 +57,15 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
                 .component(interceptor.getDisplayName())
                 .exception(e)
                 .buildAndSetResponse(exc);
+    }
+
+    @Override
+    public void init(Router router, Proxy proxy) {
+        for (Interceptor i : interceptors) {
+            if(i instanceof ProxyAware pa) {
+                pa.setProxy(proxy);
+            }
+        }
+        init(router);
     }
 }

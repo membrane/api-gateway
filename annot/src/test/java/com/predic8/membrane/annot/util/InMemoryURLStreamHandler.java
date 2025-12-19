@@ -43,11 +43,11 @@ public class InMemoryURLStreamHandler extends URLStreamHandler {
     }
 
     @Override
-    protected URLConnection openConnection(URL u) throws IOException {
+    protected URLConnection openConnection(URL u) {
         log.debug("openConnection({})", u);
         return new URLConnection(u) {
             @Override
-            public void connect() throws IOException {
+            public void connect() {
 
             }
 

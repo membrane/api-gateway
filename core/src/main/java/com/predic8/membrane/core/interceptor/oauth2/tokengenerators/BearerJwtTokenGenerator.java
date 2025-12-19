@@ -172,7 +172,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
         this.jwk = jwk;
     }
 
-    @MCElement(name="jwk", mixed = true, topLevel = false, id="bearerJwtToken-jwk")
+    @MCElement(name="jwk", mixed = true, component = false, id="bearerJwtToken-jwk")
     public static class Jwk extends Blob {
 
     }

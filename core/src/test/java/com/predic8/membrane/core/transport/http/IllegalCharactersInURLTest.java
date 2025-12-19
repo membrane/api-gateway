@@ -79,9 +79,10 @@ class IllegalCharactersInURLTest {
     }
 
     private static void makeCallWithIllegalCharacters(int expectedStatusCode) throws Exception {
-        try (HttpClient client = new HttpClient()) {
-            assertEquals(expectedStatusCode, client.call(buildExchange())
-                    .getResponse().getStatusCode());
+        try (var client = new HttpClient()) {
+            var exc1 = buildExchange();
+            client.call(exc1);
+            assertEquals(expectedStatusCode, exc1.getResponse().getStatusCode());
         }
     }
 

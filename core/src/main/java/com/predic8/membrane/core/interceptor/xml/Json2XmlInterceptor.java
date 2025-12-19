@@ -24,7 +24,6 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.util.StringUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -32,7 +31,6 @@ import static java.nio.charset.StandardCharsets.*;
  * @description Converts JSON message bodies into XML.
  * The converter wraps the JSON document into a root element. The name of the
  * root element is configurable. If unset, JSON objects default to "root" and JSON arrays default to "array".
- *
  * This interceptor reads the JSON body, converts it into XML and updates the message
  * body and Content-Type header. The resulting XML is always UTF-8 encoded and starts with an XML prolog.
  *
@@ -84,7 +82,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
                     .internal("flow", flow)
                     .internal("body", truncateAfter(msg.getBodyAsStringDecoded(), 200))
                     .buildAndSetResponse(exchange);
-            return ABORT;
+            return Outcome.ABORT;
         }
 
         msg.getHeader().setContentType(APPLICATION_XML);

@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=../../../core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
 # Membrane Tutorial: Basic Path Routing
 #
@@ -14,7 +14,7 @@
 #       curl localhost:2000/fact
 #       curl localhost:2000/get
 
-spec:
+api:
   port: 2000
   path:
     uri: /shop # Matches requests starting with /shop
@@ -24,17 +24,19 @@ spec:
 ---
 # A line beginning with --- separates multiple API definitions
 
-spec:
+api:
   port: 2000
   path:
     uri: /fact
   target:
+    # API can fail sometimes with 503
     url: https://catfact.ninja/fact
 
 ---
 # No path: matches all remaining requests
 
-spec:
+api:
   port: 2000
   target:
+    # Can take a couple of seconds to respond
     url: https://httpbin.org

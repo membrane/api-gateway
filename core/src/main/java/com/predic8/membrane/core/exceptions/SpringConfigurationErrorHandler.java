@@ -138,7 +138,7 @@ public class SpringConfigurationErrorHandler {
                 
                 Giving up.
                 
-                Check proxies.xml file for errors.
+                Check apis.yaml or proxies.xml file for errors.
                 %n""", ce.getMessage(),reason);
     }
 

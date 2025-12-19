@@ -15,11 +15,13 @@ package com.predic8.membrane.core.interceptor.soap;
 
 import com.googlecode.jatl.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.ProxyAware;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
@@ -40,7 +42,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.regex.Pattern.*;
 
 @MCElement(name="webServiceExplorer")
-public class WebServiceExplorerInterceptor extends RESTInterceptor {
+public class WebServiceExplorerInterceptor extends RESTInterceptor implements ProxyAware {
 
 	private static final Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class.getName());
 
@@ -48,6 +50,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
 	private String wsdl;
 	private String portName;
+	private Proxy proxy;
 
 	public WebServiceExplorerInterceptor() {
 		name = "web service explorer";
@@ -132,7 +135,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
 	private Service getService(Definitions d) {
 		
-		if (getProxy() instanceof SOAPProxy sp) {
+		if (proxy instanceof SOAPProxy sp) {
 			String serviceName = sp.getServiceName();
 			if (serviceName != null) {
 				return WSDLUtil.getService(d, serviceName);
@@ -353,5 +356,10 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	@Override
 	public String getShortDescription() {
 		return "Displays a graphical UI describing the web service when accessed using GET requests.";
+	}
+
+	@Override
+	public void setProxy(Proxy proxy) {
+		this.proxy = proxy;
 	}
 }

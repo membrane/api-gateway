@@ -23,6 +23,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StaticInterceptorTest {
@@ -47,7 +48,7 @@ class StaticInterceptorTest {
 
     @Test
     void pretty() {
-        i.setPretty("true");
+        i.setPretty(TRUE);
         i.setContentType(APPLICATION_JSON);
         i.init(new Router());
 

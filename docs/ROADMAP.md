@@ -12,13 +12,36 @@
 - Correct YAML example on GitHub README
 - Rename in apis.yaml
 
+# 7.1.0
 
-# 7.0.0
+- Register JSON Schema for YAML at: https://www.schemastore.org
+- Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
+
+# 7.0.4
+
+- Remove GroovyTemplateInterceptor (Not Template Interceptor)
+  - Old an unused
+
+# 7.0.1
+
+- Adding a configuration flag to enable/disable colorized output
+- Constant or methods to centralize color formatting: ANSIColors
+- Detecting terminal support before applying colors (e.g., check if System.console() is available)
+- Central description of Membrane Languages, Cheat Sheets, links to their docs.
+- Central desciption of MEMBRANE_* environment variables
+  - Like MEMBRANE_HOME...
+  - @coderabbitai look through the code base for usages of these variables and suggest documentation
+- Restore Kubernetes Startup Thread
+- Fix `YAMLParsingTest.errorInListItemUniqueness()`
+
+
+  
 
 ## (Breaking) Interface Changes
 
+- Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
 - Remove WADLInterceptor
-- HttpClient
+- HttpClient TB (done)
   - Change Signature: public Exchange call(Exchange exc) throws Exception
     =>  public void call(Exchange exc) throws Exception {
 - Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
@@ -33,6 +56,23 @@
 - Groovy:
   - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
     - Difference to SpEL
+    - SpEL headers.foo should return comma separated list of all values.
+- Delete unneeded proxies.xml in examples CG
+- for distribution: README with Link to Github for XML-based example configurations TB
+- update schema reference to 7.0.0, integrate into ConsistentVersionNumbers.java (done)
+- improve error output on
+  - schema validation error
+  - bean setter exception
+  - port occupied (done)
+
+- header['x-unknown'] returns null instead of empty string !!!!!!!!!!!!
+- SpEL: header is now of class HeaderMap insteadof SpelHeader
+
+## Breaking Changes
+
+- YAML Configuration as default
+- Use of colors in logs
+- Removed camelCase conversion of header access in Groovy scripts instead of header.contentType use header['Content-Type']
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured
@@ -58,6 +98,13 @@
 - YAML: JsonSchemaGenerator enable description fields for editor
 
 # 6.4.0
+
+Breaking Changes:
+- JSONPath:
+  List-to-String conversion now renders full list instead of first element only. Behavior is now different from XPath that returns the first element of a nodelist but it is more consistent with most of JSONPath implementations.
+
+- Migraton Nots:
+  - Check JSONPath expressions when returning lists.
 
 - SessionManagerTest: refactor, too slow for Unittest. Move to integration tests. 
 - Refactor: Cookie maybe centralize Cookie Handling in a Cookie class

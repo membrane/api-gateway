@@ -72,7 +72,7 @@ public class Schemas {
 				
 				<xsd:simpleType name="spel_boolean">
 				    <xsd:restriction base="xsd:string">
-				        <xsd:pattern value="[01]|true|false|\\#\\{.*\\}|\\$\\{.*\\}"></xsd:pattern>
+				        <xsd:pattern value="[01]|true|false|yes|no|\\#\\{.*\\}|\\$\\{.*\\}"></xsd:pattern>
 				    </xsd:restriction>
 				</xsd:simpleType>
 				
@@ -91,7 +91,7 @@ public class Schemas {
 
 	private void assembleElementDeclaration(Writer w, Model m, MainInfo main, ElementInfo i) throws ProcessingException, IOException {
 		String footer;
-		if (i.getAnnotation().topLevel()) {
+		if (i.getAnnotation().component()) {
 			w.append("<xsd:element name=\"").append(i.getAnnotation().name()).append("\">\r\n");
 			assembleDocumentation(w, i);
 			w.append("<xsd:complexType>\r\n");
@@ -126,7 +126,7 @@ public class Schemas {
 			w.append("<xsd:choice" + (cei.isRequired() ? " minOccurs=\"1\"" : " minOccurs=\"0\"") + (cei.isList() ? " maxOccurs=\"unbounded\"" : "") + ">\r\n");
 			assembleDocumentation(w, cei);
 			for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-				if (ei.getAnnotation().topLevel())
+				if (ei.getAnnotation().component())
 					w.append("<xsd:element ref=\"" + ei.getAnnotation().name() + "\">\r\n");
 				else
 					w.append("<xsd:element name=\"" + ei.getAnnotation().name() + "\" type=\"" + ei.getXSDTypeName(m) + "\">\r\n");

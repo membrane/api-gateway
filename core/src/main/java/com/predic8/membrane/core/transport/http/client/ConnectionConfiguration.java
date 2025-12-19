@@ -35,7 +35,7 @@ import java.util.Objects;
  *
  * @topic 4. Transports and Clients
  */
-@MCElement(name="connection", topLevel=false)
+@MCElement(name="connection", component =false)
 public class ConnectionConfiguration {
 
 	private long keepAliveTimeout = 4000;

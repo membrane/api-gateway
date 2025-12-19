@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name="github", topLevel=false)
+@MCElement(name="github", component =false)
 public class GithubAuthorizationService extends AuthorizationService {
     @Override
     public void init() {

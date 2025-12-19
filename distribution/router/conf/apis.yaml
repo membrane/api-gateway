@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.1.json
+#
+# How to start this configuration:
+#   cd membrane-api-gateway...
+#   ./membrane.sh (or membrane.cmd on Windows)
+#
+# Helpful resources:
+#   - Tutorials: tutorials/getting-started
+#   - Examples: examples/*
+#   - Free API Gateway Book: https://www.membrane-api.io/api-gateway-ebook.html
+#   - Documentation: https://www.membrane-api.io/docs/
+#
+# Troubleshooting:
+#   This configuration requires direct Internet access.
+#   If you are behind a corporate proxy, use examples/offline.
+
+---
+# Forward requests starting with /fact
+# Try: curl http://localhost:2000/fact
+api:
+  port: 2000
+  path:
+    uri: /fact
+  target:
+    url: https://catfact.ninja/fact
+
+---
+# Deploy an API from OpenAPI
+# API docs: http://localhost:2000/api-docs
+# Try: curl http://localhost:2000/shop/v2/products
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: openapi/fruitshop-v2-2-0.oas.yml
+        validateRequests: true
+
+---
+# Admin Web Console
+# http://localhost:9000  (login: admin / admin)
+api:
+  port: 9000
+  flow:
+    # Protect the Admin Console using authentication (Basic, OAuth2, ACL, or none).
+    - basicAuthentication:
+        users:
+          - user:
+              username: admin
+              password: admin
+    - adminConsole: {}

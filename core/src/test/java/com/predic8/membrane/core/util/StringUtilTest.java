@@ -16,12 +16,27 @@ package com.predic8.membrane.core.util;
 
 import org.junit.jupiter.api.*;
 
+import java.util.*;
+
 import static com.predic8.membrane.core.util.StringUtil.*;
+import static com.predic8.membrane.core.util.StringUtil.splitByComma;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StringUtilTest {
 
     private static final String poem = "To the greene forest so pleasant and faire";
+
+    @Test
+    void splitByCommaTest() {
+        assertEquals(List.of("foo"), splitByComma("foo"));
+        assertEquals(List.of("foo","","baz"), splitByComma("foo,,baz"));
+        assertEquals(List.of("foo","bar","baz"), splitByComma("foo,bar,baz"));
+        assertEquals(List.of(), splitByComma(null));
+        assertEquals(List.of(), splitByComma(""));
+        assertEquals(List.of(), splitByComma(","));
+        assertEquals(List.of("foo", "bar"), splitByComma("foo, bar"));
+        assertEquals(List.of("foo", "bar"), splitByComma("foo    ,    bar"));
+    }
 
     @Nested
     class TruncateAfter {

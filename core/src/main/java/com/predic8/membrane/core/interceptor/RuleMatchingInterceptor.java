@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @SuppressWarnings("unused")
-@MCElement(name="ruleMatching")
+@MCElement(name="ruleMatching", excludeFromFlow = true)
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(RuleMatchingInterceptor.class.getName());
@@ -55,8 +55,6 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
                     .title("Invalid path or method")
                     .detail("The requested path or HTTP method is not supported.")
 					.buildAndSetResponse(exc);
-//                    .internal("method", exc.getRequest().getMethod())
-//                    .internal("uri", exc.getRequest().getUri()).buildAndSetResponse(exc);
 			return ABORT;
 		}
 

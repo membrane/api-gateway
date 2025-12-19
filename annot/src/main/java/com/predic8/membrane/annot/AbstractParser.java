@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.RuntimeBeanNameReference;
@@ -36,10 +38,11 @@ import static java.util.List.of;
 
 public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser {
 
-	private static final String MEMBRANE_BEANS_NAMESPACE = "http://membrane-soa.org/proxies/1/";
+    private static final Logger log = LoggerFactory.getLogger(AbstractParser.class);
+
 	private static final String MEMBRANE_PROXIES_NAMESPACE = "http://membrane-soa.org/proxies/1/";
 
-	private boolean inlined = false;
+    private boolean inlined = false;
 
 	public BeanDefinition parse(Element e) {
 		inlined = true;
@@ -112,6 +115,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		builder.addPropertyValue(prop, attrs);
 	}
 
+    // TODO @Tobias can that be deleted?
 	protected void parseElementToProperty(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, String property) {
 		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
 
@@ -143,25 +147,27 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 
 		try {
 			Object o = delegate.parsePropertySubElement(ele, builder.getBeanDefinition());
-
-			String clazz = null;
-			if (o instanceof BeanDefinitionHolder) {
-				clazz = ((BeanDefinitionHolder) o).getBeanDefinition().getBeanClassName();
-			} else if (o instanceof RuntimeBeanReference) {
-				clazz = parserContext.getRegistry().getBeanDefinition(((RuntimeBeanReference) o).getBeanName()).getBeanClassName();
-			} else if (o instanceof RuntimeBeanNameReference) {
-				clazz = parserContext.getRegistry().getBeanDefinition(((RuntimeBeanNameReference) o).getBeanName()).getBeanClassName();
-			} else {
-				parserContext.getReaderContext().error("Don't know how to get bean class from " + o.getClass(), ele);
-			}
-
-			handleChildObject(ele, parserContext, builder, Class.forName(clazz), o);
+            handleChildObject(ele, parserContext, builder, Thread.currentThread().getContextClassLoader().loadClass(getBeanClassNameFromObject(ele, parserContext, o)), o);
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	protected int incrementCounter(BeanDefinitionBuilder builder, String counter) {
+    private static @Nullable String getBeanClassNameFromObject(Element ele, ParserContext parserContext, Object o) {
+        return switch (o) {
+            case BeanDefinitionHolder beanDefinitionHolder -> beanDefinitionHolder.getBeanDefinition().getBeanClassName();
+            case RuntimeBeanReference runtimeBeanReference -> parserContext.getRegistry().getBeanDefinition(runtimeBeanReference.getBeanName()).getBeanClassName();
+            case RuntimeBeanNameReference runtimeBeanNameReference -> parserContext.getRegistry().getBeanDefinition(runtimeBeanNameReference.getBeanName()).getBeanClassName();
+            default -> {
+                var msg = "Don't know how to get bean class from " + o.getClass();
+                log.warn(msg);
+                parserContext.getReaderContext().error(msg, ele);
+                throw new RuntimeException(msg);
+            }
+        };
+    }
+
+    protected int incrementCounter(BeanDefinitionBuilder builder, String counter) {
 		Integer i = (Integer) builder.getRawBeanDefinition().getAttribute(counter);
 		if (i == null)
 			i = 0;
@@ -169,6 +175,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		return i;
 	}
 
+    // TODO needed?
 	protected boolean isMembraneNamespace(String namespace) {
 		return MEMBRANE_PROXIES_NAMESPACE.equals(namespace);
 	}

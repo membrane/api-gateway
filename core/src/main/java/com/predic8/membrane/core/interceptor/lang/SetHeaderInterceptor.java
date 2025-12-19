@@ -16,6 +16,13 @@ package com.predic8.membrane.core.interceptor.lang;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 
+/**
+ * @description Set HTTP header on the current message.
+ * @yaml
+ * setHeader:
+ *   name: X-Foo
+ *   value: 42
+ */
 @MCElement(name = "setHeader")
 public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 

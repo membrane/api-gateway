@@ -20,14 +20,14 @@ import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactor
 
 public class SchemaArray extends AbstractSchema<SchemaArray> {
 
-    AbstractSchema items;
+    AbstractSchema<?> items;
 
     SchemaArray(String name) {
         super(name);
         type(ARRAY);
     }
 
-    public SchemaArray items(AbstractSchema items) {
+    public SchemaArray items(AbstractSchema<?> items) {
         this.items = items;
         return this;
     }

@@ -64,7 +64,8 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
     }
 
     private boolean callExchangeAndCheckFor200(Exchange e) throws Exception {
-        return client.call(e).getResponse().getStatusCode() == 200;
+        client.call(e);
+        return e.getResponse().getStatusCode() == 200;
     }
 
     private void setResponseToBadRequest(Exchange exc) {

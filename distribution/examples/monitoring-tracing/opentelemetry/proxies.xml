@@ -40,10 +40,9 @@
                      in the exchange.                   -->
                 <groovy>
                     println "Request headers:"
-                    header.allHeaderFields.each {
-                        print it
+                    message.header.allHeaderFields.each {
+                        println it
                     }
-                    CONTINUE
                 </groovy>
             </request>
             <response>

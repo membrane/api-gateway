@@ -17,7 +17,10 @@ package com.predic8.membrane.core.interceptor.schemavalidation.json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import com.networknt.schema.*;
+import com.networknt.schema.InputFormat;
+import com.networknt.schema.JsonNodePath;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.ValidationMessage;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -44,8 +47,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private static final Logger log = LoggerFactory.getLogger(JSONYAMLSchemaValidator.class);
+
     private final YAMLFactory factory = YAMLFactory.builder().enable(STRICT_DUPLICATE_DETECTION).build();
-    private final ObjectMapper objectMapper = new ObjectMapper(factory);
+    private final ObjectMapper yamlObjectMapper = new ObjectMapper(factory);
+    private final ObjectMapper jsonObjectMapper = new ObjectMapper();
 
     public static final String SCHEMA_VERSION_2020_12 = "2020-12";
 
@@ -55,7 +60,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private final AtomicLong valid = new AtomicLong();
     private final AtomicLong invalid = new AtomicLong();
-    private final SpecVersion.VersionFlag schemaId;
+    private final SpecificationVersion schemaId;
 
 
     private Map<String, String> schemaMappings = new HashMap<>();
@@ -64,14 +69,12 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     /**
      * JsonSchemaFactory instances are thread-safe provided its configuration is not modified.
      */
-    JsonSchemaFactory jsonSchemaFactory;
-
-    SchemaValidatorsConfig config;
+    SchemaRegistry jsonSchemaFactory;
 
     /**
      * JsonSchema instances are thread-safe provided its configuration is not modified.
      */
-    JsonSchema schema;
+    Schema schema;
 
     InputFormat inputFormat;
 
@@ -107,17 +110,12 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
                // builder.schemaMappers(schemaMappers -> schemaMappers.mapPrefix("https://www.example.org/", "classpath:/"))
         );
 
-        SchemaValidatorsConfig.Builder builder = SchemaValidatorsConfig.builder();
-        // By default the JDK regular expression implementation which is not ECMA 262 compliant is used
-        // Note that setting this requires including optional dependencies
-        // builder.regularExpressionFactory(GraalJSRegularExpressionFactory.getInstance());
-        // builder.regularExpressionFactory(JoniRegularExpressionFactory.getInstance());
-        config = builder.build();
-
-        // If the schema data does not specify an $id the absolute IRI of the schema location will be used as the $id.
-        schema=  jsonSchemaFactory.getSchema(SchemaLocation.of( jsonSchema), config);
-        schema.initializeValidators();
-
+        try (InputStream in = resolver.resolve(jsonSchema)) {
+            schema = jsonSchemaFactory.getSchema((jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml") ? yamlObjectMapper: jsonObjectMapper).readTree(in));
+            schema.initializeValidators();
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot read JSON Schema from: " + jsonSchema, e);
+        }
     }
 
     public Outcome validateMessage(Exchange exc, Flow flow) throws Exception {
@@ -126,7 +124,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     public Outcome validateMessage(Exchange exc, Flow flow, Charset ignored) throws Exception {
 
-        Set<ValidationMessage> assertions = inputFormat == YAML ?
+        List<Error> assertions = inputFormat == YAML ?
             handleMultipleYAMLDocuments(exc, flow) :
             schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
 
@@ -157,36 +155,34 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
      * If you call schema.validate(..) on a multi-document YAML, only the first document is validated. Therefore, we have
      * to loop here ourselves.
      */
-    private @NotNull Set<ValidationMessage> handleMultipleYAMLDocuments(Exchange exc, Flow flow) throws IOException {
-        Set<ValidationMessage> assertions;
-        assertions = new LinkedHashSet<>();
+    private @NotNull List<Error> handleMultipleYAMLDocuments(Exchange exc, Flow flow) throws IOException {
+        List<Error> assertions;
+        assertions = new ArrayList<>();
         YAMLParser parser = factory.createParser(exc.getMessage(flow).getBodyAsStreamDecoded());
         while (!parser.isClosed()) {
-            assertions.addAll(schema.validate(objectMapper.readTree(parser)));
+            assertions.addAll(schema.validate(yamlObjectMapper.readTree(parser)));
             parser.nextToken();
         }
         return assertions;
     }
 
-    private @NotNull List<Map<String, Object>> getMapForProblemDetails(Set<ValidationMessage> assertions) {
+    private @NotNull List<Map<String, Object>> getMapForProblemDetails(List<Error> assertions) {
         return assertions.stream().map(this::validationMessageToProblemDetailsMap).toList();
     }
 
-    private @NotNull Map<String, Object> validationMessageToProblemDetailsMap(ValidationMessage vm) {
+    private @NotNull Map<String, Object> validationMessageToProblemDetailsMap(Error vm) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("message", vm.getMessage());
-        m.put("code", vm.getCode());
         m.put("key", vm.getMessageKey());
         if (vm.getDetails() != null)
             m.put("details", vm.getDetails());
-        m.put("type", vm.getType());
-        m.put("error", vm.getError());
+        m.put("keyword", vm.getKeyword());
         m.put("pointer", getPointer(vm.getEvaluationPath()));
         m.put("node", vm.getInstanceNode());
         return m;
     }
 
-    private String getPointer(JsonNodePath evaluationPath) {
+    private String getPointer(NodePath evaluationPath) {
         if (evaluationPath == null || evaluationPath.getNameCount() == 0) {
             return "";
         }

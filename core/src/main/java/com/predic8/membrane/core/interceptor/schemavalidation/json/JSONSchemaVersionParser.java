@@ -18,23 +18,23 @@ import com.networknt.schema.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 
-import static com.networknt.schema.SchemaId.*;
+import static com.networknt.schema.SpecificationVersion.*;
 
 public class JSONSchemaVersionParser {
 
-    public static SpecVersion.VersionFlag parse(String version) {
-        return SpecVersion.VersionFlag.fromId(aliasToSpecId(version)).get();
+    public static SpecificationVersion parse(String version) {
+        return aliasToSpecId(version);
     }
 
-    static @NotNull String aliasToSpecId(String alias) {
+    static @NotNull SpecificationVersion aliasToSpecId(String alias) {
         if (alias == null)
             throw new ConfigurationException("Unknown JSON Schema version: " + alias);
         return switch (alias) {
-            case "04","draft-04" -> V4;
-            case "06","draft-06" -> V6;
-            case "07","draft-07" -> V7;
-            case "2019-09" -> V201909;
-            case "2020-12" -> V202012;
+            case "04","draft-04" -> DRAFT_4;
+            case "06","draft-06" -> DRAFT_6;
+            case "07","draft-07" -> DRAFT_7;
+            case "2019-09" -> DRAFT_2019_09;
+            case "2020-12" -> DRAFT_2020_12;
             default -> throw new ConfigurationException("Unknown JSON Schema version: " + alias);
         };
     }
