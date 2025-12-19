@@ -135,8 +135,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     private Timer reinitializer;
     private boolean asynchronousInitialization = false;
 
-    // not synchronized, since only modified during initialization
-    private HotDeployer hotDeployer;
+    /**
+     * HotDeployer for changes on the XML configuration file. Does not cover YAML.
+     * Not synchronized, since only modified during initialization
+     * Initialized with NullHotDeployer to avoid NPEs
+     */
+    private HotDeployer hotDeployer = new NullHotDeployer();
 
     public Router() {
         ruleManager.setRouter(this);

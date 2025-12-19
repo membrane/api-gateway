@@ -4,11 +4,15 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
 import org.slf4j.*;
 
+import javax.annotation.concurrent.*;
+
 public class DefaultHotDeployer implements HotDeployer {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultHotDeployer.class.getName());
 
+    @GuardedBy("this")
     private HotDeploymentThread hdt;
+
     private final Router router;
 
     public DefaultHotDeployer(Router router) {
@@ -37,13 +41,14 @@ public class DefaultHotDeployer implements HotDeployer {
 
     @Override
     public void stop() {
-        if (hdt == null)
-            return;
+        synchronized (this) {
+            if (hdt == null)
+                return;
 
-        router.stopAutoReinitializer();
-        hdt.stopASAP();
-        hdt = null;
-
+            router.stopAutoReinitializer();
+            hdt.stopASAP();
+            hdt = null;
+        }
     }
 
     @Override
