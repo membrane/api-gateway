@@ -13,24 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.generator.kubernetes.*;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.predic8.membrane.annot.ProcessingException;
+import com.predic8.membrane.annot.generator.kubernetes.AbstractGrammar;
 import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.*;
-import com.predic8.membrane.annot.model.doc.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.annot.model.doc.Doc;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.processing.*;
-import javax.lang.model.element.*;
-import javax.tools.*;
-import java.io.*;
-import java.util.*;
-import java.util.stream.*;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.tools.FileObject;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
-import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.*;
-import static javax.tools.StandardLocation.*;
+import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
  * TODOs:
@@ -93,6 +98,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         schema.property(ref(name).ref(refName));
 
         return object()
+                .title(name)
                 .additionalProperties(false)
                 .property(ref(name)
                         .ref(refName)
@@ -251,6 +257,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 continue;
 
             sos.add(object()
+                    .title(ei.getAnnotation().name())
                     .additionalProperties(false)
                     .property(ref(ei.getAnnotation().name())
                             .ref("#/$defs/" + ei.getXSDTypeName(m))
@@ -260,6 +267,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         // flow:
         //   - $ref: ...
         sos.add(object()
+                .title("componentRef")
                 .additionalProperties(false)
                 .property( string("$ref").required(true)));
         return sos;
