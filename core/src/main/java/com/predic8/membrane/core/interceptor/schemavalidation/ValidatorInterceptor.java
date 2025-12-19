@@ -107,7 +107,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         }
         if (jsonSchema != null) {
             return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
-                setSchemaMappings(schemaMappings.getSchemaMap());
+                if(schemaMappings != null) setSchemaMappings(schemaMappings.getSchemaMap());
             }};
         }
         if (schematron != null) {
