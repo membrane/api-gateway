@@ -13,19 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.spel.*;
-
 import org.slf4j.*;
 
 import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+import static com.predic8.membrane.core.lang.ExchangeExpression.*;
+import static com.predic8.membrane.core.lang.spel.DollarTemplateParserContext.*;
 
 public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
@@ -41,7 +40,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression) {
         // SpEL comes with its own templating
         if (language == SPEL) {
-            return new SpELExchangeExpression(expression, new SpELExchangeExpression.DollarBracketTemplateParserContext());
+            return new SpELExchangeExpression(expression, DOLLAR_TEMPLATE_PARSER_CONTEXT);
         }
         return new TemplateExchangeExpression(interceptor, language, expression);
     }
