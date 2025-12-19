@@ -45,21 +45,6 @@
             <artifactId>service-proxy-annot</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-layout-template-json</artifactId>
-            <version>${log4j.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
             <groupId>commons-cli</groupId>
             <artifactId>commons-cli</artifactId>
         </dependency>
@@ -205,7 +190,95 @@
             <version>24.1.2</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.swagger.parser.v3</groupId>
+            <artifactId>swagger-parser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>4.9.8</version>
+        </dependency>
+        <!-- fallback parser for documents based on older Swagger standards -->
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-parser</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bitbucket.b_c</groupId>
+            <artifactId>jose4j</artifactId>
+            <version>0.9.6</version>
+        </dependency>
+        <dependency>
+            <groupId>fi.solita.clamav</groupId>
+            <artifactId>clamav-client</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twitter</groupId>
+            <artifactId>hpack</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-templates</artifactId>
+        </dependency>
 
+        <!-- ntlm support-->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!--Oppen Telemetry -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-resources</artifactId>
+            <version>2.18.1-alpha</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+            <version>10.17.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>5.6.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+
+        <!-- Test dependencies -->
         <!-- GraalVM Javascript Engine, for tests only. Will not be shipped! -->
         <dependency>
             <groupId>org.graalvm.js</groupId>
@@ -214,7 +287,6 @@
             <scope>test</scope>
             <type>pom</type>
         </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -253,10 +325,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.xmlunit</groupId>
             <artifactId>xmlunit-core</artifactId>
             <scope>test</scope>
@@ -272,84 +340,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.swagger.parser.v3</groupId>
-            <artifactId>swagger-parser</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-            <version>4.9.8</version>
-        </dependency>
-        <!-- fallback parser for documents based on older Swagger standards -->
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-parser</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk18on</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bitbucket.b_c</groupId>
-            <artifactId>jose4j</artifactId>
-            <version>0.9.6</version>
-        </dependency>
-        <dependency>
-            <groupId>fi.solita.clamav</groupId>
-            <artifactId>clamav-client</artifactId>
-            <version>1.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.twitter</groupId>
-            <artifactId>hpack</artifactId>
-            <version>1.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.groovy</groupId>
-            <artifactId>groovy-templates</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-broker</artifactId>
             <version>5.18.6</version>
             <scope>test</scope>
         </dependency>
-
-        <!-- ntlm support-->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!--Oppen Telemetry -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry.instrumentation</groupId>
-            <artifactId>opentelemetry-resources</artifactId>
-            <version>2.18.1-alpha</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains</groupId>
-            <artifactId>annotations</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
+          <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
@@ -361,20 +357,38 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.derby</groupId>
-            <artifactId>derby</artifactId>
-            <version>10.17.1.0</version>
-        </dependency>
-        <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
             <version>1.3.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver-sync</artifactId>
-            <version>5.6.1</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <scope>provided</scope>
+            <version>${slf4j.version}</version>
+        </dependency>
+
+        <!-- The Logging libs from distribution are used to package with Membrane -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-layout-template-json</artifactId>
+            <version>${log4j.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

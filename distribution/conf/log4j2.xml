@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+           <!--
+           To turn off the colors in the log, set the environment variable:
+           export MEMBRANE_DISABLE_TERM_COLORS=true
+
+           Accepted values (case-insensitive): true, false
+           -->
+            <PatternLayout charset="UTF-8"
+                           disableAnsi="${sys:membrane.disable.term.colors:-false}"
+                           pattern="%d{ABSOLUTE} %highlight{%5p}{ERROR=red, WARN=yellow, INFO=cyan} %tid %tn %c{1}:%L %X - %m%n"/>
+        </Console>
+        <RollingFile name="FILE" fileName="membrane.log" filePattern="membrane.log.%i">
+            <PatternLayout pattern="%d{ABSOLUTE} %5p %tid %tn %c{1}:%L %X - %m%n" />
+            <Policies>
+                <SizeBasedTriggeringPolicy size="100 MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10" />
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <Logger name="com.predic8" level="info" additivity="false">
+            <AppenderRef ref="STDOUT" />
+            <AppenderRef ref="FILE" />
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="STDOUT" />
+        </Root>
+    </Loggers>
+</Configuration>
