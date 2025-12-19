@@ -201,8 +201,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
             getRuleManager().openPorts();
 
             try {
-                if (hotDeployer == null)
-                    hotDeployer = new DefaultHotDeployer(this);
+                hotDeployer = new DefaultHotDeployer(this);
                 hotDeployer.start();
             } catch (Exception e) {
                 shutdown();
@@ -464,13 +463,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     }
 
     /**
-     * @param hotDeploy If true the hot deploy feature is activated
+     * @param hotDeploy If true the hot deploy feature will be activated during init of the Router.
      * @description <p>Whether changes to the router's configuration file should automatically trigger a restart.
      * </p>
      * <p>
      * Monitoring the router's configuration file <i>proxies.xml</i> is only possible, if the router
      * is created by a Spring Application Context which supports monitoring.
      * </p>
+     * <p>Calling this method does not start or stop the hot deploy feature. It is just for configuration before init is called.</p>
      * @default true
      */
     @MCAttribute
