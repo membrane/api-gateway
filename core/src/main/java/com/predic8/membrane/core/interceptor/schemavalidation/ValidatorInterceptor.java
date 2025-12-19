@@ -66,6 +66,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private ResolverMap resourceResolver;
     private ApplicationContext applicationContext;
 
+    private SchemaMappings schemaMappings;
+
     public ValidatorInterceptor() {
         name = "validator";
     }
@@ -92,15 +94,23 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
     private MessageValidator getMessageValidator() throws Exception {
         if (wsdl != null) {
+            if (schemaMappings != null)
+                logIgnoringRefSchemas();
             return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
         }
         if (schema != null) {
+            if (schemaMappings != null)
+                logIgnoringRefSchemas();
             return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
-            return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion);
+            return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
+                setSchemaMappings(schemaMappings.getSchemaMap());
+            }};
         }
         if (schematron != null) {
+            if (schemaMappings != null)
+                logIgnoringRefSchemas();
             return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
         }
 
@@ -108,6 +118,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if (validator != null) return validator;
 
         throw new RuntimeException("Validator is not configured properly. <validator> must have an attribute specifying the validator.");
+    }
+
+    private static void logIgnoringRefSchemas() {
+        log.warn("Ignoring 'referenceSchemas': schema references are only supported for JSON/YAML validators");
     }
 
     private @Nullable WSDLValidator getWsdlValidatorFromSOAPProxy() {
@@ -318,5 +332,15 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             return (message, exc) -> log.info("Validation failure: {}", message);
         throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
     }
+
+    @MCChildElement
+    public void setReferenceSchemas(SchemaMappings schemaMappings) {
+        this.schemaMappings = schemaMappings;
+    }
+
+    public SchemaMappings getReferenceSchemas() {
+        return schemaMappings;
+    }
+
 
 }
