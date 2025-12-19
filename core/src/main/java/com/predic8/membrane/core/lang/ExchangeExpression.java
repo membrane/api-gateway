@@ -61,7 +61,7 @@ public interface ExchangeExpression {
     static ExchangeExpression expression(Interceptor interceptor, Language language, String expression) {
         return switch (language) {
             case GROOVY -> new GroovyExchangeExpression(interceptor, expression);
-            case SPEL -> new SpELExchangeExpression(expression,null);
+            case SPEL -> new SpELExchangeExpression(expression,null); // parserContext is null on purpose ${} or #{} are not needed here
             case XPATH -> new XPathExchangeExpression(interceptor,expression);
             case JSONPATH -> new JsonpathExchangeExpression(expression);
         };

@@ -19,7 +19,7 @@ import com.predic8.membrane.annot.MCTextContent;
 /**
  * @description Contains a scope for use in <secret value="...">...</secret> elements.
  */
-@MCElement(name = "scope", topLevel = false, mixed = true)
+@MCElement(name = "scope", component = false, mixed = true)
 public class Scope {
 
     private String value;

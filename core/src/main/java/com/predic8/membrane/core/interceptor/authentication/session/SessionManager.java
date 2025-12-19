@@ -39,7 +39,7 @@ import java.util.*;
  *              timeout is 5 minutes.
  *              </p>
  */
-@MCElement(name="sessionManager", topLevel=false)
+@MCElement(name="sessionManager", component =false)
 public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;
 	private long timeout;

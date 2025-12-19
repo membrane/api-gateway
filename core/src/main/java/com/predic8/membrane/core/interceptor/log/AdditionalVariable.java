@@ -23,7 +23,7 @@ import org.springframework.expression.spel.SpelCompilerMode;
 import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 
-@MCElement(name = "additionalVariable", topLevel = false, id = "accessLog-scope")
+@MCElement(name = "additionalVariable", component = false, id = "accessLog-scope")
 public class AdditionalVariable {
 
     private final SpelParserConfiguration spelConfig = new SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, this.getClass().getClassLoader());

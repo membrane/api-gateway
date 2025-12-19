@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * @description Contains api keys and scopes.
  */
-@MCElement(name = "secret", topLevel = false)
+@MCElement(name = "secret", component = false)
 public class Key {
 
     private final List<Scope> scopes = new ArrayList<>();

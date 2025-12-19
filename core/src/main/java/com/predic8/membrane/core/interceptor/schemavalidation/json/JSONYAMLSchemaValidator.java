@@ -14,15 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation.json;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.networknt.schema.path.NodePath;
-import com.networknt.schema.serialization.YamlMapperFactory;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -35,9 +32,6 @@ import org.slf4j.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
