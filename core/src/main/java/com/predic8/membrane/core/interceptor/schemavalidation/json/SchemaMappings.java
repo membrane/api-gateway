@@ -10,8 +10,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@MCElement(name = "referenceSchemas")
-public class ReferenceSchemas {
+@MCElement(name = "schemaMappings")
+public class SchemaMappings {
 
     private List<Schema> schemas = new ArrayList<>();
 
@@ -36,8 +36,6 @@ public class ReferenceSchemas {
         private String id;
 
         private String location;
-
-        public Schema() {}
 
         @MCAttribute
         public void setId(String id) {

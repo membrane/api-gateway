@@ -66,7 +66,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private ResolverMap resourceResolver;
     private ApplicationContext applicationContext;
 
-    private ReferenceSchemas referenceSchemas;
+    private SchemaMappings schemaMappings;
 
     public ValidatorInterceptor() {
         name = "validator";
@@ -94,22 +94,22 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
     private MessageValidator getMessageValidator() throws Exception {
         if (wsdl != null) {
-            if (referenceSchemas != null)
+            if (schemaMappings != null)
                 logIgnoringRefSchemas();
             return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
         }
         if (schema != null) {
-            if (referenceSchemas != null)
+            if (schemaMappings != null)
                 logIgnoringRefSchemas();
             return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
             return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
-                setSchemaMappings(referenceSchemas.getSchemaMap());
+                setSchemaMappings(schemaMappings.getSchemaMap());
             }};
         }
         if (schematron != null) {
-            if (referenceSchemas != null)
+            if (schemaMappings != null)
                 logIgnoringRefSchemas();
             return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
         }
@@ -334,12 +334,12 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     @MCChildElement
-    public void setReferenceSchemas(ReferenceSchemas referenceSchemas) {
-        this.referenceSchemas = referenceSchemas;
+    public void setReferenceSchemas(SchemaMappings schemaMappings) {
+        this.schemaMappings = schemaMappings;
     }
 
-    public ReferenceSchemas getReferenceSchemas() {
-        return referenceSchemas;
+    public SchemaMappings getReferenceSchemas() {
+        return schemaMappings;
     }
 
 

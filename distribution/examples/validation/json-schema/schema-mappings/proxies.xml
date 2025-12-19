@@ -9,9 +9,9 @@
         <api port="2000">
             <request>
                 <validator jsonSchema="schemas/schema2000.json">
-                    <referenceSchemas>
+                    <schemaMappings>
                         <schema id="urn:app:base_parameter_def" location="schemas/base-param.json"/>
-                    </referenceSchemas>
+                    </schemaMappings>
                 </validator>
             </request>
             <target host="localhost" port="2002"/>
@@ -20,10 +20,10 @@
         <api port="2001">
             <request>
                 <validator jsonSchema="schemas/schema2001.json">
-                    <referenceSchemas>
+                    <schemaMappings>
                         <schema id="urn:app:base_parameter_def" location="schemas/base-param.json"/>
                         <schema id="urn:app:meta_def" location="schemas/meta.json"/>
-                    </referenceSchemas>
+                    </schemaMappings>
                 </validator>
             </request>
             <target host="localhost" port="2002"/>

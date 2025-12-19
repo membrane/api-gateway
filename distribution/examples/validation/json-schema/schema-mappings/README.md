@@ -1,7 +1,7 @@
 # Validation - JSON Schema with Schema Mappings
 
 This sample explains how to set up and use the `validator` plugin with JSON Schemas that reference external schemas 
-by `$ref` URN/ID, and how to map those references to local files via `referenceSchemas`.
+by `$ref` URN/ID, and how to map those references to local files via `schemaMappings`.
 
 ## Running the Example
 
@@ -35,10 +35,10 @@ The root schemas contain `$ref` references to URN/IDs, for example:
 To let Membrane resolve these URNs, you map them in the validator using:
 
 ```xml
-<referenceSchemas>
+<schemaMappings>
   <schema id="urn:app:base_parameter_def" location="schemas/base-parameter.json"/>
   <schema id="urn:app:meta_def" location="schemas/meta.json"/>
-</referenceSchemas>
+</schemaMappings>
 ````
 
 Only if validation succeeds, the request is forwarded to the backend (port 2002).

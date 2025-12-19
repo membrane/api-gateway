@@ -23,7 +23,7 @@ import static io.restassured.http.ContentType.*;
 import static java.io.File.*;
 import static org.hamcrest.Matchers.*;
 
-public class JSONSchemaReferenceMappingsExampleTest extends DistributionExtractingTestcase {
+public class JSONSchemaMappingsExampleTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
