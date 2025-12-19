@@ -41,7 +41,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * object. The dispatching interceptor needs the service proxy to
  * get information about the target.
  */
-@MCElement(name = "dispatching")
+@MCElement(name = "dispatching", excludeFromFlow = true)
 public class DispatchingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());

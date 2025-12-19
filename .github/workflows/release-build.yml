@@ -106,6 +106,7 @@ jobs:
           GITLAB_TRIGGER_TOKEN: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
         run: |
           VERSION='${{ steps.get_version.outputs.VERSION }}'
+          echo "Triggering GitLab pipeline for membrane-api.io with VERSION=${VERSION}"
           curl -X POST --fail \
             -F token="${GITLAB_TRIGGER_TOKEN}" \
             -F ref=main \

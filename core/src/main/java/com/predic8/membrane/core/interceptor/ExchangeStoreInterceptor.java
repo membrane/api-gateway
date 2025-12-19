@@ -36,7 +36,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  *              might both be required for the exchange to be saved.
  * @topic 4. Monitoring, Logging and Statistics
  */
-@MCElement(name="exchangeStore")
+@MCElement(name="exchangeStore", excludeFromFlow = true)
 public class ExchangeStoreInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 
 	private static final String BEAN_ID_ATTRIBUTE_CANNOT_BE_USED = "bean id attribute cannot be used";

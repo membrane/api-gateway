@@ -25,7 +25,7 @@ import java.util.*;
  * @description Represents a load-balancing cluster (a named group of {@link Node}s).
  * Provides status management (UP/DOWN/TAKEOUT), node lookup, and simple session tracking.
  */
-@MCElement(name="cluster", topLevel=false)
+@MCElement(name="cluster", component =false)
 public class Cluster {
 
 	private static final Logger log = LoggerFactory.getLogger(Cluster.class.getName());

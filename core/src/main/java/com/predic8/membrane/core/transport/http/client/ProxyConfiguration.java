@@ -45,7 +45,7 @@ import static org.apache.commons.codec.binary.Base64.*;
  *
  * @topic 4. Transports and Clients
  */
-@MCElement(name="proxy", topLevel=false, id="proxy-configuration")
+@MCElement(name="proxy", component =false, id="proxy-configuration")
 public class ProxyConfiguration {
 
 	private String host;

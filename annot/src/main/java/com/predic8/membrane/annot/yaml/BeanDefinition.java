@@ -14,8 +14,12 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.bean.*;
 
 import java.util.*;
+
+import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
 public class BeanDefinition {
 
@@ -27,6 +31,10 @@ public class BeanDefinition {
     private final JsonNode node;
     private final WatchAction action;
     private final String kind;
+
+    /**
+     * Constructed bean after initialization.
+     */
     private Object bean;
 
     /**
@@ -57,7 +65,7 @@ public class BeanDefinition {
         this.namespace = namespace;
         this.uid = uid;
         this.node = node;
-        this.action = WatchAction.ADDED;
+        this.action = ADDED;
     }
 
     public JsonNode getNode() {
@@ -100,10 +108,31 @@ public class BeanDefinition {
         JsonNode annotations = meta.get("annotations");
         if (annotations == null)
             return null;
-        return annotations.get("membrane-soa.org/scope").asText(); // TODO migrate to membrane-api.io
+        JsonNode scope = annotations.get("membrane-api.io/scope");
+        return scope == null ? null : scope.asText();
+    }
+
+    public boolean isComponent() {
+        return name != null && name.startsWith("#/components/");
+    }
+
+    public boolean isBean() {
+        return "bean".equals(kind);
     }
 
     public boolean isPrototype() {
         return PROTOTYPE.equals(getScope());
+    }
+
+    public boolean isDeleted() {
+        return action == DELETED;
+    }
+
+    public boolean isModified() {
+        return action == MODIFIED;
+    }
+
+    public boolean isAdded() {
+        return action == ADDED;
     }
 }

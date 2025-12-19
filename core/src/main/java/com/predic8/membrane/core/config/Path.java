@@ -40,7 +40,7 @@ import com.predic8.membrane.annot.MCTextContent;
  *              available in scripts via the <tt>pathParam</tt> variable.
  *              </p>
  */
-@MCElement(name="path", topLevel=false, mixed=true)
+@MCElement(name="path", component =false, mixed=true)
 public class Path {
 
 	private String uri;

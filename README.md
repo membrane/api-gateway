@@ -44,11 +44,13 @@ api:
 
 **Issue JSON Web Tokens:**
 
-A minimal token-issuing endpoint built with Membrane plugins. Clients authenticate with HTTP Basic Authentication. After successful authentication, Membrane creates a signed JWT. The template defines the payload, so you control which claims are included.
+To issue a JWT for a user, create an API that acts as a simple token endpoint:
 
 ```yaml
 api:
   port: 2000
+  path:
+    uri: /token
   flow:
     - basicAuthentication:
         fileUserDataProvider:
@@ -57,7 +59,7 @@ api:
         - template:
             src: |
               {
-                "sub": "${fn.user()}" // username from HTTP Basic Auth
+                "sub": "${fn.user()}"
               }
         - jwtSign:
             jwk:
@@ -66,7 +68,7 @@ api:
         status: 200
 ```
 
-Example of issued token:
+Authenticated requests to '/token' return a signed JWT in which the username from Basic Authentication is used as the sub claim.
 
 ```text
 {
@@ -82,7 +84,7 @@ Example of issued token:
 .hTL_0-AS8IZgiDUJ6Kg...
 ```
 
-These are just a few examples; see the descriptions below for more.
+This example is intentionally minimal, but it highlights the basic building blocks: authenticate the caller, shape the token payload, and sign the result. From there, you can extend it with additional claims, custom logic, or stricter policies to implement tailored API security flows.
 
 ## API Gateway eBook
 
@@ -126,14 +128,14 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 
 # Content
 
-1. [Getting Started](#Getting-Started)
-   - [Java](#java)
-   - [Docker](#docker)
-2. [Basics](#Basics) Routing, rewriting
-   - [API Definition and Configuration](#API-Definition-and-Configuration)
-   - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
+1. [Getting Started](#getting-started)
+    - [Java](#java)
+    - [Docker](#docker)
+2. [Basics](#basics) Routing, rewriting
+    - [API Definition and Configuration](#api-definition-and-configuration)
+    - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
 3. [OpenAPI Support](#openapi-support)
-   - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
+    - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
 4. [Routing](#routing)
     - [Short Circuit](#short-circuit)
     - [URL Rewriting](#url-rewriting)
@@ -154,19 +156,20 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
     - [SSL/TLS](#ssltls)
     - [JSON Web Tokens](#json-web-tokens) JWT
     - [OAuth2](#oauth2)
-      - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
-      - [Membrane as Authorization Server](#membrane-as-authorization-server)
-    - [XML and JSON Protection](#xml-and-json-protection)
-9. [Traffic Control](#Traffic-Control) Rate limiting, Load balancing
+    - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
+        - [Membrane as Authorization Server](#membrane-as-authorization-server)
+        - [XML and JSON Protection](#xml-and-json-protection)
+9. [Traffic Control](#traffic-control) Rate limiting, Load balancing
     - [Rate Limiting](#rate-limiting)
     - [Load Balancing](#load-balancing)
 10. [Legacy Web Services](#soap-web-services) SOAP and WSDL
     - [API configuration from WSDL](#api-configuration-from-wsdl)
     - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
-11. [Operation](#Operation)
-   - [Logging](#log-http)
-   - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
-   - [OpenTelemetry](#opentelemetry-integration)
+11. [Operation](#operation)
+    - [Logging](#log-http)
+    - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
+    - [OpenTelemetry](#opentelemetry-integration)
+12. [Community and professional Support](#support)
 
 # Installation
 
@@ -175,19 +178,19 @@ You can run Membrane as Docker container, standalone Java application or install
 ## Java
 
 1. **Download and extract**
-  - [Download a release](https://github.com/membrane/api-gateway/releases) and unzip it.
+    - [Download a release](https://github.com/membrane/api-gateway/releases) and unzip it.
 2. **Start the Gateway**
-  - Open a terminal in the extracted folder.
-  - Make sure Java 21 or newer is installed:
+    - Open a terminal in the extracted folder.
+    - Make sure Java 21 or newer is installed:
     ```bash
     java -version
     ```
-  - Start:
-    - **Linux/Mac:** `./membrane.sh`
-    - **Windows:** `membrane.cmd`
-4. **Access the Gateway**
-  - Open [http://localhost:2000](http://localhost:2000)
-5. **Change the Configuration**
+    - Start:
+        - **Linux/Mac:** `./membrane.sh`
+        - **Windows:** `membrane.cmd`
+3. **Access the Gateway**
+    - Open [http://localhost:2000](http://localhost:2000)
+4. **Change the Configuration**
 
    Modify the preconfigured APIs or add APIs by editing the `proxies.xml` file in the `conf` folder.
 
@@ -1141,6 +1144,9 @@ This API will expose metrics for Prometheus at [http://localhost:2000/metrics](h
   <prometheus />
 </api>
 ```
+
+![Grafana Dashborad for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
+Grafana dashboard from Membrane metrics.
  
 See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus).
 
@@ -1163,3 +1169,15 @@ The configuration below shows Membrane forwarding requests to a backend, while e
 ```  
 
 For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/monitoring-tracing/opentelemetry).
+
+# Support
+
+## Community Support
+
+To get support from our community, please post your questions to our [Discussions](https://github.com/membrane/api-gateway/discussions) page @GitHub.
+
+If you find a bug, please report it using [GitHub Issues](https://github.com/membrane/api-gateway/issues). Please provide a minimal example that reproduces the issue and the version of Membrane you are using.
+
+## Enterprise-grade Support
+
+See [commercial support options and pricing](https://www.membrane-api.io/api-gateway-pricing.html).

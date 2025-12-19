@@ -13,16 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.annot.Grammar;
+import com.predic8.membrane.annot.bean.BeanFactory;
 import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 
-import static com.predic8.membrane.annot.yaml.BeanDefinition.*;
+import static com.predic8.membrane.annot.yaml.BeanDefinition.create4Kubernetes;
 import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
 public class BeanRegistryImplementation implements BeanRegistry {
@@ -71,12 +74,19 @@ public class BeanRegistryImplementation implements BeanRegistry {
         }
     }
 
-    private Object define(BeanDefinition bd) throws IOException, ParsingException {
+    private Object define(BeanDefinition bd)  {
         log.debug("defining bean: {}", bd.getNode());
-        return GenericYamlParser.readMembraneObject(bd.getKind(),
-                grammar,
-                bd.getNode(),
-                this);
+        try {
+            if ("bean".equals(bd.getKind())) {
+                return new BeanFactory(this).create(bd.getNode().path("bean"));
+            }
+            return GenericYamlParser.readMembraneObject(bd.getKind(),
+                    grammar,
+                    bd.getNode(),
+                    this);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -107,8 +117,9 @@ public class BeanRegistryImplementation implements BeanRegistry {
         // can see both metadata and the action (including DELETED).
         bds.put(bd.getUid(), bd);
 
-        if (observer.isActivatable(bd))
+        if (!bd.isComponent() && observer.isActivatable(bd)) {
             uidsToActivate.add(bd.getUid());
+        }
 
         if (changeEvents.isEmpty())
             activationRun();
@@ -122,16 +133,12 @@ public class BeanRegistryImplementation implements BeanRegistry {
                 Object bean = define(bd);
                 bd.setBean(bean);
 
-                Object oldBean = null;
-                if (bd.getAction() == MODIFIED || bd.getAction() == DELETED)
-                    oldBean = uuidMap.get(bd.getUid());
-
                 // e.g. inform router about new proxy
-                observer.handleBeanEvent(bd, bean, oldBean);
+                observer.handleBeanEvent(bd, bean, getOldBean(bd));
 
-                if (bd.getAction() == ADDED || bd.getAction() == MODIFIED)
+                if (bd.isAdded() || bd.isModified())
                     uuidMap.put(bd.getUid(), bean);
-                if (bd.getAction() == DELETED) {
+                if (bd.isDeleted()) {
                     uuidMap.remove(bd.getUid());
                     bds.remove(bd.getUid());
                 }
@@ -145,39 +152,53 @@ public class BeanRegistryImplementation implements BeanRegistry {
             uidsToActivate.remove(uid);
     }
 
+    private @Nullable Object getOldBean(BeanDefinition bd) {
+        Object oldBean = null;
+        if (bd.isModified() || bd.isDeleted())
+            oldBean = uuidMap.get(bd.getUid());
+        return oldBean;
+    }
+
     @Override
     public Object resolveReference(String url) {
         BeanDefinition bd = getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url)));
 
-        Object envelope = null;
-        if (bd.getBean() != null)
-            envelope = bd.getBean();
-        if (envelope == null) {
-            try {
-                envelope = define(bd);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            if (!bd.isPrototype())
-                bd.setBean(envelope);
-        }
-        return envelope;
-        // TODO
-//            if (spec instanceof Bean)
-//                return ((Bean) spec).getBean();
+        boolean prototype = isPrototypeScope(bd);
+
+        if (!prototype && bd.getBean() != null)
+            return bd.getBean();
+
+        Object instance = define(bd);
+
+        if (!prototype)
+            bd.setBean(instance);
+
+        return instance;
     }
 
     private @NotNull Optional<BeanDefinition> getFirstByName(String url) {
-        return bds.values().stream().filter(bd -> bd.getName().equals(url)).findFirst();
+        return bds.values().stream().filter(bd -> url.equals(bd.getName())).findFirst();
     }
 
     @Override
     public List<Object> getBeans() {
-        return bds.values().stream().map(BeanDefinition::getBean).filter(Objects::nonNull).toList();
+        return bds.values().stream().filter(bd -> !bd.isComponent())
+                .map(BeanDefinition::getBean)
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     @Override
     public Grammar getGrammar() {
         return grammar;
+    }
+
+    private static boolean isPrototypeScope(BeanDefinition bd) {
+        if (!bd.isBean())
+            return bd.isPrototype();
+
+        return "PROTOTYPE".equalsIgnoreCase(
+                bd.getNode().path("bean").path("scope").asText("SINGLETON")
+        );
     }
 }
