@@ -20,7 +20,7 @@ import jakarta.servlet.ServletContext;
 
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.servlet.embedded.ServletTransport;
 
 public class RouterUtil {

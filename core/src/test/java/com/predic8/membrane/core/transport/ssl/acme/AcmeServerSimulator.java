@@ -17,7 +17,7 @@ package com.predic8.membrane.core.transport.ssl.acme;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.router.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;

@@ -46,7 +46,7 @@ import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 
 /**
  * @description A <i>user data provider</i> querying an LDAP server to authorize users and retrieve attributes.

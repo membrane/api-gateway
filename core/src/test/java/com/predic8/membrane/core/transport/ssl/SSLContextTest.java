@@ -14,8 +14,8 @@
 package com.predic8.membrane.core.transport.ssl;
 
 import com.google.common.io.Resources;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.HttpRouter;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import org.jetbrains.annotations.NotNull;

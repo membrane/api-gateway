@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;

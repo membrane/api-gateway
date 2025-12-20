@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 
 import java.util.Optional;

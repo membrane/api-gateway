@@ -14,9 +14,8 @@
 package com.predic8.membrane.examples.withoutinternet.integration;
 
 import com.google.common.collect.Lists;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
-import org.apache.http.HttpEntity;
+import com.predic8.membrane.core.router.HttpRouter;
+import com.predic8.membrane.core.router.Router;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -39,7 +38,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2RaceCondition {

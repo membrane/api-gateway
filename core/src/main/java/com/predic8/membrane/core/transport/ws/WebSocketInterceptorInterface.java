@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.transport.ws;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 
 /**
  * Created by Predic8 on 12.04.2017.

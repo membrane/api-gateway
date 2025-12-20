@@ -1,4 +1,4 @@
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
 /**
  * Exception that signals that the startup failed and that Membrane should exit.

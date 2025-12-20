@@ -18,7 +18,7 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamReader;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class AccessControl extends AbstractXmlElement {

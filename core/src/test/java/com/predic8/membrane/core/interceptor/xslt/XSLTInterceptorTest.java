@@ -22,7 +22,7 @@ import javax.xml.xpath.XPathFactory;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.router.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 

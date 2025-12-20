@@ -13,8 +13,8 @@
 
 package com.predic8.membrane.examples.withoutinternet.integration;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.HttpRouter;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;

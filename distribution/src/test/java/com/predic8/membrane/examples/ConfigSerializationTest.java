@@ -14,7 +14,7 @@
 package com.predic8.membrane.examples;
 
 import com.predic8.membrane.annot.bean.*;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.xml.beautifier.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;

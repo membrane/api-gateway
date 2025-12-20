@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.integration.withoutinternet;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.router.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;

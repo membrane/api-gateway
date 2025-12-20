@@ -15,12 +15,11 @@
 package com.predic8.membrane.core.cli;
 
 import com.predic8.membrane.annot.yaml.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.cli.util.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;

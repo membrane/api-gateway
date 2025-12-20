@@ -14,6 +14,7 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.MockHttpTransport;
 

@@ -14,9 +14,9 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.ProxyAware;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.stats.*;
 import org.apache.commons.lang3.*;
 import org.slf4j.*;

@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.interceptor;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.services.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;

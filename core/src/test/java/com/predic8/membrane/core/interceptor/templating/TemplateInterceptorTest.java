@@ -15,10 +15,10 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
 import com.predic8.membrane.core.util.*;
 import org.json.*;

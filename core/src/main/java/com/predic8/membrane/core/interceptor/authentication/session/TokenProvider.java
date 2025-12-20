@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.util.Map;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 
 public interface TokenProvider {
 

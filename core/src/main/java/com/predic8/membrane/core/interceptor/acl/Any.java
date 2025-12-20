@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 
 public class Any extends AbstractClientAddress {
 

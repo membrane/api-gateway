@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.servlet.embedded;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.servlet.RouterUtil;
 import com.predic8.membrane.servlet.config.spring.BaseLocationXmlWebApplicationContext;
 import jakarta.servlet.ServletConfig;

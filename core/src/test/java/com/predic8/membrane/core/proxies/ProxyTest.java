@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.router.HttpRouter;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;

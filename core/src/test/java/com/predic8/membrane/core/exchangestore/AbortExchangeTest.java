@@ -13,12 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.HttpRouter;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.BodyUtil;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;

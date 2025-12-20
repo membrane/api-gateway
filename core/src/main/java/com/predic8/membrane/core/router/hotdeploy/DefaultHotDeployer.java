@@ -1,7 +1,7 @@
 package com.predic8.membrane.core.router.hotdeploy;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
+import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;

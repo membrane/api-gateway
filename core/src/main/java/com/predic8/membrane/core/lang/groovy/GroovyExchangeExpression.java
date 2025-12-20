@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.ConfigurationException;
 import groovy.lang.*;
 import org.codehaus.groovy.control.*;

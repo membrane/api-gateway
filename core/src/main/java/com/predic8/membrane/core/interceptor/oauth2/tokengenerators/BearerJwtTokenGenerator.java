@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import org.jose4j.json.JsonUtil;

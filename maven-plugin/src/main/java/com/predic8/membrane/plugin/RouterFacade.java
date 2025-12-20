@@ -15,7 +15,7 @@
  */
 package com.predic8.membrane.plugin;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 
 import static java.lang.Long.*;
 import static java.util.concurrent.TimeUnit.*;

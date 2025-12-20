@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.SOAPUtil;
 import org.junit.jupiter.api.Test;

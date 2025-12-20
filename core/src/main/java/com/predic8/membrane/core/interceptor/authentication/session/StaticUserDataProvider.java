@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCOtherAttributes;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.Router;
 import org.apache.commons.codec.digest.Crypt;
 
 import java.security.SecureRandom;

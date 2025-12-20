@@ -16,9 +16,9 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.lang.javascript.*;
+import com.predic8.membrane.core.router.*;
 import org.graalvm.polyglot.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;

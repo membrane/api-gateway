@@ -17,7 +17,7 @@
 //import com.bornium.security.oauth2openid.providers.Session;
 //import com.bornium.security.oauth2openid.server.AuthorizationServer;
 //import com.bornium.security.oauth2openid.server.endpoints.Endpoint;
-//import com.predic8.membrane.core.Router;
+//import com.predic8.membrane.core.router.Router;
 //import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 //import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
 //import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
