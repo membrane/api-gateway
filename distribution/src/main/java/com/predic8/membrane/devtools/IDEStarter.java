@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core;
+package com.predic8.membrane.devtools;
 
 import com.predic8.membrane.core.cli.RouterCLI;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
@@ -28,8 +28,7 @@ public class IDEStarter {
 	public static void main(String[] args) {
 		// for testing or development purposes
 		// Start in "distribution" folder
-		try {
-			Configurator.initialize(null, new ConfigurationSource(new FileInputStream("log4j2.xml")));
+		try(var ignored = Configurator.initialize(null, new ConfigurationSource(new FileInputStream("log4j2.xml")))) {
 		} catch (IOException e) {
 			LoggerFactory.getLogger(IDEStarter.class).error("Error loading log configuration.");
 		}

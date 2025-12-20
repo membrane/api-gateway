@@ -13,24 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.annot.generator;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.generator.kubernetes.*;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.predic8.membrane.annot.ProcessingException;
+import com.predic8.membrane.annot.generator.kubernetes.AbstractGrammar;
 import com.predic8.membrane.annot.generator.kubernetes.model.*;
 import com.predic8.membrane.annot.model.*;
-import com.predic8.membrane.annot.model.doc.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.annot.model.doc.Doc;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.processing.*;
-import javax.lang.model.element.*;
-import javax.tools.*;
-import java.io.*;
-import java.util.*;
-import java.util.stream.*;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.tools.FileObject;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
-import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.*;
-import static javax.tools.StandardLocation.*;
+import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
  * TODOs:
@@ -76,13 +80,20 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private void addTopLevelProperties(Model m, MainInfo main) {
         schema.additionalProperties(false);
-        List<AbstractSchema<?>> kinds = main.getElements().values().stream()
-                .filter(e -> e.getAnnotation().topLevel())
-                .map(e -> createTopLevelProperty(e, m))
-                .collect(Collectors.toUnmodifiableList());
 
-        if (!kinds.isEmpty())
-            schema.oneOf(kinds);
+        var top = main.getElements().values().stream()
+                .filter(e -> e.getAnnotation().topLevel())
+                .toList();
+
+        for (ElementInfo e : top) {
+            String name = e.getAnnotation().name();
+            String refName = "#/$defs/" + e.getXSDTypeName(m);
+            schema.property(ref(name).ref(refName));
+        }
+
+        if (!top.isEmpty()) {
+            schema.minProperties(1).maxProperties(1);
+        }
     }
 
     private AbstractSchema<?> createTopLevelProperty(ElementInfo e, Model m) {
@@ -93,6 +104,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         schema.property(ref(name).ref(refName));
 
         return object()
+                .title(name)
                 .additionalProperties(false)
                 .property(ref(name)
                         .ref(refName)
@@ -251,17 +263,18 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 continue;
 
             sos.add(object()
+                    .title(ei.getAnnotation().name())
                     .additionalProperties(false)
                     .property(ref(ei.getAnnotation().name())
-                            .ref("#/$defs/" + ei.getXSDTypeName(m))
-                            .required(true)));
+                            .ref("#/$defs/" + ei.getXSDTypeName(m))));
         }
         // Allow referencing a component instance directly on list-item level:
         // flow:
         //   - $ref: ...
         sos.add(object()
+                .title("componentRef")
                 .additionalProperties(false)
-                .property( string("$ref").required(true)));
+                .property( string("$ref")));
         return sos;
     }
 
@@ -377,17 +390,17 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         var variants = new ArrayList<SchemaObject>();
 
         for (ElementInfo comp : main.getElements().values()) {
-            if (!comp.getAnnotation().component())
-                continue;
+            if (!comp.getAnnotation().component()) continue;
+            if (comp.getAnnotation().topLevel()) continue;
 
-            if (comp.getAnnotation().topLevel())
-                continue;
+            String n = comp.getAnnotation().name();
 
             variants.add(object()
+                    .title(n)
                     .additionalProperties(false)
-                    .property(ref(comp.getAnnotation().name())
-                            .ref("#/$defs/" + comp.getXSDTypeName(m))
-                            .required(true)));
+                    .minProperties(1)
+                    .property(ref(n)
+                            .ref("#/$defs/" + comp.getXSDTypeName(m))));
         }
         return variants;
     }
