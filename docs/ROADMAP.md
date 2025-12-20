@@ -12,15 +12,18 @@
 - Correct YAML example on GitHub README
 - Rename in apis.yaml
 
+
 # 7.1.0
 
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
+- Remove GroovyTemplateInterceptor (Not Template Interceptor)
+  - Old an unused
 
 # 7.0.4
 
-- Remove GroovyTemplateInterceptor (Not Template Interceptor)
-  - Old an unused
+- Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+
 
 # 7.0.1
 
@@ -33,8 +36,8 @@
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
 - Restore Kubernetes Startup Thread
 - Fix `YAMLParsingTest.errorInListItemUniqueness()`
-
-
+- Check 404 in AdminConsole => Client Requests
+  - API to get client requests returns 404, if called without admin console access 
   
 
 ## (Breaking) Interface Changes

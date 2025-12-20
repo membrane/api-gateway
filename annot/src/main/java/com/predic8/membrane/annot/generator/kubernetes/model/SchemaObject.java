@@ -31,6 +31,9 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     private List<AbstractSchema<?>> allOf;
     private final Map<String, AbstractSchema<?>> patternProperties = new LinkedHashMap<>();
 
+    private Integer minProperties;
+    private Integer maxProperties;
+
     SchemaObject(String name) {
         super(name);
         type = OBJECT;
@@ -46,6 +49,9 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
      */
     public ObjectNode json(ObjectNode node) {
         super.json(node);
+
+        if (minProperties != null) node.put("minProperties", minProperties);
+        if (maxProperties != null) node.put("maxProperties", maxProperties);
 
         if (!additionalProperties && isObject()) {
             node.put("additionalProperties", false);
@@ -167,6 +173,9 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         this.allOf = allOf;
         return this;
     }
+
+    public SchemaObject minProperties(int n) { this.minProperties = n; return this; }
+    public SchemaObject maxProperties(int n) { this.maxProperties = n; return this; }
 
     public boolean hasProperty(String name) {
         return properties.stream().anyMatch(p -> name.equals(p.getName()));
