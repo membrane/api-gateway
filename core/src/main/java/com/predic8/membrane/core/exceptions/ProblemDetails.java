@@ -54,6 +54,8 @@ public class ProblemDetails {
     public static final String MESSAGE = "message";
     public static final String STACK_TRACE = "stackTrace";
     public static final String LOG_KEY = "logKey";
+    public static final String DEVELOPMENT_MODE_WARNING = """
+            Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""";
 
     /**
      * If router is in production mode that should not expose internal details
@@ -300,8 +302,7 @@ public class ProblemDetails {
             }
         }
         internalMap.put(SEE, getFullType(type));
-        internalMap.put(ATTENTION, """
-                Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""");
+        internalMap.put(ATTENTION, DEVELOPMENT_MODE_WARNING);
         return internalMap;
     }
 

@@ -13,10 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.lang.CommonBuiltInFunctions;
-import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.spel.*;
+import org.jetbrains.annotations.*;
 
-import java.util.List;
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.function.*;
+
+import static java.lang.reflect.Modifier.*;
 
 /**
  * This class's public methods are automatically registered in the SpEL context by the BuiltInFunctionResolver.
@@ -87,5 +92,21 @@ public class SpELBuiltInFunctions {
 
     public static String base64Encode(String s, SpELExchangeEvaluationContext ignored) {
         return CommonBuiltInFunctions.base64Encode(s);
+    }
+
+    public static List<String> getBuiltInFunctionNames() {
+        return Arrays.stream(SpELBuiltInFunctions.class.getDeclaredMethods())
+                .filter(m -> isPublic(m.getModifiers()))
+                .filter(m -> isStatic(m.getModifiers()))
+                .filter(SpELBuiltInFunctions::lastParamIsSpELExchangeEvaluationContext)
+                .map(Method::getName)
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    private static boolean lastParamIsSpELExchangeEvaluationContext(Method m) {
+        Class<?>[] params = m.getParameterTypes();
+        return params.length > 0 && params[params.length - 1] == SpELExchangeEvaluationContext.class;
     }
 }

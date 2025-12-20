@@ -21,8 +21,9 @@ public class ExchangeExpressionException extends RuntimeException {
 
     private final String expression;
     private final Map<String, Object> extensions = new HashMap<>();
+    private String detail;
 
-    private boolean statcktrace = true;
+    private boolean stacktrace = true;
 
     /*
      * Body that cause the error
@@ -39,8 +40,10 @@ public class ExchangeExpressionException extends RuntimeException {
      * @return ProblemDetails filled from exception
      */
     public ProblemDetails provideDetails(ProblemDetails pd) {
+        if (detail != null)
+            pd.detail(detail);
         pd.internal("expression", expression)
-            .stacktrace(statcktrace);
+            .stacktrace(stacktrace);
         for (Map.Entry<String, Object> entry : extensions.entrySet()) {
             pd.internal(entry.getKey(), entry.getValue());
         }
@@ -49,6 +52,11 @@ public class ExchangeExpressionException extends RuntimeException {
         pd.exception(this);
         pd.stacktrace(false);
         return pd;
+    }
+
+    public ExchangeExpressionException detail(String detail) {
+        this.detail = detail;
+        return this;
     }
 
     public ExchangeExpressionException extension(String key, Object value) {
@@ -67,7 +75,7 @@ public class ExchangeExpressionException extends RuntimeException {
     }
 
     public ExchangeExpressionException stacktrace(boolean stacktrace) {
-        this.statcktrace = stacktrace;
+        this.stacktrace = stacktrace;
         return this;
     }
 

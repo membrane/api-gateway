@@ -15,8 +15,10 @@
 package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
@@ -51,23 +53,30 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         try {
             setValue(exchange, flow, exchangeExpression.evaluate(exchange, flow, getExpressionReturnType()));
         } catch (Exception e) {
-            var root = ExceptionUtil.getRootCause(e);
-            var message = "While evaluating expression %s for field %s: %s".formatted(expression, fieldName, root.getMessage());
-            log.info(message);
-
+            var msg = "Error evaluating expression %s for field %s".formatted(expression, fieldName);
             if (failOnError) {
-                internal(getRouter().isProduction(), getDisplayName())
-                        .title("Error evaluating expression!")
-                        .internal("field", fieldName)
-                        .internal("expression", expression)
-                        .exception(root)
+                if (e instanceof ExchangeExpressionException eee) {
+                    var pd = prepareProblemDetails(msg);
+                    eee.provideDetails(pd);
+                    pd.buildAndSetResponse(exchange);
+                    return ABORT;
+                }
+                prepareProblemDetails(msg)
+                        .exception(ExceptionUtil.getRootCause(e))
                         .stacktrace(false)
                         .buildAndSetResponse(exchange);
                 return ABORT;
             }
-            log.info("Error evaluating {} but 'FailOnError' is false therefore ignoring: {}", expression, message);
+            log.info("'FailOnError' is false therefore ignoring: {}", msg);
         }
         return CONTINUE;
+    }
+
+    private ProblemDetails prepareProblemDetails(String msg) {
+        return internal(getRouter().isProduction(), getDisplayName())
+                .title(msg)
+                .internal("field", fieldName)
+                .internal("expression", expression);
     }
 
     protected abstract Class<?> getExpressionReturnType();
