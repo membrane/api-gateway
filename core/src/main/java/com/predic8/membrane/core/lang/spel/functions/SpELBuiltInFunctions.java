@@ -29,7 +29,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class SpELBuiltInFunctions {
 
-    public Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
+    public static Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.jsonPath(jsonPath, ctx.getMessage());
     }
 
