@@ -138,9 +138,6 @@ public class ProblemDetails {
     /**
      * type/subtype/subtype/...
      * lowercase, dash as separator
-     *
-     * @param subType
-     * @return
      */
     public ProblemDetails addSubType(String subType) {
         this.subType += "/" + subType;

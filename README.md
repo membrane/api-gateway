@@ -868,7 +868,7 @@ Membrane offers lots of security features to protect backend servers.
 You can define APIs keys directly in your configuration, and Membrane will validate incoming requests against them.
 
 ### Example Configuration
-The following configuration secures the `Fruitshop API` by validating a key provided as a query parameter:
+The following configuration secures the `Fruitshop API` by validating an API key provided as a query parameter:
 
 ```xml
 <api port="2000">

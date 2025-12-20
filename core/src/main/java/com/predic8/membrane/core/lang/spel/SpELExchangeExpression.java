@@ -95,7 +95,6 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             }
             log.warn(msg);
             eee.detail(msg);
-            eee.stacktrace(false);
             throw eee;
         }
     }
