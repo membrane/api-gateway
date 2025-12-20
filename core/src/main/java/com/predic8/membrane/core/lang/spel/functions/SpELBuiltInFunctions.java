@@ -28,8 +28,12 @@ import java.util.List;
  */
 public class SpELBuiltInFunctions {
 
-    public static Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
+    public Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.jsonPath(jsonPath, ctx.getMessage());
+    }
+
+    public static String xpath(String xpath, SpELExchangeEvaluationContext ctx) {
+        return CommonBuiltInFunctions.xpath(xpath, ctx.getMessage());
     }
 
     public static boolean weight(double weightInPercent, SpELExchangeEvaluationContext ignored) {

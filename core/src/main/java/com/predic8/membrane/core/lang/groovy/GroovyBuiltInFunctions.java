@@ -45,6 +45,10 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
         return CommonBuiltInFunctions.jsonPath(jsonPath, exchange.getMessage(flow));
     }
 
+    public String xpath(String xpath) {
+        return CommonBuiltInFunctions.xpath(xpath, exchange.getMessage(flow));
+    }
+
     public List<String> scopes() {
         return CommonBuiltInFunctions.scopes(exchange);
     }
@@ -68,6 +72,8 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
     public boolean isXML() {
         return CommonBuiltInFunctions.isXML(exchange, flow);
     }
+
+
 
     public boolean isJSON() {
         return CommonBuiltInFunctions.isJSON(exchange, flow);
