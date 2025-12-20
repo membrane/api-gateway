@@ -26,6 +26,11 @@
         <version>7.0.5-SNAPSHOT</version>
     </parent>
 
+    <properties>
+        <graalvm.version>24.1.2</graalvm.version>
+    </properties>
+
+
     <!-- Open Telemetry -->
     <dependencyManagement>
         <dependencies>
@@ -187,7 +192,7 @@
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
             <artifactId>graal-sdk</artifactId>
-            <version>24.2.0</version>
+            <version>${graalvm.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -283,7 +288,7 @@
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js</artifactId>
-            <version>24.1.2</version>
+            <version>${graalvm.version}</version>
             <scope>test</scope>
             <type>pom</type>
         </dependency>
