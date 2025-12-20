@@ -140,7 +140,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
      * Not synchronized, since only modified during initialization
      * Initialized with NullHotDeployer to avoid NPEs
      */
-    private HotDeployer hotDeployer = new NullHotDeployer();
+    private HotDeployer hotDeployer = new DefaultHotDeployer();
 
     public Router() {
         ruleManager.setRouter(this);
@@ -201,7 +201,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
             getRuleManager().openPorts();
 
             try {
-                hotDeployer = new DefaultHotDeployer(this);
+                hotDeployer.init(this);
                 hotDeployer.start();
             } catch (Exception e) {
                 shutdown();
@@ -475,7 +475,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
      */
     @MCAttribute
     public void setHotDeploy(boolean hotDeploy) {
-        hotDeployer = hotDeploy ? new DefaultHotDeployer(this) : new NullHotDeployer();
+        hotDeployer = hotDeploy ? new DefaultHotDeployer() : new NullHotDeployer();
     }
 
     public boolean isHotDeploy() {

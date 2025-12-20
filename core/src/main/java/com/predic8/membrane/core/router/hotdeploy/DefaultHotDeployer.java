@@ -13,9 +13,10 @@ public class DefaultHotDeployer implements HotDeployer {
     @GuardedBy("this")
     private HotDeploymentThread hdt;
 
-    private final Router router;
+    private Router router;
 
-    public DefaultHotDeployer(Router router) {
+    @Override
+    public void init(Router router) {
         this.router = router;
     }
 
