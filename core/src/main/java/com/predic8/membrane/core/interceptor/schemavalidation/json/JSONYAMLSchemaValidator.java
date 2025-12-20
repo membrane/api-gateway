@@ -49,7 +49,6 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private final YAMLFactory factory = YAMLFactory.builder().enable(STRICT_DUPLICATE_DETECTION).build();
     private final ObjectMapper yamlObjectMapper = new ObjectMapper(factory);
-    private final ObjectMapper jsonObjectMapper = new ObjectMapper();
 
     public static final String SCHEMA_VERSION_2020_12 = "2020-12";
 
@@ -62,11 +61,6 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     private final SpecificationVersion schemaId;
 
     private Map<String, String> schemaMappings = new HashMap<>();
-
-    /**
-     * JsonSchemaFactory instances are thread-safe provided its configuration is not modified.
-     */
-    SchemaRegistry jsonSchemaFactory;
 
     /**
      * JsonSchema instances are thread-safe provided its configuration is not modified.
@@ -100,20 +94,23 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     public void init() {
         super.init();
 
-        jsonSchemaFactory = SchemaRegistry.withDefaultDialect(schemaId, b -> b.schemaLoader(SchemaLoader.builder()
-                .schemaIdResolvers(r -> r.mappings(schemaMappings))
-                .resourceLoaders(rl -> rl.values(list -> list.addFirst(new MembraneSchemaLoader(resolver))))
-                .build()));
-
         try (InputStream in = resolver.resolve(jsonSchema)) {
-            InputFormat schemaFormat =
-                    (jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml")) ? YAML : JSON;
-
-            schema = jsonSchemaFactory.getSchema(SchemaLocation.of(jsonSchema), in, schemaFormat);
+            schema = getJsonSchemaFactory().getSchema(SchemaLocation.of(jsonSchema), in, getSchemaFormat());
             schema.initializeValidators();
         } catch (IOException e) {
             throw new RuntimeException("Cannot read JSON Schema from: " + jsonSchema, e);
         }
+    }
+
+    private @NotNull InputFormat getSchemaFormat() {
+        return (jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml")) ? YAML : JSON;
+    }
+
+    private SchemaRegistry getJsonSchemaFactory() {
+        return SchemaRegistry.withDefaultDialect(schemaId, b -> b.schemaLoader(SchemaLoader.builder()
+                .schemaIdResolvers(r -> r.mappings(schemaMappings))
+                .resourceLoaders(rl -> rl.values(list -> list.addFirst(new MembraneSchemaLoader(resolver))))
+                .build()));
     }
 
     public Outcome validateMessage(Exchange exc, Flow flow) throws Exception {
