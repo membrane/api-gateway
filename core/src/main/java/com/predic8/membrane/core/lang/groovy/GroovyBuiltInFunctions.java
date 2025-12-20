@@ -26,6 +26,7 @@ import java.util.List;
  *  Difference to SpEL:
  *  The functions are called with ${fn.functionname()} instead of ${functionname()} in the template interceptor
  */
+@SuppressWarnings("unused")
 public class GroovyBuiltInFunctions extends GroovyObjectSupport {
 
     private final Exchange exchange;
