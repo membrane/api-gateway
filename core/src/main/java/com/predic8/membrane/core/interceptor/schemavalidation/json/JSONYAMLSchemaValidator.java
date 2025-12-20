@@ -95,7 +95,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         super.init();
 
         try (InputStream in = resolver.resolve(jsonSchema)) {
-            schema = getJsonSchemaFactory().getSchema(SchemaLocation.of(jsonSchema), in, getSchemaFormat());
+            schema = createSchemaRegistry().getSchema(SchemaLocation.of(jsonSchema), in, getSchemaFormat());
             schema.initializeValidators();
         } catch (IOException e) {
             throw new RuntimeException("Cannot read JSON Schema from: " + jsonSchema, e);
@@ -103,10 +103,10 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     }
 
     private @NotNull InputFormat getSchemaFormat() {
-        return (jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml")) ? YAML : JSON;
+        return (jsonSchema.toLowerCase().endsWith(".yaml") || jsonSchema.toLowerCase().endsWith(".yml")) ? YAML : JSON;
     }
 
-    private SchemaRegistry getJsonSchemaFactory() {
+    private SchemaRegistry createSchemaRegistry() {
         return SchemaRegistry.withDefaultDialect(schemaId, b -> b.schemaLoader(SchemaLoader.builder()
                 .schemaIdResolvers(r -> r.mappings(schemaMappings))
                 .resourceLoaders(rl -> rl.values(list -> list.addFirst(new MembraneSchemaLoader(resolver))))
