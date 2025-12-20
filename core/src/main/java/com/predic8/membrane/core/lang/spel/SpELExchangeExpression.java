@@ -30,6 +30,7 @@ import org.springframework.expression.spel.standard.*;
 
 import static java.lang.Boolean.*;
 import static org.springframework.expression.spel.SpelCompilerMode.*;
+import static org.springframework.expression.spel.SpelMessage.METHOD_NOT_FOUND;
 
 public class SpELExchangeExpression extends AbstractExchangeExpression {
 
@@ -84,7 +85,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
         } catch (SpelEvaluationException see) {
             ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);
             String msg ;
-            if (see.getMessage().contains("EL1004E")) {
+            if (see.getMessageCode() == METHOD_NOT_FOUND) {
                 msg = "Method not found in expression '%s' use a SpEL function or one of Membrane's: %s".formatted(expression, SpELBuiltInFunctions.getBuiltInFunctionNames());
             } else if (see.getCause() instanceof ConverterNotFoundException cnfe) {
                 msg = "Type converter not found for expression '%s' from '%s' to '%s'.".formatted(expression, cnfe.getSourceType(), cnfe.getTargetType());
