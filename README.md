@@ -820,43 +820,51 @@ See [examples/javascript](distribution/examples/scripting/javascript) for a deta
 
 ## JSON and XML Beautifier
 
-You can beautify a JSON or XML using the `<beautifier/>` plugin.
+Use the `beautifier` to pretty print JSON or XML.
 
-```xml
-<api port="2000">
-    <template contentType="application/xml"><![CDATA[
-        <foo><bar>baz</bar></foo>
-    ]]></template>
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+        - beautifier: {}
+        - template:
+            contentType: application/json
+            src: |
+              { "foo": { "bar": { "baz": 99 }}}
+    - return:
+        status: 200
+```
 
-    <beautifier/>
+Result:
 
-    <return statusCode="200"/>
-</api>
-```  
-
-Returns:
-
-```xml
-<foo>
-    <bar>baz</bar>
-</foo>
+```json
+{
+  "foo" : {
+    "bar" : {
+      "baz" : 99
+    }
+  }
+}
 ```
 
 # Conditionals with if
 
-Replace `5XX` error messages from a backend:
+This example shows how to intercept error responses from a backend and replace them with a custom response.
 
-```xml
-<api port="2000">
-  <response>
-    <if test="statusCode matches '5\d\d'" language="SpEL">
-      <static>
-        Error!
-      </static>
-    </if>
-  </response>
-  <return/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+        - if:
+            test: statusCode >= 500
+            language: spel
+            flow:
+              - static:
+                  src: Failure!
+    - target:
+        url: https://httpbin.org/status/500
 ```
 
 # Security
