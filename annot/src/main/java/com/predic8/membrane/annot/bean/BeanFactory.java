@@ -15,8 +15,8 @@
 package com.predic8.membrane.annot.bean;
 
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.annot.util.*;
-import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 
 import java.lang.reflect.*;

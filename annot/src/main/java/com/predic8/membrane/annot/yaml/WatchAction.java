@@ -14,5 +14,18 @@
 package com.predic8.membrane.annot.yaml;
 
 public enum WatchAction {
-    ADDED, MODIFIED, DELETED
+    ADDED, MODIFIED, DELETED;
+
+    public boolean isDeleted() {
+        return this == DELETED;
+    }
+
+    public boolean isModified() {
+        return this == MODIFIED;
+    }
+
+    public boolean isAdded() {
+        return this == ADDED;
+    }
+
 }
