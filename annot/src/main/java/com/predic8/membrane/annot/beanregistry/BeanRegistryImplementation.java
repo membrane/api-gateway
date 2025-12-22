@@ -86,7 +86,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     private void activationRun() {
-        Set<String> uidsToRemove = new HashSet<>();
+        Set<UidAction> uidsToRemove = new HashSet<>();
         for (UidAction uidAction : uidsToActivate) {
             BeanContainer bc = bcs.get(uidAction.uid);
             try {
@@ -102,15 +102,15 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
                     singletonBeans.remove(bc.getDefinition().getUid());
                     bcs.remove(bc.getDefinition().getUid());
                 }
-                uidsToRemove.add(bc.getDefinition().getUid());
+                uidsToRemove.add(uidAction);
             } catch (Exception e) {
                 log.error("Could not handle {} {}/{}", uidAction.action,
                         bc.getDefinition().getNamespace(), bc.getDefinition().getName(), e);
                 throw new RuntimeException(e);
             }
         }
-        for (String uid : uidsToRemove)
-            uidsToActivate.remove(uid);
+        for (UidAction uidAction : uidsToRemove)
+            uidsToActivate.remove(uidAction);
     }
 
     private @Nullable Object getOldBean(WatchAction action, BeanDefinition bd) {

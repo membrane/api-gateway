@@ -28,7 +28,7 @@ public class AsyncBeanCollector implements BeanCollector {
     public synchronized void start() {
         if (t != null)
             return;
-        t = new Thread(() -> {
+        t = Thread.ofVirtual().start(() -> {
             while (true) {
                 try {
                     ChangeEvent changeEvent = changeEvents.take();
@@ -38,7 +38,6 @@ public class AsyncBeanCollector implements BeanCollector {
                 }
             }
         });
-        t.start();
     }
 
 }
