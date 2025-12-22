@@ -39,6 +39,8 @@ public class RequestTest {
 
 	private InputStream inEmptyPost;
 
+	private InputStream inEmptyPostWithContentLength;
+
 	private InputStream inChunked;
 
 	private ByteArrayOutputStream tempOut;
@@ -66,18 +68,29 @@ public class RequestTest {
 		0
 		""";
 
-	// Content-Length: 0
 	private static final String POST_EMPTY_BODY_REQUEST = """
 		POST /operation/call HTTP/1.1
 		Host: service-repository.com:80
 		
 		""";
 
+	private static final String POST_EMPTY_BODY_REQUEST_WITH_CONTENT_LENGTH = """
+		POST /operation/call HTTP/1.1
+		Host: service-repository.com:80
+		Content-Length: 0
+		
+		""";
+
 	@BeforeEach
 	public void setUp() {
 		inPost = getRequest(POST_REQUEST);
-		inEmptyPost = new ByteArrayInputStream(POST_EMPTY_BODY_REQUEST.stripIndent().replace("\n", "\r\n").getBytes());
+		inEmptyPost = getEmptyRequest(POST_EMPTY_BODY_REQUEST);
+		inEmptyPostWithContentLength = getEmptyRequest(POST_EMPTY_BODY_REQUEST_WITH_CONTENT_LENGTH);
 		inChunked = getRequest(CHUNKED_REQUEST);
+	}
+
+	private static @NotNull ByteArrayInputStream getEmptyRequest(String request) {
+		return new ByteArrayInputStream(request.stripIndent().replace("\n", "\r\n").getBytes());
 	}
 
 	private static @NotNull ByteArrayInputStream getRequest(String request) {
@@ -128,12 +141,16 @@ public class RequestTest {
 	}
 
 	@Test
-	void readEmptyPost() throws Exception {
-		reqPost.read(inEmptyPost, true);
+	void emptyBody() throws Exception {
+		readEmptyPost(inEmptyPost);
+		readEmptyPost(inEmptyPostWithContentLength);
+	}
+
+	void readEmptyPost(InputStream request) throws Exception {
+		reqPost.read(request, true);
 		assertEquals(METHOD_POST, reqPost.getMethod());
 		assertEquals("/operation/call", reqPost.getUri());
 		assertNotNull(reqPost.getBody());
-		System.out.println("reqPost = " + reqPost.body);
 		assertEquals(0, reqPost.getBody().getLength());
 	}
 
