@@ -81,4 +81,4 @@ Of course, you can protect the management API like any other Membrane proxy usin
 
 ---
 See:
-- [balancer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm) reference
+- [balancer](https://membrane-api.io/docs/current/balancer.html) reference
