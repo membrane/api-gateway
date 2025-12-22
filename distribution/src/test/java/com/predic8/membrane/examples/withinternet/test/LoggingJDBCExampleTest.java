@@ -1,17 +1,3 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License. */
-
 package com.predic8.membrane.examples.withinternet.test;
 
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
@@ -21,19 +7,18 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.sql.*;
+import java.util.concurrent.TimeUnit;
 
 import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static java.io.File.separator;
-import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.io.FileUtils.copyFileToDirectory;
-import static org.apache.commons.io.FileUtils.writeStringToFile;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
+
 
     @Override
     protected String getExampleDirName() {
@@ -42,68 +27,88 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
 
     @Test
     public void test() throws Exception {
-        copyDerbyLibraries();
-
-        writeStringToFile(new File(baseDir, "proxies.xml"),  readFileFromBaseDir("proxies.xml").
-                replace("org.apache.derby.jdbc.ClientDriver", "org.apache.derby.jdbc.EmbeddedDriver").
-                replace("jdbc:derby://localhost:1527/membranedb;create=true", "jdbc:derby:derbyDB;create=true"), UTF_8);
+        copyH2JarToMembraneLib();
 
         try (Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-            ha.getAndAssert200("http://localhost:2000/");
+            String path = "/?t=" + System.nanoTime();
+            ha.getAndAssert200("http://localhost:2000" + path);
+            assertLogged("GET", "/?t=", 200);
         }
-
-        assertLogToDerbySucceeded();
     }
 
-    private void copyDerbyLibraries() throws IOException {
-        copyDerbyJarToMembraneLib("org.apache.derby.jdbc.EmbeddedDriver");
-        copyDerbyJarToMembraneLib("org.apache.derby.iapi.jdbc.JDBCBoot");
-        copyDerbyJarToMembraneLib("org.apache.derby.shared.common.error.StandardException");
-    }
 
-    private void assertLogToDerbySucceeded() throws Exception {
-        sleep(1000); // We have to wait till the Membrane process is terminated, otherwise the derbyDB file is still used by Membrane
-        Class.forName("org.apache.derby.jdbc.EmbeddedDriver").getDeclaredConstructor().newInstance();
+    private void assertLogged(String method, String pathContains, int status) throws Exception {
+        Class.forName("org.h2.Driver");
 
-        try (Connection conn = getConnection()) {
-            try (Statement stmt = conn.createStatement()) {
-                //noinspection SqlResolve,SqlNoDataSourceInspection
-                try (ResultSet rs = stmt.executeQuery("select METHOD from MEMBRANE.STATISTIC")) {
-                    assertTrue(rs.next());
-                    assertEquals("GET", rs.getString(1));
+        String url = h2JdbcUrl();
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+
+        while (System.nanoTime() < deadline) {
+            try (Connection c = DriverManager.getConnection(url, "membrane", "membranemembrane")) {
+                var cols = new java.util.HashSet<String>();
+                try (ResultSet rs = c.getMetaData().getColumns(null, null, "STATISTIC", null)) {
+                    while (rs.next()) cols.add(rs.getString("COLUMN_NAME").toUpperCase());
                 }
+                if (cols.isEmpty()) throw new SQLException("STATISTIC not ready");
+
+                String methodCol = cols.contains("METHOD") ? "method" :
+                        cols.contains("HTTP_METHOD") ? "http_method" : null;
+                String pathCol   = cols.contains("PATH") ? "path" :
+                        cols.contains("URI") ? "uri" :
+                                cols.contains("URL") ? "url" : null;
+                String statusCol = cols.contains("STATUS_CODE") ? "status_code" :
+                        cols.contains("STATUS") ? "status" : null;
+
+                StringBuilder sql = new StringBuilder("select count(*) from statistic where 1=1");
+                if (methodCol != null) sql.append(" and ").append(methodCol).append("=?");
+                if (pathCol != null)   sql.append(" and ").append(pathCol).append(" like ?");
+                if (statusCol != null) sql.append(" and ").append(statusCol).append("=?");
+
+                try (var ps = c.prepareStatement(sql.toString())) {
+                    int i = 1;
+                    if (methodCol != null) ps.setString(i++, method);
+                    if (pathCol != null)   ps.setString(i++, "%" + pathContains + "%");
+                    if (statusCol != null) ps.setInt(i++, status);
+
+                    try (ResultSet rs = ps.executeQuery()) {
+                        rs.next();
+                        if (rs.getLong(1) > 0) return;
+                    }
+                }
+
+            } catch (SQLException e) {
+                // retry
             }
+            Thread.sleep(100);
         }
-        try {
-            DriverManager.getConnection("jdbc:derby:;shutdown=true");
-        } catch (SQLException e) {
-            // do nothing
-        }
+
+        fail("Expected log entry not found (method=" + method + ", path~=" + pathContains + ", status=" + status + ").");
     }
 
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:derby:" + getDBFile().getAbsolutePath().replace("\\", "/"));
+
+    private String h2JdbcUrl() {
+
+        File dbBase = new File(getExampleDir(), "membranedb");
+        String abs = dbBase.getAbsolutePath().replace('\\', '/');
+        return "jdbc:h2:" + abs + ";AUTO_SERVER=TRUE";
     }
 
-    private File getDBFile() {
-        return new File(baseDir, "derbyDB");
+    private File getExampleDir() {
+        return new File(getMembraneHome(), "examples" + separator + getExampleDirName());
     }
 
-    private void copyDerbyJarToMembraneLib(String clazz) throws IOException {
+    private void copyH2JarToMembraneLib() throws IOException {
+        URL res = requireNonNull(getClass().getResource("/org/h2/Driver.class"));
+        String u = res.toString(); // jar:file:/.../h2-<ver>.jar!/org/h2/Driver.class
 
-        File derbyJar = getDerbyJarFile(getClassJar(clazz));
+        String jarUrl = u.substring(0, u.indexOf('!'));
+        if (jarUrl.startsWith("jar:")) jarUrl = jarUrl.substring(4);
+        if (jarUrl.startsWith("file:")) jarUrl = jarUrl.substring(isWindows() ? 6 : 5);
 
-        if (!derbyJar.exists())
-            throw new AssertionError("derby jar not found in classpath (it's either missing or the detection logic broken). classJar=" + getClassJar(clazz));
+        File jar = new File(jarUrl);
+        if (!jar.exists())
+            throw new AssertionError("H2 jar not found in classpath: " + jar);
 
-        copyFileToDirectory(derbyJar, new File(getMembraneHome(), "lib"));
-    }
-
-    private String getClassJar(String clazz) {
-        return requireNonNull(getClass().getResource("/" + clazz.replace('.', '/') + ".class")).getPath();
-    }
-
-    private File getDerbyJarFile(String classJar) {
-        return new File(classJar.split("!")[0].substring(isWindows() ? 6 : 5));
+        copyFileToDirectory(jar, new File(getMembraneHome(), "lib"));
     }
 }
