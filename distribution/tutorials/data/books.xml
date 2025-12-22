@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<books>
+
+    <book id="1">
+        <title>The Mythical Man-Month</title>
+        <author>Frederick P. Brooks Jr.</author>
+        <year>1975</year>
+        <category>Software Engineering</category>
+    </book>
+
+    <book id="2">
+        <title>Code Complete</title>
+        <author>Steve McConnell</author>
+        <year>1993</year>
+        <category>Software Engineering</category>
+    </book>
+
+    <book id="3">
+        <title>Clean Code</title>
+        <author>Robert C. Martin</author>
+        <year>2008</year>
+        <category>Software Engineering</category>
+    </book>
+
+    <book id="4">
+        <title>The Pragmatic Programmer</title>
+        <author>Andrew Hunt</author>
+        <author>David Thomas</author>
+        <year>1999</year>
+        <category>Software Engineering</category>
+    </book>
+
+    <book id="5">
+        <title>Design Patterns</title>
+        <subtitle>Elements of Reusable Object-Oriented Software</subtitle>
+        <author>Erich Gamma</author>
+        <author>Richard Helm</author>
+        <author>Ralph Johnson</author>
+        <author>John Vlissides</author>
+        <year>1994</year>
+        <category>Architecture</category>
+    </book>
+
+    <book id="6">
+        <title>Patterns of Enterprise Application Architecture</title>
+        <author>Martin Fowler</author>
+        <year>2002</year>
+        <category>Architecture</category>
+    </book>
+
+    <book id="7">
+        <title>Structure and Interpretation of Computer Programs</title>
+        <author>Harold Abelson</author>
+        <author>Gerald Jay Sussman</author>
+        <year>1985</year>
+        <category>Computer Science</category>
+    </book>
+
+    <book id="8">
+        <title>The Art of Unix Programming</title>
+        <author>Eric S. Raymond</author>
+        <year>2003</year>
+        <category>Systems</category>
+    </book>
+
+    <book id="9">
+        <title>Site Reliability Engineering</title>
+        <subtitle>How Google Runs Production Systems</subtitle>
+        <author>Betsy Beyer</author>
+        <author>Chris Jones</author>
+        <author>Jennifer Petoff</author>
+        <author>Niall Richard Murphy</author>
+        <year>2016</year>
+        <category>DevOps</category>
+    </book>
+
+    <book id="10">
+        <title>The Phoenix Project</title>
+        <subtitle>A Novel About IT, DevOps, and Helping Your Business Win</subtitle>
+        <author>Gene Kim</author>
+        <author>Kevin Behr</author>
+        <author>George Spafford</author>
+        <year>2013</year>
+        <category>DevOps</category>
+    </book>
+
+</books>
