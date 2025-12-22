@@ -107,6 +107,14 @@ public class RequestTest {
 			inChunked.close();
 		}
 
+		if (inEmptyPost != null) {
+			inEmptyPost.close();
+		}
+
+		if (inEmptyPostWithContentLength != null) {
+			inEmptyPostWithContentLength.close();
+		}
+
 		if (tempIn != null) {
 			tempIn.close();
 		}
