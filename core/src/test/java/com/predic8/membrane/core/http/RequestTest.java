@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -36,27 +37,82 @@ public class RequestTest {
 
 	private InputStream inPost;
 
+	private InputStream inEmptyPost;
+
+	private InputStream inEmptyPostWithContentLength;
+
 	private InputStream inChunked;
 
 	private ByteArrayOutputStream tempOut;
 
 	private InputStream tempIn;
 
+	private static final String POST_REQUEST = """
+		POST /operation/call HTTP/1.1
+		Host: service-repository.com:80
+		Connection: keep-alive
+		Content-Length: 168
+		Content-Type: application/x-www-form-urlencoded
+		
+		endpoint=http%3A%2F%2Fwww.thomas-bayer.com%3A80%2Faxis2%2Fservices%2FBLZService&xpath%3A%2FgetBank%2Fblz=38070024&id=65657&operation=getBank&portType=BLZServicePortType
+		""";
+
+	private static final String CHUNKED_REQUEST = """
+		POST /axis2/services/BLZService HTTP/1.1
+		Content-Type: application/soap+xml; charset=UTF-8; action="http://thomas-bayer.com/blz/BLZServicePortType/getBankRequest"
+		Host: localhost:7000
+		Transfer-Encoding: chunked
+		
+		ff
+		<?xml version='1.0' encoding='UTF-8'?><soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope"><soapenv:Body><ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/"><ns1:blz>66762332</ns1:blz></ns1:getBank></soapenv:Body></soapenv:Envelope>
+		0
+		""";
+
+	private static final String POST_EMPTY_BODY_REQUEST = """
+		POST /operation/call HTTP/1.1
+		Host: service-repository.com:80
+		
+		""";
+
+	private static final String POST_EMPTY_BODY_REQUEST_WITH_CONTENT_LENGTH = """
+		POST /operation/call HTTP/1.1
+		Host: service-repository.com:80
+		Content-Length: 0
+		
+		""";
+
 	@BeforeEach
 	public void setUp() {
-		inPost = getResourceAsStream(this,"request-post.msg");
-		inChunked = getResourceAsStream(this,"request-chunked-soap.msg");
+		inPost = getRequest(POST_REQUEST);
+		inEmptyPost = getEmptyRequest(POST_EMPTY_BODY_REQUEST);
+		inEmptyPostWithContentLength = getEmptyRequest(POST_EMPTY_BODY_REQUEST_WITH_CONTENT_LENGTH);
+		inChunked = getRequest(CHUNKED_REQUEST);
+	}
+
+	private static @NotNull ByteArrayInputStream getEmptyRequest(String request) {
+		return new ByteArrayInputStream(request.stripIndent().replace("\n", "\r\n").getBytes());
+	}
+
+	private static @NotNull ByteArrayInputStream getRequest(String request) {
+		return new ByteArrayInputStream(request.stripIndent().stripTrailing().replace("\n", "\r\n").getBytes());
 	}
 
 	@AfterEach
 	public void tearDown() throws Exception {
-
 		if (inPost != null) {
 			inPost.close();
 		}
 
 		if (inChunked != null) {
 			inChunked.close();
+		}
+
+		if (inEmptyPost != null) {
+			inEmptyPost.close();
+		}
+
+		if (inEmptyPostWithContentLength != null) {
+			inEmptyPostWithContentLength.close();
 		}
 
 		if (tempIn != null) {
@@ -66,7 +122,6 @@ public class RequestTest {
 		if (tempOut != null) {
 			tempOut.close();
 		}
-
 	}
 	
 	@Test
@@ -91,6 +146,20 @@ public class RequestTest {
 		assertNotNull(reqPost.getBody());
 
 		assertEquals(168, reqPost.getBody().getLength());
+	}
+
+	@Test
+	void emptyBody() throws Exception {
+		readEmptyPost(inEmptyPost);
+		readEmptyPost(inEmptyPostWithContentLength);
+	}
+
+	void readEmptyPost(InputStream request) throws Exception {
+		reqPost.read(request, true);
+		assertEquals(METHOD_POST, reqPost.getMethod());
+		assertEquals("/operation/call", reqPost.getUri());
+		assertNotNull(reqPost.getBody());
+		assertEquals(0, reqPost.getBody().getLength());
 	}
 
 	@Test
@@ -239,7 +308,7 @@ public class RequestTest {
 		AbstractBody originalBody = readMessageAndGetBody();
 		reqPost.setBodyContent("ABC".getBytes(UTF_8));
 		assertTrue(originalBody.isRead()); // Assert that the original body is read
-		assertEquals(0,inPost.available()); // Check that all bytes are read from the stream
+		assertEquals(0, inPost.available()); // Check that all bytes are read from the stream
 	}
 
 	@Test
