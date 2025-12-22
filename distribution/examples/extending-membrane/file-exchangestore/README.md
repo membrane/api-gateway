@@ -19,5 +19,5 @@ To run the example execute the following steps:
 
 ---
 See: 
-- [exchangeStore](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/exchangeStore.htm) reference
-- [fileExchangeStore](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/fileExchangeStore.htm) reference
+- [exchangeStore](https://membrane-api.io/docs/current/exchangeStore.html) reference
+- [fileExchangeStore](https://membrane-api.io/docs/current/fileExchangeStore.html) reference

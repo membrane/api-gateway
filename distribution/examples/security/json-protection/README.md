@@ -60,4 +60,4 @@ Or run individual requests from the `requests.http` file using editors or IDEs s
 The requests will test several cases of malicious JSON. Take a look at the `proxies.xml` file to get an idea of how to set up the plugin.  
 
 **See**:  
-* [jsonProtection](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/jsonProtection.htm) reference
+* [jsonProtection](https://membrane-api.io/docs/current/jsonProtection.html) reference

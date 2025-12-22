@@ -92,5 +92,5 @@ the message by prepending a prefix to the body of the message.
 
 ---
 See:
-- [webSocket](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webSocket.htm) reference
-- [wsStompReassembler](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/wsStompReassembler.htm) reference
+- [webSocket](https://membrane-api.io/docs/current/webSocket.html) reference
+- [wsStompReassembler](https://membrane-api.io/docs/current/wsStompReassembler.html) reference

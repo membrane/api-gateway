@@ -38,4 +38,4 @@ select * from membrane.statistic;
 
 ---
 See:
-- [statisticsJDBC](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/statisticsJDBC.htm) reference
+- [statisticsJDBC](https://membrane-api.io/docs/current/statisticsJDBC.html) reference

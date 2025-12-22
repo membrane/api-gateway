@@ -40,4 +40,4 @@ By adding <field /> child elements to the plugin, we establish the necessary val
 
 ---
 See:
-- [formValidation](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/formValidation.htm) reference
+- [formValidation](https://www.membrane-api.io/docs/current/formValidation.html) reference

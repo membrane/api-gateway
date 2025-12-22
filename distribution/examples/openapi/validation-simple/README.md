@@ -120,4 +120,4 @@ See the [openapi-validation](../validation) folder for a more detailed example.
 
 ---
 See:
-- [openapi](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/openapi.htm) reference
+- [openapi](https://membrane-api.io/docs/current/openapi.html) reference

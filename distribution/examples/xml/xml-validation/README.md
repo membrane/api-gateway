@@ -46,4 +46,4 @@ Here, an XML document is generated and redirected back to the first `<api>` comp
 
 ---
 See:
-- [validator](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/validator.htm) reference
+- [validator](https://membrane-api.io/docs/current/validator.html) reference

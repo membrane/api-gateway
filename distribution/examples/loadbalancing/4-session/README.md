@@ -27,4 +27,4 @@ curl -X POST http://localhost:8080 \
 
 ---
 See:
-- balancer reference: https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/balancer.htm
+- balancer reference: https://www.membrane-api.io/docs/current/balancer.html
