@@ -21,13 +21,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.sql.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static java.io.File.separator;
-import static java.util.Objects.requireNonNull;
 import static org.apache.commons.io.FileUtils.copyFileToDirectory;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -44,67 +41,51 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
         copyH2JarToMembraneLib();
 
         try (Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-            String path = "/?t=" + System.nanoTime();
-            ha.getAndAssert200("http://localhost:2000" + path);
+            ha.getAndAssert200("http://localhost:2000/?t="+ System.nanoTime());
             assertLogged("GET", "/?t=", 200);
         }
     }
 
-
     private void assertLogged(String method, String pathContains, int status) throws Exception {
-        Class.forName("org.h2.Driver");
+        while (System.nanoTime() < System.nanoTime() + TimeUnit.SECONDS.toNanos(10)) {
+            try (Connection c = DriverManager.getConnection(h2JdbcUrl(), "membrane", "membranemembrane");
+                 ResultSet rs = c.prepareStatement("select * from statistic limit 200").executeQuery()) {
 
-        String url = h2JdbcUrl();
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+                ResultSetMetaData md = rs.getMetaData();
+                int methodIdx = findCol(md, "METHOD", "HTTP_METHOD");
+                int pathIdx   = findCol(md, "PATH", "URI", "URL");
+                int statusIdx = findCol(md, "STATUS_CODE", "STATUS");
 
-        while (System.nanoTime() < deadline) {
-            try (Connection c = DriverManager.getConnection(url, "membrane", "membranemembrane")) {
-                var cols = new java.util.HashSet<String>();
-                try (ResultSet rs = c.getMetaData().getColumns(null, null, "STATISTIC", null)) {
-                    while (rs.next()) cols.add(rs.getString("COLUMN_NAME").toUpperCase());
+                while (rs.next()) {
+                    boolean okMethod = methodIdx == 0 || method.equals(rs.getString(methodIdx));
+                    boolean okPath   = pathIdx == 0   || (rs.getString(pathIdx) != null && rs.getString(pathIdx).contains(pathContains));
+                    boolean okStatus = statusIdx == 0 || status == rs.getInt(statusIdx);
+
+                    if (okMethod && okPath && okStatus) return;
                 }
-                if (cols.isEmpty()) throw new SQLException("STATISTIC not ready");
+            } catch (SQLException ignored) {}
 
-                String methodCol = cols.contains("METHOD") ? "method" :
-                        cols.contains("HTTP_METHOD") ? "http_method" : null;
-                String pathCol   = cols.contains("PATH") ? "path" :
-                        cols.contains("URI") ? "uri" :
-                                cols.contains("URL") ? "url" : null;
-                String statusCol = cols.contains("STATUS_CODE") ? "status_code" :
-                        cols.contains("STATUS") ? "status" : null;
-
-                StringBuilder sql = new StringBuilder("select count(*) from statistic where 1=1");
-                if (methodCol != null) sql.append(" and ").append(methodCol).append("=?");
-                if (pathCol != null)   sql.append(" and ").append(pathCol).append(" like ?");
-                if (statusCol != null) sql.append(" and ").append(statusCol).append("=?");
-
-                try (var ps = c.prepareStatement(sql.toString())) {
-                    int i = 1;
-                    if (methodCol != null) ps.setString(i++, method);
-                    if (pathCol != null)   ps.setString(i++, "%" + pathContains + "%");
-                    if (statusCol != null) ps.setInt(i++, status);
-
-                    try (ResultSet rs = ps.executeQuery()) {
-                        rs.next();
-                        if (rs.getLong(1) > 0) return;
-                    }
-                }
-
-            } catch (SQLException e) {
-                // retry
-            }
             Thread.sleep(100);
         }
 
         fail("Expected log entry not found (method=" + method + ", path~=" + pathContains + ", status=" + status + ").");
     }
 
+    private static int findCol(ResultSetMetaData md, String... candidates) throws SQLException {
+        int n = md.getColumnCount();
+        for (int i = 1; i <= n; i++) {
+            String name = md.getColumnLabel(i);
+            if (name == null || name.isBlank()) name = md.getColumnName(i);
+            String up = name == null ? "" : name.toUpperCase();
+            for (String c : candidates)
+                if (up.equals(c)) return i;
+        }
+        return 0;
+    }
+
 
     private String h2JdbcUrl() {
-
-        File dbBase = new File(getExampleDir(), "membranedb");
-        String abs = dbBase.getAbsolutePath().replace('\\', '/');
-        return "jdbc:h2:" + abs + ";AUTO_SERVER=TRUE";
+        return "jdbc:h2:" + new File(getExampleDir(), "membranedb").getAbsolutePath().replace('\\', '/') + ";AUTO_SERVER=TRUE";
     }
 
     private File getExampleDir() {
@@ -112,17 +93,17 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
     }
 
     private void copyH2JarToMembraneLib() throws IOException {
-        URL res = requireNonNull(getClass().getResource("/org/h2/Driver.class"));
-        String u = res.toString(); // jar:file:/.../h2-<ver>.jar!/org/h2/Driver.class
+        try {
+            File jar = new File(org.h2.Driver.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI());
 
-        String jarUrl = u.substring(0, u.indexOf('!'));
-        if (jarUrl.startsWith("jar:")) jarUrl = jarUrl.substring(4);
-        if (jarUrl.startsWith("file:")) jarUrl = jarUrl.substring(isWindows() ? 6 : 5);
+            if (!jar.isFile() || !jar.getName().endsWith(".jar"))
+                throw new AssertionError("H2 is not loaded from a jar: " + jar);
 
-        File jar = new File(jarUrl);
-        if (!jar.exists())
-            throw new AssertionError("H2 jar not found in classpath: " + jar);
-
-        copyFileToDirectory(jar, new File(getMembraneHome(), "lib"));
+            copyFileToDirectory(jar, new File(getMembraneHome(), "lib"));
+        } catch (Exception e) {
+            throw new IOException("Failed to locate/copy H2 jar.", e);
+        }
     }
+
 }
