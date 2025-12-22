@@ -2,7 +2,7 @@
 #
 # Membrane Tutorial: Sample SOAP Service
 #
-# The `sampleSoapService` can be useful for development and debugging.
+# The `sampleSoapService` is useful for development and debugging.
 #
 # 1.) Start Membrane:
 #    Open a terminal in this folder and run:
@@ -17,7 +17,13 @@
 #
 #      http://localhost:2000/city-service?wsdl
 #
-# 3.)
+# 3.) Invoke the Web Service
+#    Run:
+#
+#      ./invoke-sample-soap-service.sh
+#
+#    Or import the WSDL into SoapUI
+
 api:
   port: 2000
   path:
