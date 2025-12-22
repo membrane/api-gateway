@@ -1,3 +1,13 @@
-# Membrane API Gateway Tutorial - JSON
+# Membrane API Gateway Tutorial - XML
 
-Before starting, we recommend completing the [Getting Started](../getting-started) tutorial.
+This tutorial focuses on working with XML in Membrane API Gateway, including:
+
+- XPath
+- XML-to-JSON and JSON-to-XML transformations
+
+To begin, open [10-JSON-to-XML.yaml](10-JSON-to-XML.yaml) and follow the instructions in the file.
+
+
+## TBD:
+
+- XSLT transformation

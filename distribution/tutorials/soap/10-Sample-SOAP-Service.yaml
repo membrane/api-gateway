@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
+#
+# Membrane Tutorial: Sample SOAP Service
+#
+# The `sampleSoapService` can be useful for development and debugging.
+#
+# 1.) Start Membrane:
+#    Open a terminal in this folder and run:
+#
+#    Linux/Mac:
+#      ./membrane.sh -c 00-First-API.yaml
+#    Windows:
+#      membrane.cmd -c 00-First-API.yaml
+#
+# 2.) WSDL
+#    Open the WSDL in a browser:
+#
+#      http://localhost:2000/city-service?wsdl
+#
+# 3.)
+api:
+  port: 2000
+  path:
+    uri: /city-service
+  flow:
+    - sampleSoapService: {}

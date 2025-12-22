@@ -1,3 +1,8 @@
 # Membrane API Gateway Tutorial - JSON
 
-Before starting, we recommend completing the [Getting Started](../getting-started) tutorial.
+This tutorial covers working with JSON in Membrane API Gateway, including:
+
+- JsonPath
+- JSON message transformations
+
+To begin, open [10-JsonPath.yaml](10-JsonPath.yaml) and follow the instructions in the file.

@@ -1,10 +1,15 @@
 # Advanced Membrane Tutorial
 
-In this tutorial you will learn advanced features of Membrane, including:
+This tutorial introduces advanced Membrane API Gateway features, including:
 
 - Path parameters
 - Routing
 - Rewriting of paths
 - Redirects
 
-Before starting, we recommend completing the [Getting Started](../getting-started) tutorial.
+Before you start, make sure you have completed the
+[Getting Started](../getting-started) tutorial.
+
+To begin, open [10-PathParameters.yaml](10-PathParameters.yaml) and follow the instructions in the file.
+
+
