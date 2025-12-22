@@ -12,9 +12,16 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.annot.generator;
+package com.predic8.membrane.core.lang.spel;
 
-public enum Scope {
-    SINGLETON,
-    PROTOTYPE
+import org.springframework.expression.common.*;
+
+public class DollarTemplateParserContext extends TemplateParserContext {
+
+    public static final DollarTemplateParserContext DOLLAR_TEMPLATE_PARSER_CONTEXT = new DollarTemplateParserContext();
+
+    private DollarTemplateParserContext() {
+        super("${", "}");
+    }
+
 }

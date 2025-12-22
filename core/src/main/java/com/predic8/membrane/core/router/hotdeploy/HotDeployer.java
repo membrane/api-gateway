@@ -12,9 +12,22 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.annot.generator;
+package com.predic8.membrane.core.router.hotdeploy;
 
-public enum Scope {
-    SINGLETON,
-    PROTOTYPE
+import com.predic8.membrane.core.*;
+
+public interface HotDeployer {
+
+    void start();
+
+    void stop();
+
+    void setEnabled(boolean enabled);
+
+    default boolean isEnabled() {
+        return false;
+    }
+
+    default void init(Router router) {}
 }
+

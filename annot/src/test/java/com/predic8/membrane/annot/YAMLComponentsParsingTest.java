@@ -211,7 +211,7 @@ public class YAMLComponentsParsingTest {
                 components:
                   x: {}
                 """));
-        assertSchemaErrorContains(ex, "required property", "not found");
+        assertSchemaErrorContains(ex, "must have at least 1 properties");
     }
 
     @Test
