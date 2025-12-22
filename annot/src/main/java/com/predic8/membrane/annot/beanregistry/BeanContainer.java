@@ -1,7 +1,5 @@
 package com.predic8.membrane.annot.beanregistry;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 public class BeanContainer {
     private final BeanDefinition definition;
     /**

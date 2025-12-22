@@ -104,7 +104,7 @@ public class MethodSetter {
             if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);
             return createAndPopulateNode(ctx.updateContext(key), wanted, node);
         }
-        if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolveReference(node.asText());
+        if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolve(node.asText());
         throw new RuntimeException("Not implemented setter type " + wanted);
     }
 
@@ -131,7 +131,7 @@ public class MethodSetter {
         String ref = node.asText();
         final Object resolved;
         try {
-            resolved = ctx.registry().resolveReference(ref);
+            resolved = ctx.registry().resolve(ref);
         } catch (RuntimeException e) {
             throw new ParsingException(e, node);
         }

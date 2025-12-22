@@ -335,7 +335,7 @@ public class GenericYamlParserTest {
     static class TestRegistry implements BeanRegistry {
         private final Map<String, Object> refs = new HashMap<>();
         TestRegistry with(String key, Object v) { refs.put(key, v); return this; }
-        @Override public Object resolveReference(String ref) { return refs.get(ref); }
+        @Override public Object resolve(String ref) { return refs.get(ref); }
 
         @Override
         public List<Object> getBeans() {

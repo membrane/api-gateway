@@ -18,7 +18,8 @@ import com.predic8.membrane.annot.bean.BeanFactory;
 import com.predic8.membrane.annot.yaml.BeanCacheObserver;
 import com.predic8.membrane.annot.yaml.GenericYamlParser;
 import com.predic8.membrane.annot.yaml.WatchAction;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +122,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     @Override
-    public Object resolveReference(String url) {
+    public Object resolve(String url) {
         BeanContainer bc = getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url)));
 
         boolean prototype = isPrototypeScope(bc.getDefinition());
@@ -146,6 +147,16 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         return bcs.values().stream().filter(bd -> !bd.getDefinition().isComponent())
                 .map(BeanContainer::getSingleton)
                 .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Override
+    public <T> List<T> getBeans(Class<T> clazz) {
+        return bcs.values().stream()
+                .map(BeanContainer::getSingleton)
+                .filter(Objects::nonNull)
+                .filter(clazz::isInstance)
+                .map(clazz::cast)
                 .toList();
     }
 
