@@ -15,6 +15,8 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionChanged;
 import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.RuleManager.*;
 import com.predic8.membrane.core.config.spring.*;
@@ -649,13 +651,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     }
 
     @Override
-    public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) throws IOException {
+    public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) throws IOException {
         if (!(bean instanceof Proxy newProxy)) {
             throw new IllegalArgumentException("Bean must be a Proxy instance, but got: " + bean.getClass().getName());
         }
 
         if (newProxy.getName() == null)
-            newProxy.setName(bd.getName());
+            newProxy.setName(bdc.bd().getName());
 
         try {
             newProxy.init(this);
@@ -666,11 +668,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
             throw new RuntimeException("Could not init rule.", e);
         }
 
-        if (bd.getAction() == WatchAction.ADDED)
+        if (bdc.action().isAdded())
             add(newProxy);
-        else if (bd.getAction() == WatchAction.DELETED)
+        else if (bdc.action().isDeleted())
             getRuleManager().removeRule((Proxy) oldBean);
-        else if (bd.getAction() == WatchAction.MODIFIED)
+        else if (bdc.action().isModified())
             getRuleManager().replaceRule((Proxy) oldBean, newProxy);
     }
 
