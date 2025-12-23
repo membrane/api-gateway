@@ -99,7 +99,7 @@ jobs:
           GITLAB_TRIGGER_TOKEN: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
         run: |
           VERSION='${{ steps.get_version.outputs.VERSION }}'
-          curl -X POST --fail \
+          curl -q -X POST --fail \
             --connect-timeout 10 \
             --max-time 30 \
             -F token="${GITLAB_TRIGGER_TOKEN}" \
