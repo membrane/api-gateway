@@ -15,6 +15,7 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 
 /**
  * Immutable parsing state passed down while traversing YAML.

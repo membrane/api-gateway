@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.annot.util;
 
-import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import org.hamcrest.*;
 import org.hamcrest.collection.*;
 import org.jetbrains.annotations.*;
