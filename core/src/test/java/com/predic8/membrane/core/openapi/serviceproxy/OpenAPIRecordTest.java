@@ -30,7 +30,7 @@ class OpenAPIRecordTest {
     @BeforeEach
     void setUp() {
         Router router = new Router();
-        router.setUriFactory(new URIFactory());
+        router.getConfig().setUriFactory(new URIFactory());
         router.setBaseLocation("");
 
         get.setRequest(new Request.Builder().method("GET").build());

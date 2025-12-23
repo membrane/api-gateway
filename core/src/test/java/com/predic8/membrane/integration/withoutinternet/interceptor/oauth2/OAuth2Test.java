@@ -54,7 +54,7 @@ class OAuth2Test {
     @BeforeAll
     static void startup() throws Exception {
         router = new Router();
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
         router.setExchangeStore(new ForgetfulExchangeStore());
         router.setTransport(new HttpTransport());
 
@@ -68,7 +68,7 @@ class OAuth2Test {
         router.start();
 
         router2 = new Router();
-        router2.setHotDeploy(false);
+        router2.getConfig().setHotDeploy(false);
         router2.setExchangeStore(new ForgetfulExchangeStore());
         router2.setTransport(new HttpTransport());
 

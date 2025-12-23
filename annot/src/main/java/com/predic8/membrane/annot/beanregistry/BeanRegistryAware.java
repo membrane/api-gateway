@@ -1,4 +1,4 @@
-/* Copyright 2022 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,23 +11,10 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+
 package com.predic8.membrane.annot.beanregistry;
 
-import com.predic8.membrane.annot.*;
-
-import java.util.*;
-
-public interface BeanRegistry {
-
-    Object resolve(String url);
-
-    List<Object> getBeans();
-
-    Grammar getGrammar();
-
-    <T> List<T> getBeans(Class<T> clazz);
-
-    <T> Optional<T> getBean(Class<T> clazz);
-
-    void register(String beanName, Object object);
+public interface BeanRegistryAware {
+    void setRegistry(BeanRegistry registry);
 }
+

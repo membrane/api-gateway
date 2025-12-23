@@ -42,7 +42,7 @@ public class KubernetesClientTest {
     @BeforeAll
     public static void prepare() {
         router = new HttpRouter();
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3053), null, 0);
         sp.getFlow().add(new AbstractInterceptor() {
             @Override

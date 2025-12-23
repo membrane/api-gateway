@@ -70,7 +70,7 @@ class ElasticSearchExchangeStoreTest {
 
     private static void initializeElasticSearchMock() throws IOException {
         elasticMock = new HttpRouter();
-        elasticMock.setHotDeploy(false);
+        elasticMock.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3066), null, 0);
         sp.getFlow().add(createBodyLoggingInterceptor());
         sp.getFlow().add(createElasticSearchMockInterceptor());
@@ -86,7 +86,7 @@ class ElasticSearchExchangeStoreTest {
 
     private static void initializeGateway(boolean addLoggingInterceptors) throws IOException {
         gateway = new HttpRouter();
-        gateway.setHotDeploy(false);
+        gateway.getConfig().setHotDeploy(false);
         es = new ElasticSearchExchangeStore();
         es.setLocation("http://localhost:3066");
         es.setUpdateIntervalMs(100);
@@ -103,7 +103,7 @@ class ElasticSearchExchangeStoreTest {
 
     private static void initializeBackend() throws IOException {
         back = new HttpRouter();
-        back.setHotDeploy(false);
+        back.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         StaticInterceptor si = new StaticInterceptor();
         si.setSrc(RESPONSE_BODY);

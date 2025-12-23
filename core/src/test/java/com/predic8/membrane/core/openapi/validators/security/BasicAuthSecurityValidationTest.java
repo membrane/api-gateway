@@ -43,7 +43,7 @@ public class BasicAuthSecurityValidationTest {
     @BeforeEach
     void setUpSpec() {
         Router router = new Router();
-        router.setUriFactory(new URIFactory());
+        router.getConfig().setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = getPathFromResource("openapi/specs/security/http-basic.yml");
