@@ -7,11 +7,11 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy SOAP Web Services**, easily extended with powerful plugins and Java.
+Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy Web Services**, easily extended with powerful plugins.
 
-Solve complex API requirements with simple configurations.
+Based on the Java platform, Membrane integrates smoothly with major enterprise technologies. Load tests show that Java provides an excellent foundation for high performance and scalability. On a 2021 MacBook Pro, Membrane handles more than 20,000 requests per second, supports up to 10,000 concurrent clients, and can host over 100,000 APIs on a single instance.
 
-The following YAML configuration samples require Membrane version 7.0.0 or newer.
+The examples below demonstrate how to address a wide range of API Gateway requirements using simple configurations. Version **7.0.0 or newer** is required.
 
 **Forwarding Requests from Port 2000 to a Backend:** 
 
@@ -102,7 +102,7 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 - Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
 
 ### **API Security**
-- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
+- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-api.io/docs/current/basicAuthentication.html).
 - Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
 - [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
@@ -580,7 +580,7 @@ When a JavaScript script returns a `Response` object as the last line of code, t
 The following example generates a JSON response and sends it directly to the client:
 
 ```yaml
-spec:
+api:
   port: 2000
   flow:
     - javascript:
@@ -731,7 +731,7 @@ api:
 ...or into XML:
 
 ```yaml
-spec:
+api:
   port: 2000
   flow:
     - request:

@@ -142,7 +142,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * host: thomas-bayer.com
  * </code>
  */
-@MCElement(name = "kubernetesValidation")
+@MCElement(name = "kubernetesValidation", excludeFromFlow = true)
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(KubernetesValidationInterceptor.class.getName());

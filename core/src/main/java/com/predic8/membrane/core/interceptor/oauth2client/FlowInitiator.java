@@ -29,7 +29,7 @@ import static com.predic8.membrane.core.http.Header.LOCATION;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-@MCElement(name = "flowInitiator")
+@MCElement(name = "flowInitiator", excludeFromFlow = true)
 public class FlowInitiator extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(FlowInitiator.class.getName());

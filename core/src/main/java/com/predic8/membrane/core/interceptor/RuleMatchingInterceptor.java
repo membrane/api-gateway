@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @SuppressWarnings("unused")
-@MCElement(name="ruleMatching")
+@MCElement(name="ruleMatching", excludeFromFlow = true)
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(RuleMatchingInterceptor.class.getName());

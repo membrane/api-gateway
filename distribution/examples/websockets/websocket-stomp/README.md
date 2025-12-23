@@ -121,5 +121,5 @@ standard port for the webSocket protocol.
 
 ---
 See:
-- [webSocket](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webSocket.htm) reference
-- [webServer](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webServer.htm) reference
+- [webSocket](https://membrane-api.io/docs/current/webSocket.html) reference
+- [webServer](https://membrane-api.io/docs/current/webServer.html) reference

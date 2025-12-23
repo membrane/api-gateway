@@ -36,7 +36,7 @@ import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
  * </apiKey></code></pre>
  * @topic 3. Security and Validation
  */
-@MCElement(name="headerExtractor", topLevel = false)
+@MCElement(name="headerExtractor", component = false)
 public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
 
     private HeaderName headerName = new HeaderName("X-Api-Key");

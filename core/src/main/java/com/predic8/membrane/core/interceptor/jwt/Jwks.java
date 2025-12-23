@@ -91,7 +91,7 @@ public class Jwks {
         authorizationService = authService;
     }
 
-    @MCElement(name="jwk", mixed = true, topLevel = false, id="jwks-jwk")
+    @MCElement(name="jwk", mixed = true, component = false, id="jwks-jwk")
     public static class Jwk extends Blob {
 
         String kid;

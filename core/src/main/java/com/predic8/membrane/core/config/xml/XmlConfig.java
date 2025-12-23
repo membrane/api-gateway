@@ -16,7 +16,7 @@ package com.predic8.membrane.core.config.xml;
 
 import com.predic8.membrane.annot.*;
 
-@MCElement(name="xmlConfig",topLevel = true)
+@MCElement(name="xmlConfig", component = true)
 public class XmlConfig {
 
     private Namespaces namespaces;

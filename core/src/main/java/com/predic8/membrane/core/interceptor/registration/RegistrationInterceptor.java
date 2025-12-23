@@ -32,7 +32,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 /**
  * @description Allows account registration (!Experimental!)
  */
-@MCElement(name = "accountRegistration")
+@MCElement(name = "accountRegistration", excludeFromFlow = true)
 public class RegistrationInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RegistrationInterceptor.class);
