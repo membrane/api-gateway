@@ -1,4 +1,4 @@
-/* Copyright 2025 predic8 GmbH, www.predic8.com
+/* Copyright 2022 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,18 +11,19 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+package com.predic8.membrane.annot.beanregistry;
 
-package com.predic8.membrane.annot.yaml;
+import com.predic8.membrane.annot.*;
 
-sealed interface ChangeEvent permits BeanDefinitionChanged, StaticConfigurationLoaded {
-}
+import java.util.*;
 
-record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {
-}
+public interface BeanRegistry {
 
-/**
- * Signals that all static configuration (e.g., from YAML files) has been
- * passed to the registry and initial activation can proceed.
- */
-record StaticConfigurationLoaded() implements ChangeEvent {
+    Object resolve(String url);
+
+    List<Object> getBeans();
+
+    Grammar getGrammar();
+
+    <T> List<T> getBeans(Class<T> clazz);
 }

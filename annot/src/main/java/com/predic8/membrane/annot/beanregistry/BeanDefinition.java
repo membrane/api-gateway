@@ -11,13 +11,10 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.annot.yaml;
+package com.predic8.membrane.annot.beanregistry;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.bean.*;
-
-import java.util.*;
+import com.predic8.membrane.annot.yaml.WatchAction;
 
 import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
@@ -29,19 +26,12 @@ public class BeanDefinition {
     private final String namespace;
     private final String uid;
     private final JsonNode node;
-    private final WatchAction action;
     private final String kind;
-
-    /**
-     * Constructed bean after initialization.
-     */
-    private Object bean;
 
     /**
      * Only called from K8S.
      */
-    private BeanDefinition(WatchAction action, JsonNode node) {
-        this.action = action;
+    private BeanDefinition(JsonNode node) {
         this.node = node;
         JsonNode metadata = node.get("metadata");
         var kind2 = node.get("kind").asText();
@@ -55,8 +45,8 @@ public class BeanDefinition {
         uid = metadata.get("uid").asText();
     }
 
-    public static BeanDefinition create4Kubernetes(WatchAction action, JsonNode node) {
-        return new BeanDefinition(action, node);
+    public static BeanDefinitionChanged create4Kubernetes(WatchAction action, JsonNode node) {
+        return new BeanDefinitionChanged(action, new BeanDefinition(node));
     }
 
     public BeanDefinition(String kind, String name, String namespace, String uid, JsonNode node) {
@@ -65,15 +55,10 @@ public class BeanDefinition {
         this.namespace = namespace;
         this.uid = uid;
         this.node = node;
-        this.action = ADDED;
     }
 
     public JsonNode getNode() {
         return node;
-    }
-
-    public WatchAction getAction() {
-        return action;
     }
 
     public String getNamespace() {
@@ -90,15 +75,6 @@ public class BeanDefinition {
 
     public String getKind() {
         return kind;
-    }
-
-    public Object getBean() {
-        return bean;
-    }
-
-    // TODO: Rest is immutable - can we make this also?
-    public void setBean(Object bean) {
-        this.bean = bean;
     }
 
     public String getScope() {
@@ -124,15 +100,4 @@ public class BeanDefinition {
         return PROTOTYPE.equals(getScope());
     }
 
-    public boolean isDeleted() {
-        return action == DELETED;
-    }
-
-    public boolean isModified() {
-        return action == MODIFIED;
-    }
-
-    public boolean isAdded() {
-        return action == ADDED;
-    }
 }
