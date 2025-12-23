@@ -60,4 +60,4 @@ The following items are a list of attributes that map an NTLM parameter to a cus
 
 ---
 See:
-- [ntlm](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/ntlm.htm) reference
+- [ntlm](https://membrane-api.io/docs/current/ntlm.html) reference

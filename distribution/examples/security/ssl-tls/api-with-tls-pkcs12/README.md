@@ -70,4 +70,4 @@ Just put an SSL element into a proxy. See the [documentation](https://www.membra
 
 ---
 See:
-- [ssl](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/ssl.htm) reference 
+- [ssl](https://membrane-api.io/docs/current/ssl.html) reference 

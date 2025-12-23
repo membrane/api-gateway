@@ -215,6 +215,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
                     scan(main, ii);
 
+                    if (ii.getAnnotation().component() && ii.getAnnotation().topLevel())
+                        throw new ProcessingException("@MCElement(topLevel=true) cannot be a component.", ii.getElement());
+
                     if (ii.getAnnotation().component())
                         main.getComponents().put(ii.getAnnotation().name(), ii);
 

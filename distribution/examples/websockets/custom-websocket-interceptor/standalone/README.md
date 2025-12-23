@@ -45,5 +45,5 @@ You can then reference this interceptor in through the wsInterceptor by giving i
 
 ---
 See:
-- [webSocket](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webSocket.htm) reference
-- [wsInterceptor](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/wsInterceptor.htm) reference
+- [webSocket](https://membrane-api.io/docs/current/webSocket.html) reference
+- [wsInterceptor](https://membrane-api.io/docs/current/wsInterceptor.html) reference

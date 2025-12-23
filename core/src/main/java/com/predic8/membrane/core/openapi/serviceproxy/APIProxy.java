@@ -44,7 +44,7 @@ import static com.predic8.membrane.core.util.StringUtil.maskNonPrintableCharacte
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
  * @topic 1. Proxies and Flow
  */
-@MCElement(name = "api", topLevel = true)
+@MCElement(name = "api", topLevel = true, component = false)
 public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxy.class.getName());
