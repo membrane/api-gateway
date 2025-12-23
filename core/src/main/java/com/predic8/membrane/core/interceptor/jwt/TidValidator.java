@@ -6,7 +6,7 @@ import org.jose4j.jwt.consumer.ErrorCodeValidator;
 import org.jose4j.jwt.consumer.JwtContext;
 
 public class TidValidator implements ErrorCodeValidator {
-    private static final Error MISSING_TID = new Error(-1, "No Audience (tid) claim present.");
+    private static final Error MISSING_TID = new Error(-1, "No Tenant ID (tid) claim present.");
 
     private final String acceptableTenantId;
 
@@ -20,20 +20,18 @@ public class TidValidator implements ErrorCodeValidator {
     {
         final JwtClaims jwtClaims = jwtContext.getJwtClaims();
 
-        if (!jwtClaims.hasClaim("tid")) return null;
+        if (!jwtClaims.hasClaim("tid"))
+            return MISSING_TID;
 
         String tid = jwtClaims.getClaimValue("tid", String.class);
 
-        if (acceptableTenantId.contains(tid)) {
+        if (acceptableTenantId.equals(tid)) {
             return null;
         } else {
             StringBuilder sb = new StringBuilder();
-            sb.append("Tenant ID (tid) claim " ).append(tid);
-            sb.append(" doesn't contain an acceptable identifier.");
-            sb.append(" Expected ");
-            sb.append(acceptableTenantId);
-            sb.append(" as an tid value.");
-            return MISSING_TID;
+            sb.append("Tenant ID (tid) claim '").append(tid).append("' doesn't match the expected value '");
+            sb.append(acceptableTenantId).append("' .");
+            return new Error(-1, sb.toString());
         }
     }
 }

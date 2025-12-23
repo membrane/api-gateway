@@ -215,6 +215,8 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     /**
      * @description
      * <p>Expected tenant ID ('tid') value of the token.</p>
+     * @default not set
+     * @example 67c869d3-0cd4-4a99-86db-088bed1a9601
      */
     @MCAttribute
     public JwtAuthInterceptor setExpectedTid(String expectedTid) {
