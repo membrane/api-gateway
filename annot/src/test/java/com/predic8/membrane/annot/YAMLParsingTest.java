@@ -33,7 +33,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
         }
         """);
@@ -54,7 +54,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             public String attr;
         
@@ -87,7 +87,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -126,7 +126,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
         }
         """);
@@ -151,7 +151,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -207,7 +207,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -276,7 +276,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", noEnvelope=true, topLevel=true)
+        @MCElement(name="demo", noEnvelope=true, topLevel=true, component=false)
         public class DemoElement {
             List<Child1Element> children;
         
@@ -332,7 +332,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="outer", topLevel=true)
+        @MCElement(name="outer", topLevel=true, component=false)
         public class OuterElement {
             List<DemoElement> child;
         
@@ -433,7 +433,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -455,7 +455,7 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="demo2", topLevel=true)
+        @MCElement(name="demo2", topLevel=true, component=false)
         public class Demo2Element {
         }
         ---
@@ -483,7 +483,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             ChildElement child;
         

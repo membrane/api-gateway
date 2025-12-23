@@ -52,4 +52,4 @@ When we run the membrane using membrane.sh you can see that in the console that 
 
 ---
 See:
-- [interceptor](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/interceptor.htm) reference
+- [interceptor](https://membrane-api.io/docs/current/interceptor.html) reference

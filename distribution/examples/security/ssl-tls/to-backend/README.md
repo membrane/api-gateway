@@ -21,4 +21,4 @@ In the example we will route to an SSL protected API.
 
 ---
 See:
-- [ssl](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/ssl.htm) reference 
+- [ssl](https://membrane-api.io/docs/current/ssl.html) reference 

@@ -1,0 +1,16 @@
+{
+  "params": [
+    {
+      "name": "mode",
+      "value": "fast"
+    },
+    {
+      "name": "retries",
+      "value": 3
+    }
+  ],
+  "meta": {
+    "source": "curl",
+    "requestId": "REQ-12345678"
+  }
+}
