@@ -185,7 +185,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     @Override
     public void start() {
-        System.out.println("config = " + config.isProduction());
         try {
             if (exchangeStore == null)
                 exchangeStore = new LimitedMemoryExchangeStore();
