@@ -19,10 +19,11 @@ import java.util.*;
 
 public interface BeanRegistry {
 
-    Object resolveReference(String url);
+    Object resolve(String url);
 
     List<Object> getBeans();
 
     Grammar getGrammar();
 
+    <T> List<T> getBeans(Class<T> clazz);
 }
