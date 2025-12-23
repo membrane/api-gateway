@@ -52,4 +52,4 @@ It simply executes a curl request to the two Membrane addresses, five times each
 
 ---
 See:
-- [throttle](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/throttle.htm) reference
+- [throttle](https://membrane-api.io/docs/current/throttle.html) reference

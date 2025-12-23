@@ -37,4 +37,4 @@ You can exchange Rhino with the newer Javascript engine from the GraalVM. See ht
 
 ---
 See:
-- [javascript](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/javascript.htm) reference
+- [javascript](https://membrane-api.io/docs/current/javascript.html) reference

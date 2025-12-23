@@ -64,4 +64,4 @@ WebSocket server through Membrane Service Proxy. The server respond to this mess
 
 ---
 See:
-- [webSocket](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/webSocket.htm) reference
+- [webSocket](https://membrane-api.io/docs/current/webSocket.html) reference

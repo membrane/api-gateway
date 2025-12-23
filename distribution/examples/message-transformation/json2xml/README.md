@@ -39,4 +39,4 @@ The `xml2Json` plugin will intercept messages based on the content type, and it 
 
 ---
 See:
-- [json2Xml](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/json2Xml.htm) reference
+- [json2Xml](https://membrane-api.io/docs/current/json2Xml.html) reference
