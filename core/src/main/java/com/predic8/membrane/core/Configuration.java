@@ -1,3 +1,17 @@
+/* Copyright 2025 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -10,6 +24,13 @@ import com.predic8.membrane.core.util.URIFactory;
 @MCElement(name = "configuration", topLevel = true, component = false)
 public class Configuration {
 
+    /**
+     * Set production to true to run Membrane in production mode.
+     * In production mode the security level is increased e.g. there is less information
+     * in error messages sent to clients.
+     */
+    private boolean production;
+
     private boolean hotDeploy = true;
 
     private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
@@ -17,8 +38,6 @@ public class Configuration {
     private boolean retryInit = true;
 
     private String jmxRouterName;
-
-    private boolean production;
 
     private URIFactory uriFactory = new URIFactory(false);
 
@@ -56,7 +75,7 @@ public class Configuration {
     }
 
     /**
-     * @explanation <p>Whether the router should continue startup, if initialization of a rule (proxy, serviceProxy or soapProxy) failed
+     * @description  <p>Whether the router should continue startup, if initialization of a rule (proxy, serviceProxy or soapProxy) failed
      * (for example, when a WSDL a component depends on could not be downloaded).</p>
      * <p>If false, the router will exit with code -1 just after startup, when the initialization of a rule failed.</p>
      * <p>If true, the router will continue startup, and all rules which could not be initialized will be <i>inactive</i> (=not
@@ -81,6 +100,9 @@ public class Configuration {
         return retryInit;
     }
 
+    /**
+     * @description Sets the JMX name for this router. Also declare a global &lt;jmxExporter&gt; instance.
+     */
     @MCAttribute
     public void setJmxRouterName(String jmxRouterName) {
         this.jmxRouterName = jmxRouterName;
@@ -91,7 +113,7 @@ public class Configuration {
     }
 
     /**
-     * @explanation <p>By default the error messages Membrane sends back to an HTTP client provide information to help the caller
+     * @description  <p>By default the error messages Membrane sends back to an HTTP client provide information to help the caller
      * find the problem. The caller might even get sensitive information. In production the error messages should not reveal
      * to much details. With this option you can put Membrane in production mode and reduce the amount of information in
      * error messages.</p>

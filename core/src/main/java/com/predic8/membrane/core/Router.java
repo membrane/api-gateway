@@ -94,14 +94,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     //
     private String id;
     private String baseLocation;
-    protected String jmxRouterName;
 
-    /**
-     * Set production to true to run Membrane in production mode.
-     * In production mode the security level is increased e.g. there is less information
-     * in error messages sent to clients.
-     */
-    private boolean production;
 
     //
     // Components
@@ -383,7 +376,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         try {
             JmxExporter exporter = beanFactory.getBean(JMX_EXPORTER_NAME, JmxExporter.class);
             //exporter.removeBean(prefix + jmxRouterName);
-            exporter.addBean("org.membrane-soa:00=routers, name=" + jmxRouterName, new JmxRouter(this, exporter));
+            exporter.addBean("org.membrane-soa:00=routers, name=" + config.getJmxRouterName(), new JmxRouter(this, exporter));
         } catch (NoSuchBeanDefinitionException ignored) {
             // If bean is not available do not init jmx
         }
@@ -493,18 +486,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     public Statistics getStatistics() {
         return statistics;
-    }
-
-    /**
-     * @description Sets the JMX name for this router. Also declare a global &lt;jmxExporter&gt; instance.
-     */
-    @MCAttribute
-    public void setJmx(String name) {
-        jmxRouterName = name;
-    }
-
-    public String getJmx() {
-        return jmxRouterName;
     }
 
     @SuppressWarnings("NullableProblems")
