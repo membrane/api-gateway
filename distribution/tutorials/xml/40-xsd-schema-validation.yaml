@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.4.json
+#
+# Membrane Tutorial: XSD Schema Validation
+#
+# Try:
+#   curl -d @../data/book-valid.xml localhost:2000
+#   curl -d @../data/book-invalid.xml localhost:2000
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - validator:
+            schema: books.xsd
+        - static:
+            src: Ok
+        - return:
+            status: 200

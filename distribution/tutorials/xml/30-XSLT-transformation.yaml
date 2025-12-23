@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.4.json
+#
+# Membrane Tutorial: XSLT Transformation
+#
+# Transform messages with XSLT stylesheets
+#
+# Try:
+#   curl -d @../data/books.xml localhost:2000
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - transform:
+            xslt: group-by-category.xsl
+    - return:
+        status: 200
