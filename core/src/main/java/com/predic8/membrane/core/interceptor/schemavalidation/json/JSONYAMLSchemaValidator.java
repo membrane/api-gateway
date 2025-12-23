@@ -14,15 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation.json;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLParser;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.networknt.schema.path.NodePath;
-import com.networknt.schema.serialization.YamlMapperFactory;
+import com.networknt.schema.resource.SchemaLoader;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -35,9 +33,6 @@ import org.slf4j.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
@@ -54,7 +49,6 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
 
     private final YAMLFactory factory = YAMLFactory.builder().enable(STRICT_DUPLICATE_DETECTION).build();
     private final ObjectMapper yamlObjectMapper = new ObjectMapper(factory);
-    private final ObjectMapper jsonObjectMapper = new ObjectMapper();
 
     public static final String SCHEMA_VERSION_2020_12 = "2020-12";
 
@@ -66,10 +60,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     private final AtomicLong invalid = new AtomicLong();
     private final SpecificationVersion schemaId;
 
-    /**
-     * JsonSchemaFactory instances are thread-safe provided its configuration is not modified.
-     */
-    SchemaRegistry jsonSchemaFactory;
+    private Map<String, String> schemaMappings = new HashMap<>();
 
     /**
      * JsonSchema instances are thread-safe provided its configuration is not modified.
@@ -82,7 +73,7 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
         this.resolver = resolver;
         this.jsonSchema = jsonSchema;
         this.failureHandler = failureHandler;
-        this.schemaId = JSONSchemaVersionParser.parse( schemaVersion);
+        this.schemaId = JSONSchemaVersionParser.parse(schemaVersion);
         this.inputFormat = inputFormat;
     }
 
@@ -103,15 +94,23 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     public void init() {
         super.init();
 
-        jsonSchemaFactory = SchemaRegistry.withDefaultDialect(schemaId, builder ->
-                builder.schemaLoader(loaders -> new MembraneSchemaLoader(resolver)));
-
         try (InputStream in = resolver.resolve(jsonSchema)) {
-            schema = jsonSchemaFactory.getSchema((jsonSchema.endsWith(".yaml") || jsonSchema.endsWith(".yml") ? yamlObjectMapper: jsonObjectMapper).readTree(in));
+            schema = createSchemaRegistry().getSchema(SchemaLocation.of(jsonSchema), in, getSchemaFormat());
             schema.initializeValidators();
         } catch (IOException e) {
             throw new RuntimeException("Cannot read JSON Schema from: " + jsonSchema, e);
         }
+    }
+
+    private @NotNull InputFormat getSchemaFormat() {
+        return (jsonSchema.toLowerCase().endsWith(".yaml") || jsonSchema.toLowerCase().endsWith(".yml")) ? YAML : JSON;
+    }
+
+    private SchemaRegistry createSchemaRegistry() {
+        return SchemaRegistry.withDefaultDialect(schemaId, b -> b.schemaLoader(SchemaLoader.builder()
+                .schemaIdResolvers(r -> r.mappings(schemaMappings))
+                .resourceLoaders(rl -> rl.values(list -> list.addFirst(new MembraneSchemaLoader(resolver))))
+                .build()));
     }
 
     public Outcome validateMessage(Exchange exc, Flow flow) throws Exception {
@@ -121,8 +120,8 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     public Outcome validateMessage(Exchange exc, Flow flow, Charset ignored) throws Exception {
 
         List<Error> assertions = inputFormat == YAML ?
-            handleMultipleYAMLDocuments(exc, flow) :
-            schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
+                handleMultipleYAMLDocuments(exc, flow) :
+                schema.validate(exc.getMessage(flow).getBodyAsStringDecoded(), inputFormat);
 
         if (assertions.isEmpty()) {
             valid.incrementAndGet();
@@ -209,5 +208,9 @@ public class JSONYAMLSchemaValidator extends AbstractMessageValidator {
     @Override
     public String getErrorTitle() {
         return "JSON validation failed";
+    }
+
+    public void setSchemaMappings(Map<String, String> schemaMappings) {
+        this.schemaMappings = schemaMappings;
     }
 }

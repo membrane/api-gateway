@@ -14,20 +14,52 @@
 
 package com.predic8.membrane.annot.util;
 
-import com.predic8.membrane.annot.yaml.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import org.junit.jupiter.api.Assertions;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class StructureAssertionUtil {
     public static void assertStructure(BeanRegistry registry, Asserter... asserter) {
-        assertEquals(registry.getBeans().size(), asserter.length);
-        for (int i = 0; i < asserter.length; i++) {
-            asserter[i].assertStructure(registry.getBeans().get(i));
+        assertStructure(registry.getBeans(), asserter);
+    }
+
+    public static void assertStructure(List<?> beans, Asserter... asserter) {
+        assertEquals(asserter.length, beans.size());
+
+        boolean[] used = new boolean[beans.size()];
+        AssertionError failure = matchAnyOrder(beans, asserter, used, 0);
+
+        if (failure != null) throw failure;
+    }
+
+    private static AssertionError matchAnyOrder(List<?> beans, Asserter[] expected, boolean[] used, int idx) {
+        if (idx == expected.length) return null;
+
+        AssertionError last = null;
+
+        for (int i = 0; i < beans.size(); i++) {
+            if (used[i]) continue;
+
+            try {
+                expected[idx].assertStructure(beans.get(i));
+                used[i] = true;
+
+                AssertionError res = matchAnyOrder(beans, expected, used, idx + 1);
+                if (res == null) return null;
+
+                used[i] = false;
+                last = res;
+            } catch (AssertionError e) {
+                last = e;
+            } catch (RuntimeException e) {
+                last = new AssertionError(e.getMessage(), e);
+            }
         }
+
+        return last != null ? last : new AssertionError("No matching bean found for expected index " + idx);
     }
 
     public interface Asserter {
@@ -40,7 +72,7 @@ public class StructureAssertionUtil {
 
     public static Asserter clazz(String clazzName, Property... properties) {
         return bean -> {
-            assertEquals(bean.getClass().getSimpleName(), clazzName);
+            assertEquals(clazzName, bean.getClass().getSimpleName());
             for (Property p : properties) {
                 p.assertStructure(bean);
             }
@@ -55,7 +87,7 @@ public class StructureAssertionUtil {
         return bean -> {
             assertInstanceOf(List.class, bean);
             List<?> list = (List<?>) bean;
-            assertEquals(list.size(), asserters.length);
+            assertEquals(asserters.length, list.size());
             for (int i = 0; i < asserters.length; i++) {
                 asserters[i].assertStructure(list.get(i));
             }

@@ -17,7 +17,7 @@ package com.predic8.membrane.core.util;
 import com.fasterxml.jackson.databind.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.util.JsonUtil.scalarAsJson;
+import static com.predic8.membrane.core.util.json.JsonUtil.scalarAsJson;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JsonUtilTest {

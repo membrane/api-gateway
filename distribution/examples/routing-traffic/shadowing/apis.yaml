@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.1.json
 api:
   port: 2000
   flow:
@@ -25,7 +25,7 @@ api:
   flow:
     - log: {}
     - return:
-        statusCode: 200
+        status: 200
 
 ---
 
@@ -34,7 +34,7 @@ api:
   flow:
     - log: {}
     - return:
-        statusCode: 201
+        status: 201
 
 ---
 
@@ -43,4 +43,4 @@ api:
   flow:
     - log: {}
     - return:
-        statusCode: 202
+        status: 202

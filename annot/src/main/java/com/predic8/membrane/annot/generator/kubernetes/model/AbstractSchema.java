@@ -22,6 +22,7 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
 
     protected static final JsonNodeFactory jnf = JsonNodeFactory.instance;
 
+    protected String title;
     protected String name;
     protected String type;
     protected String description;
@@ -63,6 +64,11 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
         return self();
     }
 
+    public T title(String title) {
+        this.title = title;
+        return self();
+    }
+
     public T name(String name) {
         this.name = name;
         return self();
@@ -84,8 +90,12 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
 
     @Override
     public ObjectNode json(ObjectNode node) {
+        if (title != null && !title.isBlank())
+            node.put("title", title);
+
         if (type != null)
             node.put("type", type);
+
         return node;
     }
 }

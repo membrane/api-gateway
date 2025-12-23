@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.text.*;
 import org.slf4j.Logger;
 import org.slf4j.*;
 
@@ -29,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.lang.System.*;
 
 public class HttpEndpointListener extends Thread {
@@ -92,7 +94,7 @@ public class HttpEndpointListener extends Thread {
 
             final String s = p.toShortString();
             setName("Connection Acceptor " + s);
-            log.info("listening at {}", s);
+            log.info("listening at {}{}{}", BRIGHT_MAGENTA(), s, RESET());
         } catch (BindException e) {
             throw new PortOccupiedException(p);
         }

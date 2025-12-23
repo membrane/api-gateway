@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
 # Membrane Tutorial: if
 #
@@ -19,7 +19,7 @@ api:
               - static:
                   src: Please set X-Id header
               - return:
-                  statusCode: 400
+                  status: 400
         - if:
             test: path.startsWith("/foo")
             language: groovy

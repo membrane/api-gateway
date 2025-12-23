@@ -34,4 +34,4 @@ To run the example execute the following steps:
 ```
 --- 
 See:
-- [log](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/log.htm) reference
+- [log](https://membrane-api.io/docs/current/log.html) reference

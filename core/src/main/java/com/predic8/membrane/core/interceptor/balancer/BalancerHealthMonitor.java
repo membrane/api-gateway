@@ -70,7 +70,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
 
         log.info("Starting HealthMonitor for load balancing with interval of {} ms", interval);
 
-        httpClientConfig.setMaxRetries(0); // Health check should never be retried.
+        httpClientConfig.getRetryHandler().setRetries(0); // Health check should never be retried.
         client = router.getHttpClientFactory().createClient(httpClientConfig);
         createScheduler();
 

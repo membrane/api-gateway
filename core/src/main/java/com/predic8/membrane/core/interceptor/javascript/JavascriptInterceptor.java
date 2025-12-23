@@ -20,7 +20,7 @@ import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static org.apache.commons.lang3.StringUtils.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 

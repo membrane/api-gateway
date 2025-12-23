@@ -28,24 +28,28 @@ To run the example execute the following steps:
 
 Using maven, we create a jar file and copy the compiled jar file into the libs directory of membrane to make the new interceptor available to the router.
 
-In the proxies.xml file, we define a name for our interceptor and write its fully qualified name, so we can use our interceptor on <serviceProxy>. You can see it in the line below.
+In the apis.yaml file, we define a name for our interceptor and write its fully qualified name, so we can use our interceptor in the flow:
 
+```yaml
+components:
+  myInterceptor:
+    bean:
+      class: com.predic8.MyInterceptor
 ``` 
-<spring:bean id="myInterceptor" class="com.predic8.MyInterceptor" />
-``` 
 
 
-Again in the proxies.xml file inside `<serviceProxy>` tag you can see that we added the interceptor using the beanname we defined above.
+Again in the apis.yaml file inside `api` you can see that we added the interceptor using the beanname we defined above.
 
-```
-<serviceProxy port="2000">
-  <interceptor refid="myInterceptor" />
-  <target host="membrane-soa.org" />
-</serviceProxy>
+```yaml
+api:
+  port: 2000
+  flow:
+    - $ref: "#/components/myInterceptor"
+    - return: {}
 ```
 
 When we run the membrane using membrane.sh you can see that in the console that requests and responses are being intercepted by our custom interceptor.
 
 ---
 See:
-- [interceptor](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/interceptor.htm) reference
+- [interceptor](https://membrane-api.io/docs/current/interceptor.html) reference

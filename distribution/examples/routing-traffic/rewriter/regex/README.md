@@ -17,4 +17,4 @@ We want to access this API with the path `store/products/`. To do this we have t
 3. Open the URL http://localhost:2000/store/products/ in your browser.
 ---
 See:
-- [rewriter](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/rewriter.htm) reference
+- [rewriter](https://membrane-api.io/docs/current/rewriter.html) reference

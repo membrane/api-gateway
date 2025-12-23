@@ -44,7 +44,7 @@ servers:
 
 If the basepath does not match, the next API is checked. 
 
-It is also possible to configure the backend address using a [target](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/target.htm) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
+It is also possible to configure the backend address using a [target](https://www.membrane-api.io/docs/current/target.html) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
 
 ```xml
 <serviceProxy>
@@ -169,7 +169,7 @@ If you use the rewritten OpenAPI-document for your client, then requests will be
 
 # SSL/TLS
 
-TLS for incoming and outgoing connections can be configured in the same way as for the _serviceProxy_. See the documentation for the [ssl](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/ssl.htm) element.
+TLS for incoming and outgoing connections can be configured in the same way as for the _serviceProxy_. See the documentation for the [ssl](https://www.membrane-api.io/docs/current/ssl.htm) element.
 
 ```xml
 <api port="2000">
@@ -190,7 +190,7 @@ TLS for incoming and outgoing connections can be configured in the same way as f
 
 # Plugins / Interceptors
 
-The behaviour of the _api_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and the [configuration reference](http://membrane-soa.org/api-gateway-doc/current/configuration/reference/).
+The behaviour of the _api_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and the [configuration reference](http://membrane-api.io/docs/current/).
 
 ```xml
 <api port="2000">

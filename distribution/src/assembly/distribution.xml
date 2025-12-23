@@ -8,10 +8,16 @@
     <dependencySets>
         <dependencySet>
             <excludes>
-                <exclude>org.membrane-soa:membrane-service-proxy</exclude>
+                <!-- Exclude this project from the distribution. It only contains helper for
+                     creating a distribution, development or testing.
+                 -->
+                <exclude>org.membrane-soa:membrane-api-gateway</exclude>
             </excludes>
             <unpack>false</unpack>
             <outputDirectory>/lib</outputDirectory>
+
+            <!-- do NOT put this module's own jar into /lib -->
+            <useProjectArtifact>false</useProjectArtifact>
         </dependencySet>
     </dependencySets>
     <fileSets>
@@ -22,7 +28,7 @@
         </fileSet>
         <fileSet>
             <!-- examples fileSet: bod build folder or .sh scripts -->
-            <directory>examples</directory>
+            <directory>${project.build.directory}/examples-filtered</directory>
             <outputDirectory>/examples</outputDirectory>
             <excludes>
                 <exclude>**/build/</exclude>
@@ -31,7 +37,7 @@
         </fileSet>
         <fileSet>
             <!-- examples fileSet: .sh scripts (execute permissions) -->
-            <directory>examples</directory>
+            <directory>${project.build.directory}/examples-filtered</directory>
             <outputDirectory>/examples</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
@@ -40,7 +46,7 @@
         </fileSet>
         <fileSet>
             <!-- examples fileSet: build folder -->
-            <directory>examples</directory>
+            <directory>${project.build.directory}/examples-filtered</directory>
             <outputDirectory>/examples</outputDirectory>
             <includes>
                 <include>custom-interceptor/build/**/*</include>

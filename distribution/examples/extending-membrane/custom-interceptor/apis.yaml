@@ -1,0 +1,12 @@
+components:
+  myInterceptor:
+    bean:
+      class: com.predic8.MyInterceptor
+
+---
+
+api:
+  port: 2000
+  flow:
+    - $ref: "#/components/myInterceptor"
+    - return: {}

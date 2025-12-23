@@ -24,7 +24,7 @@ import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.annot.yaml.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -83,7 +83,7 @@ class EnvelopeTest {
                   contentType: application/json
                   src: '{ "ok": 1 }'
               - return:
-                  statusCode: 200
+                  status: 200
         ---
         api:
           port: 2000

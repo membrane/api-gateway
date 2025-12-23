@@ -45,7 +45,7 @@ public class K8sJsonSchemaGenerator extends AbstractGrammar {
     }
 
     private void assemble(Model m, MainInfo main) throws IOException {
-        for (ElementInfo elementInfo : getTopLevelElementInfos(main)) {
+        for (ElementInfo elementInfo : getComponentElementInfos(main)) {
             String name = elementInfo.getAnnotation().name().toLowerCase();
             FileObject fo = createFileObject(main, name + ".schema.json");
             try (BufferedWriter w = new BufferedWriter(fo.openWriter())) {
@@ -140,20 +140,28 @@ public class K8sJsonSchemaGenerator extends AbstractGrammar {
             if (isList) {
                 SchemaObject items = object("items").additionalProperties(cei.getAnnotation().allowForeign());
 
-                if (i.getAnnotation().noEnvelope()) {
-                    if (so instanceof SchemaArray sa)
-                        sa.items(items);
-                    else
-                        throw new ProcessingException("@MCElement(noEnvelope=true) is not an array. Implementation error?", i.getElement());
-                } else {
-                    if (so instanceof SchemaObject sObj) {
-                        SchemaArray array = array(cei.getPropertyName());
-                        array.items(items);
-                        sObj.property(array.required(cei.isRequired()));
-                    } else {
-                        throw new ProcessingException("@MCElement(noEnvelope=false) is not an object. Implementation error?", i.getElement());
-                    }
-                }
+                //TODO fix: the 'components' require this structure:
+//                components:
+//                  - bean:
+//                      ...
+//                  - xmlProtection:
+//                      ...
+
+
+//                if (i.getAnnotation().noEnvelope()) {
+//                    if (so instanceof SchemaArray sa)
+//                        sa.items(items);
+//                    else
+//                        throw new ProcessingException("@MCElement(noEnvelope=true) is not an array. Implementation error?", i.getElement());
+//                } else {
+//                    if (so instanceof SchemaObject sObj) {
+//                        SchemaArray array = array(cei.getPropertyName());
+//                        array.items(items);
+//                        sObj.property(array.required(cei.isRequired()));
+//                    } else {
+//                        throw new ProcessingException("@MCElement(noEnvelope=false) is not an object. Implementation error?", i.getElement());
+//                    }
+//                }
                 parent2 = items;
             } else {
                 if (cei.getAnnotation().allowForeign()) {

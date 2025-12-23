@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
-@MCElement(name = "headerRetriever", topLevel = false)
+@MCElement(name = "headerRetriever", component = false)
 public class HeaderNTLMRetriever implements NTLMRetriever {
 
     String userHeaderName;

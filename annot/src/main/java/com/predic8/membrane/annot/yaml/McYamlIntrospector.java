@@ -15,12 +15,15 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.predic8.membrane.annot.*;
+import org.jetbrains.annotations.*;
 
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.List;
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.stream.*;
 
-import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
+import static java.lang.Character.*;
+import static java.util.Arrays.*;
+import static org.springframework.core.annotation.AnnotationUtils.*;
 
 public final class McYamlIntrospector {
 
@@ -39,25 +42,35 @@ public final class McYamlIntrospector {
 
     public static boolean matchesJsonKey(Method method, String key) {
         return matchesJsonChildElementKey(method, key)
-                || equalsTextContent(method, key)
-                || equalsAttributeName(method, key);
+               || equalsTextContent(method, key)
+               || equalsAttributeName(method, key);
     }
 
     private static boolean matchesJsonChildElementKey(Method method, String key) {
         return findAnnotation(method, MCChildElement.class) != null
-                && method.getName().substring(3).equalsIgnoreCase(key);
+               && matchesPropertyName(method, key);
     }
 
     private static boolean equalsTextContent(Method method, String key) {
-        return findAnnotation(method, MCTextContent.class) != null && method.getName().substring(3).equalsIgnoreCase(key);
+        return findAnnotation(method, MCTextContent.class) != null && matchesPropertyName(method, key);
     }
 
     private static boolean equalsAttributeName(Method method, String key) {
         MCAttribute annotation = findAnnotation(method, MCAttribute.class);
         if (annotation == null)
             return false;
-        return method.getName().substring(3).equalsIgnoreCase(key) && "".equals(annotation.attributeName())
-                || annotation.attributeName().equals(key);
+        return matchesPropertyName(method, key) && "".equals(annotation.attributeName())
+               || annotation.attributeName().equals(key);
+    }
+
+    /**
+     * If key is "foo", then method name matches "setFoo", "getFoo".
+     *
+     * @param method       Method to check.
+     * @param propertyName Property name to check.
+     */
+    private static boolean matchesPropertyName(Method method, String propertyName) {
+        return method.getName().substring(3).equalsIgnoreCase(propertyName);
     }
 
     /**
@@ -74,12 +87,18 @@ public final class McYamlIntrospector {
         if (annotation == null || !annotation.noEnvelope()) {
             throw new RuntimeException("Class " + clazz.getName() + " has properties, and is not a list.");
         }
-        if (Arrays.stream(clazz.getMethods())
-                .filter(McYamlIntrospector::isSetter)
-                .anyMatch(method -> findAnnotation(method, MCAttribute.class) != null)) {
-            throw new RuntimeException("Class " + clazz.getName() + " should not have any @MCAttribute setters, because it is a @MCElement with noEnvelope=true .");
+        guardHasMCAttributeSetters(clazz);
+        Method setter = getChildSetters(clazz).getFirst();
+        Class<?> paramType = setter.getParameterTypes()[0];
+        if (!java.util.Collection.class.isAssignableFrom(paramType)) {
+            throw new RuntimeException("The single @MCChildElement setter in " + clazz.getName() +
+                                       " must accept a Collection/List when noEnvelope=true, but found: " + paramType.getName());
         }
-        List<Method> childSetters = Arrays.stream(clazz.getMethods())
+        return setter;
+    }
+
+    private static <T> @NotNull List<Method> getChildSetters(Class<T> clazz) {
+        List<Method> childSetters = stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .filter(method -> findAnnotation(method, MCChildElement.class) != null)
                 .toList();
@@ -89,25 +108,45 @@ public final class McYamlIntrospector {
         if (childSetters.size() > 1) {
             throw new RuntimeException("Multiple @MCChildElement setters found in " + clazz.getName() + ". Only one is allowed when noEnvelope=true.");
         }
-        Method setter = childSetters.getFirst();
-        Class<?> paramType = setter.getParameterTypes()[0];
-        if (!java.util.Collection.class.isAssignableFrom(paramType)) {
-            throw new RuntimeException("The single @MCChildElement setter in " + clazz.getName() +
-                    " must accept a Collection/List when noEnvelope=true, but found: " + paramType.getName());
+        return childSetters;
+    }
+
+    private static <T> void guardHasMCAttributeSetters(Class<T> clazz) {
+        if (stream(clazz.getMethods())
+                .filter(McYamlIntrospector::isSetter)
+                .anyMatch(method -> findAnnotation(method, MCAttribute.class) != null)) {
+            throw new RuntimeException("Class " + clazz.getName() + " should not have any @MCAttribute setters, because it is a @MCElement with noEnvelope=true .");
         }
-        return setter;
     }
 
     public static <T> Method findSetterForKey(Class<T> clazz, String key) {
-        return Arrays.stream(clazz.getMethods())
+        return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .filter(method -> matchesJsonKey(method, key))
                 .findFirst()
                 .orElse(null);
     }
 
+    public static <T> List<Method> findRequiredSetters(Class<T> clazz) {
+        return stream(clazz.getMethods())
+                .filter(McYamlIntrospector::isSetter)
+                .filter(McYamlIntrospector::isRequired)
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isRequired(Method method) {
+        return method.getAnnotation(Required.class) != null;
+    }
+
+    public static String getSetterName(Method setter) {
+        if (!setter.getName().startsWith("set"))
+            throw new IllegalArgumentException("Method is not a setter: " + setter.getName());
+        String property = setter.getName().substring(3);
+        return toLowerCase(property.charAt(0)) + property.substring(1);
+    }
+
     public static <T> Method getAnySetter(Class<T> clazz) {
-        return Arrays.stream(clazz.getMethods())
+        return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .filter(method -> findAnnotation(method, MCOtherAttributes.class) != null)
                 .findFirst()
@@ -115,13 +154,15 @@ public final class McYamlIntrospector {
     }
 
     public static <T> Method getChildSetter(Class<T> clazz, Class<?> valueClass) {
-        return Arrays.stream(clazz.getMethods())
+        return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
+                .filter(McYamlIntrospector::isStructured)
                 .filter(method -> method.getParameterTypes().length == 1)
                 .filter(method -> method.getParameterTypes()[0].isAssignableFrom(valueClass))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Could not find child setter on "
-                        + clazz.getName() + " for value of type " + valueClass.getName()));
+                .reduce((a, b) -> {
+                    throw new RuntimeException("Multiple potential setters found on %s for value of type %s".formatted(clazz.getName(), valueClass.getName()));
+                })
+                .orElseThrow(() -> new RuntimeException("Could not find child setter on %s for value of type %s".formatted(clazz.getName(), valueClass.getName())));
     }
 
     public static boolean isReferenceAttribute(Method setter) {
@@ -132,6 +173,13 @@ public final class McYamlIntrospector {
 
     public static boolean hasOtherAttributes(Method setter) {
         return findAnnotation(setter, MCOtherAttributes.class) != null;
+    }
+
+    public static String getElementName(Class<?> type) {
+        MCElement ann = type.getAnnotation(MCElement.class);
+        if (ann != null && ann.name() != null && !ann.name().isBlank())
+            return ann.name();
+        return type.getSimpleName();
     }
 
 }

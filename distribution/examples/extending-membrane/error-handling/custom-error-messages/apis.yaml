@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.1.json
 api:
   port: 2000
   path:
@@ -78,7 +78,7 @@ api:
                   src: |
                     <error>
                         <case>b</case>
-                        <message>WSDL validation of ${headers.getFirstValue('X-Validation-Error-Source')} failed!</message>
+                        <message>WSDL validation of ${header['X-Validation-Error-Source']} failed!</message>
                     </error>
     - request:
         - if:
@@ -103,7 +103,7 @@ api:
                   contentType: text/plain
                   src: Ordinary error!
               - return:
-                  statusCode: 500
+                  status: 500
         - if:
             test: param.case == 'd'
             flow:
@@ -114,6 +114,6 @@ api:
                         <description>XML Fehler Meldung vom Backend!</description>
                     </failure>
               - return:
-                  statusCode: 500
+                  status: 500
     # SOAP Service Mock for Debugging
     - sampleSoapService: {}

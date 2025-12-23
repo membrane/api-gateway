@@ -36,7 +36,7 @@ public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestca
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c conf/proxies.xml").waitForMembrane().start();
+        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c conf/proxies.inactive.xml").waitForMembrane().start();
     }
 
     @SuppressWarnings("JsonSchemaCompliance")
@@ -114,7 +114,7 @@ public class ProxiesXMLExampleTest extends AbstractSampleMembraneStartStopTestca
         process.addConsoleWatcher((error, line) -> {
             if (line.contains("Request headers"))
                 headingFound.set(true);
-            if (line.contains("Host: localhost:2000"))
+            if (line.contains("Host=localhost:2000"))
                 hostFound.set(true);
         });
 

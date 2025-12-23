@@ -34,9 +34,11 @@ import static org.apache.commons.io.FileUtils.*;
  */
 public abstract class DistributionExtractingTestcase {
 
+    protected static final Logger log = LoggerFactory.getLogger(DistributionExtractingTestcase.class.getName());
+
     public static final String MEMBRANE_LOG_LEVEL = "info";
     public static final String LOCALHOST_2000 = "http://localhost:2000";
-    private static final Logger log = LoggerFactory.getLogger(DistributionExtractingTestcase.class.getName());
+
     private static File unzipDir;
     private static File membraneHome;
     protected File baseDir = new File(getExampleDirName());

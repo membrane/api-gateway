@@ -30,7 +30,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Type.*;
-import static com.predic8.membrane.core.util.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 import static java.util.Locale.US;
 
 /**
@@ -39,7 +39,7 @@ import static java.util.Locale.US;
  * </p>
  * @topic 6. Misc
  */
-@MCElement(name = "rewriter", noEnvelope = true, topLevel = false)
+@MCElement(name = "rewriter", noEnvelope = true, component = false)
 public class RewriteInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
@@ -50,7 +50,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         REDIRECT_PERMANENT,
     }
 
-    @MCElement(name = "map", topLevel = false, id = "rewriter-map")
+    @MCElement(name = "map", component = false, id = "rewriter-map")
     public static class Mapping {
         public String to;
         public String from;

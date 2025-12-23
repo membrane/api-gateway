@@ -18,8 +18,6 @@ import com.google.common.cache.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
@@ -28,12 +26,13 @@ import com.predic8.membrane.core.transport.ssl.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.post;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
  * Connects to the predic8 Gatekeeper to check, whether access is allowed or not.
  */
-@MCElement(id = "sslProxy-gatekeeper", name = "gatekeeper", topLevel = false)
+@MCElement(id = "sslProxy-gatekeeper", name = "gatekeeper", component = false)
 public class GateKeeperClientInterceptor implements SSLInterceptor {
 
     protected final String name;
@@ -80,15 +79,14 @@ public class GateKeeperClientInterceptor implements SSLInterceptor {
     }
 
     private Map getResult(String body) throws Exception {
-        Exchange exc2 = httpClient.call(new Request.Builder().post(this.url).contentType(APPLICATION_JSON).body(
-                body
-        ).buildExchange());
+        var exc = post(this.url).contentType(APPLICATION_JSON).body(body).buildExchange();
+        httpClient.call(exc);
 
 
-        if(exc2.getResponse().getStatusCode() != 200)
-            return ImmutableMap.of("error", "status " + exc2.getResponse().getStatusCode());
+        if(exc.getResponse().getStatusCode() != 200)
+            return ImmutableMap.of("error", "status " + exc.getResponse().getStatusCode());
 
-        return ImmutableMap.copyOf(om.readValue(exc2.getResponse().getBodyAsStreamDecoded(), Map.class));
+        return ImmutableMap.copyOf(om.readValue(exc.getResponse().getBodyAsStreamDecoded(), Map.class));
     }
 
     private Outcome createResponse(SSLExchange exc) {

@@ -32,8 +32,13 @@ public class Loadbalancing5MultipleExampleTest extends DistributionExtractingTes
 	@Test
 	public void test() throws Exception {
 
-		replaceInFile2("proxies.xml","8080", "3023");
-		replaceInFile2("proxies.xml","8081", "3024");
+        try {
+            replaceInFile2("proxies.xml","8080", "3023");
+            replaceInFile2("proxies.xml","8081", "3024");
+        } catch (Exception ignored) {
+            log.warn("proxies.xml not there!");
+        }
+
 		replaceInFile2("apis.yaml","8080", "3023");
 		replaceInFile2("apis.yaml","8081", "3024");
 

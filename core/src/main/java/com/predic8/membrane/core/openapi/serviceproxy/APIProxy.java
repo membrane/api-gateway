@@ -29,7 +29,6 @@ import com.predic8.membrane.core.openapi.util.UriUtil;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.xml.*;
 import io.swagger.v3.oas.models.servers.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +44,7 @@ import static com.predic8.membrane.core.util.StringUtil.maskNonPrintableCharacte
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
  * @topic 1. Proxies and Flow
  */
-@MCElement(name = "api")
+@MCElement(name = "api", topLevel = true, component = false)
 public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxy.class.getName());
@@ -259,7 +258,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         this.language = language;
     }
 
-    @MCElement(name = "description", topLevel = false, mixed = true)
+    @MCElement(name = "description", component = false, mixed = true)
     public static class ApiDescription {
         private String content;
 

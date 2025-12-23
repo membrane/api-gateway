@@ -27,7 +27,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
-@MCElement(name="wsaEndpointRewriter")
+@MCElement(name="wsaEndpointRewriter", excludeFromFlow = true)
 public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(WsaEndpointRewriterInterceptor.class);

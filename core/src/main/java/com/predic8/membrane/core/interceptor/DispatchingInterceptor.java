@@ -41,7 +41,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * object. The dispatching interceptor needs the service proxy to
  * get information about the target.
  */
-@MCElement(name = "dispatching")
+@MCElement(name = "dispatching", excludeFromFlow = true)
 public class DispatchingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
@@ -109,12 +109,12 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
         if (p.getTargetURL() != null) {
             String targetURL = p.getTarget().compileUrl(exc, REQUEST);
-            if (targetURL.startsWith("http")) {
+            if (targetURL.startsWith("http") || targetURL.startsWith("internal")) {
                 String basePath = UriUtil.getPathFromURL(router.getUriFactory(), targetURL);
-                if (basePath.isEmpty() || "/".equals(basePath)) {
-                    URL base = new URL(targetURL);
+                if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
+                    URI base = new URI(targetURL);
                     // Resolve and normalize slashes consistently with the branch below.
-                    return new URL(base, getUri(exc)).toString();
+                    return base.resolve(getUri(exc)).toString();
                 }
             }
             return targetURL;
