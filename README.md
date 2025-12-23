@@ -102,7 +102,7 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 - Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
 
 ### **API Security**
-- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
+- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-api.io/docs/current/basicAuthentication.html).
 - Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
 - [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.

@@ -130,5 +130,5 @@ The greeting, including the OID, was issued as specified in ``proxies.xml``.
 
 ---
 See:
-- [jwtAuth](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/jwtAuth.htm) reference
-- [jwks](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/jwks.htm) reference
+- [jwtAuth](https://membrane-api.io/docs/current/jwtAuth.html) reference
+- [jwks](https://membrane-api.io/docs/current/jwks.html) reference

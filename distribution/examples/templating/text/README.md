@@ -29,4 +29,4 @@ Execute the following steps:
 
 ---
 See:
-- [template](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/template.htm) reference 
+- [template](https://membrane-api.io/docs/current/template.html) reference 

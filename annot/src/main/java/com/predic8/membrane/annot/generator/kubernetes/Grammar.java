@@ -146,7 +146,7 @@ public class Grammar extends AbstractGrammar {
         return concat(
                 // global
                 main.getIis().stream()
-                        .filter(ei -> ei.getAnnotation().component())
+                        .filter(ei -> ei.getAnnotation().component() || ei.getAnnotation().topLevel())
                         .map(generateElementMappingString()),
                 // non-global
                 main.getIis().stream()

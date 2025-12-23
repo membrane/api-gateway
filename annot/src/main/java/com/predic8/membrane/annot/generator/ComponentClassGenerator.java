@@ -36,7 +36,7 @@ public class ComponentClassGenerator extends ClassGenerator{
                 
                 import java.util.Map;
                 
-                @MCElement(name = "components", topLevel = true)
+                @MCElement(name = "components", topLevel = true, component=false)
                 public class Components {
                 
                     Map<String, Object> components;

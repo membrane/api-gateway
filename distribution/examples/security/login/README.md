@@ -36,4 +36,4 @@ To run the example execute the following steps:
 
 --- 
 See
-- [login](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/login.htm) reference
+- [login](https://membrane-api.io/docs/current/login.html) reference
