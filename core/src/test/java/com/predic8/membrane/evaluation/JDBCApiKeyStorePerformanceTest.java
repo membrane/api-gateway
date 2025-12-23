@@ -14,19 +14,27 @@
 
 package com.predic8.membrane.evaluation;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.interceptor.apikey.stores.*;
-import org.apache.commons.io.FileUtils;
-import org.apache.derby.jdbc.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.interceptor.apikey.stores.JDBCApiKeyStore;
+import com.predic8.membrane.core.interceptor.apikey.stores.KeyTable;
+import com.predic8.membrane.core.interceptor.apikey.stores.ScopeTable;
+import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.sql.*;
-import java.util.*;
-import java.util.logging.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.logging.Logger;
 
-import static com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil.*;
+import static com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil.tableExists;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -36,21 +44,27 @@ public class JDBCApiKeyStorePerformanceTest {
 
     private static final Logger LOGGER = Logger.getLogger(JDBCApiKeyStorePerformanceTest.class.getName());
     private static final int USERS = 10;
-    private static final String DATABASE_NAME = "test";
-    private static final String CREATE_DB_FLAG = "create";
+    private JdbcDataSource dataSource;
+    private String dbName;
     private final Map<String, Set<String>> keyToScopesMap = new HashMap<>();
 
     private JDBCApiKeyStore jdbcApiKeyStore;
-    private EmbeddedDataSource dataSource;
     private Connection connection;
     private KeyTable keyTable;
     private ScopeTable scopeTable;
 
     @BeforeEach
-    void setUp() throws SQLException, IOException {
+    void setUp() throws SQLException {
+        dbName = "test_" + UUID.randomUUID().toString().replace("-", "");
+
         jdbcApiKeyStore = createApiKeyStore();
         connection = getDataSource().getConnection();
         jdbcApiKeyStore.init(new Router());
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        if (connection != null) connection.close();
     }
 
     @Test
@@ -59,14 +73,13 @@ public class JDBCApiKeyStorePerformanceTest {
         assertTrue(tableExists(connection, jdbcApiKeyStore.getScopeTable().getName()));
     }
 
-
     @Test
     public void performanceTest() throws UnauthorizedApiKeyException, SQLException {
         insertValues();
-        long startTime = System.currentTimeMillis();
         validateAllApiKeys();
-        long endTime = System.currentTimeMillis();
-        LOGGER.info("Performance: " + (endTime - startTime) / 1000 + " seconds");
+        long start = System.nanoTime();
+        validateAllApiKeys();
+        LOGGER.info("Performance: " + (System.nanoTime() - start) / 1_000_000 + " ms");
     }
 
     private JDBCApiKeyStore createApiKeyStore() {
@@ -83,14 +96,13 @@ public class JDBCApiKeyStorePerformanceTest {
         return apiKeyStore;
     }
 
-    private EmbeddedDataSource getDataSource() throws IOException {
+    private JdbcDataSource getDataSource() {
         if (dataSource == null) {
-            if (new File(DATABASE_NAME).exists()) {
-                FileUtils.deleteDirectory(new File(DATABASE_NAME));
-            }
-            dataSource = new EmbeddedDataSource();
-            dataSource.setDatabaseName(DATABASE_NAME);
-            dataSource.setCreateDatabase(CREATE_DB_FLAG);
+            dataSource = new JdbcDataSource();
+            dataSource.setURL("jdbc:h2:mem:" + dbName + ";MODE=LEGACY");
+            dataSource.setUser("sa");
+            dataSource.setPassword("");
+
             jdbcApiKeyStore.setDatasource(dataSource);
         }
         return dataSource;
@@ -106,6 +118,8 @@ public class JDBCApiKeyStorePerformanceTest {
                     .orElseThrow(() -> new RuntimeException("No scopes found for key: " + key));
             keyToScopesMap.put(key, scopes);
         }
+        assertFalse(keyToScopesMap.isEmpty());
+        assertEquals(USERS, keyToScopesMap.size());
         for (Map.Entry<String, Set<String>> entry : keyToScopesMap.entrySet()) {
             assertNotNull(entry.getValue(), "Scopes should not be null for key: " + entry.getKey());
         }

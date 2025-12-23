@@ -41,4 +41,4 @@ You can also use your own `JSON` layout using `eventTemplateUri` property. In or
 
 ---
 See:
-- [log](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/log.htm) reference
+- [log](https://membrane-api.io/docs/current/log.html) reference

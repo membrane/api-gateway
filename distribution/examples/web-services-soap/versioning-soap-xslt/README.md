@@ -76,5 +76,4 @@ The following configuration (found in `proxies.xml`) shows how to handle version
 - **`convert-response-to-old-version.xslt`**: Converts responses from the new version back to the old format.
 
 ## References
-- [soapProxy Configuration Reference](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/soapProxy.htm)
-- [switch Configuration Reference](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/switch.htm)
+- [soapProxy Configuration Reference](https://membrane-api.io/docs/current/soapProxy.html)
