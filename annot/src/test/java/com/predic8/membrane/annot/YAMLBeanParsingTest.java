@@ -14,7 +14,7 @@
 package com.predic8.membrane.annot;
 
 import com.predic8.membrane.annot.util.CompilerHelper;
-import com.predic8.membrane.annot.yaml.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
 import org.junit.jupiter.api.Test;
 
@@ -185,7 +185,7 @@ public class YAMLBeanParsingTest {
         import com.predic8.membrane.annot.*;
         import java.util.List;
 
-        @MCElement(name="holder", topLevel=true)
+        @MCElement(name="holder", topLevel=true, component=false)
         public class HolderElement {
             private List<Object> items;
 
@@ -232,6 +232,12 @@ public class YAMLBeanParsingTest {
             private static final AtomicInteger C = new AtomicInteger();
             private final int id = C.incrementAndGet();
             public int getId() { return id; }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="child")
+        public class Child2Element {
         }
         """;
 }

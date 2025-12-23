@@ -16,29 +16,25 @@
 
 package com.predic8.membrane.core.interceptor.prometheus;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.balancer.Cluster;
-import com.predic8.membrane.core.interceptor.balancer.Node;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.slf4j.*;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
+import java.util.concurrent.*;
+import java.util.regex.*;
 
-import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collectClusters;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
-import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
-import static java.util.stream.Collectors.toList;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
+import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static java.util.stream.Collectors.*;
 
 /**
  * @description Exposes some of Membrane's internal metrics in the Prometheus format.
@@ -60,8 +56,8 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         Context ctx = new Context();
         buildPrometheusStyleResponse(ctx);
-        exc.setResponse(Response.ok(ctx.sb.toString()).header(Header.CONTENT_TYPE, "text/plain; version=0.0.4").build());
-        return Outcome.RETURN;
+        exc.setResponse(ok(ctx.sb.toString()).contentType( "text/plain; version=0.0.4").build());
+        return RETURN;
     }
 
     private static class Context {
@@ -69,17 +65,17 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
         final List<StringBuilder> dynamic = new ArrayList<>();
 
-        final StringBuilder s1 = new StringBuilder();   // count
-        final StringBuilder s2 = new StringBuilder();   // good_count
-        final StringBuilder s3 = new StringBuilder();   // good_time
-        final StringBuilder s4 = new StringBuilder();   // good_bytes_req_body
-        final StringBuilder s5 = new StringBuilder();   // good_bytes_res_body
-        final StringBuilder s6 = new StringBuilder();   // duplicate_rule_name
-        final StringBuilder s7 = new StringBuilder();   // ssl_haskeyandcert
-        final StringBuilder s8 = new StringBuilder();   // ssl_validfrom_ms
-        final StringBuilder s9 = new StringBuilder();   // ssl_validuntil_ms
-        final StringBuilder s10 = new StringBuilder();  // openapi_validation
-        final StringBuilder s11 = new StringBuilder();  // lb_active_nodes
+        final StringBuilder count = new StringBuilder();
+        final StringBuilder good_count = new StringBuilder();
+        final StringBuilder good_time = new StringBuilder();
+        final StringBuilder good_bytes_req_body = new StringBuilder();
+        final StringBuilder good_bytes_res_body = new StringBuilder();
+        final StringBuilder duplicate_rule_name = new StringBuilder();
+        final StringBuilder ssl_haskeyandcert = new StringBuilder();
+        final StringBuilder ssl_validfrom_ms = new StringBuilder();
+        final StringBuilder ssl_validuntil_ms = new StringBuilder();
+        final StringBuilder openapi_validation = new StringBuilder();
+        final StringBuilder lb_active_nodes = new StringBuilder();
 
         final HashSet<String> seenRules = new HashSet<>();
 
@@ -90,17 +86,17 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         }
 
         private void reset() {
-            s1.setLength(0);
-            s2.setLength(0);
-            s3.setLength(0);
-            s4.setLength(0);
-            s5.setLength(0);
-            s6.setLength(0);
-            s7.setLength(0);
-            s8.setLength(0);
-            s9.setLength(0);
-            s10.setLength(0);
-            s11.setLength(0);
+            count.setLength(0);
+            good_count.setLength(0);
+            good_time.setLength(0);
+            good_bytes_req_body.setLength(0);
+            good_bytes_res_body.setLength(0);
+            duplicate_rule_name.setLength(0);
+            ssl_haskeyandcert.setLength(0);
+            ssl_validfrom_ms.setLength(0);
+            ssl_validuntil_ms.setLength(0);
+            openapi_validation.setLength(0);
+            lb_active_nodes.setLength(0);
 
             dynamic.forEach(s -> s.setLength(0));
         }
@@ -111,17 +107,17 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         }
 
         private void collect() {
-            sb.append(s1);
-            sb.append(s2);
-            sb.append(s3);
-            sb.append(s4);
-            sb.append(s5);
-            sb.append(s6);
-            sb.append(s7);
-            sb.append(s8);
-            sb.append(s9);
-            sb.append(s10);
-            sb.append(s11);
+            sb.append(count);
+            sb.append(good_count);
+            sb.append(good_time);
+            sb.append(good_bytes_req_body);
+            sb.append(good_bytes_res_body);
+            sb.append(duplicate_rule_name);
+            sb.append(ssl_haskeyandcert);
+            sb.append(ssl_validfrom_ms);
+            sb.append(ssl_validuntil_ms);
+            sb.append(openapi_validation);
+            sb.append(lb_active_nodes);
 
             dynamic.forEach(sb::append);
         }
@@ -135,7 +131,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
                 // the prometheus format is not allowed to contain the same metric more than once
                 if (issuedDuplicateRuleNameWarning)
                     continue;
-                LOG.warn("The prometheus interceptor detected the same rule name more than once: {}",r.getName());
+                log.warn("The prometheus interceptor detected the same rule name more than once: {}",r.getName());
                 issuedDuplicateRuleNameWarning = true;
                 continue;
             }
@@ -164,24 +160,24 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     private void buildLoadBalancerLines(Context ctx) {
-        ctx.s11.append("# TYPE membrane_lb_node_status gauge\n");
+        ctx.lb_active_nodes.append("# TYPE membrane_lb_node_status gauge\n");
         for (Cluster cl : collectClusters(router)) {
             for (Node node : cl.getNodes()) {
-                ctx.s11.append("membrane_lb_node_status");
-                ctx.s11.append("{node=\"");
-                ctx.s11.append(prometheusCompatibleName(node.toString()));
-                ctx.s11.append("\",cluster=\"");
-                ctx.s11.append(prometheusCompatibleName(cl.getName()));
-                ctx.s11.append("\"} ");
-                ctx.s11.append(node.getStatus() == UP ? 1 : 0);
-                ctx.s11.append("\n");
+                ctx.lb_active_nodes.append("membrane_lb_node_status");
+                ctx.lb_active_nodes.append("{node=\"");
+                ctx.lb_active_nodes.append(prometheusCompatibleName(node.toString()));
+                ctx.lb_active_nodes.append("\",cluster=\"");
+                ctx.lb_active_nodes.append(prometheusCompatibleName(cl.getName()));
+                ctx.lb_active_nodes.append("\"} ");
+                ctx.lb_active_nodes.append(node.getStatus() == UP ? 1 : 0);
+                ctx.lb_active_nodes.append("\n");
             }
         }
     }
 
     private void buildOpenAPIValidatorLines(Context ctx, APIProxy proxy) {
         for (Map.Entry<ValidationStatsKey, Integer> e : proxy.getValidationStatisticCollector().getStats().entrySet()) {
-            buildLine(ctx.s10, proxy.getName(), e.getValue(), e.getKey().getLabels(), "openapi_validation");
+            buildLine(ctx.openapi_validation, proxy.getName(), e.getValue(), e.getKey().getLabels(), "openapi_validation");
         }
     }
 
@@ -210,10 +206,10 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     private void buildSSLLines(Context ctx, Proxy r, SSLContext sslib) {
         boolean hasKeyAndCert = sslib.hasKeyAndCertificate();
-        buildSSLLine(ctx.s7, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_haskeyandcert", hasKeyAndCert ? 1 : 0);
+        buildSSLLine(ctx.ssl_haskeyandcert, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_haskeyandcert", hasKeyAndCert ? 1 : 0);
         if (hasKeyAndCert) {
-            buildSSLLine(ctx.s8, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_validfrom_ms", sslib.getValidFrom());
-            buildSSLLine(ctx.s9, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_validuntil_ms", sslib.getValidUntil());
+            buildSSLLine(ctx.ssl_validfrom_ms, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_validfrom_ms", sslib.getValidFrom());
+            buildSSLLine(ctx.ssl_validuntil_ms, r.getName(), sslib.getPrometheusContextTypeName(), "ssl_validuntil_ms", sslib.getValidUntil());
         }
     }
 
@@ -237,16 +233,16 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     private void buildDuplicateRuleNameWarning(Context ctx, boolean hasDuplicateRuleName) {
-        ctx.s6.append("# TYPE membrane_duplicate_rule_name gauge\n");
+        ctx.duplicate_rule_name.append("# TYPE membrane_duplicate_rule_name gauge\n");
 
-        buildLine(ctx.s6, "duplicate_rule_name", hasDuplicateRuleName ? 1 : 0);
+        buildLine(ctx.duplicate_rule_name, "duplicate_rule_name", hasDuplicateRuleName ? 1 : 0);
     }
 
     private void buildActive(Context ctx, Proxy r) {
-        if (ctx.s6.isEmpty())
-            ctx.s6.append("# TYPE membrane_rule_active gauge\n");
+        if (ctx.duplicate_rule_name.isEmpty())
+            ctx.duplicate_rule_name.append("# TYPE membrane_rule_active gauge\n");
 
-        buildBucketLine(ctx.s6, r.getName(), "rule_active", r.isActive() ? 1 : 0);
+        buildBucketLine(ctx.duplicate_rule_name, r.getName(), "rule_active", r.isActive() ? 1 : 0);
     }
 
     private void buildBuckets(Context ctx, Proxy proxy) {
@@ -268,11 +264,11 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     private void buildStatuscodeLines(Context ctx, Proxy proxy) {
         proxy.getStatisticCollector().getStatisticsByStatusCodes().forEach((key, value) -> {
-            buildLine(ctx.s1, proxy.getName(), value.getCount(), "code", key, "count");
-            buildLine(ctx.s2, proxy.getName(), value.getGoodCount(), "code", key, "good_count");
-            buildLine(ctx.s3, proxy.getName(), value.getGoodTotalTime(), "code", key, "good_time");
-            buildLine(ctx.s4, proxy.getName(), value.getGoodTotalBytesSent(), "code", key, "good_bytes_req_body");
-            buildLine(ctx.s5, proxy.getName(), value.getGoodTotalBytesReceived(), "code", key, "good_bytes_res_body");
+            buildLine(ctx.count, proxy.getName(), value.getCount(), "code", key, "count");
+            buildLine(ctx.good_count, proxy.getName(), value.getGoodCount(), "code", key, "good_count");
+            buildLine(ctx.good_time, proxy.getName(), value.getGoodTotalTime(), "code", key, "good_time");
+            buildLine(ctx.good_bytes_req_body, proxy.getName(), value.getGoodTotalBytesSent(), "code", key, "good_bytes_req_body");
+            buildLine(ctx.good_bytes_res_body, proxy.getName(), value.getGoodTotalBytesReceived(), "code", key, "good_bytes_res_body");
         });
     }
 

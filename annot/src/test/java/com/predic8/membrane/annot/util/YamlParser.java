@@ -15,6 +15,7 @@
 package com.predic8.membrane.annot.util;
 
 import com.predic8.membrane.annot.Grammar;
+import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 
@@ -47,10 +48,9 @@ public class YamlParser {
         String normalized = resourceName.startsWith("/") ?
                 resourceName.substring(1) : resourceName;
 
-        beanRegistry = new BeanRegistryImplementation(getLatchObserver(cdl),generator);
-        beanRegistry.registerBeanDefinitions(GenericYamlParser.parseMembraneResources(
-                requireNonNull(cl.getResourceAsStream(normalized)), generator));
-        beanRegistry.start();
+        BeanRegistryImplementation impl = new BeanRegistryImplementation(getLatchObserver(cdl), generator);
+        impl.parseYamls(requireNonNull(cl.getResourceAsStream(normalized)), generator);
+        beanRegistry = impl;
 
         cdl.await();
     }
@@ -82,7 +82,7 @@ public class YamlParser {
             }
 
             @Override
-            public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) {
+            public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) {
 
             }
 
