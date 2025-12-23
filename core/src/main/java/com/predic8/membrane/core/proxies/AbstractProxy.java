@@ -101,7 +101,7 @@ public abstract class AbstractProxy implements Proxy {
             }
             active = true;
         } catch (Exception e) {
-            if (!router.isRetryInit())
+            if (!router.getConfig().isRetryInit())
                 throw e;
             log.error("", e);
             active = false;

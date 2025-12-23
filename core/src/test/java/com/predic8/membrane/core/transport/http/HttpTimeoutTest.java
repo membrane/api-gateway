@@ -48,7 +48,7 @@ public class HttpTimeoutTest {
         hcc.getRetryHandler().setRetries(1);
 
         proxyRouter = new HttpRouter();
-        proxyRouter.setHotDeploy(false);
+        proxyRouter.getConfig().setHotDeploy(false);
         proxyRouter.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(hcc);
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*",
                 "*", ".*", 3023), "localhost", 3022);
@@ -58,7 +58,7 @@ public class HttpTimeoutTest {
 
     private void setupSlowBackend() throws Exception {
         slowBackend = new HttpRouter();
-        slowBackend.setHotDeploy(false);
+        slowBackend.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("*",
                 "*", ".*", 3022), "", -1);
         sp.getFlow().add(new AbstractInterceptor(){

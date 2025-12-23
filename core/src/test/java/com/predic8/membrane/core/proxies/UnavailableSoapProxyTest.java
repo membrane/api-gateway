@@ -51,8 +51,8 @@ public class UnavailableSoapProxyTest {
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.getRetryHandler().setRetries(1);
 		r.setHttpClientConfig(httpClientConfig);
-		r.setHotDeploy(false);
-		r.setRetryInit(true);
+		r.getConfig().setHotDeploy(false);
+		r.getConfig().setRetryInit(true);
 
 		sp = new SOAPProxy();
 		sp.setPort(2000);
@@ -69,7 +69,7 @@ public class UnavailableSoapProxyTest {
 		sp2.setPort(2001);
 		sp2.setWsdl("http://localhost:4000?wsdl");
 		r2 = new Router();
-		r2.setHotDeploy(false);
+		r2.getConfig().setHotDeploy(false);
 		r2.getRules().add(sp2);
 	}
 

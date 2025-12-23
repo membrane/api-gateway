@@ -40,7 +40,7 @@ public class HttpsKeepAliveTest {
     @BeforeAll
     public static void startServer() {
         server = new HttpRouter();
-        server.setHotDeploy(false);
+        server.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy();
         sp.setPort(3063);
         SSLParser sslIB = new SSLParser();

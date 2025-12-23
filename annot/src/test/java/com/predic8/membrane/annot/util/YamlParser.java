@@ -48,7 +48,7 @@ public class YamlParser {
         String normalized = resourceName.startsWith("/") ?
                 resourceName.substring(1) : resourceName;
 
-        BeanRegistryImplementation impl = new BeanRegistryImplementation(getLatchObserver(cdl), generator);
+        BeanRegistryImplementation impl = new BeanRegistryImplementation(getLatchObserver(cdl), new TestRouter() ,generator); // TODO
         impl.parseYamls(requireNonNull(cl.getResourceAsStream(normalized)), generator);
         beanRegistry = impl;
 

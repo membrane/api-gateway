@@ -38,7 +38,7 @@ public class OpenAPI31Test {
     @BeforeEach
     public void setUp() {
         Router router = new Router();
-        router.setUriFactory(new URIFactory());
+        router.getConfig().setUriFactory(new URIFactory());
 
         petstore_v3_1 = new OpenAPISpec();
         petstore_v3_1.location = getPathFromResource("openapi/specs/petstore-v3.1.json");

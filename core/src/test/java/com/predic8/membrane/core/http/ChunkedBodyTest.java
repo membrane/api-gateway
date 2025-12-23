@@ -185,7 +185,7 @@ public class ChunkedBodyTest {
 
     private HttpRouter setupRouter(boolean http2, boolean http2Client) {
         HttpRouter router = new HttpRouter();
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(http2 ? 3060 : 3059), "localhost", 3060);
         if (http2) {
             SSLParser sslParser = getSslParserForHttp2();

@@ -25,7 +25,7 @@ public class Util {
     public static HttpRouter basicRouter(Proxy... proxies){
         HttpRouter router = new HttpRouter();
         router.getTransport().setForceSocketCloseOnHotDeployAfter(1000);
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
 
         Arrays.stream(proxies).forEach(rule -> router.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL));
 

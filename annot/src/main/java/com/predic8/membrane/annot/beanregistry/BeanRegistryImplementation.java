@@ -41,9 +41,10 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     record UidAction(String uid, WatchAction action) {}
 
-    public BeanRegistryImplementation(BeanCacheObserver observer, Grammar grammar) {
+    public BeanRegistryImplementation(BeanCacheObserver observer, BeanRegistryAware registryAware, Grammar grammar) {
         this.observer = observer;
         this.grammar = grammar;
+        registryAware.setRegistry(this);
     }
 
     private Object define(BeanDefinition bd)  {
