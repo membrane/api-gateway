@@ -38,6 +38,14 @@ public class YamlParser {
      */
     private final BeanRegistry beanRegistry;
 
+    private static class TestRouter implements BeanRegistryAware {
+
+        @Override
+        public void setRegistry(BeanRegistry registry) {
+
+        }
+    }
+
     public YamlParser(String resourceName) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException, InterruptedException {
         Grammar generator = getGrammar();
 
@@ -48,7 +56,7 @@ public class YamlParser {
         String normalized = resourceName.startsWith("/") ?
                 resourceName.substring(1) : resourceName;
 
-        BeanRegistryImplementation impl = new BeanRegistryImplementation(getLatchObserver(cdl), generator);
+        BeanRegistryImplementation impl = new BeanRegistryImplementation(getLatchObserver(cdl), new TestRouter(), generator);
         impl.parseYamls(requireNonNull(cl.getResourceAsStream(normalized)), generator);
         beanRegistry = impl;
 

@@ -57,7 +57,7 @@ class MassivelyParallelTest {
         server.getTransport().setConcurrentConnectionLimitPerIp(CONCURRENT_THREADS);
         server.getTransport().setBacklog(CONCURRENT_THREADS);
         server.getTransport().setSocketTimeout(10000);
-        server.setHotDeploy(false);
+        server.getConfig().setHotDeploy(false);
         server.getRuleManager().addProxy(createServiceProxy(), MANUAL);
         server.start();
     }

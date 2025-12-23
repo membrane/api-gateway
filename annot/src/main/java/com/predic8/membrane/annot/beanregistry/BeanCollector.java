@@ -27,6 +27,20 @@ import java.util.List;
  * and send it a series of change events.
  */
 public interface BeanCollector {
+
+    default List<BeanDefinition> parseYamlBeanDefinitions(InputStream yamls, Grammar grammar) throws IOException {
+        List<BeanDefinition> bds = GenericYamlParser.parseMembraneResources(yamls, grammar);
+        for (BeanDefinition bd : bds) {
+            handle(new BeanDefinitionChanged(WatchAction.ADDED, bd), false);
+        }
+        return bds;
+    }
+
+    default void finishStaticConfiguration() {
+        handle(new StaticConfigurationLoaded(), true);
+        start();
+    }
+
     /**
      * Utility method to ingest a stream of YAML objects as a static configuration and then
      * start the bean registry.
@@ -34,12 +48,8 @@ public interface BeanCollector {
      * @param grammar the grammar to use for parsing
      */
     default void parseYamls(InputStream yamls, Grammar grammar) throws IOException {
-        List<BeanDefinition> bds = GenericYamlParser.parseMembraneResources(yamls, grammar);
-        for (int i = 0; i < bds.size(); i++) {
-            handle(new BeanDefinitionChanged(WatchAction.ADDED, bds.get(i)), i == bds.size() - 1);
-        }
-        handle(new StaticConfigurationLoaded(), true);
-        start();
+        parseYamlBeanDefinitions(yamls, grammar);
+        finishStaticConfiguration();
     }
 
     /**

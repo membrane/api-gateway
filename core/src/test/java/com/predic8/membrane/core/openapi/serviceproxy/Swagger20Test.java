@@ -41,7 +41,7 @@ public class Swagger20Test {
 
         router = new Router();
         router.setTransport(new HttpTransport());
-        router.setUriFactory(new URIFactory());
+        router.getConfig().setUriFactory(new URIFactory());
 
         router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy());
         router.getRuleManager().addProxyAndOpenPortIfNew(getTargetProxy());

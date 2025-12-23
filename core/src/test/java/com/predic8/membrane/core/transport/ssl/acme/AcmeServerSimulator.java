@@ -71,7 +71,7 @@ public class AcmeServerSimulator {
 
     public void start() throws IOException {
         router = new HttpRouter();
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(port), "localhost", 80);
         sp.getFlow().add(new AbstractInterceptor() {
             final ObjectMapper om = new ObjectMapper();

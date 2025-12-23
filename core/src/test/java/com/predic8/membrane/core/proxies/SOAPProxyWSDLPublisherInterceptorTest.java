@@ -29,7 +29,7 @@ public class SOAPProxyWSDLPublisherInterceptorTest {
     @BeforeAll
     static void setUp() {
         router = new HttpRouter();
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
     }
 
     @AfterAll

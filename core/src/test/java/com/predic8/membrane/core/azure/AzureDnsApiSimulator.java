@@ -44,7 +44,7 @@ public class AzureDnsApiSimulator {
 
     public void start() throws IOException {
         router = new HttpRouter();
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
 
         var sp = new ServiceProxy(new ServiceProxyKey(port), "localhost", port);
 

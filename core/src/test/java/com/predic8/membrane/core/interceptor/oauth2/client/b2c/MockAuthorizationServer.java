@@ -81,7 +81,7 @@ public class MockAuthorizationServer {
         mockAuthServer = new HttpRouter();
         mockAuthServer.getTransport().setBacklog(10000);
         mockAuthServer.getTransport().setSocketTimeout(10000);
-        mockAuthServer.setHotDeploy(false);
+        mockAuthServer.getConfig().setHotDeploy(false);
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(tc.limit * 100);
         mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(SERVER_PORT, tc.susiFlowId), MANUAL);
         mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(SERVER_PORT, tc.peFlowId), MANUAL);
