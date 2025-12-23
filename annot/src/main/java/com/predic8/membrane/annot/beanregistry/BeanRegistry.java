@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2022 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,14 +11,19 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.examples;
+package com.predic8.membrane.annot.beanregistry;
 
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+import com.predic8.membrane.annot.*;
 
-@Suite
-@SelectClasses({
-	ConfigSerializationTest.class,
-	OAuth2ExampleTest.class
-})
-public class ExampleUnitTests {}
+import java.util.*;
+
+public interface BeanRegistry {
+
+    Object resolve(String url);
+
+    List<Object> getBeans();
+
+    Grammar getGrammar();
+
+    <T> List<T> getBeans(Class<T> clazz);
+}

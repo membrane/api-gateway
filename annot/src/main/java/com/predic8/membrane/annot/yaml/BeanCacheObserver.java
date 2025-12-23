@@ -14,6 +14,10 @@
 
 package com.predic8.membrane.annot.yaml;
 
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionChanged;
+import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
+
 import java.io.IOException;
 
 /**
@@ -34,16 +38,13 @@ public interface BeanCacheObserver {
     /**
      * Called for an add/modify/delete event of a bean.
      *
-     * @param bd      the bean definition
+     * @param bd      the bean definition changed event
      * @param bean    the current instance (on ADD/MODIFY) or {@code null} (on DELETE)
      * @param oldBean the previous instance (on MODIFY) or {@code null}
      * @throws IOException if handling the event performs I/O and it fails
      *
-     *
-     * TODO: Make event visible: enum and add to signature?
-     *
      */
-    void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) throws IOException;
+    void handleBeanEvent(BeanDefinitionChanged bd, Object bean, Object oldBean) throws IOException;
 
     /**
      * Whether beans of the given definition should be considered activatable/usable

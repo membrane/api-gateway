@@ -1,4 +1,4 @@
-/* Copyright 2022 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,22 +11,15 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.annot.yaml;
 
-import com.predic8.membrane.annot.*;
+package com.predic8.membrane.annot.beanregistry;
 
-import java.util.*;
+import com.predic8.membrane.annot.yaml.WatchAction;
 
-public interface BeanRegistry {
-
-    Object resolveReference(String url);
-
-    List<Object> getBeans();
-
-    void registerBeanDefinitions(List<BeanDefinition> beanDefinitions);
-
-    void start();
-
-    Grammar getGrammar();
-
+/**
+ * Signals that a BeanDefinition has changed (=was added, modified, or deleted).
+ */
+public record BeanDefinitionChanged(
+        WatchAction action,
+        BeanDefinition bd) implements ChangeEvent {
 }

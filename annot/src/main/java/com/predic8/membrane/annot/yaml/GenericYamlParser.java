@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -88,18 +90,16 @@ public class GenericYamlParser {
     }
 
     /**
-     * Entry point used by the runtime to consume a YAML stream and turn it into
-     * a {@link BeanRegistry} that the router can work with.
+     * Entry point used by the runtime to consume a YAML stream.
      * <ul>
      *   <li>Reads the entire stream as UTF-8.</li>
      *   <li>Splits multi-document YAML ("---" separators).</li>
      *   <li>Validates each document against the JSON Schema provided by {@code grammar}.</li>
      *   <li>Emits helpful line/column locations for malformed multi-document input.</li>
      * </ul>
-     * The returned registry is fully populated and {@link BeanRegistryImplementation#fireConfigurationLoaded()} has been called.
      * @param resource the input stream to parse. The method takes care of closing the stream.
      * @param grammar the grammar to use for type resolution and schema location
-     * @return the bean registry
+     * @return list of parsed bean definitions
      */
     public static List<BeanDefinition> parseMembraneResources(@NotNull InputStream resource, Grammar grammar) throws IOException {
         try (resource) {
@@ -261,7 +261,7 @@ public class GenericYamlParser {
 
     private static Object getReferenced(ParsingContext ctx, JsonNode refNode) {
         try {
-            return ctx.registry().resolveReference(refNode.asText());
+            return ctx.registry().resolve(refNode.asText());
         } catch (RuntimeException e) {
             throw new ParsingException(e, refNode);
         }
@@ -292,7 +292,7 @@ public class GenericYamlParser {
 
     private static Object parseMapToObj(ParsingContext ctx, JsonNode node, String key) throws ParsingException {
         if ("$ref".equals(key))
-            return ctx.registry().resolveReference(node.asText());
+            return ctx.registry().resolve(node.asText());
         return createAndPopulateNode(ctx.updateContext(key), ctx.resolveClass(key), node);
     }
 }

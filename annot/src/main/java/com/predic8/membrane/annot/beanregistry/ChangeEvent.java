@@ -12,12 +12,13 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.annot.yaml;
+package com.predic8.membrane.annot.beanregistry;
 
-sealed interface ChangeEvent permits BeanDefinitionChanged, StaticConfigurationLoaded {
-}
+import com.predic8.membrane.annot.yaml.WatchAction;
 
-record BeanDefinitionChanged(BeanDefinition bd) implements ChangeEvent {
+import static com.predic8.membrane.annot.yaml.WatchAction.*;
+
+public sealed interface ChangeEvent permits BeanDefinitionChanged, StaticConfigurationLoaded {
 }
 
 /**

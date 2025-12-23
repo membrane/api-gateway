@@ -14,7 +14,7 @@
 package com.predic8.membrane.annot;
 
 import com.predic8.membrane.annot.util.CompilerHelper;
-import com.predic8.membrane.annot.yaml.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
 import org.junit.jupiter.api.Test;
 
@@ -77,8 +77,8 @@ public class YAMLBeanParsingTest {
                   scope: singleton
             """);
 
-        Object s1 = r.resolveReference("#/components/s");
-        Object s2 = r.resolveReference("#/components/s");
+        Object s1 = r.resolve("#/components/s");
+        Object s2 = r.resolve("#/components/s");
         assertSame(s1, s2, "singleton must return same instance");
         assertEquals(call(s1, "getId"), call(s2, "getId"));
     }
@@ -93,8 +93,8 @@ public class YAMLBeanParsingTest {
                   scope: prototype
             """);
 
-        Object p1 = r.resolveReference("#/components/p");
-        Object p2 = r.resolveReference("#/components/p");
+        Object p1 = r.resolve("#/components/p");
+        Object p2 = r.resolve("#/components/p");
         assertNotSame(p1, p2, "prototype must return new instance");
         assertNotEquals(call(p1, "getId"), call(p2, "getId"));
     }
@@ -108,7 +108,7 @@ public class YAMLBeanParsingTest {
                   scope: singleton
             """);
 
-        var ex = assertThrows(RuntimeException.class, () -> r.resolveReference("#/components/x"));
+        var ex = assertThrows(RuntimeException.class, () -> r.resolve("#/components/x"));
         assertAnyErrorContains(ex, "Missing/blank 'class'");
     }
 
