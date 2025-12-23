@@ -71,7 +71,7 @@ public class JSONSchemaValidationExampleTest extends DistributionExtractingTestc
                 .body(readFileFromBaseDir("bad2001.json"))
             .when()
                 .post("http://localhost:2001")
-            .then()
+                .then()
                 .statusCode(400)
                 .contentType(APPLICATION_PROBLEM_JSON)
                 .body("title", equalTo("JSON validation failed"))
