@@ -37,7 +37,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     // uid -> bean container
     private final Map<String, BeanContainer> bcs = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
-    private final Set<UidAction> uidsToActivate = new LinkedHashSet<>(); // keeps order
+    private final Set<UidAction> uidsToActivate = Collections.synchronizedSet(new LinkedHashSet<>()); // keeps order
 
     record UidAction(String uid, WatchAction action) {}
 
