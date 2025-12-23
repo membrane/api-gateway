@@ -34,7 +34,7 @@ public class JmxRouter {
 
     @ManagedAttribute
     public String getName(){
-        return router.getJmx();
+        return router.getConfig().getJmx();
     }
 
     private void exportServiceProxyList(){
@@ -46,7 +46,7 @@ public class JmxRouter {
     }
 
     private void exportServiceProxy(ServiceProxy rule) {
-        String prefix = "org.membrane-soa:00=serviceProxies, 01=" + router.getJmx()+ ", name=";
+        String prefix = "org.membrane-soa:00=serviceProxies, 01=" + router.getConfig().getJmx()+ ", name=";
         exporter.addBean(prefix + rule.getName().replace(":",""), new JmxServiceProxy(rule, router));
     }
 }

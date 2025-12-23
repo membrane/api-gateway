@@ -108,7 +108,7 @@ public class Configuration {
         this.jmxRouterName = jmxRouterName;
     }
 
-    public String getJmxRouterName() {
+    public String getJmx() {
         return jmxRouterName;
     }
 

@@ -376,7 +376,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         try {
             JmxExporter exporter = beanFactory.getBean(JMX_EXPORTER_NAME, JmxExporter.class);
             //exporter.removeBean(prefix + jmxRouterName);
-            exporter.addBean("org.membrane-soa:00=routers, name=" + config.getJmxRouterName(), new JmxRouter(this, exporter));
+            exporter.addBean("org.membrane-soa:00=routers, name=" + config.getJmx(), new JmxRouter(this, exporter));
         } catch (NoSuchBeanDefinitionException ignored) {
             // If bean is not available do not init jmx
         }
