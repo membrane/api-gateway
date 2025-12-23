@@ -35,7 +35,7 @@ public class Configuration {
 
     private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
 
-    private boolean retryInit = true;
+    private boolean retryInit = false;
 
     private String jmxRouterName;
 
