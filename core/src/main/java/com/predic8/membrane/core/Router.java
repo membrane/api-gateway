@@ -87,7 +87,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     private ApplicationContext beanFactory;
 
-    private BeanRegistry beanRegistry;
+    private BeanRegistry registry;
 
     //
     // Configuration
@@ -95,6 +95,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     private String id;
     private String baseLocation;
 
+    private Configuration config = new Configuration();
 
     //
     // Components
@@ -136,7 +137,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
      * Initialized with NullHotDeployer to avoid NPEs
      */
     private HotDeployer hotDeployer = new DefaultHotDeployer();
-    private Configuration config = new Configuration();
 
     public Router() {
         ruleManager.setRouter(this);
@@ -185,6 +185,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     @Override
     public void start() {
+        System.out.println("config = " + config.isProduction());
         try {
             if (exchangeStore == null)
                 exchangeStore = new LimitedMemoryExchangeStore();
@@ -482,8 +483,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         return config.isProduction();
     }
 
-
-
     public Statistics getStatistics() {
         return statistics;
     }
@@ -588,11 +587,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     @Override
     public void setRegistry(BeanRegistry registry) {
-        this.beanRegistry = registry;
+        this.registry = registry;
     }
 
-    public BeanRegistry getBeanRegistry() {
-        return beanRegistry;
+    public BeanRegistry getRegistry() {
+        return registry;
     }
 
     public void applyConfiguration(Configuration configuration) {
@@ -600,11 +599,23 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         this.config = configuration;
     }
 
+    public URIFactory getUriFactory() {
+        return config.getUriFactory();
+    }
+
+    /**
+     * Sets the configuration object for this router.
+     * Only used for xml
+     *
+     * @param config the configuration object
+     */
+    @MCChildElement(order = -1)
+    public void setConfig(Configuration config) {
+        this.config = config;
+    }
+
     public Configuration getConfig() {
         return config;
     }
 
-    public URIFactory getUriFactory() {
-        return config.getUriFactory();
-    }
 }
