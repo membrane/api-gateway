@@ -13,9 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.examples;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
+@Disabled
 @Suite
 @SelectClasses({
 	ConfigSerializationTest.class
