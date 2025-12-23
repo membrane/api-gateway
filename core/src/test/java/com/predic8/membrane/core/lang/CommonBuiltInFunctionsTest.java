@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.security.ApiKeySecurityScheme;
 import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,6 +27,7 @@ import java.util.List;
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.lang.CommonBuiltInFunctions.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.HEADER;
 import static java.util.List.of;
@@ -50,6 +52,12 @@ class CommonBuiltInFunctionsTest {
     void jsonPathReturnsValueOrNull() {
         assertEquals("John", jsonPath("$.name", exc.getRequest()));
         assertNull(jsonPath("$.foo", exc.getRequest()));
+    }
+
+    @Test
+    void XPath() throws URISyntaxException {
+        assertEquals("Fritz", CommonBuiltInFunctions.xpath("/person/@name",
+                post("/foo").xml("<person name='Fritz'/>").build()));
     }
 
     @Test
