@@ -22,7 +22,6 @@ import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -262,7 +261,7 @@ public class GenericYamlParser {
 
     private static Object getReferenced(ParsingContext ctx, JsonNode refNode) {
         try {
-            return ctx.registry().resolveReference(refNode.asText());
+            return ctx.registry().resolve(refNode.asText());
         } catch (RuntimeException e) {
             throw new ParsingException(e, refNode);
         }
@@ -293,7 +292,7 @@ public class GenericYamlParser {
 
     private static Object parseMapToObj(ParsingContext ctx, JsonNode node, String key) throws ParsingException {
         if ("$ref".equals(key))
-            return ctx.registry().resolveReference(node.asText());
+            return ctx.registry().resolve(node.asText());
         return createAndPopulateNode(ctx.updateContext(key), ctx.resolveClass(key), node);
     }
 }

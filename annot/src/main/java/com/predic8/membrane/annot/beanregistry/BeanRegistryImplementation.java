@@ -121,7 +121,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     @Override
-    public Object resolveReference(String url) {
+    public Object resolve(String url) {
         BeanContainer bc = getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url)));
 
         boolean prototype = isPrototypeScope(bc.getDefinition());
@@ -161,5 +161,15 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         return "PROTOTYPE".equalsIgnoreCase(
                 bd.getNode().path("bean").path("scope").asText("SINGLETON")
         );
+    }
+
+    @Override
+    public <T> List<T> getBeans(Class<T> clazz) {
+        return bcs.values().stream()
+                .map(BeanContainer::getSingleton)
+                .filter(Objects::nonNull)
+                .filter(clazz::isInstance)
+                .map(clazz::cast)
+                .toList();
     }
 }
