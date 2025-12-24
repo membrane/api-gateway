@@ -173,7 +173,7 @@ public class RouterCLI {
     }
 
     private static Router initRouterByYAML(String location) throws Exception {
-        var router = new HttpRouter();
+        var router = new Router();
         router.setBaseLocation(location);
         router.setAsynchronousInitialization(true);
 

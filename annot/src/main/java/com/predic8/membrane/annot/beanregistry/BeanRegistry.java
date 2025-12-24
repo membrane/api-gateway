@@ -27,7 +27,21 @@ public interface BeanRegistry {
 
     <T> List<T> getBeans(Class<T> clazz);
 
+    /**
+     * Retrieves a single bean of the specified type.
+     *
+     * @param clazz the class of the bean to retrieve
+     * @param <T>   the bean type
+     * @return Optional containing the bean if exactly one exists, empty otherwise
+     * @throws RuntimeException if multiple beans of the specified type exist
+     */
     <T> Optional<T> getBean(Class<T> clazz);
 
-    void register(String beanName, Object object);
+    /**
+     * Registers a bean with the specified name.
+     *
+     * @param beanName the name to register the bean under
+     * @param bean   instance to register (must not be null)
+     */
+    void register(String beanName, Object bean);
 }

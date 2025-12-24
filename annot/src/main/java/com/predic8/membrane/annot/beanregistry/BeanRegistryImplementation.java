@@ -178,17 +178,17 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         var beans = getBeans(clazz);
         if (beans.size() > 1) {
             var msg = "One bean was asked. But found %d beans of %s".formatted(beans.size(),clazz);
-            log.debug(msg);
+            log.error(msg);
             throw new RuntimeException(msg);
         }
         return beans.size() == 1 ? Optional.of(beans.getFirst()) : Optional.empty();
     }
 
-    public void register(String beanName, Object object) {
+    public void register(String beanName, Object bean) {
         var uuid = UUID.randomUUID().toString();
         BeanContainer bc = new BeanContainer(new BeanDefinition("component", beanName,null, uuid, null));
-        bc.setSingleton(object);
-        singletonBeans.put(uuid,bc);
+        bc.setSingleton(bean);
+        singletonBeans.put(uuid,bean);
         bcs.put(uuid, bc);
     }
 }
