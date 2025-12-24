@@ -79,8 +79,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
             if (!bd.isComponent() && observer.isActivatable(bd)) {
                 uidsToActivate.add(new UidAction(bd.getUid(), action));
-            }
-            if ("global".equals(bd.getKind())) {
+            } else if ("global".equals(bd.getKind())) {
                 uidsToActivate.add(new UidAction(bd.getUid(), action));
             }
             if (isLast)

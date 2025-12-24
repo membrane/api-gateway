@@ -84,6 +84,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     private BeanRegistry registry;
 
+    /**
+     * Indicates whether the router should automatically open TCP ports when adding proxies.
+     * This flag determines if the ports associated with the proxies are opened immediately
+     * when they are added to the router. Setting this to {@code false} allows for proxies
+     * to be defined without opening the associated ports, providing more control over when
+     * the ports are made accessible.
+     */
     private boolean openPorts = true;
 
     //
@@ -296,7 +303,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
      */
     @MCChildElement(order = 1, allowForeign = true)
     public void setTransport(Transport transport) {
-        transport.setRouter(this);
         this.transport = transport;
     }
 
@@ -541,18 +547,20 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         if (newProxy.getName() == null)
             newProxy.setName(bdc.bd().getName());
 
-        // TODO: Code Should be deleted before merge
-        // Only kept for discussion
-        // init in Proxies was called twice, here and in Router.initRemainingRules
-        // We should only keep one place.
-//        try {
-//            newProxy.init(this);
-//        } catch (ConfigurationException e) {
-//            SpringConfigurationErrorHandler.handleRootCause(e, log);
-//            throw e;
-//        } catch (Exception e) {
-//            throw new RuntimeException("Could not init rule.", e);
-//        }
+        // TODO: Comment or code Should be deleted before merge
+        // Comment is kept for discussion only.
+        //
+        // init() in Proxies was called twice, here and in Router.initRemainingRules
+        // We should only keep one place. Which one is up to discussion
+        //
+        //        try {
+        //            newProxy.init(this);
+        //        } catch (ConfigurationException e) {
+        //            SpringConfigurationErrorHandler.handleRootCause(e, log);
+        //            throw e;
+        //        } catch (Exception e) {
+        //            throw new RuntimeException("Could not init rule.", e);
+        //        }
 
         if (bdc.action().isAdded())
             add(newProxy);
@@ -606,6 +614,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         return config;
     }
 
+    /**
+     * Configures whether the router should open tcp ports when adding proxies. Use this field to create a router
+     * and open the ports later
+     * @param openPorts a boolean indicating whether ports should be opened (true) or closed (false)
+     */
     public void setOpenPorts(boolean openPorts) {
         this.openPorts = openPorts;
     }
