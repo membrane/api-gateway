@@ -13,10 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.annot.beanregistry;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.annot.yaml.WatchAction;
-
-import static com.predic8.membrane.annot.yaml.WatchAction.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.yaml.*;
 
 public class BeanDefinition {
 

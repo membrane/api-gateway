@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.RuleManager.*;
 import com.predic8.membrane.core.config.spring.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
@@ -48,10 +49,8 @@ import java.util.*;
 import java.util.Timer;
 import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static com.predic8.membrane.core.util.DLPUtil.*;
-import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.util.concurrent.Executors.*;
 
 /**
@@ -166,7 +165,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         bf.start();
 
         if (bf.getBeansOfType(Router.class).size() > 1) {
-            throw new RuntimeException("More than one router found in spring config (beans {}). This is not supported anymore.".formatted(bf.getBeanDefinitionNames()));
+            throw new RuntimeException("More than one router found in spring config (beans %s). This is not supported anymore.".formatted(bf.getBeanDefinitionNames()));
         }
 
         return bf.getBean("router", Router.class);
@@ -438,12 +437,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         }
     }
 
-    public void stopAll() {
-        for (String s : this.getBeanFactory().getBeanNamesForType(Router.class)) {
-            ((Router) this.getBeanFactory().getBean(s)).stop();
-        }
-    }
-
     @Override
     public boolean isRunning() {
         synchronized (lock) {
@@ -552,7 +545,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         // Only kept for discussion
         // init in Proxies was called twice, here and in Router.initRemainingRules
         // We should only keep one place.
-
 //        try {
 //            newProxy.init(this);
 //        } catch (ConfigurationException e) {
@@ -612,10 +604,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     public Configuration getConfig() {
         return config;
-    }
-
-    public boolean isOpenPorts() {
-        return openPorts;
     }
 
     public void setOpenPorts(boolean openPorts) {
