@@ -100,4 +100,14 @@ public class BeanDefinition {
         return PROTOTYPE.equals(getScope());
     }
 
+    @Override
+    public String toString() {
+        return "BeanDefinition{" +
+               "name='" + name + '\'' +
+               ", namespace='" + namespace + '\'' +
+               ", uid='" + uid + '\'' +
+               ", node=" + node +
+               ", kind='" + kind + '\'' +
+               '}';
+    }
 }

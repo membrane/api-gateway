@@ -147,4 +147,8 @@ public abstract class Transport {
     public void setConcurrentConnectionLimitPerIp(int concurrentConnectionLimitPerIp) {
         this.concurrentConnectionLimitPerIp = concurrentConnectionLimitPerIp;
     }
+
+    public void setRouter(Router router) {
+        this.router = router;
+    }
 }

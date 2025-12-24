@@ -15,14 +15,10 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionChanged;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
+import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.RuleManager.*;
 import com.predic8.membrane.core.config.spring.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
@@ -88,6 +84,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     private ApplicationContext beanFactory;
 
     private BeanRegistry registry;
+
+    private boolean openPorts = true;
 
     //
     // Configuration
@@ -242,14 +240,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         synchronized (lock) {
             running = true;
         }
-
-        ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        if (!asynchronousInitialization)
-            logStartupMessage();
-    }
-
-    private static void logStartupMessage() {
-        log.info("{}{} {} up and running!{}", BRIGHT_CYAN(), PRODUCT_NAME, VERSION, RESET());
     }
 
     public Collection<Proxy> getRules() {
@@ -307,6 +297,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
      */
     @MCChildElement(order = 1, allowForeign = true)
     public void setTransport(Transport transport) {
+        transport.setRouter(this);
         this.transport = transport;
     }
 
@@ -350,7 +341,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     public void add(Proxy proxy) throws IOException {
         if (proxy instanceof SSLableProxy sp) {
-            ruleManager.addProxyAndOpenPortIfNew(sp);
+            if (openPorts)
+                ruleManager.addProxyAndOpenPortIfNew(sp);
+            else
+                ruleManager.addProxy(sp, RuleDefinitionSource.MANUAL);
         } else {
             ruleManager.addProxy(proxy, RuleDefinitionSource.MANUAL);
         }
@@ -538,12 +532,15 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         if (!success && !config.isRetryInit())
             System.exit(1);
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        logStartupMessage();
         setAsynchronousInitialization(false);
     }
 
     @Override
     public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) throws IOException {
+        if (bean instanceof GlobalInterceptor) {
+            return;
+        }
+
         if (!(bean instanceof Proxy newProxy)) {
             throw new IllegalArgumentException("Bean must be a Proxy instance, but got: " + bean.getClass().getName());
         }
@@ -551,14 +548,19 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         if (newProxy.getName() == null)
             newProxy.setName(bdc.bd().getName());
 
-        try {
-            newProxy.init(this);
-        } catch (ConfigurationException e) {
-            SpringConfigurationErrorHandler.handleRootCause(e, log);
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Could not init rule.", e);
-        }
+        // TODO: Code Should be deleted before merge
+        // Only kept for discussion
+        // init in Proxies was called twice, here and in Router.initRemainingRules
+        // We should only keep one place.
+
+//        try {
+//            newProxy.init(this);
+//        } catch (ConfigurationException e) {
+//            SpringConfigurationErrorHandler.handleRootCause(e, log);
+//            throw e;
+//        } catch (Exception e) {
+//            throw new RuntimeException("Could not init rule.", e);
+//        }
 
         if (bdc.action().isAdded())
             add(newProxy);
@@ -612,4 +614,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         return config;
     }
 
+    public boolean isOpenPorts() {
+        return openPorts;
+    }
+
+    public void setOpenPorts(boolean openPorts) {
+        this.openPorts = openPorts;
+    }
 }
