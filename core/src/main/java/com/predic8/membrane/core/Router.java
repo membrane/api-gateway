@@ -105,7 +105,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     protected final FlowController flowController;
     protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
     protected Transport transport;
-    protected GlobalInterceptor globalInterceptor = new GlobalInterceptor();
     protected final ResolverMap resolverMap;
     protected final DNSCache dnsCache = new DNSCache();
     private final KubernetesWatcher kubernetesWatcher = new KubernetesWatcher(this);
@@ -497,7 +496,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
      */
     @MCChildElement(order = 2)
     public void setGlobalInterceptor(GlobalInterceptor globalInterceptor) {
-        this.globalInterceptor = globalInterceptor;
+        registry.register("globalInterceptor", globalInterceptor);
     }
 
     public String getId() {
@@ -528,10 +527,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     public FlowController getFlowController() {
         return flowController;
-    }
-
-    public GlobalInterceptor getGlobalInterceptor() {
-        return globalInterceptor;
     }
 
     public synchronized void setAsynchronousInitialization(boolean asynchronousInitialization) {

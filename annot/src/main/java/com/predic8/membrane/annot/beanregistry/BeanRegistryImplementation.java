@@ -173,4 +173,22 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
                 .map(clazz::cast)
                 .toList();
     }
+
+    public <T> Optional<T> getBean(Class<T> clazz) {
+        var beans = getBeans(clazz);
+        if (beans.size() > 1) {
+            var msg = "One bean was asked. But found %d beans of %s".formatted(beans.size(),clazz);
+            log.error(msg);
+            throw new RuntimeException(msg);
+        }
+        return beans.size() == 1 ? Optional.of(beans.getFirst()) : Optional.empty();
+    }
+
+    public void register(String beanName, Object bean) {
+        var uuid = UUID.randomUUID().toString();
+        BeanContainer bc = new BeanContainer(new BeanDefinition("component", beanName,null, uuid, null));
+        bc.setSingleton(bean);
+        singletonBeans.put(uuid,bean);
+        bcs.put(uuid, bc);
+    }
 }
