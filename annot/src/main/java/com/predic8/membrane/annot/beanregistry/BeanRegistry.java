@@ -50,12 +50,10 @@ public interface BeanRegistry {
      * Registers a bean of the specified type with the given name if it is not already registered.
      * If a bean with the given name is already present, the existing instance is returned.
      * Otherwise, the supplier is used to create and register a new instance.
-     *
-     * @param name the name to register the bean under
      * @param type the class type of the bean
      * @param supplier a supplier that provides a new instance of the bean if not already registered
      * @param <T> the generic type of the bean
      * @return the existing or newly created and registered bean instance
      */
-     <T> T registerIfAbsent(String name, Class<T> type, Supplier<T> supplier);
+     <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier);
 }

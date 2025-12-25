@@ -370,8 +370,8 @@ public class GenericYamlParserTest {
         public void register(String beanName, Object object) {}
 
         @Override
-        public <T> T registerIfAbsent(String name, Class<T> type, Supplier<T> supplier) {
-            return null;
+        public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
+            return type.cast(null);
         }
     }
 

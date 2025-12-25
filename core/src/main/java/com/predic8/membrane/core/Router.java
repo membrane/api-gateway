@@ -316,7 +316,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public DNSCache getDnsCache() {
-        return getRegistry().getBean(DNSCache.class).orElse(new DNSCache());
+        return getRegistry().registerIfAbsent( DNSCache.class, DNSCache::new);
     }
 
     public ResolverMap getResolverMap() {
@@ -514,7 +514,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public FlowController getFlowController() {
-        return getRegistry().getBean(FlowController.class).orElse(new FlowController(this));
+        return getRegistry().registerIfAbsent(FlowController.class, () -> new FlowController(this));
     }
 
     public void handleAsynchronousInitializationResult(boolean success) {
