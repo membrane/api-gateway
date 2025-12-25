@@ -91,6 +91,15 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
      */
     private boolean openPorts = true;
 
+    /**
+     * Indicates whether the router should automatically open TCP ports when adding proxies.
+     * This flag determines if the ports associated with the proxies are opened immediately
+     * when they are added to the router. Setting this to {@code false} allows for proxies
+     * to be defined without opening the associated ports, providing more control over when
+     * the ports are made accessible.
+     */
+    private boolean openPorts = true;
+
     //
     // Configuration
     //
