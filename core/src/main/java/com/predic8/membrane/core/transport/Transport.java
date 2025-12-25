@@ -33,8 +33,8 @@ public abstract class Transport {
      * SSL and Non-SSL are mixed here, maybe split that in future
      */
     protected final Set<IPortChangeListener> menuListeners = new HashSet<>();
-
     private List<Interceptor> interceptors = new Vector<>();
+
     private Router router;
     private boolean reverseDNS = true;
 
@@ -62,7 +62,7 @@ public abstract class Transport {
             interceptors.add(getExchangeStoreInterceptor());
             interceptors.add(getInterceptor(DispatchingInterceptor.class));
             interceptors.add(getInterceptor(ReverseProxyingInterceptor.class));
-            interceptors.add(router.getGlobalInterceptor());
+            router.getRegistry().getBean(GlobalInterceptor.class).ifPresent(i -> interceptors.add(i ));
             interceptors.add(getInterceptor(UserFeatureInterceptor.class));
             interceptors.add(getInterceptor(InternalRoutingInterceptor.class));
             interceptors.add(getInterceptor(HTTPClientInterceptor.class));

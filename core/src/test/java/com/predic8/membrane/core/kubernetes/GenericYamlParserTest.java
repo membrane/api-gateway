@@ -346,21 +346,16 @@ public class GenericYamlParserTest {
             return List.of();
         }
 
-
         @Override
         public void parseYamls(InputStream yamls, Grammar grammar) throws IOException {
             BeanCollector.super.parseYamls(yamls, grammar);
         }
 
         @Override
-        public void handle(ChangeEvent changeEvent, boolean isLast) {
-
-        }
+        public void handle(ChangeEvent changeEvent, boolean isLast) {}
 
         @Override
-        public void start() {
-
-        }
+        public void start() {}
 
         @Override
         public Grammar getGrammar() {
@@ -371,6 +366,14 @@ public class GenericYamlParserTest {
         public <T> List<T> getBeans(Class<T> clazz) {
             return List.of();
         }
+
+        @Override
+        public <T> Optional<T> getBean(Class<T> clazz) {
+            return Optional.empty();
+        }
+
+        @Override
+        public void register(String beanName, Object object) {}
     }
 
     private static APIProxy parse(String yaml, BeanRegistry reg) {

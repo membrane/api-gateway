@@ -49,7 +49,7 @@ class OpenAPIInterceptorTest {
     @BeforeEach
     public void setUp() {
         router = new Router();
-        router.setUriFactory(new URIFactory());
+        router.getConfig().setUriFactory(new URIFactory());
 
         specInfoServers = new OpenAPISpec();
         specInfoServers.location = getPathFromResource("openapi/specs/info-servers.yml");

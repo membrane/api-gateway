@@ -15,7 +15,6 @@ package com.predic8.membrane.annot.beanregistry;
 
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.bean.BeanFactory;
-import com.predic8.membrane.annot.yaml.BeanCacheObserver;
 import com.predic8.membrane.annot.yaml.GenericYamlParser;
 import com.predic8.membrane.annot.yaml.WatchAction;
 import org.jetbrains.annotations.*;
@@ -41,9 +40,10 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     record UidAction(String uid, WatchAction action) {}
 
-    public BeanRegistryImplementation(BeanCacheObserver observer, Grammar grammar) {
+    public BeanRegistryImplementation(BeanCacheObserver observer, BeanRegistryAware registryAware, Grammar grammar) {
         this.observer = observer;
         this.grammar = grammar;
+        registryAware.setRegistry(this);
     }
 
     private Object define(BeanDefinition bd)  {
@@ -79,7 +79,6 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
             if (!bd.isComponent() && observer.isActivatable(bd)) {
                 uidsToActivate.add(new UidAction(bd.getUid(), action));
             }
-
             if (isLast)
                 activationRun();
         }
@@ -171,5 +170,23 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
                 .filter(clazz::isInstance)
                 .map(clazz::cast)
                 .toList();
+    }
+
+    public <T> Optional<T> getBean(Class<T> clazz) {
+        var beans = getBeans(clazz);
+        if (beans.size() > 1) {
+            var msg = "One bean was asked. But found %d beans of %s".formatted(beans.size(),clazz);
+            log.error(msg);
+            throw new RuntimeException(msg);
+        }
+        return beans.size() == 1 ? Optional.of(beans.getFirst()) : Optional.empty();
+    }
+
+    public void register(String beanName, Object bean) {
+        var uuid = UUID.randomUUID().toString();
+        BeanContainer bc = new BeanContainer(new BeanDefinition("component", beanName,null, uuid, null));
+        bc.setSingleton(bean);
+        singletonBeans.put(uuid,bean);
+        bcs.put(uuid, bc);
     }
 }

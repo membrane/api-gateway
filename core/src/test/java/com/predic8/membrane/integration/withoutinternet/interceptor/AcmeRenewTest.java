@@ -68,7 +68,7 @@ public class AcmeRenewTest {
         acme.setAcmeSynchronizedStorage(new MemoryStorage());
 
         HttpRouter router = new HttpRouter();
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
         SSLParser sslParser = new SSLParser();
         sslParser.setAcme(acme);
         ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey(3051), "localhost", 80);

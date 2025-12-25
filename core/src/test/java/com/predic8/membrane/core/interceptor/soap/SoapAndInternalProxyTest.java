@@ -40,7 +40,7 @@ public class SoapAndInternalProxyTest {
     @BeforeEach
     void setup() {
         router = new HttpRouter();
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
     }
 
     @AfterEach

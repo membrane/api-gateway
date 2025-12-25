@@ -15,12 +15,9 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionChanged;
-import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.RuleManager.*;
 import com.predic8.membrane.core.config.spring.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
@@ -50,10 +47,8 @@ import java.util.*;
 import java.util.Timer;
 import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static com.predic8.membrane.core.util.DLPUtil.*;
-import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.util.concurrent.Executors.*;
 
 /**
@@ -79,37 +74,38 @@ import static java.util.concurrent.Executors.*;
         outputName = "router-conf.xsd",
         targetNamespace = "http://membrane-soa.org/proxies/1/")
 @MCElement(name = "router")
-public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware, BeanCacheObserver {
+public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryAware, BeanNameAware, BeanCacheObserver {
 
     private static final Logger log = LoggerFactory.getLogger(Router.class.getName());
 
     private ApplicationContext beanFactory;
 
+    private BeanRegistry registry;
+
+    /**
+     * Indicates whether the router should automatically open TCP ports when adding proxies.
+     * This flag determines if the ports associated with the proxies are opened immediately
+     * when they are added to the router. Setting this to {@code false} allows for proxies
+     * to be defined without opening the associated ports, providing more control over when
+     * the ports are made accessible.
+     */
+    private boolean openPorts = true;
+
     //
     // Configuration
     //
-
     private String id;
     private String baseLocation;
-    protected URIFactory uriFactory = new URIFactory(false);
-    protected String jmxRouterName;
 
-    /**
-     * Set production to true to run Membrane in production mode.
-     * In production mode the security level is increased e.g. there is less information
-     * in error messages sent to clients.
-     */
-    private boolean production;
+    private Configuration config = new Configuration();
 
     //
     // Components
     //
-
     protected RuleManager ruleManager = new RuleManager();
     protected final FlowController flowController;
     protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
     protected Transport transport;
-    protected GlobalInterceptor globalInterceptor = new GlobalInterceptor();
     protected final ResolverMap resolverMap;
     protected final DNSCache dnsCache = new DNSCache();
     private final KubernetesWatcher kubernetesWatcher = new KubernetesWatcher(this);
@@ -131,11 +127,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
     //
     // Reinitialization
     //
-
-    private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
-    private boolean retryInit;
     private Timer reinitializer;
-    private boolean asynchronousInitialization = false;
 
     /**
      * HotDeployer for changes on the XML configuration file. Does not cover YAML.
@@ -175,7 +167,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         bf.start();
 
         if (bf.getBeansOfType(Router.class).size() > 1) {
-            throw new RuntimeException("More than one router found in spring config (beans {}). This is not supported anymore.".formatted(bf.getBeanDefinitionNames()));
+            throw new RuntimeException("More than one router found in spring config (beans %s). This is not supported anymore.".formatted(bf.getBeanDefinitionNames()));
         }
 
         return bf.getBean("router", Router.class);
@@ -210,7 +202,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
                 throw e;
             }
 
-            if (retryInitInterval > 0)
+            if (config.getRetryInitInterval() > 0)
                 startAutoReinitializer();
         } catch (DuplicatePathException e) {
             System.err.printf("""
@@ -249,14 +241,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         synchronized (lock) {
             running = true;
         }
-
-        ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        if (!asynchronousInitialization)
-            logStartupMessage();
-    }
-
-    private static void logStartupMessage() {
-        log.info("{}{} {} up and running!{}", BRIGHT_CYAN(), PRODUCT_NAME, VERSION, RESET());
     }
 
     public Collection<Proxy> getRules() {
@@ -357,7 +341,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
     public void add(Proxy proxy) throws IOException {
         if (proxy instanceof SSLableProxy sp) {
-            ruleManager.addProxyAndOpenPortIfNew(sp);
+            if (openPorts)
+                ruleManager.addProxyAndOpenPortIfNew(sp);
+            else
+                ruleManager.addProxy(sp, RuleDefinitionSource.MANUAL);
         } else {
             ruleManager.addProxy(proxy, RuleDefinitionSource.MANUAL);
         }
@@ -382,7 +369,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         try {
             JmxExporter exporter = beanFactory.getBean(JMX_EXPORTER_NAME, JmxExporter.class);
             //exporter.removeBean(prefix + jmxRouterName);
-            exporter.addBean("org.membrane-soa:00=routers, name=" + jmxRouterName, new JmxRouter(this, exporter));
+            exporter.addBean("org.membrane-soa:00=routers, name=" + config.getJmx(), new JmxRouter(this, exporter));
         } catch (NoSuchBeanDefinitionException ignored) {
             // If bean is not available do not init jmx
         }
@@ -403,7 +390,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
             public void run() {
                 tryReinitialization();
             }
-        }, retryInitInterval, retryInitInterval);
+        }, config.getRetryInitInterval(), config.getRetryInitInterval());
     }
 
     public void tryReinitialization() {
@@ -451,50 +438,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         }
     }
 
-    public void stopAll() {
-        for (String s : this.getBeanFactory().getBeanNamesForType(Router.class)) {
-            ((Router) this.getBeanFactory().getBean(s)).stop();
-        }
-    }
-
     @Override
     public boolean isRunning() {
         synchronized (lock) {
             return running;
         }
-    }
-
-    /**
-     * @param hotDeploy If true the hot deploy feature will be activated during init of the Router.
-     * @description <p>Whether changes to the router's configuration file should automatically trigger a restart.
-     * </p>
-     * <p>
-     * Monitoring the router's configuration file <i>proxies.xml</i> is only possible, if the router
-     * is created by a Spring Application Context which supports monitoring.
-     * </p>
-     * <p>Calling this method does not start or stop the hot deploy feature. It is just for configuration before init is called.</p>
-     * @default true
-     */
-    @MCAttribute
-    public void setHotDeploy(boolean hotDeploy) {
-        hotDeployer = hotDeploy ? new DefaultHotDeployer() : new NullHotDeployer();
-    }
-
-    public boolean isHotDeploy() {
-        return hotDeployer.isEnabled();
-    }
-
-    public int getRetryInitInterval() {
-        return retryInitInterval;
-    }
-
-    /**
-     * @description number of milliseconds after which reinitialization of &lt;soapProxy&gt;s should be attempted periodically
-     * @default 5 minutes
-     */
-    @MCAttribute
-    public void setRetryInitInterval(int retryInitInterval) {
-        this.retryInitInterval = retryInitInterval;
     }
 
     private ArrayList<Proxy> getInactiveRules() {
@@ -517,76 +465,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return beanFactory;
     }
 
-    public boolean isRetryInit() {
-        return retryInit;
-    }
-
-    /**
-     * @explanation <p>Whether the router should continue startup, if initialization of a rule (proxy, serviceProxy or soapProxy) failed
-     * (for example, when a WSDL a component depends on could not be downloaded).</p>
-     * <p>If false, the router will exit with code -1 just after startup, when the initialization of a rule failed.</p>
-     * <p>If true, the router will continue startup, and all rules which could not be initialized will be <i>inactive</i> (=not
-     * {@link Proxy#isActive()}).</p>
-     * <h3>Inactive rules</h3>
-     * <p>Inactive rules will simply be ignored for routing decisions for incoming requests.
-     * This means that requests for inactive rules might be routed using different routes or result in a "400 Bad Request"
-     * when no active route could be matched to the request.</p>
-     * <p>Once rules become active due to reinitialization, they are considered in future routing decision.</p>
-     * <h3>Reinitialization</h3>
-     * <p>Inactive rules may be <i>reinitialized</i> and, if reinitialization succeeds, become active.</p>
-     * <p>By default, reinitialization is attempted at regular intervals using a timer (see {@link #setRetryInitInterval(int)}).</p>
-     * <p>Additionally, using the {@link AdminConsoleInterceptor}, an admin may trigger reinitialization of inactive rules at any time.</p>
-     * @default false
-     */
-    @MCAttribute
-    public void setRetryInit(boolean retryInit) {
-        this.retryInit = retryInit;
-    }
-
-    public URIFactory getUriFactory() {
-        return uriFactory;
-    }
-
-    /**
-     * @description Sets the URI factory used by the router. Use this only, if you need to allow
-     * special (off-spec) characters in URLs which are not supported by java.net.URI .
-     */
-    @MCChildElement(order = -1, allowForeign = true)
-    public void setUriFactory(URIFactory uriFactory) {
-        this.uriFactory = uriFactory;
-    }
-
     public boolean isProduction() {
-        return production;
+        return config.isProduction();
     }
-
-    /**
-     * @explanation <p>By default the error messages Membrane sends back to an HTTP client provide information to help the caller
-     * find the problem. The caller might even get sensitive information. In production the error messages should not reveal
-     * to much details. With this option you can put Membrane in production mode and reduce the amount of information in
-     * error messages.</p>
-     * @default false
-     */
-    @MCAttribute
-    public void setProduction(boolean production) {
-        this.production = production;
-    }
-
 
     public Statistics getStatistics() {
         return statistics;
-    }
-
-    /**
-     * @description Sets the JMX name for this router. Also declare a global &lt;jmxExporter&gt; instance.
-     */
-    @MCAttribute
-    public void setJmx(String name) {
-        jmxRouterName = name;
-    }
-
-    public String getJmx() {
-        return jmxRouterName;
     }
 
     @SuppressWarnings("NullableProblems")
@@ -600,7 +484,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
      */
     @MCChildElement(order = 2)
     public void setGlobalInterceptor(GlobalInterceptor globalInterceptor) {
-        this.globalInterceptor = globalInterceptor;
+        registry.register("globalInterceptor", globalInterceptor);
     }
 
     public String getId() {
@@ -633,25 +517,18 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         return flowController;
     }
 
-    public GlobalInterceptor getGlobalInterceptor() {
-        return globalInterceptor;
-    }
-
-    public synchronized void setAsynchronousInitialization(boolean asynchronousInitialization) {
-        this.asynchronousInitialization = asynchronousInitialization;
-        notifyAll();
-    }
-
     public void handleAsynchronousInitializationResult(boolean success) {
-        if (!success && !retryInit)
+        if (!success && !config.isRetryInit())
             System.exit(1);
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        logStartupMessage();
-        setAsynchronousInitialization(false);
     }
 
     @Override
     public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) throws IOException {
+        if (bean instanceof GlobalInterceptor) {
+            return;
+        }
+
         if (!(bean instanceof Proxy newProxy)) {
             throw new IllegalArgumentException("Bean must be a Proxy instance, but got: " + bean.getClass().getName());
         }
@@ -659,14 +536,20 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         if (newProxy.getName() == null)
             newProxy.setName(bdc.bd().getName());
 
-        try {
-            newProxy.init(this);
-        } catch (ConfigurationException e) {
-            SpringConfigurationErrorHandler.handleRootCause(e, log);
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Could not init rule.", e);
-        }
+        // TODO: Comment or code Should be deleted before merge
+        // Comment is kept for discussion only.
+        //
+        // init() in Proxies was called twice, here and in Router.initRemainingRules
+        // We should only keep one place. Which one is up to discussion
+        //
+        //        try {
+        //            newProxy.init(this);
+        //        } catch (ConfigurationException e) {
+        //            SpringConfigurationErrorHandler.handleRootCause(e, log);
+        //            throw e;
+        //        } catch (Exception e) {
+        //            throw new RuntimeException("Could not init rule.", e);
+        //        }
 
         if (bdc.action().isAdded())
             add(newProxy);
@@ -685,5 +568,47 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
         if (beanFactory instanceof AbstractRefreshableApplicationContext bf)
             return bf;
         throw new RuntimeException("ApplicationContext is not a AbstractRefreshableApplicationContext. Please set <router hotDeploy=\"false\">.");
+    }
+
+    @Override
+    public void setRegistry(BeanRegistry registry) {
+        this.registry = registry;
+    }
+
+    public BeanRegistry getRegistry() {
+        return registry;
+    }
+
+    public void applyConfiguration(Configuration configuration) {
+        hotDeployer = configuration.isHotDeploy() ? new DefaultHotDeployer() : new NullHotDeployer();
+        this.config = configuration;
+    }
+
+    public URIFactory getUriFactory() {
+        return config.getUriFactory();
+    }
+
+    /**
+     * Sets the configuration object for this router.
+     * Only used for xml
+     *
+     * @param config the configuration object
+     */
+    @MCChildElement(order = -1)
+    public void setConfig(Configuration config) {
+        this.config = config;
+    }
+
+    public Configuration getConfig() {
+        return config;
+    }
+
+    /**
+     * Configures whether the router should open tcp ports when adding proxies. Use this field to create a router
+     * and open the ports later
+     * @param openPorts a boolean indicating whether ports should be opened (true) or closed (false)
+     */
+    public void setOpenPorts(boolean openPorts) {
+        this.openPorts = openPorts;
     }
 }

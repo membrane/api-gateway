@@ -67,7 +67,7 @@ public class B2CMembrane {
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(10000);
         oauth2Resource.getTransport().setBacklog(10000);
         oauth2Resource.getTransport().setSocketTimeout(10000);
-        oauth2Resource.setHotDeploy(false);
+        oauth2Resource.getConfig().setHotDeploy(false);
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(tc.limit * 100);
 
         ServiceProxy sp1_oauth2resource2 = createOAuth2Resource2ServiceProxy();

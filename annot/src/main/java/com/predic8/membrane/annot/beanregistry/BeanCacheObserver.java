@@ -12,11 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.annot.yaml;
-
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionChanged;
-import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
+package com.predic8.membrane.annot.beanregistry;
 
 import java.io.IOException;
 

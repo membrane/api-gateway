@@ -105,12 +105,7 @@ public class GenericYamlParser {
         try (resource) {
             return parseToBeanDefinitions(resource, grammar);
         } catch (JsonParseException e) {
-            throw new IOException(
-                    "Invalid YAML: multiple configurations must be separated by '---' "
-                            + "(at line " + e.getLocation().getLineNr()
-                            + ", column " + e.getLocation().getColumnNr() + ").",
-                    e
-            );
+            throw new IOException("Invalid YAML: multiple configurations must be separated by '---' (at line %d, column %d).".formatted(e.getLocation().getLineNr(), e.getLocation().getColumnNr()), e);
         }
     }
 

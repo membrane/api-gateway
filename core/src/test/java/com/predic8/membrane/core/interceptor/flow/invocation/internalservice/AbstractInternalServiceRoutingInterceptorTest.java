@@ -40,7 +40,7 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
     @BeforeEach
     void setup() throws Exception {
         router = new HttpRouter();
-        router.setHotDeploy(false);
+        router.getConfig().setHotDeploy(false);
 
         configure();
 
