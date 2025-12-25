@@ -45,6 +45,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
@@ -374,6 +375,11 @@ public class GenericYamlParserTest {
 
         @Override
         public void register(String beanName, Object object) {}
+
+        @Override
+        public <T> T registerIfAbsent(String name, Class<T> type, Supplier<T> supplier) {
+            return null;
+        }
     }
 
     private static APIProxy parse(String yaml, BeanRegistry reg) {

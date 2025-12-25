@@ -13,16 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.annot.beanregistry;
 
-import com.predic8.membrane.annot.Grammar;
-import com.predic8.membrane.annot.bean.BeanFactory;
-import com.predic8.membrane.annot.yaml.GenericYamlParser;
-import com.predic8.membrane.annot.yaml.WatchAction;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.bean.*;
+import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
+import java.util.function.*;
 
 public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
@@ -38,7 +37,8 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     private final Map<String, BeanContainer> bcs = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
     private final Set<UidAction> uidsToActivate = Collections.synchronizedSet(new LinkedHashSet<>()); // keeps order
 
-    record UidAction(String uid, WatchAction action) {}
+    record UidAction(String uid, WatchAction action) {
+    }
 
     public BeanRegistryImplementation(BeanCacheObserver observer, BeanRegistryAware registryAware, Grammar grammar) {
         this.observer = observer;
@@ -46,7 +46,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         registryAware.setRegistry(this);
     }
 
-    private Object define(BeanDefinition bd)  {
+    private Object define(BeanDefinition bd) {
         log.debug("defining bean: {}", bd.getNode());
         try {
             if ("bean".equals(bd.getKind())) {
@@ -175,7 +175,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     public <T> Optional<T> getBean(Class<T> clazz) {
         var beans = getBeans(clazz);
         if (beans.size() > 1) {
-            var msg = "One bean was asked. But found %d beans of %s".formatted(beans.size(),clazz);
+            var msg = "One bean was asked. But found %d beans of %s".formatted(beans.size(), clazz);
             log.error(msg);
             throw new RuntimeException(msg);
         }
@@ -184,9 +184,21 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     public void register(String beanName, Object bean) {
         var uuid = UUID.randomUUID().toString();
-        BeanContainer bc = new BeanContainer(new BeanDefinition("component", beanName,null, uuid, null));
+        BeanContainer bc = new BeanContainer(new BeanDefinition("component", beanName, null, uuid, null));
         bc.setSingleton(bean);
-        singletonBeans.put(uuid,bean);
+        singletonBeans.put(uuid, bean);
         bcs.put(uuid, bc);
+    }
+
+    public <T> T registerIfAbsent(String name, Class<T> type, Supplier<T> supplier) {
+        return getBean(type).orElseGet(() -> {
+            synchronized (this) {
+                return getBean(type).orElseGet(() -> {
+                    T created = supplier.get();
+                    register(name, created);
+                    return created;
+                });
+            }
+        });
     }
 }

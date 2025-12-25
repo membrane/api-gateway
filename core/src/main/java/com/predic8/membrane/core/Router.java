@@ -80,7 +80,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     private ApplicationContext beanFactory;
 
-    private BeanRegistry registry;
+    protected BeanRegistry registry;
 
     /**
      * Indicates whether the router should automatically open TCP ports when adding proxies.
@@ -103,15 +103,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     // Components
     //
     protected RuleManager ruleManager = new RuleManager();
-    protected final FlowController flowController;
     protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
     protected Transport transport;
-    protected final ResolverMap resolverMap;
-    protected final DNSCache dnsCache = new DNSCache();
-    private final KubernetesWatcher kubernetesWatcher = new KubernetesWatcher(this);
+
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
+    protected final ResolverMap resolverMap;
 
     protected final ExecutorService backgroundInitializer =
             newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializer"));
@@ -140,7 +138,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         ruleManager.setRouter(this);
         resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
         resolverMap.addRuleResolver(this);
-        flowController = new FlowController(this);
     }
 
     //
@@ -167,9 +164,11 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         bf.start();
 
         if (bf.getBeansOfType(Router.class).size() > 1) {
-            throw new RuntimeException("More than one router found in spring config (beans %s). This is not supported anymore.".formatted(bf.getBeanDefinitionNames()));
+            throw new RuntimeException(
+                    "More than one router bean found in the Spring configuration (%s). This is no longer supported."
+                            .formatted(Arrays.toString(bf.getBeanDefinitionNames()))
+            );
         }
-
         return bf.getBean("router", Router.class);
     }
 
@@ -188,7 +187,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
                 exchangeStore = new LimitedMemoryExchangeStore();
             if (transport == null)
                 transport = new HttpTransport();
-            kubernetesWatcher.start();
+
+            getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::start);
 
             init();
             initJmx();
@@ -316,7 +316,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public DNSCache getDnsCache() {
-        return dnsCache;
+        return getRegistry().getBean(DNSCache.class).orElse(new DNSCache());
     }
 
     public ResolverMap getResolverMap() {
@@ -428,7 +428,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     @Override
     public void stop() {
-        kubernetesWatcher.stop();
+        getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::stop);
         hotDeployer.stop();
         shutdown();
 
@@ -484,7 +484,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
      */
     @MCChildElement(order = 2)
     public void setGlobalInterceptor(GlobalInterceptor globalInterceptor) {
-        registry.register("globalInterceptor", globalInterceptor);
+        getRegistry().register("globalInterceptor", globalInterceptor);
     }
 
     public String getId() {
@@ -514,7 +514,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public FlowController getFlowController() {
-        return flowController;
+        return getRegistry().getBean(FlowController.class).orElse(new FlowController(this));
     }
 
     public void handleAsynchronousInitializationResult(boolean success) {
@@ -576,6 +576,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public BeanRegistry getRegistry() {
+        if (registry == null)
+            registry = new BeanRegistryImplementation(null, this, null);
         return registry;
     }
 
@@ -605,7 +607,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     /**
      * Configures whether the router should open tcp ports when adding proxies. Use this field to create a router
-     * and open the ports later
+     * and open the ports later.
+     * This method should typically be called during router initialization, before {@link #start()}, to avoid
+     * race conditions with concurrent proxy additions.
+     *
      * @param openPorts a boolean indicating whether ports should be opened (true) or closed (false)
      */
     public void setOpenPorts(boolean openPorts) {
