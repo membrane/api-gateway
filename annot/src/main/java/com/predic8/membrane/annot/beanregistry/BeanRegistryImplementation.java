@@ -190,12 +190,12 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         bcs.put(uuid, bc);
     }
 
-    public <T> T registerIfAbsent(String name, Class<T> type, Supplier<T> supplier) {
+    public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
         return getBean(type).orElseGet(() -> {
             synchronized (this) {
                 return getBean(type).orElseGet(() -> {
                     T created = supplier.get();
-                    register(name, created);
+                    register(null, created);
                     return created;
                 });
             }
