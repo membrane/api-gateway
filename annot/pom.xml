@@ -21,12 +21,12 @@
     <name>${project.artifactId}</name>
     <packaging>jar</packaging>
 
-    <parent>
-        <groupId>org.membrane-soa</groupId>
-        <artifactId>service-proxy-parent</artifactId>
-        <relativePath>../pom.xml</relativePath>
-        <version>7.0.5</version>
-    </parent>
+	<parent>
+		<groupId>org.membrane-soa</groupId>
+		<artifactId>service-proxy-parent</artifactId>
+		<relativePath>../pom.xml</relativePath>
+		<version>7.0.6-SNAPSHOT</version>
+	</parent>
 
     <dependencies>
         <dependency>
