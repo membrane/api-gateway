@@ -23,6 +23,13 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
+/**
+ * TODO:
+ * - More Tests
+ * - Document
+ *   - singletonBeans
+ *   - bcs
+ */
 public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     private static final Logger log = LoggerFactory.getLogger(BeanRegistryImplementation.class);
@@ -85,38 +92,51 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     private void activationRun() {
-        Set<UidAction> uidsToRemove = new HashSet<>();
-        for (UidAction uidAction : uidsToActivate) {
+        for (UidAction uidAction : cloneUidActions()) {
             BeanContainer bc = bcs.get(uidAction.uid);
+            if (bc == null) {
+                log.warn("Skipping activation for missing uid {}", uidAction.uid);
+                continue;
+            }
+
+            BeanDefinition def = bc.getDefinition();
+            Object oldBean = getOldBean(uidAction.action, uidAction.uid); // capture first
+            Object newBean = null; // Do not inline!
+
             try {
-                Object bean = define(bc.getDefinition());
-                bc.setSingleton(bean);
-
-                // e.g. inform router about new proxy
-                observer.handleBeanEvent(new BeanDefinitionChanged(uidAction.action, bc.getDefinition()), bean, getOldBean(uidAction.action, bc.getDefinition()));
-
-                if (uidAction.action.isAdded() || uidAction.action.isModified())
-                    singletonBeans.put(bc.getDefinition().getUid(), bean);
                 if (uidAction.action.isDeleted()) {
-                    singletonBeans.remove(bc.getDefinition().getUid());
-                    bcs.remove(bc.getDefinition().getUid());
+                    singletonBeans.remove(uidAction.uid);
+                    bcs.remove(uidAction.uid);
+                } else {
+                    newBean = define(def);
+                    bc.setSingleton(newBean);
+                    singletonBeans.put(uidAction.uid, newBean);
                 }
-                uidsToRemove.add(uidAction);
+
+                observer.handleBeanEvent(
+                        new BeanDefinitionChanged(uidAction.action, def),
+                        newBean,
+                        oldBean
+                );
             } catch (Exception e) {
-                log.error("Could not handle {} {}/{}", uidAction.action,
-                        bc.getDefinition().getNamespace(), bc.getDefinition().getName(), e);
+                log.error("Could not handle {} {}/{}", uidAction.action, def.getNamespace(), def.getName(), e);
                 throw new RuntimeException(e);
             }
         }
-        for (UidAction uidAction : uidsToRemove)
-            uidsToActivate.remove(uidAction);
     }
 
-    private @Nullable Object getOldBean(WatchAction action, BeanDefinition bd) {
-        Object oldBean = null;
-        if (action.isModified() || action.isDeleted())
-            oldBean = singletonBeans.get(bd.getUid());
-        return oldBean;
+    private @NotNull List<UidAction> cloneUidActions() {
+        // Iterate safely over synchronizedSet
+        final List<UidAction> actions;
+        synchronized (uidsToActivate) {
+            actions = new ArrayList<>(uidsToActivate);
+            uidsToActivate.clear();
+        }
+        return actions;
+    }
+
+    private @Nullable Object getOldBean(WatchAction action, String uid) {
+        return (action.isModified() || action.isDeleted()) ? singletonBeans.get(uid) : null;
     }
 
     @Override
