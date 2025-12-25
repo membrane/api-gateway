@@ -16,10 +16,8 @@ package com.predic8.membrane.core;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
-import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.RuleManager.*;
 import com.predic8.membrane.core.config.spring.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
@@ -104,7 +102,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     //
     // Components
     //
-
     protected RuleManager ruleManager = new RuleManager();
     protected final FlowController flowController;
     protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
@@ -130,7 +127,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     //
     // Reinitialization
     //
-
     private Timer reinitializer;
     private boolean asynchronousInitialization = false;
 

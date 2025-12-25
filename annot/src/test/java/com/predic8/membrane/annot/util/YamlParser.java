@@ -16,7 +16,6 @@ package com.predic8.membrane.annot.util;
 
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.*;
-import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 
 import java.io.IOException;
