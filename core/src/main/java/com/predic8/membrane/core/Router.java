@@ -128,7 +128,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     // Reinitialization
     //
     private Timer reinitializer;
-    private boolean asynchronousInitialization = false;
 
     /**
      * HotDeployer for changes on the XML configuration file. Does not cover YAML.
@@ -518,16 +517,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         return flowController;
     }
 
-    public synchronized void setAsynchronousInitialization(boolean asynchronousInitialization) {
-        this.asynchronousInitialization = asynchronousInitialization;
-        notifyAll();
-    }
-
     public void handleAsynchronousInitializationResult(boolean success) {
         if (!success && !config.isRetryInit())
             System.exit(1);
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        setAsynchronousInitialization(false);
     }
 
     @Override
