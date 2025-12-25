@@ -15,14 +15,9 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionChanged;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
-import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.RuleManager.*;
 import com.predic8.membrane.core.config.spring.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
@@ -52,10 +47,8 @@ import java.util.*;
 import java.util.Timer;
 import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static com.predic8.membrane.core.util.DLPUtil.*;
-import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.util.concurrent.Executors.*;
 
 /**
@@ -89,6 +82,15 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     private BeanRegistry registry;
 
+    /**
+     * Indicates whether the router should automatically open TCP ports when adding proxies.
+     * This flag determines if the ports associated with the proxies are opened immediately
+     * when they are added to the router. Setting this to {@code false} allows for proxies
+     * to be defined without opening the associated ports, providing more control over when
+     * the ports are made accessible.
+     */
+    private boolean openPorts = true;
+
     //
     // Configuration
     //
@@ -100,7 +102,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     //
     // Components
     //
-
     protected RuleManager ruleManager = new RuleManager();
     protected final FlowController flowController;
     protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
@@ -126,9 +127,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     //
     // Reinitialization
     //
-
     private Timer reinitializer;
-    private boolean asynchronousInitialization = false;
 
     /**
      * HotDeployer for changes on the XML configuration file. Does not cover YAML.
@@ -168,7 +167,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         bf.start();
 
         if (bf.getBeansOfType(Router.class).size() > 1) {
-            throw new RuntimeException("More than one router found in spring config (beans {}). This is not supported anymore.".formatted(bf.getBeanDefinitionNames()));
+            throw new RuntimeException("More than one router found in spring config (beans %s). This is not supported anymore.".formatted(bf.getBeanDefinitionNames()));
         }
 
         return bf.getBean("router", Router.class);
@@ -242,14 +241,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         synchronized (lock) {
             running = true;
         }
-
-        ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        if (!asynchronousInitialization)
-            logStartupMessage();
-    }
-
-    private static void logStartupMessage() {
-        log.info("{}{} {} up and running!{}", BRIGHT_CYAN(), PRODUCT_NAME, VERSION, RESET());
     }
 
     public Collection<Proxy> getRules() {
@@ -350,7 +341,10 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     public void add(Proxy proxy) throws IOException {
         if (proxy instanceof SSLableProxy sp) {
-            ruleManager.addProxyAndOpenPortIfNew(sp);
+            if (openPorts)
+                ruleManager.addProxyAndOpenPortIfNew(sp);
+            else
+                ruleManager.addProxy(sp, RuleDefinitionSource.MANUAL);
         } else {
             ruleManager.addProxy(proxy, RuleDefinitionSource.MANUAL);
         }
@@ -444,12 +438,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         }
     }
 
-    public void stopAll() {
-        for (String s : this.getBeanFactory().getBeanNamesForType(Router.class)) {
-            ((Router) this.getBeanFactory().getBean(s)).stop();
-        }
-    }
-
     @Override
     public boolean isRunning() {
         synchronized (lock) {
@@ -529,21 +517,18 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         return flowController;
     }
 
-    public synchronized void setAsynchronousInitialization(boolean asynchronousInitialization) {
-        this.asynchronousInitialization = asynchronousInitialization;
-        notifyAll();
-    }
-
     public void handleAsynchronousInitializationResult(boolean success) {
         if (!success && !config.isRetryInit())
             System.exit(1);
         ApiInfo.logInfosAboutStartedProxies(ruleManager);
-        logStartupMessage();
-        setAsynchronousInitialization(false);
     }
 
     @Override
     public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) throws IOException {
+        if (bean instanceof GlobalInterceptor) {
+            return;
+        }
+
         if (!(bean instanceof Proxy newProxy)) {
             throw new IllegalArgumentException("Bean must be a Proxy instance, but got: " + bean.getClass().getName());
         }
@@ -551,14 +536,20 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         if (newProxy.getName() == null)
             newProxy.setName(bdc.bd().getName());
 
-        try {
-            newProxy.init(this);
-        } catch (ConfigurationException e) {
-            SpringConfigurationErrorHandler.handleRootCause(e, log);
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Could not init rule.", e);
-        }
+        // TODO: Comment or code Should be deleted before merge
+        // Comment is kept for discussion only.
+        //
+        // init() in Proxies was called twice, here and in Router.initRemainingRules
+        // We should only keep one place. Which one is up to discussion
+        //
+        //        try {
+        //            newProxy.init(this);
+        //        } catch (ConfigurationException e) {
+        //            SpringConfigurationErrorHandler.handleRootCause(e, log);
+        //            throw e;
+        //        } catch (Exception e) {
+        //            throw new RuntimeException("Could not init rule.", e);
+        //        }
 
         if (bdc.action().isAdded())
             add(newProxy);
@@ -612,4 +603,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         return config;
     }
 
+    /**
+     * Configures whether the router should open tcp ports when adding proxies. Use this field to create a router
+     * and open the ports later
+     * @param openPorts a boolean indicating whether ports should be opened (true) or closed (false)
+     */
+    public void setOpenPorts(boolean openPorts) {
+        this.openPorts = openPorts;
+    }
 }

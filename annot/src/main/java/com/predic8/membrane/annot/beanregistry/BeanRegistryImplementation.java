@@ -15,7 +15,6 @@ package com.predic8.membrane.annot.beanregistry;
 
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.bean.BeanFactory;
-import com.predic8.membrane.annot.yaml.BeanCacheObserver;
 import com.predic8.membrane.annot.yaml.GenericYamlParser;
 import com.predic8.membrane.annot.yaml.WatchAction;
 import org.jetbrains.annotations.*;
@@ -80,7 +79,6 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
             if (!bd.isComponent() && observer.isActivatable(bd)) {
                 uidsToActivate.add(new UidAction(bd.getUid(), action));
             }
-
             if (isLast)
                 activationRun();
         }
