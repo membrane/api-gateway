@@ -26,12 +26,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TemplateExchangeExpressionTest {
 
-    static Exchange exc;
-    static Language language;
-    static Router router;
+    Exchange exc;
+    Language language;
+    Router router;
 
-    @BeforeAll
-    static void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         exc = Request.get("/foo")
                 .header("bar", "42")
                 .buildExchange();
@@ -65,7 +65,7 @@ class TemplateExchangeExpressionTest {
         assertEquals("Mars - 42 - 6 7", eval("${property.prop1} - ${header.bar} - ${2*3} ${7}"));
     }
 
-    private static String eval(String expr) {
+    private String eval(String expr) {
         return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr).evaluate(exc, REQUEST,String.class);
     }
 }

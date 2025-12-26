@@ -30,10 +30,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class LoadBalancingWithClusterManagerTest {
 
-	private static HttpRouter lb;
-	private static HttpRouter node1;
-	private static HttpRouter node2;
-	private static HttpRouter node3;
+	private HttpRouter lb;
+	private HttpRouter node1;
+	private HttpRouter node2;
+	private HttpRouter node3;
 
 	@Test
 	void nodesTest() throws Exception {
@@ -84,8 +84,8 @@ public class LoadBalancingWithClusterManagerTest {
 		assertEquals(2, service3.getCount());
 	}
 
-	@AfterAll
-	public static void tearDown() {
+	@AfterEach
+	public void tearDown() {
 		lb.shutdown();
 		node1.shutdown();
 		node2.shutdown();

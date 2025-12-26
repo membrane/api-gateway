@@ -19,7 +19,6 @@ import org.junit.platform.suite.api.*;
 @SelectPackages({"com.predic8"})
 @ExcludePackages("com.predic8.membrane.integration")
 @ExcludeClassNamePatterns({
-        "com.predic8.membrane.AllTests", // Replaced with package scan
         "com.predic8.membrane.core.transport.http.ConnectionTest", // #2180 should fix it
         "com.predic8.membrane.integration.withinternet.interceptor.RewriteInterceptorIntegrationTest", // Rewrite as UnitTest with sampleSOAPService
         "com.predic8.membrane.core.interceptor.tunnel.WebsocketStompTest", // Fails: not standalone; depends on external WS+STOMP setup

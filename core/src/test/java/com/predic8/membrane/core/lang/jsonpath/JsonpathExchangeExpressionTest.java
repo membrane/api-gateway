@@ -160,7 +160,7 @@ class JsonpathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals(314, expr.evaluate(post("/foo").json("314").buildExchange(), REQUEST, Integer.class));
     }
 
-    private static <T> T evaluateWithEmptyBodyFor(Class<T> type) throws URISyntaxException {
+    private <T> T evaluateWithEmptyBodyFor(Class<T> type) throws URISyntaxException {
         return expression(new InterceptorAdapter(router), JSONPATH, "$").evaluate(get("/foo").buildExchange(), REQUEST, type);
     }
 }

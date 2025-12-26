@@ -47,7 +47,7 @@ class OpenAPIInterceptorTest {
     OpenAPIInterceptor interceptor3Server;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         router = new Router();
         router.getConfig().setUriFactory(new URIFactory());
 
@@ -66,6 +66,11 @@ class OpenAPIInterceptorTest {
         interceptor1Server.init(router);
         interceptor3Server = new OpenAPIInterceptor(createProxy(router, specInfo3Servers));
         interceptor3Server.init(router);
+    }
+
+    @AfterEach
+    void tearDown() {
+        router.shutdown();
     }
 
     @Test

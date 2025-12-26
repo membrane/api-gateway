@@ -27,7 +27,6 @@ import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
-import com.predic8.schema.*;
 import org.apache.commons.cli.ParseException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -43,7 +42,7 @@ import java.util.Optional;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.generateJWK;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.privateJWKtoPublic;
-import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.InvalidConfigurationException;
+import static com.predic8.membrane.core.config.spring.CheckableBeanFactory.InvalidConfigurationException;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
@@ -191,7 +190,6 @@ public class RouterCLI {
         reg.finishStaticConfiguration();
 
         router.start();
-        router.getRuleManager().openPorts();
         logStartupMessage();
         return router;
     }
@@ -235,7 +233,7 @@ public class RouterCLI {
 
     private static Router initRouterByXml(String config) throws Exception {
         try {
-            return Router.init(config);
+            return Router.initByXML(config);
         } catch (XmlBeanDefinitionStoreException e) {
             handleXmlBeanDefinitionStoreException(e);
         }

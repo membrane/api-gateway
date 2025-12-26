@@ -13,6 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.*;
+import org.slf4j.*;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -20,17 +23,23 @@ import java.util.TimerTask;
  * Manages periodic tasks with a single timer.
  */
 public class TimerManager {
+
+    private static final Logger log = LoggerFactory.getLogger(TimerManager.class.getName());
+
     protected final java.util.Timer timer = new Timer(true);
 
     public void schedulePeriodicTask(TimerTask task, long period, String title) {
+        log.debug("Scheduling periodic task {} every {} ms.", title, period);
         timer.schedule(task, period, period);
     }
 
     public void schedule(TimerTask task, long delay, String title) {
+        log.debug("Scheduling task {} in {} ms.", title, delay);
         timer.schedule(task, delay);
     }
 
     public void shutdown() {
+        log.debug("Shutting down timer.");
         timer.cancel();
     }
 }

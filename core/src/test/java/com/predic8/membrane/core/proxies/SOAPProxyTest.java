@@ -62,14 +62,14 @@ public class SOAPProxyTest {
     void parseWSDL() throws Exception {
         proxy.setWsdl("classpath:/ws/cities.wsdl");
         router.add(proxy);
-        router.init();
+        router.start();
     }
 
     @Test
     void parseWSDLWithMultiplePortsPerService() throws Exception {
         proxy.setWsdl("classpath:/blz-service.wsdl");
         router.add(proxy);
-        router.init();
+        router.start();
     }
 
     @Test
@@ -77,7 +77,7 @@ public class SOAPProxyTest {
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
         proxy.setServiceName("CityServiceA");
         router.add(proxy);
-        router.init();
+        router.start();
     }
 
     @Test
@@ -85,7 +85,7 @@ public class SOAPProxyTest {
         proxy.setServiceName("CityServiceA");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
         router.add(proxy);
-        router.init();
+        router.start();
     }
 
     @Test
@@ -93,7 +93,7 @@ public class SOAPProxyTest {
         proxy.setServiceName("CityServiceB");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
         router.add(proxy);
-        router.init();
+        router.start();
 
         // @formatter: off
         given().when()
@@ -111,6 +111,6 @@ public class SOAPProxyTest {
         proxy.setServiceName("WrongService");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
         router.add(proxy);
-        assertThrows(IllegalArgumentException.class, () -> router.init());
+        assertThrows(IllegalArgumentException.class, () -> router.start());
     }
 }

@@ -16,8 +16,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 import org.junit.jupiter.api.BeforeEach;
 
-public class LoadBalancingWithClusterManagerAndNoSessionTest extends
-LoadBalancingInterceptorTest {
+public class LoadBalancingWithClusterManagerAndNoSessionTest extends LoadBalancingInterceptorTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {

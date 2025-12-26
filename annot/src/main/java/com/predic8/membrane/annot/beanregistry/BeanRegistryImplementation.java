@@ -13,17 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.annot.beanregistry;
 
-import com.predic8.membrane.annot.Grammar;
-import com.predic8.membrane.annot.bean.BeanFactory;
-import com.predic8.membrane.annot.yaml.GenericYamlParser;
-import com.predic8.membrane.annot.yaml.WatchAction;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.bean.*;
+import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
+import java.util.function.*;
 
+/**
+ * TODO:
+ * - More Tests
+ * - Document
+ * - Do we need uuid when then name is unique?
+ * - For TB Unclear: Lifecycle activation/resolve
+ */
 public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     private static final Logger log = LoggerFactory.getLogger(BeanRegistryImplementation.class);
@@ -31,14 +37,14 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     private final BeanCacheObserver observer;
     private final Grammar grammar;
 
-    // uid -> bean
-    private final ConcurrentHashMap<String, Object> singletonBeans = new ConcurrentHashMap<>(); // Order is here not critical
-
     // uid -> bean container
     private final Map<String, BeanContainer> bcs = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
     private final Set<UidAction> uidsToActivate = Collections.synchronizedSet(new LinkedHashSet<>()); // keeps order
 
-    record UidAction(String uid, WatchAction action) {}
+    private final Object registrationLock = new Object();
+
+    record UidAction(String uid, WatchAction action) {
+    }
 
     public BeanRegistryImplementation(BeanCacheObserver observer, BeanRegistryAware registryAware, Grammar grammar) {
         this.observer = observer;
@@ -46,7 +52,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         registryAware.setRegistry(this);
     }
 
-    private Object define(BeanDefinition bd)  {
+    private Object define(BeanDefinition bd) {
         log.debug("defining bean: {}", bd.getNode());
         try {
             if ("bean".equals(bd.getKind())) {
@@ -85,38 +91,47 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     private void activationRun() {
-        Set<UidAction> uidsToRemove = new HashSet<>();
-        for (UidAction uidAction : uidsToActivate) {
+        // Iterate safely over clone
+        for (UidAction uidAction : cloneUidActions()) {
             BeanContainer bc = bcs.get(uidAction.uid);
+            if (bc == null) {
+                log.warn("Skipping activation for missing uid {}", uidAction.uid);
+                continue;
+            }
+
+            BeanDefinition def = bc.getDefinition();
+            Object oldBean;
+            Object newBean = null;
+
             try {
-                Object bean = define(bc.getDefinition());
-                bc.setSingleton(bean);
-
-                // e.g. inform router about new proxy
-                observer.handleBeanEvent(new BeanDefinitionChanged(uidAction.action, bc.getDefinition()), bean, getOldBean(uidAction.action, bc.getDefinition()));
-
-                if (uidAction.action.isAdded() || uidAction.action.isModified())
-                    singletonBeans.put(bc.getDefinition().getUid(), bean);
-                if (uidAction.action.isDeleted()) {
-                    singletonBeans.remove(bc.getDefinition().getUid());
-                    bcs.remove(bc.getDefinition().getUid());
+                synchronized (bc) {
+                    oldBean = (uidAction.action.isModified() || uidAction.action.isDeleted()) ? bc.getSingleton() : null;
+                    if (!uidAction.action.isDeleted()) {
+                        newBean = define(def);
+                        bc.setSingleton(newBean);
+                    }
                 }
-                uidsToRemove.add(uidAction);
+
+                // Remove container after releasing the lock (avoid holding bc while mutating registry map)
+                if (uidAction.action.isDeleted()) {
+                    bcs.remove(uidAction.uid);
+                }
+
+                observer.handleBeanEvent(new BeanDefinitionChanged(uidAction.action, def), newBean, oldBean);
             } catch (Exception e) {
-                log.error("Could not handle {} {}/{}", uidAction.action,
-                        bc.getDefinition().getNamespace(), bc.getDefinition().getName(), e);
+                log.error("Could not handle {} {}/{}", uidAction.action, def.getNamespace(), def.getName(), e);
                 throw new RuntimeException(e);
             }
         }
-        for (UidAction uidAction : uidsToRemove)
-            uidsToActivate.remove(uidAction);
     }
 
-    private @Nullable Object getOldBean(WatchAction action, BeanDefinition bd) {
-        Object oldBean = null;
-        if (action.isModified() || action.isDeleted())
-            oldBean = singletonBeans.get(bd.getUid());
-        return oldBean;
+    private @NotNull List<UidAction> cloneUidActions() {
+        final List<UidAction> actions;
+        synchronized (uidsToActivate) {
+            actions = new ArrayList<>(uidsToActivate);
+            uidsToActivate.clear();
+        }
+        return actions;
     }
 
     @Override
@@ -125,15 +140,22 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
         boolean prototype = isPrototypeScope(bc.getDefinition());
 
-        if (!prototype && bc.getSingleton() != null)
-            return bc.getSingleton();
+        // Prototypes are created anew every time.
+        if (prototype) {
+            return define(bc.getDefinition());
+        }
 
-        Object instance = define(bc.getDefinition());
+        // Singleton: ensure define() runs at most once per BeanContainer.
+        synchronized (bc) {
+            Object existing = bc.getSingleton();
+            if (existing != null) {
+                return existing;
+            }
 
-        if (!prototype)
-            bc.setSingleton(instance);
-
-        return instance;
+            Object created = define(bc.getDefinition());
+            bc.setSingleton(created);
+            return created;
+        }
     }
 
     private @NotNull Optional<BeanContainer> getFirstByName(String url) {
@@ -175,7 +197,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     public <T> Optional<T> getBean(Class<T> clazz) {
         var beans = getBeans(clazz);
         if (beans.size() > 1) {
-            var msg = "One bean was asked. But found %d beans of %s".formatted(beans.size(),clazz);
+            var msg = "One bean was asked. But found %d beans of %s".formatted(beans.size(), clazz);
             log.error(msg);
             throw new RuntimeException(msg);
         }
@@ -183,10 +205,29 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     public void register(String beanName, Object bean) {
+        if (bean == null)
+            throw new IllegalArgumentException("bean must not be null");
+
         var uuid = UUID.randomUUID().toString();
-        BeanContainer bc = new BeanContainer(new BeanDefinition("component", beanName,null, uuid, null));
+        BeanContainer bc = new BeanContainer(new BeanDefinition("component", computeBeanName(beanName, uuid), null, uuid, null));
         bc.setSingleton(bean);
-        singletonBeans.put(uuid,bean);
         bcs.put(uuid, bc);
     }
+
+    public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
+        return getBean(type).orElseGet(() -> {
+            synchronized (registrationLock) {
+                return getBean(type).orElseGet(() -> {
+                    T created = supplier.get();
+                    register(null, created);
+                    return created;
+                });
+            }
+        });
+    }
+
+    private static @NotNull String computeBeanName(String beanName, String uuid) {
+        return beanName != null ? beanName : "#" + uuid;
+    }
+
 }

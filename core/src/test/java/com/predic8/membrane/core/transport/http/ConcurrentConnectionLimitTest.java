@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,8 +49,8 @@ public class ConcurrentConnectionLimitTest {
         sp.getFlow().add(GROOVY("Thread.sleep(1000)"));
         sp.getFlow().add(RETURN);
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
-        router.init();
+        router.getRuleManager().addProxy(sp, MANUAL);
+        router.start();
     }
 
     @AfterEach

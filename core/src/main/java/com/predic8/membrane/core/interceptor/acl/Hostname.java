@@ -104,6 +104,6 @@ public class Hostname extends AbstractClientAddress {
 	@Override
 	public void init(Router router) {
 		super.init(router);
-		reverseDNS = router.getTransport().isReverseDNS();
+		reverseDNS = router.getTransport() != null && router.getTransport().isReverseDNS();
 	}
 }

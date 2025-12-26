@@ -14,24 +14,21 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
-import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
-import com.predic8.membrane.core.interceptor.log.LogInterceptor;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.groovy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 
 class InternalProxyTest {
 
-    private static Router router;
+    private Router router;
 
-    @BeforeAll
-    public static void setup() throws Exception {
+    @BeforeEach
+    void setup() throws Exception {
         router = new HttpRouter();
 
         router.add(new APIProxy() {{
@@ -112,8 +109,8 @@ class InternalProxyTest {
 
     }
 
-    @AfterAll
-    public static void teardown() {
+    @AfterEach
+    void teardown() {
         router.shutdown();
     }
 

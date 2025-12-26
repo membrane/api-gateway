@@ -112,7 +112,7 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init(Router router) {
         httpClient = router.getHttpClientFactory().createClient(httpClientConfiguration);
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
