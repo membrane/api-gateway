@@ -18,15 +18,15 @@ import org.junit.jupiter.api.*;
 
 public abstract class AbstractTestWithRouter {
 
-    protected static Router router;
+    protected Router router;
 
-    @BeforeAll
-    static void setUp() {
+    @BeforeEach
+    void setUp() {
         router = new HttpRouter();
     }
 
-    @AfterAll
-    static void shutDown() {
+    @AfterEach
+    void shutDown() {
         router.shutdown();
     }
 }

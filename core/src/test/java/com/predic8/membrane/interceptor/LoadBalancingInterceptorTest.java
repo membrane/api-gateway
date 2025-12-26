@@ -27,6 +27,7 @@ import org.junit.jupiter.api.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.internalServerError;
@@ -40,7 +41,7 @@ import static org.apache.commons.httpclient.HttpVersion.*;
 import static org.apache.http.params.HttpProtocolParams.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class LoadBalancingInterceptorTest {
+public abstract class LoadBalancingInterceptorTest {
 
 	private DummyWebServiceInterceptor mockInterceptor1;
 	private DummyWebServiceInterceptor mockInterceptor2;
@@ -54,8 +55,8 @@ public class LoadBalancingInterceptorTest {
 
     @BeforeEach
 	public void setUp() throws Exception {
-        int port2k = getFreePortEqualAbove(2000);
-        int port3k = getFreePortEqualAbove(3000);
+        int port2k = 2000;
+        int port3k = 3000;
 		service1 = new HttpRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
@@ -63,13 +64,13 @@ public class LoadBalancingInterceptorTest {
 		sp1.getFlow().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
-				exc.getResponse().getHeader().add("Connection", "close");
+				exc.getResponse().getHeader().setConnection("close");
 				return CONTINUE;
 			}
 		});
 		sp1.getFlow().add(mockInterceptor1);
-		service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
-		service1.init();
+		service1.getRuleManager().addProxy(sp1, MANUAL);
+		service1.start();
 
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
@@ -78,13 +79,13 @@ public class LoadBalancingInterceptorTest {
 		sp2.getFlow().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleResponse(Exchange exc) {
-				exc.getResponse().getHeader().add("Connection", "close");
+				exc.getResponse().getHeader().setConnection("close");
 				return CONTINUE;
 			}
 		});
 		sp2.getFlow().add(mockInterceptor2);
-		service2.getRuleManager().addProxyAndOpenPortIfNew(sp2);
-		service2.init();
+		service2.getRuleManager().addProxy(sp2, MANUAL);
+		service2.start();
 
 		balancer = new HttpRouter();
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",
@@ -146,7 +147,6 @@ public class LoadBalancingInterceptorTest {
 
 		PostMethod vari = getPostMethod();
 		int status = client.executeMethod(vari);
-		//System.out.println(new String(vari.getResponseBody()));
 
 		assertEquals(200, status);
 		assertEquals(1, mockInterceptor1.getCount());

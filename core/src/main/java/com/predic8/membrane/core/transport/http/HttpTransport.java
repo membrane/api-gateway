@@ -60,7 +60,7 @@ public class HttpTransport extends Transport {
 			new SynchronousQueue<>(), new HttpServerThreadFactory());
 
 	@Override
-	public void init(Router router) throws Exception {
+	public void init(Router router) {
 		super.init(router);
 	}
 

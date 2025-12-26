@@ -23,43 +23,42 @@ import java.util.*;
 
 public class HttpRouter extends Router {
 
-	public HttpRouter() {
-		this(null);
-	}
+    public HttpRouter() {
+        this(null);
+    }
 
-	public HttpRouter(ProxyConfiguration proxyConfiguration) {
-		transport = createTransport();
-		resolverMap.getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
-	}
+    public HttpRouter(ProxyConfiguration proxyConfiguration) {
+        transport = createTransport();
+        resolverMap.getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
+    }
 
-	/**
-	 * Same as the default config from monitor-beans.xml
-	 */
-	private Transport createTransport() {
-		Transport transport = new HttpTransport();
-		List<Interceptor> interceptors = new ArrayList<>();
-		interceptors.add(new RuleMatchingInterceptor());
-		interceptors.add(new DispatchingInterceptor());
-		interceptors.add(new UserFeatureInterceptor());
-		interceptors.add(new InternalRoutingInterceptor());
-		HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
-		interceptors.add(httpClientInterceptor);
-		transport.setFlow(interceptors);
-		return transport;
-	}
+    @Override
+    public HttpTransport getTransport() {
+        return (HttpTransport) transport;
+    }
 
-	@Override
-	public HttpTransport getTransport() {
-		return (HttpTransport)transport;
-	}
+    /**
+     * TODO Only used for tests. It s brittle cause it is dependent on
+     * the list. In tests interceptors in the proxy can be used instead.
+     */
+    public void addUserFeatureInterceptor(Interceptor i) {
+        List<Interceptor> is = getTransport().getFlow();
+        is.add(is.size() - 3, i);
+    }
 
-	/**
-	 * TODO Only used for tests. It s brittle cause it is dependent on
-	 * the list. In tests interceptors in the proxy can be used instead.
-	 */
-	public void addUserFeatureInterceptor(Interceptor i) {
-		List<Interceptor> is = getTransport().getFlow();
-		is.add(is.size()-3, i);
-	}
-
+    /**
+     * Same as the default config from monitor-beans.xml
+     */
+    private static Transport createTransport() {
+        Transport transport = new HttpTransport();
+        List<Interceptor> interceptors = new ArrayList<>();
+        interceptors.add(new RuleMatchingInterceptor());
+        interceptors.add(new DispatchingInterceptor());
+        interceptors.add(new UserFeatureInterceptor());
+        interceptors.add(new InternalRoutingInterceptor());
+        HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
+        interceptors.add(httpClientInterceptor);
+        transport.setFlow(interceptors);
+        return transport;
+    }
 }

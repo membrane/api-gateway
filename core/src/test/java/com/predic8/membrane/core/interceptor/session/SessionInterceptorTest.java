@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.nio.charset.StandardCharsets.*;
@@ -61,7 +62,7 @@ public class SessionInterceptorTest {
     @Test
     public void generalSessionUsageTest() throws Exception {
         ServiceProxy sp = createTestServiceProxy();
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
+        router.getRuleManager().addProxy(sp, MANUAL);
 
         AtomicLong counter = new AtomicLong(0);
         List<Long> vals = new ArrayList<>();
@@ -71,7 +72,7 @@ public class SessionInterceptorTest {
         sp.getFlow().add(interceptor);
         sp.getFlow().add(testResponseInterceptor());
 
-        router.init();
+        router.start();
 
         IntStream.range(0, 50).forEach(i -> sendRequest());
 
@@ -90,7 +91,7 @@ public class SessionInterceptorTest {
     @Test
     public void expirationTest() throws Exception{
         ServiceProxy sp = createTestServiceProxy();
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
+        router.getRuleManager().addProxy(sp,MANUAL);
 
         AtomicLong counter = new AtomicLong(0);
         List<Long> vals = new ArrayList<>();
@@ -100,7 +101,7 @@ public class SessionInterceptorTest {
         sp.getFlow().add(interceptor);
         sp.getFlow().add(testResponseInterceptor());
 
-        router.init();
+        router.start();
 
         interceptor.getSessionManager().setExpiresAfterSeconds(0);
 
@@ -113,12 +114,12 @@ public class SessionInterceptorTest {
     @Test
     public void noUnneededRenewalOnReadOnlySession() throws Exception{
         ServiceProxy sp = createTestServiceProxy();
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
+        router.getRuleManager().addProxy(sp,MANUAL);
 
         sp.getFlow().add(createAndReadOnlySessionInterceptor());
         sp.getFlow().add(testResponseInterceptor());
 
-        router.init();
+        router.start();
 
         List<Map<String,Object>> bodies = new ArrayList<>();
 
@@ -139,8 +140,8 @@ public class SessionInterceptorTest {
         sp.getFlow().add(createAndReadOnlySessionInterceptor);
         sp.getFlow().add(testResponseInterceptor());
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
-        router.init();
+        router.getRuleManager().addProxy(sp,MANUAL);
+        router.start();
 
         List<Map<String,Object>> bodies = new ArrayList<>();
 

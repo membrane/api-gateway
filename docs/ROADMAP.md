@@ -15,6 +15,9 @@
 
 # 7.1.0
 
+- reverseDNS
+  - Now it is in transport
+  - Maybe move it to configuration
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 - Remove GroovyTemplateInterceptor (Not Template Interceptor)
@@ -42,6 +45,7 @@
 
 ## (Breaking) Interface Changes
 
+- Removed GateKeeperClientInterceptor
 - Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
 - Remove WADLInterceptor
 - HttpClient TB (done)

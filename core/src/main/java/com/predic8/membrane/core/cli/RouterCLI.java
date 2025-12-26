@@ -190,7 +190,6 @@ public class RouterCLI {
         reg.finishStaticConfiguration();
 
         router.start();
-        router.getRuleManager().openPorts();
         logStartupMessage();
         return router;
     }

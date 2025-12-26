@@ -14,32 +14,28 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.AbstractTestWithRouter;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
-import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.log.LogInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 
-import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.A;
+import static com.predic8.membrane.core.http.Request.get;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class AbstractServiceProxyExpressionTest extends AbstractTestWithRouter {
+/**
+ * Verifies that expressions in the target URL are evaluated correctly.
+ */
+class TargetURLExpressionTest {
 
     @Test
     void targetWithExpression() throws IOException, URISyntaxException {
-        HttpRouter r = new HttpRouter();
-        Exchange rq = new Request.Builder().get("http://localhost:2000/").buildExchange();
+        Router r = new Router();
+        Exchange rq = get("http://localhost:2000/").buildExchange();
         APIProxy api = new APIProxy() {{
             setTarget(new Target() {{
                 setUrl("http://localhost:${2000 + 1000}");

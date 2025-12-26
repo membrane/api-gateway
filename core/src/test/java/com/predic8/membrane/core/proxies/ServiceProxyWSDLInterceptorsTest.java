@@ -28,16 +28,16 @@ import static org.hamcrest.Matchers.*;
 @SuppressWarnings("HttpUrlsUsage")
 public class ServiceProxyWSDLInterceptorsTest {
 
-    static Router router;
+    Router router;
 
-    @BeforeAll
-    static void setUp() {
+    @BeforeEach
+    void setUp() {
         router = new HttpRouter();
         router.getConfig().setHotDeploy(false);
     }
 
-    @AfterAll
-    static void teardown() {
+    @AfterEach
+    void teardown() {
         router.stop();
     }
 

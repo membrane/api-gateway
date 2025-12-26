@@ -195,7 +195,7 @@ public class SSLProxy implements Proxy {
     Router router;
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init(Router router) {
         this.router = router;
         cm = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout(), router.getTimerManager());
         for (SSLInterceptor i : sslInterceptors)

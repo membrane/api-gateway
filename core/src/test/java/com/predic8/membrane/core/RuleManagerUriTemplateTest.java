@@ -26,7 +26,7 @@ import java.util.stream.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class RuleManagerUriTemplateTest extends AbstractTestWithRouter {
+public class RuleManagerUriTemplateTest {
 
     static Stream<Arguments> matches() {
         return Stream.of(Arguments.of("/foo","/foo"),
@@ -57,9 +57,9 @@ public class RuleManagerUriTemplateTest extends AbstractTestWithRouter {
         assertNotEquals(p, getMatchingProxy(uriTemplate, path, p));
     }
 
-    private static Proxy getMatchingProxy(String uriTemplate, String path, APIProxy p) throws URISyntaxException {
+    private Proxy getMatchingProxy(String uriTemplate, String path, APIProxy p) throws URISyntaxException {
         p.setPath(new Path(false, uriTemplate));
-        p.init(router);
+        p.init(new Router());
         return new RuleManager() {{
             proxies.add(p);
         }}.getMatchingRule(get(path).buildExchange());

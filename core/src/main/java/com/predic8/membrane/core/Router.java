@@ -122,6 +122,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     @GuardedBy("lock")
     private boolean running;
 
+    private boolean initialized;
+
     //
     // Reinitialization
     //
@@ -143,13 +145,16 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     //
     // Initialization
     //
-    public void init() throws Exception {
+    public void init() {
         initRemainingRules();
-        transport.init(this);
+        if (transport != null)
+            transport.init(this);
         displayTraceWarning();
+
+        initialized = true;
     }
 
-    private void initRemainingRules() throws Exception {
+    private void initRemainingRules() {
         for (Proxy proxy : getRuleManager().getRules())
             proxy.init(this);
     }
@@ -187,15 +192,20 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     @Override
     public void start() {
+        if (!initialized)
+           init();
+
         try {
             if (exchangeStore == null)
                 exchangeStore = new LimitedMemoryExchangeStore();
-            if (transport == null)
+            if (transport == null) {
                 transport = new HttpTransport();
+                transport.init(this);
+            }
 
             getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::start);
 
-            init();
+            //init();
             initJmx();
             getRuleManager().openPorts();
 
@@ -236,6 +246,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
                     """, e.getMessage(), e.getLocation());
             throw new ExitException();
         } catch (Exception e) {
+            log.error("Could not start router.", e);
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
             throw new RuntimeException(e);

@@ -28,10 +28,10 @@ import static org.hamcrest.Matchers.equalTo;
 
 class InternalProxyTest {
 
-    private static Router router;
+    private Router router;
 
-    @BeforeAll
-    public static void setup() throws Exception {
+    @BeforeEach
+    void setup() throws Exception {
         router = new HttpRouter();
 
         router.add(new APIProxy() {{
@@ -112,8 +112,8 @@ class InternalProxyTest {
 
     }
 
-    @AfterAll
-    public static void teardown() {
+    @AfterEach
+    void teardown() {
         router.shutdown();
     }
 

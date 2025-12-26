@@ -25,6 +25,7 @@ import org.jetbrains.annotations.*;
 import org.springframework.beans.factory.*;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.util.*;
 
 public abstract class Transport {
@@ -53,7 +54,7 @@ public abstract class Transport {
         this.interceptors = flow;
     }
 
-    public void init(Router router) throws Exception {
+    public void init(Router router) {
         this.router = router;
 
         if (interceptors.isEmpty()) {
@@ -76,14 +77,18 @@ public abstract class Transport {
     /**
      * Look up an interceptor in the Spring context; fall back to default construction.
      */
-    private @NotNull <T extends Interceptor> T getInterceptor(Class<T> clazz) throws ReflectiveOperationException {
+    private @NotNull <T extends Interceptor> T getInterceptor(Class<T> clazz)  {
         BeanFactory bf = router.getBeanFactory();
         if (bf instanceof ListableBeanFactory lbf) {
             T bean = lbf.getBeanProvider(clazz).getIfAvailable();
             if (bean != null)
                 return bean;
         }
-        return clazz.getConstructor().newInstance();
+        try {
+            return clazz.getConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot instantiate object of class %s".formatted(clazz),e);
+        }
     }
 
     /**

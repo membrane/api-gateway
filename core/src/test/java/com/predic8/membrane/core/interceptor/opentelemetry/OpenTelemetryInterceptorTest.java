@@ -24,7 +24,7 @@ import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.SPRING;
 class OpenTelemetryInterceptorTest {
 
     @Test
-    void initTest() throws Exception {
+    void initTest() {
         Proxy r = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3141), null, 0);
         r.getFlow().add(new OpenTelemetryInterceptor());
 
@@ -32,5 +32,6 @@ class OpenTelemetryInterceptorTest {
         rtr.getRuleManager().addProxy(r, SPRING);
 
         rtr.init();
+        rtr.shutdown();
     }
 }

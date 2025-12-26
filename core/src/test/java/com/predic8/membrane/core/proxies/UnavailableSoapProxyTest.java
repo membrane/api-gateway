@@ -27,12 +27,12 @@ import static org.junit.jupiter.api.Assertions.*;
 public class UnavailableSoapProxyTest {
 
 	private Router r, r2;
-	private static Router backendRouter;
+	private Router backendRouter;
 	private SOAPProxy sp;
 	private ServiceProxy sp3;
 
-	@BeforeAll
-	static void setup() throws Exception {
+	@BeforeEach
+	void setup() throws Exception {
 		ServiceProxy cityAPI = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
 		cityAPI.getFlow().add(new SampleSoapServiceInterceptor());
 		backendRouter = new HttpRouter();
@@ -40,14 +40,16 @@ public class UnavailableSoapProxyTest {
 		backendRouter.init();
 	}
 
-	@AfterAll
-	static void teardown() {
+	@AfterEach
+	void teardown() {
 		backendRouter.shutdown();
+		r.shutdown();
+		r2.shutdown();
 	}
 
 	@BeforeEach
 	void startRouter() {
-		r = new Router();
+		r = new HttpRouter();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.getRetryHandler().setRetries(1);
 		r.setHttpClientConfig(httpClientConfig);
@@ -68,7 +70,7 @@ public class UnavailableSoapProxyTest {
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
 		sp2.setWsdl("http://localhost:4000?wsdl");
-		r2 = new Router();
+		r2 = new HttpRouter();
 		r2.getConfig().setHotDeploy(false);
 		r2.getRules().add(sp2);
 	}
