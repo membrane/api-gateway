@@ -41,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ElasticSearchExchangeStoreTest {
 
+    private static final ObjectMapper om = new ObjectMapper();
+
     private static final String RESPONSE_BODY = """
             {"demo": true}""";
     private static final String  REQUEST_BODY = """
@@ -52,7 +54,6 @@ class ElasticSearchExchangeStoreTest {
     private ElasticSearchExchangeStore es;
 
     private final List<JsonNode> insertedObjects = new ArrayList<>();
-
 
     @BeforeEach
     public void start() throws IOException {
@@ -114,18 +115,17 @@ class ElasticSearchExchangeStoreTest {
     }
 
     private Interceptor createElasticSearchMockInterceptor() {
-        ObjectMapper om = new ObjectMapper();
         return new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                if (exc.getRequest().isGETRequest()) {
-                    exc.setResponse(ok("""
-                            {"acknowledged": true}""").build());
-                    return RETURN;
-                }
                 if (exc.getRequest().isGETRequest() && exc.getRequest().getUri().equals("/membrane/_mapping")) {
                     exc.setResponse(ok("""
                             {"membrane": {"mappings": {"something":true}}}""").build());
+                    return RETURN;
+                }
+                if (exc.getRequest().isGETRequest()) {
+                    exc.setResponse(ok("""
+                            {"acknowledged": true}""").build());
                     return RETURN;
                 }
                 return getOutcome(exc, om);

@@ -98,7 +98,6 @@ public class ReadRulesConfigurationTest {
         if (proxies.get(2) instanceof SSLableProxy sp) {
             assertFalse(sp.isInboundSSL());
         }
-        assertTrue(true);
     }
 
     @Test
@@ -106,6 +105,5 @@ public class ReadRulesConfigurationTest {
         if (proxies.get(2) instanceof SSLableProxy sp) {
             assertNull(sp.getSslOutboundContext());
         }
-        assertTrue(true);
     }
 }

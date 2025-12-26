@@ -26,13 +26,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class UnavailableSoapProxyTest {
 
-	private Router r, r2;
-	private Router backendRouter;
+	private static Router r, r2;
+	private static Router backendRouter;
 	private SOAPProxy sp;
 	private ServiceProxy sp3;
 
-	@BeforeEach
-	void setup() throws Exception {
+	@BeforeAll
+	static void setup() throws Exception {
 		ServiceProxy cityAPI = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
 		cityAPI.getFlow().add(new SampleSoapServiceInterceptor());
 		backendRouter = new HttpRouter();
@@ -40,8 +40,8 @@ public class UnavailableSoapProxyTest {
 		backendRouter.init();
 	}
 
-	@AfterEach
-	void teardown() {
+	@AfterAll
+	static void teardown() {
 		backendRouter.shutdown();
 		r.shutdown();
 		r2.shutdown();
@@ -76,7 +76,7 @@ public class UnavailableSoapProxyTest {
 	}
 
 	@AfterEach
-	void shutdownRouter() {
+	void teardownEach() {
 		r.shutdown();
 		r2.shutdown();
 	}
