@@ -45,7 +45,7 @@ public class SOAPProxyIntegrationTest {
 
 	@BeforeEach
 	public void startRouter() {
-		router = Router.init("classpath:/soap-proxy.xml");
+		router = Router.initByXML("classpath:/soap-proxy.xml");
 	}
 
 	@AfterEach

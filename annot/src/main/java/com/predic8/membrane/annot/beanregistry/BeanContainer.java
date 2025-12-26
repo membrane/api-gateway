@@ -14,24 +14,34 @@
 
 package com.predic8.membrane.annot.beanregistry;
 
+import java.util.concurrent.atomic.*;
+
 public class BeanContainer {
     private final BeanDefinition definition;
     /**
      * Constructed bean after initialization.
      */
-    private volatile Object singleton;
+    private final AtomicReference<Object> singleton = new AtomicReference<>();
 
     public BeanContainer(BeanDefinition definition) {
         this.definition = definition;
     }
 
-
     public Object getSingleton() {
-        return singleton;
+        return singleton.get();
     }
 
     public void setSingleton(Object singleton) {
-        this.singleton = singleton;
+        this.singleton.set(singleton);
+    }
+
+    /**
+     * Sets the singleton if not already set.
+     *
+     * @return true if this call published the singleton
+     */
+    public boolean setIfAbsent(Object instance) {
+        return singleton.compareAndSet(null, instance);
     }
 
     public BeanDefinition getDefinition() {

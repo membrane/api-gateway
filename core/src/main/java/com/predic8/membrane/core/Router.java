@@ -143,7 +143,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     //
     // Initialization
     //
-
     public void init() throws Exception {
         initRemainingRules();
         transport.init(this);
@@ -155,7 +154,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
             proxy.init(this);
     }
 
-    public static Router init(String resource) {
+    /**
+     * Initializes a {@link Router} instance from the specified Spring XML configuration resource.
+     * @param resource the path to the Spring XML configuration file that defines the {@link Router} bean
+     * @return the initialized {@link Router} instance
+     * @throws RuntimeException if no {@link Router} bean is found or more than one {@link Router} bean is found
+     */
+    public static Router initByXML(String resource) {
         log.debug("loading spring config: {}", resource);
 
         TrackingFileSystemXmlApplicationContext bf =

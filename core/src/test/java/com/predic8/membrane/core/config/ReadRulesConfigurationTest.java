@@ -31,7 +31,7 @@ public class ReadRulesConfigurationTest {
 
 	@BeforeAll
 	public static void setUp() {
-        router = Router.init("classpath:/proxies.xml");
+        router = Router.initByXML("classpath:/proxies.xml");
 		proxies = router.getRuleManager().getRules();
 	}
 

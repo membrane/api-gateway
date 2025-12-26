@@ -27,8 +27,8 @@ import java.util.function.*;
  * TODO:
  * - More Tests
  * - Document
- *   - singletonBeans
- *   - bcs
+ * - Do we need uuid when then name is unique?
+ * - For TB Unclear: Lifecycle activation/resolve
  */
 public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
@@ -36,9 +36,6 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     private final BeanCacheObserver observer;
     private final Grammar grammar;
-
-    // uid -> bean
-    private final ConcurrentHashMap<String, Object> singletonBeans = new ConcurrentHashMap<>(); // Order is here not critical
 
     // uid -> bean container
     private final Map<String, BeanContainer> bcs = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
@@ -92,6 +89,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     private void activationRun() {
+        // Iterate safely over clone
         for (UidAction uidAction : cloneUidActions()) {
             BeanContainer bc = bcs.get(uidAction.uid);
             if (bc == null) {
@@ -100,24 +98,24 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
             }
 
             BeanDefinition def = bc.getDefinition();
-            Object oldBean = getOldBean(uidAction.action, uidAction.uid); // capture first
-            Object newBean = null; // Do not inline!
+            Object oldBean;
+            Object newBean = null;
 
             try {
-                if (uidAction.action.isDeleted()) {
-                    singletonBeans.remove(uidAction.uid);
-                    bcs.remove(uidAction.uid);
-                } else {
-                    newBean = define(def);
-                    bc.setSingleton(newBean);
-                    singletonBeans.put(uidAction.uid, newBean);
+                synchronized (bc) {
+                    oldBean = (uidAction.action.isModified() || uidAction.action.isDeleted()) ? bc.getSingleton() : null;
+                    if (!uidAction.action.isDeleted()) {
+                        newBean = define(def);
+                        bc.setSingleton(newBean);
+                    }
                 }
 
-                observer.handleBeanEvent(
-                        new BeanDefinitionChanged(uidAction.action, def),
-                        newBean,
-                        oldBean
-                );
+                // Remove container after releasing the lock (avoid holding bc while mutating registry map)
+                if (uidAction.action.isDeleted()) {
+                    bcs.remove(uidAction.uid);
+                }
+
+                observer.handleBeanEvent(new BeanDefinitionChanged(uidAction.action, def), newBean, oldBean);
             } catch (Exception e) {
                 log.error("Could not handle {} {}/{}", uidAction.action, def.getNamespace(), def.getName(), e);
                 throw new RuntimeException(e);
@@ -126,7 +124,6 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     private @NotNull List<UidAction> cloneUidActions() {
-        // Iterate safely over synchronizedSet
         final List<UidAction> actions;
         synchronized (uidsToActivate) {
             actions = new ArrayList<>(uidsToActivate);
@@ -135,25 +132,28 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         return actions;
     }
 
-    private @Nullable Object getOldBean(WatchAction action, String uid) {
-        return (action.isModified() || action.isDeleted()) ? singletonBeans.get(uid) : null;
-    }
-
     @Override
     public Object resolve(String url) {
         BeanContainer bc = getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url)));
 
         boolean prototype = isPrototypeScope(bc.getDefinition());
 
-        if (!prototype && bc.getSingleton() != null)
-            return bc.getSingleton();
+        // Prototypes are created anew every time.
+        if (prototype) {
+            return define(bc.getDefinition());
+        }
 
-        Object instance = define(bc.getDefinition());
+        // Singleton: ensure define() runs at most once per BeanContainer.
+        synchronized (bc) {
+            Object existing = bc.getSingleton();
+            if (existing != null) {
+                return existing;
+            }
 
-        if (!prototype)
-            bc.setSingleton(instance);
-
-        return instance;
+            Object created = define(bc.getDefinition());
+            bc.setSingleton(created);
+            return created;
+        }
     }
 
     private @NotNull Optional<BeanContainer> getFirstByName(String url) {
@@ -203,22 +203,32 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     public void register(String beanName, Object bean) {
+        if (bean == null)
+            throw new IllegalArgumentException("bean must not be null");
+
         var uuid = UUID.randomUUID().toString();
-        BeanContainer bc = new BeanContainer(new BeanDefinition("component", beanName, null, uuid, null));
+        BeanContainer bc = new BeanContainer(new BeanDefinition("component", computeBeanName(beanName, uuid), null, uuid, null));
         bc.setSingleton(bean);
-        singletonBeans.put(uuid, bean);
         bcs.put(uuid, bc);
     }
 
     public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
-        return getBean(type).orElseGet(() -> {
-            synchronized (this) {
-                return getBean(type).orElseGet(() -> {
-                    T created = supplier.get();
-                    register(null, created);
-                    return created;
-                });
-            }
-        });
+        var existing = getBean(type);
+        if (existing.isPresent())
+            return existing.get();
+
+        T created = supplier.get(); // outside lock
+
+        synchronized (this) {
+            return getBean(type).orElseGet(() -> {
+                register(null, created);
+                return created;
+            });
+        }
     }
+
+    private static @NotNull String computeBeanName(String beanName, String uuid) {
+        return beanName != null ? beanName : "#" + uuid;
+    }
+
 }

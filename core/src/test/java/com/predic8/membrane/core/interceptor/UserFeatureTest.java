@@ -36,7 +36,7 @@ class UserFeatureTest {
 
 	@BeforeAll
 	static void setUp() {
-		router = Router.init("classpath:/userFeature/proxies.xml");
+		router = Router.initByXML("classpath:/userFeature/proxies.xml");
 		MockInterceptor.clear();
 	}
 
