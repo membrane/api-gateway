@@ -41,6 +41,8 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     private final Map<String, BeanContainer> bcs = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
     private final Set<UidAction> uidsToActivate = Collections.synchronizedSet(new LinkedHashSet<>()); // keeps order
 
+    private final Object registrationLock = new Object();
+
     record UidAction(String uid, WatchAction action) {
     }
 
@@ -213,18 +215,15 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
-        var existing = getBean(type);
-        if (existing.isPresent())
-            return existing.get();
-
-        T created = supplier.get(); // outside lock
-
-        synchronized (this) {
-            return getBean(type).orElseGet(() -> {
-                register(null, created);
-                return created;
-            });
-        }
+        return getBean(type).orElseGet(() -> {
+            synchronized (registrationLock) {
+                return getBean(type).orElseGet(() -> {
+                    T created = supplier.get();
+                    register(null, created);
+                    return created;
+                });
+            }
+        });
     }
 
     private static @NotNull String computeBeanName(String beanName, String uuid) {
