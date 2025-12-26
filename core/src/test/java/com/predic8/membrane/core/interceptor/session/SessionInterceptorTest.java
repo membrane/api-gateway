@@ -60,7 +60,7 @@ public class SessionInterceptorTest {
     }
 
     @Test
-    public void generalSessionUsageTest() throws Exception {
+    public void generalSessionUsageTest() {
         ServiceProxy sp = createTestServiceProxy();
         router.getRuleManager().addProxy(sp, MANUAL);
 
@@ -89,7 +89,7 @@ public class SessionInterceptorTest {
     }
 
     @Test
-    public void expirationTest() throws Exception{
+    public void expirationTest() {
         ServiceProxy sp = createTestServiceProxy();
         router.getRuleManager().addProxy(sp,MANUAL);
 
@@ -112,7 +112,7 @@ public class SessionInterceptorTest {
     }
 
     @Test
-    public void noUnneededRenewalOnReadOnlySession() throws Exception{
+    public void noUnneededRenewalOnReadOnlySession() {
         ServiceProxy sp = createTestServiceProxy();
         router.getRuleManager().addProxy(sp,MANUAL);
 
@@ -133,7 +133,7 @@ public class SessionInterceptorTest {
 
     @Disabled
     @Test
-    public void renewalOnReadOnlySession() throws Exception{
+    public void renewalOnReadOnlySession() {
         ServiceProxy sp = createTestServiceProxy();
         AbstractInterceptorWithSession createAndReadOnlySessionInterceptor = createAndReadOnlySessionInterceptor();
 

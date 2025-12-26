@@ -14,17 +14,14 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
-import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
-import com.predic8.membrane.core.interceptor.log.LogInterceptor;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.groovy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 
 class InternalProxyTest {
 

@@ -27,14 +27,13 @@ import org.junit.jupiter.api.*;
 
 import java.net.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.internalServerError;
-import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.InterceptorUtil.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
-import static com.predic8.membrane.core.util.NetworkUtil.*;
 import static java.lang.Thread.*;
 import static java.util.Objects.*;
 import static org.apache.commons.httpclient.HttpVersion.*;

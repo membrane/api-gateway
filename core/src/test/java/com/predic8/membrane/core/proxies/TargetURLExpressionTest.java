@@ -13,19 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.AbstractTestWithRouter;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
+import java.io.*;
+import java.net.*;
 
-import static com.predic8.membrane.core.http.Request.get;
-import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.http.Request.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Verifies that expressions in the target URL are evaluated correctly.
@@ -33,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TargetURLExpressionTest {
 
     @Test
-    void targetWithExpression() throws IOException, URISyntaxException {
+    void targetWithExpression() throws URISyntaxException {
         Router r = new Router();
         Exchange rq = get("http://localhost:2000/").buildExchange();
         APIProxy api = new APIProxy() {{
