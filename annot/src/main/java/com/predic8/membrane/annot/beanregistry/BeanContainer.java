@@ -35,15 +35,6 @@ public class BeanContainer {
         this.singleton.set(singleton);
     }
 
-    /**
-     * Sets the singleton if not already set.
-     *
-     * @return true if this call published the singleton
-     */
-    public boolean setIfAbsent(Object instance) {
-        return singleton.compareAndSet(null, instance);
-    }
-
     public BeanDefinition getDefinition() {
         return definition;
     }

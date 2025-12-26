@@ -49,7 +49,7 @@ class UserFeatureTest {
 	}
 
 	@AfterAll
-	static void tearDown() throws Exception {
+	static void tearDown() {
 		router.shutdown();
 	}
 
@@ -60,19 +60,19 @@ class UserFeatureTest {
 	}
 
 	@Test
-	void testInvocation() throws Exception {
+	void testInvocation() {
 		callService("ok");
 		MockInterceptor.assertContent(labels, inverseLabels, new ArrayList<>());
 	}
 
 	@Test
-	void testAbort() throws Exception {
+	void testAbort() {
 		callService("abort");
 		MockInterceptor.assertContent(labels, new ArrayList<>(), inversAbortLabels);
 	}
 
 	@Test
-	void testFailInRequest() throws Exception {
+	void testFailInRequest() {
 		labels.add("mock8");
 
 		callService("failinrequest");
@@ -80,7 +80,7 @@ class UserFeatureTest {
 	}
 
 	@Test
-	void testFailInResponse() throws Exception {
+	void testFailInResponse() {
 		labels.add("mock9");
 
 		callService("failinresponse");
@@ -88,9 +88,9 @@ class UserFeatureTest {
 	}
 
 	@Test
-	void testFailInAbort() throws Exception {
+	void testFailInAbort() {
 		labels.add("mock10");
-		inversAbortLabels.add(0, "mock10");
+		inversAbortLabels.addFirst("mock10");
 
 		callService("failinabort");
 		MockInterceptor.assertContent(labels, new ArrayList<>(), inversAbortLabels);

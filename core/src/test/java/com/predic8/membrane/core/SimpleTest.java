@@ -22,7 +22,7 @@ public class SimpleTest {
 	private static Router router;
 
 	@BeforeAll
-	static void setUp() throws Exception {
+	static void setUp() {
 		router = Router.initByXML("classpath:/test-proxies.xml");
 	}
 
@@ -32,7 +32,7 @@ public class SimpleTest {
 	}
 
 	@AfterAll
-	static void tearDown() throws Exception {
+	static void tearDown() {
 		router.shutdown();
 	}
 
