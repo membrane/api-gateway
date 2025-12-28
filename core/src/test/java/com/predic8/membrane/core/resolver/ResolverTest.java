@@ -269,7 +269,6 @@ public class ResolverTest {
 	static volatile boolean hit = false;
 
 	public static final String STANDALONE = "standalone";
-	public static final String J2EE = "J2EE";
 
 	public static final String deployment = STANDALONE;
 

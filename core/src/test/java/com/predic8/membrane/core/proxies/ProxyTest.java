@@ -120,7 +120,6 @@ public class ProxyTest {
     public void runHTTPS() throws IOException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException {
         SSLSocketFactory sslsf = new SSLSocketFactory("TLS", null, null, null, null,
                 new TrustAllStrategy(), new AllowAllHostnameVerifier());
-        Scheme https = new Scheme("https", 3057, sslsf);
 
         CloseableHttpClient hc = HttpClientBuilder.create()
                 .setSSLSocketFactory(sslsf)

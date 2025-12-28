@@ -27,7 +27,6 @@ import org.junit.jupiter.api.*;
 
 import java.net.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;

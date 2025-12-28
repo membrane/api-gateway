@@ -107,7 +107,7 @@ public class SOAPProxyTest {
     }
 
     @Test
-    void parseWSDLWithMultipleServicesForAWrongService() throws Exception {
+    void parseWSDLWithMultipleServicesForAWrongService() {
         proxy.setServiceName("WrongService");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
 

@@ -34,7 +34,6 @@ import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
 

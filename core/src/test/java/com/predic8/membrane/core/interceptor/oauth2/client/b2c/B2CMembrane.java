@@ -30,10 +30,9 @@ import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * A locally running Membrane with various B2C features to test (1 ServiceProxy per feature). Primarily:

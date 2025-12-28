@@ -13,32 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.TrustStore;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.CountInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.ssl.*;
 import org.jetbrains.annotations.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxySSLTest {
     public static Collection<Object[]> data() {

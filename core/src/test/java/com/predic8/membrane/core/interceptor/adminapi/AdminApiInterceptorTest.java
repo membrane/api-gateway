@@ -122,7 +122,7 @@ class AdminApiInterceptorTest {
         private final NotifyingByteArrayOutputStream outputStream = new NotifyingByteArrayOutputStream();
         private InputStream inputStream = new InputStream() {
             @Override
-            public int read() throws IOException {
+            public int read() {
                 while (!closed) {
                     synchronized (TestHandler.this) {
                         try {
@@ -156,7 +156,7 @@ class AdminApiInterceptorTest {
         }
 
         @Override
-        public void removeSocketSoTimeout() throws SocketException {
+        public void removeSocketSoTimeout() {
             // do nothing
         }
 
@@ -166,7 +166,7 @@ class AdminApiInterceptorTest {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
             synchronized (this) {
                 notifyAll();

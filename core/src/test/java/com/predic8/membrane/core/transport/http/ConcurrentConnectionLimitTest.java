@@ -23,7 +23,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static org.junit.jupiter.api.Assertions.*;
 

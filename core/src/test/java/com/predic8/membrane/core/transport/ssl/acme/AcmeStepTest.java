@@ -101,7 +101,7 @@ public class AcmeStepTest {
 
             OrderAndLocation ol = acmeClient.createOrder(accountUrl, Arrays.asList(hosts));
 
-            assertTrue(ol.getOrder().getAuthorizations().size() > 0);
+            assertFalse(ol.getOrder().getAuthorizations().isEmpty());
             for (String authorization : ol.getOrder().getAuthorizations()) {
 
                 Authorization auth = acmeClient.getAuth(accountUrl, authorization);
@@ -144,18 +144,18 @@ public class AcmeStepTest {
                 Thread.sleep(10);
             }
 
-            HttpClient hc = new HttpClient();
-            Exchange e = new Request.Builder().get("https://localhost:3051/").buildExchange();
-            SSLParser sslParser1 = new SSLParser();
-            Trust trust = new Trust();
-            Certificate certificate = new Certificate();
-            certificate.setContent(sim.getCA().getCertificate());
-            trust.setCertificateList(ImmutableList.of(certificate));
-            sslParser1.setTrust(trust);
-            e.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
-            hc.call(e);
-
-            assertEquals(234, e.getResponse().getStatusCode());
+            try(HttpClient hc = new HttpClient()) {
+                Exchange e = new Request.Builder().get("https://localhost:3051/").buildExchange();
+                SSLParser sslParser1 = new SSLParser();
+                Trust trust = new Trust();
+                Certificate certificate = new Certificate();
+                certificate.setContent(sim.getCA().getCertificate());
+                trust.setCertificateList(ImmutableList.of(certificate));
+                sslParser1.setTrust(trust);
+                e.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
+                hc.call(e);
+                assertEquals(234, e.getResponse().getStatusCode());
+            }
         } finally {
             router.stop(); // TODO shutdown router in AfterAll
         }
