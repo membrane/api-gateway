@@ -23,11 +23,14 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.client.protocol.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.transport.http2.StreamState.*;
 import static java.util.concurrent.TimeUnit.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,15 +44,9 @@ public class Http2ClientServerTest {
     private static final ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
 
     @BeforeEach
-    public void setup() {
+    public void setup() throws IOException {
         connectionHashes.clear();
-        SSLParser sslParser = new SSLParser();
-        sslParser.setUseExperimentalHttp2(true);
-        sslParser.setEndpointIdentificationAlgorithm("");
-        sslParser.setShowSSLExceptions(true);
-        sslParser.setKeyStore(new KeyStore());
-        sslParser.getKeyStore().setLocation("classpath:/ssl-rsa.keystore");
-        sslParser.getKeyStore().setKeyPassword("secret");
+        SSLParser sslParser = getSslParser();
 
         router = new HttpRouter();
         router.getConfig().setHotDeploy(false);
@@ -63,12 +60,11 @@ public class Http2ClientServerTest {
                 if (requestAsserter != null)
                     requestAsserter.accept(exc.getRequest());
                 exc.setResponse(response);
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
-        router.getRules().add(sp);
+        router.add(sp);
         router.start();
-
 
         SSLParser sslParser2 = new SSLParser();
         sslParser2.setEndpointIdentificationAlgorithm("");
@@ -85,6 +81,17 @@ public class Http2ClientServerTest {
         connection.setKeepAliveTimeout(100);
         configuration.setConnection(connection);
         hc = new HttpClient(configuration);
+    }
+
+    private static @NotNull SSLParser getSslParser() {
+        SSLParser sslParser = new SSLParser();
+        sslParser.setUseExperimentalHttp2(true);
+        sslParser.setEndpointIdentificationAlgorithm("");
+        sslParser.setShowSSLExceptions(true);
+        sslParser.setKeyStore(new KeyStore());
+        sslParser.getKeyStore().setLocation("classpath:/ssl-rsa.keystore");
+        sslParser.getKeyStore().setKeyPassword("secret");
+        return sslParser;
     }
 
     @AfterEach

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core;
 
+import com.jayway.jsonpath.internal.function.sequence.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.RuleManager.*;
@@ -47,9 +48,32 @@ import java.util.*;
 import java.util.Timer;
 import java.util.concurrent.*;
 
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static com.predic8.membrane.core.util.DLPUtil.*;
 import static java.util.concurrent.Executors.*;
+
+/*
+ TODO:
+ - ADR: First start router than init and add proxies or first init proxies and add them later?
+
+ ADR:
+ - The Router is responsible for the lifecycle of the proxies
+ - Ports are opened in start()
+ - init()
+   - does not open ports
+   - inits the proxies
+     - In sequence as added or reverse or not defined?
+ - new Router(), add(proxy) init() start()
+ - add(proxy) could be called any time
+   - If router is started port will be opened if needed by the proxy
+ - What if a proxy needs to make a call to another proxy during init(Tests: e.g. B2C)
+ - Delete addProxyAndOpenPortIfNew() from RuleManager
+
+ HTTPRouter:
+ - Purpose? Test?
+
+ */
 
 /**
  * @description <p>
@@ -57,8 +81,8 @@ import static java.util.concurrent.Executors.*;
  * </p>
  * <p>
  * The router is a Spring Lifecycle object: It is automatically started and stopped according to the
- * Lifecycle of the Spring Context containing it. In Membrane's standard setup (standalone or in a J2EE web
- * app), Membrane itself controls the creation of the Spring Context and its Lifecycle.
+ * Lifecycle of the Spring Context containing it. In Membrane's standard setup
+ * Membrane itself controls the creation of the Spring Context and its Lifecycle.
  * </p>
  * <p>
  * In this case, the router is <i>hot deployable</i>: It can monitor <i>proxies.xml</i>, the Spring
@@ -82,15 +106,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     protected BeanRegistry registry;
 
-    /**
-     * Indicates whether the router should automatically open TCP ports when adding proxies.
-     * This flag determines if the ports associated with the proxies are opened immediately
-     * when they are added to the router. Setting this to {@code false} allows for proxies
-     * to be defined without opening the associated ports, providing more control over when
-     * the ports are made accessible.
-     */
-    private boolean openPorts = true;
-
     //
     // Configuration
     //
@@ -102,8 +117,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     //
     // Components
     //
-    protected RuleManager ruleManager = new RuleManager();
-    protected ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
     protected Transport transport;
 
     private final TimerManager timerManager = new TimerManager();
@@ -137,7 +150,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     private HotDeployer hotDeployer = new DefaultHotDeployer();
 
     public Router() {
-        ruleManager.setRouter(this);
+        log.debug("Creating new router.");
         resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
         resolverMap.addRuleResolver(this);
     }
@@ -145,22 +158,53 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     //
     // Initialization
     //
+
+    /**
+     * Initializes the {@code Router}
+     * - by setting up its associated components.
+     * - calling init() on each of its {@link Proxy} instances.
+     * <p>
+     * This method ensures that the {@code Router} and its dependencies are prepared for operation.
+     * But it does not start the router itself. Use {@link #start()} to start the router.
+     * If start() is called a separate call to init() is not needed.
+     * The init() is useful for testing without the expensive start() call.
+     */
     public void init() {
-        initRemainingRules();
-        if (transport != null)
-            transport.init(this);
-        displayTraceWarning();
+        log.debug("Initializing.");
+
+        // TODO: Temporary guard, to check correct behaviour, remove later
+        if (initialized)
+            throw new IllegalStateException("Router already initialized.");
+
+        getRegistry().registerIfAbsent(ExchangeStore.class, LimitedMemoryExchangeStore::new);
+        getRegistry().registerIfAbsent(RuleManager.class, () -> {
+            RuleManager rm = new RuleManager();
+            rm.setRouter(this);
+            return rm;
+        });
+
+        // Transport last
+        if (transport == null) {
+            transport = new HttpTransport();
+        }
+        transport.init(this);
+
+        initProxies();
 
         initialized = true;
     }
 
-    private void initRemainingRules() {
-        for (Proxy proxy : getRuleManager().getRules())
+    private void initProxies() {
+        log.debug("Initializing proxies.");
+        for (Proxy proxy : getRuleManager().getRules()) {
+            log.debug("Initializing proxy {}.", proxy.getName());
             proxy.init(this);
+        }
     }
 
     /**
      * Initializes a {@link Router} instance from the specified Spring XML configuration resource.
+     *
      * @param resource the path to the Spring XML configuration file that defines the {@link Router} bean
      * @return the initialized {@link Router} instance
      * @throws RuntimeException if no {@link Router} bean is found or more than one {@link Router} bean is found
@@ -171,7 +215,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         TrackingFileSystemXmlApplicationContext bf =
                 new TrackingFileSystemXmlApplicationContext(new String[]{resource}, false);
         bf.refresh();
-        bf.start();
 
         if (bf.getBeansOfType(Router.class).size() > 1) {
             throw new RuntimeException(
@@ -179,10 +222,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
                             .formatted(Arrays.toString(bf.getBeanDefinitionNames()))
             );
         }
-        return bf.getBean("router", Router.class);
+        Router router = bf.getBean("router", Router.class);
+        router.init();
+        bf.start(); // Starting ApplicationContext will also call router.start(). Init should happen before.
+        return router;
     }
 
     public static Router initFromXMLString(String xmlString) {
+        log.debug("Loading spring config from string");
         GenericXmlApplicationContext ctx = new GenericXmlApplicationContext();
         ctx.load(new ByteArrayResource(xmlString.getBytes(StandardCharsets.UTF_8)));
         ctx.refresh();
@@ -190,23 +237,28 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         return ctx.getBean(Router.class);
     }
 
+    /**
+     * Starts the main processing logic of the application.
+     * This method initializes essential components, validates the configuration,
+     * and starts background services required for the application's functionality.
+     * Key responsibilities:
+     * - Initializes the application if it hasn't been initialized yet.
+     * - Opens TCP ports
+     */
     @Override
     public void start() {
+        log.debug("Starting.");
+        displayTraceWarning();
+
         if (!initialized)
-           init();
+            init();
 
         try {
-            if (exchangeStore == null)
-                exchangeStore = new LimitedMemoryExchangeStore();
-            if (transport == null) {
-                transport = new HttpTransport();
-                transport.init(this);
-            }
 
             getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::start);
 
-            //init();
             initJmx();
+            startJmx();
             getRuleManager().openPorts();
 
             try {
@@ -252,15 +304,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
             throw new RuntimeException(e);
         }
 
-        startJmx();
-
         synchronized (lock) {
             running = true;
         }
     }
 
     public Collection<Proxy> getRules() {
-        return getRuleManager().getRulesBySource(RuleDefinitionSource.SPRING);
+        log.debug("Getting rules.");
+        return getRuleManager().getRulesBySource(RuleDefinitionSource.SPRING); // TODO: Source?
     }
 
     @MCChildElement(order = 3)
@@ -279,16 +330,22 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public RuleManager getRuleManager() {
-        return ruleManager;
+        var rm = getRegistry().getBean(RuleManager.class);
+        if (rm.isPresent()) return rm.get();
+        RuleManager rmi = new RuleManager();
+        rmi.setRouter(this);
+        getRegistry().register("ruleManager", rmi);
+        return rmi;
     }
 
     public void setRuleManager(RuleManager ruleManager) {
-        this.ruleManager = ruleManager;
+        log.debug("Setting ruleManager.");
         ruleManager.setRouter(this);
+        getRegistry().register("ruleManager", ruleManager);
     }
 
     public ExchangeStore getExchangeStore() {
-        return exchangeStore;
+        return registry.getBean(ExchangeStore.class).orElseThrow();
     }
 
     /**
@@ -299,7 +356,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
      */
     @MCAttribute
     public void setExchangeStore(ExchangeStore exchangeStore) {
-        this.exchangeStore = exchangeStore;
+        getRegistry().register("exchangeStore", exchangeStore);
     }
 
     public Transport getTransport() {
@@ -332,7 +389,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public DNSCache getDnsCache() {
-        return getRegistry().registerIfAbsent( DNSCache.class, DNSCache::new);
+        return getRegistry().registerIfAbsent(DNSCache.class, DNSCache::new);
     }
 
     public ResolverMap getResolverMap() {
@@ -355,14 +412,25 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         return backgroundInitializer;
     }
 
+    /**
+     * Adds a proxy to the router and initializes it.
+     * @param proxy
+     * @throws IOException
+     */
     public void add(Proxy proxy) throws IOException {
+        log.debug("Adding proxy {}.", proxy.getName());
+        RuleManager ruleManager = getRuleManager();
         if (proxy instanceof SSLableProxy sp) {
-            if (openPorts)
-                ruleManager.addProxyAndOpenPortIfNew(sp);
-            else
-                ruleManager.addProxy(sp, RuleDefinitionSource.MANUAL);
+            if (running) { // TODO
+                ruleManager.addProxyAndOpenPortIfNew(sp, MANUAL);
+            }  else
+                ruleManager.addProxy(sp, MANUAL);
         } else {
-            ruleManager.addProxy(proxy, RuleDefinitionSource.MANUAL);
+            ruleManager.addProxy(proxy, MANUAL);
+        }
+        if (running) {
+            // init() has already been called
+            proxy.init(this);
         }
     }
 
@@ -534,13 +602,15 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public void handleAsynchronousInitializationResult(boolean success) {
+        log.debug("Asynchronous initialization finished.");
         if (!success && !config.isRetryInit())
             System.exit(1);
-        ApiInfo.logInfosAboutStartedProxies(ruleManager);
+        ApiInfo.logInfosAboutStartedProxies(getRuleManager());
     }
 
     @Override
     public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) throws IOException {
+        log.debug("Bean changed: type={} instance={}", bean.getClass().getSimpleName(),bean);
         if (bean instanceof GlobalInterceptor) {
             return;
         }
@@ -567,12 +637,13 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         //            throw new RuntimeException("Could not init rule.", e);
         //        }
 
-        if (bdc.action().isAdded())
+        if (bdc.action().isAdded()) {
             add(newProxy);
-        else if (bdc.action().isDeleted())
+        } else if (bdc.action().isDeleted())
             getRuleManager().removeRule((Proxy) oldBean);
-        else if (bdc.action().isModified())
+        else if (bdc.action().isModified()) {
             getRuleManager().replaceRule((Proxy) oldBean, newProxy);
+        }
     }
 
     @Override
@@ -619,17 +690,5 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     public Configuration getConfig() {
         return config;
-    }
-
-    /**
-     * Configures whether the router should open tcp ports when adding proxies. Use this field to create a router
-     * and open the ports later.
-     * This method should typically be called during router initialization, before {@link #start()}, to avoid
-     * race conditions with concurrent proxy additions.
-     *
-     * @param openPorts a boolean indicating whether ports should be opened (true) or closed (false)
-     */
-    public void setOpenPorts(boolean openPorts) {
-        this.openPorts = openPorts;
     }
 }

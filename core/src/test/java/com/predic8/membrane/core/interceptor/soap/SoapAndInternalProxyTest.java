@@ -16,14 +16,13 @@ package com.predic8.membrane.core.interceptor.soap;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.server.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
+import com.predic8.membrane.core.proxies.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.google.common.collect.Lists.*;
 import static io.restassured.RestAssured.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Objects.*;
@@ -50,11 +49,9 @@ public class SoapAndInternalProxyTest {
 
     @Test
     void test() throws Exception {
-        router.setRules(newArrayList(createInternalProxy()));
+        router.add(createInternalProxy());
+        router.add(createServiceProxyWithWSDLInterceptors());
         router.start();
-        Proxy soapProxy = createServiceProxyWithWSDLInterceptors();
-        soapProxy.init(router);
-        router.add(soapProxy);
         runCheck();
     }
 
@@ -82,7 +79,7 @@ public class SoapAndInternalProxyTest {
         InternalProxy ip = new InternalProxy();
         ip.setName("int");
         ip.getFlow().add(new SampleSoapServiceInterceptor());
-        ip.setTarget(new Target("localhost",9501));
+        ip.setTarget(new Target("localhost", 9501));
         return ip;
     }
 

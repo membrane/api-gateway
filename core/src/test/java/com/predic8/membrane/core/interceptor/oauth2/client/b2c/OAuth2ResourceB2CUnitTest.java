@@ -90,7 +90,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
 
 
         Exchange excCallResource = get(tc.getClientAddress() + "/malicious").buildExchange();
-        LOG.debug("getting {}", excCallResource.getDestinations().getFirst());
+        log.debug("getting {}", excCallResource.getDestinations().getFirst());
         browser.apply(excCallResource); // will be aborted
 
         browser.clearCookies();

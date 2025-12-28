@@ -47,8 +47,8 @@ public class ClusterBalancerTest {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3011), "predic8.com", 80);
         sp.getFlow().add(lb);
-        r.getRuleManager().addProxyAndOpenPortIfNew(sp);
-        r.init();
+        r.add(sp);
+        r.start();
 
         BalancerUtil.up(r, "Default", "Default", "localhost", 2000);
         BalancerUtil.up(r, "Default", "Default", "localhost", 3000);

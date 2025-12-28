@@ -44,8 +44,8 @@ public class MethodTest {
 		});
 		proxy.getFlow().add(new ExceptionTestInterceptor()); // Cause exception
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-		router.init();
+		router.add(proxy);
+		router.start();
 	}
 
 	@AfterAll

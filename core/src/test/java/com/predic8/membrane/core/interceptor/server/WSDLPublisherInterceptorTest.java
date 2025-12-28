@@ -42,8 +42,8 @@ public class WSDLPublisherInterceptorTest {
 		wi.setWsdl(wsdlLocation);
 		wi.init(router);
 		sp2.getFlow().add(wi);
-		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
-		router.init();
+		router.add(sp2);
+		router.start();
 	}
 
 	void after() {

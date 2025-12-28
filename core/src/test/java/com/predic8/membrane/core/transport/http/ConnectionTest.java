@@ -33,7 +33,8 @@ public class ConnectionTest {
 
 		ServiceProxy proxy2000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "predic8.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy2000);
+		router.add(proxy2000);
+		router.start();
 
 		conLocalhost = Connection.open("localhost", 2000, null, null, 30000);
 		con127_0_0_1 = Connection.open("127.0.0.1", 2000, null, null, 30000);

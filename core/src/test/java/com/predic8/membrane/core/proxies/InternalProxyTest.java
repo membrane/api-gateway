@@ -105,7 +105,7 @@ class InternalProxyTest {
             interceptors.add(RETURN);
         }});
 
-        router.init();
+        router.start();
 
     }
 

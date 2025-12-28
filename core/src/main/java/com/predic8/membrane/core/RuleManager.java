@@ -281,6 +281,7 @@ public class RuleManager {
         getExchangeStore().removeAllExchanges(proxy);
 
         int i = proxies.indexOf(proxy);
+        newProxy.init(router);
         proxies.set(i, newProxy);
 
         for (IRuleChangeListener listener : listeners) {
@@ -340,5 +341,4 @@ public class RuleManager {
             }
         };
     }
-
 }

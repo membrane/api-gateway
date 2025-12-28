@@ -65,6 +65,36 @@ public class ResolverTest {
 		WINDOWS_DRIVE_BACKSLASH
 	}
 
+	@BeforeAll
+	public static void setup() throws Exception {
+		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3029), "localhost", 8080);
+
+		sp.getFlow().add(new AbstractInterceptor() {
+			@Override
+			public Outcome handleRequest(Exchange exc) {
+				hit = true;
+				return CONTINUE;
+			}
+		});
+
+		WebServerInterceptor i = new WebServerInterceptor();
+		if (deployment.equals(STANDALONE))
+			i.setDocBase(getPathFromResource(""));
+		else {
+			i.setDocBase("/test");
+			router.getResolverMap().addSchemaResolver(resolverMap.getFileSchemaResolver());
+		}
+		sp.getFlow().add(i);
+
+		router.add(sp);
+		router.start();
+	}
+
+	@AfterAll
+	public static void teardown() {
+		router.shutdown();
+	}
+
 	// RelativeUrlType (SCHEMA, NAME, SAME_DIR, PARENT_DIR) is handled by the test methods as well as by the test resources
 	// (WSDL and XSD files referencing other files in these ways)
 
@@ -242,35 +272,5 @@ public class ResolverTest {
 	public static final String J2EE = "J2EE";
 
 	public static final String deployment = STANDALONE;
-
-	@BeforeAll
-	public static void setup() throws Exception {
-		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3029), "localhost", 8080);
-
-		sp.getFlow().add(new AbstractInterceptor() {
-			@Override
-			public Outcome handleRequest(Exchange exc) {
-				hit = true;
-				return CONTINUE;
-			}
-		});
-
-		WebServerInterceptor i = new WebServerInterceptor();
-		if (deployment.equals(STANDALONE))
-			i.setDocBase(getPathFromResource(""));
-		else {
-			i.setDocBase("/test");
-			router.getResolverMap().addSchemaResolver(resolverMap.getFileSchemaResolver());
-		}
-		sp.getFlow().add(i);
-
-		router.add(sp);
-		router.init();
-	}
-
-	@AfterAll
-	public static void teardown() {
-		router.shutdown();
-	}
 
 }

@@ -62,7 +62,7 @@ public class B2CMembrane {
         this.sessionManager = sessionManager;
     }
 
-    public void init() {
+    public void init() throws IOException {
         oauth2Resource = new HttpRouter();
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(10000);
         oauth2Resource.getTransport().setBacklog(10000);
@@ -89,14 +89,14 @@ public class B2CMembrane {
         ServiceProxy sp7_requireAuth = createRequireAuthServiceProxy(tc.api2Id, "/api2/", ra -> ra.setScope("https://localhost/" + tc.api2Id + "/Read"));
         ServiceProxy sp8_afterLogout = createAfterLogoutServiceProxy();
 
-        oauth2Resource.getRuleManager().addProxy(sp8_afterLogout, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp7_requireAuth, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp6_requireAuth_ErrorStatus403, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp5_requireAuth_AuthNotRequired, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp4_requireAuth, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp3_flowInitiator_noLogout, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp2_flowInitiator_logoutBeforeFlow, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp1_oauth2resource2, MANUAL);
+        oauth2Resource.add(sp8_afterLogout);
+        oauth2Resource.add(sp7_requireAuth);
+        oauth2Resource.add(sp6_requireAuth_ErrorStatus403);
+        oauth2Resource.add(sp5_requireAuth_AuthNotRequired);
+        oauth2Resource.add(sp4_requireAuth);
+        oauth2Resource.add(sp3_flowInitiator_noLogout);
+        oauth2Resource.add(sp2_flowInitiator_logoutBeforeFlow);
+        oauth2Resource.add(sp1_oauth2resource2);
         oauth2Resource.start();
 
     }

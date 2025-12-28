@@ -84,7 +84,8 @@ public class AcmeStepTest {
         AcmeHttpChallengeInterceptor acmeHttpChallengeInterceptor = new AcmeHttpChallengeInterceptor();
         acmeHttpChallengeInterceptor.setIgnorePort(true);
         sp2.getFlow().add(acmeHttpChallengeInterceptor);
-        router.setRules(ImmutableList.of(sp1, sp2));
+        router.add(sp1);
+        router.add(sp2);
         router.start();
         try {
 

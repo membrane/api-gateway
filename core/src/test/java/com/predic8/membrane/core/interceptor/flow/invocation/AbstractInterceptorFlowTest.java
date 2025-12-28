@@ -36,7 +36,7 @@ public abstract class AbstractInterceptorFlowTest {
 
     @BeforeAll
     static void setUp() {
-        router = getRouter();
+        router = new HttpRouter();
     }
 
     @AfterAll
@@ -57,7 +57,7 @@ public abstract class AbstractInterceptorFlowTest {
     private void setUpRouter(Interceptor[] interceptors) throws Exception {
         router.setRules(EMPTY_LIST);
         router.add(getApiProxy(interceptors));
-        router.init();
+        router.start();
     }
 
     private static @NotNull APIProxy getApiProxy(Interceptor[] interceptors) {
@@ -72,12 +72,5 @@ public abstract class AbstractInterceptorFlowTest {
         APIProxy api = new APIProxy();
         api.setKey(new ServiceProxyKey("*","*",null,2000));
         return api;
-    }
-
-    @NotNull
-    private static Router getRouter() {
-        Router r = new Router();
-        r.setTransport(new HttpTransport());
-        return r;
     }
 }

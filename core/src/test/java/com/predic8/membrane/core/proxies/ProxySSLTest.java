@@ -32,6 +32,7 @@ import org.jetbrains.annotations.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.*;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -61,7 +62,7 @@ public class ProxySSLTest {
         backend.shutdown();
     }
 
-    private static @NotNull Router createProxy(boolean proxyUsesSSL, int proxyPort, AtomicInteger proxyCounter) {
+    private static @NotNull Router createProxy(boolean proxyUsesSSL, int proxyPort, AtomicInteger proxyCounter) throws IOException {
         Router proxy = new Router();
         proxy.getConfig().setHotDeploy(false);
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(proxyPort));
@@ -75,7 +76,7 @@ public class ProxySSLTest {
         if (proxyUsesSSL) {
             rule.setSslInboundParser(getSslParser("classpath:/ssl-rsa2.keystore"));
         }
-        proxy.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL);
+        proxy.add(rule);
         proxy.start();
         return proxy;
     }
@@ -115,7 +116,7 @@ public class ProxySSLTest {
         return new HttpClient(httpClientConfiguration);
     }
 
-    private static @NotNull Router createBackend(boolean backendUsesSSL, int backendPort) {
+    private static @NotNull Router createBackend(boolean backendUsesSSL, int backendPort) throws IOException {
         // Step 1: create the backend
         Router backend = new Router();
         backend.getConfig().setHotDeploy(false);
@@ -124,7 +125,7 @@ public class ProxySSLTest {
             sp.setSslInboundParser(getSslParser("classpath:/ssl-rsa.keystore"));
         }
         sp.getFlow().add(new CountInterceptor());
-        backend.getRuleManager().addProxy(sp, RuleManager.RuleDefinitionSource.MANUAL);
+        backend.add(sp);
         backend.start();
         return backend;
     }

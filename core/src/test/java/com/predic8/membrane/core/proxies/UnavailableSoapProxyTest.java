@@ -20,6 +20,7 @@ import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,8 +37,8 @@ public class UnavailableSoapProxyTest {
 		ServiceProxy cityAPI = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
 		cityAPI.getFlow().add(new SampleSoapServiceInterceptor());
 		backendRouter = new HttpRouter();
-		backendRouter.getRuleManager().addProxyAndOpenPortIfNew(cityAPI);
-		backendRouter.init();
+		backendRouter.add(cityAPI);
+		backendRouter.start();
 	}
 
 	@AfterAll
@@ -48,7 +49,7 @@ public class UnavailableSoapProxyTest {
 	}
 
 	@BeforeEach
-	void startRouter() {
+	void startRouter() throws IOException {
 		r = new HttpRouter();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.getRetryHandler().setRetries(1);
@@ -72,7 +73,7 @@ public class UnavailableSoapProxyTest {
 		sp2.setWsdl("http://localhost:4000?wsdl");
 		r2 = new HttpRouter();
 		r2.getConfig().setHotDeploy(false);
-		r2.getRules().add(sp2);
+		r2.add(sp2);
 	}
 
 	@AfterEach
@@ -101,21 +102,21 @@ public class UnavailableSoapProxyTest {
 	}
 
 	@Test
-	void checkWSDLDownloadFailureInSoapProxy() {
-		r.getRules().add(sp);
+	void checkWSDLDownloadFailureInSoapProxy() throws IOException {
+		r.add(sp);
 		test();
 	}
 
 	@Test
-	void checkWSDLDownloadFailureInSoapProxyAndValidator() {
+	void checkWSDLDownloadFailureInSoapProxyAndValidator() throws IOException {
 		sp.getFlow().add(new ValidatorInterceptor());
-		r.getRules().add(sp);
+		r.add(sp);
 		test();
 	}
 
 	@Test
-	void checkWSDLDownloadFailureInValidatorOfServiceProxy() {
-		r.getRules().add(sp3);
+	void checkWSDLDownloadFailureInValidatorOfServiceProxy() throws IOException {
+		r.add(sp3);
 		test();
 	}
 }

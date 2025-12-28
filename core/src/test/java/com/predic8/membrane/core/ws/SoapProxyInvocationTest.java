@@ -67,9 +67,9 @@ public class SoapProxyInvocationTest {
     private static void setupGateway() throws Exception {
         gw = new HttpRouter();
         gw.getConfig().setHotDeploy(false);
-        gw.getRuleManager().addProxyAndOpenPortIfNew(createCitiesSoapProxyGateway());
-        gw.getRuleManager().addProxyAndOpenPortIfNew(createTwoServicesSOAPProxyGateway("ServiceA"));
-        gw.init();
+        gw.add(createCitiesSoapProxyGateway());
+        gw.add(createTwoServicesSOAPProxyGateway("ServiceA"));
+        gw.start();
     }
 
     private static @NotNull SOAPProxy createCitiesSoapProxyGateway() {
@@ -90,9 +90,9 @@ public class SoapProxyInvocationTest {
 
     private static void setupBackend() throws Exception {
         backend = new HttpRouter();
-        backend.getRuleManager().addProxyAndOpenPortIfNew(createAServiceProxy());
-        backend.getRuleManager().addProxyAndOpenPortIfNew(createCitiesServiceProxy());
-        backend.init();
+        backend.add(createAServiceProxy());
+        backend.add(createCitiesServiceProxy());
+        backend.start();
     }
 
     private static @NotNull APIProxy createCitiesServiceProxy() {

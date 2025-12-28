@@ -22,12 +22,15 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.http.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,28 +41,29 @@ public class HttpsKeepAliveTest {
     private static final ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
 
     @BeforeAll
-    public static void startServer() {
+    public static void startServer() throws IOException {
         server = new HttpRouter();
         server.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy();
         sp.setPort(3063);
         SSLParser sslIB = new SSLParser();
-        KeyStore ksIB = new KeyStore();
-        ksIB.setLocation("classpath:/alias-keystore.p12");
-        ksIB.setKeyPassword("secret");
-        ksIB.setKeyAlias("key1");
-        sslIB.setKeyStore(ksIB);
+        sslIB.setKeyStore(getKeyStore());
         sp.setSslInboundParser(sslIB);
         sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                exc.setResponse(Response.ok("ssltest").build());
-                connectionHashes.put("" + ((HttpServerHandler)exc.getHandler()).getSrcOut().hashCode(), true);
+                exc.setResponse(ok("ssltest").build());
+                connectionHashes.put("" + ((HttpServerHandler) exc.getHandler()).getSrcOut().hashCode(), true);
                 return RETURN;
             }
         });
-        server.getRules().add(sp);
+        server.add(sp);
         server.start();
+    }
+
+    @AfterAll
+    public static void shutdownServer() {
+        server.stop();
     }
 
     private static StaticSSLContext createSSLOutboundContext() {
@@ -70,11 +74,6 @@ public class HttpsKeepAliveTest {
         tsOB.setPassword("secret");
         sslOB.setTrustStore(tsOB);
         return new StaticSSLContext(sslOB, new ResolverMap(), "/");
-    }
-
-    @AfterAll
-    public static void shutdownServer() {
-        server.stop();
     }
 
     @Test
@@ -92,5 +91,13 @@ public class HttpsKeepAliveTest {
         }
 
         assertEquals(1, connectionHashes.size());
+    }
+
+    private static @NotNull KeyStore getKeyStore() {
+        var ks = new KeyStore();
+        ks.setLocation("classpath:/alias-keystore.p12");
+        ks.setKeyPassword("secret");
+        ks.setKeyAlias("key1");
+        return ks;
     }
 }

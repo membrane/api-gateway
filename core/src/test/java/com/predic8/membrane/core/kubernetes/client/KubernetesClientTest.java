@@ -40,7 +40,7 @@ public class KubernetesClientTest {
     private static HttpRouter router;
 
     @BeforeAll
-    public static void prepare() {
+    public static void prepare() throws IOException {
         router = new HttpRouter();
         router.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3053), null, 0);
@@ -99,7 +99,7 @@ public class KubernetesClientTest {
                 return RETURN;
             }
         });
-        router.getRules().add(sp);
+        router.add(sp);
         router.start();
     }
 

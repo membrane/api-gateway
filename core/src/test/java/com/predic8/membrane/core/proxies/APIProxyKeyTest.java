@@ -43,7 +43,7 @@ public class APIProxyKeyTest {
     @Test
     void serviceProxyPathSubpath() throws Exception {
         registerApiProxy("/foo", "Baz");
-        router.init();
+        router.start();
 
         // @formatter:off
         when()
@@ -57,7 +57,7 @@ public class APIProxyKeyTest {
     @Test
     void apiProxyPathSubpath() throws Exception {
         registerApiProxy("/foo", "Baz");
-        router.init();
+        router.start();
         when()
             .get("http://localhost:3000/foo/bar")
         .then()
@@ -67,7 +67,7 @@ public class APIProxyKeyTest {
     @Test
     void apiProxyPathMatch() throws Exception {
         registerApiProxy("/foo", "Baz");
-        router.init();
+        router.start();
         when()
             .get("http://localhost:3000/foo")
         .then()
@@ -78,7 +78,7 @@ public class APIProxyKeyTest {
     void apiProxyPathFallthrough() throws Exception {
         registerApiProxy("/foo", "Baz");
         registerApiProxy(null, "Foobar");
-        router.init();
+        router.start();
         when()
             .get("http://localhost:3000")
         .then()
@@ -86,7 +86,7 @@ public class APIProxyKeyTest {
     }
 
     private static void registerApiProxy(String path, String body) throws IOException {
-        router.getRuleManager().addProxyAndOpenPortIfNew(new APIProxy() {{
+        router.add(new APIProxy() {{
             setKey(new APIProxyKey("127.0.0.1", "localhost", 3000, path, "*", null,false));
             getFlow().add(new TemplateInterceptor() {{
                 setSrc(body);

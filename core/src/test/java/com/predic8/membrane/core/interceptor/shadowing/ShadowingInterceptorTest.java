@@ -87,8 +87,7 @@ class ShadowingInterceptorTest {
                 new ReturnInterceptor()
         ));
 
-        interceptorRouter.getRuleManager().addProxyAndOpenPortIfNew(interceptorProxy);
-        interceptorRouter.init();
+        interceptorRouter.add(interceptorProxy);
         interceptorRouter.start();
 
         shadowingRouter = new Router();
@@ -101,8 +100,7 @@ class ShadowingInterceptorTest {
         returnInterceptorMock.setStatusCode(200);
         shadowingProxy.setFlow(List.of(returnInterceptorMock));
 
-        shadowingRouter.getRuleManager().addProxyAndOpenPortIfNew(shadowingProxy);
-        shadowingRouter.init();
+        shadowingRouter.add(shadowingProxy);
         shadowingRouter.start();
     }
 

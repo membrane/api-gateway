@@ -183,7 +183,7 @@ public class ChunkedBodyTest {
         }
     }
 
-    private HttpRouter setupRouter(boolean http2, boolean http2Client) {
+    private HttpRouter setupRouter(boolean http2, boolean http2Client) throws IOException {
         HttpRouter router = new HttpRouter();
         router.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(http2 ? 3060 : 3059), "localhost", 3060);
@@ -241,7 +241,7 @@ public class ChunkedBodyTest {
                 }
             });
         }
-        router.getRules().add(sp);
+        router.add(sp);
         router.start();
         return router;
     }

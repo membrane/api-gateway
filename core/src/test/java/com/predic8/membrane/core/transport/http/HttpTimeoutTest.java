@@ -42,7 +42,7 @@ public class HttpTimeoutTest {
         setupSlowBackend();
     }
 
-    private void setupMembrane() {
+    private void setupMembrane() throws IOException {
         HttpClientConfiguration hcc = new HttpClientConfiguration();
         hcc.getConnection().setSoTimeout(1);
         hcc.getRetryHandler().setRetries(1);
@@ -52,7 +52,7 @@ public class HttpTimeoutTest {
         proxyRouter.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(hcc);
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*",
                 "*", ".*", 3023), "localhost", 3022);
-        proxyRouter.getRules().add(sp2);
+        proxyRouter.add(sp2);
         proxyRouter.start();
     }
 
@@ -78,8 +78,8 @@ public class HttpTimeoutTest {
                 return RETURN;
             }
         });
-        slowBackend.getRuleManager().addProxyAndOpenPortIfNew(sp);
-        slowBackend.init();
+        slowBackend.add(sp);
+        slowBackend.start();
     }
 
     @AfterEach
@@ -100,8 +100,6 @@ public class HttpTimeoutTest {
             client.call(exc);
 
             assertEquals(500, exc.getResponse().getStatusCode());
-            System.out.println(exc.getResponse());
-            System.out.println(exc.getResponse().getBodyAsStringDecoded());
         }
 
         watch.stop();

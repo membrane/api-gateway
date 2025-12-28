@@ -69,7 +69,7 @@ public class OAuth2ResourceErrorForwardingTest {
         mockAuthServer.getTransport().setSocketTimeout(10000);
         mockAuthServer.getConfig().setHotDeploy(false);
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
-        mockAuthServer.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy());
+        mockAuthServer.add(getMockAuthServiceProxy());
         mockAuthServer.start();
 
         oauth2Resource = new HttpRouter();
@@ -77,8 +77,8 @@ public class OAuth2ResourceErrorForwardingTest {
         oauth2Resource.getTransport().setSocketTimeout(10000);
         oauth2Resource.getConfig().setHotDeploy(false);
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
-        oauth2Resource.getRuleManager().addProxy(getErrorCaptor(), MANUAL);
-        oauth2Resource.getRuleManager().addProxy(getConfiguredOAuth2Resource(), MANUAL);
+        oauth2Resource.add(getErrorCaptor());
+        oauth2Resource.add(getConfiguredOAuth2Resource());
         oauth2Resource.start();
     }
 

@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.adminapi;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -44,15 +45,16 @@ class AdminApiInterceptorTest {
     private static HttpRouter router;
 
     @BeforeAll
-    static void setUp() {
+    static void setUp() throws IOException {
         router = new HttpRouter();
         router.getConfig().setHotDeploy(false);
+        router.setExchangeStore(new LimitedMemoryExchangeStore()); // Needed by the AdminApiInterceptor
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         sp.getFlow().add(new FastWebSocketClosingInterceptor()); // speeds up test execution
         AdminApiInterceptor e = new AdminApiInterceptor();
         e.getMemoryWatcher().setIntervalMilliseconds(50); // speeds up test execution
         sp.getFlow().add(e);
-        router.getRules().add(sp);
+        router.add(sp);
         router.start();
     }
 

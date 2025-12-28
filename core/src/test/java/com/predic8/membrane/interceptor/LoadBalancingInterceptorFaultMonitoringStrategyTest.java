@@ -81,9 +81,9 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         balancingInterceptor = new LoadBalancingInterceptor();
         balancingInterceptor.setName("Default");
         sp3.getFlow().add(balancingInterceptor);
-        r.getRuleManager().addProxyAndOpenPortIfNew(sp3);
+        r.add(sp3);
         r.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(getHttpClientConfigurationWithRetries());
-        r.init();
+        r.start();
         return r;
     }
 
@@ -99,8 +99,8 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     private Router createRouterForNode(TestingContext ctx, int i) throws Exception {
         HttpRouter r = new HttpRouter();
-        r.getRuleManager().addProxyAndOpenPortIfNew(createServiceProxy(ctx, i));
-        r.init();
+        r.add(createServiceProxy(ctx, i));
+        r.start();
         return r;
     }
 

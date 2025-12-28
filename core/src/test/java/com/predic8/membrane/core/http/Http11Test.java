@@ -41,12 +41,12 @@ public class Http11Test {
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port5k), null, 0);
 		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
 		router2 = new HttpRouter();
-		router2.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
-		router2.init();
+		router2.add(proxy2);
+		router2.start();
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port4k), "localhost", port5k);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-		router.init();
+		router.add(proxy);
+		router.start();
 	}
 
 	@AfterAll

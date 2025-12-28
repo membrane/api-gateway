@@ -50,14 +50,14 @@ public class OpenAPI31ReferencesTest {
         api = new APIProxy();
         api.setPort(2000);
         api.setSpecs(List.of(spec));
-        router.getRuleManager().addProxyAndOpenPortIfNew(api);
+        router.add(api);
 
         APIProxy backend = new APIProxy();
         backend.setPort(3000);
         backend.getFlow().add(new ReturnInterceptor());
-        router.getRuleManager().addProxyAndOpenPortIfNew(backend);
+        router.add(backend);
 
-        router.init();
+        router.start();
     }
 
     @AfterAll

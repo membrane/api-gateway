@@ -68,7 +68,7 @@ public abstract class LoadBalancingInterceptorTest {
 			}
 		});
 		sp1.getFlow().add(mockInterceptor1);
-		service1.getRuleManager().addProxy(sp1, MANUAL);
+		service1.add(sp1);
 		service1.start();
 
 		service2 = new HttpRouter();
@@ -83,7 +83,7 @@ public abstract class LoadBalancingInterceptorTest {
 			}
 		});
 		sp2.getFlow().add(mockInterceptor2);
-		service2.getRuleManager().addProxy(sp2, MANUAL);
+		service2.add(sp2);
 		service2.start();
 
 		balancer = new HttpRouter();
@@ -92,9 +92,9 @@ public abstract class LoadBalancingInterceptorTest {
 		balancingInterceptor = new LoadBalancingInterceptor();
 		balancingInterceptor.setName("Default");
 		sp3.getFlow().add(balancingInterceptor);
-		balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
+		balancer.add(sp3);
 		enableFailOverOn5XX();
-		balancer.init();
+		balancer.start();
 
 		lookupBalancer(balancer, "Default").up("Default", "localhost", port2k);
 		lookupBalancer(balancer, "Default").up("Default", "localhost", port3k);

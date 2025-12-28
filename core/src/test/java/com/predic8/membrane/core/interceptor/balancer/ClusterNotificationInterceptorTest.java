@@ -42,7 +42,7 @@ public class ClusterNotificationInterceptorTest {
 	public void setUp() throws Exception {
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3002), "thomas-bayer.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
+		router.add(proxy);
 
 		interceptor = new ClusterNotificationInterceptor();
 		router.addUserFeatureInterceptor(interceptor);
@@ -50,9 +50,9 @@ public class ClusterNotificationInterceptorTest {
 		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
 		lbi.setName("Default");
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3003), "thomas-bayer.com", 80);
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
+		router.add(proxy2);
 		proxy2.getFlow().add(lbi);
-		router.init();
+		router.start();
 	}
 
 	@AfterEach

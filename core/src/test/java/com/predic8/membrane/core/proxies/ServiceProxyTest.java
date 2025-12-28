@@ -35,7 +35,7 @@ class ServiceProxyTest {
             key = new APIProxyKey(2000);
         }};
         router.add(proxyWithOutTarget);
-        router.init();
+        router.start();
     }
 
     @AfterAll

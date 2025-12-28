@@ -166,8 +166,8 @@ public abstract class OAuth2RedirectTest {
         Router router = new Router();
         router.setExchangeStore(new ForgetfulExchangeStore());
         router.setTransport(new HttpTransport());
-        router.getRuleManager().addProxyAndOpenPortIfNew(azureRule);
-        router.init();
+        router.add(azureRule);
+        router.start();
         return router;
     }
 

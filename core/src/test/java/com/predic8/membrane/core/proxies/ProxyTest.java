@@ -43,6 +43,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxyTest {
@@ -51,7 +52,7 @@ public class ProxyTest {
     static final AtomicReference<String> lastMethod = new AtomicReference<>();
 
     @BeforeAll
-    public static void init() {
+    public static void init() throws IOException {
 
         router = new HttpRouter();
         router.getConfig().setHotDeploy(false);
@@ -64,17 +65,17 @@ public class ProxyTest {
                 return super.handleRequest(exc);
             }
         });
-        router.getRules().add(rule);
+        router.add(rule);
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3056), null, 0);
         sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok("secret1").build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
-        router.getRules().add(sp);
+        router.add(sp);
 
         SSLParser sslParser = new SSLParser();
         sslParser.setKeyStore(new KeyStore());
@@ -86,10 +87,10 @@ public class ProxyTest {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok("secret2").build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
-        router.getRules().add(sp2);
+        router.add(sp2);
 
         router.start();
     }

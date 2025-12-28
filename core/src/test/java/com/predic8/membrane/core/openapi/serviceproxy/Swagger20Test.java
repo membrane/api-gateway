@@ -39,13 +39,12 @@ public class Swagger20Test {
     @BeforeEach
     public void setUp() throws Exception {
 
-        router = new Router();
-        router.setTransport(new HttpTransport());
+        router = new HttpRouter();
         router.getConfig().setUriFactory(new URIFactory());
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy());
-        router.getRuleManager().addProxyAndOpenPortIfNew(getTargetProxy());
-        router.init();
+        router.add(getApiProxy());
+        router.add(getTargetProxy());
+        router.start();
     }
 
     private @NotNull APIProxy getApiProxy() {

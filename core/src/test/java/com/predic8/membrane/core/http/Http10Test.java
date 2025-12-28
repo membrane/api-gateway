@@ -38,12 +38,14 @@ public class Http10Test {
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
 		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
         router2 = new HttpRouter();
-		router2.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
-		router2.init();
+		router2.add(proxy2);
+
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "localhost", 2000);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-		router.init();
+		router.add(proxy);
+
+		router2.start();
+		router.start();
 	}
 
 	@AfterAll

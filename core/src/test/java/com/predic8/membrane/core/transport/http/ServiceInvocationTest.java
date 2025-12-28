@@ -33,13 +33,13 @@ public class ServiceInvocationTest {
 	private HttpRouter router;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	void setUp() throws Exception {
 		router = createRouter();
 		MockInterceptor.clear();
 	}
 
 	@Test
-	public void testInterceptorSequence() throws Exception {
+	void testInterceptorSequence() throws Exception {
 		callService();
 
 		MockInterceptor.assertContent(
@@ -47,7 +47,6 @@ public class ServiceInvocationTest {
 				new String[] {"transport-log", "log", "process" }, // responses
 				new String[] {}); // aborts
 	}
-
 
 	@AfterEach
 	public void tearDown() {
@@ -90,11 +89,11 @@ public class ServiceInvocationTest {
 
 	private HttpRouter createRouter() throws Exception {
 		HttpRouter router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(createFirstRule());
-		router.getRuleManager().addProxyAndOpenPortIfNew(createServiceRule());
-		router.getRuleManager().addProxyAndOpenPortIfNew(createEndpointRule());
+		router.add(createFirstRule());
+		router.add(createServiceRule());
+		router.add(createEndpointRule());
 		router.getTransport().getFlow().add(router.getTransport().getFlow().size()-1, new MockInterceptor("transport-log"));
-		router.init();
+		router.start();
 		return router;
 	}
 

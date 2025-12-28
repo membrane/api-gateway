@@ -49,7 +49,7 @@ public class ConcurrentConnectionLimitTest {
         sp.getFlow().add(GROOVY("Thread.sleep(1000)"));
         sp.getFlow().add(RETURN);
 
-        router.getRuleManager().addProxy(sp, MANUAL);
+        router.add(sp);
         router.start();
     }
 
