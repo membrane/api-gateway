@@ -282,7 +282,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         //mas.init2();    // requires pull request 330
     }
 
-    private void initOasi() throws Exception {
+    private void initOasi() {
         oasi = new OAuth2AuthorizationServerInterceptor() {
             @Override
             public String computeBasePath() {
