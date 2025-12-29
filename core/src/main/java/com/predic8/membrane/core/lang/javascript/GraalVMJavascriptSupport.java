@@ -38,9 +38,9 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
 
         private final String javascriptCode;
 
-        private GraalVMJavascriptExecutorPool(ExecutorService executorService, String expression) {
+        private GraalVMJavascriptExecutorPool(String expression) {
             this.javascriptCode = expression;
-            init(executorService);
+            init();
         }
 
         @Override
@@ -79,11 +79,11 @@ public class GraalVMJavascriptSupport implements LanguageSupport {
     }
 
     @Override
-    public Function<Map<String, Object>, Object> compileScript(ExecutorService executorService, ClassLoader cl, String script) {
-        return new GraalVMJavascriptSupport.GraalVMJavascriptExecutorPool<>(executorService, script) {
+    public Function<Map<String, Object>, Object> compileScript(ClassLoader cl, String script) {
+        return new GraalVMJavascriptSupport.GraalVMJavascriptExecutorPool<>(script) {
             @Override
             public Object apply(Map<String, Object> parameters) {
-                return this.execute(parameters);
+                return execute(parameters);
             }
         };
     }

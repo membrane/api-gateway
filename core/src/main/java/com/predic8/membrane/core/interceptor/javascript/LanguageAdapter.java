@@ -91,7 +91,7 @@ public abstract  class LanguageAdapter {
     }
 
     public Function<Map<String, Object>, Object> compileScript(String script) {
-        return languageSupport.compileScript(router.getBackgroundInitializer(), getClassLoader(), prepareScript(script));
+        return languageSupport.compileScript(getClassLoader(), prepareScript(script));
     }
 
     private @Nullable ClassLoader getClassLoader() {

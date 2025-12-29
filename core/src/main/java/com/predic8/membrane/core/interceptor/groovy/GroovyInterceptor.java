@@ -56,7 +56,7 @@ public class GroovyInterceptor extends AbstractScriptInterceptor implements Prox
     @Override
     protected void initInternal() {
         try {
-            script = new GroovyLanguageSupport().compileScript(router.getBackgroundInitializer(), null, src);
+            script = new GroovyLanguageSupport().compileScript(null, src);
         } catch (MultipleCompilationErrorsException e) {
             logGroovyError(e);
             throw new ConfigurationException("Error in Groovy script initialization.",e);
