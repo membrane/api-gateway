@@ -35,14 +35,14 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
         protected final ScriptEngineManager sce;
         protected final static String javascriptEngineName = "rhino";
 
-        private JavascriptScriptExecutorPool(ExecutorService executorService, ClassLoader classLoader, String expression) {
+        private JavascriptScriptExecutorPool(ClassLoader classLoader, String expression) {
             this.javascriptCode = expression;
 
             // The ScriptEngineManager should search the engine in the classloader of the router
             // otherwise the engine will not be found
             sce = new ScriptEngineManager(classLoader);
 
-            init(executorService);
+            init();
         }
 
         @Override
@@ -67,8 +67,8 @@ public class RhinoJavascriptLanguageSupport implements LanguageSupport {
     }
 
     @Override
-    public Function<Map<String, Object>, Object> compileScript(ExecutorService executorService, ClassLoader classLoader, String script) {
-        return new JavascriptScriptExecutorPool<>(executorService, classLoader, script) {
+    public Function<Map<String, Object>, Object> compileScript(ClassLoader classLoader, String script) {
+        return new JavascriptScriptExecutorPool<>(classLoader, script) {
             @Override
             public Object apply(Map<String, Object> parameters) {
                 return this.execute(parameters);
