@@ -19,7 +19,6 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.http.Request.*;
@@ -30,9 +29,21 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TargetURLExpressionTest {
 
+    private static Router router;
+
+    @BeforeEach
+    void setUp() {
+        router = new Router();
+    }
+
+    @AfterEach
+    void tearDown() {
+        router.stop();
+    }
+
     @Test
     void targetWithExpression() throws URISyntaxException {
-        Router r = new Router();
+        router = new Router();
         Exchange rq = get("http://localhost:2000/").buildExchange();
         APIProxy api = new APIProxy() {{
             setTarget(new Target() {{
@@ -40,13 +51,15 @@ class TargetURLExpressionTest {
             }});
         }};
         rq.setProxy(api);
-        api.init(r);
+        api.init(router);
 
         DispatchingInterceptor di = new DispatchingInterceptor() {{
-            router = r;
+            router = TargetURLExpressionTest.router;
         }};
         di.handleRequest(rq);
 
         assertEquals("http://localhost:3000/", rq.getDestinations().getFirst());
     }
+
+
 }

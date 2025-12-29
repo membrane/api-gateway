@@ -45,7 +45,7 @@ class ElasticSearchExchangeStoreTest {
 
     private static final String RESPONSE_BODY = """
             {"demo": true}""";
-    private static final String  REQUEST_BODY = """
+    private static final String REQUEST_BODY = """
             {"where":"there"}""";
 
     private HttpRouter gateway;
@@ -63,8 +63,15 @@ class ElasticSearchExchangeStoreTest {
 
     @AfterEach
     public void done() {
-        back.stop();
-        elasticMock.stop();
+        try {
+            back.stop();
+        } finally {
+            try {
+                gateway.stop();
+            } finally {
+                elasticMock.stop();
+            }
+        }
     }
 
     private void initializeElasticSearchMock() throws IOException {
@@ -77,7 +84,7 @@ class ElasticSearchExchangeStoreTest {
         elasticMock.start();
     }
 
-    private static @NotNull LogInterceptor createBodyLoggingInterceptor() {
+    private @NotNull LogInterceptor createBodyLoggingInterceptor() {
         LogInterceptor log = new LogInterceptor();
         log.setBody(true);
         return log;
@@ -155,7 +162,7 @@ class ElasticSearchExchangeStoreTest {
 
     public List<JsonNode> getInsertedObjectsAndClearList() {
         synchronized (insertedObjects) {
-            List<JsonNode> insertedObjects1 = new ArrayList(insertedObjects);
+            List<JsonNode> insertedObjects1 = new ArrayList<>(insertedObjects);
             insertedObjects.clear();
             return insertedObjects1;
         }
@@ -175,9 +182,7 @@ class ElasticSearchExchangeStoreTest {
         initializeGateway(addLoggingInterceptors);
 
         try (var client = new HttpClient()) {
-            client.call(Request.post("http://localhost:3064")
-                    .header(AUTHORIZATION, "Demo")
-                    .body(REQUEST_BODY).buildExchange());
+            client.call(Request.post("http://localhost:3064").header(AUTHORIZATION, "Demo").body(REQUEST_BODY).buildExchange());
         }
 
         waitForExchangeStoreToFlush();
@@ -200,17 +205,11 @@ class ElasticSearchExchangeStoreTest {
         assertTrue(insertedObjects.get(1).get("timeResSent").longValue() > 1740000000000L);
     }
 
-    @AfterEach
-    public void done2() {
-        gateway.stop();
-    }
-
     private void waitForExchangeStoreToFlush() {
         while (true) {
             synchronized (es.shortTermMemoryForBatching) {
                 int size = es.shortTermMemoryForBatching.size();
-                if (size == 0 && !es.updateThreadWorking)
-                    return;
+                if (size == 0 && !es.updateThreadWorking) return;
             }
             try {
                 //noinspection BusyWait

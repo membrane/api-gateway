@@ -30,13 +30,13 @@ public class APIProxyKeyTest {
 
     private static Router router;
 
-    @BeforeAll
-    public static void setup() {
+    @BeforeEach
+    public void setup() {
         router = new HttpRouter();
     }
 
-    @AfterAll
-    public static void shutdown() {
+    @AfterEach
+    public void shutdown() {
         router.shutdown();
     }
 

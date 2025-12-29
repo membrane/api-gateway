@@ -15,6 +15,7 @@ package com.predic8.membrane.core.acl;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.acl.*;
+import org.junit.jupiter.api.*;
 
 import java.util.function.*;
 
@@ -22,8 +23,20 @@ import static java.util.regex.Pattern.*;
 
 public abstract class ACLTest extends AccessControlInterceptor {
 
+    protected Router router;
+
+    @BeforeEach
+    void setUpEach() {
+        router = new HttpRouter();
+        router.start();
+    }
+
+    @AfterEach
+    void tearDownEach() {
+        router.stop();
+    }
+
     private AccessControlInterceptor createRouter(boolean isReverseDNS, boolean useForwardedFor, Function<Router, Resource> f) {
-        Router router = new Router();
         AccessControlInterceptor aci = buildAci(f.apply(router), router);
         aci.setUseXForwardedForAsClientAddr(useForwardedFor);
         return aci;

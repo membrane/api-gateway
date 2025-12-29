@@ -54,9 +54,15 @@ public class SessionResumptionTest {
 
     @AfterAll
     static void done() throws IOException {
-        tcpForwarder.close();
-        router1.shutdown();
-        router2.shutdown();
+        try {
+            tcpForwarder.close();
+        } finally {
+            try {
+                router1.shutdown();
+            } finally {
+                router2.shutdown();
+            }
+        }
     }
 
     private static SSLContext createClientTLSContext() {
@@ -67,19 +73,6 @@ public class SessionResumptionTest {
         sslParser.setTrustStore(trustStore);
         sslParser.setEndpointIdentificationAlgorithm("");
         return new StaticSSLContext(sslParser, new ResolverMap(), ".");
-    }
-
-    @Disabled
-    @Test
-    public void doit() throws Exception {
-        try (HttpClient hc = new HttpClient()) {
-            for (int i = 0; i < 2; i++) {
-                // the tcp forwarder will forward the first connection to 3042, the second to 3043
-                Exchange exc = new Request.Builder().get("https://localhost:3044").buildExchange();
-                exc.setProperty(SSL_CONTEXT, clientTLSContext);
-                hc.call(exc);
-            }
-        }
     }
 
     private static Router createTLSServer(int port) {
@@ -154,6 +147,19 @@ public class SessionResumptionTest {
                 ss.close();
                 t.interrupt();
             };
+        }
+    }
+
+    @Disabled
+    @Test
+    public void doit() throws Exception {
+        try (HttpClient hc = new HttpClient()) {
+            for (int i = 0; i < 2; i++) {
+                // the tcp forwarder will forward the first connection to 3042, the second to 3043
+                Exchange exc = new Request.Builder().get("https://localhost:3044").buildExchange();
+                exc.setProperty(SSL_CONTEXT, clientTLSContext);
+                hc.call(exc);
+            }
         }
     }
 }

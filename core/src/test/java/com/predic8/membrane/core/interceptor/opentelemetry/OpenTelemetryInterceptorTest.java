@@ -13,25 +13,32 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.SPRING;
 
 class OpenTelemetryInterceptorTest {
 
+    private Router router;
+
     @Test
-    void initTest() {
+    void initTest() throws IOException {
         Proxy r = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3141), null, 0);
         r.getFlow().add(new OpenTelemetryInterceptor());
 
-        HttpRouter rtr = new HttpRouter();
-        rtr.getRuleManager().addProxy(r, SPRING);
+        router = new HttpRouter();
+        router.add(r);
+        router.init();
+    }
 
-        rtr.init();
-        rtr.shutdown();
+    @AfterEach
+    void tearDown() {
+        router.shutdown();
     }
 }

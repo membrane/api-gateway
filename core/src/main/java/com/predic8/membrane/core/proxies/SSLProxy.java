@@ -45,7 +45,7 @@ import java.util.List;
 import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 
 /**
- * TODO Do will still use this?
+ * Proxies SSL connections to a target server without decrypting the traffic.
  */
 @MCElement(name="sslProxy")
 public class SSLProxy implements Proxy {
@@ -220,11 +220,7 @@ public class SSLProxy implements Proxy {
     @Override
     public SSLProxy clone() throws CloneNotSupportedException {
         SSLProxy clone = (SSLProxy) super.clone();
-        try {
-            clone.init(router);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        clone.init(router);
         return clone;
     }
 

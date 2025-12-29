@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core;
 
-import com.jayway.jsonpath.internal.function.sequence.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.RuleManager.*;
@@ -48,7 +47,7 @@ import java.util.*;
 import java.util.Timer;
 import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static com.predic8.membrane.core.util.DLPUtil.*;
 import static java.util.concurrent.Executors.*;
@@ -309,9 +308,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         }
     }
 
+    /*
+     TODO:
+     - Why is the source hardcoded here.
+     - Why does it matter?
+     */
     public Collection<Proxy> getRules() {
         log.debug("Getting rules.");
-        return getRuleManager().getRulesBySource(RuleDefinitionSource.SPRING); // TODO: Source?
+        return getRuleManager().getRulesBySource(MANUAL); // TODO: Source?
     }
 
     @MCChildElement(order = 3)

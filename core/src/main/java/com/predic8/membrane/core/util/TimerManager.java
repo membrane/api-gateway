@@ -24,7 +24,7 @@ import java.util.TimerTask;
  */
 public class TimerManager {
 
-    private static final Logger log = LoggerFactory.getLogger(TimerManager.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(TimerManager.class);
 
     protected final java.util.Timer timer = new Timer(true);
 

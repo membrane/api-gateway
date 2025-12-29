@@ -111,6 +111,7 @@ public class SOAPProxyTest {
         proxy.setServiceName("WrongService");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
 
-        assertThrows(IllegalArgumentException.class, () -> router.add(proxy));
+        assertThrows(IllegalArgumentException.class, () -> {router.add(proxy); router.start();
+        });
     }
 }

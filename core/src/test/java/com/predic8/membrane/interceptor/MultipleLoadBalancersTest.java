@@ -75,7 +75,6 @@ public class MultipleLoadBalancersTest {
         balancingInterceptor1.setName(name);
         sp3.getFlow().add(balancingInterceptor1);
         balancer.add(sp3);
-        balancer.start();
         return balancingInterceptor1;
     }
 
@@ -92,6 +91,7 @@ public class MultipleLoadBalancersTest {
 
         balancingInterceptor1 = createBalancingInterceptor(3054, "Default");
         balancingInterceptor2 = createBalancingInterceptor(7001, "Balancer2");
+        balancer.start();
 
         BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", service1.port);
         BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", service2.port);
