@@ -14,14 +14,10 @@
 package com.predic8.membrane.core.interceptor.opentelemetry;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.proxies.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
-
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.SPRING;
 
 class OpenTelemetryInterceptorTest {
 

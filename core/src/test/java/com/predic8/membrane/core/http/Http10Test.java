@@ -28,7 +28,6 @@ import static org.apache.commons.httpclient.HttpVersion.HTTP_1_0;
 import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("deprecation")
 public class Http10Test {
     private static HttpRouter router;
 	private static HttpRouter router2;

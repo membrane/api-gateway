@@ -28,7 +28,7 @@ class RouterFacade {
     }
 
     static RouterFacade createStarted(String proxiesPath) {
-        return new RouterFacade(Router.initByXML(proxiesPath));
+        return new RouterFacade(RouterBootstrap.initByXML(proxiesPath));
     }
 
     void stop() {

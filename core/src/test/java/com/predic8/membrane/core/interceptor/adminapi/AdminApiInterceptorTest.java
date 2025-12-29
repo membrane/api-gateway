@@ -13,31 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.adminapi;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.NullProxy;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.FakeHttpHandler;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.TwoWayStreaming;
-import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.ws.*;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
-import java.net.SocketException;
-import java.net.URISyntaxException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.net.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
+import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.transport.ws.WebSocketConnection.WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS;
+import static com.predic8.membrane.core.transport.ws.WebSocketConnection.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AdminApiInterceptorTest {

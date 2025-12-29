@@ -40,7 +40,7 @@ public class MultipleLoadBalancersTest {
     protected static HttpRouter balancer;
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         service1.close();
         service2.close();
         service11.close();
@@ -50,22 +50,22 @@ public class MultipleLoadBalancersTest {
 
     private static class MockService {
         final int port;
-        final HttpRouter service1;
+        final HttpRouter router;
         final DummyWebServiceInterceptor mockInterceptor1;
 
         MockService(int port) throws Exception {
             this.port = port;
-            service1 = new HttpRouter();
+            router = new HttpRouter();
             mockInterceptor1 = new DummyWebServiceInterceptor();
             ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
                     "POST", ".*", port), "thomas-bayer.com", 80);
             sp1.getFlow().add(mockInterceptor1);
-            service1.add(sp1);
-            service1.start();
+            router.add(sp1);
+            router.start();
         }
 
         public void close() {
-            service1.shutdown();
+            router.shutdown();
         }
     }
 
@@ -80,7 +80,7 @@ public class MultipleLoadBalancersTest {
 
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    static void setUp() throws Exception {
 
         service1 = new MockService(2001);
         service2 = new MockService(2002);
@@ -111,7 +111,7 @@ public class MultipleLoadBalancersTest {
     }
 
     @Test
-    public void testRoundRobinDispachingStrategy() throws Exception {
+    void roundRobinDispatchingStrategy() throws Exception {
         balancingInterceptor1.setDispatchingStrategy(roundRobinStrategy1);
         balancingInterceptor2.setDispatchingStrategy(roundRobinStrategy2);
 

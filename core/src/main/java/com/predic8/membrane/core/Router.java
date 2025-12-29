@@ -38,13 +38,10 @@ import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
 import org.springframework.context.*;
 import org.springframework.context.support.*;
-import org.springframework.core.io.*;
 
 import javax.annotation.concurrent.*;
 import java.io.*;
-import java.nio.charset.*;
 import java.util.*;
-import java.util.Timer;
 import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
@@ -53,6 +50,11 @@ import static com.predic8.membrane.core.util.DLPUtil.*;
 import static java.util.concurrent.Executors.*;
 
 /*
+ Responsibilities:
+ - Start and stop Membrane
+   - Start, stop internal services
+ - Control lifecycle of proxies
+
  TODO:
  - ADR: First start router than init and add proxies or first init proxies and add them later?
 
@@ -71,6 +73,9 @@ import static java.util.concurrent.Executors.*;
 
  HTTPRouter:
  - Purpose? Test?
+
+ - JMX
+   - Beans added after Router.start() should also be exported as JMS beans
 
  */
 
@@ -97,9 +102,9 @@ import static java.util.concurrent.Executors.*;
         outputName = "router-conf.xsd",
         targetNamespace = "http://membrane-soa.org/proxies/1/")
 @MCElement(name = "router")
-public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryAware, BeanNameAware, BeanCacheObserver {
+public class Router implements ApplicationContextAware, BeanRegistryAware, BeanNameAware, BeanCacheObserver, IRouter {
 
-    private static final Logger log = LoggerFactory.getLogger(Router.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(Router.class);
 
     private ApplicationContext beanFactory;
 
@@ -136,17 +141,14 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     private boolean initialized;
 
-    //
-    // Reinitialization
-    //
-    private Timer reinitializer;
-
     /**
      * HotDeployer for changes on the XML configuration file. Does not cover YAML.
      * Not synchronized, since only modified during initialization
      * Initialized with NullHotDeployer to avoid NPEs
      */
     private HotDeployer hotDeployer = new DefaultHotDeployer();
+
+    private RuleReinitializer reinitializer;
 
     public Router() {
         log.debug("Creating new router.");
@@ -181,6 +183,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
             rm.setRouter(this);
             return rm;
         });
+       getRegistry().registerIfAbsent(DNSCache.class, DNSCache::new);
 
         // Transport last
         if (transport == null) {
@@ -191,6 +194,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         initProxies();
 
         initialized = true;
+        reinitializer = new RuleReinitializer(this); // Bean
     }
 
     private void initProxies() {
@@ -199,41 +203,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
             log.debug("Initializing proxy {}.", proxy.getName());
             proxy.init(this);
         }
-    }
-
-    /**
-     * Initializes a {@link Router} instance from the specified Spring XML configuration resource.
-     *
-     * @param resource the path to the Spring XML configuration file that defines the {@link Router} bean
-     * @return the initialized {@link Router} instance
-     * @throws RuntimeException if no {@link Router} bean is found or more than one {@link Router} bean is found
-     */
-    public static Router initByXML(String resource) {
-        log.debug("loading spring config: {}", resource);
-
-        TrackingFileSystemXmlApplicationContext bf =
-                new TrackingFileSystemXmlApplicationContext(new String[]{resource}, false);
-        bf.refresh();
-
-        if (bf.getBeansOfType(Router.class).size() > 1) {
-            throw new RuntimeException(
-                    "More than one router bean found in the Spring configuration (%s). This is no longer supported."
-                            .formatted(Arrays.toString(bf.getBeanDefinitionNames()))
-            );
-        }
-        Router router = bf.getBean("router", Router.class);
-        router.init();
-        bf.start(); // Starting ApplicationContext will also call router.start(). Init should happen before.
-        return router;
-    }
-
-    public static Router initFromXMLString(String xmlString) {
-        log.debug("Loading spring config from string");
-        GenericXmlApplicationContext ctx = new GenericXmlApplicationContext();
-        ctx.load(new ByteArrayResource(xmlString.getBytes(StandardCharsets.UTF_8)));
-        ctx.refresh();
-        ctx.start();
-        return ctx.getBean(Router.class);
     }
 
     /**
@@ -256,46 +225,17 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
             getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::start);
 
-            initJmx();
             startJmx();
             getRuleManager().openPorts();
 
-            try {
-                hotDeployer.init(this);
-                hotDeployer.start();
-            } catch (Exception e) {
-                shutdown();
-                throw e;
-            }
+            hotDeployer.start(this);
 
             if (config.getRetryInitInterval() > 0)
-                startAutoReinitializer();
+                reinitializer.startAutoReinitializer();
         } catch (DuplicatePathException e) {
-            System.err.printf("""
-                    ================================================================================================
-                    
-                    Configuration Error: Several OpenAPI Documents share the same path!
-                    
-                    An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
-                    Within one API the same path should be used only by one OpenAPI. Change the paths or place
-                    openapi-elements into separate api-elements.
-                    
-                    Shared path: %s
-                    %n""", e.getPath());
-            throw new ExitException();
+            handleDuplicateOpenAPIPaths(e);
         } catch (OpenAPIParsingException e) {
-            System.err.printf("""
-                    ================================================================================================
-                    
-                    Configuration Error: Could not read or parse OpenAPI Document
-                    
-                    Reason: %s
-                    
-                    Location: %s
-                    
-                    Have a look at the proxies.xml file.
-                    """, e.getMessage(), e.getLocation());
-            throw new ExitException();
+            handleOpenAPIParsingException(e);
         } catch (Exception e) {
             log.error("Could not start router.", e);
             if (e instanceof RuntimeException)
@@ -349,7 +289,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public ExchangeStore getExchangeStore() {
-        return registry.getBean(ExchangeStore.class).orElseThrow();
+        return getRegistry().getBean(ExchangeStore.class).orElseThrow();
     }
 
     /**
@@ -393,7 +333,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
     }
 
     public DNSCache getDnsCache() {
-        return getRegistry().registerIfAbsent(DNSCache.class, DNSCache::new);
+        return getRegistry().getBean(DNSCache.class).orElseThrow(); // TODO
     }
 
     public ResolverMap getResolverMap() {
@@ -418,99 +358,41 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     /**
      * Adds a proxy to the router and initializes it.
+     *
      * @param proxy
      * @throws IOException
      */
     public void add(Proxy proxy) throws IOException {
         log.debug("Adding proxy {}.", proxy.getName());
         RuleManager ruleManager = getRuleManager();
-        if (proxy instanceof SSLableProxy sp) {
-            if (running) { // TODO
-                ruleManager.addProxyAndOpenPortIfNew(sp, MANUAL);
-            }  else
-                ruleManager.addProxy(sp, MANUAL);
-        } else {
-            ruleManager.addProxy(proxy, MANUAL);
-        }
-        if (running) {
-            // init() has already been called
-            proxy.init(this);
+
+        synchronized (lock) {
+            if (proxy instanceof SSLableProxy sp) {
+                if (running) { // TODO
+                    ruleManager.addProxyAndOpenPortIfNew(sp, MANUAL);
+                } else
+                    ruleManager.addProxy(sp, MANUAL);
+            } else {
+                ruleManager.addProxy(proxy, MANUAL);
+            }
+            if (running) {
+                // init() has already been called
+                proxy.init(this);
+            }
         }
     }
 
     private void startJmx() {
-        if (getBeanFactory() == null)
-            return;
-
-        try {
-            getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class).initAfterBeansAdded();
-        } catch (NoSuchBeanDefinitionException ignored) {
-            // If bean is not available, then don't start jmx
-        }
-
-    }
-
-    private void initJmx() {
         if (beanFactory == null)
             return;
 
         try {
             JmxExporter exporter = beanFactory.getBean(JMX_EXPORTER_NAME, JmxExporter.class);
             //exporter.removeBean(prefix + jmxRouterName);
-            exporter.addBean("org.membrane-soa:00=routers, name=" + config.getJmx(), new JmxRouter(this, exporter));
+            exporter.addBean("io.membrane-api:00=routers, name=" + config.getJmx(), new JmxRouter(this, exporter));
+            exporter.initAfterBeansAdded();
         } catch (NoSuchBeanDefinitionException ignored) {
             // If bean is not available do not init jmx
-        }
-
-    }
-
-    //
-    // Reinitialization
-    //
-
-    private void startAutoReinitializer() {
-        if (getInactiveRules().isEmpty())
-            return;
-
-        reinitializer = new Timer("auto reinitializer", true);
-        reinitializer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                tryReinitialization();
-            }
-        }, config.getRetryInitInterval(), config.getRetryInitInterval());
-    }
-
-    public void tryReinitialization() {
-        boolean stillFailing = false;
-        ArrayList<Proxy> inactive = getInactiveRules();
-        if (!inactive.isEmpty()) {
-            log.info("Trying to activate all inactive rules.");
-            for (Proxy proxy : inactive) {
-                try {
-                    log.info("Trying to start API {}.", proxy.getName());
-                    Proxy newProxy = proxy.clone();
-                    if (!newProxy.isActive()) {
-                        log.warn("New rule for API {} is still not active.", proxy.getName());
-                        stillFailing = true;
-                    }
-                    getRuleManager().replaceRule(proxy, newProxy);
-                } catch (CloneNotSupportedException e) {
-                    log.error("", e);
-                }
-            }
-        }
-        if (stillFailing)
-            log.info("There are still inactive rules.");
-        else {
-            stopAutoReinitializer();
-            log.info("All rules have been initialized.");
-        }
-    }
-
-    public void stopAutoReinitializer() {
-        if (reinitializer != null) {
-            reinitializer.cancel();
         }
     }
 
@@ -531,14 +413,6 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
         synchronized (lock) {
             return running;
         }
-    }
-
-    private ArrayList<Proxy> getInactiveRules() {
-        ArrayList<Proxy> inactive = new ArrayList<>();
-        for (Proxy proxy : getRuleManager().getRules())
-            if (!proxy.isActive())
-                inactive.add(proxy);
-        return inactive;
     }
 
     public String getBaseLocation() {
@@ -614,7 +488,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     @Override
     public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) throws IOException {
-        log.debug("Bean changed: type={} instance={}", bean.getClass().getSimpleName(),bean);
+        log.debug("Bean changed: type={} instance={}", bean.getClass().getSimpleName(), bean);
         if (bean instanceof GlobalInterceptor) {
             return;
         }
@@ -694,5 +568,39 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanRegistryA
 
     public Configuration getConfig() {
         return config;
+    }
+
+    public RuleReinitializer getReinitializer() {
+        return reinitializer;
+    }
+
+    private static void handleOpenAPIParsingException(OpenAPIParsingException e) {
+        System.err.printf("""
+                ================================================================================================
+                
+                Configuration Error: Could not read or parse OpenAPI Document
+                
+                Reason: %s
+                
+                Location: %s
+                
+                Have a look at the proxies.xml file.
+                """, e.getMessage(), e.getLocation());
+        throw new ExitException();
+    }
+
+    private static void handleDuplicateOpenAPIPaths(DuplicatePathException e) {
+        System.err.printf("""
+                ================================================================================================
+                
+                Configuration Error: Several OpenAPI Documents share the same path!
+                
+                An API routes and validates requests according to the path of the OpenAPI's servers.url fields.
+                Within one API the same path should be used only by one OpenAPI. Change the paths or place
+                openapi-elements into separate api-elements.
+                
+                Shared path: %s
+                %n""", e.getPath());
+        throw new ExitException();
     }
 }

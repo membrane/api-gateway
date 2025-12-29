@@ -29,7 +29,7 @@ public class ReadRulesConfigurationTest {
 
     @BeforeAll
     static void setUp() {
-        router = Router.initByXML("classpath:/proxies.xml");
+        router = RouterBootstrap.initByXML("classpath:/proxies.xml");
         proxies = router.getRuleManager().getRules();
     }
 

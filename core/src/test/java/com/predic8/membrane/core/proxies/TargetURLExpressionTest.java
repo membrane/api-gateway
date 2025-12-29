@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TargetURLExpressionTest {
 
-    private static Router router;
+    private Router router;
 
     @BeforeEach
     void setUp() {
@@ -38,12 +38,11 @@ class TargetURLExpressionTest {
 
     @AfterEach
     void tearDown() {
-        router.stop();
+        router.shutdown();
     }
 
     @Test
     void targetWithExpression() throws URISyntaxException {
-        router = new Router();
         Exchange rq = get("http://localhost:2000/").buildExchange();
         APIProxy api = new APIProxy() {{
             setTarget(new Target() {{
@@ -53,13 +52,10 @@ class TargetURLExpressionTest {
         rq.setProxy(api);
         api.init(router);
 
-        DispatchingInterceptor di = new DispatchingInterceptor() {{
-            router = TargetURLExpressionTest.router;
-        }};
+        DispatchingInterceptor di = new DispatchingInterceptor();
+        di.init(router);
         di.handleRequest(rq);
 
         assertEquals("http://localhost:3000/", rq.getDestinations().getFirst());
     }
-
-
 }

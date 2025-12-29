@@ -26,7 +26,7 @@ public class InternalInvocationTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		router = Router.initByXML("classpath:/internal-invocation/proxies.xml");
+		router = RouterBootstrap.initByXML("classpath:/internal-invocation/proxies.xml");
 		MockInterceptor.clear();
 	}
 

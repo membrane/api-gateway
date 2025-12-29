@@ -14,36 +14,25 @@
 
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import org.apache.http.HttpHost;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.TrustAllStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.apache.http.*;
+import org.apache.http.client.config.*;
+import org.apache.http.client.methods.*;
+import org.apache.http.conn.ssl.*;
+import org.apache.http.impl.client.*;
+import org.apache.http.util.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.util.concurrent.atomic.AtomicReference;
+import java.io.*;
+import java.security.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxyTest {

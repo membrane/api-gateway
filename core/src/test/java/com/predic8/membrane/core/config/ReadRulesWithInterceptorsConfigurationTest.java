@@ -30,7 +30,7 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 
 	@BeforeAll
 	static void setUp() {
-		router = Router.initByXML("src/test/resources/ref.proxies.xml");
+		router = RouterBootstrap.initByXML("src/test/resources/ref.proxies.xml");
 		proxies = router.getRuleManager().getRules();
 	}
 

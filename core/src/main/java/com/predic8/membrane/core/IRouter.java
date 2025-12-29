@@ -12,21 +12,19 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.router.hotdeploy;
+package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.proxies.*;
+import org.springframework.context.*;
 
-public interface HotDeployer {
+import java.io.*;
 
-    void start(Router router);
+public interface IRouter extends Lifecycle {
 
-    void stop();
+    void init();
 
-    void setEnabled(boolean enabled);
+    void shutdown();
 
-    default boolean isEnabled() {
-        return false;
-    }
+    void add(Proxy proxy) throws IOException;
 
 }
-

@@ -12,6 +12,12 @@
 - Correct YAML example on GitHub README
 - Rename in apis.yaml
 
+# 7.X
+
+- JMXExporter:
+  - Tutorial
+  - Documentation
+  - See JmxExporter
 
 # 7.1.0
 
@@ -44,7 +50,7 @@
   
 
 ## (Breaking) Interface Changes
-
+- JMX: Name changes to "io.membrane-api:00=routers, name="
 - Removed GateKeeperClientInterceptor
 - Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
 - Remove WADLInterceptor

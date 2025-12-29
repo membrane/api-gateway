@@ -37,7 +37,7 @@ public class Configuration {
 
     private boolean retryInit = false;
 
-    private String jmxRouterName;
+    private String jmxRouterName = "default";
 
     private URIFactory uriFactory = new URIFactory(false);
 

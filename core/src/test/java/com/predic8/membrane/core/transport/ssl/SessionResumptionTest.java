@@ -118,36 +118,35 @@ public class SessionResumptionTest {
         AtomicInteger counter = new AtomicInteger();
         StreamPump.StreamPumpStats sps = new StreamPump.StreamPumpStats();
         ServiceProxy mock = new ServiceProxy();
-        try (ServerSocket ss = new ServerSocket(port)) {
-            Thread t = new Thread(() -> {
-                try {
-                    while (true) {
-                        Socket inbound;
-                        try {
-                            inbound = ss.accept();
-                        } catch (Exception e) {
-                            if (e.getMessage().contains("Socket closed"))
-                                return;
-                            throw e;
-                        }
-                        int port1 = 3042 + counter.incrementAndGet() % 2;
-                        try (Socket outbout = new Socket("localhost", port1)) {
-                            Thread s = new Thread(new StreamPump(inbound.getInputStream(), outbout.getOutputStream(), sps, "a", mock));
-                            s.start();
-                            Thread s2 = new Thread(new StreamPump(outbout.getInputStream(), inbound.getOutputStream(), sps, "b", mock));
-                            s2.start();
-                        }
+        ServerSocket ss = new ServerSocket(port);
+        Thread t = new Thread(() -> {
+            try {
+                while (true) {
+                    Socket inbound;
+                    try {
+                        inbound = ss.accept();
+                    } catch (Exception e) {
+                        if (e.getMessage().contains("Socket closed"))
+                            return;
+                        throw e;
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    int port1 = 3042 + counter.incrementAndGet() % 2;
+                    try (Socket outbound = new Socket("localhost", port1)) {
+                        Thread s = new Thread(new StreamPump(inbound.getInputStream(), outbound.getOutputStream(), sps, "a", mock));
+                        s.start();
+                        Thread s2 = new Thread(new StreamPump(outbound.getInputStream(), inbound.getOutputStream(), sps, "b", mock));
+                        s2.start();
+                    }
                 }
-            });
-            t.start();
-            return () -> {
-                ss.close();
-                t.interrupt();
-            };
-        }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        t.start();
+        return () -> {
+            ss.close();
+            t.interrupt();
+        };
     }
 
     @Disabled

@@ -46,7 +46,7 @@ public class JmxRouter {
     }
 
     private void exportServiceProxy(ServiceProxy rule) {
-        String prefix = "org.membrane-soa:00=serviceProxies, 01=" + router.getConfig().getJmx()+ ", name=";
+        String prefix = "org.membrane-soa:00=serviceProxies, 01=%s, name=".formatted(router.getConfig().getJmx());
         exporter.addBean(prefix + rule.getName().replace(":",""), new JmxServiceProxy(rule, router));
     }
 }

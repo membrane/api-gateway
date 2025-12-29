@@ -37,7 +37,7 @@ public abstract class ACLTest extends AccessControlInterceptor {
     }
 
     private AccessControlInterceptor createRouter(boolean isReverseDNS, boolean useForwardedFor, Function<Router, Resource> f) {
-        AccessControlInterceptor aci = buildAci(f.apply(router), router);
+        AccessControlInterceptor aci = buildAci(f.apply(router));
         aci.setUseXForwardedForAsClientAddr(useForwardedFor);
         return aci;
     }
@@ -46,11 +46,11 @@ public abstract class ACLTest extends AccessControlInterceptor {
         return createRouter(isReverseDNS, useForwardedFor, router -> getIpResource(scheme, ptype, router));
     }
 
-    AccessControlInterceptor createHostnameACI(String scheme, boolean isReverseDNS) throws Exception {
+    AccessControlInterceptor createHostnameACI(String scheme, boolean isReverseDNS) {
         return createRouter(isReverseDNS, false, router -> getHostnameResource(scheme, router));
     }
 
-    private static AccessControlInterceptor buildAci(Resource resource, Router router) {
+    private static AccessControlInterceptor buildAci(Resource resource) {
         return new ACLTest() {{
             setAccessControl(new AccessControl(router) {{
                 addResource(resource);

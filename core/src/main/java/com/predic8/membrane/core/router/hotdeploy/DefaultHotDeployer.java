@@ -30,12 +30,12 @@ public class DefaultHotDeployer implements HotDeployer {
     private Router router;
 
     @Override
-    public void init(Router router) {
+    public void start(Router router) {
         this.router = router;
+        startInternal();
     }
 
-    @Override
-    public void start() {
+    private void startInternal() {
         // Prevent multiple threads from starting hot deployment at the same time.
         synchronized (this) {
             if (hdt != null)
@@ -60,7 +60,7 @@ public class DefaultHotDeployer implements HotDeployer {
             if (hdt == null)
                 return;
 
-            router.stopAutoReinitializer();
+            router.getReinitializer().stopAutoReinitializer();
             hdt.stopASAP();
             hdt = null;
         }
@@ -69,7 +69,7 @@ public class DefaultHotDeployer implements HotDeployer {
     @Override
     public void setEnabled(boolean enabled) {
         if (enabled)
-            start();
+            startInternal();
         else
             stop();
     }

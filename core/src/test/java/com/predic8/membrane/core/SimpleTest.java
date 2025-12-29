@@ -23,7 +23,7 @@ public class SimpleTest {
 
 	@BeforeAll
 	static void setUp() {
-		router = Router.initByXML("classpath:/test-proxies.xml");
+		router = RouterBootstrap.initByXML("classpath:/test-proxies.xml");
 	}
 
 	@Test

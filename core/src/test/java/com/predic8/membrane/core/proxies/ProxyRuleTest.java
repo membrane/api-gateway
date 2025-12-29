@@ -30,7 +30,7 @@ public class ProxyRuleTest {
 
 	@BeforeAll
 	public static void setUp() {
-		router = Router.initByXML("src/test/resources/proxy-rules-test-monitor-beans.xml");
+		router = RouterBootstrap.initByXML("src/test/resources/proxy-rules-test-monitor-beans.xml");
 		proxy = new ProxyRule(new ProxyRuleKey(8888));
 		proxy.setName("Rule 1");
 		// TODO: this is not possible anymore rule.setInboundTLS(true);
