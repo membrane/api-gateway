@@ -39,7 +39,7 @@ public class XSLTTransformer {
 		log.debug("using {} parallel transformer instances for {}",concurrency, styleSheet);
 		transformers = new ArrayBlockingQueue<>(concurrency);
 		createOneTransformer(router.getResolverMap(), router.getBaseLocation());
-		router.getBackgroundInitializer().execute(() -> {
+		Thread.ofVirtual().start(() -> {
 			try {
 				for (int i = 1; i < concurrency; i++)
 					createOneTransformer(router.getResolverMap(), router.getBaseLocation());
