@@ -202,12 +202,17 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     }
 
     @BeforeEach
-    public void setUp() throws Exception{
+    void setUp() throws Exception{
         router = new HttpRouter();
         router.start();
         initOasi();
         initMas();
         initLoginMockParametersForJohn();
+    }
+
+    @AfterEach
+    void tearDown() {
+        router.shutdown();
     }
 
     public static Collection<Object[]> data() throws Exception {

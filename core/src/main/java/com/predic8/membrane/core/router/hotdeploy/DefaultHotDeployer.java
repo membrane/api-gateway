@@ -58,7 +58,7 @@ public class DefaultHotDeployer implements HotDeployer {
 
     @Override
     public void stop() {
-        synchronized (this) {
+        synchronized (lock) {
             if (hdt == null)
                 return;
 

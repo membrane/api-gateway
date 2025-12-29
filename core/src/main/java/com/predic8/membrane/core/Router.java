@@ -371,6 +371,8 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     /**
      * Adds a proxy to the router and initializes it.
      *
+     * TODO: Should we sync running cause a different Thread might call add?
+     *
      * @param proxy
      * @throws IOException
      */
@@ -378,20 +380,13 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
         log.debug("Adding proxy {}.", proxy.getName());
         RuleManager ruleManager = getRuleManager();
 
-        synchronized (lock) {
-            if (proxy instanceof SSLableProxy sp) {
-                if (running) { // TODO
-                    ruleManager.addProxyAndOpenPortIfNew(sp, MANUAL);
-                } else
-                    ruleManager.addProxy(sp, MANUAL);
-            } else {
-                ruleManager.addProxy(proxy, MANUAL);
-            }
-            if (running) {
-                // init() has already been called
-                proxy.init(this);
-            }
+        if (running && proxy instanceof SSLableProxy sp) {
+            sp.init(this);
+            ruleManager.addProxyAndOpenPortIfNew(sp, MANUAL);
+        } else {
+            ruleManager.addProxy(proxy, MANUAL);
         }
+
     }
 
     private void startJmx() {

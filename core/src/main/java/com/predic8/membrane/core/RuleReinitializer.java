@@ -32,6 +32,10 @@ public class RuleReinitializer {
     }
 
     synchronized void start() {
+        log.info("Starting rule reinitializer.");
+        if (timer != null)
+            return; // Already started.
+
         if (getInactiveRules().isEmpty())
             return;
 
@@ -48,8 +52,12 @@ public class RuleReinitializer {
         if (timer != null) {
             timer.cancel();
         }
+        timer = null;
     }
 
+    /**
+     * Should only be called from timer in this class
+     */
     public void retry() {
         boolean stillFailing = false;
         List<Proxy> inactive = getInactiveRules();

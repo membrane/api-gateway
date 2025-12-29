@@ -39,8 +39,7 @@ public class SOAPProxyTest {
     void setUp() throws IOException {
         proxy = new SOAPProxy();
         proxy.setPort(2000);
-        router = new Router();
-        router.setTransport(new HttpTransport());
+        router = new HttpRouter();
         router.setExchangeStore(new ForgetfulExchangeStore());
 
         APIProxy backend = new APIProxy();
