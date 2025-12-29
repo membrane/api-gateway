@@ -128,6 +128,11 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
     protected ResolverMap resolverMap;
 
+    /**
+     * TODO:
+     * - Replace with: Executors.newVirtualThreadPerTaskExecutor();
+     * - Remove from here and use virtualThread in those 4 places where it is used.
+     */
     protected final ExecutorService backgroundInitializer =
             newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializer"));
 
