@@ -204,6 +204,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     @BeforeEach
     public void setUp() throws Exception{
         router = new HttpRouter();
+        router.start();
         initOasi();
         initMas();
         initLoginMockParametersForJohn();

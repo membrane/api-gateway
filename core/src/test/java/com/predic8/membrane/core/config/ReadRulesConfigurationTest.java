@@ -34,7 +34,7 @@ public class ReadRulesConfigurationTest {
     }
 
     @AfterAll
-    public static void tearDown() {
+    static void tearDown() {
         router.shutdown();
     }
 
@@ -97,13 +97,17 @@ public class ReadRulesConfigurationTest {
     void testLocalServiceProxyInboundSSL() {
         if (proxies.get(2) instanceof SSLableProxy sp) {
             assertFalse(sp.isInboundSSL());
+            return;
         }
+        fail();
     }
 
     @Test
     void testLocalServiceProxyOutboundSSL() {
         if (proxies.get(2) instanceof SSLableProxy sp) {
             assertNull(sp.getSslOutboundContext());
+            return;
         }
+        fail();
     }
 }

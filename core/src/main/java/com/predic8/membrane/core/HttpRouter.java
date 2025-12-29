@@ -15,6 +15,7 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
@@ -29,7 +30,7 @@ public class HttpRouter extends Router {
 
     public HttpRouter(ProxyConfiguration proxyConfiguration) {
         transport = createTransport();
-        resolverMap.getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
+        getResolverMap().getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
     }
 
     @Override

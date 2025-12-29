@@ -31,22 +31,28 @@ public class RuleReinitializer {
         this.router = router;
     }
 
-    void startAutoReinitializer() {
+    synchronized void start() {
         if (getInactiveRules().isEmpty())
             return;
 
-        timer = new Timer("auto reinitializer", true);
+        timer = new Timer("reinitializer", true);
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                tryReinitialization();
+                retry();
             }
         }, router.getConfig().getRetryInitInterval(), router.getConfig().getRetryInitInterval());
     }
 
-    public void tryReinitialization() {
+    public synchronized void stop() {
+        if (timer != null) {
+            timer.cancel();
+        }
+    }
+
+    public void retry() {
         boolean stillFailing = false;
-        ArrayList<Proxy> inactive = getInactiveRules();
+        List<Proxy> inactive = getInactiveRules();
         if (!inactive.isEmpty()) {
             log.info("Trying to activate all inactive rules.");
             for (Proxy proxy : inactive) {
@@ -66,18 +72,13 @@ public class RuleReinitializer {
         if (stillFailing)
             log.info("There are still inactive rules.");
         else {
-            stopAutoReinitializer();
+            stop();
             log.info("All rules have been initialized.");
         }
     }
 
-    public void stopAutoReinitializer() {
-        if (timer != null) {
-            timer.cancel();
-        }
-    }
 
-    ArrayList<Proxy> getInactiveRules() {
+    List<Proxy> getInactiveRules() {
         ArrayList<Proxy> inactive = new ArrayList<>();
         for (Proxy proxy : router.getRuleManager().getRules())
             if (!proxy.isActive())

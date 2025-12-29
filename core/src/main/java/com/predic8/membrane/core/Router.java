@@ -126,7 +126,7 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
-    protected final ResolverMap resolverMap;
+    protected ResolverMap resolverMap;
 
     protected final ExecutorService backgroundInitializer =
             newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializer"));
@@ -139,6 +139,7 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     @GuardedBy("lock")
     private boolean running;
 
+    @GuardedBy("lock")
     private boolean initialized;
 
     /**
@@ -173,9 +174,17 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     public void init() {
         log.debug("Initializing.");
 
+        getRegistry().registerIfAbsent(ResolverMap.class, () -> {
+            ResolverMap rs = new ResolverMap(httpClientFactory, kubernetesClientFactory);
+            rs.addRuleResolver(this);
+            return rs;
+        });
+
         // TODO: Temporary guard, to check correct behaviour, remove later
-        if (initialized)
-            throw new IllegalStateException("Router already initialized.");
+        synchronized (lock) {
+            if (initialized)
+                throw new IllegalStateException("Router already initialized.");
+        }
 
         getRegistry().registerIfAbsent(ExchangeStore.class, LimitedMemoryExchangeStore::new);
         getRegistry().registerIfAbsent(RuleManager.class, () -> {
@@ -183,7 +192,7 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
             rm.setRouter(this);
             return rm;
         });
-       getRegistry().registerIfAbsent(DNSCache.class, DNSCache::new);
+        getRegistry().registerIfAbsent(DNSCache.class, DNSCache::new);
 
         // Transport last
         if (transport == null) {
@@ -193,7 +202,9 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
 
         initProxies();
 
-        initialized = true;
+        synchronized (lock) {
+            initialized = true;
+        }
         reinitializer = new RuleReinitializer(this); // Bean
     }
 
@@ -218,8 +229,10 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
         log.debug("Starting.");
         displayTraceWarning();
 
-        if (!initialized)
-            init();
+        synchronized (lock) {
+            if (!initialized)
+                init();
+        }
 
         try {
 
@@ -231,7 +244,7 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
             hotDeployer.start(this);
 
             if (config.getRetryInitInterval() > 0)
-                reinitializer.startAutoReinitializer();
+                reinitializer.start();
         } catch (DuplicatePathException e) {
             handleDuplicateOpenAPIPaths(e);
         } catch (OpenAPIParsingException e) {
@@ -274,12 +287,11 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     }
 
     public RuleManager getRuleManager() {
-        var rm = getRegistry().getBean(RuleManager.class);
-        if (rm.isPresent()) return rm.get();
-        RuleManager rmi = new RuleManager();
-        rmi.setRouter(this);
-        getRegistry().register("ruleManager", rmi);
-        return rmi;
+        return getRegistry().registerIfAbsent(RuleManager.class, () -> {
+            RuleManager rm = new RuleManager();
+            rm.setRouter(this);
+            return rm;
+        });
     }
 
     public void setRuleManager(RuleManager ruleManager) {
@@ -319,7 +331,7 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     }
 
     public HttpClientConfiguration getHttpClientConfig() {
-        return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
+        return getResolverMap().getHTTPSchemaResolver().getHttpClientConfig();
     }
 
     /**
@@ -329,7 +341,7 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
      */
     @MCChildElement()
     public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
-        resolverMap.getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
+        getResolverMap().getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
     }
 
     public DNSCache getDnsCache() {

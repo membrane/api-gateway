@@ -24,10 +24,12 @@ public class DefaultHotDeployer implements HotDeployer {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultHotDeployer.class.getName());
 
-    @GuardedBy("this")
+    @GuardedBy("lock")
     private HotDeploymentThread hdt;
 
     private Router router;
+
+    private final Object lock = new Object();
 
     @Override
     public void start(Router router) {
@@ -37,7 +39,7 @@ public class DefaultHotDeployer implements HotDeployer {
 
     private void startInternal() {
         // Prevent multiple threads from starting hot deployment at the same time.
-        synchronized (this) {
+        synchronized (lock) {
             if (hdt != null)
                 throw new IllegalStateException("Hot deployment already started.");
 
@@ -60,7 +62,7 @@ public class DefaultHotDeployer implements HotDeployer {
             if (hdt == null)
                 return;
 
-            router.getReinitializer().stopAutoReinitializer();
+            router.getReinitializer().stop();
             hdt.stopASAP();
             hdt = null;
         }
@@ -68,7 +70,7 @@ public class DefaultHotDeployer implements HotDeployer {
 
     @Override
     public void setEnabled(boolean enabled) {
-        if (enabled)
+        if (enabled && router != null)
             startInternal();
         else
             stop();

@@ -88,13 +88,13 @@ public class UnavailableSoapProxyTest {
 		List<Proxy> proxies = r.getRuleManager().getRules();
 		assertEquals(1, proxies.size());
 		assertFalse(proxies.getFirst().isActive());
-		r.getReinitializer().tryReinitialization();
+		r.getReinitializer().retry();
 
 		proxies = r.getRuleManager().getRules();
 		assertEquals(1, proxies.size());
 		assertFalse(proxies.getFirst().isActive());
 		r2.start();
-		r.getReinitializer().tryReinitialization();
+		r.getReinitializer().retry();
 
 		proxies = r.getRuleManager().getRules();
 		assertEquals(1, proxies.size());
