@@ -27,9 +27,9 @@ public class GroovyLanguageSupport implements LanguageSupport {
 	ScriptExecutorPool<Script, R> {
 		private final String groovyCode;
 
-		private GroovyScriptExecutorPool(ExecutorService executorService, String expression) {
+		private GroovyScriptExecutorPool(String expression) {
 			this.groovyCode = expression;
-			init(executorService);
+			init();
 		}
 
 		@Override
@@ -56,8 +56,8 @@ public class GroovyLanguageSupport implements LanguageSupport {
 	private static final GroovyShell shell = new GroovyShell();
 
 	@Override
-	public Function<Map<String, Object>, Object> compileScript(ExecutorService executorService, ClassLoader classLoader, String script) {
-		return new GroovyScriptExecutorPool<>(executorService, addImports(script)) {
+	public Function<Map<String, Object>, Object> compileScript(ClassLoader classLoader, String script) {
+		return new GroovyScriptExecutorPool<>(addImports(script)) {
 			@Override
 			public Object apply(Map<String, Object> parameters) {
 				return this.execute(parameters);
