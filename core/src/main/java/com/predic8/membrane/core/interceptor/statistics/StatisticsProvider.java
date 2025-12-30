@@ -67,7 +67,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
         try {
             con = dataSource.getConnection();
         } catch (SQLException e) {
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not connect to database")
 					.exception(e)
 					.buildAndSetResponse(exc);

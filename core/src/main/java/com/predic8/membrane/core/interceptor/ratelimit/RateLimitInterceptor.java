@@ -104,7 +104,7 @@ public class RateLimitInterceptor extends AbstractExchangeExpressionInterceptor 
                 return CONTINUE;
         } catch (SpelEvaluationException e) {
             log.info("Cannot evaluate keyExpression {} cause is {}", expression, e.getCause());
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .addSubType("rate-limit")
                     .detail("Cannot evaluate keyExpression '%s' cause is %s".formatted(expression, e.getMessage()))
                     .buildAndSetResponse(exc);

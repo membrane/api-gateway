@@ -49,7 +49,7 @@ public class Http2ClientServerTest {
         SSLParser sslParser = getSslParser();
 
         router = new TestRouter();
-        router.getConfig().setHotDeploy(false);
+        router.getConfiguration().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3049), "localhost", 80);
         sp.setSslInboundParser(sslParser);
         sp.getFlow().add(new AbstractInterceptor() {

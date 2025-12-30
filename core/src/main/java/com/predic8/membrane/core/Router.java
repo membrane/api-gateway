@@ -16,7 +16,6 @@ package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.*;
@@ -25,7 +24,6 @@ import com.predic8.membrane.core.util.*;
 import org.springframework.context.*;
 
 import java.io.*;
-import java.util.*;
 
 public interface Router extends Lifecycle {
 
@@ -40,7 +38,7 @@ public interface Router extends Lifecycle {
 
     void add(Proxy proxy) throws IOException;
 
-    Configuration getConfig();
+    Configuration getConfiguration();
 
     Transport getTransport();
 
@@ -60,9 +58,6 @@ public interface Router extends Lifecycle {
 
     URIFactory getUriFactory();
 
-    // TODO move to configuration
-    boolean isProduction();
-
     ApplicationContext getBeanFactory();
 
     HttpClientFactory getHttpClientFactory();
@@ -70,12 +65,4 @@ public interface Router extends Lifecycle {
     TimerManager getTimerManager();
 
     Statistics getStatistics();
-
-    KubernetesClientFactory getKubernetesClientFactory();
-
-    // TODO: => to RuleManager?
-    Collection<Proxy> getRules();
-
-    RuleReinitializer getReinitializer();
-
 }

@@ -66,7 +66,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
                     getRequestXMLSource(exc), exc.getStringProperties());
         } catch (Exception e) {
             log.error("", e);
-            user(router.isProduction(), getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .detail("Could not covert REST to SOAP!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -84,7 +84,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
             return handleResponseInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            user(router.isProduction(), getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .detail("Could not covert SOAP to REST!")
                     .exception(e)
                     .buildAndSetResponse(exc);

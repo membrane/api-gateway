@@ -44,7 +44,7 @@ public class ProxyTest {
     public static void init() throws IOException {
 
         router = new TestRouter();
-        router.getConfig().setHotDeploy(false);
+        router.getConfiguration().setHotDeploy(false);
 
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(3055));
         rule.getFlow().add(new AbstractInterceptor() {

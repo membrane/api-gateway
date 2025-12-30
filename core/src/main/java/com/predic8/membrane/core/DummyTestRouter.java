@@ -84,7 +84,7 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     @Override
-    public Configuration getConfig() {
+    public Configuration getConfiguration() {
         return configuration;
     }
 
@@ -129,11 +129,6 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     @Override
-    public boolean isProduction() {
-        return false;
-    }
-
-    @Override
     public ApplicationContext getBeanFactory() {
         return applicationContext;
     }
@@ -152,31 +147,7 @@ public class DummyTestRouter extends AbstractRouter {
     public Statistics getStatistics() {
         return statistics;
     }
-
-    @Override
-    public KubernetesClientFactory getKubernetesClientFactory() {
-        return kubernetesClientFactory;
-    }
-
-    @Override
-    public Collection<Proxy> getRules() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public RuleReinitializer getReinitializer() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * TODO Only used for tests. It s brittle cause it is dependent on
-     * the list. In tests interceptors in the proxy can be used instead.
-     */
-    public void addUserFeatureInterceptor(Interceptor i) {
-        List<Interceptor> is = getTransport().getFlow();
-        is.add(is.size() - 3, i);
-    }
-
+    
     /**
      * Same as the default config from monitor-beans.xml
      */

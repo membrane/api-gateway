@@ -43,7 +43,7 @@ public class EchoInterceptor extends AbstractInterceptor {
 			}
 		} catch (Exception e) {
 			log.error("Could not create echo.", e);
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not create echo!")
 					.exception(e)
 					.stacktrace(false)

@@ -74,7 +74,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
                         getParams(exc);
         } catch (Exception e) {
 			log.error("",e);
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not decrypt parameters!")
 					.exception(e)
 					.buildAndSetResponse(exc);

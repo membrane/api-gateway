@@ -57,7 +57,7 @@ public class ProxySSLTest {
 
     private static @NotNull DefaultRouter createProxy(boolean proxyUsesSSL, int proxyPort, AtomicInteger proxyCounter) throws IOException {
         DefaultRouter proxy = new DefaultRouter();
-        proxy.getConfig().setHotDeploy(false);
+        proxy.getConfiguration().setHotDeploy(false);
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(proxyPort));
         rule.getFlow().add(new AbstractInterceptor() {
             @Override
@@ -112,7 +112,7 @@ public class ProxySSLTest {
     private static @NotNull DefaultRouter createBackend(boolean backendUsesSSL, int backendPort) throws IOException {
         // Step 1: create the backend
         DefaultRouter backend = new DefaultRouter();
-        backend.getConfig().setHotDeploy(false);
+        backend.getConfiguration().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
         if (backendUsesSSL) {
             sp.setSslInboundParser(getSslParser("classpath:/ssl-rsa.keystore"));

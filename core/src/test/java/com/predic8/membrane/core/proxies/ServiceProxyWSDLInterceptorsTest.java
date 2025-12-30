@@ -33,7 +33,7 @@ public class ServiceProxyWSDLInterceptorsTest {
     @BeforeEach
     void setUp() {
         router = new TestRouter();
-        router.getConfig().setHotDeploy(false);
+        router.getConfiguration().setHotDeploy(false);
     }
 
     @AfterEach

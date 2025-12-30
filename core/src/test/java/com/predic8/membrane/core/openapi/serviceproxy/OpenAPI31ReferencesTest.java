@@ -41,7 +41,7 @@ public class OpenAPI31ReferencesTest {
     @BeforeAll
     public static void setUp() throws Exception {
         router = new TestRouter();
-        router.getConfig().setUriFactory(new URIFactory());
+        router.getConfiguration().setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = getPathFromResource( "openapi/specs/oas31/request-reference.yaml");

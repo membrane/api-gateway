@@ -34,11 +34,11 @@ public class JmxRouter {
 
     @ManagedAttribute
     public String getName(){
-        return router.getConfig().getJmx();
+        return router.getConfiguration().getJmx();
     }
 
     private void exportServiceProxyList(){
-        for(Proxy proxy : router.getRules()){
+        for(Proxy proxy : router.getRuleManager().getRules()){
             if(proxy instanceof ServiceProxy){
                 exportServiceProxy((ServiceProxy) proxy);
             }
@@ -46,7 +46,7 @@ public class JmxRouter {
     }
 
     private void exportServiceProxy(ServiceProxy rule) {
-        String prefix = "org.membrane-soa:00=serviceProxies, 01=%s, name=".formatted(router.getConfig().getJmx());
+        String prefix = "org.membrane-soa:00=serviceProxies, 01=%s, name=".formatted(router.getConfiguration().getJmx());
         exporter.addBean(prefix + rule.getName().replace(":",""), new JmxServiceProxy(rule, router));
     }
 }

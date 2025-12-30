@@ -25,6 +25,7 @@ import org.jose4j.lang.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_OCTET_STREAM;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static java.util.Arrays.stream;
@@ -53,7 +54,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
                     ? exc.getRequest().getHeader().getHost().replaceAll(":.*", "")
                     : exc.getRequest().getHeader().getHost();
 
-            for (Proxy proxy : router.getRules()) {
+            for (Proxy proxy : router.getRuleManager().getRules()) {
                 if (!(proxy instanceof SSLableProxy sp))
                     continue;
                 SSLContext sslInboundContext = sp.getSslInboundContext();
@@ -72,7 +73,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
                     try {
                         keyAuth = token + "." + acmeClient.getThumbprint();
                     } catch (JoseException e) {
-                        ProblemDetails.user(router.isProduction(),getDisplayName())
+                        ProblemDetails.user(router.getConfiguration().isProduction(),getDisplayName())
                                 .detail("Could not create thumbprint!")
                                 .exception(e)
                                 .buildAndSetResponse(exc);

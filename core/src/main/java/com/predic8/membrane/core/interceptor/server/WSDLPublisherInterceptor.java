@@ -170,7 +170,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Could not return WSDL document!")
                     .exception(e)
                     .buildAndSetResponse(exc);

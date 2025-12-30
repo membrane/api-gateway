@@ -22,7 +22,7 @@ public abstract class AuthServerMock extends DummyTestRouter {
     public AuthServerMock() throws IOException {
         getTransport().setBacklog(10_000);
         getTransport().setSocketTimeout(10_000);
-        getConfig().setHotDeploy(false);
+        getConfiguration().setHotDeploy(false);
         getTransport().setConcurrentConnectionLimitPerIp(500);
 
         getRuleManager().addProxyAndOpenPortIfNew(mockServiceProxy());

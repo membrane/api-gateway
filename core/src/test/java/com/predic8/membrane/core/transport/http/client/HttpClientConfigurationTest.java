@@ -145,7 +145,7 @@ class HttpClientConfigurationTest {
     }
 
     private @NotNull Proxy getApi1() {
-        Proxy api1 = router.getRules().stream().filter(proxy -> proxy.getName().equals("API1")).findFirst().orElseThrow();
+        Proxy api1 = router.getRuleManager().getRuleByName("API1", Proxy.class);
         assertNotNull(api1);
         return api1;
     }

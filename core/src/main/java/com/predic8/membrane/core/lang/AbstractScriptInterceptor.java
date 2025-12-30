@@ -105,7 +105,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
                 msg.setBodyContent(om.writeValueAsBytes(m));
             } catch (JsonProcessingException e) {
                 log.error("", e);
-                internal(router.isProduction(),getDisplayName())
+                internal(router.getConfiguration().isProduction(),getDisplayName())
                         .addSubSee("json-processing-1")
                         .detail("Error serializing Map to JSON")
                         .exception(e)
@@ -137,7 +137,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
                 msg.setBodyContent(om.writeValueAsBytes(m));
             } catch (JsonProcessingException e) {
                 log.error("", e);
-                internal(router.isProduction(),getDisplayName())
+                internal(router.getConfiguration().isProduction(),getDisplayName())
                         .addSubSee("json-processing-2")
                         .detail("Error serializing Map to JSON")
                         .exception(e)
@@ -174,7 +174,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         log.warn("Error executing {} script: {}", name, e.getMessage());
         log.warn("Script: {}", src);
 
-        exc.setResponse(internal(router.isProduction(),getDisplayName())
+        exc.setResponse(internal(router.getConfiguration().isProduction(),getDisplayName())
                 .addSubSee("script-execution")
                 .title("Error executing script.")
                 .addSubType("scripting")

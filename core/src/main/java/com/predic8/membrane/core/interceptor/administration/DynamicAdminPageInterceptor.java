@@ -60,7 +60,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
             o = dispatchRequest(exc);
         } catch (Exception e) {
 			log.error("", e);
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Error in dynamic administration request!")
 					.exception(e)
 					.buildAndSetResponse(exc);

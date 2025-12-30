@@ -82,12 +82,12 @@ public class OAuth2ResourceRpIniLogoutTest {
         createKey();
 
         mockAuthServer = new TestRouter();
-        mockAuthServer.getConfig().setHotDeploy(false);
+        mockAuthServer.getConfiguration().setHotDeploy(false);
         mockAuthServer.add(getMockAuthServiceProxy());
         mockAuthServer.start();
 
         oauth2Resource = new TestRouter();
-        oauth2Resource.getConfig().setHotDeploy(false);
+        oauth2Resource.getConfiguration().setHotDeploy(false);
         oauth2Resource.add(getConfiguredOAuth2Resource());
         oauth2Resource.start();
     }

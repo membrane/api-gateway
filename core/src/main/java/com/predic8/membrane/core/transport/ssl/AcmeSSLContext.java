@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -55,6 +56,14 @@ public class AcmeSSLContext extends SSLContext {
         client = new AcmeClient(parser.getAcme(), httpClientFactory);
         selfCreatedTimerManager = timerManager == null;
         this.timerManager = timerManager != null ? timerManager : new TimerManager();
+    }
+
+    public void init(Router router) {
+        KubernetesClientFactory kcf = null;
+        if (router instanceof DefaultRouter dr) {
+            kcf = dr.getRegistry().getBean(KubernetesClientFactory.class).orElse(null);
+        }
+        init(kcf,router.getHttpClientFactory());
     }
 
     public void init(@Nullable KubernetesClientFactory kubernetesClientFactory, @Nullable HttpClientFactory httpClientFactory) {

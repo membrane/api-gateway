@@ -66,7 +66,7 @@ public class SoapProxyInvocationTest {
 
     private static void setupGateway() throws Exception {
         gw = new TestRouter();
-        gw.getConfig().setHotDeploy(false);
+        gw.getConfiguration().setHotDeploy(false);
         gw.add(createCitiesSoapProxyGateway());
         gw.add(createTwoServicesSOAPProxyGateway("ServiceA"));
         gw.start();

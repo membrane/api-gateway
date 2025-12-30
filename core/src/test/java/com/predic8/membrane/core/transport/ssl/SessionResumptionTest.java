@@ -77,7 +77,7 @@ public class SessionResumptionTest {
 
     private static Router createTLSServer(int port) {
         Router router = new DummyTestRouter();
-        router.getConfig().setHotDeploy(false);
+        router.getConfiguration().setHotDeploy(false);
         ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(port), null, 0);
         SSLParser sslInboundParser = new SSLParser();
         KeyStore keyStore = new KeyStore();

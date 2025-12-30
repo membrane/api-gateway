@@ -109,7 +109,7 @@ public class STOMPClient extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (IOException e) {
 			log.error("", e);
-			user(router.isProduction(),getDisplayName())
+			user(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Error in STOMP client!")
 					.exception(e)
 					.buildAndSetResponse(exc);

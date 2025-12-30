@@ -92,14 +92,14 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
             var jwt = jwtRetriever.get(exc);
             return handleJwt(exc, jwt);
         } catch (JWTException e) {
-            ProblemDetails.security(router.isProduction(), "jwt-auth")
+            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(e.getMessage())
                     .stacktrace(true)
                     .status(400)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (JsonProcessingException e) {
-            ProblemDetails.security(router.isProduction(), "jwt-auth")
+            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(ERROR_DECODED_HEADER_NOT_JSON)
                     .addSubSee(ERROR_DECODED_HEADER_NOT_JSON_ID)
                     .stacktrace(true)
@@ -107,7 +107,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (InvalidJwtException e) {
-            ProblemDetails.security(router.isProduction(), "jwt-auth")
+            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(ERROR_VALIDATION_FAILED)
                     .addSubSee(ERROR_VALIDATION_FAILED_ID)
                     .stacktrace(false)
@@ -115,7 +115,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (Exception e) {
-            ProblemDetails.security(router.isProduction(), "jwt-auth")
+            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(ERROR_JWT_NOT_FOUND)
                     .addSubSee(ERROR_JWT_NOT_FOUND_ID)
                     .stacktrace(true)

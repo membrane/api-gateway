@@ -94,7 +94,7 @@ public class FlowController {
             } catch (Exception e) {
                 String msg = "Aborting! Exception caused in %s during %s %s flow.".formatted(interceptor.getDisplayName(), exchange.getRequest().getUri(), flow);
                 log.warn(msg, e);
-                internal(router.isProduction(),interceptor.getDisplayName())
+                internal(router.getConfiguration().isProduction(),interceptor.getDisplayName())
                         .detail(msg)
                         .exception(e)
                         .buildAndSetResponse(exchange);

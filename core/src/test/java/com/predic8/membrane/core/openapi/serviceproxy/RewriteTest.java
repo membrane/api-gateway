@@ -50,7 +50,7 @@ class RewriteTest {
         rewriteAll.basePath = "/foo";
 
         DefaultRouter router = new DefaultRouter();
-        router.getConfig().setUriFactory(new URIFactory());
+        router.getConfiguration().setUriFactory(new URIFactory());
         router.setBaseLocation("");
 
         OpenAPIRecordFactory openAPIRecordFactory = new OpenAPIRecordFactory(router);

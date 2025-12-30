@@ -24,7 +24,7 @@ import java.util.*;
 public class Util {
     public static Router basicRouter(Proxy... proxies){
         var router = new TestRouter();
-        router.getConfig().setHotDeploy(false);
+        router.getConfiguration().setHotDeploy(false);
         Arrays.stream(proxies).forEach(rule -> router.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL));
         router.start();
         router.getTransport().setForceSocketCloseOnHotDeployAfter(1000);

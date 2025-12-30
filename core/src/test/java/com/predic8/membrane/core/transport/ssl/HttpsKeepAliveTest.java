@@ -42,7 +42,7 @@ public class HttpsKeepAliveTest {
     @BeforeAll
     public static void startServer() throws IOException {
         server = new TestRouter();
-        server.getConfig().setHotDeploy(false);
+        server.getConfiguration().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy();
         sp.setPort(3063);
         SSLParser sslIB = new SSLParser();

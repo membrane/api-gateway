@@ -108,7 +108,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
             log.warn(detail);
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("openapi-parsing")
                     .flow(REQUEST)
                     .detail(detail)
@@ -116,7 +116,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (ReadingBodyException e) {
-            user(router.isProduction(), getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("reading-body")
                     .flow(REQUEST)
                     .detail("Connection problem: %s . Maybe the peer or the network closed the connection?".formatted(e.getMessage()))
@@ -126,7 +126,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         } catch (Throwable t /* On purpose! Catch absolutely all */) {
             final String LOG_MESSAGE = "Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.";
             log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()), t);
-            user(router.isProduction(), getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("generic")
                     .flow(REQUEST)
                     .detail(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()))
@@ -162,7 +162,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         } catch (OpenAPIParsingException e) {
             String detail = "Could not parse OpenAPI with title %s. Check syntax and references.".formatted(rec.api.getInfo().getTitle());
             log.warn(detail, e);
-            user(router.isProduction(), getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubType("openapi")
                     .flow(RESPONSE)
                     .detail(detail)
@@ -171,7 +171,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return RETURN;
         } catch (Throwable t /* On Purpose! Catch absolutely all */) {
             log.error("", t);
-            user(router.isProduction(), getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("generic")
                     .flow(RESPONSE)
                     .detail("Message could not be validated against OpenAPI cause of an error during validation. Please check the OpenAPI with title %s.".formatted(rec.api.getInfo().getTitle()))
@@ -350,7 +350,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private void createErrorResponse(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
-        user(router.isProduction(), getDisplayName())
+        user(router.getConfiguration().isProduction(), getDisplayName())
                 .title("OpenAPI message validation failed")
                 .addSubType("validation")
                 .status(errors.get(0).getContext().getStatusCode())

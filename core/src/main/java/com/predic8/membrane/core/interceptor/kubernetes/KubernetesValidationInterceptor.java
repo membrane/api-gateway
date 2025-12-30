@@ -182,7 +182,7 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
             return RETURN;
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .component(getDisplayName())
                     .detail("Error handling request!")
                     .exception(e)

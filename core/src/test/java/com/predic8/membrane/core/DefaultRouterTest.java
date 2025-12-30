@@ -114,7 +114,7 @@ class DefaultRouterTest {
 
     private static Router createRouter(int port, boolean production) throws IOException {
         Router r = new DefaultRouter();
-        r.getConfig().setProduction(production);
+        r.getConfiguration().setProduction(production);
         APIProxy api = new APIProxy();
         api.setKey(new APIProxyKey(port));
         api.getFlow().add(new AbstractInterceptor() {
@@ -128,7 +128,7 @@ class DefaultRouterTest {
                 return "interceptor";
             }
         });
-        r.getConfig().setHotDeploy(false);
+        r.getConfiguration().setHotDeploy(false);
         r.add(api);
         r.start();
         return r;

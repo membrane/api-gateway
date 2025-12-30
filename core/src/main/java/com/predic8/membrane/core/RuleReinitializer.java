@@ -45,7 +45,7 @@ public class RuleReinitializer {
             public void run() {
                 retry();
             }
-        }, router.getConfig().getRetryInitInterval(), router.getConfig().getRetryInitInterval());
+        }, router.getConfiguration().getRetryInitInterval(), router.getConfiguration().getRetryInitInterval());
     }
 
     public synchronized void stop() {

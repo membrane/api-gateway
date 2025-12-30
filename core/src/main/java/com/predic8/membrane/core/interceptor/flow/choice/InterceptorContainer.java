@@ -42,7 +42,7 @@ abstract class InterceptorContainer {
     }
 
     private void handleInvocationProblemDetails(Exchange exc, Exception e, Router router) {
-        internal(router.isProduction(),"interceptor-container")
+        internal(router.getConfiguration().isProduction(),"interceptor-container")
             .detail("Error invoking plugin.")
             .exception(e)
             .buildAndSetResponse(exc);

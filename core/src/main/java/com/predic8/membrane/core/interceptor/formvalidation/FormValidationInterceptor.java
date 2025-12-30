@@ -115,7 +115,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
         try {
             propMap = URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
         } catch (Exception e) {
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not parse query parameters!")
 					.topLevel("uri", exc.getRequest().getUri())
 					.exception(e)

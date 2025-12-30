@@ -114,7 +114,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     private String id;
     private String baseLocation;
 
-    private Configuration config = new Configuration();
+    private Configuration configuration = new Configuration();
 
     //
     // Components
@@ -231,7 +231,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
             hotDeployer.start(this);
 
-            if (config.getRetryInitInterval() > 0)
+            if (configuration.getRetryInitInterval() > 0)
                 reinitializer.start();
         } catch (DuplicatePathException e) {
             handleDuplicateOpenAPIPaths(e);
@@ -380,7 +380,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         try {
             JmxExporter exporter = beanFactory.getBean(JMX_EXPORTER_NAME, JmxExporter.class);
             //exporter.removeBean(prefix + jmxRouterName);
-            exporter.addBean("io.membrane-api:00=routers, name=" + config.getJmx(), new JmxRouter(this, exporter));
+            exporter.addBean("io.membrane-api:00=routers, name=" + configuration.getJmx(), new JmxRouter(this, exporter));
             exporter.initAfterBeansAdded();
         } catch (NoSuchBeanDefinitionException ignored) {
             // If bean is not available do not init jmx
@@ -419,7 +419,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     public boolean isProduction() {
-        return config.isProduction();
+        return configuration.isProduction();
     }
 
     public Statistics getStatistics() {
@@ -476,7 +476,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     public void handleAsynchronousInitializationResult(boolean success) {
         log.debug("Asynchronous initialization finished.");
-        if (!success && !config.isRetryInit())
+        if (!success && !configuration.isRetryInit())
             System.exit(1);
         ApiInfo.logInfosAboutStartedProxies(getRuleManager());
     }
@@ -543,26 +543,26 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     public void applyConfiguration(Configuration configuration) {
         hotDeployer = configuration.isHotDeploy() ? new DefaultHotDeployer() : new NullHotDeployer();
-        this.config = configuration;
+        this.configuration = configuration;
     }
 
     public URIFactory getUriFactory() {
-        return config.getUriFactory();
+        return configuration.getUriFactory();
     }
 
     /**
      * Sets the configuration object for this router.
      * Only used for xml
      *
-     * @param config the configuration object
+     * @param configuration the configuration object
      */
     @MCChildElement(order = -1)
-    public void setConfig(Configuration config) {
-        this.config = config;
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
     }
 
-    public Configuration getConfig() {
-        return config;
+    public Configuration getConfiguration() {
+        return configuration;
     }
 
     public RuleReinitializer getReinitializer() {

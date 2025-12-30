@@ -86,7 +86,7 @@ public class KubernetesWatcher {
     }
 
     private Optional<KubernetesValidationInterceptor> findK8sValidatingInterceptor() {
-        return router.getRules().stream()
+        return router.getRuleManager().getRules().stream()
                 .map(Proxy::getFlow)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
