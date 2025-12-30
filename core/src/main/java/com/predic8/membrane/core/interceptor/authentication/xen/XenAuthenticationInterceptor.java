@@ -100,7 +100,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
     }
 
     public interface XenSessionManager {
-        void init(Router router) throws Exception;
+        void init(IRouter router) throws Exception;
         String getXenSessionId(String ourSessionId);
         String getExistingSessionId(String xenSessionId);
         String createSessionId(String xenSessionId);
@@ -111,7 +111,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         private final Map<String, String> ourSessionIds = new ConcurrentHashMap<>();
         private final Map<String, String> xenSessionIds = new ConcurrentHashMap<>();
 
-        public void init(Router router) {
+        public void init(IRouter router) {
         }
 
         public String getXenSessionId(String ourSessionId) {
@@ -140,7 +140,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
 
         private final SecureRandom random = new SecureRandom();
 
-        public void init(Router router) throws Exception {
+        public void init(IRouter router) throws Exception {
             String key = jwk.get(router.getResolverMap(), router.getBaseLocation());
             if (key == null || key.isEmpty())
                 rsaJsonWebKey = generateKey();

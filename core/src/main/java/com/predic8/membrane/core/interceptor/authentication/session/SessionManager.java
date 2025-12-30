@@ -61,7 +61,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		domain = token.getAttributeValue("", "domain");
 	}
 
-	public void init(Router router) {
+	public void init(IRouter router) {
 		cookieName = StringUtils.defaultIfEmpty(cookieName, "SESSIONID");
 		timeout = timeout == 0 ? 300000 : timeout;
 	}

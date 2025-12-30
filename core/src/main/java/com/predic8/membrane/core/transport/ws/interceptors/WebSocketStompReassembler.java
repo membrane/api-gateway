@@ -16,7 +16,7 @@ package com.predic8.membrane.core.transport.ws.interceptors;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Request;
@@ -39,7 +39,7 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
     List<Interceptor> interceptors = new ArrayList<>();
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init(IRouter router) throws Exception {
         for (Interceptor i : interceptors)
             i.init(router);
     }

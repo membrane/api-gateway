@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -69,7 +69,7 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 	private static final String GATEWAY2 = "https://" + HOST2 + "/sendsms";
 
 	@Override
-	public void init(Router router) {
+	public void init(IRouter router) {
 		hc = router.getHttpClientFactory().createClient(null);
 	}
 

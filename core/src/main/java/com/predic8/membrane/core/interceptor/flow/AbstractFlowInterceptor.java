@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.ProxyAware;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -60,7 +60,7 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init(Router router, Proxy proxy) {
+    public void init(IRouter router, Proxy proxy) {
         for (Interceptor i : interceptors) {
             if(i instanceof ProxyAware pa) {
                 pa.setProxy(proxy);

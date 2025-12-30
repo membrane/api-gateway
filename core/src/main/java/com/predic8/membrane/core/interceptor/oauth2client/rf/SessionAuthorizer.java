@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -46,10 +46,10 @@ public class SessionAuthorizer {
     private boolean skip;
 
     private AuthorizationService auth;
-    private Router router;
+    private IRouter router;
     private OAuth2Statistics statistics;
 
-    public void init(AuthorizationService auth, Router router, OAuth2Statistics statistics) {
+    public void init(AuthorizationService auth, IRouter router, OAuth2Statistics statistics) {
         this.auth = auth;
         this.router = router;
         this.statistics = statistics;

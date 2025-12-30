@@ -57,25 +57,12 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
         Router router = startSpringContextAndReturnRouter(publisherSeparate);
         APIProxy ap = getApiProxy(router);
         assertEquals(5, ap.getFlow().size());
-        assertInstanceOf(OpenAPIInterceptor.class, ap.getFlow().get(0));
+        assertInstanceOf(OpenAPIInterceptor.class, ap.getFlow().get(0)); // Should be added after init() is called on router (Inside bootstrap)
         assertInstanceOf(ApiKeysInterceptor.class, ap.getFlow().get(1));
         assertInstanceOf(HeaderFilterInterceptor.class, ap.getFlow().get(2));
         assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getFlow().get(3));
         assertInstanceOf(LogInterceptor.class, ap.getFlow().get(4));
 
-    }
-
-    @Test
-    void interceptorSequenceAferInit() {
-        Router router = startSpringContextAndReturnRouter(publisherSeparate);
-        APIProxy ap = getApiProxy(router);
-        ap.init(router);
-        assertEquals(5, ap.getFlow().size());
-        assertInstanceOf(OpenAPIInterceptor.class, ap.getFlow().get(0)); // Got added
-        assertInstanceOf(ApiKeysInterceptor.class, ap.getFlow().get(1));
-        assertInstanceOf(HeaderFilterInterceptor.class, ap.getFlow().get(2));
-        assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getFlow().get(3));
-        assertInstanceOf(LogInterceptor.class, ap.getFlow().get(4));
     }
 
     @Test

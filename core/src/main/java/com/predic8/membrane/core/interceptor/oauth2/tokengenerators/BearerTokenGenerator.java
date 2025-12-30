@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -65,7 +65,7 @@ public class BearerTokenGenerator implements TokenGenerator {
     private final ConcurrentHashMap<String,User> tokenToUser = new ConcurrentHashMap<>();
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init(IRouter router) throws Exception {
         // nothing to do
     }
 

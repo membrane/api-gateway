@@ -18,7 +18,6 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.proxies.*;
 
 import java.util.*;
@@ -32,7 +31,7 @@ public class AbstractInterceptor implements Interceptor {
 
 	private EnumSet<Flow> flow = REQUEST_RESPONSE_ABORT_FLOW;
 
-	protected Router router;
+	protected IRouter router;
 
 	public AbstractInterceptor() {
 		super();
@@ -100,17 +99,17 @@ public class AbstractInterceptor implements Interceptor {
 	 */
 	public void init() {}
 
-    public final void init(Router router) {
+    public final void init(IRouter router) {
 		this.router = router;
 		init();
 	}
 
 	@Override
-	public void init(Router router, Proxy ignored) {
+	public void init(IRouter router, Proxy ignored) {
 		init(router);
 	}
 
-	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
+	public IRouter getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
 		return router;
 	}
 

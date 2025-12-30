@@ -17,7 +17,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.util.MemcachedConnector;
@@ -43,7 +43,7 @@ public class MemcachedSessionManager extends SessionManager {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init(IRouter router) throws Exception {
         this.client = connector.getClient();
     }
 

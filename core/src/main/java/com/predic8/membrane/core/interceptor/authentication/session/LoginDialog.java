@@ -84,7 +84,7 @@ public class LoginDialog {
 		wsi.setDocBase(dialogLocation);
 	}
 
-	public void init(Router router) {
+	public void init(IRouter router) {
 		uriFactory = router.getUriFactory();
 		wsi.init(router);
         try {

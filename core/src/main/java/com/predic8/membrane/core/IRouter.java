@@ -14,17 +14,56 @@
 
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.transport.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
 import org.springframework.context.*;
 
 import java.io.*;
+import java.util.*;
 
 public interface IRouter extends Lifecycle {
 
     void init();
 
+    /**
+     * TODO: What is the difference between this and stop?
+     */
     void shutdown();
 
     void add(Proxy proxy) throws IOException;
+
+    FlowController getFlowController();
+
+    ExchangeStore getExchangeStore();
+
+    RuleManager getRuleManager();
+
+    String getBaseLocation();
+
+    ResolverMap getResolverMap();
+
+    DNSCache getDnsCache();
+
+    Transport getTransport();
+
+    URIFactory getUriFactory();
+
+    boolean isProduction();
+
+    ApplicationContext getBeanFactory();
+
+    HttpClientFactory getHttpClientFactory();
+
+    TimerManager getTimerManager();
+
+    Statistics getStatistics();
+
+    // TODO: => to RuleManager?
+    Collection<Proxy> getRules();
 
 }

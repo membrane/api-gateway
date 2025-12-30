@@ -95,7 +95,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	private long tokenExpiration;
 
 	@Override
-	public void init(Router router) {
+	public void init(IRouter router) {
 		hc = router.getHttpClientFactory().createClient(null);
 	}
 

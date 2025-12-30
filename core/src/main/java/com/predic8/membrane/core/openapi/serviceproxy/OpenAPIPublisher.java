@@ -87,7 +87,7 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    Outcome handleOverviewOpenAPIDoc(Exchange exc, Router router, Logger log) throws IOException, URISyntaxException {
+    Outcome handleOverviewOpenAPIDoc(Exchange exc, IRouter router, Logger log) throws IOException, URISyntaxException {
         Matcher m = PATTERN_META.matcher(exc.getRequest().getUri());
         if (!m.matches()) { // No id specified
             if (acceptsHtmlExplicit(exc)) {
@@ -116,7 +116,7 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    private Outcome returnHtmlOverview(Exchange exc, Router router) {
+    private Outcome returnHtmlOverview(Exchange exc, IRouter router) {
         exc.setResponse(ok().contentType(TEXT_HTML_UTF8).body(renderOverviewTemplate(router)).build());
         return RETURN;
     }
@@ -133,7 +133,7 @@ public class OpenAPIPublisher {
         return RETURN;
     }
 
-    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec, Router router) throws IOException, URISyntaxException {
+    private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec, IRouter router) throws IOException, URISyntaxException {
         exc.setResponse(ok().yaml()
                 .body(omYaml.writeValueAsBytes(rec.rewriteOpenAPI(exc, router.getUriFactory())))
                 .build());
@@ -144,7 +144,7 @@ public class OpenAPIPublisher {
         return new StreamingTemplateEngine().createTemplate(new InputStreamReader(Objects.requireNonNull(getResourceAsStream(this, filePath))));
     }
 
-    private String renderOverviewTemplate(Router router) {
+    private String renderOverviewTemplate(IRouter router) {
         Map<String, Object> tempCtx = new HashMap<>();
         tempCtx.put("apis", apis);
         tempCtx.put("pathUi", PATH_UI);

@@ -93,7 +93,7 @@ class ApiDocsInterceptorTest {
     @Test
     void initializeEmptyRuleApiSpecsTest() {
         ApiDocsInterceptor adi = new ApiDocsInterceptor();
-        adi.init(new Router());
+        adi.init(new HttpRouter());
         assertEquals(new HashMap<>(), adi.initializeRuleApiSpecs());
     }
 

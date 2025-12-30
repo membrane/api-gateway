@@ -169,7 +169,7 @@ public class ApiKeysInterceptorTest {
     void handleDuplicateApiKeys() {
         var dupeStore = new ApiKeyFileStore();
         dupeStore.setLocation(getKeyfilePath("apikeys/duplicate-api-keys.txt"));
-        assertThrows(RuntimeException.class, () -> dupeStore.init(new Router()));
+        assertThrows(RuntimeException.class, () -> dupeStore.init(new HttpRouter()));
     }
 
     private static String getKeyfilePath(String name) {

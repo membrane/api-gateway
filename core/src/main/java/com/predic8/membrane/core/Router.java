@@ -42,12 +42,10 @@ import org.springframework.context.support.*;
 import javax.annotation.concurrent.*;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static com.predic8.membrane.core.util.DLPUtil.*;
-import static java.util.concurrent.Executors.*;
 
 /*
  Responsibilities:
@@ -175,9 +173,6 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
             if (initialized)
                 throw new IllegalStateException("Router already initialized.");
         }
-
-//        resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
-//        resolverMap.addRuleResolver(this);
 
         getRegistry().registerIfAbsent(HttpClientConfiguration.class, () -> new HttpClientConfiguration());
 

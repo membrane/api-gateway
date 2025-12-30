@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +29,7 @@ public class StaticClientList implements ClientList {
     private List<Client> clients = new ArrayList<>();
 
     @Override
-    public void init(Router router) {
+    public void init(IRouter router) {
         setClients(clients); // fix because the setter is called with empty List<Client>
     }
 

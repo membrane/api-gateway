@@ -54,7 +54,7 @@ public class SchematronValidator extends AbstractMessageValidator {
 		return "Schematron Validator";
 	}
 
-	public SchematronValidator(String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory) throws Exception {
+	public SchematronValidator(String schematron, ValidatorInterceptor.FailureHandler failureHandler, IRouter router, BeanFactory beanFactory) throws Exception {
 		this.failureHandler = failureHandler;
 
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"

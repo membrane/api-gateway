@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.session;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
@@ -81,7 +81,7 @@ public abstract class SessionManager {
             issuer += "/";
     }
 
-    public abstract void init(Router router) throws Exception;
+    public abstract void init(IRouter router) throws Exception;
 
     /**
      * Transforms a cookie value into its attributes. The cookie should be assumed valid as @isValidCookieForThisSessionManager was called beforehand

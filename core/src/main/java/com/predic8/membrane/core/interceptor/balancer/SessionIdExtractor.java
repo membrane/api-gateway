@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 
 public interface SessionIdExtractor {
 
-    default void init(Router router) {
+    default void init(IRouter router) {
     }
 
 	default boolean hasSessionId(Exchange exc, Flow flow) throws Exception {

@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
 
 public interface DispatchingStrategy {
 
-	void init(Router router);
+	void init(IRouter router);
 
 	Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException;
 

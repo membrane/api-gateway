@@ -25,7 +25,7 @@ public interface ApiKeyStore {
      *
      * @param router non-null router instance
      */
-    default void init(Router router) {
+    default void init(IRouter router) {
     }
 
     /**

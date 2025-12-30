@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCOtherAttributes;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import org.apache.commons.codec.digest.Crypt;
 
 import java.security.SecureRandom;
@@ -191,7 +191,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 	}
 
 	@Override
-	public void init(Router router) {
+	public void init(IRouter router) {
 		for (User user : users)
 			getUsersByName().put(user.getUsername(), user);
 	}

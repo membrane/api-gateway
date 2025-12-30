@@ -42,7 +42,7 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
     volatile boolean updateThreadWorking;
 
     @Override
-    public void init(Router router) {
+    public void init(IRouter router) {
         super.init(router);
 
         startTime = System.nanoTime();

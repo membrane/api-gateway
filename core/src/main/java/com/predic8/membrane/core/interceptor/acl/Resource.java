@@ -22,10 +22,10 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.util.text.TextUtil;
@@ -36,12 +36,12 @@ public class Resource extends AbstractXmlElement {
 
 	public static final String ELEMENT_NAME = "resource";
 
-	private final Router router;
+	private final IRouter router;
 	private final List<AbstractClientAddress> clientAddresses = new ArrayList<>();
 
 	protected Pattern uriPattern;
 
-	public Resource(Router router) {
+	public Resource(IRouter router) {
 		this.router = router;
 	}
 
@@ -97,7 +97,7 @@ public class Resource extends AbstractXmlElement {
 		return uriPattern.pattern();
 	}
 
-	public void init(Router router) {
+	public void init(IRouter router) {
 		for (AbstractClientAddress ca : clientAddresses)
 			ca.init(router);
 	}

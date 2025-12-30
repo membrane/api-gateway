@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.registration.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,10 +34,10 @@ public class JdbcUserDataProvider implements UserDataProvider {
     private String tableName;
     private String userColumnName;
     private String passwordColumnName;
-    private Router router;
+    private IRouter router;
 
     @Override
-    public void init(Router router) {
+    public void init(IRouter router) {
         this.router = router;
 
         sanitizeUserInputs();

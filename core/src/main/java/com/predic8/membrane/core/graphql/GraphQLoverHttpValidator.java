@@ -58,10 +58,10 @@ public class GraphQLoverHttpValidator {
     private final int maxRecursion;
     private final int maxDepth;
     private final int maxMutations;
-    private final Router router;
+    private final IRouter router;
     private final FeatureBlocklist featureBlocklist;
 
-    public GraphQLoverHttpValidator(boolean allowExtensions, List<String> allowedMethods, int maxRecursion, int maxDepth, int maxMutations, FeatureBlocklist featureBlocklist, Router router) {
+    public GraphQLoverHttpValidator(boolean allowExtensions, List<String> allowedMethods, int maxRecursion, int maxDepth, int maxMutations, FeatureBlocklist featureBlocklist, IRouter router) {
         this.allowExtensions = allowExtensions;
         this.allowedMethods = allowedMethods;
         this.maxRecursion = maxRecursion;

@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 
 public class Any extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "any";
 
-	public Any(Router router) {
+	public Any(IRouter router) {
 		super(router);
 	}
 

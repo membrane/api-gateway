@@ -23,7 +23,7 @@ import com.predic8.membrane.annot.Required;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 
 /**
  * @explanation <p>
@@ -63,7 +63,7 @@ public class UnifyingUserDataProvider implements UserDataProvider {
 	}
 
 	@Override
-	public void init(Router router) {
+	public void init(IRouter router) {
 		for (UserDataProvider udp : userDataProviders)
 			udp.init(router);
 	}

@@ -13,17 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 import javax.xml.stream.XMLStreamReader;
 
 public abstract class AbstractClientAddress extends AbstractXmlElement {
 
-	protected final Router router;
+	protected final IRouter router;
 	protected String schema;
 
-	public AbstractClientAddress(Router router) {
+	public AbstractClientAddress(IRouter router) {
 		super();
 		this.router = router;
 	}
@@ -44,5 +44,5 @@ public abstract class AbstractClientAddress extends AbstractXmlElement {
 		this.schema = schema;
 	}
 
-	public void init(Router router) {}
+	public void init(IRouter router) {}
 }

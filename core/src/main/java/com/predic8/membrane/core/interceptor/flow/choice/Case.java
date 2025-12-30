@@ -36,7 +36,7 @@ public class Case extends InterceptorContainer implements XMLSupport {
     private ExchangeExpression exchangeExpression;
     private XmlConfig xmlConfig;
 
-    public void init(Router router) {
+    public void init(IRouter router) {
         exchangeExpression = expression( new InterceptorAdapter(router,xmlConfig), language, test);
     }
 

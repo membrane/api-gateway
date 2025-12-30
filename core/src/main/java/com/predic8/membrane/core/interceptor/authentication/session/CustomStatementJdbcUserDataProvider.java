@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;
@@ -30,7 +30,7 @@ import java.util.NoSuchElementException;
 public class CustomStatementJdbcUserDataProvider implements  UserDataProvider {
     private static final Logger log = LoggerFactory.getLogger(CustomStatementJdbcUserDataProvider.class.getName());
 
-    private Router router;
+    private IRouter router;
 
     DataSource datasource;
 
@@ -40,7 +40,7 @@ public class CustomStatementJdbcUserDataProvider implements  UserDataProvider {
 
 
     @Override
-    public void init(Router router) {
+    public void init(IRouter router) {
         this.router = router;
         sanitizeUserInputs();
         getDatasourceIfNull();

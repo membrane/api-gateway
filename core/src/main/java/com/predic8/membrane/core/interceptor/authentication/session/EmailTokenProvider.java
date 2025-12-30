@@ -71,7 +71,7 @@ public class EmailTokenProvider extends NumericTokenProvider {
 	private boolean ssl = true;
 
 	@Override
-	public void init(Router router) {
+	public void init(IRouter router) {
 	}
 
 

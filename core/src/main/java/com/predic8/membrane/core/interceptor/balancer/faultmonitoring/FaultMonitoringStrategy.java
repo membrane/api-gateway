@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.balancer.faultmonitoring;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.interceptor.balancer.*;
@@ -122,7 +122,8 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 	private final Random random = new Random();
 	private HttpClientStatusEventBus httpClientStatusEventBus;
 
-	public void init(Router router) {
+	@Override
+	public void init(IRouter router) {
 		httpClientStatusEventBus = new HttpClientStatusEventBus();
 		httpClientStatusEventBus.registerListener(new MyHttpClientStatusEventListener());
 

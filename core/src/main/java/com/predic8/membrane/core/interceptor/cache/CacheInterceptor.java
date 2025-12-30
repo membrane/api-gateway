@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
@@ -67,7 +67,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 	}
 
 	public static abstract class Store {
-		public void init(Router router) {}
+		public void init(IRouter router) {}
 
 		public abstract Node get(String url);
 		public abstract void put(String url, Node node);
@@ -102,7 +102,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 		}
 
 		@Override
-		public void init(Router router) {
+		public void init(IRouter router) {
 			dir = ResolverMap.combine(router.getBaseLocation(), dir);
 			File d = new File(dir);
 			if (!d.exists())

@@ -22,7 +22,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.ReplaceOptions;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.proxies.Proxy;
@@ -51,7 +51,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public void init(Router router) {
+    public void init(IRouter router) {
         super.init(router);
         if (this.collection == null) {
             this.collection = MongoClients.create(connection)

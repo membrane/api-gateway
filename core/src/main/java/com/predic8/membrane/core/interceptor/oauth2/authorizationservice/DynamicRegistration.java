@@ -39,9 +39,9 @@ public class DynamicRegistration {
     private SSLContext sslContext;
     private HttpClient client;
     private HttpClientConfiguration httpClientConfiguration;
-    private Router router;
+    private IRouter router;
 
-    public void init(Router router) {
+    public void init(IRouter router) {
         this.router = router;
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());

@@ -74,11 +74,11 @@ public interface ExchangeExpression {
 
         private XmlConfig xmlConfig;
 
-        public InterceptorAdapter(Router router) {
+        public InterceptorAdapter(IRouter router) {
             this.router = router;
         }
 
-        public InterceptorAdapter(Router router, XmlConfig xmlConfig) {
+        public InterceptorAdapter(IRouter router, XmlConfig xmlConfig) {
             this.router = router;
             this.xmlConfig = xmlConfig;
         }

@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.session;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 
 import java.util.*;
@@ -27,7 +27,7 @@ public class FakeSyncSessionStoreManager extends MemcachedSessionManager {
     private final ConcurrentHashMap<String, String> remoteContent = new ConcurrentHashMap<>();
 
     @Override
-    public void init(Router router) throws Exception {}
+    public void init(IRouter router) throws Exception {}
 
     @Override
     protected void addSessions(Session[] sessions) {

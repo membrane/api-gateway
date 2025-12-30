@@ -38,7 +38,7 @@ public class InMemorySessionManager extends SessionManager {
     protected final String cookieNamePrefix = UUID.randomUUID().toString().substring(0,8);
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init(IRouter router) throws Exception {
         sessions = CacheBuilder.newBuilder()
                 .expireAfterAccess(Duration.ofSeconds(getExpiresAfterSeconds()))
                 .build();

@@ -28,7 +28,7 @@ abstract class InterceptorContainer {
 
     private List<Interceptor> interceptors;
 
-    Outcome invokeFlow(Exchange exc, Flow flow, Router router) {
+    Outcome invokeFlow(Exchange exc, Flow flow, IRouter router) {
         try {
             return switch (flow) {
                 case REQUEST -> router.getFlowController().invokeRequestHandlers(exc, interceptors);
@@ -41,7 +41,7 @@ abstract class InterceptorContainer {
         }
     }
 
-    private void handleInvocationProblemDetails(Exchange exc, Exception e, Router router) {
+    private void handleInvocationProblemDetails(Exchange exc, Exception e, IRouter router) {
         internal(router.isProduction(),"interceptor-container")
             .detail("Error invoking plugin.")
             .exception(e)

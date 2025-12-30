@@ -18,17 +18,17 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamReader;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class AccessControl extends AbstractXmlElement {
 
 	public static final String ELEMENT_NAME = "accessControl";
 
-	private final Router router;
+	private final IRouter router;
 	private final List<Resource> resources = new ArrayList<>();
 
-	public AccessControl(Router router) {
+	public AccessControl(IRouter router) {
 		this.router = router;
 	}
 
@@ -61,7 +61,7 @@ public class AccessControl extends AbstractXmlElement {
 		throw new IllegalArgumentException("Resource not found for given path");
 	}
 
-	public void init(Router router) {
+	public void init(IRouter router) {
 		for (Resource resource : resources)
 			resource.init(router);
 	}

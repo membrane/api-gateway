@@ -33,11 +33,11 @@ public abstract  class LanguageAdapter {
     private static final Logger log = LoggerFactory.getLogger(LanguageAdapter.class);
 
     protected LanguageSupport languageSupport;
-    final protected Router router;
+    final protected IRouter router;
 
     protected static int preScriptLineLength;
 
-    public LanguageAdapter(Router router) {
+    public LanguageAdapter(IRouter router) {
         this.router = router;
         preScriptLineLength = Math.toIntExact(getPreScript().lines().count());
     }
@@ -54,7 +54,7 @@ public abstract  class LanguageAdapter {
         return getPreScript() + script + getPostScript();
     }
 
-    public static LanguageAdapter instance(Router router) {
+    public static LanguageAdapter instance(IRouter router) {
         try {
             Class.forName("org.graalvm.polyglot.Context");
             log.info("Found GraalVM Javascript engine.");
