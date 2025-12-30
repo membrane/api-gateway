@@ -40,7 +40,7 @@ public class ProxyRuleTest {
 
 	@AfterAll
 	public static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

@@ -47,7 +47,7 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
 
     @AfterEach
     void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     public void api(Consumer<TestAPIProxy> c) throws Exception {

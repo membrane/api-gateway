@@ -111,7 +111,7 @@ class InternalProxyTest {
 
     @AfterEach
     void teardown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

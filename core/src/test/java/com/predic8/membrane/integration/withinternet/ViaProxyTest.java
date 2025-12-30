@@ -46,8 +46,8 @@ public class ViaProxyTest {
 
     @AfterAll
     static void tearDown() {
-        router.shutdown();
-        proxyRouter.shutdown();
+        router.stop();
+        proxyRouter.stop();
     }
 
     @Test

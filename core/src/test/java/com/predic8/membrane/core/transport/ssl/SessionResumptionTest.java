@@ -58,9 +58,9 @@ public class SessionResumptionTest {
             tcpForwarder.close();
         } finally {
             try {
-                router1.shutdown();
+                router1.stop();
             } finally {
-                router2.shutdown();
+                router2.stop();
             }
         }
     }

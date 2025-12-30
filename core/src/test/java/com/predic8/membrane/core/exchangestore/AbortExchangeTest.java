@@ -117,6 +117,6 @@ public class AbortExchangeTest {
 
     @AfterEach
     public void done() {
-        router.shutdown();
+        router.stop();
     }
 }

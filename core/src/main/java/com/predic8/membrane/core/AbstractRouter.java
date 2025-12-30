@@ -17,7 +17,7 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
 
-public abstract class AbstractRouter implements Router {
+public abstract class AbstractRouter implements Router, MainComponents {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultRouter.class);
 

@@ -61,7 +61,7 @@ public class ClusterNotificationInterceptorTest {
 
 	@AfterEach
 	public void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

@@ -53,7 +53,7 @@ class IllegalCharactersInURLTest {
 
     @AfterEach
     void unInit() {
-        r.shutdown();
+        r.stop();
     }
 
     @Test

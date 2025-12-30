@@ -43,9 +43,9 @@ public class UnavailableSoapProxyTest {
 
 	@AfterAll
 	static void teardown() {
-		backendRouter.shutdown();
-		r.shutdown();
-		r2.shutdown();
+		backendRouter.stop();
+		r.stop();
+		r2.stop();
 	}
 
 	@BeforeEach
@@ -78,8 +78,8 @@ public class UnavailableSoapProxyTest {
 
 	@AfterEach
 	void teardownEach() {
-		r.shutdown();
-		r2.shutdown();
+		r.stop();
+		r2.stop();
 	}
 
 	private void test() {

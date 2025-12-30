@@ -40,7 +40,7 @@ public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
 
     @AfterAll
     static void teardown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

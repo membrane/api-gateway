@@ -39,8 +39,8 @@ class DefaultRouterTest {
 
     @AfterAll
     static void tearDown() {
-        prod.shutdown();
-        dev.shutdown();
+        prod.stop();
+        dev.stop();
     }
 
     @Test

@@ -66,7 +66,7 @@ public class RewriteInterceptorIntegrationTest {
 
 	@AfterAll
 	static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

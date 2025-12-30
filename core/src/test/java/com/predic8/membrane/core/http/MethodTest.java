@@ -50,7 +50,7 @@ public class MethodTest {
 
 	@AfterAll
 	public static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

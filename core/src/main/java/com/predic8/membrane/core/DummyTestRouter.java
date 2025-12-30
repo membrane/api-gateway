@@ -69,16 +69,6 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     @Override
-    public void shutdown() {
-
-    }
-
-    @Override
-    public void waitFor() {
-
-    }
-
-    @Override
     public void add(Proxy proxy) throws IOException {
         ruleManager.addProxy(proxy, MANUAL);
     }
@@ -147,7 +137,7 @@ public class DummyTestRouter extends AbstractRouter {
     public Statistics getStatistics() {
         return statistics;
     }
-    
+
     /**
      * Same as the default config from monitor-beans.xml
      */

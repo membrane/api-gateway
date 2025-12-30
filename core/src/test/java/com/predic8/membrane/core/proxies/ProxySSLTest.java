@@ -51,8 +51,8 @@ public class ProxySSLTest {
 
         testClient(backendUsesSSL, backendPort, createAndConfigureClient(proxyUsesSSL, proxyPort), proxyCounter);
 
-        proxy.shutdown();
-        backend.shutdown();
+        proxy.stop();
+        backend.stop();
     }
 
     private static @NotNull DefaultRouter createProxy(boolean proxyUsesSSL, int proxyPort, AtomicInteger proxyCounter) throws IOException {

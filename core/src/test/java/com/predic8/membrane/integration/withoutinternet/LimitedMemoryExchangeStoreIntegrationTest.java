@@ -99,9 +99,9 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
     @AfterAll
     public static void shutdown() {
         if (router != null)
-            router.shutdown();
+            router.stop();
         if (router2 != null)
-            router2.shutdown();
+            router2.stop();
     }
 
     @Test

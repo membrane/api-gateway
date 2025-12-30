@@ -104,9 +104,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     private static final Logger log = LoggerFactory.getLogger(DefaultRouter.class);
 
-    private ApplicationContext beanFactory;
-
-    protected BeanRegistry registry;
+    protected DefaultMainComponents mainComponents;
 
     //
     // Configuration
@@ -115,18 +113,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     private String baseLocation;
 
     private Configuration configuration = new Configuration();
-
-    //
-    // Components
-    //
-    protected Transport transport;
-
-    private final TimerManager timerManager = new TimerManager();
-    private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
-    private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
-    protected ResolverMap resolverMap;
-
-    protected final Statistics statistics = new Statistics();
 
     private final Object lock = new Object();
 
@@ -147,8 +133,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     public DefaultRouter() {
         log.debug("Creating new router.");
-        resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
-        resolverMap.addRuleResolver(this);
+        mainComponents = new DefaultMainComponents(this);
     }
 
     //
@@ -174,27 +159,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
                 throw new IllegalStateException("Router already initialized.");
         }
 
-        getRegistry().registerIfAbsent(HttpClientConfiguration.class, () -> new HttpClientConfiguration());
-
-        getRegistry().registerIfAbsent(ResolverMap.class, () -> {
-            ResolverMap rs = new ResolverMap(httpClientFactory, kubernetesClientFactory);
-            rs.addRuleResolver(this);
-            return rs;
-        });
-
-        getRegistry().registerIfAbsent(ExchangeStore.class, LimitedMemoryExchangeStore::new);
-        getRegistry().registerIfAbsent(RuleManager.class, () -> {
-            RuleManager rm = new RuleManager();
-            rm.setRouter(this);
-            return rm;
-        });
-        getRegistry().registerIfAbsent(DNSCache.class, DNSCache::new);
-
-        // Transport last
-        if (transport == null) {
-            transport = new HttpTransport();
-        }
-        transport.init(this);
+        mainComponents.init();
 
         initProxies();
 
@@ -249,16 +214,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         }
     }
 
-    /*
-     TODO:
-     - Why is the source hardcoded here.
-     - Why does it matter?
-     */
-    public Collection<Proxy> getRules() {
-        log.debug("Getting rules.");
-        return getRuleManager().getRulesBySource(MANUAL); // TODO: Source?
-    }
-
     @MCChildElement(order = 3)
     public void setRules(Collection<Proxy> proxies) {
         getRuleManager().removeAllRules();
@@ -266,30 +221,26 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
             getRuleManager().addProxy(proxy, RuleDefinitionSource.SPRING);
     }
 
+    public Collection<Proxy> getRules() {
+        return getRuleManager().getRules();
+    }
+
     @SuppressWarnings("NullableProblems")
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        beanFactory = applicationContext;
-        if (applicationContext instanceof BaseLocationApplicationContext)
-            setBaseLocation(((BaseLocationApplicationContext) applicationContext).getBaseLocation());
+        mainComponents.setApplicationContext(applicationContext);
     }
 
     public RuleManager getRuleManager() {
-        return getRegistry().registerIfAbsent(RuleManager.class, () -> {
-            RuleManager rm = new RuleManager();
-            rm.setRouter(this);
-            return rm;
-        });
+        return mainComponents.getRuleManager();
     }
 
     public void setRuleManager(RuleManager ruleManager) {
-        log.debug("Setting ruleManager.");
-        ruleManager.setRouter(this);
-        getRegistry().register("ruleManager", ruleManager);
+        mainComponents.setRuleManager(ruleManager);
     }
 
     public ExchangeStore getExchangeStore() {
-        return getRegistry().getBean(ExchangeStore.class).orElseThrow();
+        return mainComponents.getExchangeStore();
     }
 
     /**
@@ -300,12 +251,12 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
      */
     @MCAttribute
     public void setExchangeStore(ExchangeStore exchangeStore) {
-        getRegistry().register("exchangeStore", exchangeStore);
+        mainComponents.setExchangeStore(exchangeStore);
     }
 
     @Override
     public Transport getTransport() {
-        return transport;
+        return mainComponents.getTransport();
     }
 
     /**
@@ -316,11 +267,11 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
      */
     @MCChildElement(order = 1, allowForeign = true)
     public void setTransport(Transport transport) {
-        this.transport = transport;
+        mainComponents.setTransport(transport);
     }
 
     public HttpClientConfiguration getHttpClientConfig() {
-        return getResolverMap().getHTTPSchemaResolver().getHttpClientConfig();
+        return mainComponents.getHttpClientConfig();
     }
 
     /**
@@ -330,26 +281,15 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
      */
     @MCChildElement()
     public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
-        getResolverMap().getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
+        mainComponents.setHttpClientConfig(httpClientConfig);
     }
 
     public DNSCache getDnsCache() {
-        return getRegistry().getBean(DNSCache.class).orElseThrow(); // TODO
+        return mainComponents.getDnsCache();
     }
 
     public ResolverMap getResolverMap() {
-        return resolverMap;
-    }
-
-    /**
-     * Closes all ports (if any were opened) and waits for running exchanges to complete.
-     * <p>
-     * When running as an embedded servlet, this has no effect.
-     */
-    public void shutdown() {
-        if (transport != null)
-            transport.closeAll();
-        timerManager.shutdown();
+        return mainComponents.getResolverMap();
     }
 
     /**
@@ -374,11 +314,11 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     private void startJmx() {
-        if (beanFactory == null)
+        if (mainComponents.getBeanFactory() == null)
             return;
 
         try {
-            JmxExporter exporter = beanFactory.getBean(JMX_EXPORTER_NAME, JmxExporter.class);
+            JmxExporter exporter = mainComponents.getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class);
             //exporter.removeBean(prefix + jmxRouterName);
             exporter.addBean("io.membrane-api:00=routers, name=" + configuration.getJmx(), new JmxRouter(this, exporter));
             exporter.initAfterBeansAdded();
@@ -399,6 +339,17 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         }
     }
 
+    /**
+     * Closes all ports (if any were opened) and waits for running exchanges to complete.
+     * <p>
+     * When running as an embedded servlet, this has no effect.
+     */
+    private void shutdown() {
+        if (mainComponents.getTransport() != null)
+            mainComponents.getTransport().closeAll();
+        mainComponents.getTimerManager().shutdown();
+    }
+
     @Override
     public boolean isRunning() {
         synchronized (lock) {
@@ -415,7 +366,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     public ApplicationContext getBeanFactory() {
-        return beanFactory;
+        return mainComponents.getBeanFactory();
     }
 
     public boolean isProduction() {
@@ -423,7 +374,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     public Statistics getStatistics() {
-        return statistics;
+        return mainComponents.getStatistics();
     }
 
     @SuppressWarnings("NullableProblems")
@@ -437,7 +388,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
      */
     @MCChildElement(order = 2)
     public void setGlobalInterceptor(GlobalInterceptor globalInterceptor) {
-        getRegistry().register("globalInterceptor", globalInterceptor);
+        mainComponents.setGlobalInterceptor(globalInterceptor);
     }
 
     public String getId() {
@@ -459,19 +410,19 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     public TimerManager getTimerManager() {
-        return timerManager;
+        return  mainComponents.getTimerManager();
     }
 
     public KubernetesClientFactory getKubernetesClientFactory() {
-        return kubernetesClientFactory;
+        return mainComponents.getKubernetesClientFactory();
     }
 
     public HttpClientFactory getHttpClientFactory() {
-        return httpClientFactory;
+        return mainComponents.getHttpClientFactory();
     }
 
     public FlowController getFlowController() {
-        return getRegistry().registerIfAbsent(FlowController.class, () -> new FlowController(this));
+        return mainComponents.getFlowController();
     }
 
     public void handleAsynchronousInitializationResult(boolean success) {
@@ -525,20 +476,18 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     public AbstractRefreshableApplicationContext getRef() {
-        if (beanFactory instanceof AbstractRefreshableApplicationContext bf)
+        if (mainComponents.getBeanFactory() instanceof AbstractRefreshableApplicationContext bf)
             return bf;
         throw new RuntimeException("ApplicationContext is not a AbstractRefreshableApplicationContext. Please set <router hotDeploy=\"false\">.");
     }
 
     @Override
     public void setRegistry(BeanRegistry registry) {
-        this.registry = registry;
+        mainComponents.setRegistry(registry);
     }
 
     public BeanRegistry getRegistry() {
-        if (registry == null)
-            registry = new BeanRegistryImplementation(null, this, null);
-        return registry;
+       return mainComponents.getRegistry();
     }
 
     public void applyConfiguration(Configuration configuration) {

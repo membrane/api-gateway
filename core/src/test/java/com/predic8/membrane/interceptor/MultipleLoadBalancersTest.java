@@ -45,7 +45,7 @@ public class MultipleLoadBalancersTest {
         service2.close();
         service11.close();
         service12.close();
-        balancer.shutdown();
+        balancer.stop();
     }
 
     private static class MockService {
@@ -65,7 +65,7 @@ public class MultipleLoadBalancersTest {
         }
 
         public void close() {
-            router.shutdown();
+            router.stop();
         }
     }
 

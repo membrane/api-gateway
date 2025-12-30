@@ -40,7 +40,7 @@ public class SOAPProxyIntegrationTest {
 
 	@AfterAll
 	public static void teardown() {
-		targetRouter.shutdown();
+		targetRouter.stop();
 	}
 
 	@BeforeEach
@@ -50,7 +50,7 @@ public class SOAPProxyIntegrationTest {
 
 	@AfterEach
 	void shutdownRouter() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

@@ -20,6 +20,6 @@ public class HttpRouter extends DefaultRouter {
 
     @Override
     public HttpTransport getTransport() {
-        return (HttpTransport) transport;
+        return (HttpTransport) super.getTransport();
     }
 }

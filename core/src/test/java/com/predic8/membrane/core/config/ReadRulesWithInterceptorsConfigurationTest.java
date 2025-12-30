@@ -65,7 +65,7 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 
 	@AfterAll
 	static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 }

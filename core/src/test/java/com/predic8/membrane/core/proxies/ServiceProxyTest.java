@@ -40,7 +40,7 @@ class ServiceProxyTest {
 
     @AfterAll
     public static void shutdown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

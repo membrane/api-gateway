@@ -40,7 +40,7 @@ class ProxySSLConnectionMethodTest {
 
 	@AfterEach
 	void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

@@ -37,7 +37,7 @@ public class APIProxyKeyTest {
 
     @AfterEach
     public void shutdown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

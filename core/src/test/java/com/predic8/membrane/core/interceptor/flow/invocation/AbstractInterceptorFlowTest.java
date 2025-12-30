@@ -39,7 +39,7 @@ public abstract class AbstractInterceptorFlowTest {
 
     @AfterEach
     void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     protected void assertFlow(String expected,Interceptor... interceptors) throws Exception {

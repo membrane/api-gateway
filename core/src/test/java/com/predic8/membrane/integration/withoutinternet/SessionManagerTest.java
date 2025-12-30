@@ -88,7 +88,6 @@ public class SessionManagerTest {
         assertEquals(rememberThis, rememberThisFromServer);
 
         httpRouter.stop();
-        httpRouter.shutdown();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -117,7 +116,7 @@ public class SessionManagerTest {
         assertNotEquals(rememberThis, rememberThisFromServer);
         assertEquals("null", rememberThisFromServer);
 
-        httpRouter.shutdown();
+        httpRouter.stop();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -154,7 +153,7 @@ public class SessionManagerTest {
 
         assertEquals("rememberThis", rememberThisFromServer);
 
-        httpRouter.shutdown();
+        httpRouter.stop();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -197,7 +196,7 @@ public class SessionManagerTest {
             }
         }
 
-        httpRouter.shutdown();
+        httpRouter.stop();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -245,7 +244,7 @@ public class SessionManagerTest {
             Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(secondExpires.split("=")[1]));
         }
 
-        httpRouter.shutdown();
+        httpRouter.stop();
     }
 
     @ParameterizedTest(name = "{0}")
@@ -294,7 +293,7 @@ public class SessionManagerTest {
         executor.shutdown();
         executor.awaitTermination(60, TimeUnit.SECONDS);
         client.close();
-        httpRouter.shutdown();
+        httpRouter.stop();
     }
 
     private Stream<Header> allSetCookieHeadersExceptFor1970Expire(CloseableHttpResponse resp) {

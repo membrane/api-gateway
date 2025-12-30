@@ -50,7 +50,7 @@ public class ServiceInvocationTest {
 
 	@AfterEach
 	public void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	private ServiceProxy createFirstRule() {

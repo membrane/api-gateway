@@ -61,9 +61,9 @@ public abstract class OAuth2RedirectTest {
 
     @AfterEach
     void shutdown() {
-        authorizationServerRouter.shutdown();
-        oauth2ResourceRouter.shutdown();
-        backendRouter.shutdown();
+        authorizationServerRouter.stop();
+        oauth2ResourceRouter.stop();
+        backendRouter.stop();
     }
 
     @Test

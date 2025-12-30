@@ -27,6 +27,6 @@ public abstract class AbstractTestWithRouter {
 
     @AfterEach
     void shutDown() {
-        router.shutdown();
+        router.stop();
     }
 }

@@ -75,7 +75,9 @@ public class RouterCLI {
         if (commandLine.getCommand().getName().equals("private-jwk-to-public")) {
             privateJwkToPublic(commandLine);
         }
-        getRouter(commandLine).waitFor();
+        var router = getRouter(commandLine);
+        if (router instanceof DefaultRouter dr)
+            dr.waitFor();
     }
 
     private static void privateJwkToPublic(MembraneCommandLine commandLine) {

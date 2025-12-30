@@ -56,7 +56,7 @@ public class ClusterBalancerTest {
 
     @AfterAll
     static void tearDown() {
-        r.shutdown();
+        r.stop();
     }
 
     @Test

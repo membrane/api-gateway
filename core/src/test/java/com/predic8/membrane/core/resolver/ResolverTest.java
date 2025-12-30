@@ -100,7 +100,7 @@ public class ResolverTest {
 
     @AfterAll
     public static void teardown() {
-        router.shutdown();
+        router.stop();
     }
 
     // RelativeUrlType (SCHEMA, NAME, SAME_DIR, PARENT_DIR) is handled by the test methods as well as by the test resources

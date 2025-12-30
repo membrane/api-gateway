@@ -51,7 +51,7 @@ public class SOAPProxyTest {
 
     @AfterEach
     void shutDown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

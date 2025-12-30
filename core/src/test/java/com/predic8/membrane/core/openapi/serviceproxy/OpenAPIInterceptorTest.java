@@ -69,7 +69,7 @@ class OpenAPIInterceptorTest {
 
     @AfterEach
     void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

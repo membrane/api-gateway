@@ -58,7 +58,7 @@ public class RuleManagerTest {
 
 	@AfterEach
 	public void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

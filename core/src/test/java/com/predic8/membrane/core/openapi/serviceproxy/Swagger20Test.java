@@ -66,7 +66,7 @@ public class Swagger20Test {
 
     @AfterEach
     public void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

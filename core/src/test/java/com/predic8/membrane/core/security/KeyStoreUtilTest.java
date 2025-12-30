@@ -53,7 +53,7 @@ class KeyStoreUtilTest {
 
     @AfterAll
     static void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

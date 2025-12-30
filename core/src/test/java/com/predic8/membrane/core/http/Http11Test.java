@@ -51,8 +51,8 @@ public class Http11Test {
 
 	@AfterAll
 	public static void tearDown() {
-		router2.shutdown();
-		router.shutdown();
+		router2.stop();
+		router.stop();
 	}
 
 	/**

@@ -38,7 +38,7 @@ public class AdjustContentLengthTest {
 
 	@AfterAll
 	public static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	private static ServiceProxy createMonitorRule() {

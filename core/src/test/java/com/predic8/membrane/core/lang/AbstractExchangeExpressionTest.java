@@ -61,7 +61,7 @@ public abstract class AbstractExchangeExpressionTest {
 
     @AfterAll
     static void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     protected abstract Request.Builder getRequestBuilder() throws URISyntaxException;

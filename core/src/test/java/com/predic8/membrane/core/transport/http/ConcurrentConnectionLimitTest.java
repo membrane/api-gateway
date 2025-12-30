@@ -54,7 +54,7 @@ public class ConcurrentConnectionLimitTest {
 
     @AfterEach
     public void tearDown() throws Exception {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

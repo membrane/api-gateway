@@ -33,7 +33,7 @@ public class SimpleTest {
 
 	@AfterAll
 	static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 }

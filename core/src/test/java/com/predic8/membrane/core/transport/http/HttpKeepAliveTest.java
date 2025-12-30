@@ -69,7 +69,7 @@ public class HttpKeepAliveTest {
 
 	@AfterEach
 	public void tearDown() {
-		service1.shutdown();
+		service1.stop();
 	}
 
 	private HttpClient createHttpClient(int defaultKeepAliveTimeout) {

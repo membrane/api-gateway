@@ -110,9 +110,9 @@ public abstract class LoadBalancingInterceptorTest {
 
 	@AfterEach
 	void tearDown() {
-		service1.shutdown();
-		service2.shutdown();
-		balancer.shutdown();
+		service1.stop();
+		service2.stop();
+		balancer.stop();
 	}
 
 	@Test
@@ -222,7 +222,7 @@ public abstract class LoadBalancingInterceptorTest {
 		assertEquals(1, mockInterceptor1.getCount());
 		assertEquals(1, mockInterceptor2.getCount());
 
-		service1.shutdown();
+		service1.stop();
 		sleep(1000);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));

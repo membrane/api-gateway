@@ -67,7 +67,7 @@ class ApiDocsInterceptorTest {
 
     @AfterAll
     void tearDownAll() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

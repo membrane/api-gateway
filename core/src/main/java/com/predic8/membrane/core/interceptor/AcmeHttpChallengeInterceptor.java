@@ -13,22 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.ssl.AcmeSSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.acme.AcmeClient;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.transport.ssl.acme.*;
 import org.jose4j.lang.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_OCTET_STREAM;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static java.util.Arrays.stream;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Arrays.*;
 
 /**
  * @description

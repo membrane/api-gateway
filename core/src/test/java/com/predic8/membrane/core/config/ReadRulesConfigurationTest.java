@@ -35,7 +35,7 @@ public class ReadRulesConfigurationTest {
 
     @AfterAll
     static void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

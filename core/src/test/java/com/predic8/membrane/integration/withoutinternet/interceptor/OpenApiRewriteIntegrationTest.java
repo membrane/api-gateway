@@ -41,7 +41,7 @@ public class OpenApiRewriteIntegrationTest {
 
     @AfterEach
     public void tearDown() {
-        r.shutdown();
+        r.stop();
     }
 
     @NotNull

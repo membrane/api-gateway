@@ -52,7 +52,7 @@ public class InternalInvocationTest {
 
 	@AfterEach
 	public void tearDown() throws Exception {
-		router.shutdown();
+		router.stop();
 	}
 
 	private void callService(int port) throws IOException {

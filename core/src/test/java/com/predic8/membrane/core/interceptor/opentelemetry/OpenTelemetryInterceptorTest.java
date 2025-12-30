@@ -35,6 +35,6 @@ class OpenTelemetryInterceptorTest {
 
     @AfterEach
     void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 }

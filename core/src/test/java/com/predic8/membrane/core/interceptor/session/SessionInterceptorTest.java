@@ -54,7 +54,7 @@ public class SessionInterceptorTest {
 
     @AfterEach
     void shutDown() throws IOException {
-        router.shutdown();
+        router.stop();
         httpClient.close();
     }
 

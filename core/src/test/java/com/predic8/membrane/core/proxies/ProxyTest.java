@@ -86,7 +86,7 @@ public class ProxyTest {
 
     @AfterAll
     public static void done() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

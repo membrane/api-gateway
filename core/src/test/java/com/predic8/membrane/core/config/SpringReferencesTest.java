@@ -34,7 +34,7 @@ public class SpringReferencesTest {
 
 	@AfterAll
 	public static void after() {
-		r.shutdown();
+		r.stop();
 	}
 
 	@Test

@@ -47,7 +47,7 @@ public class WSDLPublisherInterceptorTest {
 	}
 
 	void after() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@ParameterizedTest(name = "{0} {1}")

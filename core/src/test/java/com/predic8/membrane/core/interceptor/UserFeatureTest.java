@@ -50,7 +50,7 @@ class UserFeatureTest {
 
 	@AfterAll
 	static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	private void callService(String s) {

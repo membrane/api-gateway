@@ -47,7 +47,7 @@ public class ConnectionTest {
 		assertTrue(conLocalhost.isClosed());
 		assertTrue(con127_0_0_1.isClosed());
 
-		router.shutdown();
+		router.stop();
 	}
 
 

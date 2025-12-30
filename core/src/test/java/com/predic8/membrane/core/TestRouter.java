@@ -25,12 +25,11 @@ public class TestRouter extends DefaultRouter {
     public TestRouter(ProxyConfiguration proxyConfiguration) {
         if (proxyConfiguration != null)
             getResolverMap().getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
-
     }
 
     @Override
     public HttpTransport getTransport() {
-        return (HttpTransport) transport;
+        return (HttpTransport) super.getTransport();
     }
 
 }

@@ -132,8 +132,8 @@ public class SoapProxyInvocationTest {
 
     @AfterAll
     public static void teardown() {
-        gw.shutdown();
-        backend.shutdown();
+        gw.stop();
+        backend.stop();
     }
 
     @Test

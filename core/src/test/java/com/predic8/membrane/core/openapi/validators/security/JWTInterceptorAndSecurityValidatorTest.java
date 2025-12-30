@@ -58,7 +58,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
 
     @AfterEach
     void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

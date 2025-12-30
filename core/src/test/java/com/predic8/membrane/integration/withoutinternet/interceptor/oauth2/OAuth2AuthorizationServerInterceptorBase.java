@@ -212,7 +212,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
 
     @AfterEach
     void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     public static Collection<Object[]> data() throws Exception {

@@ -39,10 +39,10 @@ public class LoadBalancingWithClusterManagerTest {
 
     @AfterEach
     public void tearDown() {
-        lb.shutdown();
-        node1.shutdown();
-        node2.shutdown();
-        node3.shutdown();
+        lb.stop();
+        node1.stop();
+        node2.stop();
+        node3.stop();
     }
 
     @Test

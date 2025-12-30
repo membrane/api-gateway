@@ -59,7 +59,7 @@ public class BoundConnectionTest {
 
 	@AfterEach
 	public void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 

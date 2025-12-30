@@ -43,7 +43,7 @@ public class SoapAndInternalProxyTest {
 
     @AfterEach
     void teardown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

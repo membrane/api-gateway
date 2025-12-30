@@ -49,8 +49,8 @@ public class Http10Test {
 
 	@AfterAll
 	public static void tearDown() {
-		router2.shutdown();
-		router.shutdown();
+		router2.stop();
+		router.stop();
 	}
 
 	@Test

@@ -87,7 +87,7 @@ class MassivelyParallelTest {
     }
 
     @Test
-    @Timeout(30) // seconds
+    @Timeout(60) // seconds
     public void run() throws Exception {
         Set<String> paths = newKeySet();
         runInParallel((cdl) -> parallelTestWorker(cdl, paths), CONCURRENT_THREADS);

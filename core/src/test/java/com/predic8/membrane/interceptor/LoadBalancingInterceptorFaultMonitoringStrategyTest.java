@@ -123,13 +123,13 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     void tearDown() {
         for (Router httpRouter : nodes) {
             try {
-                httpRouter.shutdown();
+                httpRouter.stop();
             } catch (Exception e) {
                 log.warn("Node shutdown failed.", e);
             }
         }
         try {
-            balancer.shutdown();
+            balancer.stop();
         } catch (Exception e) {
             log.warn("Balancer shutdown failed.", e);
         }
@@ -206,7 +206,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 .successChance(1d)
                 .preSubmitCallback(integer -> {
                     if (integer == 20) {
-                        nodes.getFirst().shutdown();
+                        nodes.getFirst().stop();
                     }
                     return null;
                 })
@@ -236,13 +236,13 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 .successChance(1d)
                 .preSubmitCallback(i -> {
                     if (i == 10) {
-                        nodes.getFirst().shutdown();
+                        nodes.getFirst().stop();
                     } else if (i == 20) {
-                        nodes.get(1).shutdown();
+                        nodes.get(1).stop();
                     } else if (i == 30) {
-                        nodes.get(2).shutdown();
+                        nodes.get(2).stop();
                     } else if (i == 40) {
-                        nodes.get(3).shutdown();
+                        nodes.get(3).stop();
                     }
                     return null;
                 })
