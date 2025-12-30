@@ -25,11 +25,11 @@ import static org.hamcrest.Matchers.*;
 
 class InternalProxyTest {
 
-    private Router router;
+    private IRouter router;
 
     @BeforeEach
     void setup() throws Exception {
-        router = new HttpRouter();
+        router = new TestRouter();
 
         router.add(new APIProxy() {{
             key = new APIProxyKey(2001);

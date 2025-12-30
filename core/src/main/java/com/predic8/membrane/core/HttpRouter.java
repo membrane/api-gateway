@@ -14,15 +14,45 @@
 
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.util.*;
+import org.springframework.context.*;
 
+import java.io.*;
 import java.util.*;
 
-public class HttpRouter extends Router {
+import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
+
+public class HttpRouter extends AbstractRouter {
+
+    private FlowController flowController = new FlowController(this);
+    private ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
+    private RuleManager ruleManager = new RuleManager();
+
+    private final TimerManager timerManager = new TimerManager();
+    private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
+    private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
+    private ResolverMap resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
+
+    private HttpTransport transport;
+
+    private DNSCache dnsCache = new DNSCache();
+
+    private URIFactory uriFactory = new URIFactory();
+
+    private final Statistics statistics = new Statistics();
+    private ApplicationContext applicationContext;
+
+    private String baseLocation;
+
+    private Configuration configuration = new Configuration();
 
     public HttpRouter() {
         this(null);
@@ -35,8 +65,108 @@ public class HttpRouter extends Router {
     }
 
     @Override
+    public void init() {
+        initProxies();
+    }
+
+    @Override
+    public void shutdown() {
+
+    }
+
+    @Override
+    public void waitFor() {
+
+    }
+
+    @Override
+    public void add(Proxy proxy) throws IOException {
+        ruleManager.addProxy(proxy, MANUAL);
+    }
+
+    @Override
+    public Configuration getConfig() {
+        return configuration;
+    }
+
+    @Override
+    public FlowController getFlowController() {
+        return flowController;
+    }
+
+    @Override
+    public ExchangeStore getExchangeStore() {
+        return exchangeStore;
+    }
+
+    @Override
+    public RuleManager getRuleManager() {
+        return ruleManager;
+    }
+
+    @Override
+    public String getBaseLocation() {
+        return baseLocation;
+    }
+
+    @Override
+    public ResolverMap getResolverMap() {
+        return resolverMap;
+    }
+
+    @Override
+    public DNSCache getDnsCache() {
+        return dnsCache;
+    }
+
+    @Override
     public HttpTransport getTransport() {
-        return (HttpTransport) transport;
+        return transport;
+    }
+
+    @Override
+    public URIFactory getUriFactory() {
+        return uriFactory;
+    }
+
+    @Override
+    public boolean isProduction() {
+        return false;
+    }
+
+    @Override
+    public ApplicationContext getBeanFactory() {
+        return applicationContext;
+    }
+
+    @Override
+    public HttpClientFactory getHttpClientFactory() {
+        return null;
+    }
+
+    @Override
+    public TimerManager getTimerManager() {
+        return timerManager;
+    }
+
+    @Override
+    public Statistics getStatistics() {
+        return statistics;
+    }
+
+    @Override
+    public KubernetesClientFactory getKubernetesClientFactory() {
+        return kubernetesClientFactory;
+    }
+
+    @Override
+    public Collection<Proxy> getRules() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public RuleReinitializer getReinitializer() {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -51,8 +181,8 @@ public class HttpRouter extends Router {
     /**
      * Same as the default config from monitor-beans.xml
      */
-    private static Transport createTransport() {
-        Transport transport = new HttpTransport();
+    private static HttpTransport createTransport() {
+        HttpTransport transport = new HttpTransport();
         List<Interceptor> interceptors = new ArrayList<>();
         interceptors.add(new RuleMatchingInterceptor());
         interceptors.add(new DispatchingInterceptor());
@@ -62,5 +192,40 @@ public class HttpRouter extends Router {
         interceptors.add(httpClientInterceptor);
         transport.setFlow(interceptors);
         return transport;
+    }
+
+    @Override
+    public void start() {
+
+    }
+
+    @Override
+    public void stop() {
+
+    }
+
+    @Override
+    public boolean isRunning() {
+        return false;
+    }
+
+    public void setExchangeStore(ExchangeStore exchangeStore) {
+        this.exchangeStore = exchangeStore;
+    }
+
+    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        throw new UnsupportedOperationException();
+    }
+
+    public HttpClientConfiguration getHttpClientConfig() {
+       return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+    }
+
+    public void setBaseLocation(String baseLocation) {
+        this.baseLocation = baseLocation;
     }
 }

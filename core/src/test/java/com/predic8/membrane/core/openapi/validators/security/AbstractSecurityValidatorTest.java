@@ -41,9 +41,7 @@ public abstract class AbstractSecurityValidatorTest {
         return exc;
     }
 
-    protected static Router getRouter() {
-        Router router = new HttpRouter();
-        router.getConfig().setUriFactory(new URIFactory());
-        return router;
+    protected static IRouter getRouter() {
+        return new HttpRouter();
     }
 }

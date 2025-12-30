@@ -31,11 +31,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IllegalCharactersInURLTest {
 
-    private HttpRouter r;
+    private IRouter r;
 
     @BeforeEach
     void init() throws Exception {
-        r = new HttpRouter();
+        r = new TestRouter();
         r.getConfig().setHotDeploy(false);
         r.add(new ServiceProxy(new ServiceProxyKey(3027), "localhost", 3028));
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3028), null, 80);

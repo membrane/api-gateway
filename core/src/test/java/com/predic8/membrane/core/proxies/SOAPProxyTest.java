@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SOAPProxyTest {
 
-    Router router;
+    IRouter router;
 
     SOAPProxy proxy;
 
@@ -39,8 +39,7 @@ public class SOAPProxyTest {
     void setUp() throws IOException {
         proxy = new SOAPProxy();
         proxy.setPort(2000);
-        router = new HttpRouter();
-        router.setExchangeStore(new ForgetfulExchangeStore());
+        router = new Router();
 
         APIProxy backend = new APIProxy();
         backend.setKey(new APIProxyKey(2001));

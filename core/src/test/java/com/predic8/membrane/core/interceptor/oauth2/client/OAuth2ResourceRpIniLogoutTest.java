@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
@@ -59,12 +59,12 @@ import static org.junit.jupiter.api.Assertions.*;
 public class OAuth2ResourceRpIniLogoutTest {
 
     protected final BrowserMock browser = new BrowserMock();
-    protected HttpRouter mockAuthServer;
+    protected IRouter mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final int serverPort = 3062;
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
-    private HttpRouter oauth2Resource;
+    private IRouter oauth2Resource;
     private final AtomicBoolean isLoggedOutAtOP = new AtomicBoolean(false);
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
@@ -81,12 +81,12 @@ public class OAuth2ResourceRpIniLogoutTest {
     public void init() throws IOException, JoseException {
         createKey();
 
-        mockAuthServer = new HttpRouter();
+        mockAuthServer = new TestRouter();
         mockAuthServer.getConfig().setHotDeploy(false);
         mockAuthServer.add(getMockAuthServiceProxy());
         mockAuthServer.start();
 
-        oauth2Resource = new HttpRouter();
+        oauth2Resource = new TestRouter();
         oauth2Resource.getConfig().setHotDeploy(false);
         oauth2Resource.add(getConfiguredOAuth2Resource());
         oauth2Resource.start();

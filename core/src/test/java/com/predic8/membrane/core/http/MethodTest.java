@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MethodTest {
 
-	private static HttpRouter router;
+	private static IRouter router;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
@@ -43,7 +43,7 @@ public class MethodTest {
 			}
 		});
 		proxy.getFlow().add(new ExceptionTestInterceptor()); // Cause exception
-		router = new HttpRouter();
+		router = new TestRouter();
 		router.add(proxy);
 		router.start();
 	}

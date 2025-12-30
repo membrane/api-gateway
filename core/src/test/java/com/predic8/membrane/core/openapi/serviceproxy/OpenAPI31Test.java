@@ -26,6 +26,7 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,8 +41,7 @@ public class OpenAPI31Test {
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        Router router = new HttpRouter();
-        router.getConfig().setUriFactory(new URIFactory());
+        IRouter router = new HttpRouter();
 
         petstore_v3_1 = new OpenAPISpec();
         petstore_v3_1.location = getPathFromResource("openapi/specs/petstore-v3.1.json");
@@ -55,7 +55,6 @@ public class OpenAPI31Test {
     @Test
     void simple() {
         exc.getRequest().setUri("/pets");
-        Outcome actual = interceptor.handleRequest(exc);
-        assertEquals(Outcome.RETURN, actual);
+        assertEquals(RETURN, interceptor.handleRequest(exc));
     }
 }

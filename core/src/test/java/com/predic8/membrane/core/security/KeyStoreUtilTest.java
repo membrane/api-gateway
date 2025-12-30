@@ -13,8 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.security;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
 import org.junit.jupiter.api.AfterAll;
@@ -36,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class KeyStoreUtilTest {
 
-    private static Router router;
+    private static IRouter router;
     private static java.security.KeyStore keyStore;
     private static final String ALIAS = "key1";
     private static final String KEYSTORE_PASSWORD = "secret";

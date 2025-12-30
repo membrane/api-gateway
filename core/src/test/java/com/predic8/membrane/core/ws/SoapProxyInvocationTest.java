@@ -55,8 +55,8 @@ public class SoapProxyInvocationTest {
                     </s:Body>
                 </s:Envelope>""";
 
-    static Router gw;
-    static Router backend;
+    static IRouter gw;
+    static IRouter backend;
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -65,7 +65,7 @@ public class SoapProxyInvocationTest {
     }
 
     private static void setupGateway() throws Exception {
-        gw = new HttpRouter();
+        gw = new TestRouter();
         gw.getConfig().setHotDeploy(false);
         gw.add(createCitiesSoapProxyGateway());
         gw.add(createTwoServicesSOAPProxyGateway("ServiceA"));
@@ -89,7 +89,7 @@ public class SoapProxyInvocationTest {
     }
 
     private static void setupBackend() throws Exception {
-        backend = new HttpRouter();
+        backend = new TestRouter();
         backend.add(createAServiceProxy());
         backend.add(createCitiesServiceProxy());
         backend.start();

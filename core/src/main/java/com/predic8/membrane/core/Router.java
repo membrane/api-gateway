@@ -100,7 +100,7 @@ import static com.predic8.membrane.core.util.DLPUtil.*;
         outputName = "router-conf.xsd",
         targetNamespace = "http://membrane-soa.org/proxies/1/")
 @MCElement(name = "router")
-public class Router implements ApplicationContextAware, BeanRegistryAware, BeanNameAware, BeanCacheObserver, IRouter {
+public class Router extends AbstractRouter implements ApplicationContextAware, BeanRegistryAware, BeanNameAware, BeanCacheObserver {
 
     private static final Logger log = LoggerFactory.getLogger(Router.class);
 
@@ -119,7 +119,7 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     //
     // Components
     //
-    protected Transport transport;
+    protected HttpTransport transport;
 
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
@@ -202,14 +202,6 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
             initialized = true;
         }
         reinitializer = new RuleReinitializer(this); // Bean
-    }
-
-    private void initProxies() {
-        log.debug("Initializing proxies.");
-        for (Proxy proxy : getRuleManager().getRules()) {
-            log.debug("Initializing proxy {}.", proxy.getName());
-            proxy.init(this);
-        }
     }
 
     /**
@@ -311,7 +303,8 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
         getRegistry().register("exchangeStore", exchangeStore);
     }
 
-    public Transport getTransport() {
+    @Override
+    public HttpTransport getTransport() {
         return transport;
     }
 
@@ -322,7 +315,7 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
      * is shown in proxies-full-sample.xml .
      */
     @MCChildElement(order = 1, allowForeign = true)
-    public void setTransport(Transport transport) {
+    public void setTransport(HttpTransport transport) {
         this.transport = transport;
     }
 
@@ -454,10 +447,14 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     /**
      * waits until the router has shut down
      */
-    public void waitFor() throws InterruptedException {
+    public void waitFor() {
         synchronized (lock) {
-            while (running)
-                lock.wait();
+            while (running) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException ignored) {
+                }
+            }
         }
     }
 

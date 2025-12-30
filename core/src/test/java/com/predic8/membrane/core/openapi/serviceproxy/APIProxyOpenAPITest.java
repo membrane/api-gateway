@@ -38,7 +38,7 @@ public class APIProxyOpenAPITest {
     private static final String SECURITY = "security";
     private static final String DETAILS = "details";
 
-    Router router;
+    IRouter router;
 
     @BeforeEach
     public void setUp() {

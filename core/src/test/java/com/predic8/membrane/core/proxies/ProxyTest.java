@@ -37,13 +37,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxyTest {
 
-    static HttpRouter router;
+    static IRouter router;
     static final AtomicReference<String> lastMethod = new AtomicReference<>();
 
     @BeforeAll
     public static void init() throws IOException {
 
-        router = new HttpRouter();
+        router = new TestRouter();
         router.getConfig().setHotDeploy(false);
 
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(3055));

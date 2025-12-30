@@ -30,10 +30,10 @@ public class ClusterBalancerTest {
 
     private static XMLElementSessionIdExtractor extractor;
     private static LoadBalancingInterceptor lb;
-    private static Router r;
+    private static IRouter r;
 
     @BeforeAll
-    public static void setUp() throws Exception {
+    static void setUp() throws Exception {
 
         extractor = new XMLElementSessionIdExtractor();
         extractor.setLocalName("session");
@@ -48,19 +48,19 @@ public class ClusterBalancerTest {
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3011), "predic8.com", 80);
         sp.getFlow().add(lb);
         r.add(sp);
-        r.start();
+        r.init();
 
         BalancerUtil.up(r, "Default", "Default", "localhost", 2000);
         BalancerUtil.up(r, "Default", "Default", "localhost", 3000);
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         r.shutdown();
     }
 
     @Test
-    public void testClusterBalancerRequest() throws Exception {
+    void clusterBalancerRequest() throws Exception {
         Exchange exc = getExchangeWithSession();
 
         lb.handleRequest(exc);
@@ -108,7 +108,7 @@ public class ClusterBalancerTest {
     }
 
     @Test
-    public void testNoNodeFound() throws Exception {
+    void noNodeFound() throws Exception {
         Exchange exc = getExchangeWithOutSession();
 
         BalancerUtil.down(r, "Default", "Default", "localhost", 2000);

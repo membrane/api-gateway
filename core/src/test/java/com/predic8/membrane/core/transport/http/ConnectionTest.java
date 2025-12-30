@@ -26,13 +26,13 @@ public class ConnectionTest {
 	Connection conLocalhost;
 	Connection con127_0_0_1;
 
-	HttpRouter router;
+	IRouter router;
 
 	@BeforeEach
 	void setUp() throws Exception {
 
 		ServiceProxy proxy2000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "predic8.com", 80);
-		router = new HttpRouter();
+		router = new TestRouter();
 		router.add(proxy2000);
 		router.start();
 

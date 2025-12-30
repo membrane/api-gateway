@@ -56,10 +56,10 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptorFaultMonitoringStrategyTest.class.getName());
 
     LoadBalancingInterceptor balancingInterceptor;
-    HttpRouter balancer;
+    IRouter balancer;
 
     // The simulation nodes
-    private final List<Router> nodes = new ArrayList<>();
+    private final List<IRouter> nodes = new ArrayList<>();
 
     private void setUp(TestingContext ctx) throws Exception {
         nodes.clear();
@@ -75,15 +75,17 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         }
     }
 
-    private HttpRouter createLoadBalancer() throws Exception {
-        HttpRouter r = new HttpRouter();
+    private IRouter createLoadBalancer() throws Exception {
+        IRouter r = new TestRouter();
         ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3054), "thomas-bayer.com", 80);
         balancingInterceptor = new LoadBalancingInterceptor();
         balancingInterceptor.setName("Default");
         sp3.getFlow().add(balancingInterceptor);
         r.add(sp3);
-        r.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(getHttpClientConfigurationWithRetries());
         r.start();
+        var client = r.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
+        client.setHttpClientConfig(getHttpClientConfigurationWithRetries());
+        client.init();
         return r;
     }
 
@@ -97,29 +99,29 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         return config;
     }
 
-    private Router createRouterForNode(TestingContext ctx, int i) throws Exception {
-        HttpRouter r = new HttpRouter();
+    private IRouter createRouterForNode(TestingContext ctx, int i) throws Exception {
+        var r = new TestRouter();
         r.add(createServiceProxy(ctx, i));
         r.start();
         return r;
     }
 
     private @NotNull ServiceProxy createServiceProxy(TestingContext ctx, int i) {
-        ServiceProxy serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", (2000 + i)), "thomas-bayer.com", 80);
-        serviceProxy.getFlow().add(new AbstractInterceptor() {
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", (2000 + i)), "thomas-bayer.com", 80);
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleResponse(Exchange exc) {
                 exc.getResponse().getHeader().setConnection("close");
                 return CONTINUE;
             }
         });
-        serviceProxy.getFlow().add(new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance));
-        return serviceProxy;
+        sp.getFlow().add(new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance));
+        return sp;
     }
 
     @AfterEach
     void tearDown() {
-        for (Router httpRouter : nodes) {
+        for (IRouter httpRouter : nodes) {
             try {
                 httpRouter.shutdown();
             } catch (Exception e) {

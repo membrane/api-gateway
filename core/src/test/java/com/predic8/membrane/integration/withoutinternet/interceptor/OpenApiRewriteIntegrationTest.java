@@ -13,8 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.integration.withoutinternet.interceptor;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -30,7 +29,7 @@ import static java.util.Collections.*;
 
 public class OpenApiRewriteIntegrationTest {
 
-    private final Router r = new HttpRouter();
+    private final IRouter r = new HttpRouter();
 
     @BeforeEach
     public void setUp() throws Exception {

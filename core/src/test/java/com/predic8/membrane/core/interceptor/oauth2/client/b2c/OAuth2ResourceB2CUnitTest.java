@@ -110,7 +110,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
 
     // this should avoid session fixation attacks
     @Test
-    public void newSessionCookieAfterLogin() throws URISyntaxException {
+    void newSessionCookieAfterLogin() throws URISyntaxException {
         // this initializes the session, but does not login the user (because redirects are not followed)
         browser.applyWithoutRedirect(get(tc.getClientAddress() + "/init"));
 
@@ -136,7 +136,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void logout() throws Exception {
+    void logout() throws Exception {
         browser.apply(get(tc.getClientAddress() + "/init"));
 
         var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
@@ -161,7 +161,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void logoutClearsOldCookie() throws Exception {
+    void logoutClearsOldCookie() throws Exception {
         browser.apply(get(tc.getClientAddress() + "/init"));
 
         var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
@@ -190,7 +190,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void staleSessionLogout() throws Exception {
+    void staleSessionLogout() throws Exception {
         var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
 
         assertTrue(ili.getResponse().getBodyAsStringDecoded().contains("false"));
@@ -206,7 +206,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void requestAuth() throws Exception {
+    void requestAuth() throws Exception {
         var exc = browser.apply(get(tc.getClientAddress() + "/api/init"));
 
         assertEquals(200, exc.getResponse().getStatusCode());
@@ -218,7 +218,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void userFlowTest() throws Exception {
+    void userFlowTest() throws Exception {
         var exc = browser.apply(get(tc.getClientAddress() + "/init"));
 
         assertNull(getAccessToken(exc));
@@ -231,7 +231,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void userFlowViaInitiatorTest() throws Exception {
+    void userFlowViaInitiatorTest() throws Exception {
         browser.apply(get(tc.getClientAddress() + "/init"));
 
         var exc = browser.apply(get(tc.getClientAddress() + "/pe/init"));
@@ -250,7 +250,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void multipleUserFlowsTest() throws Exception {
+    void multipleUserFlowsTest() throws Exception {
         var exc = browser.apply(get(tc.getClientAddress() + "/init"));
 
         browser.apply(get(tc.getClientAddress() + "/pe2/init"));
@@ -264,7 +264,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void startingUserFlowButContinueToUseOldRefreshToken() throws Exception {
+    void startingUserFlowButContinueToUseOldRefreshToken() throws Exception {
         var exc = browser.apply(get(tc.getClientAddress() + "/init"));
 
         mockAuthorizationServer.abortSignIn.set(true);
@@ -292,7 +292,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void multipleUserFlowsWithErrorTest() throws Exception {
+    void multipleUserFlowsWithErrorTest() throws Exception {
         browser.apply(get(tc.getClientAddress() + "/init"));
 
         mockAuthorizationServer.returnOAuth2ErrorFromSignIn.set(true);
@@ -308,7 +308,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void stayLoggedInAfterProfileEditing2() throws Exception {
+    void stayLoggedInAfterProfileEditing2() throws Exception {
         browser.apply(get(tc.getClientAddress() + "/init"));
 
         mockAuthorizationServer.abortSignIn.set(true);
@@ -327,7 +327,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void notLoggedInAfterProfileEditing() throws Exception {
+    void notLoggedInAfterProfileEditing() throws Exception {
         browser.apply(get(tc.getClientAddress() + "/init"));
 
         mockAuthorizationServer.abortSignIn.set(true);
@@ -343,9 +343,8 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
         assertEquals("null", a2); // no access token, because user is logged out.
     }
 
-
     @Test
-    public void loginParams() throws Exception {
+    void loginParams() throws Exception {
         var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/init?login_hint=def&illegal=true"));
 
         String location = exc.getResponse().getHeader().getFirstValue("Location");
@@ -366,7 +365,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void loginParamsPerFlow() throws Exception {
+    void loginParamsPerFlow() throws Exception {
         var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/pe/init?domain_hint=flow&illegal=true"));
 
         var params = parseQueryString(new URIFactory().create(exc.getResponse().getHeader().getLocation()).getRawQuery(), ERROR);
@@ -379,7 +378,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void loginNotRequired() throws Exception {
+    void loginNotRequired() throws Exception {
         // access 1: not authenticated, expecting no token
         var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api-no-auth-needed/"));
 
@@ -399,7 +398,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void returning4xx() throws Exception {
+    void returning4xx() throws Exception {
         // access 1: not authenticated, expecting 4xx
         var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api-no-redirect/"));
 
@@ -418,7 +417,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void requireAuthRedirects() throws Exception {
+    void requireAuthRedirects() throws Exception {
         var excCallResource = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api/"));
         assertEquals(302, excCallResource.getResponse().getStatusCode());
         assertTrue(excCallResource.getResponse().getHeader().getFirstValue(Header.LOCATION).contains(
@@ -427,7 +426,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void errorDuringSignIn() throws Exception {
+    void errorDuringSignIn() throws Exception {
         mockAuthorizationServer.returnOAuth2ErrorFromSignIn.set(true);
         var exc = browser.apply(get(tc.getClientAddress() + "/api/"));
 
@@ -437,7 +436,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void errorDuringSecondOAuth2FlowLogsUserOut() throws Exception {
+    void errorDuringSecondOAuth2FlowLogsUserOut() throws Exception {
         browser.apply(get(tc.getClientAddress() + "/init"));
 
         var ili = browser.apply(get(tc.getClientAddress() + "/is-logged-in"));
@@ -451,7 +450,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
     }
 
     @Test
-    public void api1and2() throws Exception {
+    void api1and2() throws Exception {
         var exc = browser.apply(get(tc.getClientAddress() + "/api/"));
         Map body = om.readValue(exc.getResponse().getBodyAsStream(), Map.class);
         assertEquals("/api/", body.get("path"));

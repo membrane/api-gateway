@@ -32,15 +32,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class AbstractInterceptorFlowTest {
 
-    private static Router router;
+    private IRouter router;
 
-    @BeforeAll
-    static void setUp() {
-        router = new HttpRouter();
+    @BeforeEach
+    void setUp() {
+        router = new TestRouter();
     }
 
-    @AfterAll
-    static void tearDown() {
+    @AfterEach
+    void tearDown() {
         router.shutdown();
     }
 
@@ -55,7 +55,7 @@ public abstract class AbstractInterceptorFlowTest {
     }
 
     private void setUpRouter(Interceptor[] interceptors) throws Exception {
-        router.setRules(EMPTY_LIST);
+        // router.setRules(EMPTY_LIST);
         router.add(getApiProxy(interceptors));
         router.start();
     }

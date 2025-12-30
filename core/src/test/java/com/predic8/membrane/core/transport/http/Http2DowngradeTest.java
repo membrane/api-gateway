@@ -30,11 +30,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2DowngradeTest {
 
-    private static HttpRouter router;
+    private static IRouter router;
 
     @BeforeAll
     public static void beforeAll() throws IOException {
-        router = new HttpRouter();
+        router = new TestRouter();
         ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(3064), null, 0);
         proxy.getFlow().add(new AbstractInterceptor() {
             @Override

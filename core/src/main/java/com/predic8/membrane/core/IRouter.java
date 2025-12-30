@@ -16,6 +16,7 @@ package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.*;
@@ -35,11 +36,17 @@ public interface IRouter extends Lifecycle {
      */
     void shutdown();
 
+    void waitFor();
+
     void add(Proxy proxy) throws IOException;
+
+    Configuration getConfig();
 
     FlowController getFlowController();
 
     ExchangeStore getExchangeStore();
+
+    void setExchangeStore(ExchangeStore exchangeStore);
 
     RuleManager getRuleManager();
 
@@ -49,7 +56,7 @@ public interface IRouter extends Lifecycle {
 
     DNSCache getDnsCache();
 
-    Transport getTransport();
+    HttpTransport getTransport();
 
     URIFactory getUriFactory();
 
@@ -63,7 +70,11 @@ public interface IRouter extends Lifecycle {
 
     Statistics getStatistics();
 
+    KubernetesClientFactory getKubernetesClientFactory();
+
     // TODO: => to RuleManager?
     Collection<Proxy> getRules();
+
+    RuleReinitializer getReinitializer();
 
 }

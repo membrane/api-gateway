@@ -26,11 +26,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AdjustContentLengthTest {
 
-	private static Router router;
+	private static IRouter router;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		router = new HttpRouter();
+		router = new TestRouter();
 		router.add(createMonitorRule());
 		router.add(createEndpointRule());
 		router.start();

@@ -43,7 +43,7 @@ public abstract class AbstractProxy implements Proxy {
     private boolean active;
     private String error;
 
-    protected Router router;
+    protected IRouter router;
 
     public AbstractProxy() {
     }
@@ -89,7 +89,7 @@ public abstract class AbstractProxy implements Proxy {
     /**
      * Called after parsing is complete and this has been added to the object tree (whose root is Router).
      */
-    public final void init(Router router) {
+    public final void init(IRouter router) {
         this.router = router;
         try {
             init(); // Extension point for subclasses

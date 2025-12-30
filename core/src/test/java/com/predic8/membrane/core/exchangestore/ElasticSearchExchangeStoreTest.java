@@ -48,9 +48,9 @@ class ElasticSearchExchangeStoreTest {
     private static final String REQUEST_BODY = """
             {"where":"there"}""";
 
-    private HttpRouter gateway;
-    private HttpRouter back;
-    private HttpRouter elasticMock;
+    private TestRouter gateway;
+    private TestRouter back;
+    private TestRouter elasticMock;
     private ElasticSearchExchangeStore es;
 
     private final List<JsonNode> insertedObjects = new ArrayList<>();
@@ -75,8 +75,7 @@ class ElasticSearchExchangeStoreTest {
     }
 
     private void initializeElasticSearchMock() throws IOException {
-        elasticMock = new HttpRouter();
-        elasticMock.getConfig().setHotDeploy(false);
+        elasticMock = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3066), null, 0);
         sp.getFlow().add(createBodyLoggingInterceptor());
         sp.getFlow().add(createElasticSearchMockInterceptor());
@@ -91,25 +90,22 @@ class ElasticSearchExchangeStoreTest {
     }
 
     private void initializeGateway(boolean addLoggingInterceptors) throws IOException {
-        gateway = new HttpRouter();
-        gateway.getConfig().setHotDeploy(false);
+        gateway = new TestRouter();
         es = new ElasticSearchExchangeStore();
         es.setLocation("http://localhost:3066");
         es.setUpdateIntervalMs(100);
         gateway.setExchangeStore(es);
-        int index = 4;
-        if (addLoggingInterceptors)
-            gateway.getTransport().getFlow().add(index++, createBodyLoggingInterceptor());
-        gateway.getTransport().getFlow().add(index++, new ExchangeStoreInterceptor());
-        if (addLoggingInterceptors)
-            gateway.getTransport().getFlow().add(index++, createBodyLoggingInterceptor());
         gateway.add(new ServiceProxy(new ServiceProxyKey(3064), "localhost", 3065));
         gateway.start();
+        var global = new GlobalInterceptor();
+        if (addLoggingInterceptors) {
+            global.getFlow().add(createBodyLoggingInterceptor());
+        }
+        global.getFlow().add(new ExchangeStoreInterceptor());
     }
 
     private void initializeBackend() throws IOException {
-        back = new HttpRouter();
-        back.getConfig().setHotDeploy(false);
+        back = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         StaticInterceptor si = new StaticInterceptor();
         si.setSrc(RESPONSE_BODY);

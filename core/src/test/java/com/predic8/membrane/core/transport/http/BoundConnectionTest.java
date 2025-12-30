@@ -29,12 +29,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class BoundConnectionTest {
 
-	HttpRouter router;
+	IRouter router;
 	volatile long connectionHash = 0;
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		router = new HttpRouter();
+		router = new TestRouter();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("*",
 				"*", ".*", 3021), "localhost", 3022);
 		router.add(sp1);

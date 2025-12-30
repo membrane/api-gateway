@@ -25,6 +25,7 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import org.bouncycastle.jce.provider.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -35,6 +36,7 @@ import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.transport.ssl.acme.Authorization.*;
 import static com.predic8.membrane.core.transport.ssl.acme.Order.*;
+import static com.predic8.membrane.core.transport.ssl.acme.Order.ORDER_STATUS_VALID;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeStepTest {
@@ -47,18 +49,18 @@ public class AcmeStepTest {
     public final String baseUrl = "http://localhost:3050/directory";
 
     @BeforeEach
-    public void init() throws IOException {
+    void init() throws IOException {
         sim = new AcmeServerSimulator(3050, 3052, true);
         sim.start();
     }
 
     @AfterEach
-    public void done() {
+    void done() {
         sim.stop();
     }
 
     @Test
-    public void all() throws Exception {
+    void all() throws Exception {
         Acme acme = new Acme();
         acme.setExperimental(true);
         acme.setDirectoryUrl(baseUrl);
@@ -66,8 +68,7 @@ public class AcmeStepTest {
         acme.setContacts("mailto:jsmith@example.com");
         acme.setAcmeSynchronizedStorage(new MemoryStorage());
 
-        HttpRouter router = new HttpRouter();
-        router.getConfig().setHotDeploy(false);
+        var router = new TestRouter();
         SSLParser sslParser = new SSLParser();
         sslParser.setAcme(acme);
         ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey(3051), "localhost", 80);
@@ -81,9 +82,7 @@ public class AcmeStepTest {
         });
         sp1.setSslInboundParser(sslParser);
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3052), "localhost", 80);
-        AcmeHttpChallengeInterceptor acmeHttpChallengeInterceptor = new AcmeHttpChallengeInterceptor();
-        acmeHttpChallengeInterceptor.setIgnorePort(true);
-        sp2.getFlow().add(acmeHttpChallengeInterceptor);
+        sp2.getFlow().add(getChallengeInterceptor());
         router.add(sp1);
         router.add(sp2);
         router.start();
@@ -133,8 +132,7 @@ public class AcmeStepTest {
                 ol = acmeClient.getOrder(accountUrl, ol.getLocation());
             }
 
-
-            assertEquals(Order.ORDER_STATUS_VALID, ol.getOrder().getStatus());
+            assertEquals(ORDER_STATUS_VALID, ol.getOrder().getStatus());
 
             acmeClient.getAsse().setCertChain(hosts, acmeClient.downloadCertificate(accountUrl, ol.getOrder().getCertificate()));
 
@@ -160,6 +158,12 @@ public class AcmeStepTest {
             router.stop(); // TODO shutdown router in AfterAll
         }
 
+    }
+
+    private static @NotNull AcmeHttpChallengeInterceptor getChallengeInterceptor() {
+        var acmeHttpChallengeInterceptor = new AcmeHttpChallengeInterceptor();
+        acmeHttpChallengeInterceptor.setIgnorePort(true);
+        return acmeHttpChallengeInterceptor;
     }
 
     private static long waitAndCompute(long wait) throws InterruptedException {

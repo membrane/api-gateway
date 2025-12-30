@@ -52,7 +52,7 @@ public class MockAuthorizationServer {
     private final SecureRandom rand = new SecureRandom();
     private final ObjectMapper om = new ObjectMapper();
 
-    private HttpRouter mockAuthServer;
+    private IRouter mockAuthServer;
 
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
@@ -77,22 +77,21 @@ public class MockAuthorizationServer {
         issuer = baseServerAddr + "/v2.0/";
         createKey();
 
-        mockAuthServer = new HttpRouter();
-        mockAuthServer.getTransport().setBacklog(10000);
-        mockAuthServer.getTransport().setSocketTimeout(10000);
-        mockAuthServer.getConfig().setHotDeploy(false);
-        mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(tc.limit * 100);
+        mockAuthServer = new TestRouter();
         mockAuthServer.add(getMockAuthServiceProxy(SERVER_PORT, tc.susiFlowId));
         mockAuthServer.add(getMockAuthServiceProxy(SERVER_PORT, tc.peFlowId));
         mockAuthServer.add(getMockAuthServiceProxy(SERVER_PORT, tc.pe2FlowId));
         mockAuthServer.start();
+        mockAuthServer.getTransport().setBacklog(10000);
+        mockAuthServer.getTransport().setSocketTimeout(10000);
+        mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(tc.limit * 100);
     }
 
     public void stop() {
         mockAuthServer.stop();
     }
 
-    public Router getMockAuthServer() {
+    public IRouter getMockAuthServer() {
         return mockAuthServer;
     }
 
@@ -148,7 +147,7 @@ public class MockAuthorizationServer {
                     return handleTokenRequest(flowId, exc);
                 } else if (requestURI.contains("/logout")) {
                     onLogout.run();
-                    return Response.redirect( params.get("post_logout_redirect_uri"), 302).build();
+                    return Response.redirect(params.get("post_logout_redirect_uri"), 302).build();
                 } else {
                     return Response.notFound().build();
                 }

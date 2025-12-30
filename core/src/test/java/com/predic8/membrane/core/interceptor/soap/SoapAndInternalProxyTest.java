@@ -34,12 +34,11 @@ import static org.hamcrest.Matchers.*;
  */
 public class SoapAndInternalProxyTest {
 
-    HttpRouter router;
+    IRouter router;
 
     @BeforeEach
     void setup() {
-        router = new HttpRouter();
-        router.getConfig().setHotDeploy(false);
+        router = new TestRouter();
     }
 
     @AfterEach

@@ -25,8 +25,8 @@ import static org.hamcrest.CoreMatchers.*;
 
 public class SOAPProxyIntegrationTest {
 
-	private static Router router;
-	private static Router targetRouter;
+	private static IRouter router;
+	private static IRouter targetRouter;
 
 	@BeforeAll
 	public static void setup() throws Exception {

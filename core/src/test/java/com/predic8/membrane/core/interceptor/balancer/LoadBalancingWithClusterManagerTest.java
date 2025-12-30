@@ -14,10 +14,12 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.services.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -30,10 +32,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class LoadBalancingWithClusterManagerTest {
 
-    private HttpRouter lb;
-    private HttpRouter node1;
-    private HttpRouter node2;
-    private HttpRouter node3;
+    private IRouter lb;
+    private Router node1;
+    private Router node2;
+    private Router node3;
 
     @AfterEach
     public void tearDown() {
@@ -45,9 +47,9 @@ public class LoadBalancingWithClusterManagerTest {
 
     @Test
     void nodesTest() throws Exception {
-        node1 = new HttpRouter();
-        node2 = new HttpRouter();
-        node3 = new HttpRouter();
+        node1 = createRouter();
+        node2 = createRouter();
+        node3 = createRouter();
 
         DummyWebServiceInterceptor service1 = startNode(node1, 2000);
         DummyWebServiceInterceptor service2 = startNode(node2, 3000);
@@ -92,6 +94,12 @@ public class LoadBalancingWithClusterManagerTest {
         assertEquals(2, service3.getCount());
     }
 
+    private static @NotNull Router createRouter() {
+        Router node1 = new TestRouter();
+        node1.getRegistry().register("global", new GlobalInterceptor());
+        return node1;
+    }
+
     private void startLB() throws Exception {
 
         LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
@@ -109,15 +117,16 @@ public class LoadBalancingWithClusterManagerTest {
         ServiceProxy cniRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3012), "thomas-bayer.com", 80);
         cniRule.getFlow().add(cni);
 
-        lb = new HttpRouter();
+        lb = new Router();
         lb.add(lbiRule);
         lb.add(cniRule);
         lb.start();
     }
 
-    private DummyWebServiceInterceptor startNode(HttpRouter node, int port) throws Exception {
+    private DummyWebServiceInterceptor startNode(Router node, int port) throws Exception {
         DummyWebServiceInterceptor service1 = new DummyWebServiceInterceptor();
-        node.addUserFeatureInterceptor(service1);
+        var global = node.getRegistry().getBean(GlobalInterceptor.class);
+        global.orElseThrow().getFlow().add(service1);
         node.add(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
         node.start();
         return service1;

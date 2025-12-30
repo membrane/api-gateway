@@ -32,15 +32,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AbortExchangeTest {
 
-    Router router;
+    TestRouter router;
 
     @BeforeEach
     public void setup() throws Exception {
-        router = new HttpRouter();
-
+        router = new TestRouter();
         LimitedMemoryExchangeStore es = new LimitedMemoryExchangeStore();
         router.setExchangeStore(es);
-        router.getTransport().getFlow().add(2, new ExchangeStoreInterceptor(es));
+        var global = new GlobalInterceptor();
+        global.getFlow().add(new ExchangeStoreInterceptor(es));
+        router.getRegistry().register("global",global);
 
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 3031), "", -1);
         sp2.getFlow().add(new AbstractInterceptor() {

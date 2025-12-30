@@ -41,12 +41,12 @@ public class OAuth2ResourceErrorForwardingTest {
 
     protected final BrowserMock browser = new BrowserMock();
     private final int limit = 500;
-    protected HttpRouter mockAuthServer;
+    protected IRouter mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final int serverPort = 3062;
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
-    private HttpRouter oauth2Resource;
+    private IRouter oauth2Resource;
     private final AtomicReference<String> error = new AtomicReference<>();
     private final AtomicReference<String> errorDescription = new AtomicReference<>();
 
@@ -63,22 +63,21 @@ public class OAuth2ResourceErrorForwardingTest {
         error.set(null);
         errorDescription.set(null);
 
-        mockAuthServer = new HttpRouter();
-        mockAuthServer.getTransport().setBacklog(10000);
-        mockAuthServer.getTransport().setSocketTimeout(10000);
-        mockAuthServer.getConfig().setHotDeploy(false);
-        mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
+        mockAuthServer = new TestRouter();
         mockAuthServer.add(getMockAuthServiceProxy());
         mockAuthServer.start();
+        mockAuthServer.getTransport().setBacklog(10000);
+        mockAuthServer.getTransport().setSocketTimeout(10000);
+        mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
 
-        oauth2Resource = new HttpRouter();
-        oauth2Resource.getTransport().setBacklog(10000);
-        oauth2Resource.getTransport().setSocketTimeout(10000);
-        oauth2Resource.getConfig().setHotDeploy(false);
-        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
+        oauth2Resource = new TestRouter();
+
         oauth2Resource.add(getErrorCaptor());
         oauth2Resource.add(getConfiguredOAuth2Resource());
         oauth2Resource.start();
+        oauth2Resource.getTransport().setBacklog(10000);
+        oauth2Resource.getTransport().setSocketTimeout(10000);
+        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
     }
 
     @AfterEach
@@ -126,9 +125,9 @@ public class OAuth2ResourceErrorForwardingTest {
                         throw new RuntimeException(e);
                     }
                     exc.setResponse(new FormPostGenerator(getClientAddress() + "/oauth2callback")
-                                    .withParameter("error", "DEMO-123")
-                                    .withParameter("error_description", "This is a demo error.")
-                                    .withParameter("state", params.get("state")).build());
+                            .withParameter("error", "DEMO-123")
+                            .withParameter("error_description", "This is a demo error.")
+                            .withParameter("state", params.get("state")).build());
                 }
 
                 if (exc.getResponse() == null)

@@ -29,17 +29,17 @@ import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.transport.ws.WebSocketConnection.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AdminApiInterceptorTest {
 
-    private static HttpRouter router;
+    private static IRouter router;
 
     @BeforeAll
     static void setUp() throws IOException {
-        router = new HttpRouter();
-        router.getConfig().setHotDeploy(false);
+        router = new TestRouter();
         router.setExchangeStore(new LimitedMemoryExchangeStore()); // Needed by the AdminApiInterceptor
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         sp.getFlow().add(new FastWebSocketClosingInterceptor()); // speeds up test execution
@@ -56,7 +56,7 @@ class AdminApiInterceptorTest {
     }
 
     @Test
-    public void testWebSocket() throws Exception {
+    void webSocket() throws Exception {
         try (HttpClient client = new HttpClient()) {
             var testHandler = new TestHandler();
             var exc = createWSRequest(testHandler);
@@ -170,7 +170,7 @@ class AdminApiInterceptorTest {
         @Override
         public Outcome handleRequest(Exchange exc) {
             exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);  // speeds up test execution
-            return Outcome.CONTINUE;
+            return CONTINUE;
         }
     }
 }

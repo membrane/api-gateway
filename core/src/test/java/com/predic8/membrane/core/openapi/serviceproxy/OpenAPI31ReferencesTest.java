@@ -34,13 +34,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPI31ReferencesTest {
 
-    static Router router;
+    static IRouter router;
 
     static APIProxy api;
 
     @BeforeAll
     public static void setUp() throws Exception {
-        router = new HttpRouter();
+        router = new TestRouter();
         router.getConfig().setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();

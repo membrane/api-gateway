@@ -47,15 +47,15 @@ public abstract class LoadBalancingInterceptorTest {
 	private DispatchingStrategy roundRobin;
 	private DispatchingStrategy byThreadStrategy;
 	private DispatchingStrategy priorityStrategy;
-	private HttpRouter service1;
-	private HttpRouter service2;
-	protected HttpRouter balancer;
+	private IRouter service1;
+	private IRouter service2;
+	protected IRouter balancer;
 
     @BeforeEach
 	public void setUp() throws Exception {
         int port2k = 2000;
         int port3k = 3000;
-		service1 = new HttpRouter();
+		service1 = new TestRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"*", ".*", port2k), "dummy", 80);
@@ -70,7 +70,7 @@ public abstract class LoadBalancingInterceptorTest {
 		service1.add(sp1);
 		service1.start();
 
-		service2 = new HttpRouter();
+		service2 = new TestRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"*", ".*", port3k), "dummy", 80);
@@ -85,15 +85,15 @@ public abstract class LoadBalancingInterceptorTest {
 		service2.add(sp2);
 		service2.start();
 
-		balancer = new HttpRouter();
+		balancer = new TestRouter();
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"*", ".*", 3054), "dummy", 80);
 		balancingInterceptor = new LoadBalancingInterceptor();
 		balancingInterceptor.setName("Default");
 		sp3.getFlow().add(balancingInterceptor);
 		balancer.add(sp3);
-		enableFailOverOn5XX();
 		balancer.start();
+		enableFailOverOn5XX();
 
 		lookupBalancer(balancer, "Default").up("Default", "localhost", port2k);
 		lookupBalancer(balancer, "Default").up("Default", "localhost", port3k);
@@ -104,7 +104,9 @@ public abstract class LoadBalancingInterceptorTest {
 	}
 
 	private void enableFailOverOn5XX() {
-		getInterceptors(balancer.getTransport().getFlow(),  HTTPClientInterceptor.class).getLast().setFailOverOn5XX(true);
+		var clientInterceptor = balancer.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
+		clientInterceptor.setFailOverOn5XX(true);
+		clientInterceptor.init(); // Copies the config into the HttpClient. Needed because router.start() is already called
 	}
 
 	@AfterEach

@@ -29,18 +29,18 @@ import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http10Test {
-    private static HttpRouter router;
-	private static HttpRouter router2;
+    private static Router router;
+	private static Router router2;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
 		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
-        router2 = new HttpRouter();
+        router2 = new TestRouter();
 		router2.add(proxy2);
 
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "localhost", 2000);
-		router = new HttpRouter();
+		router = new TestRouter();
 		router.add(proxy);
 
 		router2.start();

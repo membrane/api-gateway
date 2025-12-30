@@ -57,7 +57,7 @@ public class FileUserDataProvider implements UserDataProvider {
         userAttributes = getUsersByName().get(username);
         if (userAttributes == null)
             throw new NoSuchElementException();
-        String pw = null;
+        String pw;
         String postDataPassword = postData.get("password");
         String userHash = userAttributes.getPassword();
         String[] userHashSplit = userHash.split("\\$");

@@ -38,7 +38,7 @@ public interface Proxy extends Cloneable {
 
 	RuleStatisticCollector getStatisticCollector();
 
-	void init(Router router);
+	void init(IRouter router);
 
 	boolean isTargetAdjustHostHeader();
 

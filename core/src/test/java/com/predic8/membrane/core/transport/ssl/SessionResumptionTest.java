@@ -40,8 +40,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 public class SessionResumptionTest {
 
     private static Closeable tcpForwarder;
-    private static Router router1;
-    private static Router router2;
+    private static IRouter router1;
+    private static IRouter router2;
     private static SSLContext clientTLSContext;
 
     @BeforeAll
@@ -75,8 +75,8 @@ public class SessionResumptionTest {
         return new StaticSSLContext(sslParser, new ResolverMap(), ".");
     }
 
-    private static Router createTLSServer(int port) {
-        Router router = new HttpRouter();
+    private static IRouter createTLSServer(int port) {
+        IRouter router = new HttpRouter();
         router.getConfig().setHotDeploy(false);
         ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(port), null, 0);
         SSLParser sslInboundParser = new SSLParser();

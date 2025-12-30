@@ -28,11 +28,11 @@ import static org.hamcrest.Matchers.*;
 @SuppressWarnings("HttpUrlsUsage")
 public class ServiceProxyWSDLInterceptorsTest {
 
-    Router router;
+    IRouter router;
 
     @BeforeEach
     void setUp() {
-        router = new HttpRouter();
+        router = new TestRouter();
         router.getConfig().setHotDeploy(false);
     }
 

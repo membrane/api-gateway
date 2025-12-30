@@ -18,7 +18,7 @@ import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.*;
@@ -192,10 +192,10 @@ public class SSLProxy implements Proxy {
         return null;
     }
 
-    Router router;
+    IRouter router;
 
     @Override
-    public void init(Router router) {
+    public void init(IRouter router) {
         this.router = router;
         cm = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout(), router.getTimerManager());
         for (SSLInterceptor i : sslInterceptors)

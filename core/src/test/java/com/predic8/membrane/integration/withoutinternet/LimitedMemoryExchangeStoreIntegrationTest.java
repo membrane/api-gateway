@@ -81,7 +81,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         router2.init();
     }
 
-    private static @NotNull HTTPClientInterceptor getHttpClientInterceptor(Router router) {
+    private static @NotNull HTTPClientInterceptor getHttpClientInterceptor(IRouter router) {
         return (HTTPClientInterceptor) router.getTransport().getFlow().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().get();
     }
 

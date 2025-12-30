@@ -34,14 +34,11 @@ import static java.util.Collections.singletonList;
 
 public class Swagger20Test {
 
-    Router router;
+    IRouter router;
 
     @BeforeEach
     public void setUp() throws Exception {
-
-        router = new HttpRouter();
-        router.getConfig().setUriFactory(new URIFactory());
-
+        router = new TestRouter();
         router.add(getApiProxy());
         router.add(getTargetProxy());
         router.start();

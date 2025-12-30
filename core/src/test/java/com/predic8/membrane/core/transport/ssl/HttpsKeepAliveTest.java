@@ -36,13 +36,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpsKeepAliveTest {
 
-    private static HttpRouter server;
+    private static IRouter server;
 
     private static final ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
 
     @BeforeAll
     public static void startServer() throws IOException {
-        server = new HttpRouter();
+        server = new TestRouter();
         server.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy();
         sp.setPort(3063);

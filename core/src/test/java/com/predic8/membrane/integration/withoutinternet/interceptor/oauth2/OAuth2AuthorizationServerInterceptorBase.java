@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2AuthorizationServerInterceptorBase {
 
-    static Router router;
+    static IRouter router;
     static Exchange exc;
     static OAuth2AuthorizationServerInterceptor oasi;
     static MembraneAuthorizationService mas;

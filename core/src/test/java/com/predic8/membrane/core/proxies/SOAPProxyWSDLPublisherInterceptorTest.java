@@ -24,12 +24,11 @@ import static org.hamcrest.Matchers.*;
 @SuppressWarnings("HttpUrlsUsage")
 public class SOAPProxyWSDLPublisherInterceptorTest {
 
-    static Router router;
+    static IRouter router;
 
     @BeforeAll
     static void setUp() {
-        router = new HttpRouter();
-        router.getConfig().setHotDeploy(false);
+        router = new TestRouter();
     }
 
     @AfterAll

@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SOAPFaultTest {
 	public static final String ARTICLE_SERVICE_WSDL = getPathFromResource( "/validation/ArticleService.wsdl");
-	final Router r = new HttpRouter();
+	final IRouter r = new HttpRouter();
 
 	@Test
 	public void testValidateFaults() {

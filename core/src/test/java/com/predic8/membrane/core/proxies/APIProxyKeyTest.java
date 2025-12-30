@@ -28,11 +28,11 @@ import static org.hamcrest.CoreMatchers.*;
 
 public class APIProxyKeyTest {
 
-    private static Router router;
+    private static IRouter router;
 
     @BeforeEach
     public void setup() {
-        router = new HttpRouter();
+        router = new TestRouter();
     }
 
     @AfterEach

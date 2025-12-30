@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class JWTInterceptorAndSecurityValidatorTest {
 
     private static final String SPEC_LOCATION = getPathFromResource( "openapi/openapi-proxy/no-extensions.yml");
-    private Router router;
+    private IRouter router;
     private APIProxy proxy;
 
     RsaJsonWebKey privateKey;
@@ -92,7 +92,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
     }
 
     @NotNull
-    private JwtAuthInterceptor getJwtAuthInterceptor(Router router) {
+    private JwtAuthInterceptor getJwtAuthInterceptor(IRouter router) {
         JwtAuthInterceptor interceptor = createInterceptor(getPublicKey());
         interceptor.setJwtRetriever(new HeaderJwtRetriever("Authorization","bearer"));
         interceptor.init(router);

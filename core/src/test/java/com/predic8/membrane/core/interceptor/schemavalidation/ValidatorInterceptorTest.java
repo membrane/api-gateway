@@ -44,7 +44,7 @@ public class ValidatorInterceptorTest {
 
     private static Exchange exc;
 
-    private static Router router;
+    private static IRouter router;
 
     public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.wsdl";
 

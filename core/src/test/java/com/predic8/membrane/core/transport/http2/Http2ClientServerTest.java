@@ -40,7 +40,7 @@ public class Http2ClientServerTest {
     private volatile Consumer<Request> requestAsserter;
     private volatile AbstractHttpHandler handler;
     private HttpClient hc;
-    private HttpRouter router;
+    private IRouter router;
     private static final ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
 
     @BeforeEach
@@ -48,7 +48,7 @@ public class Http2ClientServerTest {
         connectionHashes.clear();
         SSLParser sslParser = getSslParser();
 
-        router = new HttpRouter();
+        router = new TestRouter();
         router.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3049), "localhost", 80);
         sp.setSslInboundParser(sslParser);

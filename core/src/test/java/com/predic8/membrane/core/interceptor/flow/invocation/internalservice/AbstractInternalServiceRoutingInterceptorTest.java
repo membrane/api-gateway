@@ -33,13 +33,13 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
 
     protected final CaptureRoutingTestInterceptor captureRoutingTestInterceptor = new CaptureRoutingTestInterceptor();
 
-    private Router router;
+    private IRouter router;
 
     protected abstract void configure() throws Exception;
 
     @BeforeEach
     void setup() throws Exception {
-        router = new HttpRouter();
+        router = new TestRouter();
         router.getConfig().setHotDeploy(false);
         configure();
         router.start();

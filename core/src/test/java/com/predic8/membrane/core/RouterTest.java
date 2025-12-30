@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.*;
 class RouterTest {
 
     public static final String INTERNAL_SECRET = "supersecret";
-    static Router dev, prod;
+    static IRouter dev, prod;
     
     @BeforeAll
     static void setUp() throws IOException {
@@ -112,8 +112,8 @@ class RouterTest {
         // @formatter:on
     }
 
-    private static Router createRouter(int port, boolean production) throws IOException {
-        HttpRouter r = new HttpRouter();
+    private static IRouter createRouter(int port, boolean production) throws IOException {
+        IRouter r = new Router();
         r.getConfig().setProduction(production);
         APIProxy api = new APIProxy();
         api.setKey(new APIProxyKey(port));

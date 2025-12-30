@@ -44,8 +44,6 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	private List<User> users = new ArrayList<>();
 	private Map<String, User> usersByName = new HashMap<>();
-	private SecureRandom random = new SecureRandom();
-	private int saltByteSize = 128;
 
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {

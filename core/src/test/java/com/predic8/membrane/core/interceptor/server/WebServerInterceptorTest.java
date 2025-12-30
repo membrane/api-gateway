@@ -28,7 +28,7 @@ class WebServerInterceptorTest {
 
     WebServerInterceptor ws;
     Exchange exc;
-    Router r;
+    IRouter r;
 
     @BeforeEach
     void init() {

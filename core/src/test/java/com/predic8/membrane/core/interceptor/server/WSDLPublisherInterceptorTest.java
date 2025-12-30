@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class WSDLPublisherInterceptorTest {
 
-	private HttpRouter router;
+	private IRouter router;
 
 	static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
@@ -36,7 +36,7 @@ public class WSDLPublisherInterceptorTest {
 	}
 
 	void before(String wsdlLocation, int port) throws Exception {
-		router = new HttpRouter();
+		router = new TestRouter();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "", -1);
 		WSDLPublisherInterceptor wi = new WSDLPublisherInterceptor();
 		wi.setWsdl(wsdlLocation);

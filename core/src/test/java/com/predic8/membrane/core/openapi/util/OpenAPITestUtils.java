@@ -66,7 +66,7 @@ public class OpenAPITestUtils {
     }
 
 
-    public static APIProxy createProxy(Router router, OpenAPISpec spec) {
+    public static APIProxy createProxy(IRouter router, OpenAPISpec spec) {
         APIProxy proxy = new APIProxy();
         proxy.setSpecs(singletonList(spec));
         proxy.setKey(new APIProxyKey(2000));

@@ -15,7 +15,7 @@ package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.transport.http.MockHttpTransport;
+import com.predic8.membrane.core.transport.http.*;
 
 public class MockRouter extends Router {
 
@@ -24,7 +24,7 @@ public class MockRouter extends Router {
 	}
 
 	@Override
-	public Transport getTransport() {
+	public HttpTransport getTransport() {
 		return new MockHttpTransport();
 	}
 

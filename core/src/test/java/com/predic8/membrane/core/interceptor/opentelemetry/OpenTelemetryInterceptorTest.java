@@ -21,7 +21,7 @@ import java.io.*;
 
 class OpenTelemetryInterceptorTest {
 
-    private Router router;
+    private IRouter router;
 
     @Test
     void initTest() throws IOException {

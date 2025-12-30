@@ -38,7 +38,7 @@ class ApiDocsInterceptorTest {
 
     private final ObjectMapper om = new ObjectMapper();
 
-    Router router;
+    HttpRouter router;
     final Exchange exc = new Exchange(null);
     ApiDocsInterceptor interceptor;
     APIProxy rule;
@@ -46,7 +46,6 @@ class ApiDocsInterceptorTest {
     @BeforeEach
     public void setUp() throws Exception {
         router = new HttpRouter();
-        router.getConfig().setUriFactory(new URIFactory());
 
         exc.setRequest(new Request.Builder().get("/foo").build());
         exc.setOriginalRequestUri("/foo");
@@ -56,7 +55,6 @@ class ApiDocsInterceptorTest {
         rule = createProxy(router, spec);
 
         router.setExchangeStore(new ForgetfulExchangeStore());
-        router.setTransport(new HttpTransport());
         router.add(rule);
         router.init();
 

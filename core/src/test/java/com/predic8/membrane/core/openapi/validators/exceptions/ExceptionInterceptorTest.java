@@ -45,7 +45,7 @@ public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
         spec.validateRequests = YES;
         spec.validateResponses = YES;
 
-        Router router = getRouter();
+        IRouter router = getRouter();
         interceptor = new OpenAPIInterceptor(createProxy(router, spec));
         interceptor.init(router);
     }

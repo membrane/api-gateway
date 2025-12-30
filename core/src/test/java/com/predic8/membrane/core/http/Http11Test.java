@@ -30,8 +30,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class Http11Test {
 
-	private static HttpRouter router;
-	private static HttpRouter router2;
+	private static IRouter router;
+	private static IRouter router2;
 	private static int port4k;
 
     @BeforeAll
@@ -40,11 +40,11 @@ public class Http11Test {
         int port5k = getFreePortEqualAbove(5000);
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port5k), null, 0);
 		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
-		router2 = new HttpRouter();
+		router2 = new TestRouter();
 		router2.add(proxy2);
 		router2.start();
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port4k), "localhost", port5k);
-		router = new HttpRouter();
+		router = new TestRouter();
 		router.add(proxy);
 		router.start();
 	}

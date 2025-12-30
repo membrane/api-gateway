@@ -26,11 +26,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ServiceProxyTest {
 
-    private static Router router;
+    private static IRouter router;
 
     @BeforeAll
     public static void setup() throws Exception {
-        router = new HttpRouter();
+        router = new TestRouter();
         APIProxy proxyWithOutTarget = new APIProxy() {{
             key = new APIProxyKey(2000);
         }};
