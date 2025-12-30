@@ -16,6 +16,7 @@ package com.predic8.membrane.core.router.hotdeploy;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
@@ -32,7 +33,7 @@ public class DefaultHotDeployer implements HotDeployer {
     private final Object lock = new Object();
 
     @Override
-    public void start(Router router) {
+    public void start(@NotNull Router router) {
         this.router = router;
         startInternal();
     }
@@ -40,8 +41,10 @@ public class DefaultHotDeployer implements HotDeployer {
     private void startInternal() {
         // Prevent multiple threads from starting hot deployment at the same time.
         synchronized (lock) {
-            if (hdt != null)
-                throw new IllegalStateException("Hot deployment already started.");
+            if (hdt != null) {
+                log.warn("Hot deployment already started.");
+                return;
+            }
 
             if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
                 log.warn("""

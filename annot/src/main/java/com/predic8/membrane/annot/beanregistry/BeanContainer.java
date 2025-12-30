@@ -41,6 +41,6 @@ public class BeanContainer {
 
     @Override
     public String toString() {
-        return "BeanContainer: %s of %s singleton: %s".formatted( definition.getName(),definition.getKind(),singleton);
+        return "BeanContainer: %s of %s singleton: %s".formatted( definition.getName(),definition.getKind(),singleton.get());
     }
 }
