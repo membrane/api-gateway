@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.*;
  */
 public class SoapAndInternalProxyTest {
 
-    IRouter router;
+    Router router;
 
     @BeforeEach
     void setup() {

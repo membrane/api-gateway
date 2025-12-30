@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ReadRulesWithInterceptorsConfigurationTest {
 
-	private static Router router;
+	private static DefaultRouter router;
 
 	private static List<Proxy> proxies;
 

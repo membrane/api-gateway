@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 public interface TokenGenerator {
-    void init(IRouter router) throws Exception;
+    void init(Router router) throws Exception;
 
     /**
      * @return the token type used, probably "Bearer".

@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HttpKeepAliveTest {
 
 	private HashSet<Integer> hashs; // tracks the hashcodes of all connections used
-	private IRouter service1;
+	private Router service1;
 	private ServiceProxy sp1;
 
 	@BeforeEach

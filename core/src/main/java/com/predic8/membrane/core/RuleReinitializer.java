@@ -23,11 +23,11 @@ public class RuleReinitializer {
 
     private static final Logger log = LoggerFactory.getLogger(RuleReinitializer.class);
 
-    private final Router router;
+    private final DefaultRouter router;
 
     private Timer timer;
 
-    public RuleReinitializer(Router router) {
+    public RuleReinitializer(DefaultRouter router) {
         this.router = router;
     }
 

@@ -60,7 +60,7 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init(IRouter router, Proxy proxy) {
+    public void init(Router router, Proxy proxy) {
         for (Interceptor i : interceptors) {
             if(i instanceof ProxyAware pa) {
                 pa.setProxy(proxy);

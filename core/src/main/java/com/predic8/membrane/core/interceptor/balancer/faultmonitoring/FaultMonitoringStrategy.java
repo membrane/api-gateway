@@ -123,7 +123,7 @@ public class FaultMonitoringStrategy extends AbstractXmlElement implements Dispa
 	private HttpClientStatusEventBus httpClientStatusEventBus;
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		httpClientStatusEventBus = new HttpClientStatusEventBus();
 		httpClientStatusEventBus.registerListener(new MyHttpClientStatusEventListener());
 

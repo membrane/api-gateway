@@ -56,7 +56,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
      */
     public static final int INITIAL_DELAY = 5000;
 
-    private Router router;
+    private DefaultRouter router;
     private int interval = 10000;
     private HttpClient client;
 
@@ -158,7 +158,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.router = applicationContext.getBean(Router.class);
+        this.router = applicationContext.getBean(DefaultRouter.class);
     }
 
     @Override
@@ -204,7 +204,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     }
 
     /**
-     * @see Router#getHttpClientFactory()
+     * @see DefaultRouter#getHttpClientFactory()
      * @see HttpClientConfiguration
      *
      * @description Optional HTTP client configuration for health probes (e.g., timeouts, TLS).

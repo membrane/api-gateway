@@ -19,43 +19,44 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static io.restassured.RestAssured.*;
 
 
 public class ViaProxyTest {
 
-	static HttpRouter proxyRouter;
-	static HttpRouter router;
+    static Router proxyRouter;
+    static Router router;
 
-	@BeforeAll
-	static void setUp() throws Exception {
-		ProxyConfiguration proxy = new ProxyConfiguration();
-		proxy.setHost("localhost");
-		proxy.setPort(3128);
+    @BeforeAll
+    static void setUp() throws Exception {
+        ProxyConfiguration proxy = new ProxyConfiguration();
+        proxy.setHost("localhost");
+        proxy.setPort(3128);
 
-		proxyRouter = new HttpRouter(proxy);
-		proxyRouter.getRuleManager().addProxy(new ProxyRule(new ProxyRuleKey(3128)), MANUAL);
-		proxyRouter.init();
+        proxyRouter = new TestRouter(proxy);
+        proxyRouter.add(new ProxyRule(new ProxyRuleKey(3128)));
+        proxyRouter.start();
 
-		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 4000), "api.predic8.de", 443);
-		rule.getTarget().setSslParser(new SSLParser());
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
-		router.init();
-	}
+        ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", "GET", ".*", 4000), "api.predic8.de", 443);
+        rule.getTarget().setSslParser(new SSLParser());
+        router = new TestRouter();
+        router.add(rule);
+        router.start();
+    }
 
-	@Test
-	void testPost() {
-		when()
-			.get("http://localhost:4000/shop/v2/products")
-		.then()
-			.statusCode(200);
-	}
+    @AfterAll
+    static void tearDown() {
+        router.shutdown();
+        proxyRouter.shutdown();
+    }
 
-	@AfterAll
-	static void tearDown() {
-		router.shutdown();
-		proxyRouter.shutdown();
-	}
+    @Test
+    void post() {
+        when()
+                .get("http://localhost:4000/shop/v2/products")
+                .then()
+                .statusCode(200);
+    }
+
+
 }

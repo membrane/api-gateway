@@ -56,9 +56,9 @@ public class FlowController {
 
     private static final Logger log = LoggerFactory.getLogger(FlowController.class);
 
-    private final IRouter router;
+    private final Router router;
 
-    public FlowController(IRouter router) {
+    public FlowController(Router router) {
         this.router = router;
     }
 

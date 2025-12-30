@@ -60,7 +60,7 @@ class JWTSecuritySchemeTest {
     }
 
     private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
-        Router routerMock = mock(Router.class);
+        DefaultRouter routerMock = mock(DefaultRouter.class);
         when(routerMock.getBaseLocation()).thenReturn("");
         when(routerMock.getResolverMap()).thenReturn(new ResolverMap());
         interceptor.init(routerMock);

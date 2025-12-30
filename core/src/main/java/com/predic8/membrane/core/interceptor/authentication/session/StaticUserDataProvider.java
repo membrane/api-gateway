@@ -13,16 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCOtherAttributes;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
-import org.apache.commons.codec.digest.Crypt;
+import org.apache.commons.codec.digest.*;
 
-import java.security.SecureRandom;
 import java.util.*;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
@@ -189,7 +185,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 	}
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		for (User user : users)
 			getUsersByName().put(user.getUsername(), user);
 	}

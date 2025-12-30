@@ -25,7 +25,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 
 public class GraalVMJavascriptLanguageAdapter extends LanguageAdapter {
 
-    public GraalVMJavascriptLanguageAdapter(IRouter router) {
+    public GraalVMJavascriptLanguageAdapter(Router router) {
         super(router);
         languageSupport = new GraalVMJavascriptSupport();
     }

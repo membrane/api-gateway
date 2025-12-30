@@ -25,10 +25,10 @@ public class AccessControl extends AbstractXmlElement {
 
 	public static final String ELEMENT_NAME = "accessControl";
 
-	private final IRouter router;
+	private final Router router;
 	private final List<Resource> resources = new ArrayList<>();
 
-	public AccessControl(IRouter router) {
+	public AccessControl(Router router) {
 		this.router = router;
 	}
 
@@ -61,7 +61,7 @@ public class AccessControl extends AbstractXmlElement {
 		throw new IllegalArgumentException("Resource not found for given path");
 	}
 
-	public void init(IRouter router) {
+	public void init(Router router) {
 		for (Resource resource : resources)
 			resource.init(router);
 	}

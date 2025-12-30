@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public interface DispatchingStrategy {
 
-	void init(IRouter router);
+	void init(Router router);
 
 	Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException;
 

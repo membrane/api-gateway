@@ -22,7 +22,7 @@ import java.util.*;
 
 public class BalancerUtil {
 
-	public static List<Cluster> collectClusters(IRouter router) {
+	public static List<Cluster> collectClusters(Router router) {
 		ArrayList<Cluster> result = new ArrayList<>();
 		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getFlow();
@@ -34,7 +34,7 @@ public class BalancerUtil {
 		return result;
 	}
 
-	public static List<LoadBalancingInterceptor> collectBalancers(IRouter router) {
+	public static List<LoadBalancingInterceptor> collectBalancers(Router router) {
 		ArrayList<LoadBalancingInterceptor> result = new ArrayList<>();
 		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getFlow();
@@ -46,7 +46,7 @@ public class BalancerUtil {
 		return result;
 	}
 
-	public static Balancer lookupBalancer(IRouter router, String name) {
+	public static Balancer lookupBalancer(Router router, String name) {
 		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getFlow();
 			if (interceptors != null)
@@ -58,7 +58,7 @@ public class BalancerUtil {
 		throw new RuntimeException("balancer with name \"" + name + "\" not found.");
 	}
 
-	public static LoadBalancingInterceptor lookupBalancerInterceptor(IRouter router, String name) {
+	public static LoadBalancingInterceptor lookupBalancerInterceptor(Router router, String name) {
 		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getFlow();
 			if (interceptors != null)
@@ -70,7 +70,7 @@ public class BalancerUtil {
 		throw new RuntimeException("balancer with name \"" + name + "\" not found.");
 	}
 
-	public static boolean hasLoadBalancing(IRouter router) {
+	public static boolean hasLoadBalancing(Router router) {
 		for (Proxy r : router.getRuleManager().getRules()) {
 			List<Interceptor> interceptors = r.getFlow();
 			if (interceptors == null)
@@ -82,43 +82,43 @@ public class BalancerUtil {
 		return false;
 	}
 
-	public static void up(IRouter router, String balancerName, String cName, String host, int port) {
+	public static void up(Router router, String balancerName, String cName, String host, int port) {
 		lookupBalancer(router, balancerName).up(cName, host, port);
 	}
 
-	public static void down(IRouter router, String balancerName, String cName, String host, int port) {
+	public static void down(Router router, String balancerName, String cName, String host, int port) {
 		lookupBalancer(router, balancerName).down(cName, host, port);
 	}
 
-	public static void takeout(IRouter router, String balancerName, String cName, String host, int port) {
+	public static void takeout(Router router, String balancerName, String cName, String host, int port) {
 		lookupBalancer(router, balancerName).takeout(cName, host, port);
 	}
 
-	public static List<Node> getAllNodesByCluster(IRouter router, String balancerName, String cName) {
+	public static List<Node> getAllNodesByCluster(Router router, String balancerName, String cName) {
 		return lookupBalancer(router, balancerName).getAllNodesByCluster(cName);
 	}
 
-	public static List<Node> getAvailableNodesByCluster(IRouter router, String balancerName, String cName) {
+	public static List<Node> getAvailableNodesByCluster(Router router, String balancerName, String cName) {
 		return lookupBalancer(router, balancerName).getAvailableNodesByCluster(cName);
 	}
 
-	public static void addSession2Cluster(IRouter router, String balancerName, String sessionId, String cName, Node n) {
+	public static void addSession2Cluster(Router router, String balancerName, String sessionId, String cName, Node n) {
 		lookupBalancer(router, balancerName).addSession2Cluster(sessionId, cName, n);
 	}
 
-	public static void removeNode(IRouter router, String balancerName, String cluster, String host, int port) {
+	public static void removeNode(Router router, String balancerName, String cluster, String host, int port) {
 		lookupBalancer(router, balancerName).removeNode(cluster, host, port);
 	}
 
-	public static Node getNode(IRouter router, String balancerName, String cluster, String host, int port) {
+	public static Node getNode(Router router, String balancerName, String cluster, String host, int port) {
 		return lookupBalancer(router, balancerName).getNode(cluster, host, port);
 	}
 
-	public static Map<String, Session> getSessions(IRouter router, String balancerName, String cluster) {
+	public static Map<String, Session> getSessions(Router router, String balancerName, String cluster) {
 		return lookupBalancer(router, balancerName).getSessions(cluster);
 	}
 
-	public static List<Session> getSessionsByNode(IRouter router, String balancerName, String cName, Node node) {
+	public static List<Session> getSessionsByNode(Router router, String balancerName, String cName, Node node) {
 		return lookupBalancer(router, balancerName).getSessionsByNode(cName, node);
 	}
 

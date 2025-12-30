@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxyRuleTest {
 
-	private static Router router;
+	private static DefaultRouter router;
 	private static ProxyRule proxy;
 
 	@BeforeAll

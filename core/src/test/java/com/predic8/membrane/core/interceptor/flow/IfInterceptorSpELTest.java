@@ -31,11 +31,11 @@ import static org.mockito.Mockito.*;
 
 public class IfInterceptorSpELTest extends ConditionalEvaluationTestContext {
 
-    static Router router;
+    static DefaultRouter router;
 
     @BeforeAll
     static void setup() {
-        router = new Router();
+        router = new DefaultRouter();
     }
 
     @AfterAll

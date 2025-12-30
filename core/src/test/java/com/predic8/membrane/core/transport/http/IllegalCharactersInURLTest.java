@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IllegalCharactersInURLTest {
 
-    private IRouter r;
+    private Router r;
 
     @BeforeEach
     void init() throws Exception {

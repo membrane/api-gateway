@@ -13,7 +13,7 @@
  limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.DefaultRouter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -35,7 +35,7 @@ class PolyglotSessionIdExtractorTest extends AbstractSessionIdExtractorTest {
         extractor = new PolyglotSessionIdExtractor();
         extractor.setLanguage(SPEL);
         extractor.setSessionSource("headers['%s']".formatted(X_SESSION));
-        extractor.init(new Router());
+        extractor.init(new DefaultRouter());
     }
 
     @Test

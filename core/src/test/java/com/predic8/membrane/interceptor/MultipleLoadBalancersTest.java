@@ -37,10 +37,10 @@ public class MultipleLoadBalancersTest {
     protected static LoadBalancingInterceptor balancingInterceptor2;
     private static DispatchingStrategy roundRobinStrategy1;
     private static DispatchingStrategy roundRobinStrategy2;
-    protected static IRouter balancer;
+    protected static Router balancer;
 
     @AfterAll
-    static void tearDown() throws Exception {
+    static void tearDown() {
         service1.close();
         service2.close();
         service11.close();
@@ -50,7 +50,7 @@ public class MultipleLoadBalancersTest {
 
     private static class MockService {
         final int port;
-        final IRouter router;
+        final Router router;
         final DummyWebServiceInterceptor mockInterceptor1;
 
         MockService(int port) throws Exception {

@@ -24,7 +24,7 @@ import javax.script.*;
 
 public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
 
-    public RhinoJavascriptLanguageAdapter(IRouter router) {
+    public RhinoJavascriptLanguageAdapter(Router router) {
         super(router);
         languageSupport = new RhinoJavascriptLanguageSupport();
     }

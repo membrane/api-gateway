@@ -18,9 +18,6 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -41,7 +38,7 @@ public class OpenAPI31Test {
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        IRouter router = new HttpRouter();
+        Router router = new DummyTestRouter();
 
         petstore_v3_1 = new OpenAPISpec();
         petstore_v3_1.location = getPathFromResource("openapi/specs/petstore-v3.1.json");

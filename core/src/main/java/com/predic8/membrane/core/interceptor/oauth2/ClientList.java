@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
 
 public interface ClientList {
 
-    void init(IRouter router);
+    void init(Router router);
 
     /**
      * @throws NoSuchElementException

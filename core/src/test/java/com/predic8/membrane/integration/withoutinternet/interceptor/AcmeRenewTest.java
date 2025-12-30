@@ -67,8 +67,7 @@ public class AcmeRenewTest {
         acme.setContacts("mailto:jsmith@example.com");
         acme.setAcmeSynchronizedStorage(new MemoryStorage());
 
-        HttpRouter router = new HttpRouter();
-        router.getConfig().setHotDeploy(false);
+        Router router = new TestRouter();
         SSLParser sslParser = new SSLParser();
         sslParser.setAcme(acme);
         ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey(3051), "localhost", 80);

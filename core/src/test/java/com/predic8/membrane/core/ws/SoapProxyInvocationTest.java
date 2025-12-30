@@ -55,8 +55,8 @@ public class SoapProxyInvocationTest {
                     </s:Body>
                 </s:Envelope>""";
 
-    static IRouter gw;
-    static IRouter backend;
+    static Router gw;
+    static Router backend;
 
     @BeforeAll
     public static void setup() throws Exception {

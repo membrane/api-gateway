@@ -56,7 +56,7 @@ public class JwtSessionManager extends SessionManager {
     }
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         super.init(router);
 
         try {

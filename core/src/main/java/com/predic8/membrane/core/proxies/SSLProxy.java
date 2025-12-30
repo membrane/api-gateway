@@ -192,10 +192,10 @@ public class SSLProxy implements Proxy {
         return null;
     }
 
-    IRouter router;
+    Router router;
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         this.router = router;
         cm = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout(), router.getTimerManager());
         for (SSLInterceptor i : sslInterceptors)

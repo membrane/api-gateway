@@ -21,6 +21,7 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -47,19 +48,17 @@ class MassivelyParallelTest {
     private static int CONCURRENT_THREADS = 500;
 
     static HttpClient client;
-    static HttpRouter server;
+    static TestRouter server;
 
     @BeforeAll
-    public static void init() {
+    public static void init() throws IOException {
         client = new HttpClient();
-
-        server = new HttpRouter();
+        server = new TestRouter();
+        server.add(createServiceProxy());
+        server.start();
         server.getTransport().setConcurrentConnectionLimitPerIp(CONCURRENT_THREADS);
         server.getTransport().setBacklog(CONCURRENT_THREADS);
         server.getTransport().setSocketTimeout(10000);
-        server.getConfig().setHotDeploy(false);
-        server.getRuleManager().addProxy(createServiceProxy(), MANUAL);
-        server.start();
     }
 
     private static ServiceProxy createServiceProxy() {
@@ -96,7 +95,7 @@ class MassivelyParallelTest {
     }
 
     private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {
-        try(ExecutorService es = Executors.newVirtualThreadPerTaskExecutor()) {
+        try (ExecutorService es = Executors.newVirtualThreadPerTaskExecutor()) {
             CountDownLatch cdl = new CountDownLatch(threadCount);
             try {
                 for (int i = 0; i < threadCount; i++) {

@@ -37,7 +37,7 @@ public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
     private Encoding encoding = Encoding.RAW;
 
     @Override
-    public void init(IRouter router) throws Exception {
+    public void init(Router router) throws Exception {
 
     }
 

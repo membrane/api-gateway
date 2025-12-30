@@ -52,7 +52,7 @@ public class MockAuthorizationServer {
     private final SecureRandom rand = new SecureRandom();
     private final ObjectMapper om = new ObjectMapper();
 
-    private IRouter mockAuthServer;
+    private TestRouter mockAuthServer;
 
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
@@ -91,7 +91,7 @@ public class MockAuthorizationServer {
         mockAuthServer.stop();
     }
 
-    public IRouter getMockAuthServer() {
+    public Router getMockAuthServer() {
         return mockAuthServer;
     }
 

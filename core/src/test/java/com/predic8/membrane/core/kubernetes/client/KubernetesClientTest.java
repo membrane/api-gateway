@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class KubernetesClientTest {
 
-    private static IRouter router;
+    private static Router router;
 
     @BeforeAll
     public static void prepare() throws IOException {

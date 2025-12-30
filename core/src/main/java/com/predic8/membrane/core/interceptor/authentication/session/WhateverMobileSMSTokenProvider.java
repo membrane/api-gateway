@@ -69,7 +69,7 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 	private static final String GATEWAY2 = "https://" + HOST2 + "/sendsms";
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		hc = router.getHttpClientFactory().createClient(null);
 	}
 

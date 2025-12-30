@@ -42,7 +42,7 @@ public class PriorityStrategy extends AbstractXmlElement implements DispatchingS
     private static final Logger log = LoggerFactory.getLogger(PriorityStrategy.class);
 
     @Override
-    public void init(IRouter router) {}
+    public void init(Router router) {}
 
     @Override
     public Node dispatch(LoadBalancingInterceptor interceptor, AbstractExchange exc) throws EmptyNodeListException {

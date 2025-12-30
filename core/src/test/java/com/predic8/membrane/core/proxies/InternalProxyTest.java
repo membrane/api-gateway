@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.*;
 
 class InternalProxyTest {
 
-    private IRouter router;
+    private Router router;
 
     @BeforeEach
     void setup() throws Exception {

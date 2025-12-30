@@ -30,7 +30,7 @@ import static com.predic8.membrane.core.http.Request.*;
 
 public class ServiceInvocationTest {
 
-	private IRouter router;
+	private Router router;
 
 	@BeforeEach
 	void setUp() throws Exception {
@@ -87,8 +87,8 @@ public class ServiceInvocationTest {
 		return post;
 	}
 
-	private IRouter createRouter() throws Exception {
-		IRouter router = new TestRouter();
+	private Router createRouter() throws Exception {
+		Router router = new TestRouter();
 		router.add(createFirstRule());
 		router.add(createServiceRule());
 		router.add(createEndpointRule());

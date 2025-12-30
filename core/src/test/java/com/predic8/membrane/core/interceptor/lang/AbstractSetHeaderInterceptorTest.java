@@ -28,13 +28,13 @@ abstract class AbstractSetHeaderInterceptorTest {
     Exchange exchange;
     Message message;
     final AbstractSetterInterceptor interceptor = new SetHeaderInterceptor();
-    static Router router;
+    static DefaultRouter router;
 
     protected abstract Language getLanguage();
 
     @BeforeEach
     void setUp() throws Exception {
-        router = new Router();
+        router = new DefaultRouter();
         exchange = new Exchange(null) {{
             setRequest(new Request.Builder().post("/boo")
                     .header("host", "localhost:8080")

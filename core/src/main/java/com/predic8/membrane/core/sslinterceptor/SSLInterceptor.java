@@ -18,7 +18,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.ssl.SSLExchange;
 
 public interface SSLInterceptor {
-    void init(IRouter router);
+    void init(Router router);
 
     Outcome handleRequest(SSLExchange exc) throws Exception;
 }

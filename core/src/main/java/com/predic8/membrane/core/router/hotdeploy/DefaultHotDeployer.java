@@ -28,12 +28,12 @@ public class DefaultHotDeployer implements HotDeployer {
     @GuardedBy("lock")
     private HotDeploymentThread hdt;
 
-    private Router router;
+    private DefaultRouter router;
 
     private final Object lock = new Object();
 
     @Override
-    public void start(@NotNull Router router) {
+    public void start(@NotNull DefaultRouter router) {
         this.router = router;
         startInternal();
     }

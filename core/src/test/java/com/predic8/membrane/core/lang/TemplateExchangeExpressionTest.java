@@ -28,7 +28,7 @@ class TemplateExchangeExpressionTest {
 
     Exchange exc;
     Language language;
-    Router router;
+    DefaultRouter router;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -37,7 +37,7 @@ class TemplateExchangeExpressionTest {
                 .buildExchange();
         exc.setProperty("prop1", "Mars");
         language = Language.SPEL;
-        router = new Router();
+        router = new DefaultRouter();
     }
 
     @Test

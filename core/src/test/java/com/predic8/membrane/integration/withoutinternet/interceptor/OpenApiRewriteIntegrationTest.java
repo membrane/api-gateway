@@ -29,13 +29,14 @@ import static java.util.Collections.*;
 
 public class OpenApiRewriteIntegrationTest {
 
-    private final IRouter r = new HttpRouter();
+    private Router r;
 
     @BeforeEach
     public void setUp() throws Exception {
-        r.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy());
-        r.getRuleManager().addProxyAndOpenPortIfNew(getTargetProxy());
-        r.init();
+        r = new TestRouter();
+        r.add(getApiProxy());
+        r.add(getTargetProxy());
+        r.start();
     }
 
     @AfterEach

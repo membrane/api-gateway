@@ -20,10 +20,10 @@ import javax.xml.stream.XMLStreamReader;
 
 public abstract class AbstractClientAddress extends AbstractXmlElement {
 
-	protected final IRouter router;
+	protected final Router router;
 	protected String schema;
 
-	public AbstractClientAddress(IRouter router) {
+	public AbstractClientAddress(Router router) {
 		super();
 		this.router = router;
 	}
@@ -44,5 +44,5 @@ public abstract class AbstractClientAddress extends AbstractXmlElement {
 		this.schema = schema;
 	}
 
-	public void init(IRouter router) {}
+	public void init(Router router) {}
 }

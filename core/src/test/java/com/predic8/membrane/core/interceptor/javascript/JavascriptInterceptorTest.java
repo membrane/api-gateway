@@ -42,7 +42,7 @@ public class JavascriptInterceptorTest {
 
     private final static ObjectMapper om = new ObjectMapper();
 
-    final Router router = new Router();
+    final DefaultRouter router = new DefaultRouter();
     JavascriptInterceptor interceptor;
     Exchange exc;
 

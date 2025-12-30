@@ -23,7 +23,7 @@ import com.predic8.membrane.core.*;
 public class EmptyTokenProvider implements TokenProvider {
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		// does nothing
 	}
 

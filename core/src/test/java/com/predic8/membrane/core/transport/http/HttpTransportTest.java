@@ -33,7 +33,7 @@ public class HttpTransportTest {
 	private final ResolverMap resolverMap = mock(ResolverMap.class);
 	private final SSLProvider sslProvider = mock(SSLProvider.class);
 	private final RuleManager ruleManager = mock(RuleManager.class);
-	private final Router router = mock(Router.class);
+	private final DefaultRouter router = mock(DefaultRouter.class);
 	private final ExchangeStore exchangeStore = mock(ExchangeStore.class);
 	private final Statistics statistics = new Statistics();
 	private HttpTransport transport;

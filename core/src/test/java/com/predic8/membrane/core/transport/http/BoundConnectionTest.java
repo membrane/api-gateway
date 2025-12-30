@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class BoundConnectionTest {
 
-	IRouter router;
+	Router router;
 	volatile long connectionHash = 0;
 
 	@BeforeEach

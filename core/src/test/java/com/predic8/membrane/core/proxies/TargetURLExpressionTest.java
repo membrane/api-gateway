@@ -29,11 +29,11 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TargetURLExpressionTest {
 
-    private Router router;
+    private DefaultRouter router;
 
     @BeforeEach
     void setUp() {
-        router = new Router();
+        router = new DefaultRouter();
     }
 
     @AfterEach

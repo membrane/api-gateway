@@ -14,12 +14,10 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.transport.http.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -31,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SOAPProxyTest {
 
-    IRouter router;
+    Router router;
 
     SOAPProxy proxy;
 
@@ -39,7 +37,7 @@ public class SOAPProxyTest {
     void setUp() throws IOException {
         proxy = new SOAPProxy();
         proxy.setPort(2000);
-        router = new Router();
+        router = new DefaultRouter();
 
         APIProxy backend = new APIProxy();
         backend.setKey(new APIProxyKey(2001));

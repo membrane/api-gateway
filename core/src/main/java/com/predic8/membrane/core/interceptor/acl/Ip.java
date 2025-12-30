@@ -25,7 +25,7 @@ public class Ip extends AbstractClientAddress {
 
 	private ParseType type = GLOB;
 
-	public Ip(IRouter router) {
+	public Ip(Router router) {
 		super(router);
 	}
 

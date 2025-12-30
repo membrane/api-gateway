@@ -43,7 +43,7 @@ public class MemcachedSessionManager extends SessionManager {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public void init(IRouter router) throws Exception {
+    public void init(Router router) throws Exception {
         this.client = connector.getClient();
     }
 

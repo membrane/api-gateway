@@ -19,10 +19,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.templating.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
 import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -34,7 +31,7 @@ import static java.util.Collections.singletonList;
 
 public class Swagger20Test {
 
-    IRouter router;
+    Router router;
 
     @BeforeEach
     public void setUp() throws Exception {

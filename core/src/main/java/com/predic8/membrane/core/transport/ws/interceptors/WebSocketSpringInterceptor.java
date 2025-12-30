@@ -55,7 +55,7 @@ public class WebSocketSpringInterceptor implements ApplicationContextAware, WebS
     }
 
     @Override
-    public void init(IRouter router) throws Exception {
+    public void init(Router router) throws Exception {
         i.init(router);
     }
 

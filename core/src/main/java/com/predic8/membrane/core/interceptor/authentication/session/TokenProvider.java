@@ -19,7 +19,7 @@ import com.predic8.membrane.core.*;
 
 public interface TokenProvider {
 
-	void init(IRouter router);
+	void init(Router router);
 	void requestToken(Map<String, String> userAttributes);
 	void verifyToken(Map<String, String> userAttributes, String token);
 

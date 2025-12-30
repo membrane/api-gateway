@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class HttpClientConfigurationTest {
 
-    Router router;
+    DefaultRouter router;
 
     HttpClientConfiguration configuration;
 

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.*;
 
 public abstract class AbstractTestWithRouter {
 
-    protected IRouter router;
+    protected Router router;
 
     @BeforeEach
     void setUp() {

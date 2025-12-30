@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class WSDLPublisherInterceptorTest {
 
-	private IRouter router;
+	private Router router;
 
 	static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {

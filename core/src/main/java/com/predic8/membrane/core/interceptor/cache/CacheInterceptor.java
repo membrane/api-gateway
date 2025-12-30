@@ -67,7 +67,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 	}
 
 	public static abstract class Store {
-		public void init(IRouter router) {}
+		public void init(Router router) {}
 
 		public abstract Node get(String url);
 		public abstract void put(String url, Node node);
@@ -102,7 +102,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 		}
 
 		@Override
-		public void init(IRouter router) {
+		public void init(Router router) {
 			dir = ResolverMap.combine(router.getBaseLocation(), dir);
 			File d = new File(dir);
 			if (!d.exists())

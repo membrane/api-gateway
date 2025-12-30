@@ -31,7 +31,7 @@ public class AbstractInterceptor implements Interceptor {
 
 	private EnumSet<Flow> flow = REQUEST_RESPONSE_ABORT_FLOW;
 
-	protected IRouter router;
+	protected Router router;
 
 	public AbstractInterceptor() {
 		super();
@@ -99,17 +99,17 @@ public class AbstractInterceptor implements Interceptor {
 	 */
 	public void init() {}
 
-    public final void init(IRouter router) {
+    public final void init(Router router) {
 		this.router = router;
 		init();
 	}
 
 	@Override
-	public void init(IRouter router, Proxy ignored) {
+	public void init(Router router, Proxy ignored) {
 		init(router);
 	}
 
-	public IRouter getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
+	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
 		return router;
 	}
 

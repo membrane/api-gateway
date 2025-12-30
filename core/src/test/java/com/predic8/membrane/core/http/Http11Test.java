@@ -30,8 +30,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class Http11Test {
 
-	private static IRouter router;
-	private static IRouter router2;
+	private static Router router;
+	private static Router router2;
 	private static int port4k;
 
     @BeforeAll

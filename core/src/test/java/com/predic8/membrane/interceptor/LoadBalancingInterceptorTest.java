@@ -30,7 +30,6 @@ import java.net.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.InterceptorUtil.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static java.lang.Thread.*;
@@ -47,9 +46,9 @@ public abstract class LoadBalancingInterceptorTest {
 	private DispatchingStrategy roundRobin;
 	private DispatchingStrategy byThreadStrategy;
 	private DispatchingStrategy priorityStrategy;
-	private IRouter service1;
-	private IRouter service2;
-	protected IRouter balancer;
+	private Router service1;
+	private Router service2;
+	protected Router balancer;
 
     @BeforeEach
 	public void setUp() throws Exception {

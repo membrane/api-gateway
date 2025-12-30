@@ -114,7 +114,7 @@ class MembraneAuthorizationServiceTest {
         MembraneAuthorizationService mas = Mockito.spy(new MembraneAuthorizationService());
         doReturn(new ByteArrayInputStream(CONFIG.getBytes())).when(mas).resolve(any(), Mockito.nullable(String.class), anyString());
         mas.setSrc("dummy");
-        mas.router = new Router();
+        mas.router = new DefaultRouter();
         return mas;
     }
 

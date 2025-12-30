@@ -65,7 +65,7 @@ public class BearerTokenGenerator implements TokenGenerator {
     private final ConcurrentHashMap<String,User> tokenToUser = new ConcurrentHashMap<>();
 
     @Override
-    public void init(IRouter router) throws Exception {
+    public void init(Router router) throws Exception {
         // nothing to do
     }
 

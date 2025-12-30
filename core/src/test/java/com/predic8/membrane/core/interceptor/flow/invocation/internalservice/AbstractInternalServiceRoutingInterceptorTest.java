@@ -33,7 +33,7 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
 
     protected final CaptureRoutingTestInterceptor captureRoutingTestInterceptor = new CaptureRoutingTestInterceptor();
 
-    private IRouter router;
+    private Router router;
 
     protected abstract void configure() throws Exception;
 

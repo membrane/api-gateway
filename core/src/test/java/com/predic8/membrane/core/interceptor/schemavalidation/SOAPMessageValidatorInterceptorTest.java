@@ -35,11 +35,11 @@ public class SOAPMessageValidatorInterceptorTest {
 	public static final String E_MAIL_SERVICE_WSDL = "src/test/resources/validation/XWebEmailValidation.wsdl.xml";
 	public static final String INLINE_ANYTYPE_WSDL = "src/test/resources/validation/inline-anytype.wsdl";
 	public static final String WSDL_MESSAGE_VALIDATION_FAILED = "WSDL message validation failed";
-	public static IRouter router;
+	public static Router router;
 
 	@BeforeAll
 	static void setup() {
-		router = new HttpRouter();
+		router = new DummyTestRouter();
 	}
 
 	@Test

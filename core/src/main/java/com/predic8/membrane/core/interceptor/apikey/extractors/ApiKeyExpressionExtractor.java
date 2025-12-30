@@ -56,7 +56,7 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XML
     private XmlConfig xmlConfig;
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, expression);
     }
 

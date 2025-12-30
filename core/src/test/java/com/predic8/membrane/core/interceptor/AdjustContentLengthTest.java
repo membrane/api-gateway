@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AdjustContentLengthTest {
 
-	private static IRouter router;
+	private static Router router;
 
 	@BeforeAll
 	public static void setUp() throws Exception {

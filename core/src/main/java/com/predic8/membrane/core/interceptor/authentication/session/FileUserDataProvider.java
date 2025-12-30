@@ -109,7 +109,7 @@ public class FileUserDataProvider implements UserDataProvider {
     }
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         List<String> lines;
         try {
             lines = Files.readAllLines(Paths.get(this.htpasswdPath));

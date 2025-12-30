@@ -36,12 +36,12 @@ public class Resource extends AbstractXmlElement {
 
 	public static final String ELEMENT_NAME = "resource";
 
-	private final IRouter router;
+	private final Router router;
 	private final List<AbstractClientAddress> clientAddresses = new ArrayList<>();
 
 	protected Pattern uriPattern;
 
-	public Resource(IRouter router) {
+	public Resource(Router router) {
 		this.router = router;
 	}
 
@@ -97,7 +97,7 @@ public class Resource extends AbstractXmlElement {
 		return uriPattern.pattern();
 	}
 
-	public void init(IRouter router) {
+	public void init(Router router) {
 		for (AbstractClientAddress ca : clientAddresses)
 			ca.init(router);
 	}

@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ServiceProxyTest {
 
-    private static IRouter router;
+    private static Router router;
 
     @BeforeAll
     public static void setup() throws Exception {

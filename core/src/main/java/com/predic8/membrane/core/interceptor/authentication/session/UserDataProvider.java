@@ -19,7 +19,7 @@ import java.util.*;
 
 public interface UserDataProvider {
 
-	void init(IRouter router);
+	void init(Router router);
 
 	/**
 	 * @throws NoSuchElementException

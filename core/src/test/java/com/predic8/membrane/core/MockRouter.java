@@ -13,11 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.transport.http.*;
 
-public class MockRouter extends Router {
+public class MockRouter extends DefaultRouter {
 
 	public MockRouter() {
 		setExchangeStore(new ForgetfulExchangeStore());

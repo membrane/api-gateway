@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SessionInterceptorTest {
 
-    private IRouter router;
+    private Router router;
     private CloseableHttpClient httpClient;
 
     @BeforeEach

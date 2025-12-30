@@ -44,7 +44,7 @@ public class ValidatorInterceptorTest {
 
     private static Exchange exc;
 
-    private static IRouter router;
+    private static Router router;
 
     public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.wsdl";
 
@@ -60,7 +60,7 @@ public class ValidatorInterceptorTest {
         requestTB = post("http://thomas-bayer.com").build();
         requestXService = post("http://ws.xwebservices.com").build();
         exc = new Exchange(null);
-        router = new HttpRouter();
+        router = new DummyTestRouter();
     }
 
     @Test

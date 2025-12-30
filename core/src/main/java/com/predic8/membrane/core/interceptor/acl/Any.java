@@ -20,7 +20,7 @@ public class Any extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "any";
 
-	public Any(IRouter router) {
+	public Any(Router router) {
 		super(router);
 	}
 

@@ -56,10 +56,10 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptorFaultMonitoringStrategyTest.class.getName());
 
     LoadBalancingInterceptor balancingInterceptor;
-    IRouter balancer;
+    Router balancer;
 
     // The simulation nodes
-    private final List<IRouter> nodes = new ArrayList<>();
+    private final List<Router> nodes = new ArrayList<>();
 
     private void setUp(TestingContext ctx) throws Exception {
         nodes.clear();
@@ -75,8 +75,8 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         }
     }
 
-    private IRouter createLoadBalancer() throws Exception {
-        IRouter r = new TestRouter();
+    private Router createLoadBalancer() throws Exception {
+        Router r = new TestRouter();
         ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3054), "thomas-bayer.com", 80);
         balancingInterceptor = new LoadBalancingInterceptor();
         balancingInterceptor.setName("Default");
@@ -99,7 +99,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         return config;
     }
 
-    private IRouter createRouterForNode(TestingContext ctx, int i) throws Exception {
+    private Router createRouterForNode(TestingContext ctx, int i) throws Exception {
         var r = new TestRouter();
         r.add(createServiceProxy(ctx, i));
         r.start();
@@ -121,7 +121,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
     @AfterEach
     void tearDown() {
-        for (IRouter httpRouter : nodes) {
+        for (Router httpRouter : nodes) {
             try {
                 httpRouter.shutdown();
             } catch (Exception e) {

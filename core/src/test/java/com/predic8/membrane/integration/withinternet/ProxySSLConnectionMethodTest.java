@@ -28,14 +28,14 @@ import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 class ProxySSLConnectionMethodTest {
 
-	private HttpRouter router;
+	private Router router;
 
 	@BeforeEach
 	void setUp() throws Exception {
-		router = new HttpRouter();
+		router = new TestRouter();
 		router.setExchangeStore(new MemoryExchangeStore());
-		router.getRuleManager().addProxyAndOpenPortIfNew(new ProxyRule(new ProxyRuleKey(3129)));
-		router.init();
+		router.add(new ProxyRule(new ProxyRuleKey(3129)));
+		router.start();
 	}
 
 	@AfterEach

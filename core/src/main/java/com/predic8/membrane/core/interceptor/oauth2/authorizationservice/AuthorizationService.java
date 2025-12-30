@@ -58,7 +58,6 @@ import static com.predic8.membrane.core.http.Response.internalServerError;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.authorizationCodeBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refreshTokenBodyBuilder;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION_DESCRIPTION;
 import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 public abstract class AuthorizationService {
@@ -69,7 +68,7 @@ public abstract class AuthorizationService {
     protected Logger log;
 
     private HttpClient httpClient;
-    IRouter router;
+    Router router;
 
     protected HttpClientConfiguration httpClientConfiguration;
     private final Object lock = new Object();
@@ -91,7 +90,7 @@ public abstract class AuthorizationService {
         return supportsDynamicRegistration;
     }
 
-    public void init(IRouter router) throws Exception {
+    public void init(Router router) throws Exception {
         log = LoggerFactory.getLogger(this.getClass().getName());
 
         if (isUseJWTForClientAuth()) {

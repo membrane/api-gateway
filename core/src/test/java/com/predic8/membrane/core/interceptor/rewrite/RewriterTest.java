@@ -35,7 +35,7 @@ public class RewriterTest {
         mappings.add(new Mapping("/hello/(.*)", "/$1", null));
         rewriter.setMappings(mappings);
 
-        rewriter.init(new HttpRouter());
+        rewriter.init(new DummyTestRouter());
     }
 
     @Test

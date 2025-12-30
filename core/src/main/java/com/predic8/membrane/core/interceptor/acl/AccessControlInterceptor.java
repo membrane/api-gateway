@@ -129,7 +129,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
         accessControl = ac;
     }
 
-    protected AccessControl parse(String fileName, IRouter router) {
+    protected AccessControl parse(String fileName, Router router) {
         try {
             XMLInputFactory factory = XMLInputFactoryFactory.inputFactory();
             XMLStreamReader reader = null;

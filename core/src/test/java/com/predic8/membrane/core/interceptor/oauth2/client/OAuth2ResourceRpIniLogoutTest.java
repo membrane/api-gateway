@@ -59,12 +59,12 @@ import static org.junit.jupiter.api.Assertions.*;
 public class OAuth2ResourceRpIniLogoutTest {
 
     protected final BrowserMock browser = new BrowserMock();
-    protected IRouter mockAuthServer;
+    protected Router mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final int serverPort = 3062;
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
-    private IRouter oauth2Resource;
+    private Router oauth2Resource;
     private final AtomicBoolean isLoggedOutAtOP = new AtomicBoolean(false);
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;

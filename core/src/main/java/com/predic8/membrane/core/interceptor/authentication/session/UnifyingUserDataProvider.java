@@ -63,7 +63,7 @@ public class UnifyingUserDataProvider implements UserDataProvider {
 	}
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		for (UserDataProvider udp : userDataProviders)
 			udp.init(router);
 	}

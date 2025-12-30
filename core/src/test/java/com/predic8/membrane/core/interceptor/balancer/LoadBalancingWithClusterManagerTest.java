@@ -32,10 +32,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class LoadBalancingWithClusterManagerTest {
 
-    private IRouter lb;
-    private Router node1;
-    private Router node2;
-    private Router node3;
+    private Router lb;
+    private DefaultRouter node1;
+    private DefaultRouter node2;
+    private DefaultRouter node3;
 
     @AfterEach
     public void tearDown() {
@@ -94,8 +94,8 @@ public class LoadBalancingWithClusterManagerTest {
         assertEquals(2, service3.getCount());
     }
 
-    private static @NotNull Router createRouter() {
-        Router node1 = new TestRouter();
+    private static @NotNull DefaultRouter createRouter() {
+        DefaultRouter node1 = new TestRouter();
         node1.getRegistry().register("global", new GlobalInterceptor());
         return node1;
     }
@@ -117,13 +117,13 @@ public class LoadBalancingWithClusterManagerTest {
         ServiceProxy cniRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3012), "thomas-bayer.com", 80);
         cniRule.getFlow().add(cni);
 
-        lb = new Router();
+        lb = new DefaultRouter();
         lb.add(lbiRule);
         lb.add(cniRule);
         lb.start();
     }
 
-    private DummyWebServiceInterceptor startNode(Router node, int port) throws Exception {
+    private DummyWebServiceInterceptor startNode(DefaultRouter node, int port) throws Exception {
         DummyWebServiceInterceptor service1 = new DummyWebServiceInterceptor();
         var global = node.getRegistry().getBean(GlobalInterceptor.class);
         global.orElseThrow().getFlow().add(service1);

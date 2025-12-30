@@ -20,7 +20,7 @@ import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 
 public interface SessionIdExtractor {
 
-    default void init(IRouter router) {
+    default void init(Router router) {
     }
 
 	default boolean hasSessionId(Exchange exc, Flow flow) throws Exception {

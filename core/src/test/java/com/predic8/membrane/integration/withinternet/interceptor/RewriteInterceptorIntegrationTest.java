@@ -18,53 +18,72 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.http.params.*;
+import org.apache.http.util.*;
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
+import static org.apache.http.params.CoreProtocolPNames.PROTOCOL_VERSION;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RewriteInterceptorIntegrationTest {
 
-	private static HttpRouter router;
+	private static Router router;
+
+	String soap = """
+			<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cit="https://predic8.de/cities">
+			    <s11:Body>
+			        <cit:getCity>
+			            <name>Bonn</name>
+			        </cit:getCity>
+			    </s11:Body>
+			</s11:Envelope>s
+			""";
 
     @BeforeAll
-	public static void setUp() throws Exception {
+	static void setUp() throws Exception {
 
         RewriteInterceptor interceptor = new RewriteInterceptor();
-		interceptor.getMappings().add(new Mapping("/blz-service\\?wsdl", "/axis2/services/BLZService?wsdl", null));
+		interceptor.getMappings().add(new Mapping("/city\\?wsdl", "/city-service?wsdl", null));
 
-		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3006), "thomas-bayer.com", 80);
+		ServiceProxy proxy = new APIProxy();
+		AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
+		target.setUrl("https://www.predic8.de");
+		proxy.setTarget(target);
+		proxy.setKey(new ServiceProxyKey("localhost", "*", ".*", 3006));
 		proxy.getFlow().add(interceptor);
 
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
+		router = new TestRouter();
+		router.add(proxy);
+		router.start();
 	}
 
 	@AfterAll
-	public static void tearDown() {
+	static void tearDown() {
 		router.shutdown();
 	}
 
 	@Test
-	public void testRewriting() throws Exception {
+	void testRewriting() throws Exception {
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-		int status = client.executeMethod(getPostMethod());
-
+		client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_1);
+		var post = getPostMethod();
+		int status = client.executeMethod(post);
 		assertEquals(200, status);
+		assertTrue(post.getResponseBodyAsString().contains("CitySoapBinding"));
 	}
 
 	private PostMethod getPostMethod() {
-		PostMethod post = new PostMethod("http://localhost:3006/blz-service?wsdl");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
+		PostMethod post = new PostMethod("http://localhost:3006/city?wsdl");
+		post.setRequestEntity(new StringRequestEntity(soap));
+		post.setRequestHeader(CONTENT_TYPE, TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
-
 		return post;
 	}
-
-
 }

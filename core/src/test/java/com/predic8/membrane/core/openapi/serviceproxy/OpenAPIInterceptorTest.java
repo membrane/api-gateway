@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIInterceptorTest {
 
-    IRouter router;
+    Router router;
     OpenAPISpec specInfoServers;
     OpenAPISpec specInfo3Servers;
     OpenAPISpec specCustomers;
@@ -48,7 +48,7 @@ class OpenAPIInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        router = new HttpRouter();
+        router = new DummyTestRouter();
 
         specInfoServers = new OpenAPISpec();
         specInfoServers.location = getPathFromResource("openapi/specs/info-servers.yml");

@@ -43,11 +43,11 @@ public class ProxySSLTest {
     @ParameterizedTest
     @MethodSource("data")
     void test(boolean backendUsesSSL, boolean proxyUsesSSL, int backendPort, int proxyPort) throws Exception {
-        Router backend = createBackend(backendUsesSSL, backendPort);
+        DefaultRouter backend = createBackend(backendUsesSSL, backendPort);
 
         AtomicInteger proxyCounter = new AtomicInteger();
 
-        Router proxy = createProxy(proxyUsesSSL, proxyPort, proxyCounter);
+        DefaultRouter proxy = createProxy(proxyUsesSSL, proxyPort, proxyCounter);
 
         testClient(backendUsesSSL, backendPort, createAndConfigureClient(proxyUsesSSL, proxyPort), proxyCounter);
 
@@ -55,8 +55,8 @@ public class ProxySSLTest {
         backend.shutdown();
     }
 
-    private static @NotNull Router createProxy(boolean proxyUsesSSL, int proxyPort, AtomicInteger proxyCounter) throws IOException {
-        Router proxy = new Router();
+    private static @NotNull DefaultRouter createProxy(boolean proxyUsesSSL, int proxyPort, AtomicInteger proxyCounter) throws IOException {
+        DefaultRouter proxy = new DefaultRouter();
         proxy.getConfig().setHotDeploy(false);
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(proxyPort));
         rule.getFlow().add(new AbstractInterceptor() {
@@ -109,9 +109,9 @@ public class ProxySSLTest {
         return new HttpClient(httpClientConfiguration);
     }
 
-    private static @NotNull Router createBackend(boolean backendUsesSSL, int backendPort) throws IOException {
+    private static @NotNull DefaultRouter createBackend(boolean backendUsesSSL, int backendPort) throws IOException {
         // Step 1: create the backend
-        Router backend = new Router();
+        DefaultRouter backend = new DefaultRouter();
         backend.getConfig().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
         if (backendUsesSSL) {

@@ -54,7 +54,7 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
 
     @Test
     void interceptorSequenceFromSpringConfiguration() {
-        Router router = startSpringContextAndReturnRouter(publisherSeparate);
+        DefaultRouter router = startSpringContextAndReturnRouter(publisherSeparate);
         APIProxy ap = getApiProxy(router);
         assertEquals(5, ap.getFlow().size());
         assertInstanceOf(OpenAPIInterceptor.class, ap.getFlow().get(0)); // Should be added after init() is called on router (Inside bootstrap)
@@ -67,7 +67,7 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
 
     @Test
     void noPublisherNoOpenAPIInterceptor() {
-        Router router = startSpringContextAndReturnRouter(noPublisherNoOpenAPIInterceptor);
+        DefaultRouter router = startSpringContextAndReturnRouter(noPublisherNoOpenAPIInterceptor);
         APIProxy ap = getApiProxy(router);
         ap.init(router);
         assertEquals(5, ap.getFlow().size());

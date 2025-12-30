@@ -20,19 +20,17 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
 import static io.restassured.RestAssured.*;
-import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class AbstractInterceptorFlowTest {
 
-    private IRouter router;
+    private Router router;
 
     @BeforeEach
     void setUp() {

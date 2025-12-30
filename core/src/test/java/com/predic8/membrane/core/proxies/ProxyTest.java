@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxyTest {
 
-    static IRouter router;
+    static Router router;
     static final AtomicReference<String> lastMethod = new AtomicReference<>();
 
     @BeforeAll

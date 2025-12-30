@@ -20,12 +20,12 @@ import java.util.*;
 public interface ApiKeyStore {
 
     /**
-     * Lifecycle hook invoked once to provide the {@link Router} context.
+     * Lifecycle hook invoked once to provide the {@link DefaultRouter} context.
      * Default is a no-op to preserve backward compatibility; implementations may override.
      *
      * @param router non-null router instance
      */
-    default void init(IRouter router) {
+    default void init(Router router) {
     }
 
     /**

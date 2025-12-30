@@ -21,14 +21,14 @@ import java.io.*;
 
 class OpenTelemetryInterceptorTest {
 
-    private IRouter router;
+    private Router router;
 
     @Test
     void initTest() throws IOException {
         Proxy r = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3141), null, 0);
         r.getFlow().add(new OpenTelemetryInterceptor());
 
-        router = new HttpRouter();
+        router = new DummyTestRouter();
         router.add(r);
         router.init();
     }

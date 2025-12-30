@@ -24,7 +24,6 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.context.*;
 
-import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
@@ -33,11 +32,11 @@ public abstract  class LanguageAdapter {
     private static final Logger log = LoggerFactory.getLogger(LanguageAdapter.class);
 
     protected LanguageSupport languageSupport;
-    final protected IRouter router;
+    final protected Router router;
 
     protected static int preScriptLineLength;
 
-    public LanguageAdapter(IRouter router) {
+    public LanguageAdapter(Router router) {
         this.router = router;
         preScriptLineLength = Math.toIntExact(getPreScript().lines().count());
     }
@@ -54,7 +53,7 @@ public abstract  class LanguageAdapter {
         return getPreScript() + script + getPostScript();
     }
 
-    public static LanguageAdapter instance(IRouter router) {
+    public static LanguageAdapter instance(Router router) {
         try {
             Class.forName("org.graalvm.polyglot.Context");
             log.info("Found GraalVM Javascript engine.");

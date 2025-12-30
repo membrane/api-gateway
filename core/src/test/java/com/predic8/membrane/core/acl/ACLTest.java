@@ -23,11 +23,11 @@ import static java.util.regex.Pattern.*;
 
 public abstract class ACLTest extends AccessControlInterceptor {
 
-    protected IRouter router;
+    protected Router router;
 
     @BeforeEach
     void setUpEach() {
-        router = new HttpRouter();
+        router = new DummyTestRouter();
         router.start();
     }
 
@@ -36,7 +36,7 @@ public abstract class ACLTest extends AccessControlInterceptor {
         router.stop();
     }
 
-    private AccessControlInterceptor createRouter(boolean isReverseDNS, boolean useForwardedFor, Function<IRouter, Resource> f) {
+    private AccessControlInterceptor createRouter(boolean isReverseDNS, boolean useForwardedFor, Function<Router, Resource> f) {
         AccessControlInterceptor aci = buildAci(f.apply(router));
         aci.setUseXForwardedForAsClientAddr(useForwardedFor);
         return aci;
@@ -58,20 +58,20 @@ public abstract class ACLTest extends AccessControlInterceptor {
         }};
     }
 
-    private static Resource getIpResource(String scheme, ParseType ptype, IRouter router) {
+    private static Resource getIpResource(String scheme, ParseType ptype, Router router) {
         return createResource(new Ip(router) {{
             setParseType(ptype);
             setSchema(scheme);
         }}, router);
     }
 
-    private static Resource getHostnameResource(String scheme, IRouter router) {
+    private static Resource getHostnameResource(String scheme, Router router) {
         return createResource(new Hostname(router) {{
             setSchema(scheme);
         }}, router);
     }
 
-    private static Resource createResource(AbstractClientAddress address, IRouter router) {
+    private static Resource createResource(AbstractClientAddress address, Router router) {
         return new Resource(router) {{
             addAddress(address);
             setUriPattern(compile(".*"));

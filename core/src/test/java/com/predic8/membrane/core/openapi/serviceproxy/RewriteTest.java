@@ -49,7 +49,7 @@ class RewriteTest {
         rewriteAll.protocol = "https";
         rewriteAll.basePath = "/foo";
 
-        Router router = new Router();
+        DefaultRouter router = new DefaultRouter();
         router.getConfig().setUriFactory(new URIFactory());
         router.setBaseLocation("");
 

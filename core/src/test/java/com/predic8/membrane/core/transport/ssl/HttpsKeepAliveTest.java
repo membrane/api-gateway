@@ -17,7 +17,6 @@ package com.predic8.membrane.core.transport.ssl;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
@@ -36,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class HttpsKeepAliveTest {
 
-    private static IRouter server;
+    private static Router server;
 
     private static final ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
 

@@ -14,39 +14,26 @@
 
 package com.predic8.membrane.integration.withoutinternet;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.integration.*;
 import org.apache.http.Header;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.apache.http.client.config.*;
+import org.apache.http.client.methods.*;
+import org.apache.http.client.protocol.*;
+import org.apache.http.impl.client.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
+import java.time.*;
+import java.time.format.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.*;
+import java.util.stream.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -79,26 +66,26 @@ public class SessionManagerTest {
     @MethodSource("data")
     public void remembersThings(
             String nameDummyField,
-            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
+        var httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
         HttpClientContext ctx = getHttpClientContext();
 
         String rememberThis = UUID.randomUUID().toString();
         String rememberThisFromServer = "";
-        try(CloseableHttpClient client = getHttpClient()){
+        try (CloseableHttpClient client = getHttpClient()) {
 
-            try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
+            try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
                 Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
 
-            try(CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT),ctx)){
+            try (CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT), ctx)) {
                 rememberThisFromServer = resp.getFirstHeader(REMEMBER_HEADER).getValue();
                 Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
         }
 
-        assertEquals(rememberThis,rememberThisFromServer);
+        assertEquals(rememberThis, rememberThisFromServer);
 
         httpRouter.stop();
         httpRouter.shutdown();
@@ -108,26 +95,26 @@ public class SessionManagerTest {
     @MethodSource("data")
     public void sessionExpires(
             String nameDummyField,
-            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier, Duration.ZERO)));
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
+        var httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier, Duration.ZERO)));
 
         HttpClientContext ctx = getHttpClientContext();
 
         String rememberThis = UUID.randomUUID().toString();
         String rememberThisFromServer;
-        try(CloseableHttpClient client = getHttpClient()){
+        try (CloseableHttpClient client = getHttpClient()) {
 
-            try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
+            try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
                 Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
 
-            try(CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT),ctx)){
+            try (CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT), ctx)) {
                 rememberThisFromServer = resp.getFirstHeader(REMEMBER_HEADER).getValue();
                 Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
         }
 
-        assertNotEquals(rememberThis,rememberThisFromServer);
+        assertNotEquals(rememberThis, rememberThisFromServer);
         assertEquals("null", rememberThisFromServer);
 
         httpRouter.shutdown();
@@ -137,35 +124,35 @@ public class SessionManagerTest {
     @MethodSource("data")
     public void changeValueInSession(
             String nameDummyField,
-            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
+        var httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
         HttpClientContext ctx = getHttpClientContext();
 
         String rememberThis = UUID.randomUUID().toString();
         String rememberThisFromServer;
-        try(CloseableHttpClient client = getHttpClient()){
+        try (CloseableHttpClient client = getHttpClient()) {
 
-            try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(),ctx)){
+            try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
                 Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
             }
 
-            try(CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, "rememberThis").build(),ctx)){
-                if(nameDummyField.equals("jwt")){
+            try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, "rememberThis").build(), ctx)) {
+                if (nameDummyField.equals("jwt")) {
                     List<Header> collect = Arrays.stream(resp.getHeaders("Set-Cookie")).toList();
-                    assertEquals(2,collect.size());
+                    assertEquals(2, collect.size());
 
                     assertEquals(1, collect.stream().filter(v -> v.getValue().toLowerCase().contains(SessionManager.VALUE_TO_EXPIRE_SESSION_IN_BROWSER.toLowerCase())).count());
                     Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
                 }
             }
 
-            try(CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT),ctx)){
+            try (CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT), ctx)) {
                 rememberThisFromServer = resp.getFirstHeader(REMEMBER_HEADER).getValue();
             }
         }
 
-        assertEquals("rememberThis",rememberThisFromServer);
+        assertEquals("rememberThis", rememberThisFromServer);
 
         httpRouter.shutdown();
     }
@@ -174,20 +161,20 @@ public class SessionManagerTest {
     @MethodSource("data")
     public void sessionCookie(
             String nameDummyField,
-            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
         AbstractInterceptorWithSession abstractInterceptorWithSession = testInterceptor(smSupplier);
         abstractInterceptorWithSession.getSessionManager().setSessionCookie(true);
 
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, abstractInterceptorWithSession));
+        var httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, abstractInterceptorWithSession));
 
         HttpClientContext ctx = getHttpClientContext();
 
         String rememberThis = UUID.randomUUID().toString();
-        try(CloseableHttpClient client = getHttpClient()){
+        try (CloseableHttpClient client = getHttpClient()) {
 
-            for(int i = 0; i <= 100; i++) {
+            for (int i = 0; i <= 100; i++) {
                 try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
-                    if(resp.getFirstHeader("Set-Cookie") != null) {
+                    if (resp.getFirstHeader("Set-Cookie") != null) {
                         allSetCookieHeadersExceptFor1970Expire(resp).forEach(c -> {
                             assertFalse(c.getValue().toLowerCase().contains("Expire".toLowerCase()));
                             assertFalse(c.getValue().toLowerCase().contains("Max-Age".toLowerCase()));
@@ -197,9 +184,9 @@ public class SessionManagerTest {
                 }
             }
 
-            for(int i = 0; i <= 100; i++) {
+            for (int i = 0; i <= 100; i++) {
                 try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, UUID.randomUUID().toString()).build(), ctx)) {
-                    if(resp.getFirstHeader("Set-Cookie") != null) {
+                    if (resp.getFirstHeader("Set-Cookie") != null) {
                         allSetCookieHeadersExceptFor1970Expire(resp).forEach(c -> {
                             assertFalse(c.getValue().toLowerCase().contains("Expire".toLowerCase()));
                             assertFalse(c.getValue().toLowerCase().contains("Max-Age".toLowerCase()));
@@ -217,13 +204,13 @@ public class SessionManagerTest {
     @MethodSource("data")
     public void expiresPartIsRefreshedOnAccess(
             String nameDummyField,
-            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception{
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
+            Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
+        var httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
         HttpClientContext ctx = getHttpClientContext();
 
         String rememberThis = UUID.randomUUID().toString();
-        try(CloseableHttpClient client = getHttpClient()){
+        try (CloseableHttpClient client = getHttpClient()) {
 
             String firstExpires;
             String secondExpires;
@@ -251,7 +238,7 @@ public class SessionManagerTest {
             }
             System.out.println(firstExpires);
             System.out.println(secondExpires);
-            assertNotEquals(firstExpires,secondExpires);
+            assertNotEquals(firstExpires, secondExpires);
 
             // throws if dates are not parsable - no assert available
             Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(firstExpires.split("=")[1]));
@@ -266,7 +253,7 @@ public class SessionManagerTest {
     public void parallelRequests(
             String nameDummyField,
             Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
-        HttpRouter httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
+        var httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier)));
 
         HttpClientContext ctx = getHttpClientContext();
         ExecutorService executor = Executors.newCachedThreadPool();
@@ -278,7 +265,7 @@ public class SessionManagerTest {
 
         CloseableHttpClient client = getHttpClient();
 
-        for(int i = 0; i < limit; i++) {
+        for (int i = 0; i < limit; i++) {
             executor.execute(() -> {
                 try {
                     startAllInParallel.await();
@@ -292,7 +279,7 @@ public class SessionManagerTest {
                                 .filter(e -> e.contains(","))
                                 .count();
 
-                        assertEquals(0,wrongCookies);
+                        assertEquals(0, wrongCookies);
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -328,17 +315,17 @@ public class SessionManagerTest {
     private AbstractInterceptorWithSession testInterceptor(
             Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier,
             Duration... ttl) {
-        if(ttl == null || ttl.length == 0)
-            ttl = new Duration[] {Duration.ofSeconds(300)};
+        if (ttl == null || ttl.length == 0)
+            ttl = new Duration[]{Duration.ofSeconds(300)};
 
         AbstractInterceptorWithSession result = new AbstractInterceptorWithSession() {
             @Override
             protected Outcome handleRequestInternal(Exchange exc) {
                 String rememberThis = exc.getRequest().getHeader().getFirstValue(REMEMBER_HEADER);
-                if(rememberThis == null)
-                    exc.setResponse(Response.ok().header(REMEMBER_HEADER,getSessionManager().getSession(exc).get(REMEMBER_HEADER)).build());
+                if (rememberThis == null)
+                    exc.setResponse(Response.ok().header(REMEMBER_HEADER, getSessionManager().getSession(exc).get(REMEMBER_HEADER)).build());
                 else {
-                    getSessionManager().getSession(exc).put(REMEMBER_HEADER,rememberThis);
+                    getSessionManager().getSession(exc).put(REMEMBER_HEADER, rememberThis);
                     exc.setResponse(Response.ok().build());
                 }
                 return Outcome.RETURN;

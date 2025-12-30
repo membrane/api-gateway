@@ -100,7 +100,7 @@ public class ApiKeyFileStoreTest {
 
     private static void loadFromFile(ApiKeyFileStore store, String path) {
         store.setLocation(requireNonNull(ApiKeyFileStoreTest.class.getClassLoader().getResource(path)).getPath());
-        store.init(new HttpRouter());
+        store.init(new DummyTestRouter());
     }
 
     @Test

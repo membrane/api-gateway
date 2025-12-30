@@ -46,9 +46,9 @@ public class OpenAPIRecordFactory {
 
     private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
-    private final IRouter router;
+    private final Router router;
 
-    public OpenAPIRecordFactory(IRouter router) {
+    public OpenAPIRecordFactory(Router router) {
         this.router = router;
     }
 

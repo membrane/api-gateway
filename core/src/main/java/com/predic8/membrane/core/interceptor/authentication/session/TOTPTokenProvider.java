@@ -50,7 +50,7 @@ public class TOTPTokenProvider implements TokenProvider {
 	final Logger log = LoggerFactory.getLogger(TOTPTokenProvider.class);
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		// does nothing
 	}
 

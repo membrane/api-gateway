@@ -18,7 +18,7 @@ import com.predic8.membrane.core.*;
 
 public class NullHotDeployer implements HotDeployer {
     @Override
-    public void start(Router router) {
+    public void start(DefaultRouter router) {
 
     }
 

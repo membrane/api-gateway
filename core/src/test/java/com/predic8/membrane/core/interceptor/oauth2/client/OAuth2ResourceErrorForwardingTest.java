@@ -41,12 +41,12 @@ public class OAuth2ResourceErrorForwardingTest {
 
     protected final BrowserMock browser = new BrowserMock();
     private final int limit = 500;
-    protected IRouter mockAuthServer;
+    protected TestRouter mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final int serverPort = 3062;
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
-    private IRouter oauth2Resource;
+    private TestRouter oauth2Resource;
     private final AtomicReference<String> error = new AtomicReference<>();
     private final AtomicReference<String> errorDescription = new AtomicReference<>();
 

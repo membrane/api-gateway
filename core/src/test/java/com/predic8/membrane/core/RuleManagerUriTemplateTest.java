@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.Proxy;
@@ -59,7 +58,7 @@ public class RuleManagerUriTemplateTest {
 
     private Proxy getMatchingProxy(String uriTemplate, String path, APIProxy p) throws URISyntaxException {
         p.setPath(new Path(false, uriTemplate));
-        p.init(new Router());
+        p.init(new DefaultRouter());
         return new RuleManager() {{
             proxies.add(p);
         }}.getMatchingRule(get(path).buildExchange());

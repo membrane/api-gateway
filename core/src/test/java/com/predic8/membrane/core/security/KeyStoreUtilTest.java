@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class KeyStoreUtilTest {
 
-    private static IRouter router;
+    private static Router router;
     private static java.security.KeyStore keyStore;
     private static final String ALIAS = "key1";
     private static final String KEYSTORE_PASSWORD = "secret";
@@ -43,7 +43,7 @@ class KeyStoreUtilTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-        router = new HttpRouter();
+        router = new DummyTestRouter();
         SSLParser sslParser = new SSLParser();
         sslParser.setKeyStore(new KeyStore());
         sslParser.getKeyStore().setLocation("classpath:/alias-keystore.p12");

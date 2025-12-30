@@ -70,7 +70,7 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
-    public void initJson(IRouter router, Exchange exc) throws JsonProcessingException {
+    public void initJson(Router router, Exchange exc) throws JsonProcessingException {
         if (apisJson != null) {
             return;
         }

@@ -30,7 +30,7 @@ public class ClusterBalancerTest {
 
     private static XMLElementSessionIdExtractor extractor;
     private static LoadBalancingInterceptor lb;
-    private static IRouter r;
+    private static Router r;
 
     @BeforeAll
     static void setUp() throws Exception {
@@ -39,7 +39,7 @@ public class ClusterBalancerTest {
         extractor.setLocalName("session");
         extractor.setNamespace("http://predic8.com/session/");
 
-        r = new HttpRouter();
+        r = new DummyTestRouter();
 
         lb = new LoadBalancingInterceptor();
         lb.setSessionIdExtractor(extractor);
@@ -55,7 +55,7 @@ public class ClusterBalancerTest {
     }
 
     @AfterAll
-    static void tearDown() throws Exception {
+    static void tearDown() {
         r.shutdown();
     }
 

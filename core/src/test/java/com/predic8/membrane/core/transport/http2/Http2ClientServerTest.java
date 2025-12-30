@@ -40,7 +40,7 @@ public class Http2ClientServerTest {
     private volatile Consumer<Request> requestAsserter;
     private volatile AbstractHttpHandler handler;
     private HttpClient hc;
-    private IRouter router;
+    private Router router;
     private static final ConcurrentHashMap<String, Boolean> connectionHashes = new ConcurrentHashMap<>();
 
     @BeforeEach

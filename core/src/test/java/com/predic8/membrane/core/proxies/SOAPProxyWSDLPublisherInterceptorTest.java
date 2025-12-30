@@ -24,7 +24,7 @@ import static org.hamcrest.Matchers.*;
 @SuppressWarnings("HttpUrlsUsage")
 public class SOAPProxyWSDLPublisherInterceptorTest {
 
-    static IRouter router;
+    static Router router;
 
     @BeforeAll
     static void setUp() {

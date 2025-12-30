@@ -29,8 +29,8 @@ import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http10Test {
-    private static Router router;
-	private static Router router2;
+    private static DefaultRouter router;
+	private static DefaultRouter router2;
 
 	@BeforeAll
 	public static void setUp() throws Exception {

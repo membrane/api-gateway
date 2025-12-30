@@ -47,7 +47,7 @@ public class RedisSessionManager extends SessionManager{
 
 
     @Override
-    public void init(IRouter router) throws Exception {
+    public void init(Router router) throws Exception {
         //Nothing to do
     }
 

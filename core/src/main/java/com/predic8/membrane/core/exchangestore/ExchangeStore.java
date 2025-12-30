@@ -57,7 +57,7 @@ public interface ExchangeStore {
 
 	AbstractExchange getExchangeById(long id);
 
-	default void init(IRouter router) {}
+	default void init(Router router) {}
 
 	List<? extends ClientStatistics> getClientStatistics();
 

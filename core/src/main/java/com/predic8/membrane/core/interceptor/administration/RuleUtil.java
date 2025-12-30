@@ -22,7 +22,7 @@ public class RuleUtil {
 		return proxy.toString() + (proxy.getKey().getPort() == -1 ? "" : ":" + proxy.getKey().getPort());
 	}
 
-	public static Proxy findRuleByIdentifier(IRouter router, String name) {
+	public static Proxy findRuleByIdentifier(Router router, String name) {
 		for (Proxy proxy : router.getRuleManager().getRules()) {
 			if ( name.equals(getRuleIdentifier(proxy))) return proxy;
 		}

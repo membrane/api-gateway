@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.*;
 @SuppressWarnings("HttpUrlsUsage")
 public class ServiceProxyWSDLInterceptorsTest {
 
-    IRouter router;
+    Router router;
 
     @BeforeEach
     void setUp() {

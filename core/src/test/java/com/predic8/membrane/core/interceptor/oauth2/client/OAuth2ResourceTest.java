@@ -48,13 +48,13 @@ public abstract class OAuth2ResourceTest {
 
     protected final BrowserMock browser = new BrowserMock();
     private final int limit = 100;
-    protected IRouter mockAuthServer;
+    protected TestRouter mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
     final int serverPort = 3062;
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
-    private IRouter oauth2Resource;
+    private TestRouter oauth2Resource;
 
     private String getServerAddress() {
         return "http://%s:%d".formatted(serverHost, serverPort);

@@ -30,7 +30,7 @@ import java.util.NoSuchElementException;
 public class CustomStatementJdbcUserDataProvider implements  UserDataProvider {
     private static final Logger log = LoggerFactory.getLogger(CustomStatementJdbcUserDataProvider.class.getName());
 
-    private IRouter router;
+    private Router router;
 
     DataSource datasource;
 
@@ -40,7 +40,7 @@ public class CustomStatementJdbcUserDataProvider implements  UserDataProvider {
 
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         this.router = router;
         sanitizeUserInputs();
         getDatasourceIfNull();

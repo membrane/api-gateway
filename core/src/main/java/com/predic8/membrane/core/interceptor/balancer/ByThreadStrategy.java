@@ -122,7 +122,7 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 	}
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		// do nothing
 	}
 }

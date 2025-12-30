@@ -32,7 +32,7 @@ public class JsonProtectionInterceptorTest {
     static JsonProtectionInterceptor jpiDev;
 
     private static JsonProtectionInterceptor buildJPI(boolean prod) {
-        Router router = new Router();
+        DefaultRouter router = new DefaultRouter();
         router.getConfig().setProduction(prod);
         JsonProtectionInterceptor jpi = new JsonProtectionInterceptor();
 

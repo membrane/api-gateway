@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MethodTest {
 
-	private static IRouter router;
+	private static Router router;
 
 	@BeforeAll
 	public static void setUp() throws Exception {

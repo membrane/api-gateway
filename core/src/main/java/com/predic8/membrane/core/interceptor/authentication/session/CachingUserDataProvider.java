@@ -77,7 +77,7 @@ public class CachingUserDataProvider implements UserDataProvider {
 
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         userDataProvider.init(router);
         cache = CacheBuilder.newBuilder()
                 .maximumSize(this.getMaxSize())

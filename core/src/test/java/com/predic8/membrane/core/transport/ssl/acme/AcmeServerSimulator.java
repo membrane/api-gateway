@@ -57,7 +57,7 @@ public class AcmeServerSimulator {
     private final AtomicReference<String> theNonce = new AtomicReference<>();
     private final HttpClient hc = new HttpClient();
     private final AtomicBoolean challengeSucceeded = new AtomicBoolean();
-    private IRouter router;
+    private Router router;
     private final AcmeCASimulation ca = new AcmeCASimulation();
     private String certificates;
     private final AtomicReference<String> orderStatus = new AtomicReference<>("pending");

@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2DowngradeTest {
 
-    private static IRouter router;
+    private static Router router;
 
     @BeforeAll
     public static void beforeAll() throws IOException {

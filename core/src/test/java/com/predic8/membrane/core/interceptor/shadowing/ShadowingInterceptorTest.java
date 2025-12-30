@@ -37,8 +37,8 @@ class ShadowingInterceptorTest {
     Exchange exc;
     Header header;
 
-    static Router interceptorRouter;
-    static Router shadowingRouter;
+    static DefaultRouter interceptorRouter;
+    static DefaultRouter shadowingRouter;
 
     static ServiceProxy interceptorProxy;
     static ShadowingInterceptor shadowingInterceptor;
@@ -67,7 +67,7 @@ class ShadowingInterceptorTest {
 
     @BeforeAll
     static void startup() throws Exception {
-        interceptorRouter = new Router();
+        interceptorRouter = new DefaultRouter();
         interceptorRouter.getConfig().setHotDeploy(false);
         interceptorRouter.setExchangeStore(new ForgetfulExchangeStore());
         interceptorRouter.setTransport(new HttpTransport());
@@ -90,7 +90,7 @@ class ShadowingInterceptorTest {
         interceptorRouter.add(interceptorProxy);
         interceptorRouter.start();
 
-        shadowingRouter = new Router();
+        shadowingRouter = new DefaultRouter();
         shadowingRouter.getConfig().setHotDeploy(false);
         shadowingRouter.setExchangeStore(new ForgetfulExchangeStore());
         shadowingRouter.setTransport(new HttpTransport());

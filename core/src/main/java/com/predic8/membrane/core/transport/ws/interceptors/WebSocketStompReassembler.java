@@ -39,7 +39,7 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
     List<Interceptor> interceptors = new ArrayList<>();
 
     @Override
-    public void init(IRouter router) throws Exception {
+    public void init(Router router) throws Exception {
         for (Interceptor i : interceptors)
             i.init(router);
     }

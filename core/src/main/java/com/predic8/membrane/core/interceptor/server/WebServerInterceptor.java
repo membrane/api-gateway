@@ -68,7 +68,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         name = "web server";
     }
 
-    public WebServerInterceptor(IRouter r) {
+    public WebServerInterceptor(Router r) {
         name = "web server";
         this.router = r;
     }

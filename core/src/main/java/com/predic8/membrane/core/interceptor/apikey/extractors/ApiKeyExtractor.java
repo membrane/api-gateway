@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import java.util.Optional;
 
 public interface ApiKeyExtractor {
-    default void init(IRouter router) {}
+    default void init(Router router) {}
     Optional<LocationNameValue> extract(Exchange exc);
     String getDescription();
 }

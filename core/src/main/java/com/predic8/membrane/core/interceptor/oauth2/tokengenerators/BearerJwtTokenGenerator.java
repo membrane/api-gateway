@@ -50,7 +50,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     private long expiration;
     private boolean warningGeneratedKey = true;
 
-    public void init(IRouter router) throws Exception {
+    public void init(Router router) throws Exception {
         if (jwk == null) {
             rsaJsonWebKey = generateKey();
             if (warningGeneratedKey)

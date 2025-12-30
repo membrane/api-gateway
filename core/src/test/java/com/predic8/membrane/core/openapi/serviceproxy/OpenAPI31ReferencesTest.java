@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPI31ReferencesTest {
 
-    static IRouter router;
+    static Router router;
 
     static APIProxy api;
 

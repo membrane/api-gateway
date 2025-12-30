@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.DefaultRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.resolver.ResolverMap;
@@ -261,7 +261,7 @@ public class JwtAuthInterceptorTest{
     }
 
     private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
-        Router routerMock = mock(Router.class);
+        DefaultRouter routerMock = mock(DefaultRouter.class);
         when(routerMock.getBaseLocation()).thenReturn("");
         when(routerMock.getResolverMap()).thenReturn(new ResolverMap());
         interceptor.init(routerMock);

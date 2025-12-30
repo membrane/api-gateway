@@ -22,7 +22,7 @@ import java.io.*;
 
 public class InternalInvocationTest {
 
-	private Router router;
+	private DefaultRouter router;
 
 	@BeforeEach
 	public void setUp() throws Exception {

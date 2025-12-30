@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2AuthorizationServerInterceptorBase {
 
-    static IRouter router;
+    static Router router;
     static Exchange exc;
     static OAuth2AuthorizationServerInterceptor oasi;
     static MembraneAuthorizationService mas;
@@ -203,7 +203,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
 
     @BeforeEach
     void setUp() throws Exception{
-        router = new HttpRouter();
+        router = new TestRouter();
         router.start();
         initOasi();
         initMas();

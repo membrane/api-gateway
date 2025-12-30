@@ -27,7 +27,7 @@ public class FakeSyncSessionStoreManager extends MemcachedSessionManager {
     private final ConcurrentHashMap<String, String> remoteContent = new ConcurrentHashMap<>();
 
     @Override
-    public void init(IRouter router) throws Exception {}
+    public void init(Router router) throws Exception {}
 
     @Override
     protected void addSessions(Session[] sessions) {

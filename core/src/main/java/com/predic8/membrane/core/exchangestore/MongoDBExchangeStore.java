@@ -51,7 +51,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         super.init(router);
         if (this.collection == null) {
             this.collection = MongoClients.create(connection)

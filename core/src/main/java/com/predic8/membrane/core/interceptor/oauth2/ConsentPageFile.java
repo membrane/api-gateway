@@ -41,7 +41,7 @@ public class ConsentPageFile {
     private Map<String, Object> json;
 
 
-    public void init(IRouter router, String url) throws IOException {
+    public void init(Router router, String url) throws IOException {
         resolver = router.getResolverMap();
         if(url == null) {
             createDefaults();

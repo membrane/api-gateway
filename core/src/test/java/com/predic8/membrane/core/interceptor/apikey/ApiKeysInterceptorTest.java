@@ -57,17 +57,17 @@ public class ApiKeysInterceptorTest {
     static void setup() {
         store = new ApiKeyFileStore();
         store.setLocation(getKeyfilePath("apikeys/keys.txt"));
-        store.init(new HttpRouter());
+        store.init(new DummyTestRouter());
 
         mergeStore = new ApiKeyFileStore();
         mergeStore.setLocation(getKeyfilePath("apikeys/merge-keys.txt"));
-        mergeStore.init(new HttpRouter());
+        mergeStore.init(new DummyTestRouter());
 
         ahe = new ApiKeyHeaderExtractor();
         aqe = new ApiKeyQueryParamExtractor();
         aee = new ApiKeyExpressionExtractor();
         aee.setExpression("json['api-key']");
-        aee.init(new HttpRouter());
+        aee.init(new DummyTestRouter());
 
         akiWithProp = new ApiKeysInterceptor();
         akiWithProp.setExtractors(of(ahe));
@@ -169,7 +169,7 @@ public class ApiKeysInterceptorTest {
     void handleDuplicateApiKeys() {
         var dupeStore = new ApiKeyFileStore();
         dupeStore.setLocation(getKeyfilePath("apikeys/duplicate-api-keys.txt"));
-        assertThrows(RuntimeException.class, () -> dupeStore.init(new HttpRouter()));
+        assertThrows(RuntimeException.class, () -> dupeStore.init(new DummyTestRouter()));
     }
 
     private static String getKeyfilePath(String name) {

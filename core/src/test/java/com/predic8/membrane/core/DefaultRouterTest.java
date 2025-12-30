@@ -26,10 +26,10 @@ import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
-class RouterTest {
+class DefaultRouterTest {
 
     public static final String INTERNAL_SECRET = "supersecret";
-    static IRouter dev, prod;
+    static Router dev, prod;
     
     @BeforeAll
     static void setUp() throws IOException {
@@ -112,8 +112,8 @@ class RouterTest {
         // @formatter:on
     }
 
-    private static IRouter createRouter(int port, boolean production) throws IOException {
-        IRouter r = new Router();
+    private static Router createRouter(int port, boolean production) throws IOException {
+        Router r = new DefaultRouter();
         r.getConfig().setProduction(production);
         APIProxy api = new APIProxy();
         api.setKey(new APIProxyKey(port));

@@ -51,7 +51,7 @@ public class B2CMembrane {
 
     private final ObjectMapper om = new ObjectMapper();
 
-    private IRouter oauth2Resource;
+    private TestRouter oauth2Resource;
     private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
 
     public RequireAuth requireAuth;

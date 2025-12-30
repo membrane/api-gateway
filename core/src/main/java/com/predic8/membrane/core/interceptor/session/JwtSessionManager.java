@@ -59,7 +59,7 @@ public class JwtSessionManager extends SessionManager {
     Jwk jwk;
     boolean verbose = false;
 
-    public void init(IRouter router) throws Exception {
+    public void init(Router router) throws Exception {
         if (validTime == null)
             validTime = Duration.ofSeconds(expiresAfterSeconds);
         if (renewalTime == null)

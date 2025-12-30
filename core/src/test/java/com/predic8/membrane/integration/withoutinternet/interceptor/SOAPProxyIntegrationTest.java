@@ -25,17 +25,17 @@ import static org.hamcrest.CoreMatchers.*;
 
 public class SOAPProxyIntegrationTest {
 
-	private static IRouter router;
-	private static IRouter targetRouter;
+	private static Router router;
+	private static Router targetRouter;
 
 	@BeforeAll
 	public static void setup() throws Exception {
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
 		proxy.getFlow().add(new SampleSoapServiceInterceptor());
 
-		targetRouter = new HttpRouter();
-		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-		targetRouter.init();
+		targetRouter = new TestRouter();
+		targetRouter.add(proxy);
+		targetRouter.start();
 	}
 
 	@AfterAll
@@ -44,17 +44,17 @@ public class SOAPProxyIntegrationTest {
 	}
 
 	@BeforeEach
-	public void startRouter() {
+	void startRouter() {
 		router = RouterBootstrap.initByXML("classpath:/soap-proxy.xml");
 	}
 
 	@AfterEach
-	public void shutdownRouter() {
+	void shutdownRouter() {
 		router.shutdown();
 	}
 
 	@Test
-	public void targetProxyTest() {
+	void targetProxyTest() {
 		when()
 			.get("http://localhost:3000/foo?wsdl")
 		.then()
@@ -62,7 +62,7 @@ public class SOAPProxyIntegrationTest {
 	}
 
 	@Test
-	public void rewriteSimpleTest() {
+	void rewriteSimpleTest() {
 		when()
 			.get("http://localhost:2000/foo?wsdl")
 		.then()

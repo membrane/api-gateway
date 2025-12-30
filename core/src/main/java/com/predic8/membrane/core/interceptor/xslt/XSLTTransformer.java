@@ -32,7 +32,7 @@ public class XSLTTransformer {
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final String styleSheet;
 
-	public XSLTTransformer(String styleSheet, final IRouter router, final int concurrency) throws Exception {
+	public XSLTTransformer(String styleSheet, final Router router, final int concurrency) throws Exception {
 		fac = TransformerFactory.newInstance();
 
 		this.styleSheet = styleSheet;

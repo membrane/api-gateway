@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ConcurrentConnectionLimitTest {
 
-    private IRouter router;
+    private Router router;
     private ExecutorService executor;
     private final int concurrency = 100;
     private final int concurrentLimit = 10;

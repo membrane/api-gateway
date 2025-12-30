@@ -21,7 +21,7 @@ import com.predic8.membrane.core.*;
  */
 public interface WebSocketInterceptorInterface {
 
-    void init(IRouter router) throws Exception;
+    void init(Router router) throws Exception;
 
     void handleFrame(WebSocketFrame frame, boolean frameTravelsToRight, WebSocketSender sender) throws Exception;
 

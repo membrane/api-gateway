@@ -41,6 +41,8 @@ import static java.util.concurrent.TimeUnit.*;
  *              The interceptors that are engaged with the transport are global and are invoked for each message flowing
  *              through the router.
  *              </p>
+ *
+ *  Besides HttpTransport there is also a ServletTransport.
  */
 @MCElement(name="transport")
 public class HttpTransport extends Transport {
@@ -60,7 +62,7 @@ public class HttpTransport extends Transport {
 			new SynchronousQueue<>(), new HttpServerThreadFactory());
 
 	@Override
-	public void init(Router router) {
+	public void init(DefaultRouter router) {
 		super.init(router);
 	}
 
@@ -108,7 +110,7 @@ public class HttpTransport extends Transport {
 			closePort(ipPort);
 		}
 		log.debug("Closing all stream pumps.");
-		Router router = getRouter();
+		DefaultRouter router = getRouter();
 		if (router != null)
 			router.getStatistics().getStreamPumpStats().closeAllStreamPumps();
 
@@ -284,7 +286,7 @@ public class HttpTransport extends Transport {
 
 	/**
 	 * @description When proxies.xml is changed and &lt;router hotDeploy="true"&gt;, the Spring Context is automatically refreshed,
-	 * which restarts the {@link Router} object (=Membrane API Gateway). Before the context refresh, all open socket connections
+	 * which restarts the {@link DefaultRouter} object (=Membrane API Gateway). Before the context refresh, all open socket connections
 	 * have to be closed. Exchange objects which are still running might delay this process. Setting forceSocketCloseOnHotDeployAfter
 	 * to a non-zero number of milliseconds forces connections to be closed after this time.
 	 * @default 30000

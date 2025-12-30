@@ -30,7 +30,7 @@ public class FormValidationInterceptorTest {
 	@Test
 	public void testValidation() throws Exception {
 		FormValidationInterceptor interceptor = new FormValidationInterceptor();
-		interceptor.init(new HttpRouter());
+		interceptor.init(new DummyTestRouter());
 
 		Field article = new Field();
 		article.setName("article");

@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AdminApiInterceptorTest {
 
-    private static IRouter router;
+    private static Router router;
 
     @BeforeAll
     static void setUp() throws IOException {

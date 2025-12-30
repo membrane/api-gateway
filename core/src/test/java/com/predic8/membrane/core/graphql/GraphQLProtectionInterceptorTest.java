@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.graphql;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.DummyTestRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.graphql.blocklist.filters.*;
@@ -37,12 +37,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class GraphQLProtectionInterceptorTest {
 
     private static GraphQLProtectionInterceptor i;
-    private static HttpRouter router;
+    private static DummyTestRouter router;
 
 
     @BeforeAll
     static void init() {
-        router = new HttpRouter();
+        router = new DummyTestRouter();
         i = new GraphQLProtectionInterceptor();
         i.init(router);
     }

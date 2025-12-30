@@ -81,7 +81,7 @@ public abstract class SessionManager {
             issuer += "/";
     }
 
-    public abstract void init(IRouter router) throws Exception;
+    public abstract void init(Router router) throws Exception;
 
     /**
      * Transforms a cookie value into its attributes. The cookie should be assumed valid as @isValidCookieForThisSessionManager was called beforehand

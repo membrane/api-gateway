@@ -25,7 +25,6 @@ import org.jetbrains.annotations.*;
 import org.springframework.beans.factory.*;
 
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.*;
 
 public abstract class Transport {
@@ -36,7 +35,7 @@ public abstract class Transport {
     protected final Set<IPortChangeListener> menuListeners = new HashSet<>();
     private List<Interceptor> interceptors = new Vector<>();
 
-    private Router router;
+    private DefaultRouter router;
     private boolean reverseDNS = true;
 
     private int concurrentConnectionLimitPerIp = -1;
@@ -54,7 +53,7 @@ public abstract class Transport {
         this.interceptors = flow;
     }
 
-    public void init(Router router) {
+    public void init(DefaultRouter router) {
         this.router = router;
 
         if (interceptors.isEmpty()) {
@@ -104,7 +103,7 @@ public abstract class Transport {
         return new ExchangeStoreInterceptor(router.getExchangeStore());
     }
 
-    public Router getRouter() {
+    public DefaultRouter getRouter() {
         return router;
     }
 

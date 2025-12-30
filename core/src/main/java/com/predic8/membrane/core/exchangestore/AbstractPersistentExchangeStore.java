@@ -22,7 +22,6 @@ import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
-import org.slf4j.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -42,7 +41,7 @@ public abstract class AbstractPersistentExchangeStore extends AbstractExchangeSt
     volatile boolean updateThreadWorking;
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         super.init(router);
 
         startTime = System.nanoTime();

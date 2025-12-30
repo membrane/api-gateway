@@ -58,7 +58,7 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
     private MongoDatabase mongoDatabase;
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         try {
             mongoDatabase = MongoClients.create(connection).getDatabase(database);
         } catch (Exception e) {

@@ -59,7 +59,7 @@ public class ApiKeyFileStore implements ApiKeyStore {
     private Map<String, Optional<Set<String>>> scopes;
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         try {
             scopes = readKeyData(readFile(location, router.getResolverMap(), router.getBaseLocation()));
         } catch (IOException e) {

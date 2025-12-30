@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SpringReferencesTest {
 
-	private static Router r;
+	private static DefaultRouter r;
 
 	@BeforeAll
 	public static void before() {

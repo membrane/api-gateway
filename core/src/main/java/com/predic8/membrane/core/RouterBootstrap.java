@@ -23,43 +23,43 @@ import java.nio.charset.*;
 import java.util.*;
 
 /**
- * Bootstrapping a {@link Router} instance using Spring XML-based configuration.
+ * Bootstrapping a {@link DefaultRouter} instance using Spring XML-based configuration.
  */
 public class RouterBootstrap {
 
     private static final Logger log = LoggerFactory.getLogger(RouterBootstrap.class);
 
         /**
-     * Initializes a {@link Router} instance from the specified Spring XML configuration resource.
+     * Initializes a {@link DefaultRouter} instance from the specified Spring XML configuration resource.
      *
-     * @param resource the path to the Spring XML configuration file that defines the {@link Router} bean
-     * @return the initialized {@link Router} instance
-     * @throws RuntimeException if no {@link Router} bean is found or more than one {@link Router} bean is found
+     * @param resource the path to the Spring XML configuration file that defines the {@link DefaultRouter} bean
+     * @return the initialized {@link DefaultRouter} instance
+     * @throws RuntimeException if no {@link DefaultRouter} bean is found or more than one {@link DefaultRouter} bean is found
      */
-    public static Router initByXML(String resource) {
+    public static DefaultRouter initByXML(String resource) {
         log.debug("loading spring config: {}", resource);
 
         TrackingFileSystemXmlApplicationContext bf =
                 new TrackingFileSystemXmlApplicationContext(new String[]{resource}, false);
         bf.refresh();
 
-        if (bf.getBeansOfType(Router.class).size() > 1) {
+        if (bf.getBeansOfType(DefaultRouter.class).size() > 1) {
             throw new RuntimeException(
                     "More than one router bean found in the Spring configuration (%s). This is no longer supported."
                             .formatted(Arrays.toString(bf.getBeanDefinitionNames()))
             );
         }
-        Router router = bf.getBean("router", Router.class);
+        DefaultRouter router = bf.getBean("router", DefaultRouter.class);
         bf.start(); // Starting ApplicationContext will also call router.start(). Init should happen before.
         return router;
     }
 
-    public static Router initFromXMLString(String xmlString) {
+    public static DefaultRouter initFromXMLString(String xmlString) {
         log.debug("Loading spring config from string");
         GenericXmlApplicationContext ctx = new GenericXmlApplicationContext();
         ctx.load(new ByteArrayResource(xmlString.getBytes(StandardCharsets.UTF_8)));
         ctx.refresh();
         ctx.start();
-        return ctx.getBean(Router.class);
+        return ctx.getBean(DefaultRouter.class);
     }
 }

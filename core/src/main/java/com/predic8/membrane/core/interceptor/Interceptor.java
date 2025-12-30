@@ -53,9 +53,9 @@ public interface Interceptor {
 		}
 	}
 
-	void init(IRouter router);
+	void init(Router router);
 
-	void init(IRouter router, Proxy proxy);
+	void init(Router router, Proxy proxy);
 
 	Outcome handleRequest(Exchange exchange);
 	Outcome handleResponse(Exchange exchange);
@@ -73,7 +73,7 @@ public interface Interceptor {
 	String getDisplayName();
 	void setDisplayName(String name);
 
-	IRouter getRouter();
+	Router getRouter();
 
 	void setAppliedFlow(EnumSet<Flow> flow);
 	EnumSet<Flow> getAppliedFlow();

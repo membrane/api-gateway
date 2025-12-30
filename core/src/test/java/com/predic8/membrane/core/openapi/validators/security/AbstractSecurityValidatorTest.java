@@ -41,7 +41,7 @@ public abstract class AbstractSecurityValidatorTest {
         return exc;
     }
 
-    protected static IRouter getRouter() {
-        return new HttpRouter();
+    protected static Router getRouter() {
+        return new DummyTestRouter();
     }
 }

@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.evaluation;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.DefaultRouter;
 import com.predic8.membrane.core.interceptor.apikey.stores.JDBCApiKeyStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.KeyTable;
 import com.predic8.membrane.core.interceptor.apikey.stores.ScopeTable;
@@ -59,7 +59,7 @@ public class JDBCApiKeyStorePerformanceTest {
 
         jdbcApiKeyStore = createApiKeyStore();
         connection = getDataSource().getConnection();
-        jdbcApiKeyStore.init(new Router());
+        jdbcApiKeyStore.init(new DefaultRouter());
     }
 
     @AfterEach

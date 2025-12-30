@@ -53,7 +53,7 @@ public class AdminPageBuilder extends Html {
     static final int TAB_ID_CLIENTS = 8;
     static final int TAB_ID_ABOUT = 9;
 
-    private final IRouter router;
+    private final Router router;
     private final Map<String, String> params;
     private final StringWriter writer;
     private final String relativeRootPath;
@@ -64,7 +64,7 @@ public class AdminPageBuilder extends Html {
         return "/admin/" + ctrl + (action != null ? "/" + action : "") + (query != null ? "?" + query : "");
     }
 
-    public AdminPageBuilder(StringWriter writer, IRouter router, String relativeRootPath, Map<String, String> params, boolean readOnly) {
+    public AdminPageBuilder(StringWriter writer, Router router, String relativeRootPath, Map<String, String> params, boolean readOnly) {
         super(writer);
         this.router = router;
         this.params = params;

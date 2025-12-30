@@ -36,7 +36,7 @@ class HTTPClientInterceptorTest {
 
     @Test
     void protocolUpgradeRejected() throws URISyntaxException {
-        Router r = new Router();
+        DefaultRouter r = new DefaultRouter();
 
         hci.init(r);
 
@@ -53,14 +53,14 @@ class HTTPClientInterceptorTest {
 
     @Test
     void passFailOverOn500Default() {
-        hci.init(new Router());
+        hci.init(new DefaultRouter());
         assertFalse(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
     }
 
     @Test
     void passFailOverOn500() {
         hci.setFailOverOn5XX(true);
-        hci.init(new Router());
+        hci.init(new DefaultRouter());
         assertTrue(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
     }
 

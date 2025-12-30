@@ -35,7 +35,7 @@ public class HttpTimeoutTest {
 
     public final int BACKEND_DELAY_MILLIS = 300;
 
-    IRouter slowBackend, proxyRouter;
+    Router slowBackend, proxyRouter;
 
     @BeforeEach
     public void setUp() throws Exception {

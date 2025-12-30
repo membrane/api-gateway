@@ -110,7 +110,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 
         protected XmlConfig xmlConfig;
 
-        public void init(IRouter router) {
+        public void init(Router router) {
             if (url != null) {
                 exchangeExpression = TemplateExchangeExpression.newInstance(new InterceptorAdapter(router, xmlConfig), language, url);
             }

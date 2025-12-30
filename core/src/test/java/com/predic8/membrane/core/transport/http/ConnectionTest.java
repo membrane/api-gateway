@@ -26,7 +26,7 @@ public class ConnectionTest {
 	Connection conLocalhost;
 	Connection con127_0_0_1;
 
-	IRouter router;
+	Router router;
 
 	@BeforeEach
 	void setUp() throws Exception {

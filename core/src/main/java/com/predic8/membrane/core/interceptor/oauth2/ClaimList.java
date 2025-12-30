@@ -79,7 +79,7 @@ public class ClaimList {
     private String value;
     private HashSet<String> supportedClaims = new HashSet<>();
 
-    public void init(IRouter router){
+    public void init(Router router){
         setScopes(scopes);
     }
 

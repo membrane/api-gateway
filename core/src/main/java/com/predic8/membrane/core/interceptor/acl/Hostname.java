@@ -56,7 +56,7 @@ public class Hostname extends AbstractClientAddress {
 	private volatile long lastWarningSlowReverseDNSUsed;
 
 
-	public Hostname(IRouter router) {
+	public Hostname(Router router) {
 		super(router);
 	}
 
@@ -102,7 +102,7 @@ public class Hostname extends AbstractClientAddress {
 	}
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		super.init(router);
 		reverseDNS = router.getTransport() != null && router.getTransport().isReverseDNS();
 	}

@@ -40,11 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SSLContextTest {
 
-	private static IRouter router;
+	private static Router router;
 
 	@BeforeAll
 	public static void before() {
-		router = new HttpRouter();
+		router = new DummyTestRouter();
 	}
 
 	@AfterAll

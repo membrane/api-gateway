@@ -34,7 +34,7 @@ public class AzureDnsApiSimulator {
     private static final Logger log = LoggerFactory.getLogger(AzureDnsApiSimulator.class);
 
     private final int port;
-    private IRouter router;
+    private Router router;
 
     private final Map<String, List<Map<String, String>>> tableStorage = new HashMap<>();
 

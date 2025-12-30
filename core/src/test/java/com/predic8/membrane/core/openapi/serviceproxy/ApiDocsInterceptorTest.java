@@ -18,8 +18,6 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -38,14 +36,14 @@ class ApiDocsInterceptorTest {
 
     private final ObjectMapper om = new ObjectMapper();
 
-    HttpRouter router;
+    DummyTestRouter router;
     final Exchange exc = new Exchange(null);
     ApiDocsInterceptor interceptor;
     APIProxy rule;
 
     @BeforeEach
     public void setUp() throws Exception {
-        router = new HttpRouter();
+        router = new DummyTestRouter();
 
         exc.setRequest(new Request.Builder().get("/foo").build());
         exc.setOriginalRequestUri("/foo");
@@ -91,7 +89,7 @@ class ApiDocsInterceptorTest {
     @Test
     void initializeEmptyRuleApiSpecsTest() {
         ApiDocsInterceptor adi = new ApiDocsInterceptor();
-        adi.init(new HttpRouter());
+        adi.init(new DummyTestRouter());
         assertEquals(new HashMap<>(), adi.initializeRuleApiSpecs());
     }
 

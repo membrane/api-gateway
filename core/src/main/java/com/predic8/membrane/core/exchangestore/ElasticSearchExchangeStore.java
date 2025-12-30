@@ -76,7 +76,7 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
 
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
 
         if(client == null)
             client = router.getHttpClientFactory().createClient(null);

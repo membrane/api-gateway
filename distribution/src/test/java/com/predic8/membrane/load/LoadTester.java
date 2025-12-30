@@ -48,7 +48,7 @@ public class LoadTester {
      */
     public static final int CONCURRENCY = 200;
 
-    Router r = new HttpRouter();
+    Router r = new DefaultRouter();
 
     public static void main(String[] args) throws Exception {
         var instance = new LoadTester();

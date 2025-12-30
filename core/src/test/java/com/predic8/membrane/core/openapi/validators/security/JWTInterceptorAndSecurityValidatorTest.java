@@ -18,12 +18,10 @@ package com.predic8.membrane.core.openapi.validators.security;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.jwt.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.security.*;
-import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
@@ -42,14 +40,14 @@ import static org.junit.jupiter.api.Assertions.*;
 public class JWTInterceptorAndSecurityValidatorTest {
 
     private static final String SPEC_LOCATION = getPathFromResource( "openapi/openapi-proxy/no-extensions.yml");
-    private IRouter router;
+    private Router router;
     private APIProxy proxy;
 
     RsaJsonWebKey privateKey;
 
     @BeforeEach
     void setUp() throws Exception {
-        router = new HttpRouter();
+        router = new DummyTestRouter();
         proxy = createProxy(router, getSpec());
 
         privateKey = RsaJwkGenerator.generateJwk(2048);
@@ -92,7 +90,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
     }
 
     @NotNull
-    private JwtAuthInterceptor getJwtAuthInterceptor(IRouter router) {
+    private JwtAuthInterceptor getJwtAuthInterceptor(Router router) {
         JwtAuthInterceptor interceptor = createInterceptor(getPublicKey());
         interceptor.setJwtRetriever(new HeaderJwtRetriever("Authorization","bearer"));
         interceptor.init(router);

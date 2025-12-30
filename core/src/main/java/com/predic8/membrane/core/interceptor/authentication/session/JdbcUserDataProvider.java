@@ -34,10 +34,10 @@ public class JdbcUserDataProvider implements UserDataProvider {
     private String tableName;
     private String userColumnName;
     private String passwordColumnName;
-    private IRouter router;
+    private Router router;
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         this.router = router;
 
         sanitizeUserInputs();

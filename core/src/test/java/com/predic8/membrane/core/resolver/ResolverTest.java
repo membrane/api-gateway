@@ -52,7 +52,7 @@ public class ResolverTest {
 
     // OperatingSystemType (WINDOWS, LINUX) is handled by Jenkins
 
-    private static IRouter router;
+    private static Router router;
     private static volatile boolean hit = false;
 
     private static final String STANDALONE = "standalone";

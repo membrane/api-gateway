@@ -71,7 +71,7 @@ public class RoundRobinStrategy extends AbstractXmlElement implements Dispatchin
 	}
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		// do nothing
 	}
 }

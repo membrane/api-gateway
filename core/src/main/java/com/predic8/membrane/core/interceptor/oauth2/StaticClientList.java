@@ -29,7 +29,7 @@ public class StaticClientList implements ClientList {
     private List<Client> clients = new ArrayList<>();
 
     @Override
-    public void init(IRouter router) {
+    public void init(Router router) {
         setClients(clients); // fix because the setter is called with empty List<Client>
     }
 

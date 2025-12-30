@@ -104,7 +104,7 @@ public class ChunkedBodyTest {
 
     @Test
     void testWriteTrailer() throws IOException {
-        IRouter router = setupRouter(false, false);
+        Router router = setupRouter(false, false);
         try {
             org.apache.commons.httpclient.HttpClient hc = new org.apache.commons.httpclient.HttpClient();
             for (int i = 0; i < 2; i++) {
@@ -121,8 +121,8 @@ public class ChunkedBodyTest {
 
     @Test
     void readWriteTrailerHttp2() throws IOException {
-        IRouter router = setupRouter(false, true);
-        IRouter router2 = setupRouter(true, false);
+        Router router = setupRouter(false, true);
+        Router router2 = setupRouter(true, false);
         try {
             org.apache.commons.httpclient.HttpClient hc = new org.apache.commons.httpclient.HttpClient();
             for (int i = 0; i < 2; i++) {
@@ -140,7 +140,7 @@ public class ChunkedBodyTest {
 
     @Test
     void testWriteTrailerHttp2() throws IOException, NoSuchAlgorithmException, KeyManagementException {
-        IRouter router = setupRouter(true, false);
+        Router router = setupRouter(true, false);
         try {
             X509TrustManager trustAll = new X509TrustManager() {
                 @Override
@@ -182,7 +182,7 @@ public class ChunkedBodyTest {
         }
     }
 
-    private IRouter setupRouter(boolean http2, boolean http2Client) throws IOException {
+    private Router setupRouter(boolean http2, boolean http2Client) throws IOException {
         TestRouter router = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(http2 ? 3060 : 3059), "localhost", 3060);
         if (http2) {

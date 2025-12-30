@@ -28,7 +28,7 @@ import static org.hamcrest.CoreMatchers.*;
 
 public class APIProxyKeyTest {
 
-    private static IRouter router;
+    private static Router router;
 
     @BeforeEach
     public void setup() {

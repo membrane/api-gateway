@@ -36,7 +36,7 @@ public class RuleManager {
 
     private static final Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
 
-    private Router router;
+    private DefaultRouter router;
 
     protected final List<Proxy> proxies = new Vector<>();
     private final List<RuleDefinitionSource> ruleSources = new ArrayList<>();
@@ -297,7 +297,7 @@ public class RuleManager {
             removeRule(proxies.getFirst());
     }
 
-    public void setRouter(Router router) {
+    public void setRouter(DefaultRouter router) {
         this.router = router;
     }
 

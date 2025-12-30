@@ -38,11 +38,11 @@ public class APIProxyOpenAPITest {
     private static final String SECURITY = "security";
     private static final String DETAILS = "details";
 
-    IRouter router;
+    Router router;
 
     @BeforeEach
     public void setUp() {
-        router = new HttpRouter();
+        router = new DummyTestRouter();
     }
 
     @Test

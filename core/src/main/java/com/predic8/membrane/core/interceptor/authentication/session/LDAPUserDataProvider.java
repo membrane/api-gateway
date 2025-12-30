@@ -429,7 +429,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 	}
 
 	@Override
-	public void init(IRouter router) {
+	public void init(Router router) {
 		if (passwordAttribute != null && readAttributesAsSelf)
 			throw new RuntimeException("@passwordAttribute is not compatible with @readAttributesAsSelf.");
 

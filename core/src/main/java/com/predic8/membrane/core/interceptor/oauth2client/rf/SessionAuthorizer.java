@@ -46,10 +46,10 @@ public class SessionAuthorizer {
     private boolean skip;
 
     private AuthorizationService auth;
-    private IRouter router;
+    private Router router;
     private OAuth2Statistics statistics;
 
-    public void init(AuthorizationService auth, IRouter router, OAuth2Statistics statistics) {
+    public void init(AuthorizationService auth, Router router, OAuth2Statistics statistics) {
         this.auth = auth;
         this.router = router;
         this.statistics = statistics;

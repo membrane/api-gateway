@@ -41,7 +41,7 @@ public class ScriptingUtils {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    public static HashMap<String, Object> createParameterBindings(IRouter router, Exchange exc, Flow flow, boolean includeJsonObject) {
+    public static HashMap<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject) {
 
         Message msg = exc.getMessage(flow);
 
