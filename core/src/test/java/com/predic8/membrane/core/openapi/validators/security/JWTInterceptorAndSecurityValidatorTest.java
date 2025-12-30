@@ -50,7 +50,6 @@ public class JWTInterceptorAndSecurityValidatorTest {
     @BeforeEach
     void setUp() throws Exception {
         router = new HttpRouter();
-        router.start();
         proxy = createProxy(router, getSpec());
 
         privateKey = RsaJwkGenerator.generateJwk(2048);

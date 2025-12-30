@@ -42,7 +42,7 @@ public class APIProxyOpenAPITest {
 
     @BeforeEach
     public void setUp() {
-        router = new Router();
+        router = new HttpRouter();
     }
 
     @Test

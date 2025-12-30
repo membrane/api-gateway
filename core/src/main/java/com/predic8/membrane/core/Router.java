@@ -128,15 +128,6 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
     protected ResolverMap resolverMap;
 
-    /**
-     * TODO:
-     * - Replace with: Executors.newVirtualThreadPerTaskExecutor();
-     * - Remove from here and use virtualThread in those 4 places where it is used.
-     */
-    protected final ExecutorService backgroundInitializer =
-            newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializer"));
-
-
     protected final Statistics statistics = new Statistics();
 
     private final Object lock = new Object();
@@ -179,17 +170,22 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
     public void init() {
         log.debug("Initializing.");
 
-        getRegistry().registerIfAbsent(ResolverMap.class, () -> {
-            ResolverMap rs = new ResolverMap(httpClientFactory, kubernetesClientFactory);
-            rs.addRuleResolver(this);
-            return rs;
-        });
-
         // TODO: Temporary guard, to check correct behaviour, remove later
         synchronized (lock) {
             if (initialized)
                 throw new IllegalStateException("Router already initialized.");
         }
+
+//        resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
+//        resolverMap.addRuleResolver(this);
+
+        getRegistry().registerIfAbsent(HttpClientConfiguration.class, () -> new HttpClientConfiguration());
+
+        getRegistry().registerIfAbsent(ResolverMap.class, () -> {
+            ResolverMap rs = new ResolverMap(httpClientFactory, kubernetesClientFactory);
+            rs.addRuleResolver(this);
+            return rs;
+        });
 
         getRegistry().registerIfAbsent(ExchangeStore.class, LimitedMemoryExchangeStore::new);
         getRegistry().registerIfAbsent(RuleManager.class, () -> {
@@ -363,14 +359,9 @@ public class Router implements ApplicationContextAware, BeanRegistryAware, BeanN
      * When running as an embedded servlet, this has no effect.
      */
     public void shutdown() {
-        backgroundInitializer.shutdown();
         if (transport != null)
             transport.closeAll();
         timerManager.shutdown();
-    }
-
-    public ExecutorService getBackgroundInitializer() {
-        return backgroundInitializer;
     }
 
     /**

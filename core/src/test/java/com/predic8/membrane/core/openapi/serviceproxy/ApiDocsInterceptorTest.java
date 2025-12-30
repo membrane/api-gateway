@@ -45,7 +45,7 @@ class ApiDocsInterceptorTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        router = new Router();
+        router = new HttpRouter();
         router.getConfig().setUriFactory(new URIFactory());
 
         exc.setRequest(new Request.Builder().get("/foo").build());

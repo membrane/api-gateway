@@ -32,7 +32,7 @@ public class XMembraneExtensionSecurityTest {
 
     @BeforeEach
     void setUp() {
-        Router router = new Router();
+        Router router = new HttpRouter();
         router.setBaseLocation("");
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
         OpenAPISpec spec = new OpenAPISpec();

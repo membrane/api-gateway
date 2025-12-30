@@ -36,7 +36,9 @@ abstract class AbstractProxySpringConfigurationTest {
         GenericXmlApplicationContext ctx = new GenericXmlApplicationContext();
         ctx.load(new ByteArrayResource(config.formatted(api).getBytes()));
         ctx.refresh();
-        return ctx.getBean("router", Router.class);
+        var router = ctx.getBean("router", Router.class);
+        router.init();
+        return router;
     }
 
     protected static APIProxy getApiProxy(Router router) {

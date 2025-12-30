@@ -48,7 +48,7 @@ class OpenAPIInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        router = new Router();
+        router = new HttpRouter();
         router.getConfig().setUriFactory(new URIFactory());
 
         specInfoServers = new OpenAPISpec();

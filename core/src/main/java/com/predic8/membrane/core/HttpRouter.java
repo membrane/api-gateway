@@ -30,7 +30,8 @@ public class HttpRouter extends Router {
 
     public HttpRouter(ProxyConfiguration proxyConfiguration) {
         transport = createTransport();
-        getResolverMap().getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
+        if (proxyConfiguration != null)
+            getResolverMap().getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
     }
 
     @Override

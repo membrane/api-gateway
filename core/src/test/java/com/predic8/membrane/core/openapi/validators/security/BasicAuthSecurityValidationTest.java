@@ -28,6 +28,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
@@ -42,7 +43,7 @@ public class BasicAuthSecurityValidationTest {
 
     @BeforeEach
     void setUpSpec() {
-        Router router = new Router();
+        Router router = new HttpRouter();
         router.getConfig().setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();
@@ -64,7 +65,7 @@ public class BasicAuthSecurityValidationTest {
 
     @Test
     void noAuthHeader() throws Exception {
-        Exchange exc = Request.get("/v1/foo").buildExchange();
+        Exchange exc = get("/v1/foo").buildExchange();
         exc.setOriginalRequestUri("/v1/foo");
         assertEquals(ABORT, baInterceptor.handleRequest(exc));  // TODO Should we return RETURN instead. How is it in OAuth2?
     }
@@ -72,15 +73,13 @@ public class BasicAuthSecurityValidationTest {
     @Test
     void withAuthorizationHeader() throws Exception {
 
-        Exchange exc = Request.get("/v1/foo").authorization("alice","secret").buildExchange();
+        Exchange exc = get("/v1/foo").authorization("alice","secret").buildExchange();
         exc.setOriginalRequestUri("/v1/foo");
 
         Outcome outcome = baInterceptor.handleRequest(exc);
-
         assertEquals(CONTINUE,outcome);
 
         outcome = oasInterceptor.handleRequest(exc);
-
         assertEquals(CONTINUE, outcome);
     }
 }

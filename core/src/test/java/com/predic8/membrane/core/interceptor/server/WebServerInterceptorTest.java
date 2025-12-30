@@ -32,7 +32,7 @@ class WebServerInterceptorTest {
 
     @BeforeEach
     void init() {
-        r = new Router();
+        r = new HttpRouter();
 
         ws = new WebServerInterceptor(r) {{
             setDocBase(Objects.requireNonNull(this.getClass().getResource("/html/")).toString());

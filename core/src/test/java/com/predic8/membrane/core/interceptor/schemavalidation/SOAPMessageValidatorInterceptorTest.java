@@ -39,7 +39,7 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	@BeforeAll
 	static void setup() {
-		router = new Router();
+		router = new HttpRouter();
 	}
 
 	@Test

@@ -40,7 +40,7 @@ public class OpenAPI31Test {
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        Router router = new Router();
+        Router router = new HttpRouter();
         router.getConfig().setUriFactory(new URIFactory());
 
         petstore_v3_1 = new OpenAPISpec();

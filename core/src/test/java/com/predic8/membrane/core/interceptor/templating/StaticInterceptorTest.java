@@ -41,7 +41,7 @@ class StaticInterceptorTest {
 
     @Test
     void readContentFromLocationPath() {
-        i.init(new Router());
+        i.init(new HttpRouter());
         i.handleRequest(exc);
         assertEquals(27, exc.getRequest().getBodyAsStringDecoded().length());
     }
@@ -50,7 +50,7 @@ class StaticInterceptorTest {
     void pretty() {
         i.setPretty(TRUE);
         i.setContentType(APPLICATION_JSON);
-        i.init(new Router());
+        i.init(new HttpRouter());
 
         i.handleRequest(exc);
 
@@ -81,7 +81,7 @@ class StaticInterceptorTest {
         private void checkWithCharset(String charset) throws Exception {
             i.setLocation(getAbsolutePath("/charsets/%s.txt".formatted(charset)));
             i.setCharset(charset);
-            i.init(new Router());
+            i.init(new HttpRouter());
             i.handleRequest(exc);
             assertEquals(REF_CHARS, exc.getRequest().getBodyAsStringDecoded());
         }

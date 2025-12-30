@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExpressionExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
@@ -57,17 +57,17 @@ public class ApiKeysInterceptorTest {
     static void setup() {
         store = new ApiKeyFileStore();
         store.setLocation(getKeyfilePath("apikeys/keys.txt"));
-        store.init(new Router());
+        store.init(new HttpRouter());
 
         mergeStore = new ApiKeyFileStore();
         mergeStore.setLocation(getKeyfilePath("apikeys/merge-keys.txt"));
-        mergeStore.init(new Router());
+        mergeStore.init(new HttpRouter());
 
         ahe = new ApiKeyHeaderExtractor();
         aqe = new ApiKeyQueryParamExtractor();
         aee = new ApiKeyExpressionExtractor();
         aee.setExpression("json['api-key']");
-        aee.init(new Router());
+        aee.init(new HttpRouter());
 
         akiWithProp = new ApiKeysInterceptor();
         akiWithProp.setExtractors(of(ahe));

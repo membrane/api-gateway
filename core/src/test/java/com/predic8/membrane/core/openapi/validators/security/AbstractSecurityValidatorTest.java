@@ -42,7 +42,7 @@ public abstract class AbstractSecurityValidatorTest {
     }
 
     protected static Router getRouter() {
-        Router router = new Router();
+        Router router = new HttpRouter();
         router.getConfig().setUriFactory(new URIFactory());
         return router;
     }
