@@ -136,10 +136,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         mainComponents = new DefaultMainComponents(this);
     }
 
-    //
-    // Initialization
-    //
-
     /**
      * Initializes the {@code Router}
      * - by setting up its associated components.
@@ -294,6 +290,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     /**
      * Adds a proxy to the router and initializes it.
+     * Can be called at any time before or after start().
      *
      * TODO: Should we sync running cause a different Thread might call add?
      *
@@ -306,7 +303,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
         if (running && proxy instanceof SSLableProxy sp) {
             sp.init(this);
-            ruleManager.addProxyAndOpenPortIfNew(sp, MANUAL);
+            ruleManager.addProxyAndOpenPortIfNew(sp);
         } else {
             ruleManager.addProxy(proxy, MANUAL);
         }
@@ -314,9 +311,11 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     private void startJmx() {
-        if (mainComponents.getBeanFactory() == null)
+        if (mainComponents.getBeanFactory() == null) {
+            log.info("No bean factory available, not starting JMX.");
             return;
-
+        }
+        log.debug("Starting JMX.");
         try {
             JmxExporter exporter = mainComponents.getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class);
             //exporter.removeBean(prefix + jmxRouterName);
@@ -331,23 +330,15 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     public void stop() {
         getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::stop);
         hotDeployer.stop();
-        shutdown();
+
+         if (mainComponents.getTransport() != null)
+            mainComponents.getTransport().closeAll();
+        mainComponents.getTimerManager().shutdown();
 
         synchronized (lock) {
             running = false;
             lock.notifyAll();
         }
-    }
-
-    /**
-     * Closes all ports (if any were opened) and waits for running exchanges to complete.
-     * <p>
-     * When running as an embedded servlet, this has no effect.
-     */
-    private void shutdown() {
-        if (mainComponents.getTransport() != null)
-            mainComponents.getTransport().closeAll();
-        mainComponents.getTimerManager().shutdown();
     }
 
     @Override
@@ -445,21 +436,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
         if (newProxy.getName() == null)
             newProxy.setName(bdc.bd().getName());
-
-        // TODO: Comment or code Should be deleted before merge
-        // Comment is kept for discussion only.
-        //
-        // init() in Proxies was called twice, here and in Router.initRemainingRules
-        // We should only keep one place. Which one is up to discussion
-        //
-        //        try {
-        //            newProxy.init(this);
-        //        } catch (ConfigurationException e) {
-        //            SpringConfigurationErrorHandler.handleRootCause(e, log);
-        //            throw e;
-        //        } catch (Exception e) {
-        //            throw new RuntimeException("Could not init rule.", e);
-        //        }
 
         if (bdc.action().isAdded()) {
             add(newProxy);

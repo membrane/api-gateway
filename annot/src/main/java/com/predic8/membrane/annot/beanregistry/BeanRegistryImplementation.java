@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
+import javax.annotation.concurrent.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -27,8 +28,13 @@ import java.util.function.*;
  * TODO:
  * - More Tests
  * - Document
- * - Do we need uuid when then name is unique?
  * - For TB Unclear: Lifecycle activation/resolve
+ * - oldbean
+ *   - a.) Revert to second list (singletonBeans)
+ *   - b.) Give proxies an unique id
+ * <p>
+ * For K8S UUID and name is needed cause name is only unique within a namespace.
+ *
  */
 public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
@@ -37,11 +43,14 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     private final BeanCacheObserver observer;
     private final Grammar grammar;
 
+    // uid -> bean
+    private final ConcurrentHashMap<String, Object> singletonBeans = new ConcurrentHashMap<>(); // Order is here not critical
+
     // uid -> bean container
     private final Map<String, BeanContainer> bcs = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
-    private final Set<UidAction> uidsToActivate = Collections.synchronizedSet(new LinkedHashSet<>()); // keeps order
 
-    private final Object registrationLock = new Object();
+    @GuardedBy("uidsToActivate")
+    private final Set<UidAction> uidsToActivate = Collections.synchronizedSet(new LinkedHashSet<>()); // keeps order
 
     record UidAction(String uid, WatchAction action) {
     }
@@ -91,47 +100,38 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     }
 
     private void activationRun() {
-        // Iterate safely over clone
-        for (UidAction uidAction : cloneUidActions()) {
+        Set<UidAction> uidsToRemove = new HashSet<>();
+        for (UidAction uidAction : uidsToActivate) {
             BeanContainer bc = bcs.get(uidAction.uid);
-            if (bc == null) {
-                log.warn("Skipping activation for missing uid {}", uidAction.uid);
-                continue;
-            }
-
-            BeanDefinition def = bc.getDefinition();
-            Object oldBean;
-            Object newBean = null;
-
             try {
-                synchronized (bc) {
-                    oldBean = (uidAction.action.isModified() || uidAction.action.isDeleted()) ? bc.getSingleton() : null;
-                    if (!uidAction.action.isDeleted()) {
-                        newBean = define(def);
-                        bc.setSingleton(newBean);
-                    }
-                }
+                Object bean = define(bc.getDefinition());
+                bc.setSingleton(bean);
 
-                // Remove container after releasing the lock (avoid holding bc while mutating registry map)
+                // e.g. inform router about new proxy
+                observer.handleBeanEvent(new BeanDefinitionChanged(uidAction.action, bc.getDefinition()), bean, getOldBean(uidAction.action, bc.getDefinition()));
+
+                if (uidAction.action.isAdded() || uidAction.action.isModified())
+                    singletonBeans.put(bc.getDefinition().getUid(), bean);
                 if (uidAction.action.isDeleted()) {
-                    bcs.remove(uidAction.uid);
+                    singletonBeans.remove(bc.getDefinition().getUid());
+                    bcs.remove(bc.getDefinition().getUid());
                 }
-
-                observer.handleBeanEvent(new BeanDefinitionChanged(uidAction.action, def), newBean, oldBean);
+                uidsToRemove.add(uidAction);
             } catch (Exception e) {
-                log.error("Could not handle {} {}/{}", uidAction.action, def.getNamespace(), def.getName(), e);
+                log.error("Could not handle {} {}/{}", uidAction.action,
+                        bc.getDefinition().getNamespace(), bc.getDefinition().getName(), e);
                 throw new RuntimeException(e);
             }
         }
+        for (UidAction uidAction : uidsToRemove)
+            uidsToActivate.remove(uidAction);
     }
 
-    private @NotNull List<UidAction> cloneUidActions() {
-        final List<UidAction> actions;
-        synchronized (uidsToActivate) {
-            actions = new ArrayList<>(uidsToActivate);
-            uidsToActivate.clear();
-        }
-        return actions;
+    private @Nullable Object getOldBean(WatchAction action, BeanDefinition bd) {
+        Object oldBean = null;
+        if (action.isModified() || action.isDeleted())
+            oldBean = singletonBeans.get(bd.getUid());
+        return oldBean;
     }
 
     @Override
@@ -204,7 +204,10 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         return beans.size() == 1 ? Optional.of(beans.getFirst()) : Optional.empty();
     }
 
-    public void register(String beanName, Object bean) {
+    /**
+     * synchronized is a quick-fix for tests like LoadBalancingInterceptorFaultMonitoringStrategyTest.
+     */
+    public synchronized void register(String beanName, Object bean) {
         if (bean == null)
             throw new IllegalArgumentException("bean must not be null");
 
@@ -214,16 +217,15 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         bcs.put(uuid, bc);
     }
 
-    public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
-        return getBean(type).orElseGet(() -> {
-            synchronized (registrationLock) {
-                return getBean(type).orElseGet(() -> {
-                    T created = supplier.get();
-                    register(null, created);
-                    return created;
-                });
-            }
-        });
+    /**
+     * synchronized is a quick-fix for tests like LoadBalancingInterceptorFaultMonitoringStrategyTest.
+     */
+    public synchronized <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
+        return getBean(type).orElseGet(() -> getBean(type).orElseGet(() -> {
+            T created = supplier.get();
+            register(null, created);
+            return created;
+        }));
     }
 
     private static @NotNull String computeBeanName(String beanName, String uuid) {

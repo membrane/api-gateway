@@ -36,13 +36,15 @@ import static java.lang.String.*;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
+ * HttpTransport is responsible for opening and closing ports. Besides HttpTransport there is also a ServletTransport.
+ *
  * @description <p>
  *              The transport receives messages from clients and invokes interceptors in the request and response flow.
  *              The interceptors that are engaged with the transport are global and are invoked for each message flowing
  *              through the router.
  *              </p>
  *
- *  Besides HttpTransport there is also a ServletTransport.
+ *
  */
 @MCElement(name="transport")
 public class HttpTransport extends Transport {

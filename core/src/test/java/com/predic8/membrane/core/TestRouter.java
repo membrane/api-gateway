@@ -17,10 +17,17 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 
+/**
+ * Opens ports but does not start hotdeployer, reinit, ...
+ */
 public class TestRouter extends DefaultRouter {
 
     public TestRouter() {
     }
+
+    /*
+     TODO: overwrite init(), start() to do nothing
+     */
 
     public TestRouter(ProxyConfiguration proxyConfiguration) {
         if (proxyConfiguration != null)

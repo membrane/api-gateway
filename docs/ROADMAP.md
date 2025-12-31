@@ -18,6 +18,7 @@
   - Tutorial
   - Documentation
   - See JmxExporter
+- Synchronization of BeanRegistry
 
 # 7.1.0
 

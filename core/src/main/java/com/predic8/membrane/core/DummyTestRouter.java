@@ -140,6 +140,8 @@ public class DummyTestRouter extends AbstractRouter {
 
     /**
      * Same as the default config from monitor-beans.xml
+     *
+     * TODO: Sync somehow with standard transport order maybe TransportConfig class or in Transport?
      */
     private static HttpTransport createTransport() {
         HttpTransport transport = new HttpTransport();

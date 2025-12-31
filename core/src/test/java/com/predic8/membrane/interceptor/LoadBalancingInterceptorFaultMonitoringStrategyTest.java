@@ -61,6 +61,22 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     // The simulation nodes
     private final List<Router> nodes = new ArrayList<>();
 
+    @AfterEach
+    void tearDown() {
+        for (Router httpRouter : nodes) {
+            try {
+                httpRouter.stop();
+            } catch (Exception e) {
+                log.warn("Node shutdown failed.", e);
+            }
+        }
+        try {
+            balancer.stop();
+        } catch (Exception e) {
+            log.warn("Balancer shutdown failed.", e);
+        }
+    }
+
     private void setUp(TestingContext ctx) throws Exception {
         nodes.clear();
         for (int i = 1; i <= ctx.numNodes; i++) {
@@ -119,22 +135,6 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         return sp;
     }
 
-    @AfterEach
-    void tearDown() {
-        for (Router httpRouter : nodes) {
-            try {
-                httpRouter.stop();
-            } catch (Exception e) {
-                log.warn("Node shutdown failed.", e);
-            }
-        }
-        try {
-            balancer.stop();
-        } catch (Exception e) {
-            log.warn("Balancer shutdown failed.", e);
-        }
-    }
-
     /**
      * Because we set the success chance to 0, none will pass.
      */
@@ -157,7 +157,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
      * Because we set the success chance to 1, all will pass.
      */
     @Test
-    public void test_2destinations_6threads_100calls_allSucceed() throws Exception {
+    void test_2destinations_6threads_100calls_allSucceed() throws Exception {
         TestingContext ctx = new TestingContext.Builder()
                 .numNodes(2)
                 .numThreads(6)
@@ -214,7 +214,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
         run(ctx);
 
-        assertTrue(ctx.successCounter.get() > 95,"ctx.successCounter.get() > 95 was %s".formatted(ctx.successCounter.get()));
+        assertTrue(ctx.successCounter.get() > 95, "ctx.successCounter.get() > 95 was %s".formatted(ctx.successCounter.get()));
         for (int i = 0; i < 100; i++) {
             if (i < 10 || i >= 40) {
                 assertTrue(ctx.runtimes[i] < 500, "For " + i + " value was: " + ctx.runtimes[i]);

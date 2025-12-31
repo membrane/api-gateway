@@ -23,11 +23,6 @@ public interface Router extends Lifecycle, MainComponents {
 
     void init();
 
-    /**
-     * TODO: What is the difference between this and stop?
-     */
-  //  void shutdown();
-
     void add(Proxy proxy) throws IOException;
 
     Configuration getConfiguration();

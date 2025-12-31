@@ -62,6 +62,11 @@ public class RuleManager {
         return false;
     }
 
+    /**
+     * Do not call directly. Router should call this method. Call Router.add() + Router.start() instead.
+     * @param proxy
+     * @throws IOException
+     */
     public void addProxyAndOpenPortIfNew(SSLableProxy proxy) throws IOException {
         addProxyAndOpenPortIfNew(proxy, RuleDefinitionSource.MANUAL);
     }
