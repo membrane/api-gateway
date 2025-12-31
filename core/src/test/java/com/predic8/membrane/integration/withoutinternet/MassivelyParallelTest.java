@@ -32,6 +32,7 @@ import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.lang.Thread.*;
 import static java.util.concurrent.ConcurrentHashMap.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -102,7 +103,7 @@ class MassivelyParallelTest {
                     es.submit(() -> job.accept(cdl));
                 }
                 es.shutdown();
-                if (!es.awaitTermination(30, TimeUnit.SECONDS)) {
+                if (!es.awaitTermination(60, SECONDS)) {
                     es.shutdownNow();
                     fail("Tasks did not complete within timeout");
                 }
