@@ -19,6 +19,8 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.GlobalInterceptor;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import org.junit.jupiter.api.*;
 

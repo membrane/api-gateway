@@ -14,6 +14,7 @@
 package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 
 public class MockRouter extends DefaultRouter {

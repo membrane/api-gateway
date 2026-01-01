@@ -14,11 +14,11 @@
 package com.predic8.membrane.core.interceptor.server;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.URI;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
@@ -164,7 +164,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
         String encodedPath = path.replace(" ", "%20");
         try {
-            if (escapesPath(encodedPath) || escapesPath(router.getUriFactory().create(encodedPath).getPath())) {
+            if (escapesPath(encodedPath) || escapesPath(router.getConfiguration().getUriFactory().create(encodedPath).getPath())) {
                 exc.setResponse(Response.badRequest().body("").build());
                 return null;
             }
@@ -178,7 +178,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
     private @Nullable URI getRequestUri(Exchange exc) {
         try {
-            return router.getUriFactory().create(exc.getDestinations().getFirst());
+            return router.getConfiguration().getUriFactory().create(exc.getDestinations().getFirst());
         } catch (URISyntaxException e) {
             internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("uri-creation")

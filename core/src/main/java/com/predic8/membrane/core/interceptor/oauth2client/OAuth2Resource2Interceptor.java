@@ -95,7 +95,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             throw new ConfigurationException("Could not init auth in OAuth2Resource2Interceptor",e);
         }
         statistics = new OAuth2Statistics();
-        uriFactory = router.getUriFactory();
+        uriFactory = router.getConfiguration().getUriFactory();
 
         publicUrlManager.init(auth, callbackPath);
         accessTokenRevalidator.init(auth, statistics);
@@ -201,7 +201,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private String replaceUrlPath(String url, String newPath) {
-        URI uri = router.getUriFactory().createWithoutException(url);
+        URI uri = router.getConfiguration().getUriFactory().createWithoutException(url);
         return uri.getScheme() + "://" + uri.getHost() + (uri.getPort() != -1 ? ":" + uri.getPort() : "") + newPath;
     }
 

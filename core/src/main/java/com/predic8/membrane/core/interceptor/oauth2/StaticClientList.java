@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;

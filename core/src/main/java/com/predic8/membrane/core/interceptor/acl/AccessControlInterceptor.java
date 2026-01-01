@@ -19,6 +19,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.xml.beautifier.*;
 import org.apache.commons.text.*;
 import org.slf4j.*;
@@ -134,9 +135,9 @@ public class AccessControlInterceptor extends AbstractInterceptor {
             XMLInputFactory factory = XMLInputFactoryFactory.inputFactory();
             XMLStreamReader reader = null;
             try {
-                reader = new FixedStreamReader(factory.createXMLStreamReader(
+                reader = factory.createXMLStreamReader(
                         router.getResolverMap().resolve(
-                                ResolverMap.combine(router.getBaseLocation(), fileName))));
+                                ResolverMap.combine(router.getBaseLocation(), fileName)));
                 AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
                 res.init(router);
                 return res;
@@ -148,12 +149,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
                     }
                 }
             }
-
-//			XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(router.getResolverMap()
-//					.resolve(ResolverMap.combine(router.getBaseLocation(), fileName))));
-//			AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
-//			res.init(router);
-//			return res;
         } catch (Exception e) {
             log.error("Error initializing accessControl.", e);
             System.err.println("Error initializing accessControl: terminating.");

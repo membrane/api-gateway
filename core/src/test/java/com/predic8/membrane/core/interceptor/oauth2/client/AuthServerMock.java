@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import com.predic8.membrane.core.DummyTestRouter;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 
 import java.io.IOException;

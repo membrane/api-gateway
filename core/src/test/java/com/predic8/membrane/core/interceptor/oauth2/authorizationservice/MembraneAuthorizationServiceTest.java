@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;

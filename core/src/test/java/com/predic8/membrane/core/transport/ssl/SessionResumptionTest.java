@@ -20,7 +20,9 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.streampump.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;

@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;

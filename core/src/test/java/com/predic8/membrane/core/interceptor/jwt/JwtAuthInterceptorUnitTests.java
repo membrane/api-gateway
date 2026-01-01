@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.DummyTestRouter;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.*;

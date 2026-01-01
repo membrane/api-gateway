@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.floreysoft.jmte.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import jakarta.mail.*;
 import jakarta.mail.Message.*;
 import jakarta.mail.internet.*;

@@ -12,13 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
 import org.springframework.context.*;
 
@@ -37,8 +39,6 @@ public interface MainComponents {
     ResolverMap getResolverMap();
 
     DNSCache getDnsCache();
-
-    URIFactory getUriFactory();
 
     ApplicationContext getBeanFactory();
 

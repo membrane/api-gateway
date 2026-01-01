@@ -12,8 +12,9 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.kubernetes.client.*;
@@ -21,6 +22,7 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
 import org.springframework.context.*;
 
@@ -47,8 +49,6 @@ public class DummyTestRouter extends AbstractRouter {
     private HttpTransport transport;
 
     private DNSCache dnsCache = new DNSCache();
-
-    private URIFactory uriFactory = new URIFactory();
 
     private final Statistics statistics = new Statistics();
     private ApplicationContext applicationContext;
@@ -115,11 +115,6 @@ public class DummyTestRouter extends AbstractRouter {
     @Override
     public HttpTransport getTransport() {
         return transport;
-    }
-
-    @Override
-    public URIFactory getUriFactory() {
-        return uriFactory;
     }
 
     @Override

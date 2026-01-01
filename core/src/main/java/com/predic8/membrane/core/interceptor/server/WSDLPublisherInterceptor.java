@@ -85,7 +85,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                         path = Integer.toString(n);
                     }
                 }
-                path = "./" + URLUtil.getName(router.getUriFactory(), exc.getDestinations().getFirst()) + "?xsd=" + path;
+                path = "./" + URLUtil.getName(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst()) + "?xsd=" + path;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -190,7 +190,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 exc.getResponse().getHeader().setContentType(TEXT_XML);
             }
             if (exc.getRequestURI().contains("?xsd=")) {
-                Map<String, String> params = URLParamUtil.getParams(router.getUriFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+                Map<String, String> params = URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                 if (params.containsKey("xsd")) {
                     int n = Integer.parseInt(params.get("xsd"));
                     String path;

@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.router.hotdeploy;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 
 public interface HotDeployer {
 

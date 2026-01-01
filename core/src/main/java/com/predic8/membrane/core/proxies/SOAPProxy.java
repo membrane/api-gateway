@@ -15,7 +15,6 @@ package com.predic8.membrane.core.proxies;
 
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
@@ -24,6 +23,7 @@ import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.wsdl.*;
@@ -214,7 +214,7 @@ public class SOAPProxy extends AbstractServiceProxy {
     private void setTarget(URL url) {
         if (wsdl.startsWith("internal:")) {
             try {
-                target.setUrl(UriUtil.getPathFromURL(router.getUriFactory(), wsdl)); // TODO
+                target.setUrl(UriUtil.getPathFromURL(router.getConfiguration().getUriFactory(), wsdl)); // TODO
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);
             }
@@ -312,7 +312,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private @NotNull String getReplacementName(String keyPath) {
         try {
-            return URLUtil.getName(router.getUriFactory(), keyPath);
+            return URLUtil.getName(router.getConfiguration().getUriFactory(), keyPath);
         } catch (URISyntaxException e) {
             log.error("Error parsing URL {}", keyPath, e);
             throw new RuntimeException("Check!");

@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.util.jdbc;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.DefaultRouter;
+import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 
 import javax.sql.DataSource;

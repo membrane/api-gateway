@@ -14,6 +14,7 @@
 
 # 7.X
 
+- Rewrite ACL to use the YAML configuration instead of external XML files
 - JMXExporter:
   - Tutorial
   - Documentation

@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.router.hotdeploy;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 

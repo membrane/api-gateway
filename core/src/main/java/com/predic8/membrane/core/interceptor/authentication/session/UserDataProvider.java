@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 
 import java.util.*;
 

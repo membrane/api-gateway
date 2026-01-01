@@ -16,7 +16,6 @@ import com.floreysoft.jmte.*;
 import com.floreysoft.jmte.message.*;
 import com.floreysoft.jmte.token.*;
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -26,6 +25,7 @@ import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.lang3.*;
@@ -78,7 +78,7 @@ public class LoginDialog2 {
     }
 
     public void init(DefaultRouter router) throws Exception {
-        uriFactory = router.getUriFactory();
+        uriFactory = router.getConfiguration().getUriFactory();
         wsi.init(router);
         router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
 
