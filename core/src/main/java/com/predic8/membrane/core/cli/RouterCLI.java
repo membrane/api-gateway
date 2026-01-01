@@ -149,7 +149,7 @@ public class RouterCLI {
     }
 
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
-        Router router = new DummyTestRouter();
+        Router router = new DefaultRouter();
         router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy(commandLine));
         router.init();
         return router;

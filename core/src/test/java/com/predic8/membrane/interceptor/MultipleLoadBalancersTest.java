@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.interceptor;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.balancer.*;

@@ -94,10 +94,6 @@ public class HttpTransport extends Transport {
 		    portListenerMapping.remove(p.port());
 		}
 		stillRunning.add(new WeakReference<>(plt));
-
-		for (IPortChangeListener listener : menuListeners) {
-			listener.removePort(p.port());
-		}
 	}
 
 	@Override
@@ -180,10 +176,6 @@ public class HttpTransport extends Transport {
 		HttpEndpointListener portListenerThread = new HttpEndpointListener(p, this, sslProvider);
 		mih.put(p, portListenerThread);
 		portListenerThread.start();
-
-		for (IPortChangeListener listener : menuListeners) {
-			listener.addPort(port);
-		}
 	}
 
 	@Override

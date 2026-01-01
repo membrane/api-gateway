@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.integration.withinternet;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
 import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.proxies.ProxyRuleKey;
@@ -29,7 +28,7 @@ import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 class ProxySSLConnectionMethodTest {
 
-	private Router router;
+	private TestRouter router;
 
 	@BeforeEach
 	void setUp() throws Exception {

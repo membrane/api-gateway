@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.kubernetes.client;
 
 import com.google.common.io.Resources;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;

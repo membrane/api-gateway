@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
 import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.exchangestore.*;
@@ -20,7 +20,6 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
@@ -35,13 +34,12 @@ import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource
 
 /**
  * Opens ports but does not start hotdeployer, reinit, ...
+ * Allows to overwrite components with setters.
  * <p>
  * Limitations:
  * - Does not support Registry
  */
 public class TestRouter extends AbstractRouter implements BeanRegistryAware {
-
-    private ApplicationContext beanFactory;
 
     protected BeanRegistry registry = new BeanRegistryImplementation(null, this, null);
 
@@ -114,7 +112,6 @@ public class TestRouter extends AbstractRouter implements BeanRegistryAware {
         return exchangeStore;
     }
 
-    @Override
     public void setExchangeStore(ExchangeStore exchangeStore) {
         this.exchangeStore = exchangeStore;
     }

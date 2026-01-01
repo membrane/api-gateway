@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;

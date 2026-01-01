@@ -14,7 +14,6 @@
 package com.predic8.membrane.integration.withoutinternet.interceptor;
 
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.Certificate;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.config.security.acme.*;

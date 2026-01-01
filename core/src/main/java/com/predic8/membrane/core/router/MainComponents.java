@@ -37,8 +37,6 @@ public interface MainComponents {
 
     ExchangeStore getExchangeStore();
 
-    void setExchangeStore(ExchangeStore exchangeStore);
-
     RuleManager getRuleManager();
 
     ResolverMap getResolverMap();

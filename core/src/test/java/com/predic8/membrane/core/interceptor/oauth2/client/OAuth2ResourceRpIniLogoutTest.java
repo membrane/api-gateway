@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;

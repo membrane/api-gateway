@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.adminapi;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
@@ -36,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AdminApiInterceptorTest {
 
-    private static Router router;
+    private static TestRouter router;
 
     @BeforeAll
     static void setUp() throws IOException {

@@ -28,11 +28,11 @@ import org.springframework.context.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.*;
 
 /**
- * TODO rename this class: It is also being used in case the router is being started
- * from the command line (=in a non-test environment).
+ * Lightweight test router that doesn't open any ports.
+ * Fell free to add setters if needed.
  */
 public class DummyTestRouter extends AbstractRouter {
 
@@ -69,6 +69,17 @@ public class DummyTestRouter extends AbstractRouter {
     @Override
     public void init() {
         initProxies();
+    }
+
+    /**
+     * Does not open any ports.
+     */
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void stop() {
     }
 
     @Override
@@ -143,7 +154,7 @@ public class DummyTestRouter extends AbstractRouter {
 
     /**
      * Same as the default config from monitor-beans.xml
-     *
+     * <p>
      * TODO: Sync somehow with standard transport order maybe TransportConfig class or in Transport?
      */
     private HttpTransport createTransport() {
@@ -161,16 +172,6 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     @Override
-    public void start() {
-
-    }
-
-    @Override
-    public void stop() {
-
-    }
-
-    @Override
     public boolean isRunning() {
         return false;
     }
@@ -184,7 +185,7 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     public HttpClientConfiguration getHttpClientConfig() {
-       return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
+        return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) {
