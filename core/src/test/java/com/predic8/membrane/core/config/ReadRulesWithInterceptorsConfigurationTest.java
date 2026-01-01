@@ -24,13 +24,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ReadRulesWithInterceptorsConfigurationTest {
 
-	private static Router router;
+	private static DefaultRouter router;
 
 	private static List<Proxy> proxies;
 
 	@BeforeAll
 	static void setUp() {
-		router = Router.init("src/test/resources/ref.proxies.xml");
+		router = RouterXmlBootstrap.initByXML("src/test/resources/ref.proxies.xml");
 		proxies = router.getRuleManager().getRules();
 	}
 
@@ -65,7 +65,7 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 
 	@AfterAll
 	static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 }

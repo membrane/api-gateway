@@ -40,7 +40,7 @@ class ConditionalEvaluationTestContext {
         ifInt.setLanguage(lang);
         ifInt.setFlow(of(mockInt));
         ifInt.setTest(condition);
-        ifInt.init(new HttpRouter());
+        ifInt.init(new DummyTestRouter());
 
         Outcome outcome;
         if (builder instanceof Builder b) {

@@ -59,7 +59,7 @@ public class ApisJsonInterceptor extends AbstractInterceptor {
             try {
                 initJson(router, exc);
             } catch (JsonProcessingException e) {
-                internal(router.isProduction(),getDisplayName())
+                internal(router.getConfiguration().isProduction(),getDisplayName())
                         .detail("Could not create APIs JSON!")
                         .exception(e)
                         .buildAndSetResponse(exc);

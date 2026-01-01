@@ -19,11 +19,11 @@ import org.junit.jupiter.api.Test;
 
 public class SimpleTest {
 
-	private static Router router;
+	private static DefaultRouter router;
 
 	@BeforeAll
-	static void setUp() throws Exception {
-		router = Router.init("classpath:/test-proxies.xml");
+	static void setUp() {
+		router = RouterXmlBootstrap.initByXML("classpath:/test-proxies.xml");
 	}
 
 	@Test
@@ -32,8 +32,8 @@ public class SimpleTest {
 	}
 
 	@AfterAll
-	static void tearDown() throws Exception {
-		router.shutdown();
+	static void tearDown() {
+		router.stop();
 	}
 
 }

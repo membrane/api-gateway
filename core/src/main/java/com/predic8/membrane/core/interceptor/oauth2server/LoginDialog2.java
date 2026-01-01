@@ -77,7 +77,7 @@ public class LoginDialog2 {
         wsi.setDocBase(dialogLocation);
     }
 
-    public void init(Router router) throws Exception {
+    public void init(DefaultRouter router) throws Exception {
         uriFactory = router.getUriFactory();
         wsi.init(router);
         router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();

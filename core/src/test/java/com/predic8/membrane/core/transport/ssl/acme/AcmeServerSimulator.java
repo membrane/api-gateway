@@ -17,7 +17,7 @@ package com.predic8.membrane.core.transport.ssl.acme;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -43,20 +43,21 @@ import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.Header.USER_AGENT;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.jose4j.lang.HashUtil.SHA_256;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeServerSimulator {
-    private static final Logger LOG = LoggerFactory.getLogger(AcmeServerSimulator.class);
+    private static final Logger log = LoggerFactory.getLogger(AcmeServerSimulator.class);
     private final int port;
     private final int challengePort;
     private final boolean actuallyPerformChallenge;
     private final AtomicReference<String> theNonce = new AtomicReference<>();
     private final HttpClient hc = new HttpClient();
     private final AtomicBoolean challengeSucceeded = new AtomicBoolean();
-    private HttpRouter router;
+    private Router router;
     private final AcmeCASimulation ca = new AcmeCASimulation();
     private String certificates;
     private final AtomicReference<String> orderStatus = new AtomicReference<>("pending");
@@ -65,13 +66,11 @@ public class AcmeServerSimulator {
         this.port = port;
         this.challengePort = challengePort;
         this.actuallyPerformChallenge = actuallyPerformChallenge;
-
         ca.init();
     }
 
     public void start() throws IOException {
-        router = new HttpRouter();
-        router.setHotDeploy(false);
+        router = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(port), "localhost", 80);
         sp.getFlow().add(new AbstractInterceptor() {
             final ObjectMapper om = new ObjectMapper();
@@ -86,16 +85,16 @@ public class AcmeServerSimulator {
             }
 
             public Outcome handleRequestInternal(Exchange exc) throws Exception {
-                LOG.debug("acme server: got " + exc.getRequest().getUri() + " request");
+                log.debug("acme server: got " + exc.getRequest().getUri() + " request");
                 if ("/directory".equals(exc.getRequest().getUri())) {
-                    exc.setResponse(Response.ok()
+                    exc.setResponse(ok()
                             .contentType(APPLICATION_JSON)
                             .body(Resources.toString(getResource("acme/directory.json"), UTF_8))
                             .build());
                     return RETURN;
                 }
                 if ("/acme/new-nonce".equals(exc.getRequest().getUri()) && "HEAD".equals(exc.getRequest().getMethod())) {
-                    exc.setResponse(Response.ok()
+                    exc.setResponse(ok()
                             .header("Replay-Nonce", createNonce())
                             .body("")
                             .build());
@@ -135,7 +134,7 @@ public class AcmeServerSimulator {
                     assertNotNull(jws.getJwkHeader(), "RFC 8555 Section 6.2");
                     String accountUrl = "http://localhost:3050/acme/acct/123456";
 
-                    exc.setResponse(Response.ok().status(201, "Created")
+                    exc.setResponse(ok().status(201, "Created")
                             .contentType(APPLICATION_JSON)
                             .header("Location", accountUrl)
                             .header("Replay-Nonce", createNonce())
@@ -166,7 +165,7 @@ public class AcmeServerSimulator {
                         return RETURN;
                     }
 
-                    exc.setResponse(Response.ok().status(201, "Created")
+                    exc.setResponse(ok().status(201, "Created")
                             .contentType(APPLICATION_JSON)
                             .header("Replay-Nonce", createNonce())
                             .header("Location", "http://localhost:3050/acme/order/42212345")
@@ -176,7 +175,7 @@ public class AcmeServerSimulator {
                     return RETURN;
                 }
                 if ("/acme/order/42212345".equals(exc.getRequest().getUri())) {
-                    exc.setResponse(Response.ok()
+                    exc.setResponse(ok()
                             .contentType(APPLICATION_JSON)
                             .header("Replay-Nonce", createNonce())
                             .body(Resources.toString(getResource("acme/order-" + orderStatus.get() + ".json"), UTF_8))
@@ -186,13 +185,13 @@ public class AcmeServerSimulator {
                 }
                 if ("/acme/authz-v3/151234567".equals(exc.getRequest().getUri())) {
                     if (challengeSucceeded.get()) {
-                        exc.setResponse(Response.ok()
+                        exc.setResponse(ok()
                                 .contentType(APPLICATION_JSON)
                                 .header("Replay-Nonce", createNonce())
                                 .body(Resources.toString(getResource("acme/authorization-valid.json"), UTF_8))
                                 .build());
                     } else {
-                        exc.setResponse(Response.ok()
+                        exc.setResponse(ok()
                                 .contentType(APPLICATION_JSON)
                                 .header("Replay-Nonce", createNonce())
                                 .body(Resources.toString(getResource("acme/authorization.json"), UTF_8))
@@ -203,7 +202,7 @@ public class AcmeServerSimulator {
                 if ("/acme/chall-v3/1555123456/abCd1E".equals(exc.getRequest().getUri())) {
                     startChallenge(jws.getKeyIdHeaderValue());
 
-                    exc.setResponse(Response.ok()
+                    exc.setResponse(ok()
                             .contentType(APPLICATION_JSON)
                             .header("Replay-Nonce", createNonce())
                             .body(Resources.toString(getResource("acme/challenge-pending.json"), UTF_8))
@@ -215,7 +214,7 @@ public class AcmeServerSimulator {
                     certificates = ca.sign((String) om.readValue(jws.getPayload(), Map.class).get("csr"));
                     orderStatus.set("valid");
 
-                    exc.setResponse(Response.ok()
+                    exc.setResponse(ok()
                             .contentType(APPLICATION_JSON)
                             .header("Replay-Nonce", createNonce())
                             .body(Resources.toString(getResource("acme/order-processing.json"), UTF_8))
@@ -224,7 +223,7 @@ public class AcmeServerSimulator {
                     return RETURN;
                 }
                 if ("/acme/cert/fab123456789abcdef0123456789abcdef12".equals(exc.getRequest().getUri())) {
-                    exc.setResponse(Response.ok()
+                    exc.setResponse(ok()
                             .contentType(APPLICATION_JSON)
                             .header("Replay-Nonce", createNonce())
                             .body(certificates)

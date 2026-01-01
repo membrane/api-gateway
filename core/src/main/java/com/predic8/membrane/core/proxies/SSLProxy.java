@@ -18,7 +18,7 @@ import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.*;
@@ -45,7 +45,7 @@ import java.util.List;
 import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
 
 /**
- * TODO Do will still use this?
+ * Proxies SSL connections to a target server without decrypting the traffic.
  */
 @MCElement(name="sslProxy")
 public class SSLProxy implements Proxy {
@@ -195,7 +195,7 @@ public class SSLProxy implements Proxy {
     Router router;
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init(Router router) {
         this.router = router;
         cm = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout(), router.getTimerManager());
         for (SSLInterceptor i : sslInterceptors)
@@ -220,11 +220,7 @@ public class SSLProxy implements Proxy {
     @Override
     public SSLProxy clone() throws CloneNotSupportedException {
         SSLProxy clone = (SSLProxy) super.clone();
-        try {
-            clone.init(router);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        clone.init(router);
         return clone;
     }
 

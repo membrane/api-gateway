@@ -13,13 +13,13 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
 
 public interface TokenGenerator {
-    public void init(Router router) throws Exception;
+    void init(Router router) throws Exception;
 
     /**
      * @return the token type used, probably "Bearer".

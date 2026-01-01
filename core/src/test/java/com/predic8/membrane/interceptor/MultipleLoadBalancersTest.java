@@ -15,8 +15,8 @@
 package com.predic8.membrane.interceptor;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.services.*;
@@ -28,132 +28,131 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MultipleLoadBalancersTest {
-	private static MockService service1;
-	private static MockService service2;
-	private static MockService service11;
-	private static MockService service12;
+    private static MockService service1;
+    private static MockService service2;
+    private static MockService service11;
+    private static MockService service12;
 
-	protected static LoadBalancingInterceptor balancingInterceptor1;
-	protected static LoadBalancingInterceptor balancingInterceptor2;
-	private static DispatchingStrategy roundRobinStrategy1;
-	private static DispatchingStrategy roundRobinStrategy2;
-	protected static HttpRouter balancer;
+    protected static LoadBalancingInterceptor balancingInterceptor1;
+    protected static LoadBalancingInterceptor balancingInterceptor2;
+    private static DispatchingStrategy roundRobinStrategy1;
+    private static DispatchingStrategy roundRobinStrategy2;
+    protected static Router balancer;
 
-	private static class MockService {
-		final int port;
-		final HttpRouter service1;
-		final DummyWebServiceInterceptor mockInterceptor1;
+    @AfterAll
+    static void tearDown() {
+        service1.close();
+        service2.close();
+        service11.close();
+        service12.close();
+        balancer.stop();
+    }
 
-		MockService(int port) throws Exception {
-			this.port = port;
-			service1 = new HttpRouter();
-			mockInterceptor1 = new DummyWebServiceInterceptor();
-			ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
-					"POST", ".*", port), "thomas-bayer.com", 80);
-			sp1.getFlow().add(mockInterceptor1);
-			service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
-			service1.init();
-		}
+    private static class MockService {
+        final int port;
+        final Router router;
+        final DummyWebServiceInterceptor mockInterceptor1;
 
-		public void close() {
-			service1.shutdown();
-		}
-	}
+        MockService(int port) throws Exception {
+            this.port = port;
+            router = new TestRouter();
+            mockInterceptor1 = new DummyWebServiceInterceptor();
+            ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
+                    "POST", ".*", port), "thomas-bayer.com", 80);
+            sp1.getFlow().add(mockInterceptor1);
+            router.add(sp1);
+            router.start();
+        }
 
-	private static LoadBalancingInterceptor createBalancingInterceptor(int port, String name) throws Exception {
-		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80);
-		LoadBalancingInterceptor balancingInterceptor1 = new LoadBalancingInterceptor();
-		balancingInterceptor1.setName(name);
-		sp3.getFlow().add(balancingInterceptor1);
-		balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
-		balancer.init();
-		return balancingInterceptor1;
-	}
+        public void close() {
+            router.stop();
+        }
+    }
 
-
-	@BeforeAll
-	public static void setUp() throws Exception {
-
-		service1 = new MockService(2001);
-		service2 = new MockService(2002);
-		service11 = new MockService(2011);
-		service12 = new MockService(2012);
-
-		balancer = new HttpRouter();
-
-		balancingInterceptor1 = createBalancingInterceptor(3054, "Default");
-		balancingInterceptor2 = createBalancingInterceptor(7001, "Balancer2");
-
-		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", service1.port);
-		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", service2.port);
-
-		BalancerUtil.lookupBalancer(balancer, "Balancer2").up("Default", "localhost", service11.port);
-		BalancerUtil.lookupBalancer(balancer, "Balancer2").up("Default", "localhost", service12.port);
+    private static LoadBalancingInterceptor createBalancingInterceptor(int port, String name) throws Exception {
+        ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80);
+        LoadBalancingInterceptor balancingInterceptor1 = new LoadBalancingInterceptor();
+        balancingInterceptor1.setName(name);
+        sp3.getFlow().add(balancingInterceptor1);
+        balancer.add(sp3);
+        return balancingInterceptor1;
+    }
 
 
-		roundRobinStrategy1 = new RoundRobinStrategy();
-		roundRobinStrategy2 = new RoundRobinStrategy();
-	}
+    @BeforeAll
+    static void setUp() throws Exception {
 
-	@AfterAll
-	public static void tearDown() throws Exception {
-		service1.close();
-		service2.close();
-		service11.close();
-		service12.close();
-		balancer.shutdown();
-	}
+        service1 = new MockService(2001);
+        service2 = new MockService(2002);
+        service11 = new MockService(2011);
+        service12 = new MockService(2012);
 
-	private void assertMockCounters(int n1, int n2, int n11, int n12) {
-		assertEquals(n1, service1.mockInterceptor1.getCount());
-		assertEquals(n2, service2.mockInterceptor1.getCount());
-		assertEquals(n11, service11.mockInterceptor1.getCount());
-		assertEquals(n12, service12.mockInterceptor1.getCount());
-	}
+        balancer = new TestRouter();
 
-	@Test
-	public void testRoundRobinDispachingStrategy() throws Exception {
-		balancingInterceptor1.setDispatchingStrategy(roundRobinStrategy1);
-		balancingInterceptor2.setDispatchingStrategy(roundRobinStrategy2);
+        balancingInterceptor1 = createBalancingInterceptor(3054, "Default");
+        balancingInterceptor2 = createBalancingInterceptor(7001, "Balancer2");
+        balancer.start();
 
-		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
-				HttpVersion.HTTP_1_1);
+        BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", service1.port);
+        BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", service2.port);
 
-		PostMethod vari = getPostMethod(3054);
-		int status = client.executeMethod(vari);
+        BalancerUtil.lookupBalancer(balancer, "Balancer2").up("Default", "localhost", service11.port);
+        BalancerUtil.lookupBalancer(balancer, "Balancer2").up("Default", "localhost", service12.port);
 
-		assertEquals(200, status);
-		assertMockCounters(1, 0, 0, 0);
+        roundRobinStrategy1 = new RoundRobinStrategy();
+        roundRobinStrategy2 = new RoundRobinStrategy();
+    }
 
-		assertEquals(200, client.executeMethod(getPostMethod(3054)));
-		assertMockCounters(1, 1, 0, 0);
+    private void assertMockCounters(int n1, int n2, int n11, int n12) {
+        assertEquals(n1, service1.mockInterceptor1.getCount());
+        assertEquals(n2, service2.mockInterceptor1.getCount());
+        assertEquals(n11, service11.mockInterceptor1.getCount());
+        assertEquals(n12, service12.mockInterceptor1.getCount());
+    }
 
-		assertEquals(200, client.executeMethod(getPostMethod(3054)));
-		assertMockCounters(2, 1, 0, 0);
+    @Test
+    void roundRobinDispatchingStrategy() throws Exception {
+        balancingInterceptor1.setDispatchingStrategy(roundRobinStrategy1);
+        balancingInterceptor2.setDispatchingStrategy(roundRobinStrategy2);
 
-		assertEquals(200, client.executeMethod(getPostMethod(3054)));
-		assertMockCounters(2, 2, 0, 0);
+        HttpClient client = new HttpClient();
+        client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
+                HttpVersion.HTTP_1_1);
 
-		assertEquals(200, client.executeMethod(getPostMethod(7001)));
-		assertMockCounters(2, 2, 1, 0);
+        PostMethod vari = getPostMethod(3054);
+        int status = client.executeMethod(vari);
 
-		assertEquals(200, client.executeMethod(getPostMethod(7001)));
-		assertMockCounters(2, 2, 1, 1);
+        assertEquals(200, status);
+        assertMockCounters(1, 0, 0, 0);
 
-		assertEquals(200, client.executeMethod(getPostMethod(7001)));
-		assertMockCounters(2, 2, 2, 1);
-	}
+        assertEquals(200, client.executeMethod(getPostMethod(3054)));
+        assertMockCounters(1, 1, 0, 0);
 
-	private PostMethod getPostMethod(int port) {
-		PostMethod post = new PostMethod(
-				"http://localhost:" + port + "/axis2/services/BLZService");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass()
-				.getResourceAsStream("/getBank.xml")));
-		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		post.setRequestHeader(Header.SOAP_ACTION, "");
+        assertEquals(200, client.executeMethod(getPostMethod(3054)));
+        assertMockCounters(2, 1, 0, 0);
 
-		return post;
-	}
+        assertEquals(200, client.executeMethod(getPostMethod(3054)));
+        assertMockCounters(2, 2, 0, 0);
+
+        assertEquals(200, client.executeMethod(getPostMethod(7001)));
+        assertMockCounters(2, 2, 1, 0);
+
+        assertEquals(200, client.executeMethod(getPostMethod(7001)));
+        assertMockCounters(2, 2, 1, 1);
+
+        assertEquals(200, client.executeMethod(getPostMethod(7001)));
+        assertMockCounters(2, 2, 2, 1);
+    }
+
+    private PostMethod getPostMethod(int port) {
+        PostMethod post = new PostMethod(
+                "http://localhost:" + port + "/axis2/services/BLZService");
+        post.setRequestEntity(new InputStreamRequestEntity(this.getClass()
+                .getResourceAsStream("/getBank.xml")));
+        post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
+        post.setRequestHeader(Header.SOAP_ACTION, "");
+
+        return post;
+    }
 
 }

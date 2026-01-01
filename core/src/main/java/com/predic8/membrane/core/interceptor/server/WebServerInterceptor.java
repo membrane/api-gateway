@@ -99,7 +99,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (IOException e) {
             log.error("", e);
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .flow(Flow.REQUEST)
                     .detail("Error serving document")
                     .exception(e)
@@ -180,7 +180,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         try {
             return router.getUriFactory().create(exc.getDestinations().getFirst());
         } catch (URISyntaxException e) {
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("uri-creation")
                     .detail("Could not create uri")
                     .exception(e)
@@ -253,7 +253,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     .body(rr.resolve(resPath), true)
                     .build();
         } catch (Exception e) {
-            return internal(router.isProduction(), getDisplayName())
+            return internal(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Could not resolve file")
                     .topLevel("path", resPath)
                     .exception(e)

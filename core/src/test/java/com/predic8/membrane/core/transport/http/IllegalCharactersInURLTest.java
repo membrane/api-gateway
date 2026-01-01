@@ -31,12 +31,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class IllegalCharactersInURLTest {
 
-    private HttpRouter r;
+    private Router r;
 
     @BeforeEach
     void init() throws Exception {
-        r = new HttpRouter();
-        r.setHotDeploy(false);
+        r = new TestRouter();
+        r.getConfiguration().setHotDeploy(false);
         r.add(new ServiceProxy(new ServiceProxyKey(3027), "localhost", 3028));
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3028), null, 80);
         sp2.getFlow().add(new AbstractInterceptor() {
@@ -53,7 +53,7 @@ class IllegalCharactersInURLTest {
 
     @AfterEach
     void unInit() {
-        r.shutdown();
+        r.stop();
     }
 
     @Test
@@ -68,13 +68,13 @@ class IllegalCharactersInURLTest {
 
     @Test
     void illegal_with_router_tolerant_urifactory() throws Exception {
-        r.setUriFactory(new URIFactory(true));
+        r.getConfiguration().setUriFactory(new URIFactory(true));
         makeCallWithIllegalCharacters(200);
     }
 
     @Test
     void illegal_with_router_intolerant_urifactory() throws Exception {
-        r.setUriFactory(new URIFactory(false));
+        r.getConfiguration().setUriFactory(new URIFactory(false));
         makeCallWithIllegalCharacters(400);
     }
 

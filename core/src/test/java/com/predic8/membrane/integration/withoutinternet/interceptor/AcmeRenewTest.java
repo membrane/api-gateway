@@ -67,8 +67,7 @@ public class AcmeRenewTest {
         acme.setContacts("mailto:jsmith@example.com");
         acme.setAcmeSynchronizedStorage(new MemoryStorage());
 
-        HttpRouter router = new HttpRouter();
-        router.setHotDeploy(false);
+        Router router = new TestRouter();
         SSLParser sslParser = new SSLParser();
         sslParser.setAcme(acme);
         ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey(3051), "localhost", 80);
@@ -85,7 +84,8 @@ public class AcmeRenewTest {
         AcmeHttpChallengeInterceptor acmeHttpChallengeInterceptor = new AcmeHttpChallengeInterceptor();
         acmeHttpChallengeInterceptor.setIgnorePort(true);
         sp2.getFlow().add(acmeHttpChallengeInterceptor);
-        router.setRules(ImmutableList.of(sp1, sp2));
+        router.add(sp1);
+        router.add(sp2);
         router.start();
 
         try {

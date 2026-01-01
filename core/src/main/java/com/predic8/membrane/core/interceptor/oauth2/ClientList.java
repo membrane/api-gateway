@@ -13,7 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 
 import java.util.NoSuchElementException;
 

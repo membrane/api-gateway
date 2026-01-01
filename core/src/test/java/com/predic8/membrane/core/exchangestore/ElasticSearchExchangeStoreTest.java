@@ -14,63 +14,68 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.log.LogInterceptor;
-import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import org.jetbrains.annotations.NotNull;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.log.*;
+import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.jetbrains.annotations.*;
 import org.jose4j.base64url.Base64;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
-import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ElasticSearchExchangeStoreTest {
 
-    private static HttpRouter gateway;
-    private static HttpRouter back;
-    private static HttpRouter elasticMock;
-    private static ElasticSearchExchangeStore es;
+    private static final ObjectMapper om = new ObjectMapper();
 
-    private static final List<JsonNode> insertedObjects = new ArrayList<>();
-    private static String RESPONSE_BODY = """
+    private static final String RESPONSE_BODY = """
             {"demo": true}""";
-    private String REQUEST_BODY = """
+    private static final String REQUEST_BODY = """
             {"where":"there"}""";
 
-    @BeforeAll
-    public static void start() throws IOException {
+    private TestRouter gateway;
+    private TestRouter back;
+    private TestRouter elasticMock;
+    private ElasticSearchExchangeStore es;
+
+    private final List<JsonNode> insertedObjects = new ArrayList<>();
+
+    @BeforeEach
+    public void start() throws IOException {
         initializeElasticSearchMock();
         initializeBackend();
     }
 
-    private static void initializeElasticSearchMock() throws IOException {
-        elasticMock = new HttpRouter();
-        elasticMock.setHotDeploy(false);
+    @AfterEach
+    public void done() {
+        try {
+            back.stop();
+        } finally {
+            try {
+                gateway.stop();
+            } finally {
+                elasticMock.stop();
+            }
+        }
+    }
+
+    private void initializeElasticSearchMock() throws IOException {
+        elasticMock = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3066), null, 0);
         sp.getFlow().add(createBodyLoggingInterceptor());
         sp.getFlow().add(createElasticSearchMockInterceptor());
@@ -78,62 +83,52 @@ class ElasticSearchExchangeStoreTest {
         elasticMock.start();
     }
 
-    private static @NotNull LogInterceptor createBodyLoggingInterceptor() {
+    private @NotNull LogInterceptor createBodyLoggingInterceptor() {
         LogInterceptor log = new LogInterceptor();
         log.setBody(true);
         return log;
     }
 
-    private static void initializeGateway(boolean addLoggingInterceptors) throws IOException {
-        gateway = new HttpRouter();
-        gateway.setHotDeploy(false);
+    private void initializeGateway(boolean addLoggingInterceptors) throws IOException {
+        gateway = new TestRouter();
         es = new ElasticSearchExchangeStore();
         es.setLocation("http://localhost:3066");
         es.setUpdateIntervalMs(100);
         gateway.setExchangeStore(es);
-        int index = 4;
-        if (addLoggingInterceptors)
-            gateway.getTransport().getFlow().add(index++, createBodyLoggingInterceptor());
-        gateway.getTransport().getFlow().add(index++, new ExchangeStoreInterceptor());
-        if (addLoggingInterceptors)
-            gateway.getTransport().getFlow().add(index++, createBodyLoggingInterceptor());
         gateway.add(new ServiceProxy(new ServiceProxyKey(3064), "localhost", 3065));
         gateway.start();
+        var global = new GlobalInterceptor();
+        if (addLoggingInterceptors) {
+            global.getFlow().add(createBodyLoggingInterceptor());
+        }
+        global.getFlow().add(new ExchangeStoreInterceptor());
     }
 
-    private static void initializeBackend() throws IOException {
-        back = new HttpRouter();
-        back.setHotDeploy(false);
+    private void initializeBackend() throws IOException {
+        back = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         StaticInterceptor si = new StaticInterceptor();
         si.setSrc(RESPONSE_BODY);
         sp.getFlow().add(si);
         ReturnInterceptor ri = new ReturnInterceptor();
-        ri.setStatusCode(200);
+        ri.setStatus(200);
         sp.getFlow().add(ri);
         back.add(sp);
         back.start();
     }
 
-    @AfterAll
-    public static void done() {
-        back.stop();
-        elasticMock.stop();
-    }
-
-    private static Interceptor createElasticSearchMockInterceptor() {
-        ObjectMapper om = new ObjectMapper();
+    private Interceptor createElasticSearchMockInterceptor() {
         return new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                if (exc.getRequest().isGETRequest()) {
+                if (exc.getRequest().isGETRequest() && exc.getRequest().getUri().equals("/membrane/_mapping")) {
                     exc.setResponse(ok("""
-                        {"acknowledged": true}""").build());
+                            {"membrane": {"mappings": {"something":true}}}""").build());
                     return RETURN;
                 }
-                if (exc.getRequest().getMethod().equals("GET") && exc.getRequest().getUri().equals("/membrane/_mapping")) {
+                if (exc.getRequest().isGETRequest()) {
                     exc.setResponse(ok("""
-                        {"membrane": {"mappings": {"something":true}}}""").build());
+                            {"acknowledged": true}""").build());
                     return RETURN;
                 }
                 return getOutcome(exc, om);
@@ -141,8 +136,8 @@ class ElasticSearchExchangeStoreTest {
         };
     }
 
-    private static @NotNull Outcome getOutcome(Exchange exc, ObjectMapper om) {
-        if (exc.getRequest().getMethod().equals("POST") && exc.getRequest().getUri().equals("/_bulk")) {
+    private @NotNull Outcome getOutcome(Exchange exc, ObjectMapper om) {
+        if (exc.getRequest().isPOSTRequest() && exc.getRequest().getUri().equals("/_bulk")) {
             for (String line : exc.getRequest().getBodyAsStringDecoded().split("\n")) {
                 try {
                     JsonNode obj = om.readTree(line);
@@ -161,9 +156,9 @@ class ElasticSearchExchangeStoreTest {
         return RETURN;
     }
 
-    public static List<JsonNode> getInsertedObjectsAndClearList() {
+    public List<JsonNode> getInsertedObjectsAndClearList() {
         synchronized (insertedObjects) {
-            List<JsonNode> insertedObjects1 = new ArrayList(insertedObjects);
+            List<JsonNode> insertedObjects1 = new ArrayList<>(insertedObjects);
             insertedObjects.clear();
             return insertedObjects1;
         }
@@ -183,9 +178,7 @@ class ElasticSearchExchangeStoreTest {
         initializeGateway(addLoggingInterceptors);
 
         try (var client = new HttpClient()) {
-            client.call(Request.post("http://localhost:3064")
-                    .header(AUTHORIZATION, "Demo")
-                    .body(REQUEST_BODY).buildExchange());
+            client.call(Request.post("http://localhost:3064").header(AUTHORIZATION, "Demo").body(REQUEST_BODY).buildExchange());
         }
 
         waitForExchangeStoreToFlush();
@@ -208,17 +201,11 @@ class ElasticSearchExchangeStoreTest {
         assertTrue(insertedObjects.get(1).get("timeResSent").longValue() > 1740000000000L);
     }
 
-    @AfterEach
-    public void done2() {
-        gateway.stop();
-    }
-
     private void waitForExchangeStoreToFlush() {
         while (true) {
             synchronized (es.shortTermMemoryForBatching) {
                 int size = es.shortTermMemoryForBatching.size();
-                if (size == 0 && !es.updateThreadWorking)
-                    return;
+                if (size == 0 && !es.updateThreadWorking) return;
             }
             try {
                 //noinspection BusyWait

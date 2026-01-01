@@ -49,7 +49,7 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
         try {
             o = dispatchRequest(exc);
         } catch (Exception e) {
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Error dispatching request!")
 					.exception(e)
 					.buildAndSetResponse(exc);

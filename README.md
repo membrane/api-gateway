@@ -747,18 +747,18 @@ api:
 
 ### Transform XML into Text or JSON
 
-Using `setProperty` you can extract values from XML request or response bodies and store it in properties. Then the properties are available as variables inside the `template` plugin.
-plugin.
+You can use XPath to extract values from an XML message and insert them into a `template`.
 
-```xml
-
-<api port="2000">
-    <request>
-        <setProperty name="fn" value="${/person/@firstname}" language="xpath"/>
-        <template>Buenas Noches, ${property.fn}sito!</template>
-    </request>
-    <return/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            src: |
+              Buenas noches, ${fn.xpath('/person/@firstname')}
+        - return:
+            status: 200
 ```
 
 See: [message-transformation examples](./distribution/examples/message-transformation)
@@ -876,7 +876,7 @@ Membrane offers lots of security features to protect backend servers.
 You can define APIs keys directly in your configuration, and Membrane will validate incoming requests against them.
 
 ### Example Configuration
-The following configuration secures the `Fruitshop API` by validating a key provided as a query parameter:
+The following configuration secures the `Fruitshop API` by validating an API key provided as a query parameter:
 
 ```xml
 <api port="2000">

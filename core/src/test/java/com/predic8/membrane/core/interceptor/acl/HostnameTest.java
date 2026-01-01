@@ -20,14 +20,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class HostnameTest {
 
-	static Router router;
+	static DefaultRouter router;
 
 	static Hostname h1;
 	static Hostname h2;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		router = new Router();
+		router = new DefaultRouter();
 
 		h1 = new Hostname(router);
 		h1.setSchema("^localhost$");

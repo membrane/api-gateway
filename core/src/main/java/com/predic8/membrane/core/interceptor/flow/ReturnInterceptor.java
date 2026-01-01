@@ -61,7 +61,7 @@ public class ReturnInterceptor extends AbstractInterceptor {
         } catch (IOException e) {
             String detail = "Could not create response!";
             log.error(detail, e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exc);

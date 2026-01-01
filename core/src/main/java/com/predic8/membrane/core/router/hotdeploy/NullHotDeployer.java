@@ -14,9 +14,11 @@
 
 package com.predic8.membrane.core.router.hotdeploy;
 
+import com.predic8.membrane.core.*;
+
 public class NullHotDeployer implements HotDeployer {
     @Override
-    public void start() {
+    public void start(DefaultRouter router) {
 
     }
 
@@ -24,7 +26,6 @@ public class NullHotDeployer implements HotDeployer {
     public void stop() {
 
     }
-
     @Override
     public void setEnabled(boolean enabled) {
 

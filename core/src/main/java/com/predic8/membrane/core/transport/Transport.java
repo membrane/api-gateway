@@ -33,9 +33,9 @@ public abstract class Transport {
      * SSL and Non-SSL are mixed here, maybe split that in future
      */
     protected final Set<IPortChangeListener> menuListeners = new HashSet<>();
-
     private List<Interceptor> interceptors = new Vector<>();
-    private Router router;
+
+    private DefaultRouter router;
     private boolean reverseDNS = true;
 
     private int concurrentConnectionLimitPerIp = -1;
@@ -53,7 +53,7 @@ public abstract class Transport {
         this.interceptors = flow;
     }
 
-    public void init(Router router) throws Exception {
+    public void init(DefaultRouter router) {
         this.router = router;
 
         if (interceptors.isEmpty()) {
@@ -62,7 +62,7 @@ public abstract class Transport {
             interceptors.add(getExchangeStoreInterceptor());
             interceptors.add(getInterceptor(DispatchingInterceptor.class));
             interceptors.add(getInterceptor(ReverseProxyingInterceptor.class));
-            interceptors.add(router.getGlobalInterceptor());
+            router.getRegistry().getBean(GlobalInterceptor.class).ifPresent(i -> interceptors.add(i ));
             interceptors.add(getInterceptor(UserFeatureInterceptor.class));
             interceptors.add(getInterceptor(InternalRoutingInterceptor.class));
             interceptors.add(getInterceptor(HTTPClientInterceptor.class));
@@ -76,14 +76,18 @@ public abstract class Transport {
     /**
      * Look up an interceptor in the Spring context; fall back to default construction.
      */
-    private @NotNull <T extends Interceptor> T getInterceptor(Class<T> clazz) throws ReflectiveOperationException {
+    private @NotNull <T extends Interceptor> T getInterceptor(Class<T> clazz)  {
         BeanFactory bf = router.getBeanFactory();
         if (bf instanceof ListableBeanFactory lbf) {
             T bean = lbf.getBeanProvider(clazz).getIfAvailable();
             if (bean != null)
                 return bean;
         }
-        return clazz.getConstructor().newInstance();
+        try {
+            return clazz.getConstructor().newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot instantiate object of class %s".formatted(clazz),e);
+        }
     }
 
     /**
@@ -99,7 +103,7 @@ public abstract class Transport {
         return new ExchangeStoreInterceptor(router.getExchangeStore());
     }
 
-    public Router getRouter() {
+    public DefaultRouter getRouter() {
         return router;
     }
 

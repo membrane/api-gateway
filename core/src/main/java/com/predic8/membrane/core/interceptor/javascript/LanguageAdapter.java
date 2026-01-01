@@ -24,7 +24,6 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.context.*;
 
-import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
@@ -91,7 +90,7 @@ public abstract  class LanguageAdapter {
     }
 
     public Function<Map<String, Object>, Object> compileScript(String script) {
-        return languageSupport.compileScript(router.getBackgroundInitializer(), getClassLoader(), prepareScript(script));
+        return languageSupport.compileScript(getClassLoader(), prepareScript(script));
     }
 
     private @Nullable ClassLoader getClassLoader() {

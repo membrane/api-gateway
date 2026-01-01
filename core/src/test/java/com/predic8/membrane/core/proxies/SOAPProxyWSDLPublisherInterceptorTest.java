@@ -28,8 +28,7 @@ public class SOAPProxyWSDLPublisherInterceptorTest {
 
     @BeforeAll
     static void setUp() {
-        router = new HttpRouter();
-        router.setHotDeploy(false);
+        router = new TestRouter();
     }
 
     @AfterAll

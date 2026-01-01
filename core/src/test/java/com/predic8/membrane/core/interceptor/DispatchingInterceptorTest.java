@@ -40,7 +40,7 @@ class DispatchingInterceptorTest {
 
 	@BeforeEach
 	void setUp() {
-		Router router = new Router();
+		DefaultRouter router = new DefaultRouter();
 		dispatcher = new DispatchingInterceptor();
 		dispatcher.init(router);
 		exc = new Exchange(null);

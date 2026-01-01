@@ -27,7 +27,7 @@ public class OpenAPIRecordFactoryIntegrationTest {
 
     @BeforeAll
     static void setUp() {
-        factory = new OpenAPIRecordFactory(new Router());
+        factory = new OpenAPIRecordFactory(new DefaultRouter());
     }
 
     @Test

@@ -32,7 +32,7 @@ class WebServerInterceptorTest {
 
     @BeforeEach
     void init() {
-        r = new Router();
+        r = new DummyTestRouter();
 
         ws = new WebServerInterceptor(r) {{
             setDocBase(Objects.requireNonNull(this.getClass().getResource("/html/")).toString());
@@ -56,13 +56,10 @@ class WebServerInterceptorTest {
     }
 
     @Test
-    void generateIndex() throws Exception {
+    void generateIndex() {
         ws.setGenerateIndex(true);
         ws.handleRequest(exc);
         // No index file is set, but index page is being generated. Body lists the page.html resource.
-        String body = exc.getResponse().getBodyAsStringDecoded();
-        // System.out.println("body = " + body);
-
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("page.html"));
     }
 }

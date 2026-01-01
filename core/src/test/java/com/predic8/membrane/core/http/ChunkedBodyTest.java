@@ -17,15 +17,14 @@ package com.predic8.membrane.core.http;
 import com.fasterxml.jackson.databind.*;
 import com.google.common.io.*;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
-import okhttp3.Call;
-import okhttp3.OkHttpClient;
+import okhttp3.*;
 import org.apache.commons.httpclient.methods.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -42,10 +41,10 @@ import static com.google.common.io.Resources.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.ChunkedBody.*;
 import static com.predic8.membrane.core.http.ChunksBuilder.*;
-import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
-import static java.lang.Thread.sleep;
+import static java.lang.Thread.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -105,7 +104,7 @@ public class ChunkedBodyTest {
 
     @Test
     void testWriteTrailer() throws IOException {
-        HttpRouter router = setupRouter(false, false);
+        Router router = setupRouter(false, false);
         try {
             org.apache.commons.httpclient.HttpClient hc = new org.apache.commons.httpclient.HttpClient();
             for (int i = 0; i < 2; i++) {
@@ -121,9 +120,9 @@ public class ChunkedBodyTest {
     }
 
     @Test
-    void testReadWriteTrailerHttp2() throws IOException {
-        HttpRouter router = setupRouter(false, true);
-        HttpRouter router2 = setupRouter(true, false);
+    void readWriteTrailerHttp2() throws IOException {
+        Router router = setupRouter(false, true);
+        Router router2 = setupRouter(true, false);
         try {
             org.apache.commons.httpclient.HttpClient hc = new org.apache.commons.httpclient.HttpClient();
             for (int i = 0; i < 2; i++) {
@@ -141,7 +140,7 @@ public class ChunkedBodyTest {
 
     @Test
     void testWriteTrailerHttp2() throws IOException, NoSuchAlgorithmException, KeyManagementException {
-        HttpRouter router = setupRouter(true, false);
+        Router router = setupRouter(true, false);
         try {
             X509TrustManager trustAll = new X509TrustManager() {
                 @Override
@@ -174,7 +173,7 @@ public class ChunkedBodyTest {
                     assertEquals("Mon, 12 Dec 2022 09:28:00 GMT", res.trailers().get("Expires"));
                 }
             }
-            try(ExecutorService es = hc.dispatcher().executorService()) {
+            try (ExecutorService es = hc.dispatcher().executorService()) {
                 es.shutdown();
             }
             hc.connectionPool().evictAll();
@@ -183,9 +182,8 @@ public class ChunkedBodyTest {
         }
     }
 
-    private HttpRouter setupRouter(boolean http2, boolean http2Client) {
-        HttpRouter router = new HttpRouter();
-        router.setHotDeploy(false);
+    private Router setupRouter(boolean http2, boolean http2Client) throws IOException {
+        TestRouter router = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(http2 ? 3060 : 3059), "localhost", 3060);
         if (http2) {
             SSLParser sslParser = getSslParserForHttp2();
@@ -193,57 +191,68 @@ public class ChunkedBodyTest {
         }
         AtomicReference<String> remoteSocketAddr = new AtomicReference<>();
         if (http2Client) {
-            HTTPClientInterceptor interceptor = (HTTPClientInterceptor) router.getTransport().getFlow().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().get();
-            HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
-            httpClientConfig.setUseExperimentalHttp2(true);
-            interceptor.setHttpClientConfig(httpClientConfig);
+//            HTTPClientInterceptor interceptor = (HTTPClientInterceptor) router.getTransport().getFlow().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().get();
+//            HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
+//            httpClientConfig.setUseExperimentalHttp2(true);
+//            interceptor.setHttpClientConfig(httpClientConfig);
             SSLParser sslParser2 = getSslParserForHttp2Client();
             sp.getTarget().setSslParser(sslParser2);
         } else {
-            sp.getFlow().add(new AbstractInterceptor() {
-                @Override
-                public Outcome handleRequest(Exchange exc) {
-                    String remoteAddr = getRemoteAddr(exc);
-                    if (remoteSocketAddr.get() == null) {
-                        remoteSocketAddr.set(remoteAddr);
-                    } else if (!remoteAddr.equals(remoteSocketAddr.get())) {
-                        throw new RuntimeException("Keep-Alive is not working.");
-                    }
-
-                    if (http2 && exc.getProperty(HTTP2_SERVER) == null)
-                        throw new RuntimeException("HTTP/2 is not being used.");
-                    if (!http2 && exc.getProperty(HTTP2_SERVER) != null)
-                        throw new RuntimeException("HTTP/2 is being used.");
-
-                    Response r = Response.ok().build();
-                    r.getHeader().removeFields("Content-Length");
-                    r.getHeader().setValue("Transfer-Encoding", "chunked");
-                    r.getHeader().setValue("Content-Type", "text/plain");
-                    r.getHeader().setValue("Trailer", "Expires");
-                    r.setBody(new ChunkedBody(new ByteArrayInputStream(getContent())));
-                    exc.setResponse(r);
-                    return RETURN;
-                }
-
-                private static String getRemoteAddr(Exchange exc) {
-                    return ((HttpServerHandler) exc.getHandler()).getSourceSocket().getRemoteSocketAddress().toString();
-                }
-
-                private static byte[] getContent() {
-                    String cont;
-                    try {
-                        cont = Resources.toString(getResource("chunked-body-with-trailer.txt"), US_ASCII);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
-                    return cont.getBytes(US_ASCII);
-                }
-            });
+            sp.getFlow().add(getInterceptor(http2, remoteSocketAddr));
         }
-        router.getRules().add(sp);
+        router.add(sp);
         router.start();
+        if (http2Client) {
+            HTTPClientInterceptor interceptor = router.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
+            HttpClientConfiguration cfg = new HttpClientConfiguration();
+            cfg.setUseExperimentalHttp2(true);
+            interceptor.setHttpClientConfig(cfg);
+            interceptor.init(); // Copies the config into the HttpClient. It is needed to call because router.start() above already called init()
+        }
         return router;
+    }
+
+    private static @NotNull AbstractInterceptor getInterceptor(boolean http2, AtomicReference<String> remoteSocketAddr) {
+        return new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                String remoteAddr = getRemoteAddr(exc);
+                if (remoteSocketAddr.get() == null) {
+                    remoteSocketAddr.set(remoteAddr);
+                } else if (!remoteAddr.equals(remoteSocketAddr.get())) {
+                    throw new RuntimeException("Keep-Alive is not working.");
+                }
+
+                if (http2 && exc.getProperty(HTTP2_SERVER) == null)
+                    throw new RuntimeException("HTTP/2 is not being used.");
+                if (!http2 && exc.getProperty(HTTP2_SERVER) != null)
+                    throw new RuntimeException("HTTP/2 is being used.");
+
+                Response r = Response.ok().build();
+                r.getHeader().removeFields("Content-Length");
+                r.getHeader().setValue("Transfer-Encoding", "chunked");
+                r.getHeader().setValue("Content-Type", "text/plain");
+                r.getHeader().setValue("Trailer", "Expires");
+                r.setBody(new ChunkedBody(new ByteArrayInputStream(getContent())));
+                exc.setResponse(r);
+                return RETURN;
+            }
+
+            private static String getRemoteAddr(Exchange exc) {
+                return ((HttpServerHandler) exc.getHandler()).getSourceSocket().getRemoteSocketAddress().toString();
+            }
+
+            private static byte[] getContent() {
+                String cont;
+                try {
+                    cont = Resources.toString(getResource("chunked-body-with-trailer.txt"), US_ASCII);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                cont = cont.replaceAll("\n", "").replaceAll("\r", "").replaceAll("\\\\n", "\n").replaceAll("\\\\r", "\r");
+                return cont.getBytes(US_ASCII);
+            }
+        };
     }
 
     private static @NotNull SSLParser getSslParserForHttp2() {
@@ -285,7 +294,7 @@ public class ChunkedBodyTest {
         ByteArrayInputStream is = new ByteArrayInputStream(trailer);
         assertEquals(61, readChunkSize(is)); // 3D = 61
         readTrailer(is);
-        assertEquals( 0,is.available()); // Check that everything is read
+        assertEquals(0, is.available()); // Check that everything is read
     }
 
     @Test
@@ -306,7 +315,7 @@ public class ChunkedBodyTest {
         //  0 + CRLF + CRLF is not read yet
         assertFalse(cb.read);
 
-        if(!(is instanceof BodyInputStream bodyIs)) {
+        if (!(is instanceof BodyInputStream bodyIs)) {
             fail();
             return;
         }
@@ -329,7 +338,7 @@ public class ChunkedBodyTest {
         // Re-Read JSON from the body (both reads will leave the final end-chunk unread)
         assertEquals(42, om.readTree(cb.getContentAsStream()).get("foo").asInt());
 
-        if(!(cb.getContentAsStream() instanceof BodyInputStream bodyIs)) {
+        if (!(cb.getContentAsStream() instanceof BodyInputStream bodyIs)) {
             fail();
             return;
         }
@@ -374,7 +383,7 @@ public class ChunkedBodyTest {
         // Read the second JSON from the body
         assertEquals(43, om.readTree(is).get("foo").asInt());
 
-        if(!(is instanceof BodyInputStream bodyIs)) {
+        if (!(is instanceof BodyInputStream bodyIs)) {
             fail();
             return;
         }

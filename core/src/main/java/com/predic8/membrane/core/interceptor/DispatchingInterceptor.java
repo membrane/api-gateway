@@ -66,7 +66,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
                 pd.buildAndSetResponse(exc);
                 return ABORT;
             } catch (Exception e) {
-                internal(router.isProduction(), getDisplayName())
+                internal(router.getConfiguration().isProduction(), getDisplayName())
                         .detail("Could not get forwarding destination to dispatch request")
                         .exception(e)
                         .buildAndSetResponse(exc);

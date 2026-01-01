@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.*;

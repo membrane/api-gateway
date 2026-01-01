@@ -19,10 +19,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.templating.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
 import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -38,14 +35,10 @@ public class Swagger20Test {
 
     @BeforeEach
     public void setUp() throws Exception {
-
-        router = new Router();
-        router.setTransport(new HttpTransport());
-        router.setUriFactory(new URIFactory());
-
-        router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy());
-        router.getRuleManager().addProxyAndOpenPortIfNew(getTargetProxy());
-        router.init();
+        router = new TestRouter();
+        router.add(getApiProxy());
+        router.add(getTargetProxy());
+        router.start();
     }
 
     private @NotNull APIProxy getApiProxy() {
@@ -73,7 +66,7 @@ public class Swagger20Test {
 
     @AfterEach
     public void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

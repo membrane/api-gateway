@@ -26,32 +26,33 @@ public class ConnectionTest {
 	Connection conLocalhost;
 	Connection con127_0_0_1;
 
-	HttpRouter router;
+	Router router;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	void setUp() throws Exception {
 
 		ServiceProxy proxy2000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "predic8.com", 80);
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy2000);
+		router = new TestRouter();
+		router.add(proxy2000);
+		router.start();
 
 		conLocalhost = Connection.open("localhost", 2000, null, null, 30000);
 		con127_0_0_1 = Connection.open("127.0.0.1", 2000, null, null, 30000);
 	}
 
 	@AfterEach
-	public void tearDown() throws Exception {
+	void tearDown() throws Exception {
 		conLocalhost.close();
 		con127_0_0_1.close();
 		assertTrue(conLocalhost.isClosed());
 		assertTrue(con127_0_0_1.isClosed());
 
-		router.shutdown();
+		router.stop();
 	}
 
 
 	@Test
-	public void testIsSame() {
+	void isSame() {
 		assertTrue(conLocalhost.isSame("127.0.0.1", 2000));
 		assertTrue(con127_0_0_1.isSame("localhost", 2000));
 	}

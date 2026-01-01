@@ -66,7 +66,7 @@ public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 		if (!beanDefinitionRegistry.containsBeanDefinition("router")) {
 			beanDefinitionRegistry.registerBeanDefinition(
 					"router",
-					root().clazz(Router.class).addRef("transport", "transport").addRef("exchangeStore", "memoryExchangeStore").build());
+					root().clazz(DefaultRouter.class).addRef("transport", "transport").addRef("exchangeStore", "memoryExchangeStore").build());
 		}
 	}
 

@@ -22,11 +22,11 @@ import java.io.*;
 
 public class InternalInvocationTest {
 
-	private Router router;
+	private DefaultRouter router;
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		router = Router.init("classpath:/internal-invocation/proxies.xml");
+		router = RouterXmlBootstrap.initByXML("classpath:/internal-invocation/proxies.xml");
 		MockInterceptor.clear();
 	}
 
@@ -52,7 +52,7 @@ public class InternalInvocationTest {
 
 	@AfterEach
 	public void tearDown() throws Exception {
-		router.shutdown();
+		router.stop();
 	}
 
 	private void callService(int port) throws IOException {

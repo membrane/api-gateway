@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.GlobalInterceptor;
@@ -32,21 +33,22 @@ public class HttpTransportTest {
 	private final ResolverMap resolverMap = mock(ResolverMap.class);
 	private final SSLProvider sslProvider = mock(SSLProvider.class);
 	private final RuleManager ruleManager = mock(RuleManager.class);
-	private final Router router = mock(Router.class);
+	private final DefaultRouter router = mock(DefaultRouter.class);
 	private final ExchangeStore exchangeStore = mock(ExchangeStore.class);
 	private final Statistics statistics = new Statistics();
 	private HttpTransport transport;
 	private final GlobalInterceptor globalInterceptor = new GlobalInterceptor();
 
 	@BeforeEach
-	public void before() throws Exception {
+	void before() throws Exception {
 		when(resolverMap.getHTTPSchemaResolver()).thenReturn(httpSchemaResolver);
 		when(router.getResolverMap()).thenReturn(resolverMap);
 		when(router.getRuleManager()).thenReturn(ruleManager);
 		when(router.getExchangeStore()).thenReturn(exchangeStore);
-		when(router.getGlobalInterceptor()).thenReturn(globalInterceptor);
 		when(router.getHttpClientFactory()).thenReturn(new HttpClientFactory(null));
 		when(router.getStatistics()).thenReturn(statistics);
+		BeanRegistryImplementation value = new BeanRegistryImplementation(null, router, null); // Do not inline! Otherwise mocking is not possible!
+		when(router.getRegistry()).thenReturn(value);
 
 		transport = new HttpTransport();
 		transport.init(router);

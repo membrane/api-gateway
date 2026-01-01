@@ -32,7 +32,7 @@ public class ReverseProxyingInterceptorTest {
 
 	@Test
 	public void localRedirect() {
-		rp.init(new Router());
+		rp.init(new DefaultRouter());
 		// invalid by spec, redirection location should not be rewritten
 		assertEquals("/local", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "/local"));
 	}

@@ -62,7 +62,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 			rewrite(exc);
 		} catch (Exception e) {
 			log.error("",e);
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Error rewriting URI")
 					.topLevel("URI", exc.getRequestURI())
 					.exception(e)

@@ -13,9 +13,9 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.core.type.*;
 import com.fasterxml.jackson.databind.*;
-import com.google.code.yanf4j.util.ConcurrentHashSet;
+import com.google.code.yanf4j.util.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -37,51 +37,48 @@ import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
-import java.util.stream.IntStream;
+import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.http.Request.post;
-import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.MEMBRANE_MISSING_SESSION_DESCRIPTION;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2CallbackRequestHandler.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class OAuth2ResourceTest {
 
     protected final BrowserMock browser = new BrowserMock();
     private final int limit = 100;
-    protected HttpRouter mockAuthServer;
+    protected TestRouter mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final Logger LOG = LoggerFactory.getLogger(OAuth2ResourceTest.class);
     final int serverPort = 3062;
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
-    private HttpRouter oauth2Resource;
+    private TestRouter oauth2Resource;
 
     private String getServerAddress() {
-        return "http://" + serverHost + ":" + serverPort;
+        return "http://%s:%d".formatted(serverHost, serverPort);
     }
 
     protected String getClientAddress() {
-        return "http://" + serverHost + ":" + clientPort;
+        return "http://%s:%d".formatted(serverHost, clientPort);
     }
 
     @BeforeEach
     public void init() throws IOException {
-        mockAuthServer = new HttpRouter();
+        mockAuthServer = new TestRouter();
+        mockAuthServer.add(getMockAuthServiceProxy());
+        mockAuthServer.start();
         mockAuthServer.getTransport().setBacklog(10000);
         mockAuthServer.getTransport().setSocketTimeout(10000);
-        mockAuthServer.setHotDeploy(false);
-        mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit+1);
-        mockAuthServer.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy());
-        mockAuthServer.start();
+        mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit + 1);
 
-        oauth2Resource = new HttpRouter();
+        oauth2Resource = new TestRouter();
+        oauth2Resource.add(getConfiguredOAuth2Resource());
+        oauth2Resource.start();
         oauth2Resource.getTransport().setBacklog(10000);
         oauth2Resource.getTransport().setSocketTimeout(10000);
-        oauth2Resource.setHotDeploy(false);
-        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit+1);
-        oauth2Resource.getRuleManager().addProxyAndOpenPortIfNew(getConfiguredOAuth2Resource());
-        oauth2Resource.start();
+        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit + 1);
     }
 
     @AfterEach
@@ -96,7 +93,8 @@ public abstract class OAuth2ResourceTest {
     public void getOriginalRequest() throws Exception {
         var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
         assertEquals(200, response.getStatusCode());
-        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
+        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {
+        });
         assertEquals("/init", body.get("path"));
         assertEquals("", body.get("body"));
         assertEquals("GET", body.get("method"));
@@ -106,7 +104,8 @@ public abstract class OAuth2ResourceTest {
     public void postOriginalRequest() throws Exception {
         var response = browser.apply(post(getClientAddress() + "/init").body("demobody")).getResponse();
         assertEquals(200, response.getStatusCode());
-        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
+        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {
+        });
         assertEquals("/init", body.get("path"));
         assertEquals("demobody", body.get("body"));
         assertEquals("POST", body.get("method"));
@@ -117,7 +116,8 @@ public abstract class OAuth2ResourceTest {
     void testUseRefreshTokenOnTokenExpiration() throws Exception {
         var response = browser.apply(get(getClientAddress() + "/init")).getResponse();
         assertEquals(200, response.getStatusCode());
-        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {});
+        var body = om.readValue(response.getBodyAsStream(), new TypeReference<Map<String, String>>() {
+        });
         assertEquals("/init", body.get("path"));
 
         CountDownLatch cdl = new CountDownLatch(limit);
@@ -135,7 +135,8 @@ public abstract class OAuth2ResourceTest {
             cdl.await();
             String path = "/" + UUID.randomUUID();
             var response = browser.apply(get(getClientAddress() + path)).getResponse();
-            var body = om.readValue(response.getBodyAsStringDecoded(), new TypeReference<Map<String, String>>() {});
+            var body = om.readValue(response.getBodyAsStringDecoded(), new TypeReference<Map<String, String>>() {
+            });
             assertEquals(path, body.get("path"));
             return body.get("accessToken");
         } catch (Exception e) {
@@ -283,9 +284,9 @@ public abstract class OAuth2ResourceTest {
                 } else if (exc.getRequestURI().startsWith("/auth?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     return new FormPostGenerator(getClientAddress() + "/oauth2callback")
-                        .withParameter("state", params.get("state"))
-                        .withParameter("code", params.get("1234"))
-                        .build();
+                            .withParameter("state", params.get("state"))
+                            .withParameter("code", params.get("1234"))
+                            .build();
                 } else if (exc.getRequestURI().startsWith("/token")) {
                     ObjectMapper om = new ObjectMapper();
                     var responseData = Map.ofEntries(

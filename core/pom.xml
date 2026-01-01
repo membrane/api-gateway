@@ -23,7 +23,7 @@
         <groupId>org.membrane-soa</groupId>
         <artifactId>service-proxy-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>7.0.5-SNAPSHOT</version>
+        <version>7.0.6-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -70,7 +70,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
-            <version>1.14.0</version>
+            <version>1.15.0</version>
         </dependency>
 
         <dependency>
@@ -187,7 +187,7 @@
         <dependency>
             <groupId>org.mozilla</groupId>
             <artifactId>rhino-engine</artifactId>
-            <version>1.8.0</version>
+            <version>1.8.1</version>
         </dependency>
         <dependency>
             <groupId>org.graalvm.sdk</groupId>

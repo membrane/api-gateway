@@ -34,15 +34,14 @@ import java.io.*;
 import java.math.*;
 import java.security.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static java.net.URLEncoder.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MockAuthorizationServer {
@@ -53,7 +52,7 @@ public class MockAuthorizationServer {
     private final SecureRandom rand = new SecureRandom();
     private final ObjectMapper om = new ObjectMapper();
 
-    private HttpRouter mockAuthServer;
+    private TestRouter mockAuthServer;
 
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
@@ -78,15 +77,14 @@ public class MockAuthorizationServer {
         issuer = baseServerAddr + "/v2.0/";
         createKey();
 
-        mockAuthServer = new HttpRouter();
+        mockAuthServer = new TestRouter();
+        mockAuthServer.add(getMockAuthServiceProxy(SERVER_PORT, tc.susiFlowId));
+        mockAuthServer.add(getMockAuthServiceProxy(SERVER_PORT, tc.peFlowId));
+        mockAuthServer.add(getMockAuthServiceProxy(SERVER_PORT, tc.pe2FlowId));
+        mockAuthServer.start();
         mockAuthServer.getTransport().setBacklog(10000);
         mockAuthServer.getTransport().setSocketTimeout(10000);
-        mockAuthServer.setHotDeploy(false);
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(tc.limit * 100);
-        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(SERVER_PORT, tc.susiFlowId), MANUAL);
-        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(SERVER_PORT, tc.peFlowId), MANUAL);
-        mockAuthServer.getRuleManager().addProxy(getMockAuthServiceProxy(SERVER_PORT, tc.pe2FlowId), MANUAL);
-        mockAuthServer.start();
     }
 
     public void stop() {
@@ -149,7 +147,7 @@ public class MockAuthorizationServer {
                     return handleTokenRequest(flowId, exc);
                 } else if (requestURI.contains("/logout")) {
                     onLogout.run();
-                    return Response.redirect( params.get("post_logout_redirect_uri"), 302).build();
+                    return Response.redirect(params.get("post_logout_redirect_uri"), 302).build();
                 } else {
                     return Response.notFound().build();
                 }

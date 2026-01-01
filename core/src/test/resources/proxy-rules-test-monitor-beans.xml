@@ -11,7 +11,7 @@
 
 	<context:annotation-config />
 
-	<bean id="router" class="com.predic8.membrane.core.Router">
+	<bean id="router" class="com.predic8.membrane.core.DefaultRouter">
 		<property name="ruleManager">
 			<bean class="com.predic8.membrane.core.RuleManager" />
 		</property>

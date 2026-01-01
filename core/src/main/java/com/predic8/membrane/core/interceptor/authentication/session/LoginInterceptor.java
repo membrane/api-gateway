@@ -150,7 +150,7 @@ public class LoginInterceptor extends AbstractInterceptor implements ProxyAware 
                 loginDialog.handleLoginRequest(exc);
             } catch (Exception e) {
 				log.error("",e);
-				internal(router.isProduction(),getDisplayName())
+				internal(router.getConfiguration().isProduction(),getDisplayName())
 						.detail("Could not handle login request.!")
 						.exception(e)
 						.buildAndSetResponse(exc);

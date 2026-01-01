@@ -1,4 +1,4 @@
-/* Copyright 2009, 2011 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,17 +11,10 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.integration.*;
-import org.junit.platform.suite.api.SelectClasses;
-import org.junit.platform.suite.api.Suite;
+package com.predic8.membrane.annot.beanregistry;
 
-@Suite
-@SelectClasses({
-        UnitTests.class,
-        IntegrationTestsWithoutInternet.class,
-        IntegrationTestsWithInternet.class
-})
-public class AllTests {}
+public interface BeanRegistryAware {
+    void setRegistry(BeanRegistry registry);
+}
+

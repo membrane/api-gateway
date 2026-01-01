@@ -56,7 +56,7 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
             transformAndReplaceBody(exc.getRequest(), requestXSLT, new StreamSource(exc.getRequest().getBodyAsStreamDecoded()), exc.getStringProperties());
         } catch (Exception e) {
 			log.error("", e);
-			user(router.isProduction(),getDisplayName())
+			user(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not transform using XSLT!")
 					.exception(e)
 					.stacktrace(true)
@@ -83,7 +83,7 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
             transformAndReplaceBody(exc.getResponse(), responseXSLT, getExchangeXMLSource(exc), exc.getStringProperties());
         } catch (Exception e) {
 			log.error("", e);
-			user(router.isProduction(),getDisplayName())
+			user(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not transform using XSLT!")
 					.exception(e)
 					.buildAndSetResponse(exc);

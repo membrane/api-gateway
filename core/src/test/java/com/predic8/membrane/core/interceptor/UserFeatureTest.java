@@ -30,13 +30,13 @@ class UserFeatureTest {
 	public static final String MOCK_5 = "mock5";
 	public static final String MOCK_6 = "mock6";
 	public static final String MOCK_2 = "mock2";
-	private static Router router;
+	private static DefaultRouter router;
 
 	static List<String> labels, inverseLabels, inversAbortLabels;
 
 	@BeforeAll
 	static void setUp() {
-		router = Router.init("classpath:/userFeature/proxies.xml");
+		router = RouterXmlBootstrap.initByXML("classpath:/userFeature/proxies.xml");
 		MockInterceptor.clear();
 	}
 
@@ -49,8 +49,8 @@ class UserFeatureTest {
 	}
 
 	@AfterAll
-	static void tearDown() throws Exception {
-		router.shutdown();
+	static void tearDown() {
+		router.stop();
 	}
 
 	private void callService(String s) {
@@ -60,19 +60,19 @@ class UserFeatureTest {
 	}
 
 	@Test
-	void testInvocation() throws Exception {
+	void testInvocation() {
 		callService("ok");
 		MockInterceptor.assertContent(labels, inverseLabels, new ArrayList<>());
 	}
 
 	@Test
-	void testAbort() throws Exception {
+	void testAbort() {
 		callService("abort");
 		MockInterceptor.assertContent(labels, new ArrayList<>(), inversAbortLabels);
 	}
 
 	@Test
-	void testFailInRequest() throws Exception {
+	void testFailInRequest() {
 		labels.add("mock8");
 
 		callService("failinrequest");
@@ -80,7 +80,7 @@ class UserFeatureTest {
 	}
 
 	@Test
-	void testFailInResponse() throws Exception {
+	void testFailInResponse() {
 		labels.add("mock9");
 
 		callService("failinresponse");
@@ -88,9 +88,9 @@ class UserFeatureTest {
 	}
 
 	@Test
-	void testFailInAbort() throws Exception {
+	void testFailInAbort() {
 		labels.add("mock10");
-		inversAbortLabels.add(0, "mock10");
+		inversAbortLabels.addFirst("mock10");
 
 		callService("failinabort");
 		MockInterceptor.assertContent(labels, new ArrayList<>(), inversAbortLabels);

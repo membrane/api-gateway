@@ -39,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OAuth2Test {
 
-    static Router router;
-    static Router router2;
+    static DefaultRouter router;
+    static DefaultRouter router2;
 
     static ServiceProxy oAuth2ServerProxy;
     static OAuth2AuthorizationServerInterceptor oAuth2ASI;
@@ -53,8 +53,8 @@ class OAuth2Test {
 
     @BeforeAll
     static void startup() throws Exception {
-        router = new Router();
-        router.setHotDeploy(false);
+        router = new DefaultRouter();
+        router.getConfiguration().setHotDeploy(false);
         router.setExchangeStore(new ForgetfulExchangeStore());
         router.setTransport(new HttpTransport());
 
@@ -67,8 +67,8 @@ class OAuth2Test {
         router.init();
         router.start();
 
-        router2 = new Router();
-        router2.setHotDeploy(false);
+        router2 = new DefaultRouter();
+        router2.getConfiguration().setHotDeploy(false);
         router2.setExchangeStore(new ForgetfulExchangeStore());
         router2.setTransport(new HttpTransport());
 

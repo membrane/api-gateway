@@ -14,11 +14,13 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.FileExchangeStore;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
+import org.slf4j.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -31,6 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase {
+
+	private static final Logger log = LoggerFactory.getLogger(FileExchangeStoreExampleTest.class.getName());
 
 	@Override
 	protected String getExampleDirName() {
@@ -124,6 +128,7 @@ public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase
 	}
 
 	private boolean containsRecursively(File base, FilenameFilter filter) {
+		log.info("Checking {} for {}", base, filter);
 		//noinspection ConstantConditions
 		for (File f : base.listFiles()) {
 			if (f.isDirectory())

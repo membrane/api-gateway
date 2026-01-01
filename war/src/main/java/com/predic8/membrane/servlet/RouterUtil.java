@@ -20,18 +20,18 @@ import jakarta.servlet.ServletContext;
 
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.DefaultRouter;
 import com.predic8.membrane.servlet.embedded.ServletTransport;
 
 public class RouterUtil {
-	public static Router initializeRoutersFromSpringWebContext(XmlWebApplicationContext appCtx, final ServletContext ctx, String configLocation) {
+	public static DefaultRouter initializeRoutersFromSpringWebContext(XmlWebApplicationContext appCtx, final ServletContext ctx, String configLocation) {
 		appCtx.setServletContext(ctx);
 		appCtx.setConfigLocation(configLocation);
 		appCtx.refresh();
 
-		Collection<Router> routers = appCtx.getBeansOfType(Router.class).values();
-		Router theOne = null;
-		for (Router r : routers) {
+		Collection<DefaultRouter> routers = appCtx.getBeansOfType(DefaultRouter.class).values();
+		DefaultRouter theOne = null;
+		for (DefaultRouter r : routers) {
 			r.getResolverMap().addSchemaResolver(new FileSchemaWebAppResolver(ctx));
 			if (r.getTransport() instanceof ServletTransport) {
 				if (theOne != null)

@@ -15,7 +15,9 @@ limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import org.jetbrains.annotations.*;
 
@@ -46,7 +48,7 @@ public class SSLableProxy extends AbstractProxy {
 			if (acmeCtx == null)
 				acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager());
 			setSslInboundContext(acmeCtx);
-			acmeCtx.init(router.getKubernetesClientFactory(), router.getHttpClientFactory());
+			acmeCtx.init(router);
 			return;
 		}
 		sslInboundContext = generateSslInboundContext();

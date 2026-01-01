@@ -69,7 +69,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
         try {
             replaceBody(message);
         } catch (Exception e) {
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Could not replace body!")
                     .exception(e)
                     .buildAndSetResponse(exc);

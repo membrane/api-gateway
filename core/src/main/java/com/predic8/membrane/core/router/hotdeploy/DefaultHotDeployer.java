@@ -16,6 +16,7 @@ package com.predic8.membrane.core.router.hotdeploy;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
@@ -24,22 +25,26 @@ public class DefaultHotDeployer implements HotDeployer {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultHotDeployer.class.getName());
 
-    @GuardedBy("this")
+    @GuardedBy("lock")
     private HotDeploymentThread hdt;
 
-    private Router router;
+    private DefaultRouter router;
+
+    private final Object lock = new Object();
 
     @Override
-    public void init(Router router) {
+    public void start(@NotNull DefaultRouter router) {
         this.router = router;
+        startInternal();
     }
 
-    @Override
-    public void start() {
+    private void startInternal() {
         // Prevent multiple threads from starting hot deployment at the same time.
-        synchronized (this) {
-            if (hdt != null)
-                throw new IllegalStateException("Hot deployment already started.");
+        synchronized (lock) {
+            if (hdt != null) {
+                log.warn("Hot deployment already started.");
+                return;
+            }
 
             if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
                 log.warn("""
@@ -56,11 +61,11 @@ public class DefaultHotDeployer implements HotDeployer {
 
     @Override
     public void stop() {
-        synchronized (this) {
+        synchronized (lock) {
             if (hdt == null)
                 return;
 
-            router.stopAutoReinitializer();
+            router.getReinitializer().stop();
             hdt.stopASAP();
             hdt = null;
         }
@@ -68,8 +73,8 @@ public class DefaultHotDeployer implements HotDeployer {
 
     @Override
     public void setEnabled(boolean enabled) {
-        if (enabled)
-            start();
+        if (enabled && router != null)
+            startInternal();
         else
             stop();
     }

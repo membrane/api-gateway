@@ -79,7 +79,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome deny(Exchange exc) {
-		security(router.isProduction(),getDisplayName())
+		security(router.getConfiguration().isProduction(),getDisplayName())
 						.status(401)
 						.title("Unauthorized")
 						.buildAndSetResponse(exc);

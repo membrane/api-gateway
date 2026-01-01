@@ -25,21 +25,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SpringReferencesTest {
 
-	private static Router r;
+	private static DefaultRouter r;
 
 	@BeforeAll
 	public static void before() {
-		r = Router.init("classpath:/proxies-using-spring-refs.xml");
+		r = RouterXmlBootstrap.initByXML("classpath:/proxies-using-spring-refs.xml");
 	}
 
 	@AfterAll
 	public static void after() {
-		r.shutdown();
+		r.stop();
 	}
 
 	@Test
 	public void doit() {
-		ServiceProxy p = (ServiceProxy) r.getRules().iterator().next();
+		ServiceProxy p = (ServiceProxy) r.getRuleManager().getRules().getFirst();
 		List<Interceptor> is = p.getFlow();
 
 		assertEquals(LogInterceptor.class, is.get(0).getClass());

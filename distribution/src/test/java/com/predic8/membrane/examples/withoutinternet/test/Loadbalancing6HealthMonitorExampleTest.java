@@ -189,7 +189,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
         void https_adminShowsNodesUp() throws Exception {
             ensureCertificates();
             try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
-                // @formatter:off
+            // @formatter:off
             String html = given()
                 .relaxedHTTPSValidation()
             .get(ADMIN_URL_HTTPS).then()

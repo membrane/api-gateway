@@ -36,6 +36,7 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.net.SocketFactory;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
@@ -46,7 +47,6 @@ import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 
 /**
  * @description A <i>user data provider</i> querying an LDAP server to authorize users and retrieve attributes.

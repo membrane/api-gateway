@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.resolver.ResolverMap;
@@ -44,10 +44,12 @@ public class JwtAuthInterceptorTest{
     public static final String KID = "membrane";
     public static final String SUB_CLAIM_CONTENT = "Till, der fleissige Programmierer";
     private static final String AUDIENCE = "AusgestelltFuer";
+    private static final String TENANT_ID = "Tenant12345";
 
     public static Stream<Named<TestData>> data() throws Exception {
         return Stream.of(happyPath(),
                 wrongAudience(),
+                wrongTenantId(),
                 manipulatedSignature(),
                 unknownKey(),
                 wrongKId(),
@@ -188,6 +190,20 @@ public class JwtAuthInterceptorTest{
         );
     }
 
+    private static TestData wrongTenantId() {
+        return new TestData(
+                "wrongTenantId",
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
+                        .get("")
+                        .header("Authorization", "Bearer " + getSignedJwt(privateKey, getClaimsWithWrongTenantId()))
+                        .buildExchange(),
+                (Exchange exc) -> {
+                    assertTrue(exc.getResponse().isUserError());
+                    assertNull(exc.getProperties().get("jwt"));
+                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                }
+        );
+    }
 
     private static TestData happyPath() {
         return new TestData(
@@ -224,7 +240,7 @@ public class JwtAuthInterceptorTest{
 
     @ParameterizedTest
     @MethodSource("data")
-    public void test(TestData data) throws Exception{
+    void test(TestData data) throws Exception{
         RsaJsonWebKey privateKey = RsaJwkGenerator.generateJwk(2048);
         privateKey.setKeyId(KID);
 
@@ -245,10 +261,11 @@ public class JwtAuthInterceptorTest{
     }
 
     private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
-        Router routerMock = mock(Router.class);
-        when(routerMock.getBaseLocation()).thenReturn("");
-        when(routerMock.getResolverMap()).thenReturn(new ResolverMap());
-        interceptor.init(routerMock);
+        DefaultRouter mock = mock(DefaultRouter.class);
+        when(mock.getBaseLocation()).thenReturn("");
+        when(mock.getResolverMap()).thenReturn(new ResolverMap());
+        when(mock.getConfiguration()).thenReturn(new Configuration());
+        interceptor.init(mock);
         return interceptor;
     }
 
@@ -262,11 +279,12 @@ public class JwtAuthInterceptorTest{
         jwks.getJwks().add(jwk);
         interceptor.setJwks(jwks);
         interceptor.setExpectedAud(AUDIENCE);
+        interceptor.setExpectedTid(TENANT_ID);
         return interceptor;
     }
 
     private static String getSignedJwt(RsaJsonWebKey privateKey) throws JoseException {
-        return getSignedJwt(privateKey,createClaims(AUDIENCE));
+        return getSignedJwt(privateKey,createClaims(AUDIENCE, TENANT_ID));
     }
 
     private static String getSignedJwt(RsaJsonWebKey privateKey, JwtClaims claims) throws JoseException {
@@ -281,19 +299,23 @@ public class JwtAuthInterceptorTest{
         return jws.getCompactSerialization();
     }
 
-    private static JwtClaims createClaims(String audience){
+    private static JwtClaims createClaims(String audience, String tenantId){
         JwtClaims claims = new JwtClaims();
         claims.setExpirationTimeMinutesInTheFuture(10);
         claims.setIssuedAtToNow();
         claims.setNotBeforeMinutesInThePast(30);
         claims.setSubject(SUB_CLAIM_CONTENT);
         claims.setAudience(audience);
+        claims.setClaim("tid", tenantId);
 
         return claims;
     }
 
     private static JwtClaims getClaimsWithWrongAudience() {
-        return createClaims(AUDIENCE + "1");
+        return createClaims(AUDIENCE + "1", TENANT_ID);
     }
 
+    private static JwtClaims getClaimsWithWrongTenantId() {
+        return createClaims(AUDIENCE, TENANT_ID + "1");
+    }
 }

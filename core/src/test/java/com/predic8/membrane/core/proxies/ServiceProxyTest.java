@@ -30,17 +30,17 @@ class ServiceProxyTest {
 
     @BeforeAll
     public static void setup() throws Exception {
-        router = new HttpRouter();
+        router = new TestRouter();
         APIProxy proxyWithOutTarget = new APIProxy() {{
             key = new APIProxyKey(2000);
         }};
         router.add(proxyWithOutTarget);
-        router.init();
+        router.start();
     }
 
     @AfterAll
     public static void shutdown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

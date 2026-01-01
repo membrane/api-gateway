@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ConcurrentConnectionLimitTest {
 
-    private HttpRouter router;
+    private Router router;
     private ExecutorService executor;
     private final int concurrency = 100;
     private final int concurrentLimit = 10;
@@ -40,21 +40,21 @@ public class ConcurrentConnectionLimitTest {
     public void setup() throws Exception{
         executor = Executors.newFixedThreadPool(concurrency);
 
-        router = new HttpRouter();
-        router.getTransport().setConcurrentConnectionLimitPerIp(concurrentLimit);
+        router = new TestRouter();
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "", -1);
 
         sp.getFlow().add(GROOVY("Thread.sleep(1000)"));
         sp.getFlow().add(RETURN);
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
-        router.init();
+        router.add(sp);
+        router.start();
+        router.getTransport().setConcurrentConnectionLimitPerIp(concurrentLimit);
     }
 
     @AfterEach
     public void tearDown() throws Exception {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

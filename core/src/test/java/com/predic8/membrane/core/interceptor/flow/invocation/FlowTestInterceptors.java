@@ -73,7 +73,7 @@ public class FlowTestInterceptors {
 
     public static Interceptor GROOVY(String aSrc) {
         return new GroovyInterceptor() {{
-            router = new HttpRouter();
+            router = new DummyTestRouter();
             setSrc(aSrc);
             init();
         }};

@@ -62,7 +62,7 @@ public class Json2XmlInterceptorTest {
     @BeforeEach
     void setUp() {
         interceptor = new Json2XmlInterceptor();
-        interceptor.init(new Router());
+        interceptor.init(new DefaultRouter());
     }
 
     @Test

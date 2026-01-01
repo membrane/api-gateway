@@ -39,7 +39,7 @@ public class BasicAuthenticationInterceptorTest {
 				new User("admin", "admin"),
 				new User("admin", "$6$12345678$jwCsYagMo/KNcTDqnrWL25Dy3AfAT5U94abA5a/iPFO.Cx2zAkMpPxZBNKY/P/xiRrCfCFDxdBp7pvNEMoBcr0")
 		));
-		bai.init(new Router());
+		bai.init(new DefaultRouter());
 	}
 
 	@Test
