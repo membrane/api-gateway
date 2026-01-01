@@ -26,7 +26,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;

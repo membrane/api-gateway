@@ -13,7 +13,7 @@
 
 	<bean id="router" class="com.predic8.membrane.core.router.DefaultRouter">
 		<property name="ruleManager">
-			<bean class="com.predic8.membrane.core.RuleManager" />
+			<bean class="com.predic8.membrane.core.proxies.RuleManager" />
 		</property>
 		<property name="transport" ref="transport" />
 		<property name="exchangeStore" ref="exchangeStore" />

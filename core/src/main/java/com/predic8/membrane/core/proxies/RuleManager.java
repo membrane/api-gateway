@@ -12,14 +12,12 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
@@ -249,25 +247,6 @@ public class RuleManager {
         }
         log.debug("No rule found for incoming request");
         return new NullProxy();
-    }
-
-    public void addRuleChangeListener(IRuleChangeListener viewer) {
-        listeners.add(viewer);
-        viewer.batchUpdate(proxies.size());
-    }
-
-    public void removeRuleChangeListener(IRuleChangeListener viewer) {
-        listeners.remove(viewer);
-
-    }
-
-    public void addExchangesStoreListener(IExchangesStoreListener viewer) {
-        getExchangeStore().addExchangesStoreListener(viewer);
-
-    }
-
-    public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
-        getExchangeStore().removeExchangesStoreListener(viewer);
     }
 
     public synchronized void removeRule(Proxy proxy) {

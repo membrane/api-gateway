@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.router;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.kubernetes.client.*;
@@ -29,7 +28,7 @@ import org.springframework.context.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
 
 /**
  * TODO rename this class: It is also being used in case the router is being started

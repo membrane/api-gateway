@@ -16,8 +16,7 @@ package com.predic8.membrane.core.router;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.RuleManager.*;
+import com.predic8.membrane.core.proxies.RuleManager.*;
 import com.predic8.membrane.core.cli.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchangestore.*;
@@ -46,7 +45,7 @@ import javax.annotation.concurrent.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
+import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static com.predic8.membrane.core.util.DLPUtil.*;
 

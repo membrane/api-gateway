@@ -37,7 +37,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
+import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;

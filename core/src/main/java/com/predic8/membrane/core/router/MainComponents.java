@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.router;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -24,6 +24,9 @@ import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
 import org.springframework.context.*;
 
+/**
+ * Essential components of a router
+ */
 public interface MainComponents {
 
     Transport getTransport();

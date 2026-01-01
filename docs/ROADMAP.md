@@ -14,6 +14,7 @@
 
 # 7.X
 
+- Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
 - Rewrite ACL to use the YAML configuration instead of external XML files
 - JMXExporter:
   - Tutorial
