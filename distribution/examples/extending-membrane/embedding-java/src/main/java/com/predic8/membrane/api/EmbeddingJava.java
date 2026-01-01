@@ -13,7 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.api;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 
@@ -42,14 +43,13 @@ public class EmbeddingJava {
 
         APIProxy api = new APIProxy();
         api.setKey(key);
-        api.setTargetHost("api.predic8.de");
-        api.setTargetPort(80);
+        api.getTarget().setUrl("https://api.predic8.de");
 
-        // Add a simple interceptor as plugin
-        api.getInterceptors().add(new AddMyHeaderInterceptor());
+        // Add a simple interceptor
+        api.getFlow().add(new AddMyHeaderInterceptor());
 
-        HttpRouter router = new HttpRouter();
+        Router router = new DefaultRouter();
         router.add(api);
-        router.init();
+        router.start();
     }
 }

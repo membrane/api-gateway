@@ -14,6 +14,7 @@
 
 # 7.X
 
+- Fix maven central publish job
 - JMXExporter:
   - Tutorial
   - Documentation

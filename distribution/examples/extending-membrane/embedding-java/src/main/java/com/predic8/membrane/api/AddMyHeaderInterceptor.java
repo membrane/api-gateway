@@ -13,24 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.api;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import lombok.extern.log4j.Log4j2;
-import java.lang.Override;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import org.slf4j.*;
 
 /**
  * A custom interceptor which adds the header 'X-Hello' to the HTTP request.
  *
  * @author Oliver Weiler
  */
-@Log4j2
 public class AddMyHeaderInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(AddMyHeaderInterceptor.class);
+
     @Override
     public Outcome handleRequest(Exchange exchange) {
-        log.info(exchange.getRequest().getHeader().getUserAgent());
+        // Reading an HTTP Header
+        log.info("User agent: {}",exchange.getRequest().getHeader().getUserAgent());
+
+        // Adding a HTTP Header
         exchange.getRequest().getHeader().add("X-Hello", "Hello World!");
-        log.info(exchange.getRequest());
+
+        // Logging the HTTP Request
+        log.info("Request: {}", exchange.getRequest());
         return Outcome.CONTINUE;
     }
 }
