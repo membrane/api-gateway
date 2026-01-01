@@ -20,6 +20,7 @@ import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.http.*;
 import org.apache.http.client.config.*;
 import org.apache.http.client.methods.*;
@@ -44,7 +45,6 @@ public class ProxyTest {
     public static void init() throws IOException {
 
         router = new TestRouter();
-        router.getConfiguration().setHotDeploy(false);
 
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(3055));
         rule.getFlow().add(new AbstractInterceptor() {

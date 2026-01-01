@@ -13,14 +13,10 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 @MCElement(name="staticClientList")
 public class StaticClientList implements ClientList {

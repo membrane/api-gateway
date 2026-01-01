@@ -16,15 +16,15 @@ package com.predic8.membrane.integration;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 
 import java.util.*;
 
 public class Util {
     public static Router basicRouter(Proxy... proxies){
         var router = new TestRouter();
-        router.getConfiguration().setHotDeploy(false);
         Arrays.stream(proxies).forEach(rule -> router.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL));
         router.start();
         router.getTransport().setForceSocketCloseOnHotDeployAfter(1000);

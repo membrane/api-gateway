@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.apache.http.*;
 import org.apache.http.client.methods.*;
@@ -27,6 +28,8 @@ import org.junit.jupiter.api.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
 
 class IllegalCharactersInURLTest {
@@ -36,15 +39,14 @@ class IllegalCharactersInURLTest {
     @BeforeEach
     void init() throws Exception {
         r = new TestRouter();
-        r.getConfiguration().setHotDeploy(false);
         r.add(new ServiceProxy(new ServiceProxyKey(3027), "localhost", 3028));
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3028), null, 80);
         sp2.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 assertEquals("/foo{}", exc.getRequestURI());
-                exc.setResponse(Response.ok().build());
-                return Outcome.RETURN;
+                exc.setResponse(ok().build());
+                return RETURN;
             }
         });
         r.add(sp2);

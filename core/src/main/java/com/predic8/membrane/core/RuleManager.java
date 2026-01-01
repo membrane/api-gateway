@@ -20,6 +20,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
@@ -36,7 +37,7 @@ public class RuleManager {
 
     private static final Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
 
-    private DefaultRouter router;
+    private Router router;
 
     protected final List<Proxy> proxies = new Vector<>();
     private final List<RuleDefinitionSource> ruleSources = new ArrayList<>();
@@ -302,7 +303,7 @@ public class RuleManager {
             removeRule(proxies.getFirst());
     }
 
-    public void setRouter(DefaultRouter router) {
+    public void setRouter(Router router) {
         this.router = router;
     }
 

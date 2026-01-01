@@ -16,6 +16,7 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 

@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.balancer.faultmonitoring.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.services.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.apache.commons.httpclient.*;

@@ -35,7 +35,7 @@ public class TokenFlowDecider {
     ParameterizedRequest flow;
 
     public TokenFlowDecider(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
-        params = URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc, ERROR);
+        params = URLParamUtil.getParams(authServer.getRouter().getConfiguration().getUriFactory(), exc, ERROR);
         flow = new ErrorFlow(authServer,exc);
         if(getGrantType() == null)
             return;

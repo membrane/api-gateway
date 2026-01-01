@@ -15,21 +15,19 @@ package com.predic8.membrane.integration.withinternet.interceptor;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
-import org.apache.http.params.*;
-import org.apache.http.util.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
-import static org.apache.commons.httpclient.HttpVersion.HTTP_1_1;
-import static org.apache.http.params.CoreProtocolPNames.PROTOCOL_VERSION;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static org.apache.commons.httpclient.HttpVersion.*;
+import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RewriteInterceptorIntegrationTest {

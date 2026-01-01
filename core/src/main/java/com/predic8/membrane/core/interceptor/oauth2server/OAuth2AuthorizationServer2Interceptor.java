@@ -20,7 +20,7 @@
 //import com.predic8.membrane.annot.MCAttribute;
 //import com.predic8.membrane.annot.MCChildElement;
 //import com.predic8.membrane.annot.MCElement;
-//import com.predic8.membrane.core.Router;
+//import com.predic8.membrane.core.router.hotdeploy.Router;
 //import com.predic8.membrane.core.exchange.Exchange;
 //import com.predic8.membrane.core.http.Response;
 //import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;

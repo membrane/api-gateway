@@ -15,11 +15,10 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.util.*;
 import org.json.*;
 import org.junit.jupiter.api.*;
@@ -32,7 +31,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static java.lang.Boolean.*;
@@ -40,32 +39,21 @@ import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 public class TemplateInterceptorTest {
 
     private final ObjectMapper om = new ObjectMapper();
 
-    TemplateInterceptor ti;
-    Exchange exc = new Exchange(null);
-    Request req;
-    static DefaultRouter router;
-    static ResolverMap map;
-
-    @BeforeAll
-    static void setupFiles() {
-        router = mock(DefaultRouter.class);
-        map = new ResolverMap();
-        when(router.getResolverMap()).thenReturn(map);
-        when(router.getUriFactory()).thenReturn(new URIFactory());
-    }
+    private TemplateInterceptor ti;
+    private Exchange exc;
+    private Router router;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
+        router = new DummyTestRouter();
         ti = new TemplateInterceptor();
         exc = new Exchange(null);
-        req = new Request.Builder().build();
-        exc.setRequest(req);
+        exc.setRequest(new Request());
 
         exc.setProperty("title", "minister");
         List<String> lst = new ArrayList<>();
@@ -101,15 +89,15 @@ public class TemplateInterceptorTest {
 
         assertEquals(APPLICATION_JSON, exchange.getRequest().getHeader().getContentType());
 
-        Map<String,Object> m = om.readValue(exchange.getRequest().getBodyAsStringDecoded(),Map.class);
-        assertEquals(7,m.get("foo"));
-        assertEquals("baz",m.get("bar"));
+        Map<String, Object> m = om.readValue(exchange.getRequest().getBodyAsStringDecoded(), Map.class);
+        assertEquals(7, m.get("foo"));
+        assertEquals("baz", m.get("bar"));
     }
 
     @Test
     void accessBindings() throws Exception {
         Exchange exchange = post("/foo?a=1&b=2").contentType(TEXT_PLAIN).body("vlinder").buildExchange();
-        exchange.setProperty("baz",7);
+        exchange.setProperty("baz", 7);
 
         invokeInterceptor(exchange, """
                 <% for(h in header.allHeaderFields) { %>
@@ -132,7 +120,7 @@ public class TemplateInterceptorTest {
                     <%= p.key %> : <%= p.value %>
                 <% } %>
                 """, APPLICATION_JSON);
-        
+
         String body = exchange.getRequest().getBodyAsStringDecoded();
         assertTrue(body.contains("/foo"));
         assertTrue(body.contains("Flow: REQUEST"));
@@ -210,7 +198,7 @@ public class TemplateInterceptorTest {
     @Test
     void contentTypeTestJson() {
         setAndHandleRequest("json/template_test.json");
-        assertEquals(APPLICATION_JSON,exc.getRequest().getHeader().getContentType());
+        assertEquals(APPLICATION_JSON, exc.getRequest().getHeader().getContentType());
     }
 
     @Test
@@ -218,7 +206,7 @@ public class TemplateInterceptorTest {
         ti.setSrc("normal text");
         ti.init(router);
         ti.handleRequest(exc);
-        assertEquals(TEXT_PLAIN,exc.getRequest().getHeader().getContentType());
+        assertEquals(TEXT_PLAIN, exc.getRequest().getHeader().getContentType());
     }
 
     @Test
@@ -232,7 +220,7 @@ public class TemplateInterceptorTest {
 
         ti.setContentType(APPLICATION_JSON);
         ti.setSrc(inputJson);
-        ti.setPretty( TRUE);
+        ti.setPretty(TRUE);
         ti.init();
         assertArrayEquals(expectedPrettyJson.getBytes(UTF_8), ti.prettify(inputJson.getBytes(UTF_8)));
     }
@@ -255,8 +243,8 @@ public class TemplateInterceptorTest {
         exc.setProperty(SECURITY_SCHEMES, List.of(new BasicHttpSecurityScheme().username("alice")));
         ti.setContentType(APPLICATION_JSON);
         ti.setSrc("""
-        { "foo": "${fn.user()}" }
-        """);
+                { "foo": "${fn.user()}" }
+                """);
         ti.init(router);
         ti.handleRequest(exc);
 
@@ -270,11 +258,11 @@ public class TemplateInterceptorTest {
     }
 
 
-    private static void invokeInterceptor(Exchange exchange, String template, String mimeType) {
-        TemplateInterceptor interceptor = new TemplateInterceptor();
-        interceptor.setSrc(template);
-        interceptor.setContentType(mimeType);
-        interceptor.init(router);
-        interceptor.handleRequest(exchange);
+    private void invokeInterceptor(Exchange exchange, String template, String mimeType) {
+        var i = new TemplateInterceptor();
+        i.setSrc(template);
+        i.setContentType(mimeType);
+        i.init(router);
+        i.handleRequest(exchange);
     }
 }

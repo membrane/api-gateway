@@ -14,11 +14,11 @@
 package com.predic8.membrane.core.transport;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
@@ -35,7 +35,7 @@ public abstract class Transport {
     protected final Set<IPortChangeListener> menuListeners = new HashSet<>();
     private List<Interceptor> interceptors = new Vector<>();
 
-    private DefaultRouter router;
+    private Router router;
     private boolean reverseDNS = true;
 
     private int concurrentConnectionLimitPerIp = -1;
@@ -53,7 +53,7 @@ public abstract class Transport {
         this.interceptors = flow;
     }
 
-    public void init(DefaultRouter router) {
+    public void init(Router router) {
         this.router = router;
 
         if (interceptors.isEmpty()) {
@@ -103,7 +103,7 @@ public abstract class Transport {
         return new ExchangeStoreInterceptor(router.getExchangeStore());
     }
 
-    public DefaultRouter getRouter() {
+    public Router getRouter() {
         return router;
     }
 

@@ -12,14 +12,20 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
-import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.proxies.*;
+import org.slf4j.*;
 
-public class HttpRouter extends DefaultRouter {
+public abstract class AbstractRouter implements Router, MainComponents {
 
-    @Override
-    public HttpTransport getTransport() {
-        return (HttpTransport) super.getTransport();
+    private static final Logger log = LoggerFactory.getLogger(AbstractRouter.class);
+
+    protected void initProxies() {
+        log.debug("Initializing proxies.");
+        for (Proxy proxy : getRuleManager().getRules()) {
+            log.debug("Initializing proxy {}.", proxy.getName());
+            proxy.init(this);
+        }
     }
 }

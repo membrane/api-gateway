@@ -13,15 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.router.*;
 
 import javax.xml.stream.*;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
+import java.util.*;
 
 @MCElement(name="byThreadStrategy")
 public class ByThreadStrategy extends AbstractXmlElement implements DispatchingStrategy {

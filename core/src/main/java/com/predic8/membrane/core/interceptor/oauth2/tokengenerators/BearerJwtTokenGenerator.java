@@ -12,33 +12,23 @@
  */
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.security.Blob;
-import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
-import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwk.RsaJwkGenerator;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.jose4j.jwt.consumer.JwtConsumer;
-import org.jose4j.jwt.consumer.JwtConsumerBuilder;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.router.*;
+import org.jose4j.json.*;
+import org.jose4j.jwk.*;
+import org.jose4j.jws.*;
+import org.jose4j.jwt.*;
+import org.jose4j.jwt.consumer.*;
+import org.jose4j.lang.*;
+import org.slf4j.*;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.math.*;
+import java.security.*;
+import java.util.*;
 
-import static java.util.stream.Collectors.toUnmodifiableMap;
+import static java.util.stream.Collectors.*;
 
 @MCElement(name = "bearerJwtToken")
 public class BearerJwtTokenGenerator implements TokenGenerator {

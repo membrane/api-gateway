@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -66,7 +67,6 @@ public class SoapProxyInvocationTest {
 
     private static void setupGateway() throws Exception {
         gw = new TestRouter();
-        gw.getConfiguration().setHotDeploy(false);
         gw.add(createCitiesSoapProxyGateway());
         gw.add(createTwoServicesSOAPProxyGateway("ServiceA"));
         gw.start();

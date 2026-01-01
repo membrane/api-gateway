@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.util.jdbc;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.DefaultRouter;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.ConfigurationException;
 
 import javax.sql.DataSource;
@@ -24,7 +24,7 @@ import java.util.Map;
 public abstract class AbstractJdbcSupport {
 
     private DataSource datasource;
-    private DefaultRouter router;
+    private Router router;
     private static final String DATASOURCE_SAMPLE = """
              Sample:
             
@@ -48,7 +48,7 @@ public abstract class AbstractJdbcSupport {
              </router>
             """;
 
-    public void init(DefaultRouter router) {
+    public void init(Router router) {
         this.router = router;
         getDatasourceIfNull();
     }

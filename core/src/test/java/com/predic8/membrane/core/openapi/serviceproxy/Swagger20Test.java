@@ -20,14 +20,15 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
+import com.predic8.membrane.core.router.*;
 import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.TestUtil.getPathFromResource;
+import static com.predic8.membrane.test.TestUtil.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
 
 public class Swagger20Test {
 

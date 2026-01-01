@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.client.protocol.*;
@@ -49,7 +50,6 @@ public class Http2ClientServerTest {
         SSLParser sslParser = getSslParser();
 
         router = new TestRouter();
-        router.getConfiguration().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3049), "localhost", 80);
         sp.setSslInboundParser(sslParser);
         sp.getFlow().add(new AbstractInterceptor() {

@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.apache.commons.io.*;
 import org.junit.jupiter.api.*;
@@ -32,11 +32,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class AbortExchangeTest {
 
-    TestRouter router;
+    Router router;
 
     @BeforeEach
     public void setup() throws Exception {
-        router = new TestRouter();
+        router = new DefaultRouter();
         LimitedMemoryExchangeStore es = new LimitedMemoryExchangeStore();
         router.setExchangeStore(es);
         var global = new GlobalInterceptor();

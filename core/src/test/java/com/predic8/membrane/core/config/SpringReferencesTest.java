@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SpringReferencesTest {
 
-	private static DefaultRouter r;
+	private static Router r;
 
 	@BeforeAll
 	public static void before() {

@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -28,6 +27,7 @@ import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2TokenResponse
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JWSSigner;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.PEMSupport;
@@ -68,7 +68,7 @@ public abstract class AuthorizationService {
     protected Logger log;
 
     private HttpClient httpClient;
-    Router router;
+    protected Router router;
 
     protected HttpClientConfiguration httpClientConfiguration;
     private final Object lock = new Object();

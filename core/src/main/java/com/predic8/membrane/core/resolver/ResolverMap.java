@@ -16,9 +16,9 @@ package com.predic8.membrane.core.resolver;
 
 import com.google.common.base.Objects;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.kubernetes.*;
 import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
@@ -229,7 +229,7 @@ public class ResolverMap implements Cloneable, Resolver {
         throw new RuntimeException("No SchemaResolver defined for " + uri);
     }
 
-    public void addRuleResolver(DefaultRouter r) {
+    public void addRuleResolver(Router r) {
         addSchemaResolver(new RuleResolver(r));
     }
 

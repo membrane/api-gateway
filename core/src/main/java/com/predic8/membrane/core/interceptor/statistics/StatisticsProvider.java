@@ -31,6 +31,9 @@ import java.sql.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.sql.ResultSet.CONCUR_READ_ONLY;
+import static java.sql.ResultSet.TYPE_SCROLL_INSENSITIVE;
 
 @MCElement(name="statisticsProvider")
 public class StatisticsProvider extends AbstractInterceptor implements ApplicationContextAware {
@@ -75,21 +78,25 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
         }
 
         try {
-			int offset = URLParamUtil.getIntParam(router.getUriFactory(), exc, "offset");
-			int max = URLParamUtil.getIntParam(router.getUriFactory(), exc, "max");
-			int total = getTotal(con);
-
-			Statement s = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			ResultSet r = s.executeQuery(getOrderedStatistics(router.getUriFactory(), exc));
-			createJson(exc, r, offset, max, total);
+            Statement s = con.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY);
+			ResultSet r = s.executeQuery(getOrderedStatistics(router.getConfiguration().getUriFactory(), exc));
+			createJson(exc, r, getOffset(exc), getMax(exc), getTotal(con));
 		} catch (Exception e) {
 			log.warn("Could not retrieve statistics.", e);
-			return Outcome.ABORT;
+			return ABORT;
 		} finally {
 			closeConnection(con);
 		}
 
-		return Outcome.RETURN;
+		return RETURN;
+	}
+
+	private int getMax(Exchange exc) throws Exception {
+		return URLParamUtil.getIntParam(router.getConfiguration().getUriFactory(), exc, "max");
+	}
+
+	private int getOffset(Exchange exc) throws Exception {
+		return URLParamUtil.getIntParam(router.getConfiguration().getUriFactory(), exc, "offset");
 	}
 
 	public static String getOrderedStatistics(URIFactory uriFactory, Exchange exc) throws Exception {

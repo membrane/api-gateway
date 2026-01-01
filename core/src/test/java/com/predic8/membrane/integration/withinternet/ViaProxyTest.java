@@ -16,6 +16,7 @@ package com.predic8.membrane.integration.withinternet;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.junit.jupiter.api.*;
 

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.services.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
@@ -33,9 +34,9 @@ import static org.junit.jupiter.api.Assertions.*;
 public class LoadBalancingWithClusterManagerTest {
 
     private Router lb;
-    private DefaultRouter node1;
-    private DefaultRouter node2;
-    private DefaultRouter node3;
+    private Router node1;
+    private Router node2;
+    private Router node3;
 
     @AfterEach
     public void tearDown() {
@@ -94,8 +95,8 @@ public class LoadBalancingWithClusterManagerTest {
         assertEquals(2, service3.getCount());
     }
 
-    private static @NotNull DefaultRouter createRouter() {
-        DefaultRouter node1 = new TestRouter();
+    private static @NotNull Router createRouter() {
+        Router node1 = new TestRouter();
         node1.getRegistry().register("global", new GlobalInterceptor());
         return node1;
     }
@@ -123,7 +124,7 @@ public class LoadBalancingWithClusterManagerTest {
         lb.start();
     }
 
-    private DummyWebServiceInterceptor startNode(DefaultRouter node, int port) throws Exception {
+    private DummyWebServiceInterceptor startNode(Router node, int port) throws Exception {
         DummyWebServiceInterceptor service1 = new DummyWebServiceInterceptor();
         var global = node.getRegistry().getBean(GlobalInterceptor.class);
         global.orElseThrow().getFlow().add(service1);

@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.acme.*;
 import com.predic8.membrane.core.util.*;
@@ -26,9 +26,9 @@ import javax.annotation.Nullable;
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
+import java.security.*;
 import java.security.Key;
 import java.security.KeyStore;
-import java.security.*;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.atomic.*;
@@ -60,7 +60,7 @@ public class AcmeSSLContext extends SSLContext {
 
     public void init(Router router) {
         KubernetesClientFactory kcf = null;
-        if (router instanceof DefaultRouter dr) {
+        if (router instanceof Router dr) {
             kcf = dr.getRegistry().getBean(KubernetesClientFactory.class).orElse(null);
         }
         init(kcf,router.getHttpClientFactory());

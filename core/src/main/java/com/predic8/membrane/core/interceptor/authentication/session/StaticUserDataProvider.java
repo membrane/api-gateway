@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.codec.digest.*;
 
 import java.util.*;

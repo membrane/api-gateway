@@ -168,7 +168,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 	@Mapping("(?!.*operation)([^?]*)")
 	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath, final Exchange exc) throws Exception {
 		try {
-			final String myPath = router.getUriFactory().create(exc.getRequestURI()).getPath();
+			final String myPath = router.getConfiguration().getUriFactory().create(exc.getRequestURI()).getPath();
 
 			final Definitions w = getParsedWSDL();
 			final Service service = getService(w);

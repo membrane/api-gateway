@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.security;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

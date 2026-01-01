@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -30,7 +30,7 @@ class UserFeatureTest {
 	public static final String MOCK_5 = "mock5";
 	public static final String MOCK_6 = "mock6";
 	public static final String MOCK_2 = "mock2";
-	private static DefaultRouter router;
+	private static Router router;
 
 	static List<String> labels, inverseLabels, inversAbortLabels;
 

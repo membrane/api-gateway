@@ -13,18 +13,13 @@
 
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
+import org.slf4j.*;
 
-import javax.sql.DataSource;
+import javax.sql.*;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 @MCElement(name="customStatementJdbcUserDataProvider")
 public class CustomStatementJdbcUserDataProvider implements  UserDataProvider {

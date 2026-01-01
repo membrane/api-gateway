@@ -14,16 +14,12 @@
 
 package com.predic8.membrane.core.transport.ws.interceptors;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.transport.ws.WebSocketFrame;
-import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
-import com.predic8.membrane.core.transport.ws.WebSocketSender;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.ws.*;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor.Encoding.HEX;
+import static com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor.Encoding.*;
 
 @MCElement(name = "wsLog")
 public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {

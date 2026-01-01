@@ -16,18 +16,18 @@ import com.floreysoft.jmte.*;
 import com.floreysoft.jmte.message.*;
 import com.floreysoft.jmte.token.*;
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.server.*;
-import com.predic8.membrane.core.interceptor.session.SessionManager;
 import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.interceptor.session.SessionManager;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.URI;
 import org.apache.commons.lang3.*;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.*;
@@ -77,8 +77,8 @@ public class LoginDialog2 {
         wsi.setDocBase(dialogLocation);
     }
 
-    public void init(DefaultRouter router) throws Exception {
-        uriFactory = router.getUriFactory();
+    public void init(Router router) throws Exception {
+        uriFactory = router.getConfiguration().getUriFactory();
         wsi.init(router);
         router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
 

@@ -12,8 +12,10 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
+import com.predic8.membrane.annot.beanregistry.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.kubernetes.client.*;
@@ -29,6 +31,10 @@ import java.util.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 
+/**
+ * Lightweight Router for testing that does not open any ports.
+ * No need to call stop()
+ */
 public class DummyTestRouter extends AbstractRouter {
 
     private FlowController flowController = new FlowController(this);
@@ -43,8 +49,6 @@ public class DummyTestRouter extends AbstractRouter {
     private HttpTransport transport;
 
     private DNSCache dnsCache = new DNSCache();
-
-    private URIFactory uriFactory = new URIFactory();
 
     private final Statistics statistics = new Statistics();
     private ApplicationContext applicationContext;
@@ -114,11 +118,6 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     @Override
-    public URIFactory getUriFactory() {
-        return uriFactory;
-    }
-
-    @Override
     public ApplicationContext getBeanFactory() {
         return applicationContext;
     }
@@ -138,6 +137,11 @@ public class DummyTestRouter extends AbstractRouter {
         return statistics;
     }
 
+    @Override
+    public BeanRegistry getRegistry() {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Same as the default config from monitor-beans.xml
      *
@@ -150,8 +154,7 @@ public class DummyTestRouter extends AbstractRouter {
         interceptors.add(new DispatchingInterceptor());
         interceptors.add(new UserFeatureInterceptor());
         interceptors.add(new InternalRoutingInterceptor());
-        HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
-        interceptors.add(httpClientInterceptor);
+        interceptors.add(new HTTPClientInterceptor());
         transport.setFlow(interceptors);
         return transport;
     }

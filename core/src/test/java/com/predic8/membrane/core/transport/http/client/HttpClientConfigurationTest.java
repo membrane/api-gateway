@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -151,7 +151,10 @@ class HttpClientConfigurationTest {
     }
 
     private void setupRouter(String globalHcc) {
-        router = RouterBootstrap.initFromXMLString(globalHcc);
+        var r = RouterBootstrap.initFromXMLString(globalHcc);
+        if (!(r instanceof DefaultRouter dr))
+            throw new RuntimeException("Expected DefaultRouter, got " + router.getClass());
+        router = dr;
         assertNotNull(router.getHttpClientConfig());
         assertNotNull(router.getResolverMap().getHTTPSchemaResolver().getHttpClientConfig());
     }

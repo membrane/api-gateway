@@ -27,6 +27,8 @@ import org.jose4j.lang.JoseException;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+
 public class IdTokenTokenFlow extends OAuth2Flow {
 
     Client client = null;
@@ -57,7 +59,7 @@ public class IdTokenTokenFlow extends OAuth2Flow {
 
         addIdTokenToRedirect();
 
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     private void addIdTokenToRedirect() {

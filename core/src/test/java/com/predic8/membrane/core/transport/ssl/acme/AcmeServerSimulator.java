@@ -14,39 +14,35 @@
 
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Resources;
+import com.fasterxml.jackson.databind.*;
+import com.google.common.collect.*;
+import com.google.common.io.*;
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.jose4j.base64url.Base64;
-import org.jose4j.jwk.PublicJsonWebKey;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jose4j.jwk.*;
+import org.jose4j.jws.*;
+import org.jose4j.lang.*;
+import org.slf4j.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.*;
 
-import static com.google.common.io.Resources.getResource;
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
-import static com.predic8.membrane.core.http.Header.USER_AGENT;
+import static com.google.common.io.Resources.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.jose4j.lang.HashUtil.SHA_256;
+import static java.nio.charset.StandardCharsets.*;
+import static org.jose4j.lang.HashUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AcmeServerSimulator {

@@ -24,6 +24,9 @@ import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 
 import java.io.IOException;
 
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session.STATE;
+
 public class TokenFlow extends OAuth2Flow {
     public TokenFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc, SessionManager.Session s) {
         super(authServer, exc, s);
@@ -39,7 +42,7 @@ public class TokenFlow extends OAuth2Flow {
         String grantTypes = client.getGrantTypes();
         if (!grantTypes.contains("implicit")) {
             exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant_type"));
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         return respondWithTokenAndRedirect(exc, generateAccessToken(client), authServer.getTokenGenerator().getTokenType(),session);
@@ -50,7 +53,7 @@ public class TokenFlow extends OAuth2Flow {
         String redirectUrl;
         String scope;
         synchronized (s) {
-            state = s.getUserAttributes().get(SessionManager.Session.STATE);
+            state = s.getUserAttributes().get(STATE);
             redirectUrl = s.getUserAttributes().get("redirect_uri");
             scope = s.getUserAttributes().get("scope");
         }
@@ -61,7 +64,7 @@ public class TokenFlow extends OAuth2Flow {
                 .body("")
                 .build());
 
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     public String generateAccessToken(Client client) {

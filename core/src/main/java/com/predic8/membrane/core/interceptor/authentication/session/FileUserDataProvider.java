@@ -13,15 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.createPasswdCompatibleHash;
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.*;
 
 /**
  * @description A <i>user data provider</i> utilizing htpasswd formatted files.

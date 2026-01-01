@@ -12,10 +12,10 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
-import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -34,7 +34,7 @@ import java.util.*;
 
 public class DefaultMainComponents implements MainComponents {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultRouter.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultMainComponents.class);
 
     private DefaultRouter router;
 
@@ -50,7 +50,6 @@ public class DefaultMainComponents implements MainComponents {
     protected ResolverMap resolverMap;
 
     protected final Statistics statistics = new Statistics();
-
 
     public DefaultMainComponents(DefaultRouter router) {
         log.debug("Creating new router.");
@@ -181,10 +180,6 @@ public class DefaultMainComponents implements MainComponents {
         if (registry == null)
             registry = new BeanRegistryImplementation(null, router, null);
         return registry;
-    }
-
-    public URIFactory getUriFactory() {
-        throw new UnsupportedOperationException();
     }
 
     @Override

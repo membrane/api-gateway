@@ -14,6 +14,7 @@
 package com.predic8.membrane;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 public abstract class AbstractTestWithRouter {

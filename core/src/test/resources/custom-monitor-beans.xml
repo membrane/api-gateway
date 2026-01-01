@@ -149,7 +149,7 @@
     </property>
  
     <property name="configuration">
-      <bean class="com.predic8.membrane.core.Configuration">
+      <bean class="com.predic8.membrane.core.router.Configuration">
         <property name="adjustHostHeader" value="true" />
         <property name="indentMessage" value="true" />
         <property name="trackExchange" value="false" />

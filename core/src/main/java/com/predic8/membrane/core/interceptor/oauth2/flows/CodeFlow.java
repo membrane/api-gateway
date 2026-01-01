@@ -22,7 +22,11 @@ import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.util.URLUtil;
 
 import java.math.BigInteger;
+import java.net.*;
 import java.security.SecureRandom;
+
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session.STATE;
 
 public class CodeFlow extends OAuth2Flow{
 
@@ -44,20 +48,12 @@ public class CodeFlow extends OAuth2Flow{
     }
 
     protected Outcome respondWithAuthorizationCodeAndRedirect(Exchange exc, String code, SessionManager.Session s) throws Exception {
-        String state = null;
         String redirectUrl;
-
-        String rawQuery = URLUtil.getPathQuery(authServer.getRouter().getUriFactory(),exc.getRequestURI());
-        if(rawQuery.startsWith(authServer.getBasePath() + "/"))
-            rawQuery = rawQuery.substring(authServer.getBasePath().length() + 1);
-        if(rawQuery.startsWith("?"))
-            rawQuery = rawQuery.substring(1);
-        if(!rawQuery.isEmpty())
-            state = rawQuery;
+        String state = getState(exc);
 
         synchronized (s) {
             if(state == null) // TODO: always get state through query and not like this
-                state = s.getUserAttributes().get(SessionManager.Session.STATE);
+                state = s.getUserAttributes().get(STATE);
             redirectUrl = s.getUserAttributes().get("redirect_uri");
         }
 
@@ -67,6 +63,17 @@ public class CodeFlow extends OAuth2Flow{
                 .body("")
                 .build());
 
-        return Outcome.RETURN;
+        return RETURN;
+    }
+
+    private String getState(Exchange exc) throws URISyntaxException {
+        String rawQuery = URLUtil.getPathQuery(authServer.getRouter().getConfiguration().getUriFactory(), exc.getRequestURI());
+        if(rawQuery.startsWith(authServer.getBasePath() + "/"))
+            rawQuery = rawQuery.substring(authServer.getBasePath().length() + 1);
+        if(rawQuery.startsWith("?"))
+            rawQuery = rawQuery.substring(1);
+        if(!rawQuery.isEmpty())
+            return rawQuery;
+        return null;
     }
 }

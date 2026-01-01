@@ -18,11 +18,12 @@ import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.TestUtil.getPathFromResource;
+import static com.predic8.membrane.test.TestUtil.*;
 import static io.restassured.RestAssured.*;
-import static io.restassured.filter.log.LogDetail.ALL;
+import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
 @SuppressWarnings("HttpUrlsUsage")
@@ -33,7 +34,6 @@ public class ServiceProxyWSDLInterceptorsTest {
     @BeforeEach
     void setUp() {
         router = new TestRouter();
-        router.getConfiguration().setHotDeploy(false);
     }
 
     @AfterEach

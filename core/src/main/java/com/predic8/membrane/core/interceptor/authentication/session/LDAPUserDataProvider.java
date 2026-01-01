@@ -13,40 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.regex.Pattern;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import org.slf4j.*;
 
-import javax.naming.AuthenticationException;
-import javax.naming.CommunicationException;
-import javax.naming.Context;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
-import javax.net.SocketFactory;
-
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
+import javax.naming.*;
+import javax.naming.directory.*;
+import javax.net.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+import java.util.regex.*;
 
 /**
  * @description A <i>user data provider</i> querying an LDAP server to authorize users and retrieve attributes.

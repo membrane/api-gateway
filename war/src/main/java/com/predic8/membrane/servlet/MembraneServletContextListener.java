@@ -15,7 +15,7 @@
 package com.predic8.membrane.servlet;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.DefaultRouter;
+import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.servlet.config.spring.BaseLocationXmlWebApplicationContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;

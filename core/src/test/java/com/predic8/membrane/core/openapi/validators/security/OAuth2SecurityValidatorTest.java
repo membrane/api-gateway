@@ -16,9 +16,9 @@
 
 package com.predic8.membrane.core.openapi.validators.security;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.Request.*;
@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.core.security.OAuth2SecurityScheme.*;
-import static com.predic8.membrane.test.TestUtil.getPathFromResource;
+import static com.predic8.membrane.test.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2SecurityValidatorTest extends AbstractSecurityValidatorTest {

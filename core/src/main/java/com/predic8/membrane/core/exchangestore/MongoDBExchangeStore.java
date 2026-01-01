@@ -14,29 +14,22 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.ReplaceOptions;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.proxies.RuleKey;
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.mongodb.client.*;
+import com.mongodb.client.model.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.snapshots.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
+import org.bson.*;
+import org.bson.conversions.*;
+import org.slf4j.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
-import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.*;
 
 
 @MCElement(name = "mongoDBExchangeStore")

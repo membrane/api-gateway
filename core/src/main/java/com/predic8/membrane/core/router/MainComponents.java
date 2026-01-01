@@ -12,8 +12,10 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
+import com.predic8.membrane.annot.beanregistry.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.resolver.*;
@@ -38,8 +40,6 @@ public interface MainComponents {
 
     DNSCache getDnsCache();
 
-    URIFactory getUriFactory();
-
     ApplicationContext getBeanFactory();
 
     HttpClientFactory getHttpClientFactory();
@@ -47,4 +47,6 @@ public interface MainComponents {
     TimerManager getTimerManager();
 
     Statistics getStatistics();
+
+    BeanRegistry getRegistry();
 }

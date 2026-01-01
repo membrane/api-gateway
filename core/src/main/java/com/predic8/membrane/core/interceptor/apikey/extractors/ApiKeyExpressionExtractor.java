@@ -14,20 +14,20 @@
 package com.predic8.membrane.core.interceptor.apikey.extractors;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.router.*;
 
-import java.util.Optional;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
-import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.EXPRESSION;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 
 /**
  * @deprecated Set the expression directly on the apiKey plugin.
@@ -62,6 +62,7 @@ public class ApiKeyExpressionExtractor implements ApiKeyExtractor, Polyglot, XML
 
     @Override
     public Optional<LocationNameValue> extract(Exchange exc) {
+
         return Optional.of(new LocationNameValue(
                 EXPRESSION,
                 expression,

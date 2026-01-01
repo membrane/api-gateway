@@ -16,6 +16,7 @@ package com.predic8.membrane.core.http;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -24,13 +25,13 @@ import java.io.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static org.apache.commons.httpclient.HttpVersion.HTTP_1_0;
+import static org.apache.commons.httpclient.HttpVersion.*;
 import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http10Test {
-    private static DefaultRouter router;
-	private static DefaultRouter router2;
+    private static Router router;
+	private static Router router2;
 
 	@BeforeAll
 	public static void setUp() throws Exception {

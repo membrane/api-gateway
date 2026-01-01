@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.*;
 
 import java.util.*;
 
@@ -96,6 +96,4 @@ public interface Interceptor {
      * for this interceptor, or null if there is no such page.
      */
 	String getHelpId();
-
-
 }

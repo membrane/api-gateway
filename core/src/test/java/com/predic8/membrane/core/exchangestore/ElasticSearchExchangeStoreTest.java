@@ -16,7 +16,6 @@ package com.predic8.membrane.core.exchangestore;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -24,6 +23,7 @@ import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.jose4j.base64url.Base64;
@@ -48,9 +48,9 @@ class ElasticSearchExchangeStoreTest {
     private static final String REQUEST_BODY = """
             {"where":"there"}""";
 
-    private TestRouter gateway;
-    private TestRouter back;
-    private TestRouter elasticMock;
+    private Router gateway;
+    private Router back;
+    private Router elasticMock;
     private ElasticSearchExchangeStore es;
 
     private final List<JsonNode> insertedObjects = new ArrayList<>();
@@ -75,7 +75,7 @@ class ElasticSearchExchangeStoreTest {
     }
 
     private void initializeElasticSearchMock() throws IOException {
-        elasticMock = new TestRouter();
+        elasticMock = new DefaultRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3066), null, 0);
         sp.getFlow().add(createBodyLoggingInterceptor());
         sp.getFlow().add(createElasticSearchMockInterceptor());
@@ -90,7 +90,7 @@ class ElasticSearchExchangeStoreTest {
     }
 
     private void initializeGateway(boolean addLoggingInterceptors) throws IOException {
-        gateway = new TestRouter();
+        gateway = new DefaultRouter();
         es = new ElasticSearchExchangeStore();
         es.setLocation("http://localhost:3066");
         es.setUpdateIntervalMs(100);
@@ -105,7 +105,7 @@ class ElasticSearchExchangeStoreTest {
     }
 
     private void initializeBackend() throws IOException {
-        back = new TestRouter();
+        back = new DefaultRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         StaticInterceptor si = new StaticInterceptor();
         si.setSrc(RESPONSE_BODY);
@@ -165,12 +165,12 @@ class ElasticSearchExchangeStoreTest {
     }
 
     @Test
-    public void testWithoutLogging() throws Exception {
+    void testWithoutLogging() throws Exception {
         runTest(false);
     }
 
     @Test
-    public void testWithLogging() throws Exception {
+    void testWithLogging() throws Exception {
         runTest(true);
     }
 

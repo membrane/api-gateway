@@ -20,6 +20,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.junit.jupiter.api.*;
 
@@ -77,7 +78,6 @@ public class SessionResumptionTest {
 
     private static Router createTLSServer(int port) {
         Router router = new DummyTestRouter();
-        router.getConfiguration().setHotDeploy(false);
         ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(port), null, 0);
         SSLParser sslInboundParser = new SSLParser();
         KeyStore keyStore = new KeyStore();

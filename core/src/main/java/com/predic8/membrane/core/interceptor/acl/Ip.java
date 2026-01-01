@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.*;
 
-import static com.predic8.membrane.core.interceptor.acl.ParseType.GLOB;
+import static com.predic8.membrane.core.interceptor.acl.ParseType.*;
 
 public class Ip extends AbstractClientAddress {
 

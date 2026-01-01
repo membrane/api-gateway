@@ -13,13 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 public class SimpleTest {
 
-	private static DefaultRouter router;
+	private static Router router;
 
 	@BeforeAll
 	static void setUp() {

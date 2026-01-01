@@ -17,6 +17,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.groovy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;

@@ -16,16 +16,11 @@
 
 package com.predic8.membrane.core.transport.ws.interceptors;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.transport.ws.WebSocketFrame;
-import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
-import com.predic8.membrane.core.transport.ws.WebSocketSender;
-import org.springframework.beans.BeansException;
-import com.predic8.membrane.annot.Required;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.ws.*;
+import org.springframework.beans.*;
+import org.springframework.context.*;
 
 @MCElement(name="wsInterceptor")
 public class WebSocketSpringInterceptor implements ApplicationContextAware, WebSocketInterceptorInterface {

@@ -13,14 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.router.*;
+
 import javax.xml.stream.*;
-
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-
-import java.util.List;
+import java.util.*;
 
 /**
  * Strategy that iterates the endpoints according to <a href="https://en.wikipedia.org/wiki/Round-robin">...</a>
