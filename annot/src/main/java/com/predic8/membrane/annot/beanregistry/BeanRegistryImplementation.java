@@ -52,6 +52,11 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     @GuardedBy("uidsToActivate")
     private final Set<UidAction> uidsToActivate = Collections.synchronizedSet(new LinkedHashSet<>()); // keeps order
 
+    /**
+     * Protects the initialization of beans, which are unique per class.
+     */
+    private final Object uniqueClassInitialization = new Object();
+
     record UidAction(String uid, WatchAction action) {
     }
 
@@ -59,21 +64,6 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         this.observer = observer;
         this.grammar = grammar;
         registryAware.setRegistry(this);
-    }
-
-    private Object define(BeanDefinition bd) {
-        log.debug("defining bean: {}", bd.getNode());
-        try {
-            if ("bean".equals(bd.getKind())) {
-                return new BeanFactory(this).create(bd.getNode().path("bean"));
-            }
-            return GenericYamlParser.readMembraneObject(bd.getKind(),
-                    grammar,
-                    bd.getNode(),
-                    this);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -104,10 +94,9 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         for (UidAction uidAction : uidsToActivate) {
             BeanContainer bc = bcs.get(uidAction.uid);
             try {
-                Object bean = define(bc.getDefinition());
-                bc.setSingleton(bean);
+                Object bean = bc.getOrCreate(this, grammar);
 
-                // e.g. inform router about new proxy
+                // e.g., inform router about a new ApiProxy or GlobalInterceptor
                 observer.handleBeanEvent(new BeanDefinitionChanged(uidAction.action, bc.getDefinition()), bean, getOldBean(uidAction.action, bc.getDefinition()));
 
                 if (uidAction.action.isAdded() || uidAction.action.isModified())
@@ -136,26 +125,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     @Override
     public Object resolve(String url) {
-        BeanContainer bc = getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url)));
-
-        boolean prototype = isPrototypeScope(bc.getDefinition());
-
-        // Prototypes are created anew every time.
-        if (prototype) {
-            return define(bc.getDefinition());
-        }
-
-        // Singleton: ensure define() runs at most once per BeanContainer.
-        synchronized (bc) {
-            Object existing = bc.getSingleton();
-            if (existing != null) {
-                return existing;
-            }
-
-            Object created = define(bc.getDefinition());
-            bc.setSingleton(created);
-            return created;
-        }
+        return getFirstByName(url).orElseThrow(() -> new RuntimeException("Reference %s not found".formatted(url))).getOrCreate(this, grammar);
     }
 
     private @NotNull Optional<BeanContainer> getFirstByName(String url) {
@@ -165,7 +135,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
     @Override
     public List<Object> getBeans() {
         return bcs.values().stream().filter(bd -> !bd.getDefinition().isComponent())
-                .map(BeanContainer::getSingleton)
+                .map(bc -> bc.getOrCreate(this, grammar))
                 .filter(Objects::nonNull)
                 .toList();
     }
@@ -175,19 +145,10 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         return grammar;
     }
 
-    private static boolean isPrototypeScope(BeanDefinition bd) {
-        if (!bd.isBean())
-            return bd.isPrototype();
-
-        return "PROTOTYPE".equalsIgnoreCase(
-                bd.getNode().path("bean").path("scope").asText("SINGLETON")
-        );
-    }
-
     @Override
     public <T> List<T> getBeans(Class<T> clazz) {
         return bcs.values().stream()
-                .map(BeanContainer::getSingleton)
+                .map(bc -> bc.getOrCreate(this, grammar))
                 .filter(Objects::nonNull)
                 .filter(clazz::isInstance)
                 .map(clazz::cast)
@@ -204,28 +165,33 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         return beans.size() == 1 ? Optional.of(beans.getFirst()) : Optional.empty();
     }
 
-    /**
-     * synchronized is a quick-fix for tests like LoadBalancingInterceptorFaultMonitoringStrategyTest.
-     */
-    public synchronized void register(String beanName, Object bean) {
+    public void register(String beanName, Object bean) {
         if (bean == null)
             throw new IllegalArgumentException("bean must not be null");
 
         var uuid = UUID.randomUUID().toString();
-        BeanContainer bc = new BeanContainer(new BeanDefinition("component", computeBeanName(beanName, uuid), null, uuid, null));
-        bc.setSingleton(bean);
-        bcs.put(uuid, bc);
+        bcs.put(uuid,
+                new BeanContainer(
+                    new BeanDefinition(
+                            "component",
+                            computeBeanName(beanName, uuid),
+                            null,
+                            uuid,
+                            null),
+                    bean));
+        singletonBeans.put(uuid, bean);
+        // the return value of 'put' is ignored, since bean registration with
+        // random keys should not yield duplicates anyway.
     }
 
-    /**
-     * synchronized is a quick-fix for tests like LoadBalancingInterceptorFaultMonitoringStrategyTest.
-     */
-    public synchronized <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
-        return getBean(type).orElseGet(() -> getBean(type).orElseGet(() -> {
-            T created = supplier.get();
-            register(null, created);
-            return created;
-        }));
+    public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
+        synchronized (uniqueClassInitialization) {
+            return getBean(type).orElseGet(() -> getBean(type).orElseGet(() -> {
+                T created = supplier.get();
+                register(null, created);
+                return created;
+            }));
+        }
     }
 
     private static @NotNull String computeBeanName(String beanName, String uuid) {
