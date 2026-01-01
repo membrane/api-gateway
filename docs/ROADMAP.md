@@ -33,6 +33,7 @@
 # 7.0.4
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- do not pass a `Router` reference into all sorts of beans: Access to global functionality should happen only on a very limited basis.
 
 
 # 7.0.1

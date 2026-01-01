@@ -29,6 +29,10 @@ import java.util.*;
 
 import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
 
+/**
+ * TODO rename this class: It is also being used in case the router is being started
+ * from the command line (=in a non-test environment).
+ */
 public class DummyTestRouter extends AbstractRouter {
 
     private FlowController flowController = new FlowController(this);
