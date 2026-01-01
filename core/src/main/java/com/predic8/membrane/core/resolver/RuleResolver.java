@@ -34,8 +34,9 @@ public class RuleResolver implements SchemaResolver {
 
     private static final Logger log = LoggerFactory.getLogger(RuleResolver.class);
 
-    final DefaultRouter router;
-    public RuleResolver(DefaultRouter router) {
+    final Router router;
+    
+    public RuleResolver(Router router) {
         this.router = router;
     }
 

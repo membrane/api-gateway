@@ -33,8 +33,8 @@ public class DefaultHotDeployer implements HotDeployer {
     private final Object lock = new Object();
 
     @Override
-    public void start(@NotNull DefaultRouter router) {
-        this.router = router;
+    public void start(@NotNull DefaultRouter defaultRouter) {
+        this.router = defaultRouter;
         startInternal();
     }
 

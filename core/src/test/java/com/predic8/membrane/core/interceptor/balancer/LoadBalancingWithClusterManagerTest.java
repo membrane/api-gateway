@@ -96,7 +96,7 @@ public class LoadBalancingWithClusterManagerTest {
     }
 
     private static @NotNull DefaultRouter createRouter() {
-        DefaultRouter node1 = new TestRouter();
+        DefaultRouter node1 = new DefaultRouter();
         node1.getRegistry().register("global", new GlobalInterceptor());
         return node1;
     }

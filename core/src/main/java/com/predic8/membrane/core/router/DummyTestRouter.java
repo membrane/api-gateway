@@ -122,8 +122,13 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     @Override
+    public KubernetesClientFactory getKubernetesClientFactory() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public HttpClientFactory getHttpClientFactory() {
-        return null;
+        return httpClientFactory;
     }
 
     @Override
@@ -141,8 +146,8 @@ public class DummyTestRouter extends AbstractRouter {
      *
      * TODO: Sync somehow with standard transport order maybe TransportConfig class or in Transport?
      */
-    private static HttpTransport createTransport() {
-        HttpTransport transport = new HttpTransport();
+    private HttpTransport createTransport() {
+        var transport = new HttpTransport();
         List<Interceptor> interceptors = new ArrayList<>();
         interceptors.add(new RuleMatchingInterceptor());
         interceptors.add(new DispatchingInterceptor());
@@ -151,6 +156,7 @@ public class DummyTestRouter extends AbstractRouter {
         HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
         interceptors.add(httpClientInterceptor);
         transport.setFlow(interceptors);
+        transport.init(this);
         return transport;
     }
 

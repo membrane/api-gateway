@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ReadRulesConfigurationTest {
 
-    private static DefaultRouter router;
+    private static Router router;
 
     private static List<Proxy> proxies;
 

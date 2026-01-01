@@ -23,6 +23,7 @@ import com.predic8.membrane.core.config.security.acme.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import org.bouncycastle.asn1.*;
@@ -41,13 +42,13 @@ import org.bouncycastle.util.io.pem.*;
 import org.jetbrains.annotations.*;
 import org.joda.time.*;
 import org.jose4j.base64url.Base64;
-import org.jose4j.json.JsonUtil;
+import org.jose4j.json.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
 import org.jose4j.keys.*;
 import org.jose4j.lang.*;
-import org.slf4j.Logger;
 import org.slf4j.*;
+import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import javax.security.auth.x500.*;
@@ -63,28 +64,32 @@ import java.util.stream.*;
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.transport.ssl.acme.Challenge.*;
 import static com.predic8.membrane.core.transport.ssl.acme.Identifier.*;
 import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
+import static org.bouncycastle.jce.provider.BouncyCastleProvider.*;
 import static org.jose4j.lang.HashUtil.*;
 
 public class AcmeClient {
 
+    private static final Logger log = LoggerFactory.getLogger(AcmeClient.class);
+
     public static final String BEGIN_CERTIFICATE_REQUEST = "-----BEGIN CERTIFICATE REQUEST-----";
     public static final String END_CERTIFICATE_REQUEST = "-----END CERTIFICATE REQUEST-----";
+    public static final String BEGIN_PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\n";
+    public static final String END_PUBLIC_KEY = "\n-----END PUBLIC KEY-----\n";
 
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(AcmeClient.class);
     private static final SecureRandom random = new SecureRandom();
     private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
 
     private final String directoryUrl;
-    private final HttpClient hc;
+    private HttpClient hc;
     private final ObjectMapper om = new ObjectMapper();
     private final List<String> nonces = new ArrayList<>();
     private final String challengeType;
@@ -103,14 +108,14 @@ public class AcmeClient {
     private AcmeSynchronizedStorageEngine asse;
     private final AcmeValidation acmeValidation;
 
-    public AcmeClient(Acme acme, @Nullable HttpClientFactory httpClientFactory) {
+    private final Acme acme;
+
+    public AcmeClient(Acme acme) {
+        this.acme =acme;
         directoryUrl = acme.getDirectoryUrl();
         termsOfServiceAgreed = acme.isTermsOfServiceAgreed();
         ass = acme.getAcmeSynchronizedStorage();
         contacts = Arrays.asList(acme.getContacts().split(" +"));
-        if (httpClientFactory == null)
-            httpClientFactory = new HttpClientFactory(null);
-        hc = httpClientFactory.createClient(acme.getHttpClientConfiguration());
         validity = acme.getValidityDuration();
         this.acmeValidation = acme.getValidationMethod();
         challengeType = acme.getValidationMethod() != null && acme.getValidationMethod().useDnsValidation() ? TYPE_DNS_01 : TYPE_HTTP_01;
@@ -121,15 +126,17 @@ public class AcmeClient {
             throw new RuntimeException("The ACME client is still experimental, please set <acme experimental=\"true\" ... /> to acknowledge.");
     }
 
-    public void init(@Nullable KubernetesClientFactory kubernetesClientFactory, @Nullable HttpClientFactory httpClientFactory) {
+    public void init(@NotNull Router router) {
+        hc = router.getHttpClientFactory().createClient(acme.getHttpClientConfiguration());
+
         switch (ass) {
             case null -> throw new RuntimeException("<acme> is used, but to storage is configured.");
             case FileStorage fileStorage -> asse = new AcmeFileStorageEngine(fileStorage);
             case KubernetesStorage kubernetesStorage ->
-                    asse = new AcmeKubernetesStorageEngine(kubernetesStorage, kubernetesClientFactory);
+                    asse = new AcmeKubernetesStorageEngine(kubernetesStorage, router.getKubernetesClientFactory());
             case MemoryStorage memoryStorage -> asse = new AcmeMemoryStorageEngine();
             case AzureTableStorage azureTableStorage ->
-                    asse = new AcmeAzureTableApiStorageEngine(azureTableStorage, (AzureDns) acmeValidation, httpClientFactory);
+                    asse = new AcmeAzureTableApiStorageEngine(azureTableStorage, (AzureDns) acmeValidation, router);
             default -> throw new RuntimeException("Unsupported: Storage type " + ass.getClass().getName());
         }
 
@@ -181,7 +188,7 @@ public class AcmeClient {
                 new AcmeException.SubProblem(
                         (String) m.get("type"),
                         (String) m.get("detail"),
-                        (Map)m.get("identifier"))).collect(Collectors.toList());
+                        (Map) m.get("identifier"))).collect(Collectors.toList());
     }
 
     public String retrieveNewNonce() throws Exception {
@@ -210,9 +217,7 @@ public class AcmeClient {
     }
 
     private static @NotNull String getPublicKeyBase64Encoded(KeyPair kp) {
-        return "-----BEGIN PUBLIC KEY-----\n"
-               + Base64.encode(kp.getPublic().getEncoded()) +
-               "\n-----END PUBLIC KEY-----\n";
+        return BEGIN_PUBLIC_KEY + Base64.encode(kp.getPublic().getEncoded()) + END_PUBLIC_KEY;
     }
 
     private static @NotNull String getKeyBase64Encoded(KeyPair kp) {
@@ -222,7 +227,7 @@ public class AcmeClient {
     }
 
     private static @NotNull KeyPairGenerator getKeyPairGenerator() throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ECDSA", PROVIDER_NAME);
         kpg.initialize(new ECGenParameterSpec("secp384r1"), random);
         return kpg;
     }
@@ -237,7 +242,8 @@ public class AcmeClient {
             p10Builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, getExtensions(GeneralNames.getInstance(new DERSequence(getGeneralNames(hosts)))));
 
             return formatCSR(convertCSR2String(getPkcs10CertificationRequest(pk, p10Builder)));
-        } catch (NoSuchAlgorithmException | IOException | OperatorCreationException | InvalidKeySpecException | NoSuchProviderException e) {
+        } catch (NoSuchAlgorithmException | IOException | OperatorCreationException | InvalidKeySpecException |
+                 NoSuchProviderException e) {
             throw new RuntimeException(e);
         }
     }
@@ -277,7 +283,7 @@ public class AcmeClient {
     }
 
     private static PrivateKey getPrivateKeyFromString(String privateKey) throws NoSuchAlgorithmException, NoSuchProviderException, IOException, InvalidKeySpecException {
-        KeyFactory factory = KeyFactory.getInstance("ECDSA", BouncyCastleProvider.PROVIDER_NAME);
+        KeyFactory factory = KeyFactory.getInstance("ECDSA", PROVIDER_NAME);
         PrivateKey pk;
         try (PemReader pemReader = new PemReader(new StringReader(privateKey))) {
             PemObject pemObject = pemReader.readPemObject();
@@ -304,7 +310,7 @@ public class AcmeClient {
     public String provision(Authorization auth) throws Exception {
         Optional<Challenge> challenge = auth.getChallenges().stream().filter(c -> challengeType.equals(c.getType())).findAny();
         if (challenge.isEmpty())
-            throw new RuntimeException("Could not find challenge of type "+challengeType+": " + om.writeValueAsString(auth));
+            throw new RuntimeException("Could not find challenge of type %s: %s".formatted(challengeType, om.writeValueAsString(auth)));
 
         if (!TYPE_DNS.equals(auth.getIdentifier().getType()))
             throw new RuntimeException("Identifier type is not DNS: " + om.writeValueAsString(auth));
@@ -325,7 +331,7 @@ public class AcmeClient {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         String record = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest(keyAuth.getBytes(UTF_8)));
 
-        ((DnsProvisionable)asse).provisionDns(auth.getIdentifier().getValue(), record);
+        ((DnsProvisionable) asse).provisionDns(auth.getIdentifier().getValue(), record);
     }
 
     private void provisionHttp(Authorization auth, Challenge challenge) {
@@ -357,7 +363,7 @@ public class AcmeClient {
     }
 
     private static String convert2String(MyJsonWebSignature jws) {
-        Map<String,Object> json = new LinkedHashMap<>();
+        Map<String, Object> json = new LinkedHashMap<>();
         json.put("protected", jws.getEncodedHeader());
         json.put("payload", jws.getEncodedPayload());
         json.put("signature", jws.getEncodedSignature());
@@ -478,7 +484,7 @@ public class AcmeClient {
         if (validity != null) {
             Date now = new Date();
             synchronized (sdf) {
-                return new Pair<>(sdf.format(now), sdf.format(new Date(now.getTime() + validity.getMillis())) );
+                return new Pair<>(sdf.format(now), sdf.format(new Date(now.getTime() + validity.getMillis())));
             }
         }
         return new Pair<>(null, null);
@@ -555,8 +561,8 @@ public class AcmeClient {
             privateKey = ek.getPrivateKey();
             publicJsonWebKey = ek;
         } else {
-            if (LOG.isDebugEnabled())
-                LOG.debug("acme: generating key");
+            if (log.isDebugEnabled())
+                log.debug("acme: generating key");
             EllipticCurveJsonWebKey jwk = generateKey();
             privateKey = jwk.getPrivateKey();
             asse.setAccountKey(jwk.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 public class SimpleTest {
 
-	private static DefaultRouter router;
+	private static Router router;
 
 	@BeforeAll
 	static void setUp() {

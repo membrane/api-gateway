@@ -36,7 +36,7 @@ public class RouterXmlBootstrap {
      * @return the initialized {@link DefaultRouter} instance
      * @throws RuntimeException if no {@link DefaultRouter} bean is found or more than one {@link DefaultRouter} bean is found
      */
-    public static DefaultRouter initByXML(String resource) {
+    public static Router initByXML(String resource) {
         log.debug("loading spring config: {}", resource);
 
         TrackingFileSystemXmlApplicationContext bf =
@@ -54,7 +54,7 @@ public class RouterXmlBootstrap {
         return router;
     }
 
-    public static DefaultRouter initFromXMLString(String xmlString) {
+    public static Router initFromXMLString(String xmlString) {
         log.debug("Loading spring config from string");
         GenericXmlApplicationContext ctx = new GenericXmlApplicationContext();
         ctx.load(new ByteArrayResource(xmlString.getBytes(StandardCharsets.UTF_8)));

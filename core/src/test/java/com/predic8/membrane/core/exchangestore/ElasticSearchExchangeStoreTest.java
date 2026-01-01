@@ -165,12 +165,12 @@ class ElasticSearchExchangeStoreTest {
     }
 
     @Test
-    public void testWithoutLogging() throws Exception {
+    void withoutLogging() throws Exception {
         runTest(false);
     }
 
     @Test
-    public void testWithLogging() throws Exception {
+    void withLogging() throws Exception {
         runTest(true);
     }
 

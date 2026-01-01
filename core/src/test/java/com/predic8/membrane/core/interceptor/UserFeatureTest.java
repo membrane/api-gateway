@@ -30,7 +30,7 @@ class UserFeatureTest {
 	public static final String MOCK_5 = "mock5";
 	public static final String MOCK_6 = "mock6";
 	public static final String MOCK_2 = "mock2";
-	private static DefaultRouter router;
+	private static Router router;
 
 	static List<String> labels, inverseLabels, inversAbortLabels;
 

@@ -229,7 +229,7 @@ public class ResolverMap implements Cloneable, Resolver {
         throw new RuntimeException("No SchemaResolver defined for " + uri);
     }
 
-    public void addRuleResolver(DefaultRouter r) {
+    public void addRuleResolver(Router r) {
         addSchemaResolver(new RuleResolver(r));
     }
 

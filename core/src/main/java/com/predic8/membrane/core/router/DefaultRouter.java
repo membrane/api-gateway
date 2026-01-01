@@ -399,22 +399,27 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         }
     }
 
+    @Override
     public TimerManager getTimerManager() {
         return  mainComponents.getTimerManager();
     }
 
+    @Override
     public KubernetesClientFactory getKubernetesClientFactory() {
         return mainComponents.getKubernetesClientFactory();
     }
 
+    @Override
     public HttpClientFactory getHttpClientFactory() {
         return mainComponents.getHttpClientFactory();
     }
 
+    @Override
     public FlowController getFlowController() {
         return mainComponents.getFlowController();
     }
 
+    @Override
     public void handleAsynchronousInitializationResult(boolean success) {
         log.debug("Asynchronous initialization finished.");
         if (!success && !configuration.isRetryInit())
@@ -458,6 +463,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         mainComponents.setRegistry(registry);
     }
 
+
     public BeanRegistry getRegistry() {
        return mainComponents.getRegistry();
     }
@@ -478,6 +484,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         this.configuration = configuration;
     }
 
+    @Override
     public Configuration getConfiguration() {
         return configuration;
     }

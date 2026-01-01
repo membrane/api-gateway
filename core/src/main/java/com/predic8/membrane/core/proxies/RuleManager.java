@@ -35,7 +35,7 @@ public class RuleManager {
 
     private static final Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
 
-    private DefaultRouter router;
+    private Router router;
 
     protected final List<Proxy> proxies = new Vector<>();
     private final List<RuleDefinitionSource> ruleSources = new ArrayList<>();
@@ -74,7 +74,7 @@ public class RuleManager {
         if (exists(proxy.getKey()))
             return;
 
-        router.getTransport().openPort(proxy, router.getTimerManager());
+        router.getTransport().openPort(proxy);
 
         proxies.add(proxy);
         ruleSources.add(source);
@@ -104,8 +104,8 @@ public class RuleManager {
             if (proxy instanceof NotPortOpeningProxy)
                 continue;
 
-            router.getTransport().openPort(proxy.getKey().getIp(), proxy.getKey().getPort(), sslProviders.get(getIpPort(proxy)),
-                    router.getTimerManager());
+            router.getTransport().openPort(proxy.getKey().getIp(), proxy.getKey().getPort(), sslProviders.get(getIpPort(proxy))
+            );
         }
     }
 
@@ -282,7 +282,7 @@ public class RuleManager {
             removeRule(proxies.getFirst());
     }
 
-    public void setRouter(DefaultRouter router) {
+    public void setRouter(Router router) {
         this.router = router;
     }
 

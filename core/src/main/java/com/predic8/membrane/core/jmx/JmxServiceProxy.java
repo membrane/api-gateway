@@ -13,21 +13,19 @@
 
 package com.predic8.membrane.core.jmx;
 
-import com.predic8.membrane.core.router.DefaultRouter;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import org.springframework.jmx.export.annotation.ManagedAttribute;
-import org.springframework.jmx.export.annotation.ManagedOperation;
-import org.springframework.jmx.export.annotation.ManagedResource;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
+import org.springframework.jmx.export.annotation.*;
 
-import java.io.IOException;
+import java.io.*;
 
 @ManagedResource
 public class JmxServiceProxy {
 
     private final ServiceProxy rule;
-    private final DefaultRouter router;
+    private final Router router;
 
-    public JmxServiceProxy(ServiceProxy rule, DefaultRouter router) {
+    public JmxServiceProxy(ServiceProxy rule, Router router) {
         this.rule = rule;
         this.router = router;
     }

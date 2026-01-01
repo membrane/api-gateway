@@ -23,7 +23,7 @@ public class RuleReinitializer {
 
     private static final Logger log = LoggerFactory.getLogger(RuleReinitializer.class);
 
-    private final DefaultRouter router;
+    private final Router router;
 
     private Timer timer;
 

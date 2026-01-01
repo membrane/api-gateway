@@ -19,7 +19,7 @@ import org.slf4j.*;
 
 public abstract class AbstractRouter implements Router, MainComponents {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultRouter.class);
+    private static final Logger log = LoggerFactory.getLogger(AbstractRouter.class);
 
     protected void initProxies() {
         log.debug("Initializing proxies.");
