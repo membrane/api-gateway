@@ -79,6 +79,8 @@ public class BeanDefinition {
     }
 
     public String getScope() {
+        if (node == null)
+            return null;
         JsonNode meta = node.get("metadata");
         if (meta == null)
             return null;
