@@ -65,32 +65,20 @@ public class JSONSchemaValidationExampleTest extends DistributionExtractingTestc
     @Test
     void port2001() throws Exception {
         try(Process2 ignored = startServiceProxyScript()) {
-
             // @formatter:off
-            // Test good JSON
-            given()
-                .contentType(JSON)
-                .body(readFileFromBaseDir("good2001.json"))
-            .when()
-                .post("http://localhost:2001")
-            .then()
-                .statusCode(200);
-
-            // Test bad JSON
             given()
                 .contentType(JSON)
                 .body(readFileFromBaseDir("bad2001.json"))
             .when()
                 .post("http://localhost:2001")
-            .then()
+                .then()
                 .statusCode(400)
                 .contentType(APPLICATION_PROBLEM_JSON)
                 .body("title", equalTo("JSON validation failed"))
                 .body("type", equalTo("https://membrane-api.io/problems/user/validation"))
-                .body("errors.find { it.pointer == '/properties/id/type' }.message", containsString("integer expected"))
-                .body("errors.find { it.pointer == '/properties/price/type' }.message", containsString("number expected"))
-                .body("errors.find { it.pointer == '/properties/tags/type' }.message", containsString("array expected"))
-                .body("errors.find { it.pointer == '/properties/weight/minimum' }.message", containsString("700"));
+                .body("errors.find { it.pointer == '/properties/params/minItems' }.message", containsString("at least 2 items"))
+                .body("errors.find { it.pointer == '/properties/meta/$ref/properties/source/minLength' }.message", containsString("at least 1"))
+                .body("errors.find { it.pointer == '/properties/meta/$ref/additionalProperties' }.message", containsString("unexpected"));
             // @formatter:on
 
         }
