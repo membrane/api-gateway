@@ -130,7 +130,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		}
 
 		/**
-		 * @description The user's phone number (if used in combination with the {@link TelekomSMSTokenProvider}).
+		 * @description The user's phone number
 		 */
 		@MCAttribute
 		public void setSms(String value) {
