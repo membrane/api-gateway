@@ -25,9 +25,9 @@ import java.util.*;
 /**
  * Bootstrapping a {@link DefaultRouter} instance using Spring XML-based configuration.
  */
-public class RouterBootstrap {
+public class RouterXmlBootstrap {
 
-    private static final Logger log = LoggerFactory.getLogger(RouterBootstrap.class);
+    private static final Logger log = LoggerFactory.getLogger(RouterXmlBootstrap.class);
 
         /**
      * Initializes a {@link DefaultRouter} instance from the specified Spring XML configuration resource.

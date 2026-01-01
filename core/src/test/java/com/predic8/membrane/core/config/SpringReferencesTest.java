@@ -29,7 +29,7 @@ public class SpringReferencesTest {
 
 	@BeforeAll
 	public static void before() {
-		r = RouterBootstrap.initByXML("classpath:/proxies-using-spring-refs.xml");
+		r = RouterXmlBootstrap.initByXML("classpath:/proxies-using-spring-refs.xml");
 	}
 
 	@AfterAll

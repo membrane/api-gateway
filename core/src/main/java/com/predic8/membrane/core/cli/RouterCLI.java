@@ -215,7 +215,7 @@ public class RouterCLI {
 
     private static DefaultRouter initRouterByXml(String config) throws Exception {
         try {
-            return RouterBootstrap.initByXML(config);
+            return RouterXmlBootstrap.initByXML(config);
         } catch (XmlBeanDefinitionStoreException e) {
             handleXmlBeanDefinitionStoreException(e);
         }

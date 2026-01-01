@@ -125,7 +125,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     /**
      * HotDeployer for changes on the XML configuration file. Does not cover YAML.
      * Not synchronized, since only modified during initialization
-     * Initialized with NullHotDeployer to avoid NPEs
      */
     private HotDeployer hotDeployer = new DefaultHotDeployer();
 
@@ -153,16 +152,14 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         synchronized (lock) {
             if (initialized)
                 throw new IllegalStateException("Router already initialized.");
-        }
 
-        mainComponents.init();
+            mainComponents.init();
 
-        initProxies();
+            initProxies();
 
-        synchronized (lock) {
             initialized = true;
+            reinitializer = new RuleReinitializer(this); // Bean
         }
-        reinitializer = new RuleReinitializer(this); // Bean
     }
 
     /**
@@ -272,7 +269,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     /**
      * @description A 'global' (per router) &lt;httpClientConfig&gt;. This instance is used everywhere
-     * a HTTP Client is used. Usually, in every specific place, you can still configure a local
+     * a HTTP Client is used. In every specific place, you should still be able to configure a local
      * &lt;httpClientConfig&gt; (with higher precedence compared to this global instance).
      */
     @MCChildElement()
@@ -426,11 +423,8 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     @Override
     public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) throws IOException {
         log.debug("Bean changed: type={} instance={}", bean.getClass().getSimpleName(), bean);
-        if (bean instanceof GlobalInterceptor) {
-            return;
-        }
-
         if (!(bean instanceof Proxy newProxy)) {
+            // should not happen, as handleBeanEvent() is only called for beans passing isActivatable().
             throw new IllegalArgumentException("Bean must be a Proxy instance, but got: " + bean.getClass().getName());
         }
 
