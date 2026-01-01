@@ -45,9 +45,9 @@ public abstract class OAuth2RedirectTest {
     static final URI AUTH_SERVER_BASE_URL = URI.create("http://localhost:2002");
     static final URI BACKEND_BASE_URL = URI.create("http://localhost:2001");
     static final URI CLIENT_BASE_URL = URI.create("http://localhost:2000");
-    static Router authorizationServerRouter;
-    static Router oauth2ResourceRouter;
-    static Router backendRouter;
+    static DefaultRouter authorizationServerRouter;
+    static DefaultRouter oauth2ResourceRouter;
+    static DefaultRouter backendRouter;
     static final AtomicReference<String> firstUrlHit = new AtomicReference<>();
     static final AtomicReference<String> targetUrlHit = new AtomicReference<>();
     static final AtomicReference<String> interceptorChainHit = new AtomicReference<>();
@@ -61,9 +61,9 @@ public abstract class OAuth2RedirectTest {
 
     @AfterEach
     void shutdown() {
-        authorizationServerRouter.shutdown();
-        oauth2ResourceRouter.shutdown();
-        backendRouter.shutdown();
+        authorizationServerRouter.stop();
+        oauth2ResourceRouter.stop();
+        backendRouter.stop();
     }
 
     @Test
@@ -162,12 +162,12 @@ public abstract class OAuth2RedirectTest {
         }};
     }
 
-    private static Router startProxyRule(SSLableProxy azureRule) throws Exception {
-        Router router = new Router();
+    private static DefaultRouter startProxyRule(SSLableProxy azureRule) throws Exception {
+        DefaultRouter router = new DefaultRouter();
         router.setExchangeStore(new ForgetfulExchangeStore());
         router.setTransport(new HttpTransport());
-        router.getRuleManager().addProxyAndOpenPortIfNew(azureRule);
-        router.init();
+        router.add(azureRule);
+        router.start();
         return router;
     }
 

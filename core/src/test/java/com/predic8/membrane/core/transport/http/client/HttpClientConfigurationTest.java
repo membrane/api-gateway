@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class HttpClientConfigurationTest {
 
-    Router router;
+    DefaultRouter router;
 
     HttpClientConfiguration configuration;
 
@@ -145,13 +145,13 @@ class HttpClientConfigurationTest {
     }
 
     private @NotNull Proxy getApi1() {
-        Proxy api1 = router.getRules().stream().filter(proxy -> proxy.getName().equals("API1")).findFirst().orElseThrow();
+        Proxy api1 = router.getRuleManager().getRuleByName("API1", Proxy.class);
         assertNotNull(api1);
         return api1;
     }
 
     private void setupRouter(String globalHcc) {
-        router = Router.initFromXMLString(globalHcc);
+        router = RouterXmlBootstrap.initFromXMLString(globalHcc);
         assertNotNull(router.getHttpClientConfig());
         assertNotNull(router.getResolverMap().getHTTPSchemaResolver().getHttpClientConfig());
     }

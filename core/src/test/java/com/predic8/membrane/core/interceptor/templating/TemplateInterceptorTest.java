@@ -49,12 +49,12 @@ public class TemplateInterceptorTest {
     TemplateInterceptor ti;
     Exchange exc = new Exchange(null);
     Request req;
-    static Router router;
+    static DefaultRouter router;
     static ResolverMap map;
 
     @BeforeAll
     static void setupFiles() {
-        router = mock(Router.class);
+        router = mock(DefaultRouter.class);
         map = new ResolverMap();
         when(router.getResolverMap()).thenReturn(map);
         when(router.getUriFactory()).thenReturn(new URIFactory());

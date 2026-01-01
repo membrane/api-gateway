@@ -20,13 +20,12 @@ import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
-import com.predic8.membrane.core.exchange.*;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.DefaultRouter;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -93,7 +92,7 @@ public class HelpLinkExistenceTest {
 		try {
 			HashSet<Class<?>> currentSet = new HashSet<>();
 
-			try (BufferedReader r = new BufferedReader(new InputStreamReader(requireNonNull(Router.class.getResourceAsStream("/META-INF/membrane.cache"))))) {
+			try (BufferedReader r = new BufferedReader(new InputStreamReader(requireNonNull(DefaultRouter.class.getResourceAsStream("/META-INF/membrane.cache"))))) {
 				if (!CACHE_FILE_FORMAT_VERSION.equals(r.readLine()))
 					throw new RuntimeException();
 				Class<? extends Annotation> annotationClass;

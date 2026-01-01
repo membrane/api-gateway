@@ -22,7 +22,6 @@ import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
-import org.slf4j.*;
 
 import java.util.*;
 import java.util.concurrent.*;

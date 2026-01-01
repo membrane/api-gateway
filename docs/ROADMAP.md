@@ -12,9 +12,19 @@
 - Correct YAML example on GitHub README
 - Rename in apis.yaml
 
+# 7.X
+
+- JMXExporter:
+  - Tutorial
+  - Documentation
+  - See JmxExporter
+- Synchronization of BeanRegistry
 
 # 7.1.0
 
+- reverseDNS
+  - Now it is in transport
+  - Maybe move it to configuration
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 - Remove GroovyTemplateInterceptor (Not Template Interceptor)
@@ -23,6 +33,7 @@
 # 7.0.4
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- do not pass a `Router` reference into all sorts of beans: Access to global functionality should happen only on a very limited basis.
 
 
 # 7.0.1
@@ -41,7 +52,8 @@
   
 
 ## (Breaking) Interface Changes
-
+- JMX: Name changes to "io.membrane-api:00=routers, name="
+- Removed GateKeeperClientInterceptor
 - Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
 - Remove WADLInterceptor
 - HttpClient TB (done)

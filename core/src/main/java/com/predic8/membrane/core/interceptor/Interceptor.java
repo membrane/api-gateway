@@ -53,6 +53,10 @@ public interface Interceptor {
 		}
 	}
 
+	void init(Router router);
+
+	void init(Router router, Proxy proxy);
+
 	Outcome handleRequest(Exchange exchange);
 	Outcome handleResponse(Exchange exchange);
 
@@ -93,7 +97,5 @@ public interface Interceptor {
      */
 	String getHelpId();
 
-	void init(Router router);
 
-	void init(Router router, Proxy proxy);
 }

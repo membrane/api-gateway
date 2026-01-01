@@ -20,28 +20,26 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
 import static io.restassured.RestAssured.*;
-import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class AbstractInterceptorFlowTest {
 
-    private static Router router;
+    private Router router;
 
-    @BeforeAll
-    static void setUp() {
-        router = getRouter();
+    @BeforeEach
+    void setUp() {
+        router = new TestRouter();
     }
 
-    @AfterAll
-    static void tearDown() {
-        router.shutdown();
+    @AfterEach
+    void tearDown() {
+        router.stop();
     }
 
     protected void assertFlow(String expected,Interceptor... interceptors) throws Exception {
@@ -55,9 +53,9 @@ public abstract class AbstractInterceptorFlowTest {
     }
 
     private void setUpRouter(Interceptor[] interceptors) throws Exception {
-        router.setRules(EMPTY_LIST);
+        // router.setRules(EMPTY_LIST);
         router.add(getApiProxy(interceptors));
-        router.init();
+        router.start();
     }
 
     private static @NotNull APIProxy getApiProxy(Interceptor[] interceptors) {
@@ -72,12 +70,5 @@ public abstract class AbstractInterceptorFlowTest {
         APIProxy api = new APIProxy();
         api.setKey(new ServiceProxyKey("*","*",null,2000));
         return api;
-    }
-
-    @NotNull
-    private static Router getRouter() {
-        Router r = new Router();
-        r.setTransport(new HttpTransport());
-        return r;
     }
 }

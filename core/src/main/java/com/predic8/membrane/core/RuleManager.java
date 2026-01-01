@@ -36,7 +36,7 @@ public class RuleManager {
 
     private static final Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
 
-    private Router router;
+    private DefaultRouter router;
 
     protected final List<Proxy> proxies = new Vector<>();
     private final List<RuleDefinitionSource> ruleSources = new ArrayList<>();
@@ -62,6 +62,11 @@ public class RuleManager {
         return false;
     }
 
+    /**
+     * Do not call directly. Router should call this method. Call Router.add() + Router.start() instead.
+     * @param proxy
+     * @throws IOException
+     */
     public void addProxyAndOpenPortIfNew(SSLableProxy proxy) throws IOException {
         addProxyAndOpenPortIfNew(proxy, RuleDefinitionSource.MANUAL);
     }
@@ -281,6 +286,7 @@ public class RuleManager {
         getExchangeStore().removeAllExchanges(proxy);
 
         int i = proxies.indexOf(proxy);
+        newProxy.init(router);
         proxies.set(i, newProxy);
 
         for (IRuleChangeListener listener : listeners) {
@@ -296,7 +302,7 @@ public class RuleManager {
             removeRule(proxies.getFirst());
     }
 
-    public void setRouter(Router router) {
+    public void setRouter(DefaultRouter router) {
         this.router = router;
     }
 
@@ -340,5 +346,4 @@ public class RuleManager {
             }
         };
     }
-
 }

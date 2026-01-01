@@ -15,7 +15,8 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
+
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
@@ -56,7 +57,7 @@ public class FileUserDataProvider implements UserDataProvider {
         userAttributes = getUsersByName().get(username);
         if (userAttributes == null)
             throw new NoSuchElementException();
-        String pw = null;
+        String pw;
         String postDataPassword = postData.get("password");
         String userHash = userAttributes.getPassword();
         String[] userHashSplit = userHash.split("\\$");

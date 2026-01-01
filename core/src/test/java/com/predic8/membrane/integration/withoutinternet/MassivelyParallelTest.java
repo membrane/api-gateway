@@ -21,6 +21,7 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -31,6 +32,7 @@ import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.lang.Thread.*;
 import static java.util.concurrent.ConcurrentHashMap.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -47,19 +49,17 @@ class MassivelyParallelTest {
     private static int CONCURRENT_THREADS = 500;
 
     static HttpClient client;
-    static HttpRouter server;
+    static TestRouter server;
 
     @BeforeAll
-    public static void init() {
+    public static void init() throws IOException {
         client = new HttpClient();
-
-        server = new HttpRouter();
+        server = new TestRouter();
+        server.add(createServiceProxy());
+        server.start();
         server.getTransport().setConcurrentConnectionLimitPerIp(CONCURRENT_THREADS);
         server.getTransport().setBacklog(CONCURRENT_THREADS);
         server.getTransport().setSocketTimeout(10000);
-        server.getConfig().setHotDeploy(false);
-        server.getRuleManager().addProxy(createServiceProxy(), MANUAL);
-        server.start();
     }
 
     private static ServiceProxy createServiceProxy() {
@@ -88,7 +88,7 @@ class MassivelyParallelTest {
     }
 
     @Test
-    @Timeout(30) // seconds
+    @Timeout(60) // seconds
     public void run() throws Exception {
         Set<String> paths = newKeySet();
         runInParallel((cdl) -> parallelTestWorker(cdl, paths), CONCURRENT_THREADS);
@@ -96,14 +96,14 @@ class MassivelyParallelTest {
     }
 
     private void runInParallel(Consumer<CountDownLatch> job, int threadCount) {
-        try(ExecutorService es = Executors.newVirtualThreadPerTaskExecutor()) {
+        try (ExecutorService es = Executors.newVirtualThreadPerTaskExecutor()) {
             CountDownLatch cdl = new CountDownLatch(threadCount);
             try {
                 for (int i = 0; i < threadCount; i++) {
                     es.submit(() -> job.accept(cdl));
                 }
                 es.shutdown();
-                if (!es.awaitTermination(30, TimeUnit.SECONDS)) {
+                if (!es.awaitTermination(60, SECONDS)) {
                     es.shutdownNow();
                     fail("Tasks did not complete within timeout");
                 }

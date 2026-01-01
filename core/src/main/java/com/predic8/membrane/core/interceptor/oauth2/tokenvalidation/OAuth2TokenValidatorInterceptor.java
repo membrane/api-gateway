@@ -53,7 +53,7 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
                 if(callExchangeAndCheckFor200(buildAccessTokenValidationExchange(exc)))
                     return CONTINUE;
             } catch (Exception e) {
-                internal(router.isProduction(),getDisplayName())
+                internal(router.getConfiguration().isProduction(),getDisplayName())
                         .exception(e)
                         .buildAndSetResponse(exc);
                 return ABORT;

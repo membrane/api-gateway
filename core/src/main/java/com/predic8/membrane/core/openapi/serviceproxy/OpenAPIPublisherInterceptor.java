@@ -119,7 +119,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
             return handleOverviewOpenAPIDoc(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .detail("Error handling OpenAPI overview!")
                     .exception(e)
                     .buildAndSetResponse(exc);

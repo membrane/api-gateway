@@ -29,7 +29,7 @@ public class WsaEndpointRewriterInterceptorTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		Router router = new HttpRouter();
+		Router router = new DummyTestRouter();
 		router.init();
 		rewriter = new WsaEndpointRewriterInterceptor();
 		rewriter.init(router);

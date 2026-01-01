@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.DummyTestRouter;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.*;
@@ -62,7 +62,7 @@ public class JwtAuthInterceptorUnitTests {
                 +"\", \"e\":\"BB\"}");
         jwks.getJwks().add(jwk);
         interceptor.setJwks(jwks);
-        interceptor.init(new HttpRouter());
+        interceptor.init(new DummyTestRouter());
         interceptor.handleRequest(exchange);
 
         assertEquals(ERROR_JWT_NOT_FOUND, getErrorResponse(exchange));

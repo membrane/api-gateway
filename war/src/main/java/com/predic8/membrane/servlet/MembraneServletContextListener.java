@@ -15,7 +15,7 @@
 package com.predic8.membrane.servlet;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.DefaultRouter;
 import com.predic8.membrane.servlet.config.spring.BaseLocationXmlWebApplicationContext;
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
@@ -36,7 +36,7 @@ public class MembraneServletContextListener implements ServletContextListener {
 			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(sce));
 
 			appCtx = new BaseLocationXmlWebApplicationContext();
-			Router router = RouterUtil.initializeRoutersFromSpringWebContext(appCtx, sce.getServletContext(), getProxiesXmlLocation(sce));
+			DefaultRouter router = RouterUtil.initializeRoutersFromSpringWebContext(appCtx, sce.getServletContext(), getProxiesXmlLocation(sce));
 			if (router != null)
 				throw new RuntimeException("A <router> with a <servletTransport> cannot be used with MembraneServletContextListener. Use MembraneServlet instead.");
 

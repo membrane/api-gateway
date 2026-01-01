@@ -34,7 +34,7 @@ class RegExReplaceInterceptorTest {
 		interceptor = new RegExReplaceInterceptor();
 		interceptor.setRegex("\\bb.*?\\b");
 		interceptor.setReplace("boo");
-		interceptor.init(new Router());
+		interceptor.init(new DefaultRouter());
 	}
 
 	@Test

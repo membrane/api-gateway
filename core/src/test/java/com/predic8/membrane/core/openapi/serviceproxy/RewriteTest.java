@@ -49,8 +49,8 @@ class RewriteTest {
         rewriteAll.protocol = "https";
         rewriteAll.basePath = "/foo";
 
-        Router router = new Router();
-        router.getConfig().setUriFactory(new URIFactory());
+        DefaultRouter router = new DefaultRouter();
+        router.getConfiguration().setUriFactory(new URIFactory());
         router.setBaseLocation("");
 
         OpenAPIRecordFactory openAPIRecordFactory = new OpenAPIRecordFactory(router);

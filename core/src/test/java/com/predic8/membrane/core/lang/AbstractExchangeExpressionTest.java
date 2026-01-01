@@ -30,13 +30,13 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 public abstract class AbstractExchangeExpressionTest {
 
-    protected static Router router;
+    protected static DefaultRouter router;
     protected static Exchange exchange;
     protected static Flow flow;
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        router = new Router();
+        router = new DefaultRouter();
         exchange = getRequestBuilder()
                 .header("name","Jelly Fish")
                 .header("foo","42")
@@ -61,7 +61,7 @@ public abstract class AbstractExchangeExpressionTest {
 
     @AfterAll
     static void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     protected abstract Request.Builder getRequestBuilder() throws URISyntaxException;

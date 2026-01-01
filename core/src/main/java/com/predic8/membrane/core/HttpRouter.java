@@ -1,4 +1,4 @@
-/* Copyright 2009, 2011, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,52 +14,12 @@
 
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
 
-import java.util.*;
+public class HttpRouter extends DefaultRouter {
 
-public class HttpRouter extends Router {
-
-	public HttpRouter() {
-		this(null);
-	}
-
-	public HttpRouter(ProxyConfiguration proxyConfiguration) {
-		transport = createTransport();
-		resolverMap.getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
-	}
-
-	/**
-	 * Same as the default config from monitor-beans.xml
-	 */
-	private Transport createTransport() {
-		Transport transport = new HttpTransport();
-		List<Interceptor> interceptors = new ArrayList<>();
-		interceptors.add(new RuleMatchingInterceptor());
-		interceptors.add(new DispatchingInterceptor());
-		interceptors.add(new UserFeatureInterceptor());
-		interceptors.add(new InternalRoutingInterceptor());
-		HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
-		interceptors.add(httpClientInterceptor);
-		transport.setFlow(interceptors);
-		return transport;
-	}
-
-	@Override
-	public HttpTransport getTransport() {
-		return (HttpTransport)transport;
-	}
-
-	/**
-	 * TODO Only used for tests. It s brittle cause it is dependent on
-	 * the list. In tests interceptors in the proxy can be used instead.
-	 */
-	public void addUserFeatureInterceptor(Interceptor i) {
-		List<Interceptor> is = getTransport().getFlow();
-		is.add(is.size()-3, i);
-	}
-
+    @Override
+    public HttpTransport getTransport() {
+        return (HttpTransport) super.getTransport();
+    }
 }

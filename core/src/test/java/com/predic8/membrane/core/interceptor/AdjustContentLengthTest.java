@@ -30,15 +30,15 @@ public class AdjustContentLengthTest {
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(createMonitorRule());
-		router.getRuleManager().addProxyAndOpenPortIfNew(createEndpointRule());
-		router.init();
+		router = new TestRouter();
+		router.add(createMonitorRule());
+		router.add(createEndpointRule());
+		router.start();
 	}
 
 	@AfterAll
 	public static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	private static ServiceProxy createMonitorRule() {

@@ -507,11 +507,9 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
                     log.info("Index {} created",index);
                 }
             } catch (JSONException e) {
-                if(indexRes.getJSONObject("error").getJSONArray("root_cause")
-                        .getJSONObject(0).getString("type").equals("resource_already_exists_exception")){
+                if(indexRes.has("error") && indexRes.getJSONObject("error").getJSONArray("root_cause").getJSONObject(0).getString("type").equals("resource_already_exists_exception")){
                     log.info("Index already exists skipping index creation");
-                }
-                else{
+                } else {
                     log.error("Error happened. Reply from elastic search is below");
                     log.error(indexRes.toString());
                 }

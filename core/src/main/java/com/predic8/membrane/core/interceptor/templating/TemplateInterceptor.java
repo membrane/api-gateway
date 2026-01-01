@@ -69,7 +69,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
             process(exc, flow);
         } catch (GroovyRuntimeException e) {
             log.warn("Groovy error executing template: {}", e.getMessage());
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("groovy")
                     .detail("Groovy error during template rendering.")
                     .exception(e)
@@ -77,7 +77,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (TemplateExecutionException tee) {
-            ProblemDetails pd = internal(router.isProduction(), getDisplayName())
+            ProblemDetails pd = internal(router.getConfiguration().isProduction(), getDisplayName())
                     .topLevel("line",tee.getLineNumber())
                     .topLevel("message", tee.getMessage())
                     .addSubSee("template");
@@ -104,7 +104,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
         } catch (Exception e) {
             log.warn("Error executing template.", e);
 
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("template")
                     .exception(e)
                     .buildAndSetResponse(exc);

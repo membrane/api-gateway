@@ -32,8 +32,8 @@ public class JsonProtectionInterceptorTest {
     static JsonProtectionInterceptor jpiDev;
 
     private static JsonProtectionInterceptor buildJPI(boolean prod) {
-        Router router = new Router();
-        router.getConfig().setProduction(prod);
+        DefaultRouter router = new DefaultRouter();
+        router.getConfiguration().setProduction(prod);
         JsonProtectionInterceptor jpi = new JsonProtectionInterceptor();
 
         jpi.setMaxTokens(4096);

@@ -40,14 +40,14 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HttpKeepAliveTest {
 
 	private HashSet<Integer> hashs; // tracks the hashcodes of all connections used
-	private HttpRouter service1;
+	private Router service1;
 	private ServiceProxy sp1;
 
 	@BeforeEach
 	public void setUp() throws Exception {
 		hashs = new HashSet<>();
 
-		service1 = new HttpRouter();
+		service1 = new TestRouter();
 		sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
 				METHOD_POST, ".*", 2003), "thomas-bayer.com", 80);
 		sp1.getFlow().add(new AbstractInterceptor(){
@@ -63,13 +63,13 @@ public class HttpKeepAliveTest {
 				return RETURN;
 			}
 		});
-		service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
-		service1.init();
+		service1.add(sp1);
+		service1.start();
 	}
 
 	@AfterEach
 	public void tearDown() {
-		service1.shutdown();
+		service1.stop();
 	}
 
 	private HttpClient createHttpClient(int defaultKeepAliveTimeout) {

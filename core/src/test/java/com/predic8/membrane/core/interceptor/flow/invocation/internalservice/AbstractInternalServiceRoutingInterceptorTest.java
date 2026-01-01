@@ -39,24 +39,21 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
 
     @BeforeEach
     void setup() throws Exception {
-        router = new HttpRouter();
-        router.getConfig().setHotDeploy(false);
-
+        router = new TestRouter();
+        router.getConfiguration().setHotDeploy(false);
         configure();
-
-        router.init();
         router.start();
     }
 
     @AfterEach
     void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     public void api(Consumer<TestAPIProxy> c) throws Exception {
         TestAPIProxy api = new TestAPIProxy();
         c.accept(api);
-        router.getRuleManager().addProxyAndOpenPortIfNew(api);
+        router.add(api);
     }
 
     protected static class TestAPIProxy extends APIProxy {
@@ -69,7 +66,7 @@ abstract class AbstractInternalServiceRoutingInterceptorTest {
         TestInternalProxy api = new TestInternalProxy();
         c.accept(api);
         api.setKey(new InternalProxyKey());
-        router.getRuleManager().addProxyAndOpenPortIfNew(api);
+        router.add(api);
     }
 
     protected static class TestInternalProxy extends InternalProxy {

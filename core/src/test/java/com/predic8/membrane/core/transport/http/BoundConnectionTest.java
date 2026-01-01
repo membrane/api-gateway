@@ -29,15 +29,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class BoundConnectionTest {
 
-	HttpRouter router;
+	Router router;
 	volatile long connectionHash = 0;
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		router = new HttpRouter();
+		router = new TestRouter();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("*",
 				"*", ".*", 3021), "localhost", 3022);
-		router.getRuleManager().addProxyAndOpenPortIfNew(sp1);
+		router.add(sp1);
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*",
 				"*", ".*", 3022), "", -1);
 		sp2.getFlow().add(new AbstractInterceptor(){
@@ -53,13 +53,13 @@ public class BoundConnectionTest {
 				return Outcome.RETURN;
 			}
 		});
-		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
-		router.init();
+		router.add(sp2);
+		router.start();
 	}
 
 	@AfterEach
 	public void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 

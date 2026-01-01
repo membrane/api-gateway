@@ -22,10 +22,10 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.util.text.TextUtil;

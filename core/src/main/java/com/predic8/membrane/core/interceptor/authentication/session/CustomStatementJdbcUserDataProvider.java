@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;

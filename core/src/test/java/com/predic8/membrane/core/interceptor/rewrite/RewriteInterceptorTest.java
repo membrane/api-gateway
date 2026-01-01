@@ -41,7 +41,7 @@ public class RewriteInterceptorTest {
 
 	@BeforeEach
 	void setUp() {
-		HttpRouter router = new HttpRouter();
+		DummyTestRouter router = new DummyTestRouter();
 
 		di = new DispatchingInterceptor();
 		di.init(router);

@@ -15,7 +15,7 @@ package com.predic8.membrane.core.azure;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -34,7 +34,7 @@ public class AzureDnsApiSimulator {
     private static final Logger log = LoggerFactory.getLogger(AzureDnsApiSimulator.class);
 
     private final int port;
-    private HttpRouter router;
+    private Router router;
 
     private final Map<String, List<Map<String, String>>> tableStorage = new HashMap<>();
 
@@ -43,8 +43,7 @@ public class AzureDnsApiSimulator {
     }
 
     public void start() throws IOException {
-        router = new HttpRouter();
-        router.getConfig().setHotDeploy(false);
+        router = new TestRouter();
 
         var sp = new ServiceProxy(new ServiceProxyKey(port), "localhost", port);
 

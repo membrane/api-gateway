@@ -13,16 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.DummyTestRouter;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 
 import java.io.IOException;
 
-public abstract class AuthServerMock extends HttpRouter {
+public abstract class AuthServerMock extends DummyTestRouter {
     public AuthServerMock() throws IOException {
         getTransport().setBacklog(10_000);
         getTransport().setSocketTimeout(10_000);
-        getConfig().setHotDeploy(false);
+        getConfiguration().setHotDeploy(false);
         getTransport().setConcurrentConnectionLimitPerIp(500);
 
         getRuleManager().addProxyAndOpenPortIfNew(mockServiceProxy());

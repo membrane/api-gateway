@@ -18,7 +18,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.DummyTestRouter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -34,7 +34,7 @@ public class AccessControlParserTest {
 
 	@BeforeAll
 	protected static void setUp() throws Exception {
-		resources = new AccessControlInterceptor().parse(FILE_NAME, new HttpRouter()).getResources();
+		resources = new AccessControlInterceptor().parse(FILE_NAME, new DummyTestRouter()).getResources();
 	}
 
 	@Test

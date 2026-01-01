@@ -73,7 +73,7 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
     }
 
     private ProblemDetails prepareProblemDetails(String msg) {
-        return internal(getRouter().isProduction(), getDisplayName())
+        return internal(getRouter().getConfiguration().isProduction(), getDisplayName())
                 .title(msg)
                 .internal("field", fieldName)
                 .internal("expression", expression);

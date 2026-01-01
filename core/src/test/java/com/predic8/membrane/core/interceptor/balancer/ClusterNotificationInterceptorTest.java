@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
 import org.apache.commons.codec.*;
 import org.apache.commons.codec.binary.*;
@@ -21,6 +22,7 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
+import org.mockito.internal.configuration.*;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -35,29 +37,31 @@ import static org.apache.commons.codec.binary.Base64.encodeBase64;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClusterNotificationInterceptorTest {
-	private HttpRouter router;
+	private TestRouter router;
 	private ClusterNotificationInterceptor interceptor;
 
 	@BeforeEach
 	public void setUp() throws Exception {
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3002), "thomas-bayer.com", 80);
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
+		router = new TestRouter();
+		router.add(proxy);
 
 		interceptor = new ClusterNotificationInterceptor();
-		router.addUserFeatureInterceptor(interceptor);
+		var global = new GlobalInterceptor();
+		global.getFlow().add(interceptor);
+		router.getRegistry().register("global", global);
 
 		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
 		lbi.setName("Default");
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3003), "thomas-bayer.com", 80);
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
+		router.add(proxy2);
 		proxy2.getFlow().add(lbi);
-		router.init();
+		router.start();
 	}
 
 	@AfterEach
 	public void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

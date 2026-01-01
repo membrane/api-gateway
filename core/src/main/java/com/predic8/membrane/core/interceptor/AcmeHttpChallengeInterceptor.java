@@ -13,21 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.ssl.AcmeSSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.acme.AcmeClient;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.transport.ssl.acme.*;
 import org.jose4j.lang.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_OCTET_STREAM;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static java.util.Arrays.stream;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Arrays.*;
 
 /**
  * @description
@@ -53,7 +51,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
                     ? exc.getRequest().getHeader().getHost().replaceAll(":.*", "")
                     : exc.getRequest().getHeader().getHost();
 
-            for (Proxy proxy : router.getRules()) {
+            for (Proxy proxy : router.getRuleManager().getRules()) {
                 if (!(proxy instanceof SSLableProxy sp))
                     continue;
                 SSLContext sslInboundContext = sp.getSslInboundContext();
@@ -72,7 +70,7 @@ public class AcmeHttpChallengeInterceptor extends AbstractInterceptor {
                     try {
                         keyAuth = token + "." + acmeClient.getThumbprint();
                     } catch (JoseException e) {
-                        ProblemDetails.user(router.isProduction(),getDisplayName())
+                        ProblemDetails.user(router.getConfiguration().isProduction(),getDisplayName())
                                 .detail("Could not create thumbprint!")
                                 .exception(e)
                                 .buildAndSetResponse(exc);

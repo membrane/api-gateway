@@ -18,12 +18,10 @@ package com.predic8.membrane.core.openapi.validators.security;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.jwt.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.security.*;
-import com.predic8.membrane.core.transport.http.*;
 import org.jetbrains.annotations.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
@@ -34,37 +32,38 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JWTInterceptorAndSecurityValidatorTest {
 
-    public static final String SPEC_LOCATION = getPathFromResource( "openapi/openapi-proxy/no-extensions.yml");
-    APIProxy proxy;
+    private static final String SPEC_LOCATION = getPathFromResource( "openapi/openapi-proxy/no-extensions.yml");
+    private Router router;
+    private APIProxy proxy;
 
     RsaJsonWebKey privateKey;
 
-
     @BeforeEach
-    public void setUp() throws Exception {
-
-        Router router = new Router();
+    void setUp() throws Exception {
+        router = new DummyTestRouter();
         proxy = createProxy(router, getSpec());
 
         privateKey = RsaJwkGenerator.generateJwk(2048);
         privateKey.setKeyId("membrane");
 
         proxy.getFlow().add(getJwtAuthInterceptor(router));
+    }
 
-        router.setTransport(new HttpTransport());
-        router.setExchangeStore(new ForgetfulExchangeStore());
-        router.init();
+    @AfterEach
+    void tearDown() {
+        router.stop();
     }
 
     @Test
-    public void checkIfScopesAreStoredInProperty() throws Exception {
-        Exchange exc = new Request.Builder().get("/foo").header("Authorization", "bearer " + getSignedJwt(privateKey, getJwtClaimsStringScopesList())).buildExchange();
+    void checkIfScopesAreStoredInProperty() throws Exception {
+        Exchange exc = get("/foo").header("Authorization", "bearer " + getSignedJwt(privateKey, getJwtClaimsStringScopesList())).buildExchange();
         callInterceptorChain(exc);
 
         //noinspection unchecked
@@ -72,7 +71,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
     }
 
     @Test
-    public void checkIfScopesCanBeReadFromListType() throws Exception {
+    void checkIfScopesCanBeReadFromListType() throws Exception {
         Exchange exc = new Request.Builder().get("/foo").header("Authorization", "bearer " + getSignedJwt(privateKey, getJwtClaimsArrayScopesList())).buildExchange();
         callInterceptorChain(exc);
 

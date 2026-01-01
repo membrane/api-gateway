@@ -19,7 +19,7 @@ import com.predic8.membrane.core.interceptor.apikey.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.TestUtil.getPathFromResource;
+import static com.predic8.membrane.test.TestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTest {
@@ -54,31 +54,20 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
 
     @Test
     void interceptorSequenceFromSpringConfiguration() {
-        Router router = startSpringContextAndReturnRouter(publisherSeparate);
+        DefaultRouter router = startSpringContextAndReturnRouter(publisherSeparate);
         APIProxy ap = getApiProxy(router);
-        assertEquals(4, ap.getFlow().size());
-        assertInstanceOf(ApiKeysInterceptor.class, ap.getFlow().get(0));
-        assertInstanceOf(HeaderFilterInterceptor.class, ap.getFlow().get(1));
-        assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getFlow().get(2));
-        assertInstanceOf(LogInterceptor.class, ap.getFlow().get(3));
-    }
-
-    @Test
-    void interceptorSequenceAferInit() {
-        Router router = startSpringContextAndReturnRouter(publisherSeparate);
-        APIProxy ap = getApiProxy(router);
-        ap.init(router);
         assertEquals(5, ap.getFlow().size());
-        assertInstanceOf(OpenAPIInterceptor.class, ap.getFlow().get(0)); // Got added
+        assertInstanceOf(OpenAPIInterceptor.class, ap.getFlow().get(0)); // Should be added after init() is called on router (Inside bootstrap)
         assertInstanceOf(ApiKeysInterceptor.class, ap.getFlow().get(1));
         assertInstanceOf(HeaderFilterInterceptor.class, ap.getFlow().get(2));
         assertInstanceOf(OpenAPIPublisherInterceptor.class, ap.getFlow().get(3));
         assertInstanceOf(LogInterceptor.class, ap.getFlow().get(4));
+
     }
 
     @Test
     void noPublisherNoOpenAPIInterceptor() {
-        Router router = startSpringContextAndReturnRouter(noPublisherNoOpenAPIInterceptor);
+        DefaultRouter router = startSpringContextAndReturnRouter(noPublisherNoOpenAPIInterceptor);
         APIProxy ap = getApiProxy(router);
         ap.init(router);
         assertEquals(5, ap.getFlow().size());

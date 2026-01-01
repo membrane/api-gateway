@@ -18,7 +18,7 @@ import com.predic8.membrane.core.*;
 
 public interface HotDeployer {
 
-    void start();
+    void start(DefaultRouter router);
 
     void stop();
 
@@ -28,6 +28,5 @@ public interface HotDeployer {
         return false;
     }
 
-    default void init(Router router) {}
 }
 

@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.resolver.ResolverMap;
@@ -240,7 +240,7 @@ public class JwtAuthInterceptorTest{
 
     @ParameterizedTest
     @MethodSource("data")
-    public void test(TestData data) throws Exception{
+    void test(TestData data) throws Exception{
         RsaJsonWebKey privateKey = RsaJwkGenerator.generateJwk(2048);
         privateKey.setKeyId(KID);
 
@@ -261,10 +261,11 @@ public class JwtAuthInterceptorTest{
     }
 
     private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
-        Router routerMock = mock(Router.class);
-        when(routerMock.getBaseLocation()).thenReturn("");
-        when(routerMock.getResolverMap()).thenReturn(new ResolverMap());
-        interceptor.init(routerMock);
+        DefaultRouter mock = mock(DefaultRouter.class);
+        when(mock.getBaseLocation()).thenReturn("");
+        when(mock.getResolverMap()).thenReturn(new ResolverMap());
+        when(mock.getConfiguration()).thenReturn(new Configuration());
+        interceptor.init(mock);
         return interceptor;
     }
 

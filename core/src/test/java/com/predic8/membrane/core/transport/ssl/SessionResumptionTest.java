@@ -18,8 +18,8 @@ import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.junit.jupiter.api.*;
 
@@ -27,9 +27,8 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
-import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
-import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -46,12 +45,24 @@ public class SessionResumptionTest {
     private static SSLContext clientTLSContext;
 
     @BeforeAll
-    public static void init() throws IOException {
+    static void init() throws IOException {
         tcpForwarder = startTCPForwarder(3044);
         router1 = createTLSServer(3042);
         router2 = createTLSServer(3043);
-
         clientTLSContext = createClientTLSContext();
+    }
+
+    @AfterAll
+    static void done() throws IOException {
+        try {
+            tcpForwarder.close();
+        } finally {
+            try {
+                router1.stop();
+            } finally {
+                router2.stop();
+            }
+        }
     }
 
     private static SSLContext createClientTLSContext() {
@@ -64,29 +75,9 @@ public class SessionResumptionTest {
         return new StaticSSLContext(sslParser, new ResolverMap(), ".");
     }
 
-    @AfterAll
-    public static void done() throws IOException {
-        tcpForwarder.close();
-        router1.shutdown();
-        router2.shutdown();
-    }
-
-    @Disabled
-    @Test
-    public void doit() throws Exception {
-        try(HttpClient hc = new HttpClient()) {
-            for (int i = 0; i < 2; i++) {
-                // the tcp forwarder will forward the first connection to 3042, the second to 3043
-                Exchange exc = new Request.Builder().get("https://localhost:3044").buildExchange();
-                exc.setProperty(SSL_CONTEXT, clientTLSContext);
-                hc.call(exc);
-            }
-        }
-    }
-
     private static Router createTLSServer(int port) {
-        Router router = new HttpRouter();
-        router.getConfig().setHotDeploy(false);
+        Router router = new DummyTestRouter();
+        router.getConfiguration().setHotDeploy(false);
         ServiceProxy rule = new ServiceProxy(new ServiceProxyKey(port), null, 0);
         SSLParser sslInboundParser = new SSLParser();
         KeyStore keyStore = new KeyStore();
@@ -127,35 +118,47 @@ public class SessionResumptionTest {
         AtomicInteger counter = new AtomicInteger();
         StreamPump.StreamPumpStats sps = new StreamPump.StreamPumpStats();
         ServiceProxy mock = new ServiceProxy();
-        try (ServerSocket ss = new ServerSocket(port)) {
-            Thread t = new Thread(() -> {
-                try {
-                    while (true) {
-                        Socket inbound;
-                        try {
-                            inbound = ss.accept();
-                        } catch (Exception e) {
-                            if (e.getMessage().contains("Socket closed"))
-                                return;
-                            throw e;
-                        }
-                        int port1 = 3042 + counter.incrementAndGet() % 2;
-                        try(Socket outbout = new Socket("localhost", port1)) {
-                            Thread s = new Thread(new StreamPump(inbound.getInputStream(), outbout.getOutputStream(), sps, "a", mock));
-                            s.start();
-                            Thread s2 = new Thread(new StreamPump(outbout.getInputStream(), inbound.getOutputStream(), sps, "b", mock));
-                            s2.start();
-                        }
+        ServerSocket ss = new ServerSocket(port);
+        Thread t = new Thread(() -> {
+            try {
+                while (true) {
+                    Socket inbound;
+                    try {
+                        inbound = ss.accept();
+                    } catch (Exception e) {
+                        if (e.getMessage().contains("Socket closed"))
+                            return;
+                        throw e;
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    int port1 = 3042 + counter.incrementAndGet() % 2;
+                    try (Socket outbound = new Socket("localhost", port1)) {
+                        Thread s = new Thread(new StreamPump(inbound.getInputStream(), outbound.getOutputStream(), sps, "a", mock));
+                        s.start();
+                        Thread s2 = new Thread(new StreamPump(outbound.getInputStream(), inbound.getOutputStream(), sps, "b", mock));
+                        s2.start();
+                    }
                 }
-            });
-            t.start();
-            return () -> {
-                ss.close();
-                t.interrupt();
-            };
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        t.start();
+        return () -> {
+            ss.close();
+            t.interrupt();
+        };
+    }
+
+    @Disabled
+    @Test
+    public void doit() throws Exception {
+        try (HttpClient hc = new HttpClient()) {
+            for (int i = 0; i < 2; i++) {
+                // the tcp forwarder will forward the first connection to 3042, the second to 3043
+                Exchange exc = new Request.Builder().get("https://localhost:3044").buildExchange();
+                exc.setProperty(SSL_CONTEXT, clientTLSContext);
+                hc.call(exc);
+            }
         }
     }
 }

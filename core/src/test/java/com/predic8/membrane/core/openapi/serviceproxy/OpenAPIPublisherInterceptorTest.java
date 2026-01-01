@@ -51,8 +51,8 @@ public class OpenAPIPublisherInterceptorTest {
 
     @BeforeEach
     void setUp() {
-        Router router = new Router();
-        router.getConfig().setUriFactory(new URIFactory());
+        DefaultRouter router = new DefaultRouter();
+        router.getConfiguration().setUriFactory(new URIFactory());
         router.setBaseLocation("");
         openAPIRecordFactory = new OpenAPIRecordFactory(router);
         OpenAPISpec spec = new OpenAPISpec();

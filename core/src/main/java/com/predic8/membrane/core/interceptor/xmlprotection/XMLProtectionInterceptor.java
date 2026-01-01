@@ -51,7 +51,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
             return handleInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            user(router.isProduction(), getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .detail("Error inspecting body!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -71,7 +71,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         if (!exc.getRequest().isXML()) {
             String msg = "Content-Type %s is not XML.".formatted(exc.getRequest().getHeader().getContentType());
             log.warn(msg);
-            user(router.isProduction(), getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Request discarded by xmlProtection")
                     .detail(msg)
                     .buildAndSetResponse(exc);
@@ -81,7 +81,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         if (!protectXML(exc)) {
             String msg = "Request was rejected by XML protection. Please check XML.";
             log.warn(msg);
-            security(router.isProduction(), getDisplayName())
+            security(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Content violates XML security policy")
                     .detail(msg)
                     .buildAndSetResponse(exc);

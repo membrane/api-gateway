@@ -29,17 +29,18 @@ import org.junit.jupiter.api.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class LimitedMemoryExchangeStoreIntegrationTest {
     private static LimitedMemoryExchangeStore lmes;
-    private static HttpRouter router;
-    private static HttpRouter router2;
+    private static Router router;
+    private static Router router2;
     private static HttpClientConfiguration hcc;
     private static final AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         lmes = new LimitedMemoryExchangeStore();
         lmes.setMaxSize(500000);
 
@@ -47,22 +48,20 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         hcc = new HttpClientConfiguration();
         hcc.getRetryHandler().setRetries(1);
 
-        ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3045), "dummy", 80);
+        ServiceProxy proxy = getServiceProxy(3045, "dummy", 80);
         proxy.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 exc.setResponse(Response.ok().body("").build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
-        router = new HttpRouter();
+        router = new TestRouter();
+        router.add(proxy);
+        router.start();
+        setClientConfig(router,hcc);
 
-        getHttpClientInterceptor(router).setHttpClientConfig(hcc);
-
-        router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-        router.init();
-
-        ServiceProxy proxy1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3046), "localhost", 3045);
+        ServiceProxy proxy1 = getServiceProxy(3046, "localhost", 3045);
         proxy1.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -70,19 +69,26 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
                 return super.handleRequest(exc);
             }
         });
-        router2 = new HttpRouter();
+        router2 = new TestRouter();
         router2.setExchangeStore(lmes);
-
-        getHttpClientInterceptor(router2).setHttpClientConfig(hcc);
-
+        router2.add(proxy1);
+        router2.start();
+        setClientConfig(router2,hcc);
         router2.getTransport().getFlow().add(3, new ExchangeStoreInterceptor(lmes));
+    }
 
-        router2.getRuleManager().addProxyAndOpenPortIfNew(proxy1);
-        router2.init();
+    private static void setClientConfig(Router router, HttpClientConfiguration hcc) {
+        var client = getHttpClientInterceptor(router);
+        client.setHttpClientConfig(hcc);
+        client.init();
+    }
+
+    private static @NotNull ServiceProxy getServiceProxy(int port, String localhost, int targetPort) {
+        return new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), localhost, targetPort);
     }
 
     private static @NotNull HTTPClientInterceptor getHttpClientInterceptor(Router router) {
-        return (HTTPClientInterceptor) router.getTransport().getFlow().stream().filter(i -> i instanceof HTTPClientInterceptor).findFirst().get();
+        return router.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
     }
 
     @BeforeEach
@@ -93,9 +99,9 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
     @AfterAll
     public static void shutdown() {
         if (router != null)
-            router.shutdown();
+            router.stop();
         if (router2 != null)
-            router2.shutdown();
+            router2.stop();
     }
 
     @Test
@@ -132,7 +138,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         long len = Integer.MAX_VALUE + 1L;
 
         Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
-        try(HttpClient hc = new HttpClient(hcc)) {
+        try (HttpClient hc = new HttpClient(hcc)) {
             hc.call(e);
         }
         assertTrue(e.getRequest().getBody().wasStreamed());

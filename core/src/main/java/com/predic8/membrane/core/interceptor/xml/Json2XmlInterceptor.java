@@ -74,7 +74,7 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
         try {
             msg.setBodyContent(json2Xml(msg));
         } catch (Exception e) {
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Error parsing JSON")
                     .addSubType("validation/json")
                     .exception(e) // Message contains a meaningful error message

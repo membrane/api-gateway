@@ -13,43 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.BodyUtil;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import org.apache.commons.io.IOUtils;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.apache.commons.io.*;
 import org.junit.jupiter.api.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
+import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.lang.Thread.sleep;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.lang.Thread.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AbortExchangeTest {
 
-    Router router;
+    TestRouter router;
 
     @BeforeEach
     public void setup() throws Exception {
-        router = new HttpRouter();
-
+        router = new TestRouter();
         LimitedMemoryExchangeStore es = new LimitedMemoryExchangeStore();
         router.setExchangeStore(es);
-        router.getTransport().getFlow().add(2, new ExchangeStoreInterceptor(es));
+        var global = new GlobalInterceptor();
+        global.getFlow().add(new ExchangeStoreInterceptor(es));
+        router.getRegistry().register("global",global);
 
         ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 3031), "", -1);
         sp2.getFlow().add(new AbstractInterceptor() {
@@ -73,8 +65,8 @@ public class AbortExchangeTest {
                 return RETURN;
             }
         });
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
-        router.init();
+        router.add(sp2);
+        router.start();
     }
 
     @Test
@@ -125,6 +117,6 @@ public class AbortExchangeTest {
 
     @AfterEach
     public void done() {
-        router.shutdown();
+        router.stop();
     }
 }

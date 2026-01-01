@@ -16,6 +16,9 @@ package com.predic8.membrane.annot.beanregistry;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.yaml.*;
 
+/**
+ * Immutable.
+ */
 public class BeanDefinition {
 
     public static final String PROTOTYPE = "prototype";
@@ -76,6 +79,8 @@ public class BeanDefinition {
     }
 
     public String getScope() {
+        if (node == null)
+            return null;
         JsonNode meta = node.get("metadata");
         if (meta == null)
             return null;

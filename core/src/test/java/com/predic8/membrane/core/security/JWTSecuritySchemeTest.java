@@ -26,6 +26,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,14 +46,8 @@ class JWTSecuritySchemeTest {
 
         JwtAuthInterceptor interceptor = prepareInterceptor(publicOnly);
 
-        Exchange exc = new Request.Builder()
-                .get("")
-                .header("Authorization", "Bearer " + getSignedJwt(privateKey) + "1")
-                .buildExchange();
-
+        Exchange exc = get("").header("Authorization", "Bearer " + getSignedJwt(privateKey) + "1").buildExchange();
         interceptor.handleRequest(exc);
-
-        //
     }
 
     private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) throws Exception {
@@ -60,10 +55,11 @@ class JWTSecuritySchemeTest {
     }
 
     private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
-        Router routerMock = mock(Router.class);
-        when(routerMock.getBaseLocation()).thenReturn("");
-        when(routerMock.getResolverMap()).thenReturn(new ResolverMap());
-        interceptor.init(routerMock);
+        DefaultRouter mock = mock(DefaultRouter.class);
+        when(mock.getBaseLocation()).thenReturn("");
+        when(mock.getResolverMap()).thenReturn(new ResolverMap());
+        when(mock.getConfiguration()).thenReturn(new Configuration());
+        interceptor.init(mock);
         return interceptor;
     }
 

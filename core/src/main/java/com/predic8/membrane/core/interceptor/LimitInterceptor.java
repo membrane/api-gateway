@@ -82,7 +82,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 		long len = msg.getHeader().getContentLength();
 		if (len != -1 && len > maxBodyLength) {
 			log.info("Message length of {} exceeded limit {}.",len,maxBodyLength);
-			security(router.isProduction(), getDisplayName())
+			security(router.getConfiguration().isProduction(), getDisplayName())
 					.title("Message is too large.")
 					.detail("Message bodies must be smaller than limit.")
 					.internal("maxBodyLength", maxBodyLength)

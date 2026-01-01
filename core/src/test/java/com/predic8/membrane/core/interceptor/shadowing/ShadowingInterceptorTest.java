@@ -37,8 +37,8 @@ class ShadowingInterceptorTest {
     Exchange exc;
     Header header;
 
-    static Router interceptorRouter;
-    static Router shadowingRouter;
+    static DefaultRouter interceptorRouter;
+    static DefaultRouter shadowingRouter;
 
     static ServiceProxy interceptorProxy;
     static ShadowingInterceptor shadowingInterceptor;
@@ -67,8 +67,8 @@ class ShadowingInterceptorTest {
 
     @BeforeAll
     static void startup() throws Exception {
-        interceptorRouter = new Router();
-        interceptorRouter.getConfig().setHotDeploy(false);
+        interceptorRouter = new DefaultRouter();
+        interceptorRouter.getConfiguration().setHotDeploy(false);
         interceptorRouter.setExchangeStore(new ForgetfulExchangeStore());
         interceptorRouter.setTransport(new HttpTransport());
 
@@ -87,22 +87,20 @@ class ShadowingInterceptorTest {
                 new ReturnInterceptor()
         ));
 
-        interceptorRouter.getRuleManager().addProxyAndOpenPortIfNew(interceptorProxy);
-        interceptorRouter.init();
+        interceptorRouter.add(interceptorProxy);
         interceptorRouter.start();
 
-        shadowingRouter = new Router();
-        shadowingRouter.getConfig().setHotDeploy(false);
+        shadowingRouter = new DefaultRouter();
+        shadowingRouter.getConfiguration().setHotDeploy(false);
         shadowingRouter.setExchangeStore(new ForgetfulExchangeStore());
         shadowingRouter.setTransport(new HttpTransport());
 
         shadowingProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3000), null, 0);
         returnInterceptorMock = Mockito.spy(new ReturnInterceptor());
-        returnInterceptorMock.setStatusCode(200);
+        returnInterceptorMock.setStatus(200);
         shadowingProxy.setFlow(List.of(returnInterceptorMock));
 
-        shadowingRouter.getRuleManager().addProxyAndOpenPortIfNew(shadowingProxy);
-        shadowingRouter.init();
+        shadowingRouter.add(shadowingProxy);
         shadowingRouter.start();
     }
 
@@ -117,7 +115,7 @@ class ShadowingInterceptorTest {
      * and ensures that the ReturnInterceptor's handleRequest() is invoked once.
      */
     @Test
-    void testIfShadowTargetIsCalled() throws Exception {
+    void testIfShadowTargetIsCalled() {
         given().when().get("http://localhost:2000").then().statusCode(200);
         verify(returnInterceptorMock, timeout(10000).times(1)).handleRequest(any(Exchange.class));
     }
@@ -127,7 +125,7 @@ class ShadowingInterceptorTest {
      * handleRequest() is invoked with an Exchange object not containing the "foo" header.
      */
     @Test
-    void testIfShadowTargetHasFooHeader() throws Exception {
+    void testIfShadowTargetHasFooHeader() {
         given().when().get("http://localhost:2000").then().statusCode(200);
 
         ArgumentCaptor<Exchange> exchangeCaptor = ArgumentCaptor.forClass(Exchange.class);
