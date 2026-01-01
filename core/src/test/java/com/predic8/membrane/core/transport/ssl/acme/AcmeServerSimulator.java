@@ -147,7 +147,7 @@ public class AcmeServerSimulator {
 
                     return RETURN;
                 }
-                assertNotNull("RFC 8555 Section 6.2", jws.getKeyIdHeaderValue());
+                assertNotNull(jws.getKeyIdHeaderValue(),"RFC 8555 Section 6.2");
                 if ("/acme/new-order".equals(exc.getRequest().getUri())) {
                     // here we spuriously return 'badNonce' to check whether the client correctly retries with the
                     // nonce returned on the response
