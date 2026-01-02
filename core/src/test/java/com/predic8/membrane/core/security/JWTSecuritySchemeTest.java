@@ -50,7 +50,7 @@ class JWTSecuritySchemeTest {
         return initInterceptor(createInterceptor(publicOnly));
     }
 
-    private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
+    private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) {
         interceptor.init(new DummyTestRouter());
         return interceptor;
     }

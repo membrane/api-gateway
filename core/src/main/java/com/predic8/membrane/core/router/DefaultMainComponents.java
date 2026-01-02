@@ -66,7 +66,7 @@ public class DefaultMainComponents implements MainComponents {
             registry = new BeanRegistryImplementation(null, router, null);
         }
 
-        registry.registerIfAbsent(HttpClientConfiguration.class, () -> new HttpClientConfiguration());
+        registry.registerIfAbsent(HttpClientConfiguration.class, HttpClientConfiguration::new);
 
         registry.registerIfAbsent(ResolverMap.class, () -> {
             ResolverMap rs = new ResolverMap(httpClientFactory, kubernetesClientFactory);

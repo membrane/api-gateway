@@ -13,23 +13,17 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
-import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.NotNull;
+import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.*;
+import org.apache.commons.io.*;
+import org.jetbrains.annotations.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.io.*;
+import java.util.*;
+import java.util.stream.*;
 
 /**
  * Configure Membrane with Microsoft's Entra ID platform.
@@ -72,12 +66,12 @@ public class MicrosoftEntraIDAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public String getJwksEndpoint() throws Exception {
+    public String getJwksEndpoint() {
         return jwksEndpoint;
     }
 
     @Override
-    public String getEndSessionEndpoint() throws Exception {
+    public String getEndSessionEndpoint() {
         return endSessionEndpoint;
     }
 
@@ -93,7 +87,7 @@ public class MicrosoftEntraIDAuthorizationService extends AuthorizationService {
         encodedScope = false;
     }
 
-    private void adjustScope() throws UnsupportedEncodingException {
+    private void adjustScope() {
         if(scope == null)
             scope = "openid";
         if (!encodedScope) {

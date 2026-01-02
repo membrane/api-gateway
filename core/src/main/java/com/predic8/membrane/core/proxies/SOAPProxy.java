@@ -154,7 +154,6 @@ public class SOAPProxy extends AbstractServiceProxy {
         RewriteInterceptor ri = new RewriteInterceptor();
         ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
         interceptors.addFirst(ri);
-        automaticallyAddedInterceptorCount++;
     }
 
     private static @NotNull String getTargetPath(URL url) {
@@ -272,13 +271,10 @@ public class SOAPProxy extends AbstractServiceProxy {
         return null;
     }
 
-    private int automaticallyAddedInterceptorCount;
-
     private void addWSDLInterceptor() {
         if (getFirstInterceptorOfType(WSDLInterceptor.class).isEmpty()) {
             WSDLInterceptor wsdlInterceptor = new WSDLInterceptor();
             interceptors.addFirst(wsdlInterceptor);
-            automaticallyAddedInterceptorCount++;
         }
     }
 
@@ -324,7 +320,6 @@ public class SOAPProxy extends AbstractServiceProxy {
         sui.setWsdl(wsdl);
         sui.setPortName(portName);
         interceptors.addFirst(sui);
-        automaticallyAddedInterceptorCount++;
     }
 
     private void addWSDLPublisherInterceptor() {
@@ -335,7 +330,6 @@ public class SOAPProxy extends AbstractServiceProxy {
         wp.setWsdl(wsdl);
         wp.init(router);
         interceptors.addFirst(wp);
-        automaticallyAddedInterceptorCount++;
     }
 
     private boolean hasWSDLPublisherInterceptor() {

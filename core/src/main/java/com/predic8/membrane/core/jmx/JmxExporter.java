@@ -99,7 +99,10 @@ public class JmxExporter extends MBeanExporter implements Lifecycle {
         if (router.getBeanFactory() == null) {
             return Optional.empty();
         }
-        return Optional.of(router.getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class));
+        try {
+            return Optional.of(router.getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class));
+        } catch (NoSuchBeanDefinitionException e) {
+            return Optional.empty();
+        }
     }
-
 }

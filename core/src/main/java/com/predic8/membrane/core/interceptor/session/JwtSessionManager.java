@@ -68,7 +68,7 @@ public class JwtSessionManager extends SessionManager {
         if (jwk == null) {
             rsaJsonWebKey = generateKey();
             log.warn("""
-                    jwtSessionManager uses a generated key ('{}'). Sessions of this instance 
+                    jwtSessionManager uses a generated key ('{}'). Sessions of this instance
                     will not be compatible with sessions of other (e.g. restarted)
                     instances. To solve this, write the JWK into a file and reference it using <jwtSessionManager><jwk location="...">.
                     """, rsaJsonWebKey.toJson(INCLUDE_PRIVATE));

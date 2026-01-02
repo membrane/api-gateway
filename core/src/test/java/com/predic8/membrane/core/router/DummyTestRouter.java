@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.router;
 
+import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.kubernetes.client.*;
@@ -113,6 +114,11 @@ public class DummyTestRouter extends AbstractRouter {
     @Override
     public DNSCache getDnsCache() {
         return dnsCache;
+    }
+
+    @Override
+    public BeanRegistry getRegistry() {
+        throw new UnsupportedOperationException("DummyTestRouter does not have a BeanRegistry.");
     }
 
     @Override

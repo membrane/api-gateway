@@ -245,8 +245,7 @@ public class SSLContextTest {
 		cert.setContent(Resources.toString(getResource("ca/server.pem"), UTF_8));
 		key.setCertificates(List.of(cert));
 		sslParser.setKey(key);
-		StaticSSLContext ctx = new StaticSSLContext(sslParser, new ResolverMap(), "");
-		return ctx;
+        return new StaticSSLContext(sslParser, new ResolverMap(), "");
 	}
 
 	private static @NotNull StaticSSLContext createPEMClientSSLContext() throws IOException {

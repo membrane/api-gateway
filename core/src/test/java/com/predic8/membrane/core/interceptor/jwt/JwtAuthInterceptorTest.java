@@ -250,7 +250,7 @@ public class JwtAuthInterceptorTest{
         data.asserts().accept(exc);
     }
 
-    private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) throws Exception {
+    private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) {
         return initInterceptor(createInterceptor(publicOnly));
     }
 
