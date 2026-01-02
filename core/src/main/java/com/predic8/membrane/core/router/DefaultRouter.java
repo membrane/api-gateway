@@ -54,12 +54,6 @@ import static com.predic8.membrane.core.util.DLPUtil.*;
  * - Start and stop Membrane, proxies and internal services
  * - Control the lifecycle of proxies
  *
- *
- * TODO:
- * - ADR: First start router than init and add proxies or first init proxies and add them later?
- * - JMX
- *  - Beans added after Router.start() should also be exported as JMS beans
- *
  * Questions:
  * - What if a proxy needs to make a call to another proxy during init(Tests: e.g. B2C)
  */
@@ -163,7 +157,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
         try {
             getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::start);
-            startJmx();
+            JmxExporter.start(this);
             getRuleManager().openPorts();
             hotDeployer.start(this);
             if (configuration.getRetryInitInterval() > 0)
@@ -284,20 +278,15 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     }
 
-    private void startJmx() {
+    private Optional<JmxExporter> getExporter() {
+        var exporter=  mainComponents.getRegistry().getBean(JmxExporter.class);
+        if (exporter.isPresent()) return exporter;
         if (mainComponents.getBeanFactory() == null) {
-            log.info("No bean factory available, not starting JMX.");
-            return;
+            return Optional.empty();
         }
-        log.debug("Starting JMX.");
-        try {
-            JmxExporter exporter = mainComponents.getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class);
-            exporter.addBean("io.membrane-api:00=routers, name=" + configuration.getJmx(), new JmxRouter(this, exporter));
-            exporter.initAfterBeansAdded();
-        } catch (NoSuchBeanDefinitionException ignored) {
-            // If bean is not available do not init jmx
-        }
+        return Optional.of(mainComponents.getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class));
     }
+
 
     @Override
     public void stop() {
@@ -425,6 +414,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         mainComponents.setRegistry(registry);
     }
 
+    @Override
     public BeanRegistry getRegistry() {
        return mainComponents.getRegistry();
     }

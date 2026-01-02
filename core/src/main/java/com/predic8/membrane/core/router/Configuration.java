@@ -146,7 +146,7 @@ public class Configuration {
 
     /**
      * @description Base location for the router's configuration file.
-     * @param baseLocation
+     * @param baseLocation The base directory path used to resolve relative file paths in configuration
      */
     @MCAttribute()
     public void setBaseLocation(String baseLocation) {
