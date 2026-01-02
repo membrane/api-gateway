@@ -22,7 +22,6 @@ import static com.predic8.membrane.core.jmx.JmxExporter.JMX_NAMESPACE;
 @ManagedResource()
 public class JmxRouter {
 
-
     private final Router router;
     private final JmxExporter exporter;
 

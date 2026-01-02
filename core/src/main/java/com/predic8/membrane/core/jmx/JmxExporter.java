@@ -27,9 +27,9 @@ import java.util.*;
 import static org.springframework.jmx.support.RegistrationPolicy.*;
 
 @MCElement(name = JmxExporter.JMX_EXPORTER_NAME)
-public class JmxExporter extends MBeanExporter implements Lifecycle {
+public class JmxExporter implements Lifecycle {
 
-    private static final Logger log = LoggerFactory.getLogger(MBeanExporter.class);
+    private static final Logger log = LoggerFactory.getLogger(JmxExporter.class);
 
     public static final String JMX_EXPORTER_NAME = "jmxExporter";
     public static final String JMX_NAMESPACE = "io.membrane-api";
@@ -52,11 +52,12 @@ public class JmxExporter extends MBeanExporter implements Lifecycle {
     public void stop() {
         jmxBeans.clear();
         exporter.destroy();
+        exporter = null;
     }
 
     @Override
     public boolean isRunning() {
-        return false;
+        return exporter != null;
     }
 
     public void addBean(String fullyQualifiedMBeanName, Object bean) {
@@ -74,12 +75,8 @@ public class JmxExporter extends MBeanExporter implements Lifecycle {
     }
 
     public void addRouter(Router router) {
-        try {
-            addBean(JMX_NAMESPACE + ":00=routers, name=" + router.getConfiguration().getJmx(), new JmxRouter(router, this));
-            initAfterBeansAdded();
-        } catch (NoSuchBeanDefinitionException ignored) {
-            // If bean is not available do not init jmx
-        }
+        addBean(JMX_NAMESPACE + ":00=routers, name=" + router.getConfiguration().getJmx(), new JmxRouter(router, this));
+        initAfterBeansAdded();
     }
 
 

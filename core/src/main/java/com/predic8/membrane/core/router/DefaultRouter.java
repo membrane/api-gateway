@@ -16,7 +16,6 @@ package com.predic8.membrane.core.router;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
-import com.predic8.membrane.core.proxies.RuleManager.*;
 import com.predic8.membrane.core.cli.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchangestore.*;
@@ -28,6 +27,7 @@ import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.RuleManager.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.hotdeploy.*;
 import com.predic8.membrane.core.transport.*;
@@ -46,7 +46,6 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.*;
-import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static com.predic8.membrane.core.util.DLPUtil.*;
 
 /*
@@ -277,16 +276,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         }
 
     }
-
-    private Optional<JmxExporter> getExporter() {
-        var exporter=  mainComponents.getRegistry().getBean(JmxExporter.class);
-        if (exporter.isPresent()) return exporter;
-        if (mainComponents.getBeanFactory() == null) {
-            return Optional.empty();
-        }
-        return Optional.of(mainComponents.getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class));
-    }
-
 
     @Override
     public void stop() {
