@@ -115,7 +115,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         if (uri == null) return ABORT;
 
         if (generateIndex) {
-            if (router.getResolverMap().getChildren(combine(router.getBaseLocation(), docBase, uri)) != null) {
+            if (router.getResolverMap().getChildren(combine(router.getConfiguration().getBaseLocation(), docBase, uri)) != null) {
                 if (tryToReceiveResource(exc, uri))
                     return RETURN;
                 if (tryToReceiveResource(exc, uri + "/"))
@@ -128,7 +128,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
         try {
             exc.setTimeReqSent(currentTimeMillis());
-            exc.setResponse(createResponse(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri)));
+            exc.setResponse(createResponse(router.getResolverMap(), combine(router.getConfiguration().getBaseLocation(), docBase, uri)));
             exc.setReceived();
             exc.setTimeResReceived(currentTimeMillis());
             return RETURN;
@@ -193,7 +193,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         for (String i : index) {
             Response response = createResponse(
                     router.getResolverMap(),
-                    combine(router.getBaseLocation(), docBase, uri + i)
+                    combine(router.getConfiguration().getBaseLocation(), docBase, uri + i)
             );
 
             if (!response.isOk())
@@ -208,7 +208,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
     }
 
     private Outcome generateHtmlResponseFromChildren(Exchange exc, String uri) throws FileNotFoundException {
-        List<String> children = router.getResolverMap().getChildren(combine(router.getBaseLocation(), docBase, uri));
+        List<String> children = router.getResolverMap().getChildren(combine(router.getConfiguration().getBaseLocation(), docBase, uri));
         if (children == null) {
             return null;
         }
@@ -288,7 +288,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
     }
 
     private @NotNull String getNewPath(String path) {
-        String newPath = combine(router.getBaseLocation(), path);
+        String newPath = combine(router.getConfiguration().getBaseLocation(), path);
         if (newPath.endsWith(File.separator + File.separator))
             newPath = newPath.substring(0, newPath.length() - 1);
         if (!newPath.endsWith("/"))

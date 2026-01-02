@@ -38,11 +38,11 @@ public class XSLTTransformer {
 		this.styleSheet = styleSheet;
 		log.debug("using {} parallel transformer instances for {}",concurrency, styleSheet);
 		transformers = new ArrayBlockingQueue<>(concurrency);
-		createOneTransformer(router.getResolverMap(), router.getBaseLocation());
+		createOneTransformer(router.getResolverMap(), router.getConfiguration().getBaseLocation());
 		Thread.ofVirtual().start(() -> {
 			try {
 				for (int i = 1; i < concurrency; i++)
-					createOneTransformer(router.getResolverMap(), router.getBaseLocation());
+					createOneTransformer(router.getResolverMap(), router.getConfiguration().getBaseLocation());
 			} catch (Exception e) {
 				log.error("Error creating XSLT transformer:", e);
 			}

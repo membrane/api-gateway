@@ -329,7 +329,7 @@ public class SSLProxy implements Proxy {
     private class ForwardingStaticSSLContext extends StaticSSLContext {
 
         public ForwardingStaticSSLContext() {
-            super(getSSLParser(), SSLProxy.this.router.getResolverMap(), SSLProxy.this.router.getBaseLocation());
+            super(getSSLParser(), SSLProxy.this.router.getResolverMap(), SSLProxy.this.router.getConfiguration().getBaseLocation());
         }
 
         @Override

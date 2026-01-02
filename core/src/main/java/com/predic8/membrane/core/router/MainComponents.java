@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.router;
 
+import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.kubernetes.client.*;
@@ -30,6 +31,8 @@ import org.springframework.context.*;
  * Essential components of a router
  */
 public interface MainComponents {
+
+    BeanRegistry getRegistry();
 
     Transport getTransport();
 

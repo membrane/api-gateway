@@ -176,11 +176,6 @@ public class TestRouter extends AbstractRouter implements BeanRegistryAware {
     }
 
     @Override
-    public String getBaseLocation() {
-        return "";
-    }
-
-    @Override
     public void stop() {
         transport.closeAll();
     }

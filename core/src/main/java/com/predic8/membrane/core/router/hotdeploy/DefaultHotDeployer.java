@@ -46,16 +46,21 @@ public class DefaultHotDeployer implements HotDeployer {
                 return;
             }
 
-            if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
-                log.warn("""
-                        ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
-                        """);
+            // Start from XML
+            if (router.getBeanFactory() != null) {
+                if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
+                    log.warn("""
+                            ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
+                            """);
+                    return;
+                }
+                hdt = new HotDeploymentThread(router.getRef());
+                hdt.setFiles(tac.getFiles());
+                hdt.start();
                 return;
             }
 
-            hdt = new HotDeploymentThread(router.getRef());
-            hdt.setFiles(tac.getFiles());
-            hdt.start();
+            log.debug("Hot deployment is not yet supported for the YAML configuration.");
         }
     }
 

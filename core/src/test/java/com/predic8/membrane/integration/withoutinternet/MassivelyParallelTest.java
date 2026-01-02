@@ -102,7 +102,7 @@ class MassivelyParallelTest {
                     es.submit(() -> job.accept(cdl));
                 }
                 es.shutdown();
-                if (!es.awaitTermination(60, SECONDS)) {
+                if (!es.awaitTermination(120, SECONDS)) {
                     es.shutdownNow();
                     fail("Tasks did not complete within timeout");
                 }

@@ -13,31 +13,25 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.resolver.ResolverMap;
+import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwk.RsaJwkGenerator;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.lang.JoseException;
-import org.junit.jupiter.api.Named;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
+import org.jose4j.jwk.*;
+import org.jose4j.jws.*;
+import org.jose4j.jwt.*;
+import org.jose4j.lang.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.stream.Stream;
+import java.io.*;
+import java.util.*;
+import java.util.stream.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class JwtAuthInterceptorTest{
 
@@ -256,16 +250,12 @@ public class JwtAuthInterceptorTest{
         data.asserts().accept(exc);
     }
 
-    private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) throws Exception {
+    private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) {
         return initInterceptor(createInterceptor(publicOnly));
     }
 
-    private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
-        DefaultRouter mock = mock(DefaultRouter.class);
-        when(mock.getBaseLocation()).thenReturn("");
-        when(mock.getResolverMap()).thenReturn(new ResolverMap());
-        when(mock.getConfiguration()).thenReturn(new Configuration());
-        interceptor.init(mock);
+    private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) {
+        interceptor.init(new DummyTestRouter());
         return interceptor;
     }
 
@@ -289,13 +279,10 @@ public class JwtAuthInterceptorTest{
 
     private static String getSignedJwt(RsaJsonWebKey privateKey, JwtClaims claims) throws JoseException {
         JsonWebSignature jws = new JsonWebSignature();
-
         jws.setPayload(claims.toJson());
-
         jws.setKey(privateKey.getPrivateKey());
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
         jws.setKeyIdHeaderValue(privateKey.getKeyId());
-
         return jws.getCompactSerialization();
     }
 
@@ -307,7 +294,6 @@ public class JwtAuthInterceptorTest{
         claims.setSubject(SUB_CLAIM_CONTENT);
         claims.setAudience(audience);
         claims.setClaim("tid", tenantId);
-
         return claims;
     }
 

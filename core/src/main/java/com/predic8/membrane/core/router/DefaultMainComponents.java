@@ -66,7 +66,7 @@ public class DefaultMainComponents implements MainComponents {
             registry = new BeanRegistryImplementation(null, router, null);
         }
 
-        registry.registerIfAbsent(HttpClientConfiguration.class, () -> new HttpClientConfiguration());
+        registry.registerIfAbsent(HttpClientConfiguration.class, HttpClientConfiguration::new);
 
         registry.registerIfAbsent(ResolverMap.class, () -> {
             ResolverMap rs = new ResolverMap(httpClientFactory, kubernetesClientFactory);
@@ -108,7 +108,7 @@ public class DefaultMainComponents implements MainComponents {
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         beanFactory = ctx;
         if (ctx instanceof BaseLocationApplicationContext blac)
-            router.setBaseLocation(blac.getBaseLocation());
+            router.getConfiguration().setBaseLocation(blac.getBaseLocation());
     }
 
     public void setRuleManager(RuleManager ruleManager) {

@@ -33,7 +33,7 @@ public class XMembraneExtensionSecurityTest {
     @BeforeEach
     void setUp() {
         DummyTestRouter router = new DummyTestRouter();
-        router.setBaseLocation("");
+        router.getConfiguration().setBaseLocation("");
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
         OpenAPISpec spec = new OpenAPISpec();
         spec.setLocation(getPathFromResource("openapi/openapi-proxy/validate-security-extensions.yml"));

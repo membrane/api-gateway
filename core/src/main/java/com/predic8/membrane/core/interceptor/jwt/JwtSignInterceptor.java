@@ -52,7 +52,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         try {
-            Map<String, Object> params = JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation()));
+            Map<String, Object> params = JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation()));
             if (Objects.equals(params.get("p"), DEFAULT_PKEY)) {
                 log.warn("""
                     \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.router;
 
+import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.kubernetes.client.*;
@@ -51,8 +52,6 @@ public class DummyTestRouter extends AbstractRouter {
 
     private final Statistics statistics = new Statistics();
     private ApplicationContext applicationContext;
-
-    private String baseLocation;
 
     private Configuration configuration = new Configuration();
 
@@ -108,11 +107,6 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     @Override
-    public String getBaseLocation() {
-        return baseLocation;
-    }
-
-    @Override
     public ResolverMap getResolverMap() {
         return resolverMap;
     }
@@ -120,6 +114,11 @@ public class DummyTestRouter extends AbstractRouter {
     @Override
     public DNSCache getDnsCache() {
         return dnsCache;
+    }
+
+    @Override
+    public BeanRegistry getRegistry() {
+        throw new UnsupportedOperationException("DummyTestRouter does not have a BeanRegistry.");
     }
 
     @Override
@@ -190,9 +189,5 @@ public class DummyTestRouter extends AbstractRouter {
 
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
-    }
-
-    public void setBaseLocation(String baseLocation) {
-        this.baseLocation = baseLocation;
     }
 }

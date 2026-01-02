@@ -48,7 +48,7 @@ class KeyStoreUtilTest {
         sslParser.setKeyStore(new KeyStore());
         sslParser.getKeyStore().setLocation("classpath:/alias-keystore.p12");
         sslParser.getKeyStore().setKeyPassword(KEYSTORE_PASSWORD);
-        keyStore = getAndLoadKeyStore(sslParser.getKeyStore(), router.getResolverMap(), router.getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
+        keyStore = getAndLoadKeyStore(sslParser.getKeyStore(), router.getResolverMap(), router.getConfiguration().getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
     }
 
     @AfterAll
@@ -61,7 +61,7 @@ class KeyStoreUtilTest {
         KeyStore store = new KeyStore();
         store.setLocation("classpath:/alias-keystore.p12");
         store.setKeyPassword(KEYSTORE_PASSWORD);
-        java.security.KeyStore loadedKeyStore = getAndLoadKeyStore(store, router.getResolverMap(), router.getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
+        java.security.KeyStore loadedKeyStore = getAndLoadKeyStore(store, router.getResolverMap(), router.getConfiguration().getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
         assertNotNull(loadedKeyStore);
         assertEquals(2, loadedKeyStore.size());
         java.security.KeyStore filteredKeyStore = filterKeyStoreByAlias(loadedKeyStore, "secret".toCharArray(), "key1");
@@ -79,7 +79,7 @@ class KeyStoreUtilTest {
         KeyStore store = new KeyStore();
         store.setLocation("classpath:/alias-keystore.p12");
         store.setKeyPassword(KEYSTORE_PASSWORD);
-        java.security.KeyStore loadedKeyStore = getAndLoadKeyStore(store, router.getResolverMap(), router.getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
+        java.security.KeyStore loadedKeyStore = getAndLoadKeyStore(store, router.getResolverMap(), router.getConfiguration().getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
         assertNotNull(loadedKeyStore);
         assertTrue(loadedKeyStore.size() > 0);
         assertTrue(loadedKeyStore.containsAlias(ALIAS));

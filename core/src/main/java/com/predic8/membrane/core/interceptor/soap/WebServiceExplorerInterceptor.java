@@ -95,7 +95,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 		if (parsedWSDL != null)
 			return parsedWSDL;
 		WSDLParserContext ctx = new WSDLParserContext();
-		ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
+		ctx.setInput(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsdl));
         return parsedWSDL = getWsdlParser().parse(ctx);
 	}
 

@@ -80,7 +80,7 @@ public class LoginDialog2 {
     public void init(Router router) throws Exception {
         uriFactory = router.getConfiguration().getUriFactory();
         wsi.init(router);
-        router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
+        router.getResolverMap().resolve(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsi.getDocBase(), "index.html")).close();
 
     }
 
@@ -308,11 +308,11 @@ public class LoginDialog2 {
         return result;
     }
 
-    private String[] prepareClaimsFromSession(Session s) throws UnsupportedEncodingException {
+    private String[] prepareClaimsFromSession(Session s) {
         return prepareStringArray(decodeClaimsFromSession(s));
     }
 
-    private String[] prepareScopesFromSession(Session s) throws UnsupportedEncodingException {
+    private String[] prepareScopesFromSession(Session s) {
         return prepareStringArray(decodeScopesFromSession(s));
     }
 
@@ -345,7 +345,7 @@ public class LoginDialog2 {
         return new String[0];
     }
 
-    public Outcome redirectToLogin(Exchange exc) throws UnsupportedEncodingException {
+    public Outcome redirectToLogin(Exchange exc) {
         exc.setResponse(Response
                 .redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), UTF_8), 302)
                 .dontCache()
