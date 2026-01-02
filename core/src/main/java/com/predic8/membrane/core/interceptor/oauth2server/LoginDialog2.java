@@ -80,7 +80,7 @@ public class LoginDialog2 {
     public void init(Router router) throws Exception {
         uriFactory = router.getConfiguration().getUriFactory();
         wsi.init(router);
-        router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
+        router.getResolverMap().resolve(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsi.getDocBase(), "index.html")).close();
 
     }
 

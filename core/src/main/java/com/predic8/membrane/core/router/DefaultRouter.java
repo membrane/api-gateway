@@ -50,35 +50,19 @@ import static com.predic8.membrane.core.jmx.JmxExporter.*;
 import static com.predic8.membrane.core.util.DLPUtil.*;
 
 /*
- Responsibilities:
- - Start and stop Membrane
-   - Start, stop internal services
- - Control lifecycle of proxies
-
- TODO:
- - ADR: First start router than init and add proxies or first init proxies and add them later?
-
- ADR:
- - The Router is responsible for the lifecycle of the proxies
- - Ports are opened in start()
- - init()
-   - does not open ports
-   - inits the proxies
-     - In sequence as added or reverse or not defined?
- - new Router(), add(proxy) init() start()
- - add(proxy) could be called any time
-   - If router is started port will be opened if needed by the proxy
- - What if a proxy needs to make a call to another proxy during init(Tests: e.g. B2C)
- - Delete addProxyAndOpenPortIfNew() from RuleManager
-
- HTTPRouter:
- - Purpose? Test?
-
- - JMX
-   - Beans added after Router.start() should also be exported as JMS beans
-
+ * Responsibilities:
+ * - Start and stop Membrane, proxies and internal services
+ * - Control the lifecycle of proxies
+ *
+ *
+ * TODO:
+ * - ADR: First start router than init and add proxies or first init proxies and add them later?
+ * - JMX
+ *  - Beans added after Router.start() should also be exported as JMS beans
+ *
+ * Questions:
+ * - What if a proxy needs to make a call to another proxy during init(Tests: e.g. B2C)
  */
-
 /**
  * @description <p>
  * Membrane API Gateway's main object.
@@ -108,11 +92,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     protected DefaultMainComponents mainComponents;
 
-    //
-    // Configuration
-    //
     private String id;
-    private String baseLocation;
 
     private Configuration configuration = new Configuration();
 
@@ -125,7 +105,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     private boolean initialized;
 
     /**
-     * HotDeployer for changes on the XML configuration file. Does not cover YAML.
+     * HotDeployer for changes on the configuration file.
      * Not synchronized, since only modified during initialization
      */
     private HotDeployer hotDeployer = new DefaultHotDeployer();
@@ -140,12 +120,11 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     /**
      * Initializes the {@code Router}
      * - by setting up its associated components.
-     * - calling init() on each of its {@link Proxy} instances.
-     * <p>
+     * - calling init() on each of its {@link Proxy} instances
+     *
      * This method ensures that the {@code Router} and its dependencies are prepared for operation.
      * But it does not start the router itself. Use {@link #start()} to start the router.
      * If start() is called a separate call to init() is not needed.
-     * The init() is useful for testing without the expensive start() call.
      */
     public void init() {
         log.debug("Initializing.");
@@ -183,14 +162,10 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         }
 
         try {
-
             getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::start);
-
             startJmx();
             getRuleManager().openPorts();
-
             hotDeployer.start(this);
-
             if (configuration.getRetryInitInterval() > 0)
                 reinitializer.start();
         } catch (DuplicatePathException e) {
@@ -288,10 +263,10 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     /**
-     * Adds a proxy to the router and initializes it.
+     * Adds a proxy to the router.
      * Can be called at any time before or after start().
      *
-     * TODO: Should we sync running cause a different Thread might call add?
+     * If called after start(), the port will be opened automatically.
      *
      * @param proxy
      * @throws IOException
@@ -317,7 +292,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         log.debug("Starting JMX.");
         try {
             JmxExporter exporter = mainComponents.getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class);
-            //exporter.removeBean(prefix + jmxRouterName);
             exporter.addBean("io.membrane-api:00=routers, name=" + configuration.getJmx(), new JmxRouter(this, exporter));
             exporter.initAfterBeansAdded();
         } catch (NoSuchBeanDefinitionException ignored) {
@@ -347,20 +321,8 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         }
     }
 
-    public String getBaseLocation() {
-        return baseLocation;
-    }
-
-    public void setBaseLocation(String baseLocation) {
-        this.baseLocation = baseLocation;
-    }
-
     public ApplicationContext getBeanFactory() {
         return mainComponents.getBeanFactory();
-    }
-
-    public boolean isProduction() {
-        return configuration.isProduction();
     }
 
     public Statistics getStatistics() {
@@ -462,7 +424,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     public void setRegistry(BeanRegistry registry) {
         mainComponents.setRegistry(registry);
     }
-
 
     public BeanRegistry getRegistry() {
        return mainComponents.getRegistry();

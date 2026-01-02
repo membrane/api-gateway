@@ -44,7 +44,7 @@ public class DynamicRegistration {
     public void init(Router router) {
         this.router = router;
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
         for (Interceptor i : interceptors)
             i.init(router);
         client = router.getHttpClientFactory().createClient(httpClientConfiguration);

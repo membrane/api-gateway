@@ -442,7 +442,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		}
 
 		if (sslParser != null)
-			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
 	}
 
 	public AttributeMap getMap() {

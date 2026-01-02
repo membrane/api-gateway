@@ -53,7 +53,7 @@ public class OpenAPIPublisherInterceptorTest {
     void setUp() {
         DefaultRouter router = new DefaultRouter();
         router.getConfiguration().setUriFactory(new URIFactory());
-        router.setBaseLocation("");
+        router.getConfiguration().setBaseLocation("");
         openAPIRecordFactory = new OpenAPIRecordFactory(router);
         OpenAPISpec spec = new OpenAPISpec();
         spec.setDir("src/test/resources/openapi/specs");

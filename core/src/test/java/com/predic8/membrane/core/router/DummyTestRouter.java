@@ -52,8 +52,6 @@ public class DummyTestRouter extends AbstractRouter {
     private final Statistics statistics = new Statistics();
     private ApplicationContext applicationContext;
 
-    private String baseLocation;
-
     private Configuration configuration = new Configuration();
 
     public DummyTestRouter() {
@@ -105,11 +103,6 @@ public class DummyTestRouter extends AbstractRouter {
     @Override
     public RuleManager getRuleManager() {
         return ruleManager;
-    }
-
-    @Override
-    public String getBaseLocation() {
-        return baseLocation;
     }
 
     @Override
@@ -190,9 +183,5 @@ public class DummyTestRouter extends AbstractRouter {
 
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
-    }
-
-    public void setBaseLocation(String baseLocation) {
-        this.baseLocation = baseLocation;
     }
 }

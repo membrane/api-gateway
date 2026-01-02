@@ -15,7 +15,6 @@ package com.predic8.membrane.core.security;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.jwt.*;
-import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
@@ -25,9 +24,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.get;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static com.predic8.membrane.core.http.Request.*;
 
 class JWTSecuritySchemeTest {
 
@@ -54,11 +51,7 @@ class JWTSecuritySchemeTest {
     }
 
     private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
-        DefaultRouter mock = mock(DefaultRouter.class);
-        when(mock.getBaseLocation()).thenReturn("");
-        when(mock.getResolverMap()).thenReturn(new ResolverMap());
-        when(mock.getConfiguration()).thenReturn(new Configuration());
-        interceptor.init(mock);
+        interceptor.init(new DummyTestRouter());
         return interceptor;
     }
 
@@ -93,13 +86,10 @@ class JWTSecuritySchemeTest {
 
     private static String getSignedJwt(RsaJsonWebKey privateKey, JwtClaims claims) throws JoseException {
         JsonWebSignature jws = new JsonWebSignature();
-
         jws.setPayload(claims.toJson());
-
         jws.setKey(privateKey.getPrivateKey());
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
         jws.setKeyIdHeaderValue("membrane");
-
         return jws.getCompactSerialization();
     }
 

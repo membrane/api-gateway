@@ -61,7 +61,7 @@ public class ApiKeyFileStore implements ApiKeyStore {
     @Override
     public void init(Router router) {
         try {
-            scopes = readKeyData(readFile(location, router.getResolverMap(), router.getBaseLocation()));
+            scopes = readKeyData(readFile(location, router.getResolverMap(), router.getConfiguration().getBaseLocation()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

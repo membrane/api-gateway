@@ -60,7 +60,7 @@ public class SSLContextTest {
 		}
 
 		public StaticSSLContext build() {
-			return new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+			return new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
 		}
 
 		private SSLContextBuilder byKeyAlias(String alias) {

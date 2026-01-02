@@ -103,7 +103,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 
 		@Override
 		public void init(Router router) {
-			dir = ResolverMap.combine(router.getBaseLocation(), dir);
+			dir = ResolverMap.combine(router.getConfiguration().getBaseLocation(), dir);
 			File d = new File(dir);
 			if (!d.exists())
 				if (!d.mkdirs())

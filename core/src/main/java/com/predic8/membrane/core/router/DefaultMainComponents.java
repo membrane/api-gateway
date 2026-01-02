@@ -108,7 +108,7 @@ public class DefaultMainComponents implements MainComponents {
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         beanFactory = ctx;
         if (ctx instanceof BaseLocationApplicationContext blac)
-            router.setBaseLocation(blac.getBaseLocation());
+            router.getConfiguration().setBaseLocation(blac.getBaseLocation());
     }
 
     public void setRuleManager(RuleManager ruleManager) {

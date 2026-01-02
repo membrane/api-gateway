@@ -27,6 +27,4 @@ public interface Router extends Lifecycle, MainComponents {
 
     Configuration getConfiguration();
 
-    String getBaseLocation();
-
 }

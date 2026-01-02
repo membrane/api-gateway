@@ -137,7 +137,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
             try {
                 reader = factory.createXMLStreamReader(
                         router.getResolverMap().resolve(
-                                ResolverMap.combine(router.getBaseLocation(), fileName)));
+                                ResolverMap.combine(router.getConfiguration().getBaseLocation(), fileName)));
                 AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
                 res.init(router);
                 return res;

@@ -178,7 +178,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private @NotNull WSDLParserContext getWsdlParserContext() {
         WSDLParserContext ctx = new WSDLParserContext();
-        ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
+        ctx.setInput(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsdl));
         return ctx;
     }
 

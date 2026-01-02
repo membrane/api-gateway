@@ -14,13 +14,14 @@
 
 package com.predic8.membrane.core.router;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.administration.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
 
+/**
+ * Global Membrane configuration.
+ */
 @MCElement(name = "configuration", topLevel = true, component = false)
 public class Configuration {
 
@@ -40,6 +41,8 @@ public class Configuration {
     private String jmxRouterName = "default";
 
     private URIFactory uriFactory = new URIFactory(false);
+
+    private String baseLocation;
 
     /**
      * @param hotDeploy If true the hot deploy feature will be activated during init of the Router.
@@ -75,7 +78,7 @@ public class Configuration {
     }
 
     /**
-     * @description  <p>Whether the router should continue startup, if initialization of a rule (proxy, serviceProxy or soapProxy) failed
+     * @description <p>Whether the router should continue startup, if initialization of a rule (proxy, serviceProxy or soapProxy) failed
      * (for example, when a WSDL a component depends on could not be downloaded).</p>
      * <p>If false, the router will exit with code -1 just after startup, when the initialization of a rule failed.</p>
      * <p>If true, the router will continue startup, and all rules which could not be initialized will be <i>inactive</i> (=not
@@ -113,7 +116,7 @@ public class Configuration {
     }
 
     /**
-     * @description  <p>By default the error messages Membrane sends back to an HTTP client provide information to help the caller
+     * @description <p>By default the error messages Membrane sends back to an HTTP client provide information to help the caller
      * find the problem. The caller might even get sensitive information. In production the error messages should not reveal
      * to much details. With this option you can put Membrane in production mode and reduce the amount of information in
      * error messages.</p>
@@ -139,5 +142,18 @@ public class Configuration {
 
     public URIFactory getUriFactory() {
         return uriFactory;
+    }
+
+    /**
+     * @description Base location for the router's configuration file.
+     * @param baseLocation
+     */
+    @MCAttribute()
+    public void setBaseLocation(String baseLocation) {
+        this.baseLocation = baseLocation;
+    }
+
+    public String getBaseLocation() {
+        return baseLocation;
     }
 }

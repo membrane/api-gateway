@@ -31,7 +31,7 @@ class OpenAPIRecordFactoryTest {
     @BeforeAll
     static void setUp() {
         DummyTestRouter router = new DummyTestRouter();
-        router.setBaseLocation("src/test/resources/openapi/specs/");
+        router.getConfiguration().setBaseLocation("src/test/resources/openapi/specs/");
         factory = new OpenAPIRecordFactory(router);
     }
 

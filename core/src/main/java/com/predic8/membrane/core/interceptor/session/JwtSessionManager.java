@@ -73,7 +73,7 @@ public class JwtSessionManager extends SessionManager {
                     instances. To solve this, write the JWK into a file and reference it using <jwtSessionManager><jwk location="...">.
                     """, rsaJsonWebKey.toJson(INCLUDE_PRIVATE));
         } else {
-            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
+            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation())));
         }
 
         idTokenProvider = new IdTokenProvider(rsaJsonWebKey);

@@ -51,7 +51,7 @@ class RewriteTest {
 
         DefaultRouter router = new DefaultRouter();
         router.getConfiguration().setUriFactory(new URIFactory());
-        router.setBaseLocation("");
+        router.getConfiguration().setBaseLocation("");
 
         OpenAPIRecordFactory openAPIRecordFactory = new OpenAPIRecordFactory(router);
 
