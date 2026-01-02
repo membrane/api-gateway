@@ -91,6 +91,7 @@
 - YAML Configuration as default
 - Use of colors in logs
 - Removed camelCase conversion of header access in Groovy scripts instead of header.contentType use header['Content-Type']
+- JMX namespace changed from org.membrane-soa to io.membrane-api.
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured
