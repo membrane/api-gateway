@@ -15,6 +15,7 @@ package com.predic8.membrane.core;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -31,12 +32,13 @@ public class RuleManagerTest {
 	ServiceProxy forwardBlzPOST;
 	InternalProxy internal;
 
-	MockRouter router;
+	Router router;
 
 	@BeforeEach
 	public void setUp() throws Exception{
 		manager = new RuleManager();
-		router = new MockRouter();
+		router = new TestRouter();
+		router.init();
 		manager.setRouter(router);
 		proxy3013 = new ProxyRule(new ProxyRuleKey(3013));
 		manager.addProxyAndOpenPortIfNew(proxy3013);

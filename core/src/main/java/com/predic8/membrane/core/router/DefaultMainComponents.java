@@ -12,9 +12,8 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
-import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchangestore.*;
@@ -25,6 +24,7 @@ import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 import org.springframework.beans.*;
@@ -34,9 +34,9 @@ import java.util.*;
 
 public class DefaultMainComponents implements MainComponents {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultRouter.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultMainComponents.class);
 
-    private DefaultRouter router;
+    private final DefaultRouter router;
 
     private ApplicationContext beanFactory;
 
@@ -96,6 +96,7 @@ public class DefaultMainComponents implements MainComponents {
             getRuleManager().addProxy(proxy, RuleManager.RuleDefinitionSource.SPRING);
     }
 
+    @Override
     public RuleManager getRuleManager() {
         return getRegistry().registerIfAbsent(RuleManager.class, () -> {
             RuleManager rm = new RuleManager();
@@ -116,6 +117,7 @@ public class DefaultMainComponents implements MainComponents {
         getRegistry().register("ruleManager", ruleManager);
     }
 
+    @Override
     public ExchangeStore getExchangeStore() {
         return getRegistry().getBean(ExchangeStore.class).orElseThrow();
     }
@@ -141,14 +143,17 @@ public class DefaultMainComponents implements MainComponents {
         getResolverMap().getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
     }
 
+    @Override
     public DNSCache getDnsCache() {
         return getRegistry().getBean(DNSCache.class).orElseThrow(); // TODO
     }
 
+    @Override
     public ResolverMap getResolverMap() {
         return resolverMap;
     }
 
+    @Override
     public Statistics getStatistics() {
         return statistics;
     }
@@ -157,10 +162,12 @@ public class DefaultMainComponents implements MainComponents {
         getRegistry().register("globalInterceptor", globalInterceptor);
     }
 
+    @Override
     public TimerManager getTimerManager() {
         return timerManager;
     }
 
+    @Override
     public KubernetesClientFactory getKubernetesClientFactory() {
         return kubernetesClientFactory;
     }
@@ -181,10 +188,6 @@ public class DefaultMainComponents implements MainComponents {
         if (registry == null)
             registry = new BeanRegistryImplementation(null, router, null);
         return registry;
-    }
-
-    public URIFactory getUriFactory() {
-        throw new UnsupportedOperationException();
     }
 
     @Override

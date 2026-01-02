@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.router.hotdeploy;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -33,8 +33,8 @@ public class DefaultHotDeployer implements HotDeployer {
     private final Object lock = new Object();
 
     @Override
-    public void start(@NotNull DefaultRouter router) {
-        this.router = router;
+    public void start(@NotNull DefaultRouter defaultRouter) {
+        this.router = defaultRouter;
         startInternal();
     }
 

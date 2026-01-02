@@ -75,7 +75,7 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
-		String path = router.getUriFactory().create(exc.getDestinations().getFirst()).getPath();
+		String path = router.getConfiguration().getUriFactory().create(exc.getDestinations().getFirst()).getPath();
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if (a==null) continue;
@@ -97,7 +97,7 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	}
 
 	private QueryParameter getQueryParameter(Exchange exc, Matcher matcher) throws Exception {
-		return new QueryParameter(getParams(router.getUriFactory(), exc, ERROR), matcher);
+		return new QueryParameter(getParams(router.getConfiguration().getUriFactory(), exc, ERROR), matcher);
 	}
 
 	/**

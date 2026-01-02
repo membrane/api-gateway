@@ -15,12 +15,12 @@
 package com.predic8.membrane.core.resolver;
 
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -34,8 +34,9 @@ public class RuleResolver implements SchemaResolver {
 
     private static final Logger log = LoggerFactory.getLogger(RuleResolver.class);
 
-    final DefaultRouter router;
-    public RuleResolver(DefaultRouter router) {
+    final Router router;
+    
+    public RuleResolver(Router router) {
         this.router = router;
     }
 

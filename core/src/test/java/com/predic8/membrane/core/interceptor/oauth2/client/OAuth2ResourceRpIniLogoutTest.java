@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
@@ -30,6 +29,7 @@ import com.predic8.membrane.core.interceptor.oauth2client.rf.FormPostGenerator;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import org.jetbrains.annotations.NotNull;

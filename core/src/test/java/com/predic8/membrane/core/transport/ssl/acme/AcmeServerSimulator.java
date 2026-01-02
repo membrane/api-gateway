@@ -17,13 +17,13 @@ package com.predic8.membrane.core.transport.ssl.acme;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.jetbrains.annotations.*;
 import org.jose4j.base64url.Base64;
@@ -147,7 +147,7 @@ public class AcmeServerSimulator {
 
                     return RETURN;
                 }
-                assertNotNull("RFC 8555 Section 6.2", jws.getKeyIdHeaderValue());
+                assertNotNull(jws.getKeyIdHeaderValue(),"RFC 8555 Section 6.2");
                 if ("/acme/new-order".equals(exc.getRequest().getUri())) {
                     // here we spuriously return 'badNonce' to check whether the client correctly retries with the
                     // nonce returned on the response

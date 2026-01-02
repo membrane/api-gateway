@@ -14,11 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.annot.beanregistry.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.interceptor.GlobalInterceptor;
-import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import org.junit.jupiter.api.*;
 
@@ -29,59 +25,43 @@ import static org.mockito.Mockito.*;
 
 public class HttpTransportTest {
 
-	private final HTTPSchemaResolver httpSchemaResolver = mock(HTTPSchemaResolver.class);
-	private final ResolverMap resolverMap = mock(ResolverMap.class);
 	private final SSLProvider sslProvider = mock(SSLProvider.class);
-	private final RuleManager ruleManager = mock(RuleManager.class);
-	private final DefaultRouter router = mock(DefaultRouter.class);
-	private final ExchangeStore exchangeStore = mock(ExchangeStore.class);
-	private final Statistics statistics = new Statistics();
 	private HttpTransport transport;
-	private final GlobalInterceptor globalInterceptor = new GlobalInterceptor();
 
 	@BeforeEach
-	void before() throws Exception {
-		when(resolverMap.getHTTPSchemaResolver()).thenReturn(httpSchemaResolver);
-		when(router.getResolverMap()).thenReturn(resolverMap);
-		when(router.getRuleManager()).thenReturn(ruleManager);
-		when(router.getExchangeStore()).thenReturn(exchangeStore);
-		when(router.getHttpClientFactory()).thenReturn(new HttpClientFactory(null));
-		when(router.getStatistics()).thenReturn(statistics);
-		BeanRegistryImplementation value = new BeanRegistryImplementation(null, router, null); // Do not inline! Otherwise mocking is not possible!
-		when(router.getRegistry()).thenReturn(value);
-
-		transport = new HttpTransport();
-		transport.init(router);
+	void before() {
+		var router = new DummyTestRouter();
+		transport = router.getTransport();
 	}
 
 	@AfterEach
-	public void after() {
+	void after() {
 		transport.closeAll();
 	}
 
 	@Test
-	public final void testCloseAllBoolean() {
+	void testCloseAllBoolean() {
 		transport.closeAll(false);
 		transport.closeAll(true);
 	}
 
 	@Test
-	public final void testOpenPortOK_NoSSL() throws IOException {
-		transport.openPort("localhost", 3000, null, null);
-		transport.openPort("127.0.0.1", 3001, null, null);
+	void testOpenPortOK_NoSSL() throws IOException {
+		transport.openPort("localhost", 3000, null);
+		transport.openPort("127.0.0.1", 3001, null);
 	}
 
 	@Test
-	public final void testOpenPortOK_SSL() throws IOException {
-		transport.openPort("localhost", 80, sslProvider, null);
-		transport.openPort("127.0.0.1", 80, sslProvider, null);
+	void testOpenPortOK_SSL() throws IOException {
+		transport.openPort("localhost", 80, sslProvider);
+		transport.openPort("127.0.0.1", 80, sslProvider);
 	}
 
 	@Test
-	public final void testOpenPortErr_SSL() throws IOException {
-		transport.openPort("localhost", 80, sslProvider, null);
+	void testOpenPortErr_SSL() throws IOException {
+		transport.openPort("localhost", 80, sslProvider);
 		try {
-			transport.openPort("127.0.0.1", 80, null, null);
+			transport.openPort("127.0.0.1", 80, null);
 			fail("Should throw RuntimeException");
 		} catch (RuntimeException e) {
 			assertEquals("Lister thread on '/127.0.0.1:80' should use the same SSL config", e.getMessage());
@@ -89,10 +69,10 @@ public class HttpTransportTest {
 	}
 
 	@Test
-	public final void testOpenPortErr_0() throws IOException {
-		transport.openPort("localhost", 80, sslProvider, null);
+	void testOpenPortErr_0() throws IOException {
+		transport.openPort("localhost", 80, sslProvider);
 		try {
-			transport.openPort(null, 80, sslProvider, null);
+			transport.openPort(null, 80, sslProvider);
 			fail("Should throw RuntimeException");
 		} catch (RuntimeException e) {
 			assertEquals("Conflict with listening on the same net interfaces ['*:80', 'localhost/127.0.0.1:80']",
@@ -101,10 +81,10 @@ public class HttpTransportTest {
 	}
 
 	@Test
-	public final void testOpenPortErr_1() throws IOException {
-		transport.openPort(null, 80, sslProvider, null);
+	void testOpenPortErr_1() throws IOException {
+		transport.openPort(null, 80, sslProvider);
 		try {
-			transport.openPort("127.0.0.1", 80, sslProvider, null);
+			transport.openPort("127.0.0.1", 80, sslProvider);
 			fail("Should throw RuntimeException");
 		} catch (RuntimeException e) {
 			assertEquals("Conflict with listening on the same net interfaces ['/127.0.0.1:80', '*:80']",
@@ -113,42 +93,41 @@ public class HttpTransportTest {
 	}
 
 	@Test
-	public final void testIsOpeningPorts() {
+	void testIsOpeningPorts() {
 		assertTrue(transport.isOpeningPorts());
 	}
 
 	@Test
-	public final void testClosePort() throws IOException {
-		transport.openPort("localhost", 80, sslProvider, null);
-		transport.openPort("127.0.0.1", 80, sslProvider, null);
+	void testClosePort() throws IOException {
+		transport.openPort("localhost", 80, sslProvider);
+		transport.openPort("127.0.0.1", 80, sslProvider);
 		transport.closePort(new IpPort("192.1.1.1", 80));
 		transport.closePort(new IpPort("localhost", 80));
 	}
 
 	@Test
-	public final void testGetExecutorService() {
+	void testGetExecutorService() {
 		assertNotNull(transport.getExecutorService());
 	}
 
 	@Test
-	public final void testSetGetSocketTimeout() {
+	void testSetGetSocketTimeout() {
 		assertEquals(30000, transport.getSocketTimeout());
 		transport.setSocketTimeout(12);
 		assertEquals(12, transport.getSocketTimeout());
 	}
 
 	@Test
-	public final void testSetIsTcpNoDelay() {
+	void testSetIsTcpNoDelay() {
 		assertTrue(transport.isTcpNoDelay());
 		transport.setTcpNoDelay(false);
 		assertFalse(transport.isTcpNoDelay());
 	}
 
 	@Test
-	public final void testSetGetForceSocketCloseOnHotDeployAfter() {
+	void testSetGetForceSocketCloseOnHotDeployAfter() {
 		assertEquals(30000, transport.getForceSocketCloseOnHotDeployAfter());
 		transport.setForceSocketCloseOnHotDeployAfter(13);
 		assertEquals(13, transport.getForceSocketCloseOnHotDeployAfter());
 	}
-
 }

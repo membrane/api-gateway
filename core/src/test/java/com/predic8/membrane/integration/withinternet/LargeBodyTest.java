@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.integration.withinternet;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.jetbrains.annotations.*;
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class LargeBodyTest {
 
-    private static TestRouter router, router2;
+    private static Router router, router2;
     private static HttpClientConfiguration hcc;
     private static final AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
@@ -55,7 +55,7 @@ public class LargeBodyTest {
             }
         });
 
-        startNewRouter(router, proxy);
+        router = startNewRouter(proxy);
 
         ServiceProxy proxy1 = getProxy(3041, "localhost", 3040);
         proxy1.getFlow().add(new AbstractInterceptor() {
@@ -66,18 +66,19 @@ public class LargeBodyTest {
             }
         });
 
-        startNewRouter(router2, proxy1);
+        router2 = startNewRouter(proxy1);
     }
 
     private static @NotNull ServiceProxy getProxy(int port, String targetHost, int targetPort) {
         return new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), targetHost, targetPort);
     }
 
-    private static void startNewRouter(TestRouter router, ServiceProxy proxy) throws IOException {
-        router = new TestRouter();
+    private static Router startNewRouter(ServiceProxy proxy) throws IOException {
+        var router = new TestRouter();
         router.add(proxy);
         router.start();
         setClientConfigHTTPClientOnInterceptor(router);
+        return router;
     }
 
     private static void setClientConfigHTTPClientOnInterceptor(TestRouter router2) {
@@ -88,10 +89,8 @@ public class LargeBodyTest {
 
     @AfterAll
     public static void shutdown() {
-        if (router != null)
-            router.stop();
-        if (router2 != null)
-            router2.stop();
+        router.stop();
+        router2.stop();
     }
 
     @Test

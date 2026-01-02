@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
 import com.predic8.membrane.core.proxies.*;
 import org.slf4j.*;
@@ -23,7 +23,7 @@ public class RuleReinitializer {
 
     private static final Logger log = LoggerFactory.getLogger(RuleReinitializer.class);
 
-    private final DefaultRouter router;
+    private final Router router;
 
     private Timer timer;
 

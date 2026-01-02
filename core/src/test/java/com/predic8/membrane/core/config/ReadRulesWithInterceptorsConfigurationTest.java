@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ReadRulesWithInterceptorsConfigurationTest {
 
-	private static DefaultRouter router;
+	private static Router router;
 
 	private static List<Proxy> proxies;
 

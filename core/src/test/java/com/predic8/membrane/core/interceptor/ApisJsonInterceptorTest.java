@@ -14,8 +14,8 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.DefaultRouter;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request.Builder;

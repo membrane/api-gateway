@@ -17,13 +17,13 @@
 package com.predic8.membrane.core.lang;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
+import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -62,7 +62,7 @@ public class ScriptingUtils {
 
         if (flow == REQUEST) {
             try {
-                Map<String, String> qParams = getParams(router.getUriFactory(), exc, MERGE_USING_COMMA);
+                Map<String, String> qParams = getParams(router.getConfiguration().getUriFactory(), exc, MERGE_USING_COMMA);
                 params.put("params", qParams);
                 params.put("param", qParams);
             } catch (Exception e) {

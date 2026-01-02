@@ -854,7 +854,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome dispatchRequest(Exchange exc) throws URISyntaxException, IOException, InvocationTargetException, IllegalAccessException {
-		String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().getFirst());
+		String pathQuery = URLUtil.getPathQuery(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst());
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
@@ -866,7 +866,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws URISyntaxException, IOException {
-		return URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
+		return URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, ERROR);
 	}
 
 	private Response respond(String page) {

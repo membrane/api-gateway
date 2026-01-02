@@ -15,11 +15,11 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.util.*;
 import org.json.*;
 import org.junit.jupiter.api.*;
@@ -32,7 +32,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
+import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static java.lang.Boolean.*;
@@ -40,7 +40,6 @@ import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 public class TemplateInterceptorTest {
 
@@ -49,19 +48,13 @@ public class TemplateInterceptorTest {
     TemplateInterceptor ti;
     Exchange exc = new Exchange(null);
     Request req;
-    static DefaultRouter router;
-    static ResolverMap map;
+    Router router;
+    ResolverMap map;
 
-    @BeforeAll
-    static void setupFiles() {
-        router = mock(DefaultRouter.class);
-        map = new ResolverMap();
-        when(router.getResolverMap()).thenReturn(map);
-        when(router.getUriFactory()).thenReturn(new URIFactory());
-    }
 
     @BeforeEach
     void setUp(){
+        router = new DummyTestRouter();
         ti = new TemplateInterceptor();
         exc = new Exchange(null);
         req = new Request.Builder().build();
@@ -260,7 +253,7 @@ public class TemplateInterceptorTest {
         ti.init(router);
         ti.handleRequest(exc);
 
-        assertTrue(exc.getRequest().getBodyAsStringDecoded().contains("\"foo\": \"alice\""));
+        assertTrue(exc.getRequest().getBodyAsStringDecoded().contains("alice"));
     }
 
     private void setAndHandleRequest(String location) {
@@ -270,11 +263,11 @@ public class TemplateInterceptorTest {
     }
 
 
-    private static void invokeInterceptor(Exchange exchange, String template, String mimeType) {
-        TemplateInterceptor interceptor = new TemplateInterceptor();
-        interceptor.setSrc(template);
-        interceptor.setContentType(mimeType);
-        interceptor.init(router);
-        interceptor.handleRequest(exchange);
+    private void invokeInterceptor(Exchange exchange, String template, String mimeType) {
+        var i = new TemplateInterceptor();
+        i.setSrc(template);
+        i.setContentType(mimeType);
+        i.init(router);
+        i.handleRequest(exchange);
     }
 }

@@ -36,8 +36,8 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.net.SocketFactory;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.slf4j.Logger;

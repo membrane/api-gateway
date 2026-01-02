@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 
 public class RuleUtil {
 	public static String getRuleIdentifier(Proxy proxy) {

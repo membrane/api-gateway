@@ -15,9 +15,9 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.balancer.Node.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
@@ -56,7 +56,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
      */
     public static final int INITIAL_DELAY = 5000;
 
-    private DefaultRouter router;
+    private Router router;
     private int interval = 10000;
     private HttpClient client;
 
@@ -158,7 +158,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.router = applicationContext.getBean(DefaultRouter.class);
+        this.router = applicationContext.getBean(Router.class);
     }
 
     @Override
@@ -204,7 +204,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     }
 
     /**
-     * @see DefaultRouter#getHttpClientFactory()
+     * @see Router#getHttpClientFactory()
      * @see HttpClientConfiguration
      *
      * @description Optional HTTP client configuration for health probes (e.g., timeouts, TLS).

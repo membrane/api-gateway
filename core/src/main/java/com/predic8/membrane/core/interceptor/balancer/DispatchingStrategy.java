@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.router.*;
 
 
 public interface DispatchingStrategy {

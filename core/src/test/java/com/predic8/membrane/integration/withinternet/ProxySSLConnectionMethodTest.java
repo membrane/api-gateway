@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.integration.withinternet;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
 import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.proxies.ProxyRuleKey;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.jupiter.api.AfterEach;
@@ -28,7 +28,7 @@ import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 class ProxySSLConnectionMethodTest {
 
-	private Router router;
+	private TestRouter router;
 
 	@BeforeEach
 	void setUp() throws Exception {

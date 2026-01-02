@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.router;
 
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -21,17 +21,18 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
 import org.springframework.context.*;
 
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.*;
 
 /**
- * TODO rename this class: It is also being used in case the router is being started
- * from the command line (=in a non-test environment).
+ * Lightweight test router that doesn't open any ports.
+ * Fell free to add setters if needed.
  */
 public class DummyTestRouter extends AbstractRouter {
 
@@ -47,8 +48,6 @@ public class DummyTestRouter extends AbstractRouter {
     private HttpTransport transport;
 
     private DNSCache dnsCache = new DNSCache();
-
-    private URIFactory uriFactory = new URIFactory();
 
     private final Statistics statistics = new Statistics();
     private ApplicationContext applicationContext;
@@ -70,6 +69,17 @@ public class DummyTestRouter extends AbstractRouter {
     @Override
     public void init() {
         initProxies();
+    }
+
+    /**
+     * Does not open any ports.
+     */
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void stop() {
     }
 
     @Override
@@ -118,18 +128,18 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     @Override
-    public URIFactory getUriFactory() {
-        return uriFactory;
-    }
-
-    @Override
     public ApplicationContext getBeanFactory() {
         return applicationContext;
     }
 
     @Override
+    public KubernetesClientFactory getKubernetesClientFactory() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public HttpClientFactory getHttpClientFactory() {
-        return null;
+        return httpClientFactory;
     }
 
     @Override
@@ -144,11 +154,11 @@ public class DummyTestRouter extends AbstractRouter {
 
     /**
      * Same as the default config from monitor-beans.xml
-     *
+     * <p>
      * TODO: Sync somehow with standard transport order maybe TransportConfig class or in Transport?
      */
-    private static HttpTransport createTransport() {
-        HttpTransport transport = new HttpTransport();
+    private HttpTransport createTransport() {
+        var transport = new HttpTransport();
         List<Interceptor> interceptors = new ArrayList<>();
         interceptors.add(new RuleMatchingInterceptor());
         interceptors.add(new DispatchingInterceptor());
@@ -157,17 +167,8 @@ public class DummyTestRouter extends AbstractRouter {
         HTTPClientInterceptor httpClientInterceptor = new HTTPClientInterceptor();
         interceptors.add(httpClientInterceptor);
         transport.setFlow(interceptors);
+        transport.init(this);
         return transport;
-    }
-
-    @Override
-    public void start() {
-
-    }
-
-    @Override
-    public void stop() {
-
     }
 
     @Override
@@ -184,7 +185,7 @@ public class DummyTestRouter extends AbstractRouter {
     }
 
     public HttpClientConfiguration getHttpClientConfig() {
-       return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
+        return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) {

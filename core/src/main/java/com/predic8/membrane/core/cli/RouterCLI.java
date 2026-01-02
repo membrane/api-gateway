@@ -15,11 +15,11 @@
 package com.predic8.membrane.core.cli;
 
 import com.predic8.membrane.annot.beanregistry.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.cli.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -135,7 +135,7 @@ public class RouterCLI {
         return null;
     }
 
-    private static DefaultRouter initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
+    private static Router initRouterByConfig(MembraneCommandLine commandLine) throws Exception {
         String config = getRulesFile(commandLine);
         if (config.endsWith(".xml")) {
             var router = initRouterByXml(config);
@@ -149,17 +149,17 @@ public class RouterCLI {
     }
 
     private static Router initRouterByOpenApiSpec(MembraneCommandLine commandLine) throws Exception {
-        Router router = new DummyTestRouter();
+        Router router = new DefaultRouter();
         router.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy(commandLine));
         router.init();
         return router;
     }
 
-    private static DefaultRouter initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
+    private static Router initRouterByYAML(MembraneCommandLine commandLine, String option) throws Exception {
         return initRouterByYAML(commandLine.getCommand().getOptionValue(option));
     }
 
-    private static DefaultRouter initRouterByYAML(String location) throws Exception {
+    private static Router initRouterByYAML(String location) throws Exception {
         var router = new DefaultRouter();
         router.setBaseLocation(location);
 
@@ -213,7 +213,7 @@ public class RouterCLI {
         return new File(getUserDir(), location).getCanonicalPath();
     }
 
-    private static DefaultRouter initRouterByXml(String config) throws Exception {
+    private static Router initRouterByXml(String config) throws Exception {
         try {
             return RouterXmlBootstrap.initByXML(config);
         } catch (XmlBeanDefinitionStoreException e) {

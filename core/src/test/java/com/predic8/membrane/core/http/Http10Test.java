@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -29,8 +29,8 @@ import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class Http10Test {
-    private static DefaultRouter router;
-	private static DefaultRouter router2;
+    private static Router router;
+	private static Router router2;
 
 	@BeforeAll
 	public static void setUp() throws Exception {

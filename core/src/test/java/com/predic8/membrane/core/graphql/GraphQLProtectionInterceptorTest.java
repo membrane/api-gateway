@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.graphql;
 
-import com.predic8.membrane.core.DummyTestRouter;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
 import com.predic8.membrane.core.graphql.blocklist.filters.*;

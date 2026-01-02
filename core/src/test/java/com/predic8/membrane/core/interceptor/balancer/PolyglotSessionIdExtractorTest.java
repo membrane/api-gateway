@@ -13,7 +13,7 @@
  limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.DefaultRouter;
+import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;

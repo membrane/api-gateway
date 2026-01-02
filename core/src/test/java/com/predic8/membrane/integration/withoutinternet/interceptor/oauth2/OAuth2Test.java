@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.flow.*;
@@ -25,6 +24,7 @@ import com.predic8.membrane.core.interceptor.oauth2.StaticClientList;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.json.*;
 import org.junit.jupiter.api.*;
@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OAuth2Test {
 
-    static DefaultRouter router;
+    static TestRouter router;
     static DefaultRouter router2;
 
     static ServiceProxy oAuth2ServerProxy;
@@ -53,7 +53,7 @@ class OAuth2Test {
 
     @BeforeAll
     static void startup() throws Exception {
-        router = new DefaultRouter();
+        router = new TestRouter();
         router.getConfiguration().setHotDeploy(false);
         router.setExchangeStore(new ForgetfulExchangeStore());
         router.setTransport(new HttpTransport());
@@ -63,7 +63,7 @@ class OAuth2Test {
         oAuth2ServerProxy.setFlow(List.of(oAuth2ASI));
 
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(oAuth2ServerProxy);
+        router.add(oAuth2ServerProxy);
         router.init();
         router.start();
 
@@ -80,7 +80,7 @@ class OAuth2Test {
                 new StaticInterceptor(){{setSrc("{\"success\": \"true\"}");}},
                 new ReturnInterceptor()));
 
-        router2.getRuleManager().addProxyAndOpenPortIfNew(jwtAuthProxy);
+        router2.add(jwtAuthProxy);
         router2.init();
         router2.start();
     }

@@ -14,13 +14,12 @@
 package com.predic8.membrane.core.transport;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.ssl.*;
-import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.springframework.beans.factory.*;
 
@@ -32,10 +31,9 @@ public abstract class Transport {
     /**
      * SSL and Non-SSL are mixed here, maybe split that in future
      */
-    protected final Set<IPortChangeListener> menuListeners = new HashSet<>();
     private List<Interceptor> interceptors = new Vector<>();
 
-    private DefaultRouter router;
+    private Router router;
     private boolean reverseDNS = true;
 
     private int concurrentConnectionLimitPerIp = -1;
@@ -53,7 +51,7 @@ public abstract class Transport {
         this.interceptors = flow;
     }
 
-    public void init(DefaultRouter router) {
+    public void init(Router router) {
         this.router = router;
 
         if (interceptors.isEmpty()) {
@@ -62,7 +60,8 @@ public abstract class Transport {
             interceptors.add(getExchangeStoreInterceptor());
             interceptors.add(getInterceptor(DispatchingInterceptor.class));
             interceptors.add(getInterceptor(ReverseProxyingInterceptor.class));
-            router.getRegistry().getBean(GlobalInterceptor.class).ifPresent(i -> interceptors.add(i ));
+            if (router instanceof DefaultRouter dr)
+                dr.getRegistry().getBean(GlobalInterceptor.class).ifPresent(i -> interceptors.add(i ));
             interceptors.add(getInterceptor(UserFeatureInterceptor.class));
             interceptors.add(getInterceptor(InternalRoutingInterceptor.class));
             interceptors.add(getInterceptor(HTTPClientInterceptor.class));
@@ -103,7 +102,7 @@ public abstract class Transport {
         return new ExchangeStoreInterceptor(router.getExchangeStore());
     }
 
-    public DefaultRouter getRouter() {
+    public Router getRouter() {
         return router;
     }
 
@@ -118,10 +117,10 @@ public abstract class Transport {
     public void closeAll(boolean waitForCompletion) {
     }
 
-    public void openPort(String ip, int port, SSLProvider sslProvider, TimerManager timerManager) throws IOException {
+    public void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
     }
 
-    public void openPort(SSLableProxy proxy, TimerManager timerManager) throws IOException {
+    public void openPort(SSLableProxy proxy) throws IOException {
     }
 
     public abstract boolean isOpeningPorts();
