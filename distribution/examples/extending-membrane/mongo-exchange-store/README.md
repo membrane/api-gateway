@@ -17,8 +17,10 @@ View live data in the Admin Console from the MongoDB store. Great for debugging,
 
 1. **Download MongoDB Driver:**
 
-- From [https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/5.0.1/mongodb-driver-sync-5.0.1.jar](https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/5.0.1/mongodb-driver-sync-5.0.1.jar).
-- Place it in the `lib` directory of your Membrane installation.
+  - Choose from:
+    [https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/](https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/)
+    a recent version. 5.X is recommended.
+  - Place it in the `lib` directory of your Membrane installation.
 
 2. **Configure:** edit `apis.yaml`
 

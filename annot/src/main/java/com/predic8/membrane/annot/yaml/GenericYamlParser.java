@@ -15,14 +15,11 @@ package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.util.*;
+import com.fasterxml.jackson.databind.node.*;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -198,7 +195,7 @@ public class GenericYamlParser {
                 log.error(msg);
                 throw new ParsingException(msg, node); // TODO: Cause we know the reason, shorten output.
             }
-            throw new ParsingException(e,node);
+            throw new ParsingException(e, node);
         }
         catch (Throwable cause) {
             throw new ParsingException(cause, node);
