@@ -26,7 +26,7 @@ import static com.google.common.collect.ImmutableMap.of;
 
 public class DiskWatcher {
 
-    private final static Logger LOG = LoggerFactory.getLogger(DiskWatcher.class.getName());
+    private final static Logger log = LoggerFactory.getLogger(DiskWatcher.class.getName());
 
     private WebSocketConnectionCollection connections;
     private int intervalMilliseconds = 10000;
@@ -53,7 +53,7 @@ public class DiskWatcher {
                     )
             ));
         } catch (JsonProcessingException e) {
-            LOG.error("", e); // should not happen
+            log.error("", e); // should not happen
         }
     }
 

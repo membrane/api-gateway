@@ -83,7 +83,7 @@ public class FlowInitiator extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            ProblemDetails.internal(router.isProduction(),getDisplayName())
+            ProblemDetails.internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Error initiating OAuth2 flow!")
                     .exception(e)
                     .buildAndSetResponse(exc);

@@ -40,7 +40,7 @@ public class HTTP2XMLInterceptor extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (Exception e) {
             log.error("",e);
-            user(router.isProduction(),getDisplayName())
+            user(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Could not generate XML from HTTP information!")
                     .exception(e)
                     .buildAndSetResponse(exc);

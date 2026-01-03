@@ -96,7 +96,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
             return CONTINUE;
         } catch (Exception e) {
             log.error("Error processing response from {}: {}", dest, e.getMessage(), e);
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("internal-calling")
                     .detail("Internal call")
                     .exception(e)

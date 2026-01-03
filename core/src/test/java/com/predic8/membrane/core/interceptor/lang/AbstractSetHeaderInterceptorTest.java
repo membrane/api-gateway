@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -28,13 +28,13 @@ abstract class AbstractSetHeaderInterceptorTest {
     Exchange exchange;
     Message message;
     final AbstractSetterInterceptor interceptor = new SetHeaderInterceptor();
-    static Router router;
+    static DefaultRouter router;
 
     protected abstract Language getLanguage();
 
     @BeforeEach
     void setUp() throws Exception {
-        router = new Router();
+        router = new DefaultRouter();
         exchange = new Exchange(null) {{
             setRequest(new Request.Builder().post("/boo")
                     .header("host", "localhost:8080")

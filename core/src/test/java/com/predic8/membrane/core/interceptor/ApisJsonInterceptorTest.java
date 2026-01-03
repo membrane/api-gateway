@@ -14,8 +14,8 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request.Builder;
@@ -51,7 +51,7 @@ class ApisJsonInterceptorTest {
     @Test
     void responseTest() throws Exception {
         Exchange exc = new Builder().buildExchange();
-        Router r = mock(Router.class);
+        DefaultRouter r = mock(DefaultRouter.class);
         RuleManager rm = mock(RuleManager.class);
         APIProxy apiProxy = new APIProxy() {{
             setPath(new Path(false, "/baz"));

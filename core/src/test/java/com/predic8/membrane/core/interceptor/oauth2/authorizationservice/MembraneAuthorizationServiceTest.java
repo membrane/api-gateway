@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -114,7 +114,7 @@ class MembraneAuthorizationServiceTest {
         MembraneAuthorizationService mas = Mockito.spy(new MembraneAuthorizationService());
         doReturn(new ByteArrayInputStream(CONFIG.getBytes())).when(mas).resolve(any(), Mockito.nullable(String.class), anyString());
         mas.setSrc("dummy");
-        mas.router = new Router();
+        mas.router = new DefaultRouter();
         return mas;
     }
 

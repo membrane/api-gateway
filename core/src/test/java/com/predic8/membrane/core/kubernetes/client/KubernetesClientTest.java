@@ -14,13 +14,13 @@
 package com.predic8.membrane.core.kubernetes.client;
 
 import com.google.common.io.Resources;
-import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,12 +37,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class KubernetesClientTest {
 
-    private static HttpRouter router;
+    private static Router router;
 
     @BeforeAll
-    public static void prepare() {
-        router = new HttpRouter();
-        router.setHotDeploy(false);
+    public static void prepare() throws IOException {
+        router = new TestRouter();
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3053), null, 0);
         sp.getFlow().add(new AbstractInterceptor() {
             @Override
@@ -99,7 +98,7 @@ public class KubernetesClientTest {
                 return RETURN;
             }
         });
-        router.getRules().add(sp);
+        router.add(sp);
         router.start();
     }
 

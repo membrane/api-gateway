@@ -1,4 +1,4 @@
-/* Copyright 2011 predic8 GmbH, www.predic8.com
+/* Copyright 2015 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,21 +11,12 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.transport.http.streampump;
 
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.transport.http.MockHttpTransport;
+public class Statistics {
+	private final StreamPump.StreamPumpStats streamPumpStats = new StreamPump.StreamPumpStats();
 
-public class MockRouter extends Router {
-
-	public MockRouter() {
-		setExchangeStore(new ForgetfulExchangeStore());
+	public StreamPump.StreamPumpStats getStreamPumpStats() {
+		return streamPumpStats;
 	}
-
-	@Override
-	public Transport getTransport() {
-		return new MockHttpTransport();
-	}
-
 }

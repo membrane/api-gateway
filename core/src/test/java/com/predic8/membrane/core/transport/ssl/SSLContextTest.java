@@ -14,10 +14,9 @@
 package com.predic8.membrane.core.transport.ssl;
 
 import com.google.common.io.Resources;
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,7 +44,7 @@ public class SSLContextTest {
 
 	@BeforeAll
 	public static void before() {
-		router = new HttpRouter();
+		router = new DummyTestRouter();
 	}
 
 	@AfterAll
@@ -61,7 +60,7 @@ public class SSLContextTest {
 		}
 
 		public StaticSSLContext build() {
-			return new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+			return new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
 		}
 
 		private SSLContextBuilder byKeyAlias(String alias) {
@@ -246,8 +245,7 @@ public class SSLContextTest {
 		cert.setContent(Resources.toString(getResource("ca/server.pem"), UTF_8));
 		key.setCertificates(List.of(cert));
 		sslParser.setKey(key);
-		StaticSSLContext ctx = new StaticSSLContext(sslParser, new ResolverMap(), "");
-		return ctx;
+        return new StaticSSLContext(sslParser, new ResolverMap(), "");
 	}
 
 	private static @NotNull StaticSSLContext createPEMClientSSLContext() throws IOException {

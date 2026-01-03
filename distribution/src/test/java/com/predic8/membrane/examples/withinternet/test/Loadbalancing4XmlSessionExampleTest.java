@@ -24,17 +24,21 @@ import static org.hamcrest.CoreMatchers.containsString;
 
 public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingTestcase {
 
+	private static final String BODY_SESSION_1 = """
+			{"id":"SESSION1"}""";
+	private static final String BODY_SESSION_2 = """
+			{"id":"SESSION2"}""";
+
 	@Override
 	protected String getExampleDirName() {
 		return "loadbalancing/4-session";
 	}
 
 	@Test
-	public void test() throws Exception {
+	void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript()) {
             given().when()
-                    .body("""
-                        {"id":"SESSION1"}""")
+                    .body(BODY_SESSION_1)
                     .contentType(APPLICATION_JSON)
                     .post("http://localhost:8080")
                 .then()
@@ -42,8 +46,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
                     .body(containsString("Request count: 1"));
 
             given().when()
-                    .body("""
-                        {"id":"SESSION1"}""")
+                    .body(BODY_SESSION_1)
                     .contentType(APPLICATION_JSON)
                     .post("http://localhost:8080")
                     .then()
@@ -51,8 +54,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
                     .body(containsString("Request count: 2"));
 
             given().when()
-                    .body("""
-                        {"id":"SESSION1"}""")
+                    .body(BODY_SESSION_1)
                     .contentType(APPLICATION_JSON)
                     .post("http://localhost:8080")
                     .then()
@@ -60,8 +62,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
                     .body(containsString("Request count: 3"));
 
             given().when()
-                    .body("""
-                        {"id":"SESSION1"}""")
+                    .body(BODY_SESSION_1)
                     .contentType(APPLICATION_JSON)
                     .post("http://localhost:8080")
                     .then()
@@ -69,8 +70,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
                     .body(containsString("Request count: 4"));
 
             given().when()
-                    .body("""
-                        {"id":"SESSION2"}""")
+                    .body(BODY_SESSION_2)
                     .contentType(APPLICATION_JSON)
                     .post("http://localhost:8080")
                     .then()
@@ -78,8 +78,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
                     .body(containsString("Request count: 1"));
 
             given().when()
-                    .body("""
-                        {"id":"SESSION2"}""")
+                    .body(BODY_SESSION_2)
                     .contentType(APPLICATION_JSON)
                     .post("http://localhost:8080")
                     .then()
@@ -87,8 +86,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
                     .body(containsString("Request count: 2"));
 
             given().when()
-                    .body("""
-                        {"id":"SESSION2"}""")
+                    .body(BODY_SESSION_2)
                     .contentType(APPLICATION_JSON)
                     .post("http://localhost:8080")
                     .then()
@@ -96,8 +94,7 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
                     .body(containsString("Request count: 3"));
 
             given().when()
-                    .body("""
-                        {"id":"SESSION2"}""")
+                    .body(BODY_SESSION_2)
                     .contentType(APPLICATION_JSON)
                     .post("http://localhost:8080")
                     .then()

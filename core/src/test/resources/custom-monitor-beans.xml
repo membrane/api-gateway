@@ -18,7 +18,7 @@
   
 	<router exchangeStore="exchangeStore">
 		<property name="ruleManager">
-	      <bean class="com.predic8.membrane.core.RuleManager" />
+	      <bean class="com.predic8.membrane.core.proxies.RuleManager" />
 		</property>
 	    <property name="configurationManager" ref="configurationManager" />
     </router>
@@ -149,7 +149,7 @@
     </property>
  
     <property name="configuration">
-      <bean class="com.predic8.membrane.core.Configuration">
+      <bean class="com.predic8.membrane.core.router.Configuration">
         <property name="adjustHostHeader" value="true" />
         <property name="indentMessage" value="true" />
         <property name="trackExchange" value="false" />

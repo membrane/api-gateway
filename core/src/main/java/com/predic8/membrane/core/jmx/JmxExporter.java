@@ -13,39 +13,35 @@
 
 package com.predic8.membrane.core.jmx;
 
-import com.predic8.membrane.annot.MCElement;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.Lifecycle;
-import org.springframework.jmx.export.MBeanExporter;
-import org.springframework.jmx.export.annotation.AnnotationJmxAttributeSource;
-import org.springframework.jmx.export.assembler.MetadataMBeanInfoAssembler;
-import org.springframework.jmx.support.RegistrationPolicy;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
+import org.slf4j.*;
+import org.springframework.beans.factory.*;
+import org.springframework.context.*;
+import org.springframework.jmx.export.*;
+import org.springframework.jmx.export.annotation.*;
+import org.springframework.jmx.export.assembler.*;
 
-import java.util.HashMap;
+import java.util.*;
 
-@MCElement(name=JmxExporter.JMX_EXPORTER_NAME)
-public class JmxExporter extends MBeanExporter implements Lifecycle, ApplicationContextAware, DisposableBean {
+import static org.springframework.jmx.support.RegistrationPolicy.*;
+
+@MCElement(name = JmxExporter.JMX_EXPORTER_NAME)
+public class JmxExporter implements Lifecycle {
+
+    private static final Logger log = LoggerFactory.getLogger(JmxExporter.class);
 
     public static final String JMX_EXPORTER_NAME = "jmxExporter";
-    final HashMap<String, Object> jmxBeans = new HashMap<>();
+    public static final String JMX_NAMESPACE = "io.membrane-api";
 
-    ApplicationContext context;
+    private final HashMap<String, Object> jmxBeans = new HashMap<>();
 
-    MBeanExporter exporter;
-
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.context = applicationContext;
-    }
+    private MBeanExporter exporter;
 
     @Override
     public void start() {
         exporter = new MBeanExporter();
-        exporter.setRegistrationPolicy(RegistrationPolicy.IGNORE_EXISTING);
+        exporter.setRegistrationPolicy(IGNORE_EXISTING);
         MetadataMBeanInfoAssembler assembler = new MetadataMBeanInfoAssembler();
         assembler.setAttributeSource(new AnnotationJmxAttributeSource());
         assembler.afterPropertiesSet();
@@ -54,31 +50,56 @@ public class JmxExporter extends MBeanExporter implements Lifecycle, Application
 
     @Override
     public void stop() {
-
+        jmxBeans.clear();
+        exporter.destroy();
+        exporter = null;
     }
 
     @Override
     public boolean isRunning() {
-        return false;
+        return exporter != null;
     }
 
-    @Override
-    public void destroy() {
-        jmxBeans.clear();
-        exporter.destroy();
+    public void addBean(String fullyQualifiedMBeanName, Object bean) {
+        jmxBeans.put(fullyQualifiedMBeanName, bean);
     }
 
-    public void addBean(String fullyQualifiedMBeanName, Object bean ) {
-        jmxBeans.put(fullyQualifiedMBeanName,bean);
-    }
+    public void initAfterBeansAdded() {
+        // Temporary workaround till YAML start calls start() on components
+        if (exporter == null)
+            start();
 
-    public void removeBean(String fullyQualifiedMBeanName){
-        jmxBeans.remove(fullyQualifiedMBeanName);
-    }
-
-    public void initAfterBeansAdded(){
         exporter.setBeans(jmxBeans);
         exporter.afterPropertiesSet();
         exporter.afterSingletonsInstantiated();
+    }
+
+    public void addRouter(Router router) {
+        addBean(JMX_NAMESPACE + ":00=routers, name=" + router.getConfiguration().getJmx(), new JmxRouter(router, this));
+        initAfterBeansAdded();
+    }
+
+
+    public static void start(Router router) {
+        var eo = getExporter(router);
+        if (eo.isEmpty()) {
+            log.debug("Not starting JMX exporter. Declare component in YAML or element in XML");
+            return;
+        }
+        log.debug("Starting JMX.");
+        eo.get().addRouter(router);
+    }
+
+    public static Optional<JmxExporter> getExporter(Router router) {
+        var exporter = router.getRegistry().getBean(JmxExporter.class);
+        if (exporter.isPresent()) return exporter;
+        if (router.getBeanFactory() == null) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(router.getBeanFactory().getBean(JMX_EXPORTER_NAME, JmxExporter.class));
+        } catch (NoSuchBeanDefinitionException e) {
+            return Optional.empty();
+        }
     }
 }

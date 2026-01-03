@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -30,16 +30,16 @@ import static com.predic8.membrane.core.http.Request.*;
 
 public class ServiceInvocationTest {
 
-	private HttpRouter router;
+	private Router router;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	void setUp() throws Exception {
 		router = createRouter();
 		MockInterceptor.clear();
 	}
 
 	@Test
-	public void testInterceptorSequence() throws Exception {
+	void testInterceptorSequence() throws Exception {
 		callService();
 
 		MockInterceptor.assertContent(
@@ -48,10 +48,9 @@ public class ServiceInvocationTest {
 				new String[] {}); // aborts
 	}
 
-
 	@AfterEach
 	public void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	private ServiceProxy createFirstRule() {
@@ -88,13 +87,13 @@ public class ServiceInvocationTest {
 		return post;
 	}
 
-	private HttpRouter createRouter() throws Exception {
-		HttpRouter router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(createFirstRule());
-		router.getRuleManager().addProxyAndOpenPortIfNew(createServiceRule());
-		router.getRuleManager().addProxyAndOpenPortIfNew(createEndpointRule());
+	private Router createRouter() throws Exception {
+		Router router = new TestRouter();
+		router.add(createFirstRule());
+		router.add(createServiceRule());
+		router.add(createEndpointRule());
+		router.start();
 		router.getTransport().getFlow().add(router.getTransport().getFlow().size()-1, new MockInterceptor("transport-log"));
-		router.init();
 		return router;
 	}
 

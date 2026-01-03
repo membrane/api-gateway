@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.stats.*;
 
 import java.util.*;
@@ -38,7 +38,7 @@ public interface Proxy extends Cloneable {
 
 	RuleStatisticCollector getStatisticCollector();
 
-	void init(Router router) throws Exception;
+	void init(Router router);
 
 	boolean isTargetAdjustHostHeader();
 

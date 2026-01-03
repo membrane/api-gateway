@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.client.protocol.*;
+import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 

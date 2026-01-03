@@ -73,7 +73,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
         try {
             result = exchangeExpression.evaluate(exc, flow, Boolean.class);
         } catch (ExchangeExpressionException e) {
-            e.provideDetails(internal(router.isProduction(), getDisplayName()))
+            e.provideDetails(internal(router.getConfiguration().isProduction(), getDisplayName()))
                     .detail("Error evaluating expression on exchange.")
                     .buildAndSetResponse(exc);
             return ABORT;

@@ -14,12 +14,12 @@
 
 package com.predic8.membrane.core.util.jdbc;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
 
-import javax.sql.DataSource;
-import java.util.Map;
+import javax.sql.*;
+import java.util.*;
 
 public abstract class AbstractJdbcSupport {
 

@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.integration.withoutinternet.interceptor;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -33,28 +33,28 @@ public class SOAPProxyIntegrationTest {
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(3000), null, 0);
 		proxy.getFlow().add(new SampleSoapServiceInterceptor());
 
-		targetRouter = new HttpRouter();
-		targetRouter.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-		targetRouter.init();
+		targetRouter = new TestRouter();
+		targetRouter.add(proxy);
+		targetRouter.start();
 	}
 
 	@AfterAll
 	public static void teardown() {
-		targetRouter.shutdown();
+		targetRouter.stop();
 	}
 
 	@BeforeEach
-	public void startRouter() {
-		router = Router.init("classpath:/soap-proxy.xml");
+	void startRouter() {
+		router = RouterXmlBootstrap.initByXML("classpath:/soap-proxy.xml");
 	}
 
 	@AfterEach
-	public void shutdownRouter() {
-		router.shutdown();
+	void shutdownRouter() {
+		router.stop();
 	}
 
 	@Test
-	public void targetProxyTest() {
+	void targetProxyTest() {
 		when()
 			.get("http://localhost:3000/foo?wsdl")
 		.then()
@@ -62,7 +62,7 @@ public class SOAPProxyIntegrationTest {
 	}
 
 	@Test
-	public void rewriteSimpleTest() {
+	void rewriteSimpleTest() {
 		when()
 			.get("http://localhost:2000/foo?wsdl")
 		.then()

@@ -67,7 +67,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
         try {
             con = dataSource.getConnection();
         } catch (SQLException e) {
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not connect to database")
 					.exception(e)
 					.buildAndSetResponse(exc);
@@ -75,12 +75,12 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
         }
 
         try {
-			int offset = URLParamUtil.getIntParam(router.getUriFactory(), exc, "offset");
-			int max = URLParamUtil.getIntParam(router.getUriFactory(), exc, "max");
+			int offset = URLParamUtil.getIntParam(router.getConfiguration().getUriFactory(), exc, "offset");
+			int max = URLParamUtil.getIntParam(router.getConfiguration().getUriFactory(), exc, "max");
 			int total = getTotal(con);
 
 			Statement s = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			ResultSet r = s.executeQuery(getOrderedStatistics(router.getUriFactory(), exc));
+			ResultSet r = s.executeQuery(getOrderedStatistics(router.getConfiguration().getUriFactory(), exc));
 			createJson(exc, r, offset, max, total);
 		} catch (Exception e) {
 			log.warn("Could not retrieve statistics.", e);

@@ -13,11 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.annot.beanregistry;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.annot.yaml.WatchAction;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.yaml.*;
 
-import static com.predic8.membrane.annot.yaml.WatchAction.*;
-
+/**
+ * Immutable.
+ */
 public class BeanDefinition {
 
     public static final String PROTOTYPE = "prototype";
@@ -78,6 +79,8 @@ public class BeanDefinition {
     }
 
     public String getScope() {
+        if (node == null)
+            return null;
         JsonNode meta = node.get("metadata");
         if (meta == null)
             return null;
@@ -100,4 +103,14 @@ public class BeanDefinition {
         return PROTOTYPE.equals(getScope());
     }
 
+    @Override
+    public String toString() {
+        return "BeanDefinition{" +
+               "name='" + name + '\'' +
+               ", namespace='" + namespace + '\'' +
+               ", uid='" + uid + '\'' +
+               ", node=" + node +
+               ", kind='" + kind + '\'' +
+               '}';
+    }
 }

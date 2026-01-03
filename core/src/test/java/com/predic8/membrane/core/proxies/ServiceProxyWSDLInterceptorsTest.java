@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
@@ -28,16 +28,16 @@ import static org.hamcrest.Matchers.*;
 @SuppressWarnings("HttpUrlsUsage")
 public class ServiceProxyWSDLInterceptorsTest {
 
-    static Router router;
+    Router router;
 
-    @BeforeAll
-    static void setUp() {
-        router = new HttpRouter();
-        router.setHotDeploy(false);
+    @BeforeEach
+    void setUp() {
+        router = new TestRouter();
+        router.getConfiguration().setHotDeploy(false);
     }
 
-    @AfterAll
-    static void teardown() {
+    @AfterEach
+    void teardown() {
         router.stop();
     }
 

@@ -58,7 +58,7 @@ public abstract class ParameterizedRequest {
     }
 
     private Map<String, String> getValidParams(Exchange exc) throws Exception {
-        Map<String, String> params = URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc, ERROR);
+        Map<String, String> params = URLParamUtil.getParams(authServer.getRouter().getConfiguration().getUriFactory(), exc, ERROR);
         params.putAll(parseAuthentication(exc));
         removeEmptyParams(params);
         return params;

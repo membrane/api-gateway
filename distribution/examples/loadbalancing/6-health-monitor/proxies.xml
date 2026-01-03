@@ -12,7 +12,7 @@
         </httpClientConfig>
     </balancerHealthMonitor>
 
-    <router production="false">
+    <router>
 
         <!-- Public LB endpoint -->
         <api port="8000">

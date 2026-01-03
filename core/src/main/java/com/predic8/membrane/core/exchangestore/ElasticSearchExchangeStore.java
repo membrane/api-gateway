@@ -17,7 +17,6 @@ package com.predic8.membrane.core.exchangestore;
 import com.fasterxml.jackson.databind.*;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchange.snapshots.*;
 import com.predic8.membrane.core.http.*;
@@ -25,6 +24,7 @@ import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.apache.commons.io.*;
 import org.json.*;
@@ -507,11 +507,9 @@ public class ElasticSearchExchangeStore extends AbstractPersistentExchangeStore 
                     log.info("Index {} created",index);
                 }
             } catch (JSONException e) {
-                if(indexRes.getJSONObject("error").getJSONArray("root_cause")
-                        .getJSONObject(0).getString("type").equals("resource_already_exists_exception")){
+                if(indexRes.has("error") && indexRes.getJSONObject("error").getJSONArray("root_cause").getJSONObject(0).getString("type").equals("resource_already_exists_exception")){
                     log.info("Index already exists skipping index creation");
-                }
-                else{
+                } else {
                     log.error("Error happened. Reply from elastic search is below");
                     log.error(indexRes.toString());
                 }

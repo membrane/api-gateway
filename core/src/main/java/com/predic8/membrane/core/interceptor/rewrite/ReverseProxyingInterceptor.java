@@ -72,7 +72,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
             target = new URL(exc.getDestinations().getFirst());
         } catch (MalformedURLException e) {
 			log.error("Could not parse target URL: {}",destination);
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not parse target URL")
 					.internal("URL", exc.getDestinations().getFirst())
 					.exception(e)

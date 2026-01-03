@@ -16,6 +16,7 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -26,7 +27,7 @@ import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
-class RouterTest {
+class DefaultRouterTest {
 
     public static final String INTERNAL_SECRET = "supersecret";
     static Router dev, prod;
@@ -39,8 +40,8 @@ class RouterTest {
 
     @AfterAll
     static void tearDown() {
-        prod.shutdown();
-        dev.shutdown();
+        prod.stop();
+        dev.stop();
     }
 
     @Test
@@ -113,8 +114,8 @@ class RouterTest {
     }
 
     private static Router createRouter(int port, boolean production) throws IOException {
-        HttpRouter r = new HttpRouter();
-        r.setProduction(production);
+        Router r = new DefaultRouter();
+        r.getConfiguration().setProduction(production);
         APIProxy api = new APIProxy();
         api.setKey(new APIProxyKey(port));
         api.getFlow().add(new AbstractInterceptor() {
@@ -128,7 +129,7 @@ class RouterTest {
                 return "interceptor";
             }
         });
-        r.setHotDeploy(false);
+        r.getConfiguration().setHotDeploy(false);
         r.add(api);
         r.start();
         return r;

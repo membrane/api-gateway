@@ -14,11 +14,10 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -114,7 +113,7 @@ class SetPropertyInterceptorXPathTest {
         i.setLanguage(XPATH);
         i.setFieldName("firstname");
         i.setValue(value);
-        i.init(new Router());
+        i.init(new DefaultRouter());
         return i;
     }
 

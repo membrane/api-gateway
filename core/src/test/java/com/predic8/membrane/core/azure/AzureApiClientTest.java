@@ -14,6 +14,9 @@
 package com.predic8.membrane.core.azure;
 
 import com.predic8.membrane.core.azure.api.AzureApiClient;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +44,7 @@ class AzureApiClientTest {
         simulator = new AzureDnsApiSimulator(port);
         simulator.start();
 
-        apiClient = new AzureApiClient(null, tableStorage, null);
+        apiClient = new AzureApiClient(null, tableStorage, new DummyTestRouter());
     }
 
     @AfterEach

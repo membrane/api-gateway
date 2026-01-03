@@ -14,9 +14,9 @@
 package com.predic8.membrane.core.graphql;
 
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -30,7 +30,7 @@ public class GraphQLoverHttpValidatorTest {
 
     @BeforeEach
     void setup() {
-        Router router = new Router();
+        DefaultRouter router = new DefaultRouter();
         validator1 = new GraphQLoverHttpValidator(false, Lists.newArrayList("GET", "POST"), 3, 3, 2, null, router);
     }
 
