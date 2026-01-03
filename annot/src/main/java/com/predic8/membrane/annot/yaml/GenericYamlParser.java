@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.util.*;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
@@ -189,7 +190,17 @@ public class GenericYamlParser {
             if (!required.isEmpty())
                 throw new ParsingException("Missing required fields: " + required.stream().map(McYamlIntrospector::getSetterName).toList(), node);
             return configObj;
-        } catch (Throwable cause) {
+        }
+        catch (NoClassDefFoundError e) {
+            if (e.getCause() != null) {
+                var missingClass = e.getCause().getMessage(); // TODO: Better use ExceptionUtil.getRootCause() but it isn't visible in annot.
+                var msg = "Could not create bean with class: %s\nMissing class: %s\nConfiguration: %s".formatted(clazz, missingClass, node);
+                log.error(msg);
+                throw new ParsingException(msg, node); // TODO: Cause we know the reason, shorten output.
+            }
+            throw new ParsingException(e,node);
+        }
+        catch (Throwable cause) {
             throw new ParsingException(cause, node);
         }
     }

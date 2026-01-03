@@ -1,8 +1,7 @@
 # MongoDB Exchange Store
 
-Track and store all your Exchanges, even after restarts by connecting Membrane to MongoDB. View live data in the
-Admin Console. Great for debugging, audits, or traffic insights.
-This quick guide shows you how to set it up in minutes.
+Make exchanges persistent with MongoDB. You can search and inspect the HTTP traffic later even after restarts.
+View live data in the Admin Console from the MongoDB store. Great for debugging, audits, or traffic insights.
 
 ### Prerequisite
 
@@ -18,26 +17,10 @@ This quick guide shows you how to set it up in minutes.
 
 1. **Download MongoDB Driver:**
 
-- Download the MongoDB
-  driver [https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/5.0.1/mongodb-driver-sync-5.0.1.jar](https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/5.0.1/mongodb-driver-sync-5.0.1.jar).
+- From [https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/5.0.1/mongodb-driver-sync-5.0.1.jar](https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/5.0.1/mongodb-driver-sync-5.0.1.jar).
 - Place it in the `lib` directory of your Membrane installation.
 
-2. **Configure `proxies.xml`:**
-
-- Example configuration for MongoDB:
-
-   ```xml
-   <mongoDBExchangeStore id="store" connection="mongodb://localhost:27017/" database="membrane"
-                          collection="exchanges" />
-    <router exchangeStore="store">
-        <serviceProxy name="predic8.com" port="2000">
-            <target url="https://membrane-soa.org" />
-        </serviceProxy>
-        <serviceProxy port="9000">
-            <adminConsole />
-        </serviceProxy>
-    </router>
-   ```
+2. **Configure:** edit `apis.yaml`
 
 3. **run service.proxy.sh script:**
 

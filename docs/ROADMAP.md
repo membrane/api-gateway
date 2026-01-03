@@ -22,6 +22,10 @@
   - Documentation
   - See JmxExporter
 - Synchronization of BeanRegistry
+- Move YAML Parsing to core?
+  - Core isn't visible.
+- YAML parsing:
+  - When the reason for a parse error is clear. Shorten error message.
 
 # 7.1.0
 
