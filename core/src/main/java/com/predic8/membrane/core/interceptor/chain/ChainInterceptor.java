@@ -44,7 +44,10 @@ public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
                 .getFlow();
     }
 
-    private  <T> Optional<T> getBean(String name, Class<T> clazz) {
+    /**
+     * TODO: Temporary fix till we have a central configuration independant lookup
+     */
+    private <T> Optional<T> getBean(String name, Class<T> clazz) {
         if (router.getRegistry() != null) {
             var bean = router.getRegistry().getBean(name, clazz);
             if (bean.isPresent())
@@ -53,9 +56,7 @@ public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
         // From XML
         if (router.getBeanFactory() != null) {
             try {
-                var bean = router.getBeanFactory().getBean(name, clazz);
-                if (bean != null)
-                    return Optional.of(bean);
+                return Optional.of(router.getBeanFactory().getBean(name, clazz));
             } catch (NoSuchBeanDefinitionException ignored) {
             }
         }
