@@ -41,7 +41,7 @@ public abstract class DistributionExtractingTestcase {
 
     private static File unzipDir;
     private static File membraneHome;
-    protected File baseDir = new File(getExampleDirName());
+    protected File baseDir;
 
     protected abstract String getExampleDirName();
 

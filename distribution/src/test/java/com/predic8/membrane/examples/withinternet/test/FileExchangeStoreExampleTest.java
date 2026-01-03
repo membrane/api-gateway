@@ -14,142 +14,137 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
-import com.predic8.membrane.core.exchangestore.FileExchangeStore;
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.test.HttpAssertions;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.test.*;
 import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.slf4j.*;
 
 import java.io.*;
-import java.util.Calendar;
+import java.nio.file.*;
+import java.util.*;
 
-import static java.io.File.createTempFile;
-import static java.lang.Thread.sleep;
+import static java.lang.Thread.*;
 import static java.util.Calendar.*;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase {
 
-	private static final Logger log = LoggerFactory.getLogger(FileExchangeStoreExampleTest.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(FileExchangeStoreExampleTest.class.getName());
 
-	@Override
-	protected String getExampleDirName() {
-		return "extending-membrane/file-exchangestore";
-	}
+    @Override
+    protected String getExampleDirName() {
+        return "extending-membrane/file-exchangestore";
+    }
 
-	@Test
-	void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-			ha.getAndAssert200("http://localhost:2000/");
+    @Test
+    void test() throws Exception {
+        try (Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert200("http://localhost:2000/");
 
-			sleep(300);
+            sleep(300);
 
-			if (!containsRecursively(new File(baseDir, "exchanges"), this::filterDotMsg))
-				throw new AssertionError("Did not find *.msg in exchanges dir.");
-		}
-	}
+            if (!containsRecursively(new File(baseDir, "exchanges"), this::filterDotMsg))
+                throw new AssertionError("Did not find *.msg in exchanges dir.");
+        }
+    }
 
-	private boolean filterDotMsg(File dir, String name) {
-		return name.endsWith(".msg");
-	}
+    private boolean filterDotMsg(File dir, String name) {
+        return name.endsWith(".msg");
+    }
 
-	@Test
-	void testDeleteOldFolders() throws Exception {
+    @Test
+    void testDeleteOldFolders() throws Exception {
 
-		File base = createTempFolder();
+        File base = createTempFolder();
 
-		// Creates old entries from 2015 in the filestore to test if they are deleted
-		createOldEntriesForDeletion(base);
+        // Creates old entries from 2015 in the filestore to test if they are deleted
+        createOldEntriesForDeletion(base);
 
-		// Assert that the old entries are there
-		for (int m = 1; m<=3; m++)
-			for (int d = 1; d<=31; d++)
-				if (!(m == 2 && d > 28))
-					assertTrue(new File(base, "2015/"+m+"/"+d).exists());
+        // Assert that the old entries are there
+        for (int m = 1; m <= 3; m++)
+            for (int d = 1; d <= 31; d++)
+                if (!(m == 2 && d > 28))
+                    assertTrue(new File(base, "2015/" + m + "/" + d).exists());
 
-		// Let the FileExchangeStore delete the old entries
-		getFileExchangeStore(base).deleteOldFolders(getCalendar());
+        // Let the FileExchangeStore delete the old entries
+        getFileExchangeStore(base).deleteOldFolders(getCalendar());
 
-		// Assert that the old entries are deleted
-		for (int d = 1; d<=31; d++)
-			assertFalse(new File(base, "2015/1/"+d).exists());
-		for (int d = 1; d<=13; d++)
-			assertFalse(new File(base, "2015/2/"+d).exists());
-		for (int d = 17; d<=28; d++)
-			assertTrue(new File(base, "2015/2/"+d).exists());
-		for (int d = 1; d<=31; d++)
-			assertTrue(new File(base, "2015/3/"+d).exists());
+        // Assert that the old entries are deleted
+        for (int d = 1; d <= 31; d++)
+            assertFalse(new File(base, "2015/1/" + d).exists());
+        for (int d = 1; d <= 13; d++)
+            assertFalse(new File(base, "2015/2/" + d).exists());
+        for (int d = 17; d <= 28; d++)
+            assertTrue(new File(base, "2015/2/" + d).exists());
+        for (int d = 1; d <= 31; d++)
+            assertTrue(new File(base, "2015/3/" + d).exists());
 
-		// cleanup
-		recursiveDelete(base);
-	}
+        // cleanup
+        recursiveDelete(base);
+    }
 
-	private static @NotNull File createTempFolder() throws IOException {
-		File t = createTempFile("fes", null);
+    private static @NotNull File createTempFolder() throws IOException {
+        Path tempDir = Files.createTempDirectory("fes");
+        File base = new File(tempDir.toFile(), "FileExchangeStoreTest");
+        if (!base.mkdirs()) {
+            throw new IOException("Failed to create directory: " + base.getAbsolutePath());
+        }
+        return base;
+    }
 
-		//noinspection ResultOfMethodCallIgnored
-		t.delete();
+    /**
+     * Creates directories representing old entries based on a specific date structure (month and day)
+     * under the given base directory. This is useful for setting up test scenarios where a directory
+     * hierarchy for archival or deletion purposes is required.
+     *
+     * @param base the base directory where the old entries are created. It serves as the root
+     *             directory under which the date-based folder structure is created.
+     */
+    private void createOldEntriesForDeletion(File base) {
+        for (int m = 1; m <= 3; m++)
+            for (int d = 1; d <= 31; d++)
+                if (!(m == 2 && d > 28))
+                    //noinspection ResultOfMethodCallIgnored
+                    new File(base, "2015/%d/%d".formatted(m, d)).mkdirs();
+    }
 
-		File base = new File(t, "FileExchangeStoreTest");
-		//noinspection ResultOfMethodCallIgnored
-		base.mkdirs();
-		return base;
-	}
+    private Calendar getCalendar() {
+        Calendar c = Calendar.getInstance();
+        c.set(YEAR, 2015);
+        c.set(MONTH, 2); // 2 = March
+        c.set(DAY_OF_MONTH, 15);
+        return c;
+    }
 
-	/**
-	 * Creates directories representing old entries based on a specific date structure (month and day)
-	 * under the given base directory. This is useful for setting up test scenarios where a directory
-	 * hierarchy for archival or deletion purposes is required.
-	 *
-	 * @param base the base directory where the old entries are created. It serves as the root
-	 *             directory under which the date-based folder structure is created.
-	 */
-	private void createOldEntriesForDeletion(File base) {
-		for (int m = 1; m<=3; m++)
-			for (int d = 1; d<=31; d++)
-				if (!(m == 2 && d > 28))
-					//noinspection ResultOfMethodCallIgnored
-					new File(base, "2015/%d/%d".formatted(m, d)).mkdirs();
-	}
+    private FileExchangeStore getFileExchangeStore(File base) {
+        var fes = new FileExchangeStore();
+        fes.setDir(base.getAbsolutePath());
+        fes.setMaxDays(30);
+        return fes;
+    }
 
-	private Calendar getCalendar() {
-		Calendar c = Calendar.getInstance();
-		c.set(YEAR, 2015);
-		c.set(MONTH, 2); // 2 = March
-		c.set(DAY_OF_MONTH, 15);
-		return c;
-	}
+    private void recursiveDelete(File file) {
+        if (file.isDirectory())
 
-	private FileExchangeStore getFileExchangeStore(File base) {
-		var fes = new FileExchangeStore();
-		fes.setDir(base.getAbsolutePath());
-		fes.setMaxDays(30);
-		return fes;
-	}
+            //noinspection ConstantConditions
+            for (File child : file.listFiles())
+                recursiveDelete(child);
+        if (!file.delete())
+            throw new RuntimeException("could not delete " + file.getAbsolutePath());
+    }
 
-	private void recursiveDelete(File file) {
-		if (file.isDirectory())
-
-			//noinspection ConstantConditions
-			for (File child : file.listFiles())
-				recursiveDelete(child);
-		if (!file.delete())
-			throw new RuntimeException("could not delete " + file.getAbsolutePath());
-	}
-
-	private boolean containsRecursively(File base, FilenameFilter filter) {
-		log.info("Checking {} for {}", base, filter);
-		//noinspection ConstantConditions
-		for (File f : base.listFiles()) {
-			if (f.isDirectory())
-				if (containsRecursively(f, filter))
-					return true;
-			if (f.isFile() && filter.accept(base, f.getName()))
-				return true;
-		}
-		return false;
-	}
+    private boolean containsRecursively(File base, FilenameFilter filter) {
+        log.info("Checking {} for {}", base, filter);
+        //noinspection ConstantConditions
+        for (File f : base.listFiles()) {
+            if (f.isDirectory())
+                if (containsRecursively(f, filter))
+                    return true;
+            if (f.isFile() && filter.accept(base, f.getName()))
+                return true;
+        }
+        return false;
+    }
 }
