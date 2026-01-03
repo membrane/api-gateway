@@ -165,6 +165,12 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
         return beans.size() == 1 ? Optional.of(beans.getFirst()) : Optional.empty();
     }
 
+    public <T> Optional<T> getBean(String beanname, Class<T> clazz) {
+        return getFirstByName(beanname)
+                .map(bc ->  bc.getOrCreate(this, grammar))
+                .map(clazz::cast);
+    }
+
     public void register(String beanName, Object bean) {
         if (bean == null)
             throw new IllegalArgumentException("bean must not be null");
