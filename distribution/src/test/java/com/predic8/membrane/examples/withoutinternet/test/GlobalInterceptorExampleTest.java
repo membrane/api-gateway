@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.examples.withoutinternet.test;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
+import static com.predic8.membrane.core.http.Header.*;
+import static io.restassured.RestAssured.*;
 
 public class GlobalInterceptorExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -28,30 +29,28 @@ public class GlobalInterceptorExampleTest extends AbstractSampleMembraneStartSto
 
     // @formatter:off
     @Test
-    public void request1() {
+    void request1() {
         given()
         .when()
             .get("http://localhost:2000")
         .then()
             .assertThat()
             .header("Access-Control-Allow-Origin", "*")
-            .header("Access-Control-Allow-Methods", "*")
-            .header("Access-Control-Allow-Headers", "*")
-            .header("Access-Control-Allow-Credentials", "*")
+            .header("Access-Control-Allow-Methods", "GET, POST")
+            .header("Access-Control-Allow-Headers", CONTENT_TYPE)
             .statusCode(200);
     }
 
     @Test
-    public void request2() {
+    void request2() {
         given()
         .when()
             .get("http://localhost:2001")
         .then()
             .assertThat()
             .header("Access-Control-Allow-Origin", "*")
-            .header("Access-Control-Allow-Methods", "*")
-            .header("Access-Control-Allow-Headers", "*")
-            .header("Access-Control-Allow-Credentials", "*")
+            .header("Access-Control-Allow-Methods", "GET, POST")
+            .header("Access-Control-Allow-Headers", CONTENT_TYPE)
             .statusCode(404);
     }
     // @formatter:on
