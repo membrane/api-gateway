@@ -14,16 +14,15 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchangestore.FileExchangeStore;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.HttpAssertions;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.Test;
 import org.slf4j.*;
 
-import java.io.File;
-import java.io.FilenameFilter;
+import java.io.*;
 import java.util.Calendar;
 
 import static java.io.File.createTempFile;
@@ -42,7 +41,7 @@ public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase
 	}
 
 	@Test
-	public void test() throws Exception {
+	void test() throws Exception {
 		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
 			ha.getAndAssert200("http://localhost:2000/");
 
@@ -58,29 +57,23 @@ public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase
 	}
 
 	@Test
-	public void testDeleteOldFolders() throws Exception {
+	void testDeleteOldFolders() throws Exception {
 
-		File t = createTempFile("fes", null);
+		File base = createTempFolder();
 
-		//noinspection ResultOfMethodCallIgnored
-		t.delete();
+		// Creates old entries from 2015 in the filestore to test if they are deleted
+		createOldEntriesForDeletion(base);
 
-		File base = new File(t, "FileExchangeStoreTest");
-
-		//noinspection ResultOfMethodCallIgnored
-		base.mkdirs();
-
-		renameMe(base);
-
-		// before
+		// Assert that the old entries are there
 		for (int m = 1; m<=3; m++)
 			for (int d = 1; d<=31; d++)
 				if (!(m == 2 && d > 28))
 					assertTrue(new File(base, "2015/"+m+"/"+d).exists());
 
+		// Let the FileExchangeStore delete the old entries
 		getFileExchangeStore(base).deleteOldFolders(getCalendar());
 
-		// after
+		// Assert that the old entries are deleted
 		for (int d = 1; d<=31; d++)
 			assertFalse(new File(base, "2015/1/"+d).exists());
 		for (int d = 1; d<=13; d++)
@@ -94,12 +87,32 @@ public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase
 		recursiveDelete(base);
 	}
 
-	private void renameMe(File base) {
+	private static @NotNull File createTempFolder() throws IOException {
+		File t = createTempFile("fes", null);
+
+		//noinspection ResultOfMethodCallIgnored
+		t.delete();
+
+		File base = new File(t, "FileExchangeStoreTest");
+		//noinspection ResultOfMethodCallIgnored
+		base.mkdirs();
+		return base;
+	}
+
+	/**
+	 * Creates directories representing old entries based on a specific date structure (month and day)
+	 * under the given base directory. This is useful for setting up test scenarios where a directory
+	 * hierarchy for archival or deletion purposes is required.
+	 *
+	 * @param base the base directory where the old entries are created. It serves as the root
+	 *             directory under which the date-based folder structure is created.
+	 */
+	private void createOldEntriesForDeletion(File base) {
 		for (int m = 1; m<=3; m++)
 			for (int d = 1; d<=31; d++)
 				if (!(m == 2 && d > 28))
 					//noinspection ResultOfMethodCallIgnored
-					new File(base, "2015/"+m+"/"+d).mkdirs();
+					new File(base, "2015/%d/%d".formatted(m, d)).mkdirs();
 	}
 
 	private Calendar getCalendar() {
@@ -111,7 +124,7 @@ public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase
 	}
 
 	private FileExchangeStore getFileExchangeStore(File base) {
-		FileExchangeStore fes = new FileExchangeStore();
+		var fes = new FileExchangeStore();
 		fes.setDir(base.getAbsolutePath());
 		fes.setMaxDays(30);
 		return fes;
