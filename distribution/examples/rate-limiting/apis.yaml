@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+global:
+  - rateLimiter:
+      requestLimit: 10
+      requestLimitDuration: PT1M
+---
+api:
+  port: 2000
+  flow:
+    - static:
+        src: Success
+    - return:
+        status: 200
+
+---
+api:
+  port: 2010
+  path:
+    uri: /reset-pwd
+  flow:
+    - rateLimiter:
+        requestLimit: 3
+        requestLimitDuration: PT30S
+        language: jsonpath
+        keyExpression: $.user
+    - static:
+        src: Success
+    - return:
+        status: 200
