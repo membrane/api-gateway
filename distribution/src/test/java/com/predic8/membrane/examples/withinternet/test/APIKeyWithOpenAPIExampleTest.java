@@ -26,13 +26,15 @@ import static org.hamcrest.Matchers.*;
 
 public class APIKeyWithOpenAPIExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
+    public static final String API_KEY = "X-Api-Key";
+
     @Override
     protected String getExampleDirName() {
         return "security/api-key/apikey-openapi";
     }
 
     @Test
-    public void noApiKey() {
+    void noApiKey() {
         when()
             .get("http://localhost:2000/shop/v2/products")
         .then().assertThat()
@@ -41,9 +43,9 @@ public class APIKeyWithOpenAPIExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    public void noScopesGet() {
+    void noScopesGet() {
         given()
-            .header("X-Api-Key", "111")
+            .header(API_KEY, "111")
         .when()
             .get("http://localhost:2000/shop/v2/products")
         .then().assertThat()
@@ -53,9 +55,9 @@ public class APIKeyWithOpenAPIExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    public void noScopesPost() {
+    void noScopesPost() {
         given()
-            .header("X-Api-Key", "111")
+            .header(API_KEY, "111")
             .contentType(APPLICATION_JSON)
             .body("""
                         {
@@ -78,9 +80,9 @@ public class APIKeyWithOpenAPIExampleTest extends AbstractSampleMembraneStartSto
     }
 
     @Test
-    public void writeScopes() {
+    void writeScopes() {
         given()
-            .headers("X-Api-Key", "222")
+            .headers(API_KEY, "222")
             .contentType(APPLICATION_JSON)
             .body("{\"name\": \"Mango\", \"price\": 2.79}")
         .when()

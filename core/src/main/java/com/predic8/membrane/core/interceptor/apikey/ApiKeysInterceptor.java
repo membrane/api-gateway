@@ -85,10 +85,18 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        // At the moment the beanFactory is only there when the Membrane configuration was read from XML
+
+        // Todo: Move logic into the registry
+        // The beanFactory is only there when the Membrane configuration was read from XML
         if (router.getBeanFactory() != null) {
             stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
         }
+        // For YAML configuration
+        if (router.getRegistry() != null) {
+            var stores = router.getRegistry().getBeans(ApiKeyStore.class);
+            this.stores.addAll(stores);
+        }
+
         stores.forEach(s -> s.init(router));
 
         // Add the default extractor if none is configured

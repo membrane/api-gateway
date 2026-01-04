@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+components:
+  store:
+    apiKeyFileStore:
+      location: ./demo-keys.txt
+---
+
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: fruitshop-api-v2-openapi-3-security.yml
+        validateSecurity: true
+  flow:
+    - log:
+        message: "Header: ${header['X-Api-Key']}"
+    - apiKey:
+        required: false
+        extractors:
+          - headerExtractor:
+              name: "X-Api-Key"
+#          - expressionExtractor:
+#              expression: "header['X-Api-Key']"
+    - openapiValidator: {}
+    - headerFilter:
+        rules:
+          - exclude:
+              pattern: "Origin"
