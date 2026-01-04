@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+global:
+  - openTelemetry:
+      sampleRate: 1.0
+      otlpExporter:
+        host: localhost
+---
+
+api:
+  name: Entry
+  port: 2000
+  target:
+    url: http://localhost:2001
+---
+
+api:
+  name: Access Control
+  port: 2001
+  target:
+    url: http://localhost:2002
+---
+
+api:
+  name: Validation
+  port: 2002
+  target:
+    url: http://localhost:3000
+---
+
+api:
+  name: Backend
+  port: 3000
+  flow:
+    - request:
+        - log:
+            message: "Header: ${header}"
+    - static:
+        src: Greetings from the backend!
+    - return:
+        status: 200
