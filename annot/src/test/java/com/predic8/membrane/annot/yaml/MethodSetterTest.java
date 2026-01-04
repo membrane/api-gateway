@@ -14,14 +14,19 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.util.GrammarMock;
-import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.util.*;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
+import static com.predic8.membrane.annot.yaml.MethodSetter.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MethodSetterTest {
+
+    private static final ObjectMapper om = new ObjectMapper();
 
     @SuppressWarnings("unused")
     static class A {
@@ -44,7 +49,7 @@ class MethodSetterTest {
     public static class C {}
 
     @Test
-    public void dontUseMethodsWithoutChildElementAnnotation() {
+    void dontUseMethodsWithoutChildElementAnnotation() {
         MethodSetter ms = getMethodSetter(new ParsingContext("foo", null,
                         new GrammarMock().withGlobalElement("b", B.class)),
                 A.class, "b");
@@ -52,17 +57,29 @@ class MethodSetterTest {
     }
 
     @Test
-    public void multiplePotentialSettersFound() {
+    void multiplePotentialSettersFound() {
         assertThrowsExactly(RuntimeException.class, () -> getMethodSetter(new ParsingContext("foo", null,
                         new GrammarMock().withGlobalElement("b", B.class)),
                 A2.class, "b"));
     }
 
     @Test
-    public void noPotentialSetterFound() {
+    void noPotentialSetterFound() {
         assertThrowsExactly(RuntimeException.class, () -> getMethodSetter(new ParsingContext("foo", null,
                         new GrammarMock().withGlobalElement("c", C.class)),
                 A2.class, "c"));
     }
 
+    @Test
+    void foo() throws Exception {
+        var ms  = new MethodSetter(null, null);
+        assertEquals(true, ms.coerceScalarOrReference(null, om.readTree("true"), null, boolean.class));
+        assertEquals(true, ms.coerceScalarOrReference(null, om.readTree("true"), null, Boolean.class));
+        assertEquals(1, ms.coerceScalarOrReference(null, om.readTree("1"), null, int.class));
+        assertEquals(1.0, ms.coerceScalarOrReference(null, om.readTree("1"), null, double.class));
+        var l = ms.coerceScalarOrReference(null, om.readTree("1"), null, long.class);
+        assertInstanceOf(Long.class, l);
+        assertEquals(1L, l);
+        assertEquals(true, ms.coerceScalarOrReference(null, om.readTree("true"), null, boolean.class));
+    }
 }

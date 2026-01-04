@@ -1,98 +1,59 @@
 # Tracing with OpenTelemetry
 
-Membrane offers support for tracing according to the [OpenTelemetry](https://opentelemetry.io/) specification.
+Membrane supports distributed tracing based on the [OpenTelemetry](https://opentelemetry.io/) specification.
 
-The usage of APIs can be observed with the OpenTelemetry plugin. Membrane collects data about the processes flowing
-through it and sends it to an OTLP endpoint, in this case, a jaeger backend.
+With the OpenTelemetry plugin, API traffic can be observed end to end. Membrane collects tracing data for requests flowing through the gateway and exports it to an OTLP endpoint. In this example, Jaeger is used as the backend.
 
-To instrument an API add the `opentelemetry` plugin to it.
+To instrument an API, add the `openTelemetry` plugin to the API configuration.
 
 ## Run the Example
 
 1. Start Jaeger with:
 ```dockerfile
-docker run -d --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 -p 4318:4318 jaegertracing/all-in-one:latest
+docker run -it --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 4317:4317 -p 4318:4318 jaegertracing/all-in-one:latest
 ```
 
-2. Run `membrane.cmd` or `./membrane.sh` to start Membrane.
+2. Start Membrane: `membrane.cmd` or `./membrane.sh`
 
 3. Call the first endpoint in the telemetry chain:
 
-   `curl http://localhost:2000`.
+   ```bash
+   curl http://localhost:2000
+   ```
 
-4. You should see `Hello from a faked backend!` in your terminal.
-5. Open `localhost:16686` in the browser to access the Jaeger UI.
+4. You should see `Greetings from the backend!` in your terminal.
+5. Open the Jaeger UI in your browser: `http://localhost:16686`
 6. Select Membrane as the service and click on `Find Traces`.
-A span created by Membrane should be visible in [Jaeger UI](http://localhost:16686).
-![sample](resources/otel_sample.png)
-7. Examine the printed header fields on the console. You will see headers called `traceparent`, these denote which spans were involved in the request.
+A span created by Membrane should be visible in the [Jaeger UI](http://localhost:16686).
+![sample](resources/otel_example.png)
+7. Check the headers printed to the console. You will see headers such as `traceparent`, which indicate the trace and span context involved in the request.
 
-**HOW IT IS DONE**
+**How it is done**
 
-Take a look at the `proxies.xml`.
+Take a look at the `apis.yml`.
 
-```xml
-<router>
+The openTelemetry plugin can be used in several ways:
 
-   <transport>
-      <ruleMatching />
-      <logContext />
-      <exchangeStore />
-      <dispatching />
-      <reverseProxying />
-      <openTelemetry sampleRate="1.0"> <!--globally registers OpenTelemetry for every api-->
-         <otlpExporter host="localhost" port="4317" transport="grpc"/>
-      </openTelemetry>
-      <userFeature />
-      <internalRouting />
-      <httpClient />
-   </transport>
+a.) Globally, in a shared interceptor chain that applies to all APIs (as shown in apis.yaml)
+b.) Per API, by defining it directly inside the API flow
+c.) With reuseable interceptor chains. See: [Reusable Plugin Chains](../../extending-membrane/reusable-plugin-chains)
 
-   <api port="2000">
-      <target url="http://localhost:2001" />
-   </api>
+Example configuration for a single API:
 
-   <api port="2001" name="AccessControl">
-      <target url="http://localhost:2002" />
-   </api>
-
-   <api port="2002" name="Validation">
-      <target url="http://localhost:3000" />
-   </api>
-
-   <api port="3000" name="Replace with your Backend">
-      <request>
-         <!-- Print the request headers.
-              traceparents will be added to them
-              showing which spans were involved
-              in the exchange.                   -->
-         <groovy>
-            println "Request headers:"
-            header.allHeaderFields.each {
-            print it
-            }
-            CONTINUE
-         </groovy>
-      </request>
-      <response>
-         <template>Hello from a faked backend!</template>
-      </response>
-      <return/>
-   </api>
-</router>
-```
-The `openTelemetry` plugin can be utilized in two ways: either in a global context for all APIs using the `<transport>` tag, as demonstrated above, or it can be specifically defined for individual APIs by placing it within the `<api>` tag.
-```xml
-<api port="2000">
-   <openTelemetry sampleRate="1.0">
-      <otlpExporter host="localhost" port="4317" transport="grpc"/>
-   </openTelemetry>
-   <target host="localhost" port="3000"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - openTelemetry:
+        sampleRate: 1.0
+        otlpExporter:
+          host: localhost
+          port: 4317
+          transport: grpc
+  target:
+    url: http://localhost:2001
 ```
 
-**Note:**
+**Note on Transport:**
 
-The OTLP Exporter is configured by default to use gRPC. You can omit the `transport` field in the configuration when using gRPC.
-
-To use HTTP, set the `transport` field to `http` and set the `port` to `4318`.
+The OTLP exporter is configured by default to use gRPC. To use HTTP, set the `transport` field to `http` and set the `port` to `4318`.
