@@ -71,7 +71,7 @@ class MethodSetterTest {
     }
 
     @Test
-    void foo() throws Exception {
+    void coerceScalar() throws Exception {
         var ms  = new MethodSetter(null, null);
         assertEquals(true, ms.coerceScalarOrReference(null, om.readTree("true"), null, boolean.class));
         assertEquals(true, ms.coerceScalarOrReference(null, om.readTree("true"), null, Boolean.class));
@@ -80,6 +80,5 @@ class MethodSetterTest {
         var l = ms.coerceScalarOrReference(null, om.readTree("1"), null, long.class);
         assertInstanceOf(Long.class, l);
         assertEquals(1L, l);
-        assertEquals(true, ms.coerceScalarOrReference(null, om.readTree("true"), null, boolean.class));
     }
 }

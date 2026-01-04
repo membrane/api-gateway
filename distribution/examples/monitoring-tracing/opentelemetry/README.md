@@ -30,13 +30,13 @@ A span created by Membrane should be visible in the [Jaeger UI](http://localhost
 
 **How it is done**
 
-Take a look at the `apis.yml`.
+Take a look at the `apis.yaml`.
 
 The openTelemetry plugin can be used in several ways:
 
 a.) Globally, in a shared interceptor chain that applies to all APIs (as shown in apis.yaml)
 b.) Per API, by defining it directly inside the API flow
-c.) With reuseable interceptor chains. See: [Reusable Plugin Chains](../../extending-membrane/reusable-plugin-chains)
+c.) With reusable interceptor chains. See: [Reusable Plugin Chains](../../extending-membrane/reusable-plugin-chains)
 
 Example configuration for a single API:
 
