@@ -46,7 +46,7 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
         }
     }
 
-    private void assertLogged(String method, String pathContains, int status) throws Exception {
+    private void assertLogged(String method, String pathContains, int status) {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         while (System.nanoTime() < deadline) {
             try (Connection c = DriverManager.getConnection(h2JdbcUrl(), "membrane", "secret");
