@@ -22,6 +22,8 @@
   - Documentation
   - See JmxExporter
 - Synchronization of BeanRegistry
+- IfInterceptor:
+  - Add "else"
 
 # 7.1.0
 

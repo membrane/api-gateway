@@ -4,30 +4,32 @@ api:
   port: 2000
   flow:
     - request:
-        # If 'true' set destination to internal proxy 'express'
         - if:
             test: //order[@express='yes']
             language: xpath
             flow:
+              # Overwrite the target URL
               - destination:
                   url: internal://express
+  target:
+    url: internal://normal
 
 ---
-# An internalProxy is like a function or subroutine for an API.
-# TODO kind: internal
+# An internal API is like a function or subroutine for an API.
+# For an internal API a port is not needed
 api:
   name: express
   flow:
     - static:
         src: Express processing!
-    - return: {}
+    - return:
+        status: 200
 
 ---
-
-# TODO kind: internal
 api:
   name: normal
   flow:
     - static:
         src: Normal processing!
-    - return: {}
+    - return:
+        status: 200
