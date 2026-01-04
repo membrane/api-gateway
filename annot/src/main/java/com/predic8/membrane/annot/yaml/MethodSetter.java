@@ -57,6 +57,14 @@ public class MethodSetter {
         }
         Class<?> beanClass = null;
         if (setter == null) {
+
+            // TODO: Find more robust solution than this workaround.
+            // If object is a child of Component use this shortcut. Otherwise there is a problem, if the name of the component is a name of a configuration element like log, request, flow, ...
+            // Problem: Components is a generated class that is not available at compile time
+            if ("com.predic8.membrane.core.config.spring.Components".equals(clazz.getName())) {
+                return new MethodSetter(getAnySetter(clazz), beanClass);
+            }
+
             try {
                 beanClass = ctx.grammar().getLocal(ctx.context(), key);
                 if (beanClass == null)

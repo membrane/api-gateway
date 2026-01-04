@@ -17,6 +17,7 @@ package com.predic8.membrane.annot.beanregistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.bean.BeanFactory;
 import com.predic8.membrane.annot.yaml.GenericYamlParser;
+import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +72,7 @@ public class BeanContainer {
         return "BeanContainer: %s of %s singleton: %s".formatted( definition.getName(),definition.getKind(),singleton.get());
     }
 
-    private synchronized Object define(BeanRegistryImplementation registry, Grammar grammar) {
+    private synchronized @NotNull Object define(BeanRegistryImplementation registry, Grammar grammar) {
         log.debug("defining bean: {}", definition.getNode());
         try {
             if ("bean".equals(definition.getKind())) {
@@ -86,7 +87,7 @@ public class BeanContainer {
         }
     }
 
-    public Object getOrCreate(BeanRegistryImplementation registry, Grammar grammar) {
+    public @NotNull Object getOrCreate(BeanRegistryImplementation registry, Grammar grammar) {
         boolean prototype = isPrototypeScope(getDefinition());
 
         // Prototypes are created anew every time.
