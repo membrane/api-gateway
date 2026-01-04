@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.apikey.extractors.*;
@@ -23,11 +22,10 @@ import com.predic8.membrane.core.security.*;
 import org.slf4j.*;
 
 import java.util.*;
-import java.util.stream.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Stream.*;
 
 /**
@@ -93,8 +91,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
         }
         // For YAML configuration
         if (router.getRegistry() != null) {
-            var stores = router.getRegistry().getBeans(ApiKeyStore.class);
-            this.stores.addAll(stores);
+            this.stores.addAll(router.getRegistry().getBeans(ApiKeyStore.class));
         }
 
         stores.forEach(s -> s.init(router));

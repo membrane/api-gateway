@@ -13,17 +13,13 @@ api:
         location: fruitshop-api-v2-openapi-3-security.yml
         validateSecurity: true
   flow:
-    - log:
-        message: "Header: ${header['X-Api-Key']}"
     - apiKey:
+        # API keys are validated in the OpenAPI validator with validateSecurity: true. See the OpenAPI document for details.
         required: false
         extractors:
           - headerExtractor:
               name: "X-Api-Key"
-#          - expressionExtractor:
-#              expression: "header['X-Api-Key']"
+      # The API key must be extracted before the OpenAPI validator is called.
+      # Normally, the OpenAPI is validated before the flow is executed. By explicitly
+      # setting the openapiValidator to this position, the OpenAPI is validated after the apiKey plugin.
     - openapiValidator: {}
-    - headerFilter:
-        rules:
-          - exclude:
-              pattern: "Origin"
