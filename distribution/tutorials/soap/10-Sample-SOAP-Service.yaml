@@ -8,9 +8,9 @@
 #    Open a terminal in this folder and run:
 #
 #    Linux/Mac:
-#      ./membrane.sh -c 00-First-API.yaml
+#      ./membrane.sh -c 10-Sample-SOAP-Service.yaml
 #    Windows:
-#      membrane.cmd -c 00-First-API.yaml
+#      membrane.cmd -c 10-Sample-SOAP-Service.yaml
 #
 # 2.) WSDL
 #    Open the WSDL in a browser:
