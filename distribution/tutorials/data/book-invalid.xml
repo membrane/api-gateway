@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<books>
+
+    <book id="29">
+        <title>The API Gateway Handbook - Second Edition</title>
+        <author>Thomas Bayer</author>
+        <author>Tobias Polley</author>
+        <year>Not released yet</year>
+        <category>APIs</category>
+    </book>
+
+</books>
