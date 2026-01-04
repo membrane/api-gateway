@@ -37,7 +37,7 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    public void test() throws Exception {
+    void test() throws Exception {
         copyH2JarToMembraneLib();
 
         try (Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
@@ -49,7 +49,7 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
     private void assertLogged(String method, String pathContains, int status) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         while (System.nanoTime() < deadline) {
-            try (Connection c = DriverManager.getConnection(h2JdbcUrl(), "membrane", "membranemembrane");
+            try (Connection c = DriverManager.getConnection(h2JdbcUrl(), "membrane", "secret");
                  ResultSet rs = c.prepareStatement("select * from statistic limit 200").executeQuery()) {
 
                 ResultSetMetaData md = rs.getMetaData();
@@ -65,11 +65,9 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
                     if (okMethod && okPath && okStatus) return;
                 }
             } catch (SQLException ignored) {}
-
-            Thread.sleep(100);
         }
 
-        fail("Expected log entry not found (method=" + method + ", path~=" + pathContains + ", status=" + status + ").");
+        fail("Expected log entry not found (method=%s, path~=%s, status=%d).".formatted(method, pathContains, status));
     }
 
     private static int findCol(ResultSetMetaData md, String... candidates) throws SQLException {
