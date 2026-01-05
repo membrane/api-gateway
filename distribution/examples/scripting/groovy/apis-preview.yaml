@@ -1,0 +1,89 @@
+components:
+  myBean:
+    bean:
+      class: java.lang.String
+      constructorArgs:
+        - constructorArg:
+            value: Greetings from Spring
+
+---
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              // Return Json as Map
+              [id:7,city:'Berlin']
+    # Return response to Client
+    - return:
+        contentType: application/json
+  # Instead forward to your backend
+  # target:
+  #   host: myhost
+  #   port: myport
+
+---
+
+api:
+  port: 2010
+  flow:
+    - request:
+        - groovy:
+            src: |
+              // JSON to JSON transformation
+              // The json-Variable contains the request or response body as JSON object.
+              import java.text.*
+
+              def dfIn = new SimpleDateFormat("d MMM yyyy",Locale.US)
+              def dfOut = new SimpleDateFormat("yyyy-MM-dd")
+
+              [
+              	id: json.id,
+              	date: dfOut.format(dfIn.parse(json.date)),
+              	client: json.customer,
+              	total: json.items.collect { it.price * it.quantity }.sum(),
+              	positions: json.items.collect {
+              		[
+              			pieces: it.quantity,
+              			price: it.price,
+              			article: it.description
+              		]
+              	}
+              ]
+    - return: {}
+
+---
+
+api:
+  port: 2020
+  flow:
+    - request:
+        - groovy:
+            src: |
+              println "Request headers:"
+              header.entrySet().each {
+                  println it
+              }
+    # Execute groovy-Interceptor in response flow
+    - response:
+        - groovy:
+            src: |
+              header.add("X-Groovy", "42") // Set Header
+              CONTINUE
+  target:
+    host: localhost
+    port: 2030
+
+---
+
+api:
+  port: 2030
+  flow:
+    - request:
+        - groovy:
+            src: |
+              // Create response and set the body to the value of the Spring Bean
+              Response.ok().body(router.getRegistry().getBean('myBean')).build()
+    - return: {}

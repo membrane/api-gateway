@@ -6,7 +6,7 @@ Using the `groovy` element you can run Groovy scripts to manipulate or monitor m
 
 ## Running the example
 
-1. Take a look at [proxies.xml](proxies.xml). There you'll find the APIs with Groovy scripts.
+1. Take a look at [apis.yaml](apis.yaml). There you'll find the APIs with Groovy scripts.
 2. Open a commandline session or a terminal.
 3. Run `membrane.cmd` or `./membrane.sh` in this folder
 4. Open a second terminal and run the commands:
