@@ -1,0 +1,89 @@
+#  this is a Java string object defined as a component. It serves as value for the X-Javascript header
+components:
+  myBean:
+    bean:
+      class: java.lang.String
+      constructorArgs:
+        - constructorArg:
+            value: Greetings from Javascript
+
+---
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - javascript:
+            src: |
+              console.log("Query parameters: " + params);
+              // Return Json as Map
+              ({ id: params.get('id'), city: params.get('city') })
+        # Return response to Client
+    - return:
+        contentType: application/json
+  # Instead forward to your backend
+  # target:
+  #   host: myhost
+  #   port: myport
+
+---
+
+api:
+  port: 2010
+  flow:
+    - request:
+        - javascript:
+            src: |
+              // JSON to JSON transformation
+                
+              function convertDate(d) {
+                return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2);
+              }
+                
+              ({
+                id: json.id,
+                date: convertDate(new Date(json.date)),
+                client: json.customer,
+                total: json.items.map(i => i.quantity * i.price).reduce((a,b) => a+b),
+                positions: json.items.map(i => ({
+                  pieces: i.quantity,
+                  price: i.price,
+                  article: i.description
+                }))
+              })
+    - return: { }
+
+---
+
+api:
+  port: 2020
+  flow:
+    - request:
+        - javascript:
+            src: |
+              console.log("Request headers:")
+            
+              for (var entry of header.entrySet()) {
+                console.log(entry.getKey() + ": " + entry.getValue());
+              }
+    # Execute javascript-Interceptor in response flow
+    - response:
+        - javascript:
+            src: |
+              header.add("X-Javascript", "42") // Set Header
+              CONTINUE
+  target:
+    host: localhost
+    port: 2030
+
+---
+
+api:
+  port: 2030
+  flow:
+    - request:
+        - javascript:
+            src: |
+              // Create response and set the body to the value of the component
+              Response.ok().body(router.getRegistry().getBean('myBean')).build()
+    - return: { }

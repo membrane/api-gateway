@@ -84,6 +84,6 @@ api:
     - request:
         - groovy:
             src: |
-              // Create response and set the body to the value of the Spring Bean
+              // Create response and set the body to the value of the component
               Response.ok().body(router.getRegistry().getBean('myBean')).build()
     - return: {}

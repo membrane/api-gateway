@@ -58,7 +58,7 @@
                     }
 				</javascript>
 			</request>
-			<!-- Execute groovy-Interceptor in response flow -->
+			<!-- Execute javascript-Interceptor in response flow -->
 			<response>
 				<javascript>
 					header.add("X-Javascript", "42") // Set Header
