@@ -4,10 +4,10 @@ Membrane can log metadata about service invocations to any database that can be 
 
 ## Running the Example
 
-In this example we configure Membrane to log to an embedded **H2** database.
+In this example we configure Membrane to log to an embedded **H2** database. For production you can use any other JDBC database like postgres or mysql.
 
 
-1. [Download the H2 JDBC driver JAR](https://search.maven.org/remotecontent?filepath=com/h2database/h2/2.4.240/h2-2.4.240.jar).
+1. [Download the H2 JDBC driver JAR](https://www.h2database.com/html/download.html).
 
 2. Copy the `h2-*.jar` into the `MEMBRANE_HOME/lib` directory
 
@@ -17,14 +17,14 @@ In this example we configure Membrane to log to an embedded **H2** database.
 
 5. Open the URL http://localhost:2000/ in your browser (trigger a request).
 
-6. Query the database using the H2 Shell (run this from `examples/logging/jdbc-database`):
-    ```shell
-   java -cp ../../../lib/h2-*.jar org.h2.tools.Shell \
-    -url "jdbc:h2:./membranedb;AUTO_SERVER=TRUE" \
-    -user membrane -password membranemembrane
+6. Stop Membrane to shut down the embedded H2 database. Otherwise, it is not possible to connect to it from the H2 Shell.
+
+7. Query the database using the H2 Shell (run this from `examples/logging/jdbc-database`):
+   ```shell
+   java -cp h2-2.4.240.jar org.h2.tools.Shell -url "jdbc:h2:./membranedb" -user membrane -password secret
    ```
 
-7. In the SQL prompt, list tables and query the statistic table:
+8. In the SQL prompt, list tables and query the statistic table:
     ```sql
     select * from statistic;
    ```
