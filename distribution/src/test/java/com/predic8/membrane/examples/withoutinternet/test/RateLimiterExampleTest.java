@@ -14,14 +14,11 @@
 
 package com.predic8.membrane.examples.withoutinternet.test;
 
-import com.predic8.membrane.examples.util.BufferLogger;
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.get;
-import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RateLimiterExampleTest extends DistributionExtractingTestcase {
 
@@ -31,7 +28,7 @@ public class RateLimiterExampleTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    void testGlobalRateLimitByClientIp() throws Exception {
+    void globalRateLimitByClientIp() throws Exception {
         BufferLogger logger = new BufferLogger();
         try (Process2 ignored = startServiceProxyScript(logger)) {
             for (int i = 0; i < 10; i++) {
@@ -39,14 +36,14 @@ public class RateLimiterExampleTest extends DistributionExtractingTestcase {
             }
             get("http://localhost:2000").then().statusCode(429);
 
-            Assertions.assertTrue(logger.contains("127.0.0.1"));
-            Assertions.assertTrue(logger.contains("PT1M"));
-            Assertions.assertTrue(logger.contains("is exceeded"));
+            assertTrue(logger.contains("127.0.0.1"));
+            assertTrue(logger.contains("PT1M"));
+            assertTrue(logger.contains("is exceeded"));
         }
     }
 
     @Test
-    void testEndpointSpecificRateLimitByJsonUser() throws Exception {
+    void endpointSpecificRateLimitByJsonUser() throws Exception {
         BufferLogger logger = new BufferLogger();
         try (Process2 ignored = startServiceProxyScript(logger)) {
             for (int i = 0; i < 3; i++) {
@@ -72,9 +69,9 @@ public class RateLimiterExampleTest extends DistributionExtractingTestcase {
                     .then()
                     .statusCode(200);
 
-            Assertions.assertTrue(logger.contains("Alice"));
-            Assertions.assertTrue(logger.contains("PT30S"));
-            Assertions.assertTrue(logger.contains("is exceeded"));
+            assertTrue(logger.contains("Alice"));
+            assertTrue(logger.contains("PT30S"));
+            assertTrue(logger.contains("is exceeded"));
         }
     }
 }
