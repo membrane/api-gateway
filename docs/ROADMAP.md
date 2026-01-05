@@ -22,6 +22,9 @@
   - Documentation
   - See JmxExporter
 - Synchronization of BeanRegistry
+- BalancerHealthMonitor:
+  - @PostConstruct instead of InitializingBean, DisposableBean
+- Scripting: expose beanRegistry  
 
 # 7.1.0
 

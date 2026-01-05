@@ -47,7 +47,10 @@ public class DefaultMainComponents implements MainComponents {
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
-    protected ResolverMap resolverMap;
+    private ResolverMap resolverMap;
+
+    private FlowController flowController;
+    private RuleManager ruleManager;
 
     protected final Statistics statistics = new Statistics();
 
@@ -57,6 +60,9 @@ public class DefaultMainComponents implements MainComponents {
         this.router = router;
         resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
         resolverMap.addRuleResolver(router);
+        flowController = new FlowController(router);
+        ruleManager= new RuleManager();
+        ruleManager.setRouter(router);
     }
 
     public void init() {
@@ -67,19 +73,7 @@ public class DefaultMainComponents implements MainComponents {
         }
 
         registry.registerIfAbsent(HttpClientConfiguration.class, HttpClientConfiguration::new);
-
-        registry.registerIfAbsent(ResolverMap.class, () -> {
-            ResolverMap rs = new ResolverMap(httpClientFactory, kubernetesClientFactory);
-            rs.addRuleResolver(router);
-            return rs;
-        });
-
         registry.registerIfAbsent(ExchangeStore.class, LimitedMemoryExchangeStore::new);
-        registry.registerIfAbsent(RuleManager.class, () -> {
-            RuleManager rm = new RuleManager();
-            rm.setRouter(router);
-            return rm;
-        });
         registry.registerIfAbsent(DNSCache.class, DNSCache::new);
 
         // Transport last
@@ -98,11 +92,7 @@ public class DefaultMainComponents implements MainComponents {
 
     @Override
     public RuleManager getRuleManager() {
-        return getRegistry().registerIfAbsent(RuleManager.class, () -> {
-            RuleManager rm = new RuleManager();
-            rm.setRouter(router);
-            return rm;
-        });
+        return ruleManager;
     }
 
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
@@ -177,7 +167,7 @@ public class DefaultMainComponents implements MainComponents {
     }
 
     public FlowController getFlowController() {
-        return getRegistry().registerIfAbsent(FlowController.class, () -> new FlowController(router));
+        return flowController;
     }
 
     public void setRegistry(BeanRegistry registry) {
