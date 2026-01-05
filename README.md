@@ -297,11 +297,11 @@ api:
 #### Viewing Deployed APIs
 Once configured, a list of deployed APIs is available at: [http://localhost:2000/api-docs](http://localhost:2000/api-docs)
 
-![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.png)
+![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.jpg)
 
 Click on an API title in the list to open the Swagger UI for interactive exploration and testing:
 
-![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.png)
+![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.jpg)
 
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
