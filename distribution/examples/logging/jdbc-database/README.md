@@ -7,8 +7,7 @@ Membrane can log metadata about service invocations to any database that can be 
 In this example we configure Membrane to log to an embedded **H2** database. For production you can use any other JDBC database like postgres or mysql.
 
 
-1. [Download the H2 JDBC driver JAR](https://search.maven.org/remotecontent?filepath=com/h2database/h2/2.4.240/h2-2.4.240.jar).
-   Replace `2.4.240` with the latest version.
+1. [Download the H2 JDBC driver JAR](https://www.h2database.com/html/download.html).
 
 2. Copy the `h2-*.jar` into the `MEMBRANE_HOME/lib` directory
 
