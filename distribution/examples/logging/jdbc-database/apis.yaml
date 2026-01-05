@@ -1,3 +1,5 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.4.json
+
 components:
   dataSource:
     bean:
@@ -14,7 +16,7 @@ components:
             value: membrane
         - property:
             name: password
-            value: membranemembrane
+            value: secret
 
 ---
 
@@ -23,6 +25,6 @@ api:
   port: 2000
   flow:
     - statisticsJDBC:
-        dataSource: dataSource
+        dataSource: '#/components/dataSource'
   target:
     url: https://api.predic8.de
