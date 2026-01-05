@@ -20,6 +20,7 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -57,7 +58,12 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
      */
     private final Object uniqueClassInitialization = new Object();
 
+    private final LinkedHashSet<PreDestroyCallback> preDestroyCallbacks = new LinkedHashSet<>();
+
     record UidAction(String uid, WatchAction action) {
+    }
+
+    record PreDestroyCallback(Object bean, Method method) {
     }
 
     public BeanRegistryImplementation(BeanCacheObserver observer, BeanRegistryAware registryAware, Grammar grammar) {
@@ -196,6 +202,23 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     private static @NotNull String computeBeanName(String beanName, String uuid) {
         return beanName != null ? beanName : "#" + uuid;
+    }
+
+    /**
+     * Registers a @PreDestroy callback for the given bean.
+     */
+    public void addPreDestroyCallback(Object bean, Method method) {
+        preDestroyCallbacks.add(new PreDestroyCallback(bean, method));
+    }
+
+    public void close() {
+        preDestroyCallbacks.reversed().forEach(pc -> {
+            try {
+                pc.method.invoke(pc.bean);
+            } catch (Exception e) {
+                log.error("Could not invoke preDestroy method of {}: {}", pc.bean, e.getMessage());
+            }
+        });
     }
 
 }

@@ -22,8 +22,12 @@ import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import org.springframework.util.ReflectionUtils;
 
 import java.io.*;
 import java.lang.reflect.*;
@@ -138,7 +142,7 @@ public class GenericYamlParser {
      * <p>Ensures the node contains exactly one key (the kind), resolves the Java class via the
      * grammar and delegates to {@link #createAndPopulateNode(ParsingContext, Class, JsonNode)}.</p>
      */
-    public static Object readMembraneObject(String kind, Grammar grammar, JsonNode node, BeanRegistry registry) throws ParsingException {
+    public static Object readMembraneObject(String kind, Grammar grammar, JsonNode node, BeanRegistryImplementation registry) throws ParsingException {
         ensureSingleKey(node);
         Class<?> clazz = grammar.getElement(kind);
         if (clazz == null)
@@ -188,7 +192,7 @@ public class GenericYamlParser {
             }
             if (!required.isEmpty())
                 throw new ParsingException("Missing required fields: " + required.stream().map(McYamlIntrospector::getSetterName).toList(), node);
-            return configObj;
+            return handlePostConstructAndPreDestroy(ctx, configObj);
         } catch (Throwable cause) {
             throw new ParsingException(cause, node);
         }
@@ -289,5 +293,25 @@ public class GenericYamlParser {
         if ("$ref".equals(key))
             return ctx.registry().resolve(node.asText());
         return createAndPopulateNode(ctx.updateContext(key), ctx.resolveClass(key), node);
+    }
+
+    /**
+     * Calls the @PostConstruct method on the bean and returns it. If there are @PreDestroy methods, they will be
+     * registered within the registry.
+     */
+    private static <T> T handlePostConstructAndPreDestroy(ParsingContext ctx, T bean) {
+        ReflectionUtils.doWithMethods(bean.getClass(), method -> {
+            if (method.isAnnotationPresent(PostConstruct.class)) {
+                try {
+                    method.invoke(bean);
+                } catch (InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (method.isAnnotationPresent(PreDestroy.class)) {
+                ctx.registry().addPreDestroyCallback(bean, method);
+            }
+        });
+        return bean;
     }
 }
