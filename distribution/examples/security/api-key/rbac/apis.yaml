@@ -1,0 +1,43 @@
+# API key stores are designed to retrieve key and scope data from various data sources.
+# In this instance, we use an `ApiKeyFileStore`, which fetches API keys from a specified file.
+# For global access across all API key interceptors, declare the stores as shown here.
+# If an interceptor-specific store is needed, embed the store directly within the interceptor.
+components:
+  keys:
+    apiKeyFileStore:
+      location: ./demo-keys.txt
+
+---
+# API key authorization providing key is optional. Certain scopes allow for additional access rights.
+api:
+  port: 2000
+  flow:
+    - apiKey:
+        required: false
+        extractors:
+          - headerExtractor:
+              name: X-Key
+    - setProperty:
+        name: scopes
+        value: ${scopes()}
+    - if:
+        test: hasScope('admin')
+        language: spel
+        flow:
+          - template:
+              src: |
+                Only for admins!
+                Caller scopes: ${property.scopes}
+          - return: {}
+    - if:
+        test: hasScope({'finance','accounting'})
+        language: spel
+        flow:
+          - template:
+              src: |
+                Only for finance or accounting!
+                Caller scopes: ${property.scopes}
+          - return: {}
+    - template:
+        src: Normal API
+    - return: {}
