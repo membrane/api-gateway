@@ -1,0 +1,34 @@
+global:
+  - apiKey:
+      stores:
+        # API keys that permit access
+        - keys:
+            - secret:
+                value: demokey
+            - secret:
+                value: aed8bcc4-7c83-44d5-8789-21e4024ac873
+            - secret:
+                value: abc123
+                scopes:
+                  - scope:
+                      value: asdf
+      extractors:
+        # Fetch the API key from header
+        # X-Api-Key: demokey
+        - headerExtractor: {}
+
+        # Fetch key from query
+        # GET /foo?api-key=abc123
+        - queryParamExtractor: {}
+
+---
+
+api:
+  port: 2000
+  flow:
+    - static:
+        src: Secured API!
+    - return: {}
+  # Use your backend instead of static and return.
+  # target:
+  #   url: https://example.com
