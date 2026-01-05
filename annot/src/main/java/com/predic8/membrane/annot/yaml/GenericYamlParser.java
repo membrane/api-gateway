@@ -191,7 +191,7 @@ public class GenericYamlParser {
         catch (NoClassDefFoundError e) {
             if (e.getCause() != null) {
                 var missingClass = e.getCause().getMessage(); // TODO: Better use ExceptionUtil.getRootCause() but it isn't visible in annot.
-                var msg = "Could not create bean with class: %s\nMissing class: %s\nConfiguration: %s".formatted(clazz, missingClass, node);
+                var msg = "Could not create bean with class: %s\nMissing class: %s\n".formatted(clazz, missingClass);
                 log.error(msg);
                 throw new ParsingException(msg, node); // TODO: Cause we know the reason, shorten output.
             }
