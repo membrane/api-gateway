@@ -1,0 +1,14 @@
+components:
+  headerAddInterceptor:
+    bean:
+      class: com.predic8.AddSoapHeaderInterceptor
+
+---
+
+api:
+  port: 2000
+  name: echo
+  flow:
+    - $ref: '#/components/headerAddInterceptor'
+    - log: {}
+    - return: {}
