@@ -38,23 +38,27 @@ apiKey:
                 value: demokey
            - secret:
                 value: abc123
+                scopes:
+                  - test
 ```
 
 ### Mandatory API Key Authentication
 This configuration enables mandatory API key authentication globally. It defines valid API keys and allows clients to provide their keys either via HTTP headers or query parameters. Upon successful authentication, requests are forwarded to the intended destination.
 
-```xml
-<global>
-   <apiKey>
-      <keys>
-         <secret value="demokey" />
-         <secret value="aed8bcc4-7c83-44d5-8789-21e4024ac873" />
-         <secret value="abc123" />
-      </keys>
-      <headerExtractor />
-      <queryParamExtractor />
-   </apiKey>
-</global>
+```yaml
+global:
+  - apiKey:
+      stores:
+        - keys:
+            - secret:
+                value: demokey
+            - secret:
+                value: aed8bcc4-7c83-44d5-8789-21e4024ac873
+            - secret:
+                value: abc123
+      extractors:
+        - headerExtractor: {}
+        - queryParamExtractor: {}
 ```
 ###  More Complex Examples
 See:
