@@ -32,10 +32,7 @@ class SimpleKeyStoreTest {
                 new Key(){{setValue("12345");}},
                 new Key(){{
                     setValue("67890");
-                    setScopes(of(
-                            new Scope(){{setValue("admin");}},
-                            new Scope(){{setValue("user");}})
-                    );
+                    setScopes(of("admin", "user"));
                 }})
         );
         assertEquals(empty(), simpleKeyStore.getScopes("12345"));
