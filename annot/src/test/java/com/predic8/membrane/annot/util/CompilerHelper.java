@@ -93,7 +93,7 @@ public class CompilerHelper {
         return withContextClassLoader(cl, () -> {
             Class<?> ctx = cl.loadClass(APPLICATION_CONTEXT_CLASSNAME);
             Object context = ctx.getConstructor(String.class).newInstance("demo.xml");
-            return new SpringContextAdapter((ApplicationContext) context);
+            return new SpringContextAdapter((AbstractRefreshableApplicationContext) context);
         });
     }
 

@@ -58,7 +58,8 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
      */
     private final Object uniqueClassInitialization = new Object();
 
-    private final LinkedHashSet<PreDestroyCallback> preDestroyCallbacks = new LinkedHashSet<>();
+    @GuardedBy("preDestroyCallbacks")
+    private final List<PreDestroyCallback> preDestroyCallbacks = new ArrayList<>();
 
     record UidAction(String uid, WatchAction action) {
     }
@@ -208,11 +209,18 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
      * Registers a @PreDestroy callback for the given bean.
      */
     public void addPreDestroyCallback(Object bean, Method method) {
-        preDestroyCallbacks.add(new PreDestroyCallback(bean, method));
+        synchronized (preDestroyCallbacks) {
+            preDestroyCallbacks.add(new PreDestroyCallback(bean, method));
+        }
     }
 
     public void close() {
-        preDestroyCallbacks.reversed().forEach(pc -> {
+        List<PreDestroyCallback> callbacks;
+        synchronized (preDestroyCallbacks) {
+            callbacks = new ArrayList<>(preDestroyCallbacks);
+            preDestroyCallbacks.clear();
+        }
+        callbacks.reversed().forEach(pc -> {
             try {
                 pc.method.invoke(pc.bean);
             } catch (Exception e) {

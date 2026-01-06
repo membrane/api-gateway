@@ -16,9 +16,9 @@ import java.util.function.Supplier;
  */
 public class SpringContextAdapter implements BeanRegistry {
 
-    private final ApplicationContext ac;
+    private final AbstractRefreshableApplicationContext ac;
 
-    public SpringContextAdapter(ApplicationContext ac) {
+    public SpringContextAdapter(AbstractRefreshableApplicationContext ac) {
         this.ac = ac;
     }
 
@@ -59,7 +59,7 @@ public class SpringContextAdapter implements BeanRegistry {
 
     @Override
     public void close() {
-        ((AbstractRefreshableApplicationContext)ac).close();
+        ac.close();
     }
 
     public ApplicationContext getApplicationContext() {

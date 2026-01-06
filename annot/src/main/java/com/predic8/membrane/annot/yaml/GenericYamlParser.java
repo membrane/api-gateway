@@ -35,6 +35,7 @@ import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static com.predic8.membrane.annot.yaml.MethodSetter.*;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.List.of;
 import static java.util.UUID.*;
 
 public class GenericYamlParser {
@@ -139,12 +140,12 @@ public class GenericYamlParser {
      * <p>Ensures the node contains exactly one key (the kind), resolves the Java class via the
      * grammar and delegates to {@link #createAndPopulateNode(ParsingContext, Class, JsonNode)}.</p>
      */
-    public static Object readMembraneObject(String kind, Grammar grammar, JsonNode node, BeanRegistryImplementation registry) throws ParsingException {
+    public static <R extends BeanRegistry & BeanLifecycleManager> Object readMembraneObject(String kind, Grammar grammar, JsonNode node, R registry) throws ParsingException {
         ensureSingleKey(node);
         Class<?> clazz = grammar.getElement(kind);
         if (clazz == null)
             throw new ParsingException("Did not find java class for kind '%s'.".formatted(kind), node);
-        return createAndPopulateNode(new ParsingContext(kind, registry, grammar), clazz, node.get(kind));
+        return createAndPopulateNode(new ParsingContext<>(kind, registry, grammar), clazz, node.get(kind));
     }
 
     /**
@@ -154,7 +155,7 @@ public class GenericYamlParser {
      *   values are produced by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)}. A top-level {@code "$ref"} injects a previously defined bean.
      * All failures are wrapped in a {@link ParsingException} with location information.
      */
-    public static <T> T createAndPopulateNode(ParsingContext ctx, Class<T> clazz, JsonNode node) throws ParsingException {
+    public static <T> T createAndPopulateNode(ParsingContext<?> ctx, Class<T> clazz, JsonNode node) throws ParsingException {
         try {
             T configObj = clazz.getConstructor().newInstance();
             if (node.isArray()) {
@@ -205,7 +206,7 @@ public class GenericYamlParser {
 
     private static List<BeanDefinition> extractComponentBeanDefinitions(JsonNode componentsNode) {
         if (componentsNode == null || componentsNode.isNull())
-            return List.of();
+            return of();
 
         if (!componentsNode.isObject())
             throw new ParsingException("Expected object for 'components'.", componentsNode);
@@ -308,12 +309,16 @@ public class GenericYamlParser {
         ReflectionUtils.doWithMethods(bean.getClass(), method -> {
             if (method.isAnnotationPresent(PostConstruct.class)) {
                 try {
+                    method.setAccessible(true);
                     method.invoke(bean);
                 } catch (InvocationTargetException e) {
+                    throw new RuntimeException(e.getTargetException());
+                } catch (IllegalAccessException | IllegalArgumentException e) {
                     throw new RuntimeException(e);
                 }
             }
             if (method.isAnnotationPresent(PreDestroy.class)) {
+                method.setAccessible(true);
                 ctx.registry().addPreDestroyCallback(bean, method);
             }
         });
