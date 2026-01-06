@@ -1,0 +1,16 @@
+components:
+  myInterceptor:
+    bean:
+      class: com.predic8.membrane.core.interceptor.websocket.custom.MyWebSocketLogInterceptor
+
+---
+
+api:
+  port: 9999
+  flow:
+    - webSocket:
+        flow:
+          - $ref: '#/components/myInterceptor'
+  target:
+    host: localhost
+    port: 8080
