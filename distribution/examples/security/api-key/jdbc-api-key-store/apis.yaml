@@ -28,7 +28,7 @@ api:
               keyTable:
                 name: key
               scopeTable:
-                 name: scope
+                name: scope
         extractors:
           - headerExtractor: {}
   target:

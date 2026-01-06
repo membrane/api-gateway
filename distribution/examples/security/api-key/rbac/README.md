@@ -7,7 +7,7 @@ Secure endpoints using API keys combined with role-based access control (RBAC).
 
 1. **Navigate** to the `examples/security/api-key/rbac` directory.
 2. **Start** the API Gateway by executing `membrane.sh` (Linux/Mac) or `membrane.cmd` (Windows).
-3**Test Optional API Key with RBAC**:
+3. **Test Optional API Key with RBAC**:
     - Access with a non-admin scope key to receive limited access:
       ```
       curl http://localhost:2000 -H "X-Key: 123456789" -v
