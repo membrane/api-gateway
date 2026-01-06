@@ -5,4 +5,4 @@ CREATE TABLE users (
 
 INSERT INTO users (nickname, password)
 VALUES ('johnsmith123', 'pass123'),
-       ('membrane', 'proxy');
+       ('membrane', 'gateway');
