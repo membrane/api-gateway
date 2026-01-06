@@ -22,10 +22,16 @@
   - Documentation
   - See JmxExporter
 
-
 # 7.0.4
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- YAML parsing:
+  - When the reason for a parse error is clear. Shorten error message.
+- BalancerHealthMonitor:
+  - @PostConstruct instead of InitializingBean, DisposableBean
+- Scripting: expose beanRegistry  
+- IfInterceptor:
+  - Add "else"
 
 # 7.1.0
 
@@ -46,7 +52,7 @@
 - Fix `YAMLParsingTest.errorInListItemUniqueness()`
 - Check 404 in AdminConsole => Client Requests
   - API to get client requests returns 404, if called without admin console access 
-  
+ 
 
 ## (Breaking) Interface Changes
 - JMX: Name changes to "io.membrane-api:00=routers, name="
