@@ -53,6 +53,10 @@ public class SecurityUtils {
     }
 
     public static String extractMagicString(String password) {
-        return password.split(Pattern.quote("$"))[1];
+        try{
+            return password.split(Pattern.quote("$"))[1];
+        } catch (Exception e) {
+            throw new RuntimeException("Password must be in hash notation", e);
+        }
     }
 }
