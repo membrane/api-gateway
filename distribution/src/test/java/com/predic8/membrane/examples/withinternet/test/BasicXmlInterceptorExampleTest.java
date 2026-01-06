@@ -17,7 +17,6 @@ package com.predic8.membrane.examples.withinternet.test;
 import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.util.OSUtil.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.http.ContentType.*;
 import static org.hamcrest.CoreMatchers.*;
@@ -41,7 +40,7 @@ public class BasicXmlInterceptorExampleTest extends DistributionExtractingTestca
             given()
                 .contentType(XML)
                 .body(readFileFromBaseDir("example.xml"))
-            .when()
+                    .when()
                 .post(LOCALHOST_2000)
             .then()
                 .statusCode(200);

@@ -18,7 +18,6 @@ import com.predic8.membrane.examples.util.*;
 import com.predic8.membrane.test.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.util.OSUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CustomInterceptorExampleTest extends DistributionExtractingTestcase {

@@ -18,7 +18,6 @@ import com.predic8.membrane.examples.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.OSUtil.*;
 import static io.restassured.RestAssured.*;
 import static java.io.File.*;
 import static org.hamcrest.Matchers.*;
