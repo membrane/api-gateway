@@ -13,15 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.annot.util;
 
+import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.SpringContextAdapter;
 import org.hamcrest.*;
 import org.hamcrest.collection.*;
 import org.jetbrains.annotations.*;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.CommonAnnotationBeanPostProcessor;
+import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 import javax.tools.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.regex.*;
 import java.util.regex.Matcher;
 import java.util.stream.*;
@@ -82,17 +88,12 @@ public class CompilerHelper {
         });
     }
 
-    public static void parseXML(CompilerResult cr, String xmlSpringConfig) {
+    public static BeanRegistry parseXML(CompilerResult cr, String xmlSpringConfig) {
         CompositeClassLoader cl = xmlClassLoader(cr, xmlSpringConfig);
-        withContextClassLoader(cl, () -> {
+        return withContextClassLoader(cl, () -> {
             Class<?> ctx = cl.loadClass(APPLICATION_CONTEXT_CLASSNAME);
             Object context = ctx.getConstructor(String.class).newInstance("demo.xml");
-            try {
-                // Context successfully created - validation passed
-            } finally {
-                ctx.getMethod("close").invoke(context);
-            }
-            return null;
+            return new SpringContextAdapter((AbstractRefreshableApplicationContext) context);
         });
     }
 
