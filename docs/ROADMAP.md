@@ -26,6 +26,10 @@
   - @PostConstruct instead of InitializingBean, DisposableBean
 - Scripting: expose beanRegistry  
 
+- IfInterceptor:
+  - Add "else"
+
+
 # 7.1.0
 
 - reverseDNS
