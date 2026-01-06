@@ -26,8 +26,13 @@
   - Core isn't visible.
 - YAML parsing:
   - When the reason for a parse error is clear. Shorten error message.
+
+- BalancerHealthMonitor:
+  - @PostConstruct instead of InitializingBean, DisposableBean
+- Scripting: expose beanRegistry  
 - IfInterceptor:
   - Add "else"
+
 
 # 7.1.0
 
