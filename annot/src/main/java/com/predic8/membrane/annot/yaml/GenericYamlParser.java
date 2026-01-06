@@ -15,16 +15,13 @@ package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.*;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import com.predic8.membrane.annot.beanregistry.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.util.ReflectionUtils;
@@ -193,6 +190,14 @@ public class GenericYamlParser {
             if (!required.isEmpty())
                 throw new ParsingException("Missing required fields: " + required.stream().map(McYamlIntrospector::getSetterName).toList(), node);
             return handlePostConstructAndPreDestroy(ctx, configObj);
+        } catch (NoClassDefFoundError e) {
+            if (e.getCause() != null) {
+                var missingClass = e.getCause().getMessage(); // TODO: Better use ExceptionUtil.getRootCause() but it isn't visible in annot.
+                var msg = "Could not create bean with class: %s\nMissing class: %s\n".formatted(clazz, missingClass);
+                log.error(msg);
+                throw new ParsingException(msg, node); // TODO: Cause we know the reason, shorten output.
+            }
+            throw new ParsingException(e, node);
         } catch (Throwable cause) {
             throw new ParsingException(cause, node);
         }

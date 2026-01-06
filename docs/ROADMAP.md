@@ -21,7 +21,15 @@
   - Tutorial
   - Documentation
   - See JmxExporter
-- Synchronization of BeanRegistry
+
+# 7.0.4
+
+- Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- YAML parsing:
+  - When the reason for a parse error is clear. Shorten error message.
+- BalancerHealthMonitor:
+  - @PostConstruct instead of InitializingBean, DisposableBean
+- Scripting: expose beanRegistry  
 - IfInterceptor:
   - Add "else"
 
@@ -32,20 +40,10 @@
   - Maybe move it to configuration
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
-- Remove GroovyTemplateInterceptor (Not Template Interceptor)
-  - Old an unused
-
-# 7.0.4
-
-- Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
-- do not pass a `Router` reference into all sorts of beans: Access to global functionality should happen only on a very limited basis.
 
 
 # 7.0.1
 
-- Adding a configuration flag to enable/disable colorized output
-- Constant or methods to centralize color formatting: ANSIColors
-- Detecting terminal support before applying colors (e.g., check if System.console() is available)
 - Central description of Membrane Languages, Cheat Sheets, links to their docs.
 - Central desciption of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
@@ -54,7 +52,7 @@
 - Fix `YAMLParsingTest.errorInListItemUniqueness()`
 - Check 404 in AdminConsole => Client Requests
   - API to get client requests returns 404, if called without admin console access 
-  
+ 
 
 ## (Breaking) Interface Changes
 - JMX: Name changes to "io.membrane-api:00=routers, name="
