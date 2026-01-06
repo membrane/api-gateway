@@ -1,7 +1,7 @@
 ### CUSTOM WEBSOCKET INTERCEPTOR WITH EMBEDDED MEMBRANE
 
 In this example a custom WebSocket interceptor is created and then added to Membrane Service Proxy through configuration
-of the proxies.xml file.
+of the apis.yaml file.
 
 
 #### PREREQUISITES
@@ -15,7 +15,7 @@ of the proxies.xml file.
 #### RUNNING THE EXAMPLE
 
 1. Run the `compile-and-copy.[bat|sh]`. Wait until the console window closes
-2. Start Membrane Service proxy by running the `service-proxy.[bat|sh]` in this folder
+2. Start Membrane Service proxy by running the `membrane.[bat|sh]` in this folder
 3. Look at the console window and wait until `"Membrane ... up and running!"`. This window will remain open
 4. Start the WebSocket Server
 5. Start the WebSocket client
@@ -29,18 +29,23 @@ is the WebSocket log interceptor of the custom WebSocket interceptor tutorial at
 
 The custom interceptor is compiled and added to Membrane Service Proxy by copying the resulting jar into the `lib` folder.
 
-Take a look at the proxies.xml. To use the interceptor in Membrane we need to create it as a spring bean. This is done like this:
-```
-<spring:bean id="myInterceptor" class="com.predic8.membrane.core.interceptor.websocket.custom.MyWebSocketLogInterceptor" />
+Take a look at the `apis.yaml`. To use the interceptor in Membrane we need to create it as a component. This is done like this:
+```yaml
+components:
+   myInterceptor:
+      bean:
+         class: com.predic8.membrane.core.interceptor.websocket.custom.MyWebSocketLogInterceptor
 ```
 
-The id is the name you want to use to reference your bean in the configuration file. The class attribute tells spring
+The id is the name you want to use to reference your component in the configuration file. The class attribute tells spring
 which class it should instantiate.
 
-You can then reference this interceptor in through the wsInterceptor by giving it the id of you interceptor:
+You can then reference this interceptor in the webSocket flow:
 
-```
-<wsInterceptor refid="myInterceptor"/>
+```yaml
+webSocket:
+   flow:
+      - $ref: '#/components/myInterceptor'
 ```
 
 ---
