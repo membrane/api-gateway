@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.transport.ssl.acme;
 
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.Certificate;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.config.security.acme.*;
@@ -22,6 +21,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import org.bouncycastle.jce.provider.*;
@@ -150,7 +150,7 @@ public class AcmeStepTest {
                 certificate.setContent(sim.getCA().getCertificate());
                 trust.setCertificateList(ImmutableList.of(certificate));
                 sslParser1.setTrust(trust);
-                e.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
+                e.setProperty(Exchange.SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getConfiguration().getBaseLocation()));
                 hc.call(e);
                 assertEquals(234, e.getResponse().getStatusCode());
             }

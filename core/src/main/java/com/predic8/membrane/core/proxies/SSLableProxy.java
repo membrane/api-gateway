@@ -46,7 +46,7 @@ public class SSLableProxy extends AbstractProxy {
 			AcmeSSLContext acmeCtx = (AcmeSSLContext) getSslInboundContext(); // TODO: remove this.
 			// getSslInboundContext() of an inactive rule should not be called in the first place.
 			if (acmeCtx == null)
-				acmeCtx = new AcmeSSLContext(sslInboundParser, host, router.getHttpClientFactory(), router.getTimerManager());
+				acmeCtx = new AcmeSSLContext(sslInboundParser, host);
 			setSslInboundContext(acmeCtx);
 			acmeCtx.init(router);
 			return;
@@ -127,8 +127,8 @@ public class SSLableProxy extends AbstractProxy {
 
 	private @NotNull SSLContext generateSslInboundContext() {
 		if (sslInboundParser.getKeyGenerator() != null)
-			return new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation());
-		return new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation());
+			return new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
+		return new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
 	}
 
 }

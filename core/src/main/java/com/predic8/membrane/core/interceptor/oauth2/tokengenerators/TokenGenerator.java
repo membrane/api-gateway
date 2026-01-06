@@ -13,7 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 
 import java.util.Map;
 import java.util.NoSuchElementException;

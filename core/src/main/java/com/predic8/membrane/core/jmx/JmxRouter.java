@@ -13,20 +13,19 @@
 
 package com.predic8.membrane.core.jmx;
 
-import com.predic8.membrane.core.DefaultRouter;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import org.springframework.jmx.export.annotation.ManagedAttribute;
-import org.springframework.jmx.export.annotation.ManagedResource;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
+import org.springframework.jmx.export.annotation.*;
+
+import static com.predic8.membrane.core.jmx.JmxExporter.JMX_NAMESPACE;
 
 @ManagedResource()
 public class JmxRouter {
 
-
-    private final DefaultRouter router;
+    private final Router router;
     private final JmxExporter exporter;
 
-    public JmxRouter(DefaultRouter router, JmxExporter exporter) {
+    public JmxRouter(Router router, JmxExporter exporter) {
         this.router = router;
         this.exporter = exporter;
         exportServiceProxyList();
@@ -46,7 +45,7 @@ public class JmxRouter {
     }
 
     private void exportServiceProxy(ServiceProxy rule) {
-        String prefix = "org.membrane-soa:00=serviceProxies, 01=%s, name=".formatted(router.getConfiguration().getJmx());
+        String prefix = JMX_NAMESPACE + ":00=apis, 01=%s, name=".formatted(router.getConfiguration().getJmx());
         exporter.addBean(prefix + rule.getName().replace(":",""), new JmxServiceProxy(rule, router));
     }
 }

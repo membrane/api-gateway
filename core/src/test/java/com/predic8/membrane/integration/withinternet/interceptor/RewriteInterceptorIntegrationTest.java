@@ -13,17 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.integration.withinternet.interceptor;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
-import org.apache.http.params.*;
-import org.apache.http.util.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;

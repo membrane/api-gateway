@@ -170,7 +170,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec) throws IOException, URISyntaxException {
         exc.setResponse(ok().yaml()
-                .body(omYaml.writeValueAsBytes(rec.rewriteOpenAPI(exc, getRouter().getUriFactory())))
+                .body(omYaml.writeValueAsBytes(rec.rewriteOpenAPI(exc, getRouter().getConfiguration().getUriFactory())))
                 .build());
         return RETURN;
     }
@@ -211,7 +211,7 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         tempCtx.put("apis", apis);
         tempCtx.put("pathUi", PATH_UI);
         tempCtx.put("path", PATH);
-        tempCtx.put("uriFactory", router.getUriFactory());
+        tempCtx.put("uriFactory", router.getConfiguration().getUriFactory());
         return apiOverviewHtmlTemplate.make(tempCtx).toString();
     }
 

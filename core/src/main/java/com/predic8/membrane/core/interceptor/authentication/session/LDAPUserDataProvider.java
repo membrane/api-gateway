@@ -36,8 +36,8 @@ import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.net.SocketFactory;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.slf4j.Logger;
@@ -442,7 +442,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		}
 
 		if (sslParser != null)
-			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
 	}
 
 	public AttributeMap getMap() {

@@ -17,9 +17,9 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
@@ -169,7 +169,7 @@ public class OpenAPIRecordFactory {
     }
 
     private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
-        return router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
+        return router.getResolverMap().resolve(ResolverMap.combine(router.getConfiguration().getBaseLocation(), location));
     }
 
     private OpenAPI parseFileAsOpenAPI(File oaFile) {
@@ -201,7 +201,7 @@ public class OpenAPIRecordFactory {
     }
 
     private String resolve(String filepath) {
-        return ResolverMap.combine(router.getBaseLocation(), filepath);
+        return ResolverMap.combine(router.getConfiguration().getBaseLocation(), filepath);
     }
 
     private static @NotNull ParseOptions getParseOptions() {

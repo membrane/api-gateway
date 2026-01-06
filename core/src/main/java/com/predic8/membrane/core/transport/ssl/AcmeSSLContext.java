@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.kubernetes.client.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.acme.*;
 import com.predic8.membrane.core.util.*;
@@ -40,34 +40,21 @@ public class AcmeSSLContext extends SSLContext {
     private final SSLParser parser;
     private final AcmeClient client;
     private final String[] hosts;
-    private final boolean selfCreatedTimerManager;
-    private final TimerManager timerManager;
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
     private volatile AcmeKeyCert keyCert;
 
+    private Router router;
 
-    public AcmeSSLContext(SSLParser parser,
-                          String[] hosts,
-                          @Nullable HttpClientFactory httpClientFactory,
-                          @Nullable TimerManager timerManager) {
+    public AcmeSSLContext(SSLParser parser, String[] hosts) {
         this.parser = parser;
         this.hosts = computeHostList(hosts, parser.getAcme().getHosts());
-        client = new AcmeClient(parser.getAcme(), httpClientFactory);
-        selfCreatedTimerManager = timerManager == null;
-        this.timerManager = timerManager != null ? timerManager : new TimerManager();
+        client = new AcmeClient(parser.getAcme());
     }
 
     public void init(Router router) {
-        KubernetesClientFactory kcf = null;
-        if (router instanceof DefaultRouter dr) {
-            kcf = dr.getRegistry().getBean(KubernetesClientFactory.class).orElse(null);
-        }
-        init(kcf,router.getHttpClientFactory());
-    }
-
-    public void init(@Nullable KubernetesClientFactory kubernetesClientFactory, @Nullable HttpClientFactory httpClientFactory) {
-        client.init(kubernetesClientFactory, httpClientFactory);
+        this.router = router;
+        client.init(router);
         initAndSchedule();
     }
 
@@ -275,7 +262,7 @@ public class AcmeSSLContext extends SSLContext {
         if (shutdown.get())
             return;
 
-        timerManager.schedule(new TimerTask() {
+        router.getTimerManager().schedule(new TimerTask() {
             @Override
             public void run() {
                 if (!"never".equals(parser.getAcme().getRenewal()))
@@ -292,8 +279,6 @@ public class AcmeSSLContext extends SSLContext {
     @Override
     public void stop() {
         shutdown.set(true);
-        if (selfCreatedTimerManager)
-            timerManager.shutdown();
     }
 
     public boolean isReady() {

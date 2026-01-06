@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.codec.digest.*;
 
 import java.util.*;
@@ -130,7 +130,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		}
 
 		/**
-		 * @description The user's phone number (if used in combination with the {@link TelekomSMSTokenProvider}).
+		 * @description The user's phone number
 		 */
 		@MCAttribute
 		public void setSms(String value) {

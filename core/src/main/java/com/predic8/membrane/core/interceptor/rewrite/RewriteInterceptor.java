@@ -149,7 +149,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         ListIterator<String> it = exc.getDestinations().listIterator();
         while (it.hasNext()) {
             String dest = it.next();
-            String pathQuery = getPathQueryOrSetError(router.getUriFactory(), dest, exc);
+            String pathQuery = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), dest, exc);
             if (pathQuery == null)
                 return RETURN;
 
@@ -189,7 +189,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         if (mapping != null && mapping.do_ == REWRITE) {
             String newDest = replace(exc.getRequest().getUri(), mapping);
             if (newDest.contains("://")) {
-                newDest = getPathQueryOrSetError(router.getUriFactory(), newDest, exc);
+                newDest = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), newDest, exc);
                 if (newDest == null)
                     return RETURN;
             }

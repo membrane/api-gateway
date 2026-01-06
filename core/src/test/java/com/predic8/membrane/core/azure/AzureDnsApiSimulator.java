@@ -15,19 +15,21 @@ package com.predic8.membrane.core.azure;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
+
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 public class AzureDnsApiSimulator {
 
@@ -63,7 +65,7 @@ public class AzureDnsApiSimulator {
 
                 if (missingHeaders(exc)) {
                     exc.setResponse(Response.badRequest().build());
-                    return Outcome.RETURN;
+                    return RETURN;
                 }
 
                 if (exc.getRequestURI().equals("/Tables")) {
@@ -75,12 +77,12 @@ public class AzureDnsApiSimulator {
                         case "PUT" -> insertOrReplaceTableStorageEntity(exc);
                         case "GET" -> getEntityFromTableStorage(exc);
                         case "DELETE" -> deleteEntityFromTableStorage(exc);
-                        default -> Outcome.RETURN;
+                        default -> RETURN;
                     };
                 }
 
                 exc.setResponse(Response.notFound().build());
-                return Outcome.RETURN;
+                return RETURN;
             }
         });
 
@@ -94,11 +96,7 @@ public class AzureDnsApiSimulator {
                         .contains(headerField.getHeaderName())
         );
 
-        if (!hasNeededHeaders) {
-            return false;
-        }
-
-        return true;
+        return hasNeededHeaders;
     }
 
     private Outcome deleteEntityFromTableStorage(Exchange exc) {
@@ -106,7 +104,7 @@ public class AzureDnsApiSimulator {
 
         if (uriPayload == null) {
             exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         var tableName = uriPayload.get("tableName");
@@ -119,7 +117,7 @@ public class AzureDnsApiSimulator {
         );
 
         exc.setResponse(Response.statusCode(204).build());
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     private Outcome insertOrReplaceTableStorageEntity(Exchange exc) throws JsonProcessingException {
@@ -130,14 +128,14 @@ public class AzureDnsApiSimulator {
 
         if (data == null) {
             exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         var uriPayload = extractValuesFromUri(exc.getRequestURI());
 
         if (uriPayload == null) {
             exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         var tableName = uriPayload.get("tableName");
@@ -146,7 +144,7 @@ public class AzureDnsApiSimulator {
 
         if (!tableStorage.containsKey(tableName)) {
             exc.setResponse(Response.notFound().build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         var table = tableStorage.get(tableName);
@@ -163,7 +161,7 @@ public class AzureDnsApiSimulator {
         }
 
         exc.setResponse(Response.statusCode(204).build());
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     private Outcome getEntityFromTableStorage(Exchange exc) throws JsonProcessingException {
@@ -171,7 +169,7 @@ public class AzureDnsApiSimulator {
 
         if (uriPayload == null) {
             exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         var tableName = uriPayload.get("tableName");
@@ -185,13 +183,13 @@ public class AzureDnsApiSimulator {
             exc.setResponse(Response.statusCode(400)
                     .body(new ObjectMapper().writeValueAsString(Map.of("odata.error", "foo")))
                     .build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         exc.setResponse(Response.statusCode(200)
                 .body(new ObjectMapper().writeValueAsString(row.get()))
                 .build());
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     private Map<String, String> extractValuesFromUri(String uri) {
@@ -217,7 +215,7 @@ public class AzureDnsApiSimulator {
 
         if (tableName == null || tableName.isBlank() || tableName.isEmpty()) {
             exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
+            return RETURN;
         }
 
         if (tableStorage.containsKey(tableName)) {
@@ -227,7 +225,7 @@ public class AzureDnsApiSimulator {
             exc.setResponse(Response.statusCode(201).build());
         }
 
-        return Outcome.RETURN;
+        return RETURN;
     }
 
     public void stop() {

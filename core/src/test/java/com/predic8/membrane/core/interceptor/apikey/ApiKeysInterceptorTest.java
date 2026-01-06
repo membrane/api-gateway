@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExpressionExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyQueryParamExtractor;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.security.SecurityScheme;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

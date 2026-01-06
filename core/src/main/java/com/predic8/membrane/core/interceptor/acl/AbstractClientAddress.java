@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.router.*;
 
 import javax.xml.stream.XMLStreamReader;
 

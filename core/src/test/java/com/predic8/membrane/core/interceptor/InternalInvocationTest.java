@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -22,7 +22,7 @@ import java.io.*;
 
 public class InternalInvocationTest {
 
-	private DefaultRouter router;
+	private Router router;
 
 	@BeforeEach
 	public void setUp() throws Exception {

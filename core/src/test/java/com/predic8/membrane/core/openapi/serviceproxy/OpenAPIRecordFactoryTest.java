@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -31,7 +31,7 @@ class OpenAPIRecordFactoryTest {
     @BeforeAll
     static void setUp() {
         DummyTestRouter router = new DummyTestRouter();
-        router.setBaseLocation("src/test/resources/openapi/specs/");
+        router.getConfiguration().setBaseLocation("src/test/resources/openapi/specs/");
         factory = new OpenAPIRecordFactory(router);
     }
 

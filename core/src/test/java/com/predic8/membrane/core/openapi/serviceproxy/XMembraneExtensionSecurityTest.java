@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -33,7 +33,7 @@ public class XMembraneExtensionSecurityTest {
     @BeforeEach
     void setUp() {
         DummyTestRouter router = new DummyTestRouter();
-        router.setBaseLocation("");
+        router.getConfiguration().setBaseLocation("");
         OpenAPIRecordFactory factory = new OpenAPIRecordFactory(router);
         OpenAPISpec spec = new OpenAPISpec();
         spec.setLocation(getPathFromResource("openapi/openapi-proxy/validate-security-extensions.yml"));

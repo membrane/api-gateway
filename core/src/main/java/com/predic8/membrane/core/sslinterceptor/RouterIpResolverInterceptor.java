@@ -18,12 +18,12 @@ import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -115,7 +115,7 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
     public void init(Router router) {
         httpClient = router.getHttpClientFactory().createClient(httpClientConfiguration);
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
     }
 
     @Override

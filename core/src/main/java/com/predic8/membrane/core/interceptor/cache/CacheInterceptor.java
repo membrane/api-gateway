@@ -17,7 +17,6 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
@@ -26,6 +25,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,7 +103,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 
 		@Override
 		public void init(Router router) {
-			dir = ResolverMap.combine(router.getBaseLocation(), dir);
+			dir = ResolverMap.combine(router.getConfiguration().getBaseLocation(), dir);
 			File d = new File(dir);
 			if (!d.exists())
 				if (!d.mkdirs())

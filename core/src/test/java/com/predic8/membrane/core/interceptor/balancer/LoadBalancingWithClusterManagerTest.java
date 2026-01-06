@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.services.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
@@ -95,7 +96,7 @@ public class LoadBalancingWithClusterManagerTest {
     }
 
     private static @NotNull DefaultRouter createRouter() {
-        DefaultRouter node1 = new TestRouter();
+        DefaultRouter node1 = new DefaultRouter();
         node1.getRegistry().register("global", new GlobalInterceptor());
         return node1;
     }

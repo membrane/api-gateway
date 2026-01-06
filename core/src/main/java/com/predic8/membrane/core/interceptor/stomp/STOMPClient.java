@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import org.slf4j.*;
 
@@ -100,7 +101,7 @@ public class STOMPClient extends AbstractInterceptor {
 		super.init();
 		connectionManager = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout(), router.getTimerManager());
 		if (sslOutboundParser != null)
-			sslOutboundProvider = new StaticSSLContext(sslOutboundParser, router.getResolverMap(), router.getBaseLocation());
+			sslOutboundProvider = new StaticSSLContext(sslOutboundParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
 	}
 
 	@Override

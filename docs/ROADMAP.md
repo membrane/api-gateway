@@ -14,11 +14,25 @@
 
 # 7.X
 
+- Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
+- Rewrite ACL to use the YAML configuration instead of external XML files
+- Fix maven central publish job
 - JMXExporter:
   - Tutorial
   - Documentation
   - See JmxExporter
 - Synchronization of BeanRegistry
+- Move YAML Parsing to core?
+  - Core isn't visible.
+- YAML parsing:
+  - When the reason for a parse error is clear. Shorten error message.
+
+- BalancerHealthMonitor:
+  - @PostConstruct instead of InitializingBean, DisposableBean
+- Scripting: expose beanRegistry  
+- IfInterceptor:
+  - Add "else"
+
 
 # 7.1.0
 
@@ -88,6 +102,7 @@
 - YAML Configuration as default
 - Use of colors in logs
 - Removed camelCase conversion of header access in Groovy scripts instead of header.contentType use header['Content-Type']
+- JMX namespace changed from org.membrane-soa to io.membrane-api.
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured

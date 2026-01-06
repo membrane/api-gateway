@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.evaluation;
 
-import com.predic8.membrane.core.DefaultRouter;
+import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.interceptor.apikey.stores.JDBCApiKeyStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.KeyTable;
 import com.predic8.membrane.core.interceptor.apikey.stores.ScopeTable;

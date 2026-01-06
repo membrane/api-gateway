@@ -134,7 +134,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     private @Nullable String getBaseLocation() {
-        return router == null ? null : router.getBaseLocation();
+        return router == null ? null : router.getConfiguration().getBaseLocation();
     }
 
     @Override

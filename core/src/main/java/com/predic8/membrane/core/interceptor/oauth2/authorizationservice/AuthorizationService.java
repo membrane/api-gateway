@@ -13,52 +13,38 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody;
-import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.LogHelper;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2Exception;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2TokenResponseBody;
-import com.predic8.membrane.core.interceptor.oauth2client.rf.token.JWSSigner;
-import com.predic8.membrane.core.interceptor.session.Session;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.ssl.PEMSupport;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import jakarta.mail.internet.ParseException;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.NumericDate;
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.*;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
+import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.ssl.*;
+import jakarta.mail.internet.*;
+import org.jose4j.jwt.*;
+import org.jose4j.lang.*;
+import org.slf4j.*;
 
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.GuardedBy;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-import java.util.UUID;
+import javax.annotation.*;
+import javax.annotation.concurrent.*;
+import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.Constants.USERAGENT;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.http.Response.badRequest;
-import static com.predic8.membrane.core.http.Response.internalServerError;
-import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.authorizationCodeBodyBuilder;
-import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.refreshTokenBodyBuilder;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
-import static org.apache.commons.codec.binary.Base64.encodeBase64;
+import static org.apache.commons.codec.binary.Base64.*;
 
 public abstract class AuthorizationService {
 
@@ -94,13 +80,13 @@ public abstract class AuthorizationService {
         log = LoggerFactory.getLogger(this.getClass().getName());
 
         if (isUseJWTForClientAuth()) {
-            JWSSigner = new JWSSigner(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getBaseLocation())),
-                    getSslParser().getKey().getCertificates().getFirst().get(router.getResolverMap(), router.getBaseLocation()));
+            JWSSigner = new JWSSigner(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getConfiguration().getBaseLocation())),
+                    getSslParser().getKey().getCertificates().getFirst().get(router.getResolverMap(), router.getConfiguration().getBaseLocation()));
         }
 
         setHttpClient(router.getHttpClientFactory().createClient(getHttpClientConfiguration()));
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
         this.router = router;
         init();
         if (!supportsDynamicRegistration())

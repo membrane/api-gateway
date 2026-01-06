@@ -16,13 +16,13 @@ package com.predic8.membrane.core.interceptor.balancer;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.codec.*;
 import org.apache.commons.codec.binary.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
-import org.mockito.internal.configuration.*;
 
 import javax.crypto.*;
 import javax.crypto.spec.*;
@@ -30,20 +30,20 @@ import java.net.*;
 import java.security.*;
 
 import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static java.lang.System.currentTimeMillis;
+import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
-import static javax.crypto.Cipher.ENCRYPT_MODE;
-import static org.apache.commons.codec.binary.Base64.encodeBase64;
+import static javax.crypto.Cipher.*;
+import static org.apache.commons.codec.binary.Base64.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClusterNotificationInterceptorTest {
-	private TestRouter router;
+	private DefaultRouter router;
 	private ClusterNotificationInterceptor interceptor;
 
 	@BeforeEach
 	public void setUp() throws Exception {
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3002), "thomas-bayer.com", 80);
-		router = new TestRouter();
+		router = new DefaultRouter();
 		router.add(proxy);
 
 		interceptor = new ClusterNotificationInterceptor();

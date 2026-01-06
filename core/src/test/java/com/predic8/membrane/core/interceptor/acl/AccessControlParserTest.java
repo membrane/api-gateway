@@ -18,7 +18,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.core.DummyTestRouter;
+import com.predic8.membrane.core.router.DummyTestRouter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

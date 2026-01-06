@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.router.hotdeploy;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -33,8 +33,8 @@ public class DefaultHotDeployer implements HotDeployer {
     private final Object lock = new Object();
 
     @Override
-    public void start(@NotNull DefaultRouter router) {
-        this.router = router;
+    public void start(@NotNull DefaultRouter defaultRouter) {
+        this.router = defaultRouter;
         startInternal();
     }
 
@@ -46,16 +46,21 @@ public class DefaultHotDeployer implements HotDeployer {
                 return;
             }
 
-            if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
-                log.warn("""
-                        ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
-                        """);
+            // Start from XML
+            if (router.getBeanFactory() != null) {
+                if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
+                    log.warn("""
+                            ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
+                            """);
+                    return;
+                }
+                hdt = new HotDeploymentThread(router.getRef());
+                hdt.setFiles(tac.getFiles());
+                hdt.start();
                 return;
             }
 
-            hdt = new HotDeploymentThread(router.getRef());
-            hdt.setFiles(tac.getFiles());
-            hdt.start();
+            log.debug("Hot deployment is not yet supported for the YAML configuration.");
         }
     }
 

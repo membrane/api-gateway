@@ -15,15 +15,14 @@
 package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
-import javax.annotation.*;
 import java.io.*;
 import java.lang.ref.*;
 import java.net.InetAddress;
@@ -64,7 +63,7 @@ public class HttpTransport extends Transport {
 			new SynchronousQueue<>(), new HttpServerThreadFactory());
 
 	@Override
-	public void init(DefaultRouter router) {
+	public void init(Router router) {
 		super.init(router);
 	}
 
@@ -95,10 +94,6 @@ public class HttpTransport extends Transport {
 		    portListenerMapping.remove(p.port());
 		}
 		stillRunning.add(new WeakReference<>(plt));
-
-		for (IPortChangeListener listener : menuListeners) {
-			listener.removePort(p.port());
-		}
 	}
 
 	@Override
@@ -112,7 +107,7 @@ public class HttpTransport extends Transport {
 			closePort(ipPort);
 		}
 		log.debug("Closing all stream pumps.");
-		DefaultRouter router = getRouter();
+		Router router = getRouter();
 		if (router != null)
 			router.getStatistics().getStreamPumpStats().closeAllStreamPumps();
 
@@ -156,11 +151,10 @@ public class HttpTransport extends Transport {
 
 	/**
 	 * @param port Port to open
-	 * @param timerManager timerManager
 	 * @throws IOException If port can not be opened
 	 */
 	@Override
-	public synchronized void openPort(String ip, int port, SSLProvider sslProvider, @Nullable TimerManager timerManager) throws IOException {
+	public synchronized void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
 	    if (port == -1)
 			throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
 
@@ -179,19 +173,14 @@ public class HttpTransport extends Transport {
 	        throw new RuntimeException(createDiffInterfacesErrorMsg(p,mih));
 	    }
 
-		HttpEndpointListener portListenerThread = new HttpEndpointListener(p, this, sslProvider, timerManager);
+		HttpEndpointListener portListenerThread = new HttpEndpointListener(p, this, sslProvider);
 		mih.put(p, portListenerThread);
 		portListenerThread.start();
-
-		for (IPortChangeListener listener : menuListeners) {
-			listener.addPort(port);
-		}
 	}
 
 	@Override
-	public void openPort(SSLableProxy proxy, TimerManager timerManager) throws IOException {
-		TimerManager timerManager1 = getRouter() != null ? getRouter().getTimerManager() : null;
-		openPort(proxy.getKey().getIp(), proxy.getKey().getPort(), proxy.getSslInboundContext(), timerManager1);
+	public void openPort(SSLableProxy proxy) throws IOException {
+		openPort(proxy.getKey().getIp(), proxy.getKey().getPort(), proxy.getSslInboundContext());
 	}
 
 	@Override

@@ -17,11 +17,11 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.parser.*;
 import org.junit.jupiter.api.*;
@@ -53,7 +53,7 @@ public class OpenAPIPublisherInterceptorTest {
     void setUp() {
         DefaultRouter router = new DefaultRouter();
         router.getConfiguration().setUriFactory(new URIFactory());
-        router.setBaseLocation("");
+        router.getConfiguration().setBaseLocation("");
         openAPIRecordFactory = new OpenAPIRecordFactory(router);
         OpenAPISpec spec = new OpenAPISpec();
         spec.setDir("src/test/resources/openapi/specs");

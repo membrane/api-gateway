@@ -18,14 +18,15 @@ import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.sslinterceptor.SSLInterceptor;
 import com.predic8.membrane.core.stats.RuleStatisticCollector;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
+import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLExchange;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
@@ -328,7 +329,7 @@ public class SSLProxy implements Proxy {
     private class ForwardingStaticSSLContext extends StaticSSLContext {
 
         public ForwardingStaticSSLContext() {
-            super(getSSLParser(), SSLProxy.this.router.getResolverMap(), SSLProxy.this.router.getBaseLocation());
+            super(getSSLParser(), SSLProxy.this.router.getResolverMap(), SSLProxy.this.router.getConfiguration().getBaseLocation());
         }
 
         @Override

@@ -14,52 +14,49 @@
 
 package com.predic8.membrane.integration.withoutinternet;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.integration.withinternet.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
+import java.net.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static java.lang.Integer.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class LimitedMemoryExchangeStoreIntegrationTest {
     private static LimitedMemoryExchangeStore lmes;
-    private static Router router;
-    private static Router router2;
+    private static DefaultRouter router;
+    private static DefaultRouter router2;
     private static HttpClientConfiguration hcc;
     private static final AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
-    @BeforeAll
-    static void setup() throws Exception {
+    @BeforeEach
+    void setup() throws Exception {
         lmes = new LimitedMemoryExchangeStore();
-        lmes.setMaxSize(500000);
-
+        lmes.setMaxSize(500_000);
+        lmes.removeAllExchanges((AbstractExchange[]) lmes.getAllExchanges());
         // streaming only works for maxRetries = 1
         hcc = new HttpClientConfiguration();
         hcc.getRetryHandler().setRetries(1);
 
         ServiceProxy proxy = getServiceProxy(3045, "dummy", 80);
-        proxy.getFlow().add(new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(Exchange exc) {
-                exc.setResponse(Response.ok().body("").build());
-                return RETURN;
-            }
-        });
-        router = new TestRouter();
+        proxy.getFlow().add(new ReturnInterceptor());
+        router = new DefaultRouter();
         router.add(proxy);
         router.start();
-        setClientConfig(router,hcc);
+        setClientConfig(router, hcc);
 
         ServiceProxy proxy1 = getServiceProxy(3046, "localhost", 3045);
         proxy1.getFlow().add(new AbstractInterceptor() {
@@ -69,12 +66,14 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
                 return super.handleRequest(exc);
             }
         });
-        router2 = new TestRouter();
+        router2 = new DefaultRouter();
         router2.setExchangeStore(lmes);
         router2.add(proxy1);
         router2.start();
-        setClientConfig(router2,hcc);
-        router2.getTransport().getFlow().add(3, new ExchangeStoreInterceptor(lmes));
+        setClientConfig(router2, hcc);
+        var global = new GlobalInterceptor();
+        global.getFlow().add(new ExchangeStoreInterceptor(lmes));
+        router.getRegistry().register("global", global);
     }
 
     private static void setClientConfig(Router router, HttpClientConfiguration hcc) {
@@ -91,60 +90,47 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         return router.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
     }
 
-    @BeforeEach
-    public void init() {
-        lmes.removeAllExchanges((AbstractExchange[]) lmes.getAllExchanges());
-    }
-
-    @AfterAll
-    public static void shutdown() {
-        if (router != null)
-            router.stop();
-        if (router2 != null)
-            router2.stop();
+    @AfterEach
+    void shutdown() {
+        router.stop();
+        router2.stop();
     }
 
     @Test
-    public void small() throws Exception {
+    void small() throws Exception {
         long len = 100;
-
-        Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).buildExchange();
-        try (HttpClient hc = new HttpClient(hcc)) {
-            hc.call(e);
-        }
-        assertTrue(e.getRequest().getBody().wasStreamed());
-        assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
-
+        call(prepareExchange(len).buildExchange());
         assertEquals(1, lmes.getAllExchangesAsList().size());
         assertEquals(len, lmes.getAllExchangesAsList().getFirst().getRequest().getBody().getLength());
     }
 
     @Test
-    public void large() throws Exception {
-        long len = Integer.MAX_VALUE + 1L;
-
-        Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).buildExchange();
-        try (HttpClient hc = new HttpClient(hcc)) {
-            hc.call(e);
-        }
-        assertTrue(e.getRequest().getBody().wasStreamed());
-        assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
+    void large() throws Exception {
+        long len = MAX_VALUE + 1L;
+        call(prepareExchange(len).buildExchange());
         int snappedLength = lmes.getAllExchangesAsList().getFirst().getRequest().getBody().getLength();
         assertTrue(100000 <= snappedLength && snappedLength <= 150000);
     }
 
     @Test
-    public void largeChunked() throws Exception {
-        long len = Integer.MAX_VALUE + 1L;
+    void largeChunked() throws Exception {
+        long len = MAX_VALUE + 1L;
+        Exchange e = prepareExchange(len).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
+        call(e);
+        int snappedLength = lmes.getAllExchangesAsList().getFirst().getRequest().getBody().getLength();
+        assertTrue(100000 <= snappedLength && snappedLength <= 150000);
+    }
 
-        Exchange e = new Request.Builder().post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
+    private static Builder prepareExchange(long len) throws URISyntaxException {
+        return post("http://localhost:3046/foo").body(len, new LargeBodyTest.ConstantInputStream(len));
+    }
+
+    private static void call(Exchange e) throws Exception {
         try (HttpClient hc = new HttpClient(hcc)) {
             hc.call(e);
         }
         assertTrue(e.getRequest().getBody().wasStreamed());
         assertTrue(middleExchange.get().getRequest().getBody().wasStreamed());
-        int snappedLength = lmes.getAllExchangesAsList().getFirst().getRequest().getBody().getLength();
-        assertTrue(100000 <= snappedLength && snappedLength <= 150000);
     }
 
 }
