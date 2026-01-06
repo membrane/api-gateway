@@ -19,10 +19,6 @@ api:
     # Return response to Client
     - return:
         contentType: application/json
-  # Instead forward to your backend
-  # target:
-  #   host: myhost
-  #   port: myport
 
 ---
 

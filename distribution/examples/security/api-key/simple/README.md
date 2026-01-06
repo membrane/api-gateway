@@ -28,12 +28,12 @@ Secure endpoints using API keys.
 ## Understanding the Configuration
 
 ### Key Stores
-Key stores maintain API keys and their corresponding scopes through various methods. In this instance, we use the simple in-config "keys"-store, which holds the keys inside the `proxies.xml` file.:
+Key stores maintain API keys and their corresponding scopes through various methods. In this instance, we use the simple in-config store, which holds the keys inside the `apis.yaml` file.:
 
 ```yaml
 apiKey:
    stores:
-      - keys:
+      - simple:
            - secret:
                 value: demokey
            - secret:
@@ -49,7 +49,7 @@ This configuration enables mandatory API key authentication globally. It defines
 global:
   - apiKey:
       stores:
-        - keys:
+        - simple:
             - secret:
                 value: demokey
             - secret:

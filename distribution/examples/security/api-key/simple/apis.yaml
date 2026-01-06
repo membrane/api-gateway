@@ -2,7 +2,7 @@ global:
   - apiKey:
       stores:
         # API keys that permit access
-        - keys:
+        - simple:
             - secret:
                 value: demokey
             - secret:
@@ -26,6 +26,3 @@ api:
     - static:
         src: Secured API!
     - return: {}
-  # Use your backend instead of static and return.
-  # target:
-  #   url: https://example.com

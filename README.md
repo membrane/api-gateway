@@ -882,11 +882,11 @@ The following configuration secures the `Fruitshop API` by validating an API key
 <api port="2000">
     <apiKey>
         <!-- Define valid API keys -->
-        <keys>
+        <simple>
             <secret value="abc123" />
             <secret value="secret" />
             <secret value="Paris2025" />
-        </keys>
+        </simple>
         
         <!-- Extract the API key from the query parameter -->
         <queryParamExtractor paramName="api-key" />

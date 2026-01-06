@@ -10,11 +10,11 @@
             <!--Global API key authentication, providing key is mandatory.-->
             <apiKey>
                 <!-- API keys that permit access -->
-                <keys>
+                <simple>
                     <secret value="demokey" />
                     <secret value="aed8bcc4-7c83-44d5-8789-21e4024ac873" />
                     <secret value="abc123" />
-                </keys>
+                </simple>
 
                 <!-- Fetch the API key from header
 

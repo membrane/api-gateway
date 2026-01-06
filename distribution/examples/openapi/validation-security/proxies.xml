@@ -12,9 +12,9 @@
 					 validateResponses="no"
 					 validationDetails="yes" />
 			<apiKey>
-				<keys>
+				<simple>
 					<secret value="demo-key-foobar" />
-				</keys>
+				</simple>
 				<headerExtractor />
 				<queryParamExtractor name="X-Api-Key" />
 			</apiKey>
