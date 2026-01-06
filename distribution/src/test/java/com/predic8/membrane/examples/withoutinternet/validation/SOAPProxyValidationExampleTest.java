@@ -15,7 +15,6 @@
 package com.predic8.membrane.examples.withoutinternet.validation;
 
 import com.predic8.membrane.examples.util.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -23,8 +22,7 @@ import java.io.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static java.io.File.*;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.*;
 
 public class SOAPProxyValidationExampleTest extends DistributionExtractingTestcase {
 

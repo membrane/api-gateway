@@ -97,25 +97,6 @@ public class SOAPUtil {
         return env;
     }
 
-    public static String getFaultSOAP12Body(String title, String text) {
-
-
-        return """
-                <soapenv:Envelope xmlns:soapenv="%s">
-                <soapenv:Body>
-                <soapenv:Fault>
-                <soapenv:Code>
-                <soapenv:Value>soapenv:Receiver</soapenv:Value>
-                </soapenv:Code>
-                <soapenv:Reason><soapenv:Text xml:lang="en-US">%s</soapenv:Text></soapenv:Reason>
-                <soapenv:Detail><Text>%s</Text></soapenv:Detail>
-                </soapenv:Fault>
-                </soapenv:Body>
-                </soapenv:Envelope>"""
-                .formatted(SOAP12_NS, escapeXml11(title), escapeXml11(text))
-                .replace("\n", CRLF);
-    }
-
     public record SOAPAnalysisResult(boolean isSOAP, boolean isFault, SoapVersion version, QName soapElement) {
     }
 
