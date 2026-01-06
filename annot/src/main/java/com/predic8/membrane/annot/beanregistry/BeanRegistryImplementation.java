@@ -37,7 +37,7 @@ import java.util.function.*;
  * For K8S UUID and name is needed cause name is only unique within a namespace.
  *
  */
-public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
+public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, BeanLifecycleManager {
 
     private static final Logger log = LoggerFactory.getLogger(BeanRegistryImplementation.class);
 

@@ -236,7 +236,7 @@ public class GenericYamlParser {
      * into the parent object via the matching @MCChildElement setter.
      * Rejects "$ref" if the same child is already configured inline.
      */
-    private static <T> void applyObjectLevelRef(ParsingContext ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) throws ParsingException {
+    private static <T> void applyObjectLevelRef(ParsingContext<?> ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) throws ParsingException {
         ensureTextual(refNode, "Expected a string after the '$ref' key.");
         Object referenced = getReferenced(ctx, refNode);
         String refKey = getElementName(referenced.getClass());
@@ -258,7 +258,7 @@ public class GenericYamlParser {
         }
     }
 
-    private static Object getReferenced(ParsingContext ctx, JsonNode refNode) {
+    private static Object getReferenced(ParsingContext<?> ctx, JsonNode refNode) {
         try {
             return ctx.registry().resolve(refNode.asText());
         } catch (RuntimeException e) {
@@ -266,12 +266,12 @@ public class GenericYamlParser {
         }
     }
 
-    public static List<Object> parseListIncludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+    public static List<Object> parseListIncludingStartEvent(ParsingContext<?> context, JsonNode node) throws ParsingException {
         ensureArray(node);
         return parseListExcludingStartEvent(context, node);
     }
 
-    private static @NotNull List<Object> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+    private static @NotNull List<Object> parseListExcludingStartEvent(ParsingContext<?> context, JsonNode node) throws ParsingException {
         List<Object> res = new ArrayList<>();
         for (int i = 0; i < node.size(); i++) {
             res.add(parseMapToObj(context, node.get(i)));
@@ -283,13 +283,13 @@ public class GenericYamlParser {
      * Parses a single-item map node like { kind: {...} } by extracting the only key and
      * delegating to {@link #parseMapToObj(ParsingContext, JsonNode, String)}.
      */
-    private static Object parseMapToObj(ParsingContext context, JsonNode node) throws ParsingException {
+    private static Object parseMapToObj(ParsingContext<?> context, JsonNode node) throws ParsingException {
         ensureSingleKey(node);
         String key = node.fieldNames().next();
         return parseMapToObj(context, node.get(key), key);
     }
 
-    private static Object parseMapToObj(ParsingContext ctx, JsonNode node, String key) throws ParsingException {
+    private static Object parseMapToObj(ParsingContext<?> ctx, JsonNode node, String key) throws ParsingException {
         if ("$ref".equals(key))
             return ctx.registry().resolve(node.asText());
         return createAndPopulateNode(ctx.updateContext(key), ctx.resolveClass(key), node);
@@ -299,7 +299,7 @@ public class GenericYamlParser {
      * Calls the @PostConstruct method on the bean and returns it. If there are @PreDestroy methods, they will be
      * registered within the registry.
      */
-    private static <T> T handlePostConstructAndPreDestroy(ParsingContext ctx, T bean) {
+    private static <T> T handlePostConstructAndPreDestroy(ParsingContext<?> ctx, T bean) {
         ReflectionUtils.doWithMethods(bean.getClass(), method -> {
             if (method.isAnnotationPresent(PostConstruct.class)) {
                 try {

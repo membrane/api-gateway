@@ -38,6 +38,7 @@ import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -71,15 +72,15 @@ public class GenericYamlParserTest {
             setHost("localhost");
             setPort(3000);
         }};
-        BeanRegistry memReg = new TestRegistry().with("mem", mem);
+        TestBeanRegistry memReg = new TestBeanRegistry().with("mem", mem);
 
         Target target = new Target() {{
             setUrl("https://ref.example");
         }};
-        BeanRegistry targetReg = new TestRegistry().with("target", target);
+        TestBeanRegistry targetReg = new TestBeanRegistry().with("target", target);
 
         ResponseInterceptor responseInterceptor = new ResponseInterceptor();
-        BeanRegistry responseReg = new TestRegistry().with("response", responseInterceptor);
+        TestBeanRegistry responseReg = new TestBeanRegistry().with("response", responseInterceptor);
 
         return Stream.of(
                 ok(
@@ -292,7 +293,7 @@ public class GenericYamlParserTest {
     }
 
     Stream<ErrCase> errorCases() {
-        BeanRegistry empty = new TestRegistry();
+        TestBeanRegistry empty = new TestBeanRegistry();
         return Stream.of(
                 err(
                         "invalid_ref",
@@ -311,28 +312,28 @@ public class GenericYamlParserTest {
         );
     }
 
-    record Case(String testName, String yaml, BeanRegistry reg, java.util.function.Consumer<APIProxy> check) {
+    record Case(String testName, String yaml, TestBeanRegistry reg, java.util.function.Consumer<APIProxy> check) {
         @Override public @NotNull String toString() { return testName; }
     }
 
-    record ErrCase(String testName, String yaml, BeanRegistry reg, Class<? extends Throwable> expected) {
+    record ErrCase(String testName, String yaml, TestBeanRegistry reg, Class<? extends Throwable> expected) {
         @Override public @NotNull String toString() { return testName; }
     }
 
     private static Case ok(String testName, String yaml, java.util.function.Consumer<APIProxy> check) {
         return new Case(testName, yaml, null, check);
     }
-    private static Case ok(String testName, String yaml, BeanRegistry reg, java.util.function.Consumer<APIProxy> check) {
+    private static Case ok(String testName, String yaml, TestBeanRegistry reg, java.util.function.Consumer<APIProxy> check) {
         return new Case(testName, yaml, reg, check);
     }
 
-    private static ErrCase err(String testName, String yaml, BeanRegistry reg, Class<? extends Throwable> expected) {
+    private static ErrCase err(String testName, String yaml, TestBeanRegistry reg, Class<? extends Throwable> expected) {
         return new ErrCase(testName, yaml, reg, expected);
     }
 
-    static class TestRegistry implements BeanRegistry, BeanCollector {
+    static class TestBeanRegistry implements BeanRegistry, BeanCollector, BeanLifecycleManager {
         private final Map<String, Object> refs = new HashMap<>();
-        TestRegistry with(String key, Object v) { refs.put(key, v); return this; }
+        TestBeanRegistry with(String key, Object v) { refs.put(key, v); return this; }
         @Override public Object resolve(String ref) { return refs.get(ref); }
 
         @Override
@@ -373,10 +374,16 @@ public class GenericYamlParserTest {
         public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
             return type.cast(null);
         }
+
+        @Override
+        public void close() {}
+
+        @Override
+        public void addPreDestroyCallback(Object bean, Method method) {}
     }
 
-    private static APIProxy parse(String yaml, BeanRegistry reg) {
-        return GenericYamlParser.createAndPopulateNode(new ParsingContext("api", reg, K8S_HELPER), APIProxy.class, parse(yaml));
+    private static APIProxy parse(String yaml, TestBeanRegistry reg) {
+        return GenericYamlParser.createAndPopulateNode(new ParsingContext<TestBeanRegistry>("api", reg, K8S_HELPER), APIProxy.class, parse(yaml));
     }
 
     public static JsonNode parse(String yaml) {
