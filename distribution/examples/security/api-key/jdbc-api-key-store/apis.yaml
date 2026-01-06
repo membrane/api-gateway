@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+components:
+  dataSource:
+    bean:
+      class: org.apache.commons.dbcp2.BasicDataSource
+      properties:
+        - property:
+            name: driverClassName
+            value: org.postgresql.Driver
+        - property:
+            name: url
+            value: jdbc:postgresql://localhost:5432/postgres
+        - property:
+            name: username
+            value: user
+        - property:
+            name: password
+            value: password
+
+---
+
+api:
+  port: 2000
+  flow:
+    - apiKey:
+        stores:
+          - databaseApiKeyStore:
+              datasource: '#/components/dataSource'
+              keyTable:
+                name: key
+              scopeTable:
+                name: scope
+        extractors:
+          - headerExtractor: {}
+  target:
+    url: https://api.predic8.de
