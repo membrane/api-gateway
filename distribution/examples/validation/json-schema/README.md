@@ -15,7 +15,7 @@ Simple validation:
 - `curl -H "Content-Type: application/json" -d @bad2000.json  http://localhost:2000`
 
 Schema with `$ref` URNs resolved via schemaMappings:
-- Inspect `schemas/schema2001.json` referencing `urn:app:base_parameter_def` and `urn:app:meta_def`.
+- Inspect `schemas/schema2001.json` referencing `urn:app:base_def` and `urn:app:meta_def`.
 - See the mapped schemas under `schemas/base.json` and `schemas/meta.json`.
 - `curl -H "Content-Type: application/json" -d @good2001.json http://localhost:2001`
 - `curl -H "Content-Type: application/json" -d @bad2001.json  http://localhost:2001`
