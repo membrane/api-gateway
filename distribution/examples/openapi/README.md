@@ -87,7 +87,7 @@ x-membrane-validation:
 
 The __api__ has a UI that can be reached on its port e.g. [http://localhost:2000/api-docs](http://localhost:2000/api-docs). Follow the links on the left to access the Swagger UI or the link on the right to download the OpenAPI document.
 
-![Overview UI](openapi-proxy/api-overview.png)
+![Overview UI](openapi-proxy/api-overview.jpg)
 
 To get a JSON description of the deployed OpenAPI documents call the same `<a href="curl http://localhost:2000/api-docs">URL</a>` outside the browser e.g. in curl or Postman:
 
