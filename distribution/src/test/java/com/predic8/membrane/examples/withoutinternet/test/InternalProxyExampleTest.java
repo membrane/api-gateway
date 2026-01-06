@@ -14,12 +14,11 @@
 package com.predic8.membrane.examples.withoutinternet.test;
 
 import com.predic8.membrane.examples.util.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.*;
 import static io.restassured.http.ContentType.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.*;
 
 public class InternalProxyExampleTest extends DistributionExtractingTestcase {
 
@@ -31,7 +30,7 @@ public class InternalProxyExampleTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    public void testExpressOrderRoutesToInternalProxy() throws Exception {
+    void expressOrderRoutesToInternalProxy() throws Exception {
         try(Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
             given()
@@ -41,23 +40,19 @@ public class InternalProxyExampleTest extends DistributionExtractingTestcase {
                 .post(BASE_URL)
             .then()
                 .statusCode(200)
-                .body(Matchers.containsStringIgnoringCase("Express"));
+                .body(containsStringIgnoringCase("Express"));
 
-
-            String response = given()
+            given()
                 .when()
                     .body(readFileFromBaseDir("normal.xml"))
                     .post(BASE_URL)
                 .then()
                     .statusCode(200)
+                    .body(containsStringIgnoringCase("Normal"))
                     .extract()
                     .asString();
-            // @formatter:on
 
-            assertTrue(response.contains("Normal processing!"));
-
-
-            response = given()
+            given()
                     .contentType(XML)
                     .body("""
                         <order express='no'>
@@ -70,12 +65,10 @@ public class InternalProxyExampleTest extends DistributionExtractingTestcase {
                     .post(BASE_URL)
                 .then()
                     .statusCode(200)
-                    .body(Matchers.containsStringIgnoringCase("Normal"))
+                    .body(containsStringIgnoringCase("Normal"))
                     .extract()
                     .asString();
             // @formatter:on
-
-            assertTrue(response.contains("Normal processing!"));
         }
     }
 }

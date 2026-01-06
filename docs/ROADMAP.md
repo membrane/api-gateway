@@ -26,6 +26,8 @@
   - Core isn't visible.
 - YAML parsing:
   - When the reason for a parse error is clear. Shorten error message.
+- IfInterceptor:
+  - Add "else"
 
 # 7.1.0
 
