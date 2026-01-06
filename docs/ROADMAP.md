@@ -20,7 +20,12 @@
 - JMXExporter:
   - Tutorial
   - Documentation
-  - See JmxExporter
+    - See JmxExporter
+- logs:
+  - Instead of:
+    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2000'
+    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2001'
+    => listening at *:2000, *:2001
 
 # 7.0.4
 
