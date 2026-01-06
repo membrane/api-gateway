@@ -1,14 +1,14 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 10-PathParameters.yaml
+#     ./membrane.sh
 #
 # 2.) Open the WSDL in a browser:
 #     The WSDL from the wsdl-API:     http://localhost:2001/?wsdl
 #     The WSDL from the SOAP Proxy:   http://localhost:2000/?wsdl
 #     The Service publisher:          http://localhost:2000
 #
-# 3.) Change the API below to
+# 3.) Change the API below to retrieve the WSDL
 
 # Internal API
 api:
