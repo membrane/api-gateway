@@ -21,6 +21,7 @@
   - Tutorial
   - Documentation
   - See JmxExporter
+- refactor JdbcUserDataProvider
 
 # 7.0.4
 
