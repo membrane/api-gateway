@@ -25,9 +25,15 @@ public class SecurityUtils {
     private static final SecureRandom secureRandom = new SecureRandom();
 
     public static boolean isHashedPassword(String postDataPassword) {
-        // TODO do a better check here
         String[] split = postDataPassword.split(Pattern.quote("$"));
-        return split.length == 4 && split[0].isEmpty() && split[3].length() >= 20;
+        if (split.length != 4)
+            return false;
+        if (!split[0].isEmpty())
+            return false;
+        if (split[3].length() < 20)
+            return false;
+        // Check if the second part is a valid hex
+        return Pattern.matches("\\$([^$]+)\\$([^$]+)\\$.+", postDataPassword);
     }
 
     static String createPasswdCompatibleHash(String password) {

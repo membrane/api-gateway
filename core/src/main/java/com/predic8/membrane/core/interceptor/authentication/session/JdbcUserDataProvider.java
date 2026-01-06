@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.*;
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.isHashedPassword;
+
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {
     private static final Logger log = LoggerFactory.getLogger(JdbcUserDataProvider.class.getName());
@@ -122,11 +125,10 @@ public class JdbcUserDataProvider implements UserDataProvider {
             log.error(e.getMessage());
         }
 
-        if (result != null && result.size() > 0) {
+        if (result != null && !result.isEmpty()) {
             String passwordFromDB = result.get(getPasswordColumnName().toLowerCase());
-            if (!SecurityUtils.isHashedPassword(password))
-                password = SecurityUtils.createPasswdCompatibleHash(SecurityUtils.extractMagicString(passwordFromDB), password, SecurityUtils.extractSalt(passwordFromDB));
-
+            if (!isHashedPassword(password) && isHashedPassword(passwordFromDB))
+                password = createPasswdCompatibleHash(extractMagicString(passwordFromDB), password, extractSalt(passwordFromDB));
             if (username.equals(result.get(getUserColumnName().toLowerCase())) && password.equals(passwordFromDB))
                 return result;
         }
