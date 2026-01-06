@@ -14,10 +14,12 @@ limitations under the License. */
 package com.predic8.membrane.examples.withoutinternet.test;
 
 import com.predic8.membrane.examples.util.*;
+import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.not;
 
 public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -27,11 +29,11 @@ public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestca
     }
 
     @Test
-    public void normalScope() {
+    void normalScope() {
         given()
             .header("X-Key", "123456789")
         .when()
-            .get("http://localhost:3000")
+            .get("http://localhost:2000")
         .then().assertThat()
             .statusCode(200)
             .body(containsString("Caller scopes"))
@@ -40,14 +42,15 @@ public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestca
     }
 
     @Test
-    public void conditionalScope() {
+    void conditionalScope() {
         given()
             .header("X-Key", "key_321_abc")
         .when()
-            .get("http://localhost:3000")
+            .get("http://localhost:2000")
         .then().assertThat()
             .statusCode(200)
             .body(containsString("Caller scopes"))
+            .body(not(containsString("accounting")))
             .body(containsString("admin"));
     }
 }
