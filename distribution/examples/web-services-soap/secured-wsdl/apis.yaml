@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 10-PathParameters.yaml
+#
+# 2.) Open the WSDL in a browser:
+#     The WSDL from the wsdl-API:     http://localhost:2001/?wsdl
+#     The WSDL from the SOAP Proxy:   http://localhost:2000/?wsdl
+#     The Service publisher:          http://localhost:2000
+#
+# 3.) Change the API below to
+
+# Internal API
+api:
+  name: wsdl
+  port: 2001 # For debugging purposes. Cause it is used with internal:// no port is needed
+  flow:
+    # Remove that service an configure in this API SSL, HTTP headers or other means of authentication
+    - sampleSoapService: {}
+#  target:
+#    ssl:
+#      keystore:
+#        location: keystore.p12
+#        password: changeit
+
+---
+soapProxy:
+  port: 2000
+  # Reference the internal API
+  wsdl: internal://wsdl/?wsdl

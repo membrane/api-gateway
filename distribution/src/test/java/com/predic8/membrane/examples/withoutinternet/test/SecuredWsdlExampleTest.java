@@ -32,7 +32,7 @@ public class SecuredWsdlExampleTest extends AbstractSampleMembraneStartStopTestc
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2010/services?wsdl")
+            .get("http://localhost:2000/services?wsdl")
         .then()
             .statusCode(200)
             .contentType(XML)
