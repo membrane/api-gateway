@@ -14,12 +14,10 @@ limitations under the License. */
 package com.predic8.membrane.examples.withoutinternet.test;
 
 import com.predic8.membrane.examples.util.*;
-import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.CoreMatchers.not;
 
 public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
