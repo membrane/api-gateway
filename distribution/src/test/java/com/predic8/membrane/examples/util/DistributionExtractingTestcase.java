@@ -231,4 +231,12 @@ public abstract class DistributionExtractingTestcase {
     protected String mavenCommand(String command) {
         return isWindows() ? "cmd /c mvn " + command : "mvn " + command;
     }
+
+    protected void mavenPackage() throws Exception {
+        BufferLogger logger = new BufferLogger();
+        try (Process2 mvn = new Process2.Builder().in(baseDir).executable(mavenCommand("package")).withWatcher(logger).start()) {
+            if (mvn.waitForExit(60000) != 0)
+                throw new RuntimeException("Maven exited with code " + mvn.waitForExit(60000) + ": " + logger);
+        }
+    }
 }

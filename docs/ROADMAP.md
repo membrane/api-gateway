@@ -22,6 +22,7 @@
   - Tutorial
   - Documentation
   - See JmxExporter
+- remove basic-xml-interceptor example?
 
 # 7.0.4
 
