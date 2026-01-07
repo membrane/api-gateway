@@ -1070,7 +1070,6 @@ Limit the number of incoming requests:
 Distribute workload to multiple backend nodes. [See the example](distribution/examples/loadbalancing)
 
 ```xml
-
 <api port="8080">
     <balancer name="balancer">
         <clusters>
@@ -1106,24 +1105,31 @@ Integrate legacy services.
 
 ## API configuration from WSDL
 
-SOAP proxies configure themselves by analysing WSDL:
+Membrane reads the WSDL and automatically generates a SOAP proxy.
 
-```xml
-
-<soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl"/>
+```yaml
+soapProxy:
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
 ```
+
+After startup, Membrane exposes:
+
+- A SOAP endpoint at http://localhost:2000/city-service
+- A WSDL at http://localhost:2000/city-service?wsdl
 
 ## Message Validation against WSDL and XSD
 
 The _validator_ checks SOAP messages against a WSDL document including referenced XSD schemas.
 
-```xml
-
-<soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
-    <validator/>
-</soapProxy>
+```yaml
+soapProxy:
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
+  flow:
+    # Validates SOAP messages against the WSDL and XSDs
+    - validator: {}
 ```
-
 
 # Operation
 
