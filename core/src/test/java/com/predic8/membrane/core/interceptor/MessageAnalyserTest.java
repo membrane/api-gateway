@@ -62,7 +62,7 @@ public class MessageAnalyserTest {
 		assertEquals("http://predic8.de", exc.getProperty(MessageAnalyser.RESPONSE_SOAP_OPERATION_NS));
 	}
 
-	private Exchange getResponse(String path) throws IOException {
+	private Exchange getResponse(String path) {
 		Exchange exc = new Exchange(null);
 		exc.setResponse(ok().body(getClass().getClassLoader().getResourceAsStream(path), true).build());
 		return exc;

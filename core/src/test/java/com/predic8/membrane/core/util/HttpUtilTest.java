@@ -56,7 +56,6 @@ public class HttpUtilTest {
         assertEquals("", readLine(is1));
     }
 
-    @SuppressWarnings("DataFlowIssue")
     @Test
     void readLineMessage() throws Exception {
         assertEquals("POST /operation/call HTTP/1.1", readLine( convertMessage(POST_REQUEST)));
