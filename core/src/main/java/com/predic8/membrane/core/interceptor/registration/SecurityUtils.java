@@ -23,6 +23,8 @@ import java.util.regex.Pattern;
 public class SecurityUtils {
 
     private static final SecureRandom secureRandom = new SecureRandom();
+    public static final Pattern HEX_PASSWORD_PATTERN = Pattern.compile("\\$([^$]+)\\$([^$]+)\\$.+");
+    public static final String $ = Pattern.quote("$");
 
     public static boolean isHashedPassword(String postDataPassword) {
         String[] split = postDataPassword.split(Pattern.quote("$"));
@@ -33,7 +35,7 @@ public class SecurityUtils {
         if (split[3].length() < 20)
             return false;
         // Check if the second part is a valid hex
-        return Pattern.matches("\\$([^$]+)\\$([^$]+)\\$.+", postDataPassword);
+        return HEX_PASSWORD_PATTERN.matcher(postDataPassword).matches();
     }
 
     static String createPasswdCompatibleHash(String password) {
@@ -47,7 +49,7 @@ public class SecurityUtils {
     }
 
     public static String extractSalt(String password) {
-        return password.split(Pattern.quote("$"))[2];
+        return password.split($)[2];
     }
 
     public static String createPasswdCompatibleHash(String algo, String password, String salt) {

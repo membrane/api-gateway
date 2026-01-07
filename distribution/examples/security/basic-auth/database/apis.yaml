@@ -1,3 +1,4 @@
+# Works with most JDBC databases. With PostgreSQL, an exception may be logged, but the functionality is not affected.
 components:
   dataSource:
     bean:

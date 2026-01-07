@@ -47,11 +47,9 @@ public class JdbcUserDataProvider implements UserDataProvider {
         getDatasourceIfNull();
 
         try {
-            createTableIfNeeded(); // TODO does not work with postgres
+            createTableIfNeeded(); // @todo: works with postgres but prints stacktrace and warning
         } catch (SQLException e) {
-            e.printStackTrace(); // TODO refactor/improve
-            log.error("Something went wrong at jdbcUserDataProvider table creation");
-            log.error(e.getMessage());
+            log.warn("Error creating table.",e);
         }
     }
 
