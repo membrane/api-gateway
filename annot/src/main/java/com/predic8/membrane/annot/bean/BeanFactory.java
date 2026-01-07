@@ -15,8 +15,8 @@
 package com.predic8.membrane.annot.bean;
 
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.annot.util.*;
-import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 
 import java.lang.reflect.*;
@@ -239,7 +239,7 @@ public final class BeanFactory {
 
     private Object resolveValueOrRef(Class<?> targetType, String value, String ref) {
         if (ref != null && !ref.isBlank()) {
-            Object o = registry.resolveReference(ref);
+            Object o = registry.resolve(ref);
             if (o != null && !targetType.isInstance(o)) {
                 if (!(targetType.isPrimitive() && isWrapperOfPrimitive(targetType, o.getClass()))) {
                     throw new IllegalArgumentException("Ref '%s' is not assignable to %s".formatted(ref, targetType.getName()));

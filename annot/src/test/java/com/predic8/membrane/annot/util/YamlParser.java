@@ -15,7 +15,7 @@
 package com.predic8.membrane.annot.util;
 
 import com.predic8.membrane.annot.Grammar;
-import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.beanregistry.*;
 import org.jetbrains.annotations.*;
 
 import java.io.IOException;
@@ -37,6 +37,14 @@ public class YamlParser {
      */
     private final BeanRegistry beanRegistry;
 
+    private static class TestRouter implements BeanRegistryAware {
+
+        @Override
+        public void setRegistry(BeanRegistry registry) {
+
+        }
+    }
+
     public YamlParser(String resourceName) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException, InterruptedException {
         Grammar generator = getGrammar();
 
@@ -47,10 +55,9 @@ public class YamlParser {
         String normalized = resourceName.startsWith("/") ?
                 resourceName.substring(1) : resourceName;
 
-        beanRegistry = new BeanRegistryImplementation(getLatchObserver(cdl),generator);
-        beanRegistry.registerBeanDefinitions(GenericYamlParser.parseMembraneResources(
-                requireNonNull(cl.getResourceAsStream(normalized)), generator));
-        beanRegistry.start();
+        BeanRegistryImplementation impl = new BeanRegistryImplementation(getLatchObserver(cdl), new TestRouter(), generator);
+        impl.parseYamls(requireNonNull(cl.getResourceAsStream(normalized)), generator);
+        beanRegistry = impl;
 
         cdl.await();
     }
@@ -82,7 +89,7 @@ public class YamlParser {
             }
 
             @Override
-            public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) {
+            public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) {
 
             }
 

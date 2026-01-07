@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -26,7 +26,7 @@ public class InternalInvocationTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		router = Router.init("classpath:/internal-invocation/proxies.xml");
+		router = RouterXmlBootstrap.initByXML("classpath:/internal-invocation/proxies.xml");
 		MockInterceptor.clear();
 	}
 
@@ -52,7 +52,7 @@ public class InternalInvocationTest {
 
 	@AfterEach
 	public void tearDown() throws Exception {
-		router.shutdown();
+		router.stop();
 	}
 
 	private void callService(int port) throws IOException {

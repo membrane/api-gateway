@@ -53,6 +53,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     JwtRetriever jwtRetriever;
     Jwks jwks;
     String expectedAud;
+    String expectedTid;
 
     // should be used read only after init
     // Hashmap done on purpose as only here the read only thread safety is guaranteed
@@ -69,12 +70,12 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         if(jwtRetriever == null)
             jwtRetriever = new HeaderJwtRetriever("Authorization","Bearer");
 
-        jwks.init(router.getResolverMap(),router.getBaseLocation());
+        jwks.init(router.getResolverMap(),router.getConfiguration().getBaseLocation());
 
         kidToKey = jwks.getJwks().stream()
                 .map(jwk -> {
                     try {
-                        return new RsaJsonWebKey(mapper.readValue(jwk.getJwk(router.getResolverMap(), router.getBaseLocation(),mapper),Map.class));
+                        return new RsaJsonWebKey(mapper.readValue(jwk.getJwk(router.getResolverMap(), router.getConfiguration().getBaseLocation(),mapper),Map.class));
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -91,14 +92,14 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
             var jwt = jwtRetriever.get(exc);
             return handleJwt(exc, jwt);
         } catch (JWTException e) {
-            ProblemDetails.security(router.isProduction(), "jwt-auth")
+            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(e.getMessage())
                     .stacktrace(true)
                     .status(400)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (JsonProcessingException e) {
-            ProblemDetails.security(router.isProduction(), "jwt-auth")
+            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(ERROR_DECODED_HEADER_NOT_JSON)
                     .addSubSee(ERROR_DECODED_HEADER_NOT_JSON_ID)
                     .stacktrace(true)
@@ -106,7 +107,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (InvalidJwtException e) {
-            ProblemDetails.security(router.isProduction(), "jwt-auth")
+            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(ERROR_VALIDATION_FAILED)
                     .addSubSee(ERROR_VALIDATION_FAILED_ID)
                     .stacktrace(false)
@@ -114,7 +115,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (Exception e) {
-            ProblemDetails.security(router.isProduction(), "jwt-auth")
+            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(ERROR_JWT_NOT_FOUND)
                     .addSubSee(ERROR_JWT_NOT_FOUND_ID)
                     .stacktrace(true)
@@ -163,6 +164,10 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                         .setExpectedAudience(expectedAud);
         }
 
+        if (expectedTid != null && !expectedTid.isEmpty())
+            jwtConsumerBuilder
+                    .registerValidator(new TidValidator(expectedTid));
+
         return jwtConsumerBuilder.build();
     }
 
@@ -192,6 +197,10 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         return expectedAud;
     }
 
+    public String getExpectedTid() {
+        return expectedTid;
+    }
+
     /**
      * @description
      * <p>Expected audience ('aud') value of the token.</p>
@@ -200,6 +209,18 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     @MCAttribute
     public JwtAuthInterceptor setExpectedAud(String expectedAud) {
         this.expectedAud = expectedAud;
+        return this;
+    }
+
+    /**
+     * @description
+     * <p>Expected tenant ID ('tid') value of the token.</p>
+     * @default not set
+     * @example 67c869d3-0cd4-4a99-86db-088bed1a9601
+     */
+    @MCAttribute
+    public JwtAuthInterceptor setExpectedTid(String expectedTid) {
+        this.expectedTid = expectedTid;
         return this;
     }
 

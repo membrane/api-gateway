@@ -28,7 +28,7 @@ public abstract class EndpointProcessor {
 
     public EndpointProcessor(OAuth2AuthorizationServerInterceptor authServer){
         this.authServer = authServer;
-        uriFactory = authServer.getRouter().getUriFactory();
+        uriFactory = authServer.getRouter().getConfiguration().getUriFactory();
     }
 
 }

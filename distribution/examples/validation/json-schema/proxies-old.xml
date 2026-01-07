@@ -1,0 +1,39 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+      	 
+		<!-- Simple JSON Schema validation example -->
+		<api port="2000">
+			<request>
+				<validator jsonSchema="schemas/schema2000.json" />
+			</request>
+			<target host="localhost" port="2002" />
+		</api>
+
+		<!-- JSON Schema with schemaMappings for resolving $ref URNs -->
+		<api port="2001">
+			<request>
+				<validator jsonSchema="schemas/schema2001.json">
+					<schemaMappings>
+						<schema id="urn:app:base_def" location="schemas/base.json"/>
+						<schema id="urn:app:meta_def" location="schemas/meta.json"/>
+					</schemaMappings>
+				</validator>
+			</request>
+			<target host="localhost" port="2002" />
+		</api>
+		
+		<!-- Backend -->
+		<api port="2002">
+			<groovy>
+				Response.ok("&lt;response&gt;good request&lt;/response&gt;").build()			
+			</groovy>
+		</api>
+		
+	</router>
+	
+</spring:beans>

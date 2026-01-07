@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
 import org.hamcrest.*;
 import org.junit.jupiter.api.*;
 
@@ -30,17 +30,17 @@ class ServiceProxyTest {
 
     @BeforeAll
     public static void setup() throws Exception {
-        router = new HttpRouter();
+        router = new TestRouter();
         APIProxy proxyWithOutTarget = new APIProxy() {{
             key = new APIProxyKey(2000);
         }};
         router.add(proxyWithOutTarget);
-        router.init();
+        router.start();
     }
 
     @AfterAll
     public static void shutdown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

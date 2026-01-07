@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -44,7 +44,7 @@ class SetBodyInterceptorTest {
     @Test
     void nullResult() {
         sbi.setValue("null");
-        sbi.init(new Router());
+        sbi.init(new DefaultRouter());
         sbi.handleRequest(exc);
         assertEquals("null", exc.getRequest().getBodyAsStringDecoded());
     }
@@ -52,7 +52,7 @@ class SetBodyInterceptorTest {
     @Test
     void evalOfSimpleExpression() {
         sbi.setValue("${path}");
-        sbi.init(new Router());
+        sbi.init(new DefaultRouter());
         sbi.handleRequest(exc);
         assertEquals("/foo", exc.getRequest().getBodyAsStringDecoded());
     }
@@ -60,7 +60,7 @@ class SetBodyInterceptorTest {
         @Test
     void response() {
         sbi.setValue("SC: ${statusCode}");
-        sbi.init(new Router());
+        sbi.init(new DefaultRouter());
         sbi.handleResponse(exc);
         assertEquals("SC: 501", exc.getResponse().getBodyAsStringDecoded());
     }

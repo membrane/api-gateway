@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.load;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.asynchttpclient.*;
 
 import java.io.*;
@@ -48,7 +48,7 @@ public class LoadTester {
      */
     public static final int CONCURRENCY = 200;
 
-    Router r = new HttpRouter();
+    Router r = new DefaultRouter();
 
     public static void main(String[] args) throws Exception {
         var instance = new LoadTester();

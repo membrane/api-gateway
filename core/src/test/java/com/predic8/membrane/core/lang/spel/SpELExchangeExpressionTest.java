@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
@@ -206,5 +207,20 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
         assertEquals(FALSE, toBoolean(Boolean.FALSE));
         assertEquals(TRUE, toBoolean(TRUE));
+    }
+
+    @Test
+    void unknownBuiltInFunction() {
+        try {
+            evalBool("unknown()");
+            fail();
+        } catch (ExchangeExpressionException e) {
+            ProblemDetails pd = new ProblemDetails();
+            e.provideDetails(pd);
+            assertEquals("unknown()", pd.getInternal().get("expression"));
+            assertTrue(pd.getDetail().contains("unknown()"));
+            assertTrue(pd.getDetail().contains("Method not found"));
+            assertTrue(pd.getDetail().contains("isBearerAuthorization"));
+        }
     }
 }

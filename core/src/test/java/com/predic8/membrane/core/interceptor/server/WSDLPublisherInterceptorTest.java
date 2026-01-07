@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.server;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.test.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class WSDLPublisherInterceptorTest {
 
-	private HttpRouter router;
+	private Router router;
 
 	static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] {
@@ -36,18 +36,18 @@ public class WSDLPublisherInterceptorTest {
 	}
 
 	void before(String wsdlLocation, int port) throws Exception {
-		router = new HttpRouter();
+		router = new TestRouter();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "", -1);
 		WSDLPublisherInterceptor wi = new WSDLPublisherInterceptor();
 		wi.setWsdl(wsdlLocation);
 		wi.init(router);
 		sp2.getFlow().add(wi);
-		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
-		router.init();
+		router.add(sp2);
+		router.start();
 	}
 
 	void after() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@ParameterizedTest(name = "{0} {1}")

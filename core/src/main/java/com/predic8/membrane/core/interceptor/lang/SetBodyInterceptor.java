@@ -64,7 +64,7 @@ public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
             var message = "While evaluating expression %s: %s".formatted(expression, root.getMessage());
             log.info(message);
 
-            internal(getRouter().isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Error evaluating expression!")
                     .internal("expression", expression)
                     .exception(root)

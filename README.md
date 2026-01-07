@@ -1,4 +1,4 @@
-![Membrane Logo](distribution/media/membrane-logo-m-text.png)
+![Membrane Logo](distribution/media/membrane-logo-m-text.svg)
 
 # API Gateway
 
@@ -297,11 +297,11 @@ api:
 #### Viewing Deployed APIs
 Once configured, a list of deployed APIs is available at: [http://localhost:2000/api-docs](http://localhost:2000/api-docs)
 
-![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.png)
+![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.jpg)
 
 Click on an API title in the list to open the Swagger UI for interactive exploration and testing:
 
-![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.png)
+![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.jpg)
 
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
@@ -747,18 +747,18 @@ api:
 
 ### Transform XML into Text or JSON
 
-Using `setProperty` you can extract values from XML request or response bodies and store it in properties. Then the properties are available as variables inside the `template` plugin.
-plugin.
+You can use XPath to extract values from an XML message and insert them into a `template`.
 
-```xml
-
-<api port="2000">
-    <request>
-        <setProperty name="fn" value="${/person/@firstname}" language="xpath"/>
-        <template>Buenas Noches, ${property.fn}sito!</template>
-    </request>
-    <return/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            src: |
+              Buenas noches, ${fn.xpath('/person/@firstname')}
+        - return:
+            status: 200
 ```
 
 See: [message-transformation examples](./distribution/examples/message-transformation)
@@ -820,43 +820,51 @@ See [examples/javascript](distribution/examples/scripting/javascript) for a deta
 
 ## JSON and XML Beautifier
 
-You can beautify a JSON or XML using the `<beautifier/>` plugin.
+Use the `beautifier` to pretty print JSON or XML.
 
-```xml
-<api port="2000">
-    <template contentType="application/xml"><![CDATA[
-        <foo><bar>baz</bar></foo>
-    ]]></template>
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+        - beautifier: {}
+        - template:
+            contentType: application/json
+            src: |
+              { "foo": { "bar": { "baz": 99 }}}
+    - return:
+        status: 200
+```
 
-    <beautifier/>
+Result:
 
-    <return statusCode="200"/>
-</api>
-```  
-
-Returns:
-
-```xml
-<foo>
-    <bar>baz</bar>
-</foo>
+```json
+{
+  "foo" : {
+    "bar" : {
+      "baz" : 99
+    }
+  }
+}
 ```
 
 # Conditionals with if
 
-Replace `5XX` error messages from a backend:
+This example shows how to intercept error responses from a backend and replace them with a custom response.
 
-```xml
-<api port="2000">
-  <response>
-    <if test="statusCode matches '5\d\d'" language="SpEL">
-      <static>
-        Error!
-      </static>
-    </if>
-  </response>
-  <return/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+        - if:
+            test: statusCode >= 500
+            language: spel
+            flow:
+              - static:
+                  src: Failure!
+    - target:
+        url: https://httpbin.org/status/500
 ```
 
 # Security
@@ -868,17 +876,17 @@ Membrane offers lots of security features to protect backend servers.
 You can define APIs keys directly in your configuration, and Membrane will validate incoming requests against them.
 
 ### Example Configuration
-The following configuration secures the `Fruitshop API` by validating a key provided as a query parameter:
+The following configuration secures the `Fruitshop API` by validating an API key provided as a query parameter:
 
 ```xml
 <api port="2000">
     <apiKey>
         <!-- Define valid API keys -->
-        <keys>
+        <simple>
             <secret value="abc123" />
             <secret value="secret" />
             <secret value="Paris2025" />
-        </keys>
+        </simple>
         
         <!-- Extract the API key from the query parameter -->
         <queryParamExtractor paramName="api-key" />

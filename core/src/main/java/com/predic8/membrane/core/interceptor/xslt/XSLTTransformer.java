@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
 
 import javax.xml.transform.*;
@@ -38,11 +38,11 @@ public class XSLTTransformer {
 		this.styleSheet = styleSheet;
 		log.debug("using {} parallel transformer instances for {}",concurrency, styleSheet);
 		transformers = new ArrayBlockingQueue<>(concurrency);
-		createOneTransformer(router.getResolverMap(), router.getBaseLocation());
-		router.getBackgroundInitializer().execute(() -> {
+		createOneTransformer(router.getResolverMap(), router.getConfiguration().getBaseLocation());
+		Thread.ofVirtual().start(() -> {
 			try {
 				for (int i = 1; i < concurrency; i++)
-					createOneTransformer(router.getResolverMap(), router.getBaseLocation());
+					createOneTransformer(router.getResolverMap(), router.getConfiguration().getBaseLocation());
 			} catch (Exception e) {
 				log.error("Error creating XSLT transformer:", e);
 			}

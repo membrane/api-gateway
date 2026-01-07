@@ -15,15 +15,14 @@
 package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
-import javax.annotation.*;
 import java.io.*;
 import java.lang.ref.*;
 import java.net.InetAddress;
@@ -36,11 +35,15 @@ import static java.lang.String.*;
 import static java.util.concurrent.TimeUnit.*;
 
 /**
+ * HttpTransport is responsible for opening and closing ports. Besides HttpTransport there is also a ServletTransport.
+ *
  * @description <p>
  *              The transport receives messages from clients and invokes interceptors in the request and response flow.
  *              The interceptors that are engaged with the transport are global and are invoked for each message flowing
  *              through the router.
  *              </p>
+ *
+ *
  */
 @MCElement(name="transport")
 public class HttpTransport extends Transport {
@@ -60,7 +63,7 @@ public class HttpTransport extends Transport {
 			new SynchronousQueue<>(), new HttpServerThreadFactory());
 
 	@Override
-	public void init(Router router) throws Exception {
+	public void init(Router router) {
 		super.init(router);
 	}
 
@@ -91,10 +94,6 @@ public class HttpTransport extends Transport {
 		    portListenerMapping.remove(p.port());
 		}
 		stillRunning.add(new WeakReference<>(plt));
-
-		for (IPortChangeListener listener : menuListeners) {
-			listener.removePort(p.port());
-		}
 	}
 
 	@Override
@@ -152,11 +151,10 @@ public class HttpTransport extends Transport {
 
 	/**
 	 * @param port Port to open
-	 * @param timerManager timerManager
 	 * @throws IOException If port can not be opened
 	 */
 	@Override
-	public synchronized void openPort(String ip, int port, SSLProvider sslProvider, @Nullable TimerManager timerManager) throws IOException {
+	public synchronized void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
 	    if (port == -1)
 			throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
 
@@ -175,19 +173,14 @@ public class HttpTransport extends Transport {
 	        throw new RuntimeException(createDiffInterfacesErrorMsg(p,mih));
 	    }
 
-		HttpEndpointListener portListenerThread = new HttpEndpointListener(p, this, sslProvider, timerManager);
+		HttpEndpointListener portListenerThread = new HttpEndpointListener(p, this, sslProvider);
 		mih.put(p, portListenerThread);
 		portListenerThread.start();
-
-		for (IPortChangeListener listener : menuListeners) {
-			listener.addPort(port);
-		}
 	}
 
 	@Override
-	public void openPort(SSLableProxy proxy, TimerManager timerManager) throws IOException {
-		TimerManager timerManager1 = getRouter() != null ? getRouter().getTimerManager() : null;
-		openPort(proxy.getKey().getIp(), proxy.getKey().getPort(), proxy.getSslInboundContext(), timerManager1);
+	public void openPort(SSLableProxy proxy) throws IOException {
+		openPort(proxy.getKey().getIp(), proxy.getKey().getPort(), proxy.getSslInboundContext());
 	}
 
 	@Override
@@ -284,7 +277,7 @@ public class HttpTransport extends Transport {
 
 	/**
 	 * @description When proxies.xml is changed and &lt;router hotDeploy="true"&gt;, the Spring Context is automatically refreshed,
-	 * which restarts the {@link Router} object (=Membrane API Gateway). Before the context refresh, all open socket connections
+	 * which restarts the {@link DefaultRouter} object (=Membrane API Gateway). Before the context refresh, all open socket connections
 	 * have to be closed. Exchange objects which are still running might delay this process. Setting forceSocketCloseOnHotDeployAfter
 	 * to a non-zero number of milliseconds forces connections to be closed after this time.
 	 * @default 30000

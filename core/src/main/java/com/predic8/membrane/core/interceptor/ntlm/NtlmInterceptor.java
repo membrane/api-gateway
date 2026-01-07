@@ -92,7 +92,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
         try {
             authenticationResult = authenticate(stableConnection, originalRequestUrl, user, pass, domain, workstation);
         } catch (Exception e) {
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Could not authenticate!")
                     .internal("domain", domain)
                     .internal("workstation", workstation)

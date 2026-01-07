@@ -13,41 +13,37 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
-import org.jose4j.jwk.RsaJsonWebKey;
-import org.jose4j.jwk.RsaJwkGenerator;
-import org.jose4j.jws.AlgorithmIdentifiers;
-import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.jwt.JwtClaims;
-import org.jose4j.lang.JoseException;
-import org.junit.jupiter.api.Named;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import com.fasterxml.jackson.core.type.*;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.functionalInterfaces.*;
+import org.jose4j.jwk.*;
+import org.jose4j.jws.*;
+import org.jose4j.jwt.*;
+import org.jose4j.lang.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.stream.Stream;
+import java.io.*;
+import java.util.*;
+import java.util.stream.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class JwtAuthInterceptorTest{
 
     public static final String KID = "membrane";
     public static final String SUB_CLAIM_CONTENT = "Till, der fleissige Programmierer";
     private static final String AUDIENCE = "AusgestelltFuer";
+    private static final String TENANT_ID = "Tenant12345";
 
     public static Stream<Named<TestData>> data() throws Exception {
         return Stream.of(happyPath(),
                 wrongAudience(),
+                wrongTenantId(),
                 manipulatedSignature(),
                 unknownKey(),
                 wrongKId(),
@@ -188,6 +184,20 @@ public class JwtAuthInterceptorTest{
         );
     }
 
+    private static TestData wrongTenantId() {
+        return new TestData(
+                "wrongTenantId",
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
+                        .get("")
+                        .header("Authorization", "Bearer " + getSignedJwt(privateKey, getClaimsWithWrongTenantId()))
+                        .buildExchange(),
+                (Exchange exc) -> {
+                    assertTrue(exc.getResponse().isUserError());
+                    assertNull(exc.getProperties().get("jwt"));
+                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                }
+        );
+    }
 
     private static TestData happyPath() {
         return new TestData(
@@ -224,7 +234,7 @@ public class JwtAuthInterceptorTest{
 
     @ParameterizedTest
     @MethodSource("data")
-    public void test(TestData data) throws Exception{
+    void test(TestData data) throws Exception{
         RsaJsonWebKey privateKey = RsaJwkGenerator.generateJwk(2048);
         privateKey.setKeyId(KID);
 
@@ -240,15 +250,12 @@ public class JwtAuthInterceptorTest{
         data.asserts().accept(exc);
     }
 
-    private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) throws Exception {
+    private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) {
         return initInterceptor(createInterceptor(publicOnly));
     }
 
-    private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
-        Router routerMock = mock(Router.class);
-        when(routerMock.getBaseLocation()).thenReturn("");
-        when(routerMock.getResolverMap()).thenReturn(new ResolverMap());
-        interceptor.init(routerMock);
+    private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) {
+        interceptor.init(new DummyTestRouter());
         return interceptor;
     }
 
@@ -262,38 +269,39 @@ public class JwtAuthInterceptorTest{
         jwks.getJwks().add(jwk);
         interceptor.setJwks(jwks);
         interceptor.setExpectedAud(AUDIENCE);
+        interceptor.setExpectedTid(TENANT_ID);
         return interceptor;
     }
 
     private static String getSignedJwt(RsaJsonWebKey privateKey) throws JoseException {
-        return getSignedJwt(privateKey,createClaims(AUDIENCE));
+        return getSignedJwt(privateKey,createClaims(AUDIENCE, TENANT_ID));
     }
 
     private static String getSignedJwt(RsaJsonWebKey privateKey, JwtClaims claims) throws JoseException {
         JsonWebSignature jws = new JsonWebSignature();
-
         jws.setPayload(claims.toJson());
-
         jws.setKey(privateKey.getPrivateKey());
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
         jws.setKeyIdHeaderValue(privateKey.getKeyId());
-
         return jws.getCompactSerialization();
     }
 
-    private static JwtClaims createClaims(String audience){
+    private static JwtClaims createClaims(String audience, String tenantId){
         JwtClaims claims = new JwtClaims();
         claims.setExpirationTimeMinutesInTheFuture(10);
         claims.setIssuedAtToNow();
         claims.setNotBeforeMinutesInThePast(30);
         claims.setSubject(SUB_CLAIM_CONTENT);
         claims.setAudience(audience);
-
+        claims.setClaim("tid", tenantId);
         return claims;
     }
 
     private static JwtClaims getClaimsWithWrongAudience() {
-        return createClaims(AUDIENCE + "1");
+        return createClaims(AUDIENCE + "1", TENANT_ID);
     }
 
+    private static JwtClaims getClaimsWithWrongTenantId() {
+        return createClaims(AUDIENCE, TENANT_ID + "1");
+    }
 }

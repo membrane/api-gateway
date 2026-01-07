@@ -14,7 +14,7 @@
 package com.predic8.membrane.examples;
 
 import com.predic8.membrane.annot.bean.*;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.xml.beautifier.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -100,7 +100,7 @@ public class ConfigSerializationTest {
 
             assertContainsNot("incomplete serialization", xml);
 
-            Router r2 = MCUtil.fromXML(Router.class, xml);
+            DefaultRouter r2 = MCUtil.fromXML(DefaultRouter.class, xml);
 
             String xml2 = MCUtil.toXML(r2);
 
@@ -111,7 +111,7 @@ public class ConfigSerializationTest {
     }
 
     private String readConfigFileAsXML(String configFile) throws IOException {
-        return MCUtil.toXML(MCUtil.fromXML(Router.class, readFileToString(new File(configFile), UTF_8)));
+        return MCUtil.toXML(MCUtil.fromXML(DefaultRouter.class, readFileToString(new File(configFile), UTF_8)));
     }
 
     public void prettyPrint(String xml) throws Exception {

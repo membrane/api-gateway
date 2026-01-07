@@ -127,3 +127,4 @@ maven-plugin/target/surefire/
 .vscode/
 /core/derby.log
 /distribution/conf/apis.yaml
+/distribution/conf/membrane.log

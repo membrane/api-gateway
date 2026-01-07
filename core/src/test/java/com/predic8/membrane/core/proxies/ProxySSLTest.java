@@ -13,31 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.TrustStore;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.CountInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.transport.ssl.*;
 import org.jetbrains.annotations.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxySSLTest {
     public static Collection<Object[]> data() {
@@ -49,21 +43,21 @@ public class ProxySSLTest {
     @ParameterizedTest
     @MethodSource("data")
     void test(boolean backendUsesSSL, boolean proxyUsesSSL, int backendPort, int proxyPort) throws Exception {
-        Router backend = createBackend(backendUsesSSL, backendPort);
+        DefaultRouter backend = createBackend(backendUsesSSL, backendPort);
 
         AtomicInteger proxyCounter = new AtomicInteger();
 
-        Router proxy = createProxy(proxyUsesSSL, proxyPort, proxyCounter);
+        DefaultRouter proxy = createProxy(proxyUsesSSL, proxyPort, proxyCounter);
 
         testClient(backendUsesSSL, backendPort, createAndConfigureClient(proxyUsesSSL, proxyPort), proxyCounter);
 
-        proxy.shutdown();
-        backend.shutdown();
+        proxy.stop();
+        backend.stop();
     }
 
-    private static @NotNull Router createProxy(boolean proxyUsesSSL, int proxyPort, AtomicInteger proxyCounter) {
-        Router proxy = new Router();
-        proxy.setHotDeploy(false);
+    private static @NotNull DefaultRouter createProxy(boolean proxyUsesSSL, int proxyPort, AtomicInteger proxyCounter) throws IOException {
+        DefaultRouter proxy = new DefaultRouter();
+        proxy.getConfiguration().setHotDeploy(false);
         ProxyRule rule = new ProxyRule(new ProxyRuleKey(proxyPort));
         rule.getFlow().add(new AbstractInterceptor() {
             @Override
@@ -75,7 +69,7 @@ public class ProxySSLTest {
         if (proxyUsesSSL) {
             rule.setSslInboundParser(getSslParser("classpath:/ssl-rsa2.keystore"));
         }
-        proxy.getRuleManager().addProxy(rule, RuleManager.RuleDefinitionSource.MANUAL);
+        proxy.add(rule);
         proxy.start();
         return proxy;
     }
@@ -115,16 +109,16 @@ public class ProxySSLTest {
         return new HttpClient(httpClientConfiguration);
     }
 
-    private static @NotNull Router createBackend(boolean backendUsesSSL, int backendPort) {
+    private static @NotNull DefaultRouter createBackend(boolean backendUsesSSL, int backendPort) throws IOException {
         // Step 1: create the backend
-        Router backend = new Router();
-        backend.setHotDeploy(false);
+        DefaultRouter backend = new DefaultRouter();
+        backend.getConfiguration().setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
         if (backendUsesSSL) {
             sp.setSslInboundParser(getSslParser("classpath:/ssl-rsa.keystore"));
         }
         sp.getFlow().add(new CountInterceptor());
-        backend.getRuleManager().addProxy(sp, RuleManager.RuleDefinitionSource.MANUAL);
+        backend.add(sp);
         backend.start();
         return backend;
     }

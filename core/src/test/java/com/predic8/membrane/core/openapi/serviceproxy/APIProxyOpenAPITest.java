@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 import org.jetbrains.annotations.*;
@@ -42,7 +42,7 @@ public class APIProxyOpenAPITest {
 
     @BeforeEach
     public void setUp() {
-        router = new Router();
+        router = new DummyTestRouter();
     }
 
     @Test

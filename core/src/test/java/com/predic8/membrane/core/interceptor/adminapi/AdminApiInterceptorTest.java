@@ -13,46 +13,40 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.adminapi;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.NullProxy;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.FakeHttpHandler;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.TwoWayStreaming;
-import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.ws.*;
+import org.junit.jupiter.api.*;
 
 import java.io.*;
-import java.net.SocketException;
-import java.net.URISyntaxException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.net.*;
+import java.util.concurrent.atomic.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
+import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.transport.ws.WebSocketConnection.WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.transport.ws.WebSocketConnection.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AdminApiInterceptorTest {
 
-    private static HttpRouter router;
+    private static TestRouter router;
 
     @BeforeAll
-    static void setUp() {
-        router = new HttpRouter();
-        router.setHotDeploy(false);
+    static void setUp() throws IOException {
+        router = new TestRouter();
+        router.setExchangeStore(new LimitedMemoryExchangeStore()); // Needed by the AdminApiInterceptor
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3065), null, 0);
         sp.getFlow().add(new FastWebSocketClosingInterceptor()); // speeds up test execution
         AdminApiInterceptor e = new AdminApiInterceptor();
         e.getMemoryWatcher().setIntervalMilliseconds(50); // speeds up test execution
         sp.getFlow().add(e);
-        router.getRules().add(sp);
+        router.add(sp);
         router.start();
     }
 
@@ -62,7 +56,7 @@ class AdminApiInterceptorTest {
     }
 
     @Test
-    public void testWebSocket() throws Exception {
+    void webSocket() throws Exception {
         try (HttpClient client = new HttpClient()) {
             var testHandler = new TestHandler();
             var exc = createWSRequest(testHandler);
@@ -120,7 +114,7 @@ class AdminApiInterceptorTest {
         private final NotifyingByteArrayOutputStream outputStream = new NotifyingByteArrayOutputStream();
         private InputStream inputStream = new InputStream() {
             @Override
-            public int read() throws IOException {
+            public int read() {
                 while (!closed) {
                     synchronized (TestHandler.this) {
                         try {
@@ -154,7 +148,7 @@ class AdminApiInterceptorTest {
         }
 
         @Override
-        public void removeSocketSoTimeout() throws SocketException {
+        public void removeSocketSoTimeout() {
             // do nothing
         }
 
@@ -164,7 +158,7 @@ class AdminApiInterceptorTest {
         }
 
         @Override
-        public void close() throws IOException {
+        public void close() {
             closed = true;
             synchronized (this) {
                 notifyAll();
@@ -176,7 +170,7 @@ class AdminApiInterceptorTest {
         @Override
         public Outcome handleRequest(Exchange exc) {
             exc.setProperty(WEBSOCKET_CLOSED_POLL_INTERVAL_MILLISECONDS, 10);  // speeds up test execution
-            return Outcome.CONTINUE;
+            return CONTINUE;
         }
     }
 }

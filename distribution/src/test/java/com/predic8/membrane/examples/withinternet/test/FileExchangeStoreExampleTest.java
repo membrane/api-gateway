@@ -14,124 +14,137 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
-import com.predic8.membrane.core.exchangestore.FileExchangeStore;
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.test.HttpAssertions;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.examples.util.*;
+import com.predic8.membrane.test.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
+import org.slf4j.*;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.util.Calendar;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
 
-import static java.io.File.createTempFile;
-import static java.lang.Thread.sleep;
+import static java.lang.Thread.*;
 import static java.util.Calendar.*;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase {
 
-	@Override
-	protected String getExampleDirName() {
-		return "extending-membrane/file-exchangestore";
-	}
+    private static final Logger log = LoggerFactory.getLogger(FileExchangeStoreExampleTest.class.getName());
 
-	@Test
-	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-			ha.getAndAssert200("http://localhost:2000/");
+    @Override
+    protected String getExampleDirName() {
+        return "extending-membrane/file-exchangestore";
+    }
 
-			sleep(300);
+    @Test
+    void test() throws Exception {
+        try (Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+            ha.getAndAssert200("http://localhost:2000/");
 
-			if (!containsRecursively(new File(baseDir, "exchanges"), this::filterDotMsg))
-				throw new AssertionError("Did not find *.msg in exchanges dir.");
-		}
-	}
+            sleep(300);
 
-	private boolean filterDotMsg(File dir, String name) {
-		return name.endsWith(".msg");
-	}
+            if (!containsRecursively(new File(baseDir, "exchanges"), this::filterDotMsg))
+                throw new AssertionError("Did not find *.msg in exchanges dir.");
+        }
+    }
 
-	@Test
-	public void testDeleteOldFolders() throws Exception {
+    private boolean filterDotMsg(File dir, String name) {
+        return name.endsWith(".msg");
+    }
 
-		File t = createTempFile("fes", null);
+    @Test
+    void testDeleteOldFolders() throws Exception {
 
-		//noinspection ResultOfMethodCallIgnored
-		t.delete();
+        File base = createTempFolder();
 
-		File base = new File(t, "FileExchangeStoreTest");
+        // Creates old entries from 2015 in the filestore to test if they are deleted
+        createOldEntriesForDeletion(base);
 
-		//noinspection ResultOfMethodCallIgnored
-		base.mkdirs();
+        // Assert that the old entries are there
+        for (int m = 1; m <= 3; m++)
+            for (int d = 1; d <= 31; d++)
+                if (!(m == 2 && d > 28))
+                    assertTrue(new File(base, "2015/" + m + "/" + d).exists());
 
-		renameMe(base);
+        // Let the FileExchangeStore delete the old entries
+        getFileExchangeStore(base).deleteOldFolders(getCalendar());
 
-		// before
-		for (int m = 1; m<=3; m++)
-			for (int d = 1; d<=31; d++)
-				if (!(m == 2 && d > 28))
-					assertTrue(new File(base, "2015/"+m+"/"+d).exists());
+        // Assert that the old entries are deleted
+        for (int d = 1; d <= 31; d++)
+            assertFalse(new File(base, "2015/1/" + d).exists());
+        for (int d = 1; d <= 13; d++)
+            assertFalse(new File(base, "2015/2/" + d).exists());
+        for (int d = 17; d <= 28; d++)
+            assertTrue(new File(base, "2015/2/" + d).exists());
+        for (int d = 1; d <= 31; d++)
+            assertTrue(new File(base, "2015/3/" + d).exists());
 
-		getFileExchangeStore(base).deleteOldFolders(getCalendar());
+        // cleanup
+        recursiveDelete(base);
+    }
 
-		// after
-		for (int d = 1; d<=31; d++)
-			assertFalse(new File(base, "2015/1/"+d).exists());
-		for (int d = 1; d<=13; d++)
-			assertFalse(new File(base, "2015/2/"+d).exists());
-		for (int d = 17; d<=28; d++)
-			assertTrue(new File(base, "2015/2/"+d).exists());
-		for (int d = 1; d<=31; d++)
-			assertTrue(new File(base, "2015/3/"+d).exists());
+    private static @NotNull File createTempFolder() throws IOException {
+        Path tempDir = Files.createTempDirectory("fes");
+        File base = new File(tempDir.toFile(), "FileExchangeStoreTest");
+        if (!base.mkdirs()) {
+            throw new IOException("Failed to create directory: " + base.getAbsolutePath());
+        }
+        return base;
+    }
 
-		// cleanup
-		recursiveDelete(base);
-	}
+    /**
+     * Creates directories representing old entries based on a specific date structure (month and day)
+     * under the given base directory. This is useful for setting up test scenarios where a directory
+     * hierarchy for archival or deletion purposes is required.
+     *
+     * @param base the base directory where the old entries are created. It serves as the root
+     *             directory under which the date-based folder structure is created.
+     */
+    private void createOldEntriesForDeletion(File base) {
+        for (int m = 1; m <= 3; m++)
+            for (int d = 1; d <= 31; d++)
+                if (!(m == 2 && d > 28))
+                    //noinspection ResultOfMethodCallIgnored
+                    new File(base, "2015/%d/%d".formatted(m, d)).mkdirs();
+    }
 
-	private void renameMe(File base) {
-		for (int m = 1; m<=3; m++)
-			for (int d = 1; d<=31; d++)
-				if (!(m == 2 && d > 28))
-					//noinspection ResultOfMethodCallIgnored
-					new File(base, "2015/"+m+"/"+d).mkdirs();
-	}
+    private Calendar getCalendar() {
+        Calendar c = Calendar.getInstance();
+        c.set(YEAR, 2015);
+        c.set(MONTH, 2); // 2 = March
+        c.set(DAY_OF_MONTH, 15);
+        return c;
+    }
 
-	private Calendar getCalendar() {
-		Calendar c = Calendar.getInstance();
-		c.set(YEAR, 2015);
-		c.set(MONTH, 2); // 2 = March
-		c.set(DAY_OF_MONTH, 15);
-		return c;
-	}
+    private FileExchangeStore getFileExchangeStore(File base) {
+        var fes = new FileExchangeStore();
+        fes.setDir(base.getAbsolutePath());
+        fes.setMaxDays(30);
+        return fes;
+    }
 
-	private FileExchangeStore getFileExchangeStore(File base) {
-		FileExchangeStore fes = new FileExchangeStore();
-		fes.setDir(base.getAbsolutePath());
-		fes.setMaxDays(30);
-		return fes;
-	}
+    private void recursiveDelete(File file) {
+        if (file.isDirectory())
 
-	private void recursiveDelete(File file) {
-		if (file.isDirectory())
+            //noinspection ConstantConditions
+            for (File child : file.listFiles())
+                recursiveDelete(child);
+        if (!file.delete())
+            throw new RuntimeException("could not delete " + file.getAbsolutePath());
+    }
 
-			//noinspection ConstantConditions
-			for (File child : file.listFiles())
-				recursiveDelete(child);
-		if (!file.delete())
-			throw new RuntimeException("could not delete " + file.getAbsolutePath());
-	}
-
-	private boolean containsRecursively(File base, FilenameFilter filter) {
-		//noinspection ConstantConditions
-		for (File f : base.listFiles()) {
-			if (f.isDirectory())
-				if (containsRecursively(f, filter))
-					return true;
-			if (f.isFile() && filter.accept(base, f.getName()))
-				return true;
-		}
-		return false;
-	}
+    private boolean containsRecursively(File base, FilenameFilter filter) {
+        log.info("Checking {} for {}", base, filter);
+        //noinspection ConstantConditions
+        for (File f : base.listFiles()) {
+            if (f.isDirectory())
+                if (containsRecursively(f, filter))
+                    return true;
+            if (f.isFile() && filter.accept(base, f.getName()))
+                return true;
+        }
+        return false;
+    }
 }

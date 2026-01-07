@@ -16,12 +16,12 @@
 
 package com.predic8.membrane.core.interceptor.flow.invocation;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.flow.choice.*;
 import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 import com.predic8.membrane.core.interceptor.groovy.*;
+import com.predic8.membrane.core.router.*;
 
 import java.util.*;
 
@@ -73,7 +73,7 @@ public class FlowTestInterceptors {
 
     public static Interceptor GROOVY(String aSrc) {
         return new GroovyInterceptor() {{
-            router = new HttpRouter();
+            router = new DummyTestRouter();
             setSrc(aSrc);
             init();
         }};

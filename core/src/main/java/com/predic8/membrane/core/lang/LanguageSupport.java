@@ -15,11 +15,10 @@
 package com.predic8.membrane.core.lang;
 
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.function.*;
 
 public interface LanguageSupport {
 
-	Function<Map<String, Object>, Object> compileScript(ExecutorService executorService, ClassLoader classLoader, String script);
+	Function<Map<String, Object>, Object> compileScript(ClassLoader classLoader, String script);
 
 }

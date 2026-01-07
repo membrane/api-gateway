@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.integration.withoutinternet.interceptor;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -29,14 +29,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class REST2SOAPInterceptorIntegrationTest {
 
-	private static HttpRouter router;
+	private static Router router;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "*",
 				".*", 3004), "", 0);
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
+		router = new TestRouter();
+		router.add(proxy);
 		var interceptors = proxy.getFlow();
 
 		REST2SOAPInterceptor rest2SoapInt = new REST2SOAPInterceptor();
@@ -45,12 +45,12 @@ public class REST2SOAPInterceptorIntegrationTest {
 
 		SampleSoapServiceInterceptor sampleSoapInt = new SampleSoapServiceInterceptor();
 		interceptors.add(sampleSoapInt);
-		router.init();
+		router.start();
 	}
 
 	@AfterAll
 	public static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test
@@ -60,7 +60,6 @@ public class REST2SOAPInterceptorIntegrationTest {
 		GetMethod get = new GetMethod("http://localhost:3004/city/Bonn");
 
 		int status = client.executeMethod(get);
-		System.out.println(get.getResponseBodyAsString());
 
 		assertEquals(200, status);
 	}

@@ -17,9 +17,9 @@
 package com.predic8.membrane.core.openapi.util;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
 import io.swagger.parser.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;

@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.proxies.NullProxy;
@@ -29,9 +29,9 @@ class OpenAPIRecordTest {
 
     @BeforeEach
     void setUp() {
-        Router router = new Router();
-        router.setUriFactory(new URIFactory());
-        router.setBaseLocation("");
+        DefaultRouter router = new DefaultRouter();
+        router.getConfiguration().setUriFactory(new URIFactory());
+        router.getConfiguration().setBaseLocation("");
 
         get.setRequest(new Request.Builder().method("GET").build());
         get.setProxy(new NullProxy());

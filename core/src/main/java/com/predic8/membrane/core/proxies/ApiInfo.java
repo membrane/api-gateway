@@ -13,10 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.util.text.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.util.*;

@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.apikey;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.apikey.extractors.*;
@@ -23,11 +22,10 @@ import com.predic8.membrane.core.security.*;
 import org.slf4j.*;
 
 import java.util.*;
-import java.util.stream.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Stream.*;
 
 /**
@@ -85,10 +83,17 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        // At the moment the beanFactory is only there when the Membrane configuration was read from XML
+
+        // Todo: Move logic into the registry
+        // The beanFactory is only there when the Membrane configuration was read from XML
         if (router.getBeanFactory() != null) {
             stores.addAll(router.getBeanFactory().getBeansOfType(ApiKeyStore.class).values());
         }
+        // For YAML configuration
+        if (router.getRegistry() != null) {
+            this.stores.addAll(router.getRegistry().getBeans(ApiKeyStore.class));
+        }
+
         stores.forEach(s -> s.init(router));
 
         // Add the default extractor if none is configured

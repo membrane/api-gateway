@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.*;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;

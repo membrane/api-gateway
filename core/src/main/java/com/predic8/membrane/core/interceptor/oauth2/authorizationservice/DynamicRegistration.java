@@ -14,12 +14,12 @@
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.ssl.*;
@@ -44,7 +44,7 @@ public class DynamicRegistration {
     public void init(Router router) {
         this.router = router;
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
         for (Interceptor i : interceptors)
             i.init(router);
         client = router.getHttpClientFactory().createClient(httpClientConfiguration);

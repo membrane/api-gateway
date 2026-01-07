@@ -12,24 +12,39 @@
 - Correct YAML example on GitHub README
 - Rename in apis.yaml
 
+# 7.X
 
-# 7.1.0
-
-- Register JSON Schema for YAML at: https://www.schemastore.org
-- Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
-- Remove GroovyTemplateInterceptor (Not Template Interceptor)
-  - Old an unused
+- Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
+- Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
+- Rewrite ACL to use the YAML configuration instead of external XML files
+- Fix maven central publish job
+- JMXExporter:
+  - Tutorial
+  - Documentation
+  - See JmxExporter
 
 # 7.0.4
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- YAML parsing:
+  - When the reason for a parse error is clear. Shorten error message.
+- BalancerHealthMonitor:
+  - @PostConstruct instead of InitializingBean, DisposableBean
+- Scripting: expose beanRegistry  
+- IfInterceptor:
+  - Add "else"
+
+# 7.1.0
+
+- reverseDNS
+  - Now it is in transport
+  - Maybe move it to configuration
+- Register JSON Schema for YAML at: https://www.schemastore.org
+- Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 
 
 # 7.0.1
 
-- Adding a configuration flag to enable/disable colorized output
-- Constant or methods to centralize color formatting: ANSIColors
-- Detecting terminal support before applying colors (e.g., check if System.console() is available)
 - Central description of Membrane Languages, Cheat Sheets, links to their docs.
 - Central desciption of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
@@ -38,10 +53,11 @@
 - Fix `YAMLParsingTest.errorInListItemUniqueness()`
 - Check 404 in AdminConsole => Client Requests
   - API to get client requests returns 404, if called without admin console access 
-  
+ 
 
 ## (Breaking) Interface Changes
-
+- JMX: Name changes to "io.membrane-api:00=routers, name="
+- Removed GateKeeperClientInterceptor
 - Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
 - Remove WADLInterceptor
 - HttpClient TB (done)
@@ -76,6 +92,7 @@
 - YAML Configuration as default
 - Use of colors in logs
 - Removed camelCase conversion of header access in Groovy scripts instead of header.contentType use header['Content-Type']
+- JMX namespace changed from org.membrane-soa to io.membrane-api.
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured

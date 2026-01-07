@@ -15,12 +15,12 @@
 package com.predic8.membrane.interceptor;
 
 import com.google.common.base.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.balancer.faultmonitoring.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.services.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.apache.commons.httpclient.*;
@@ -56,10 +56,26 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     private static final Logger log = LoggerFactory.getLogger(LoadBalancingInterceptorFaultMonitoringStrategyTest.class.getName());
 
     LoadBalancingInterceptor balancingInterceptor;
-    HttpRouter balancer;
+    Router balancer;
 
     // The simulation nodes
     private final List<Router> nodes = new ArrayList<>();
+
+    @AfterEach
+    void tearDown() {
+        for (Router httpRouter : nodes) {
+            try {
+                httpRouter.stop();
+            } catch (Exception e) {
+                log.warn("Node shutdown failed.", e);
+            }
+        }
+        try {
+            balancer.stop();
+        } catch (Exception e) {
+            log.warn("Balancer shutdown failed.", e);
+        }
+    }
 
     private void setUp(TestingContext ctx) throws Exception {
         nodes.clear();
@@ -75,15 +91,17 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         }
     }
 
-    private HttpRouter createLoadBalancer() throws Exception {
-        HttpRouter r = new HttpRouter();
+    private Router createLoadBalancer() throws Exception {
+        Router r = new TestRouter();
         ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3054), "thomas-bayer.com", 80);
         balancingInterceptor = new LoadBalancingInterceptor();
         balancingInterceptor.setName("Default");
         sp3.getFlow().add(balancingInterceptor);
-        r.getRuleManager().addProxyAndOpenPortIfNew(sp3);
-        r.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(getHttpClientConfigurationWithRetries());
-        r.init();
+        r.add(sp3);
+        r.start();
+        var client = r.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
+        client.setHttpClientConfig(getHttpClientConfigurationWithRetries());
+        client.init();
         return r;
     }
 
@@ -98,39 +116,23 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
     }
 
     private Router createRouterForNode(TestingContext ctx, int i) throws Exception {
-        HttpRouter r = new HttpRouter();
-        r.getRuleManager().addProxyAndOpenPortIfNew(createServiceProxy(ctx, i));
-        r.init();
+        var r = new TestRouter();
+        r.add(createServiceProxy(ctx, i));
+        r.start();
         return r;
     }
 
     private @NotNull ServiceProxy createServiceProxy(TestingContext ctx, int i) {
-        ServiceProxy serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", (2000 + i)), "thomas-bayer.com", 80);
-        serviceProxy.getFlow().add(new AbstractInterceptor() {
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", (2000 + i)), "thomas-bayer.com", 80);
+        sp.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleResponse(Exchange exc) {
                 exc.getResponse().getHeader().setConnection("close");
                 return CONTINUE;
             }
         });
-        serviceProxy.getFlow().add(new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance));
-        return serviceProxy;
-    }
-
-    @AfterEach
-    void tearDown() {
-        for (Router httpRouter : nodes) {
-            try {
-                httpRouter.shutdown();
-            } catch (Exception e) {
-                log.warn("Node shutdown failed.", e);
-            }
-        }
-        try {
-            balancer.shutdown();
-        } catch (Exception e) {
-            log.warn("Balancer shutdown failed.", e);
-        }
+        sp.getFlow().add(new RandomlyFailingDummyWebServiceInterceptor(ctx.successChance));
+        return sp;
     }
 
     /**
@@ -155,7 +157,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
      * Because we set the success chance to 1, all will pass.
      */
     @Test
-    public void test_2destinations_6threads_100calls_allSucceed() throws Exception {
+    void test_2destinations_6threads_100calls_allSucceed() throws Exception {
         TestingContext ctx = new TestingContext.Builder()
                 .numNodes(2)
                 .numThreads(6)
@@ -204,7 +206,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 .successChance(1d)
                 .preSubmitCallback(integer -> {
                     if (integer == 20) {
-                        nodes.getFirst().shutdown();
+                        nodes.getFirst().stop();
                     }
                     return null;
                 })
@@ -212,7 +214,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
 
         run(ctx);
 
-        assertTrue(ctx.successCounter.get() > 95,"ctx.successCounter.get() > 95 was %s".formatted(ctx.successCounter.get()));
+        assertTrue(ctx.successCounter.get() > 95, "ctx.successCounter.get() > 95 was %s".formatted(ctx.successCounter.get()));
         for (int i = 0; i < 100; i++) {
             if (i < 10 || i >= 40) {
                 assertTrue(ctx.runtimes[i] < 500, "For " + i + " value was: " + ctx.runtimes[i]);
@@ -234,13 +236,13 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
                 .successChance(1d)
                 .preSubmitCallback(i -> {
                     if (i == 10) {
-                        nodes.getFirst().shutdown();
+                        nodes.getFirst().stop();
                     } else if (i == 20) {
-                        nodes.get(1).shutdown();
+                        nodes.get(1).stop();
                     } else if (i == 30) {
-                        nodes.get(2).shutdown();
+                        nodes.get(2).stop();
                     } else if (i == 40) {
-                        nodes.get(3).shutdown();
+                        nodes.get(3).stop();
                     }
                     return null;
                 })

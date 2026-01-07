@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -22,8 +23,8 @@ public class SimpleTest {
 	private static Router router;
 
 	@BeforeAll
-	static void setUp() throws Exception {
-		router = Router.init("classpath:/test-proxies.xml");
+	static void setUp() {
+		router = RouterXmlBootstrap.initByXML("classpath:/test-proxies.xml");
 	}
 
 	@Test
@@ -32,8 +33,8 @@ public class SimpleTest {
 	}
 
 	@AfterAll
-	static void tearDown() throws Exception {
-		router.shutdown();
+	static void tearDown() {
+		router.stop();
 	}
 
 }

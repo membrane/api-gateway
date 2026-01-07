@@ -53,7 +53,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
         try {
             transformMsg(exc.getRequest(), xslt, exc.getStringProperties());
         } catch (Exception e) {
-			user(router.isProduction(),getDisplayName())
+			user(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Error transforming request!")
 					.exception(e)
 					.buildAndSetResponse(exc);
@@ -68,7 +68,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
             transformMsg(exc.getResponse(), xslt, exc.getStringProperties());
         } catch (Exception e) {
 			log.error("Error transforming response!", e);
-			user(router.isProduction(),getDisplayName())
+			user(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Error transforming response!")
 					.exception(e)
 					.buildAndSetResponse(exc);

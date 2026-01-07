@@ -41,7 +41,7 @@ public abstract class DistributionExtractingTestcase {
 
     private static File unzipDir;
     private static File membraneHome;
-    protected File baseDir = new File(getExampleDirName());
+    protected File baseDir;
 
     protected abstract String getExampleDirName();
 
@@ -68,6 +68,12 @@ public abstract class DistributionExtractingTestcase {
         log.info("cleaning up...");
         recursiveDelete(unzipDir);
         log.info("cleaning up... done");
+    }
+
+    @BeforeEach
+    void init() {
+        baseDir = getExampleDir(getExampleDirName());
+        log.info("running test... in {}", baseDir);
     }
 
     private static File getTargetDir() throws IOException {
@@ -132,7 +138,7 @@ public abstract class DistributionExtractingTestcase {
         }
     }
 
-    public static void unzip(File zip, File target) throws IOException {
+    private static void unzip(File zip, File target) throws IOException {
         try (ZipFile zipFile = new ZipFile(zip)) {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
@@ -156,7 +162,7 @@ public abstract class DistributionExtractingTestcase {
         }
     }
 
-    public static void copyInputStream(InputStream in, OutputStream out)
+    private static void copyInputStream(InputStream in, OutputStream out)
             throws IOException {
         byte[] buffer = new byte[1024];
         int len;
@@ -168,16 +174,10 @@ public abstract class DistributionExtractingTestcase {
         out.close();
     }
 
-    @BeforeEach
-    public void init() {
-        baseDir = getExampleDir(getExampleDirName());
-        log.info("running test... in {}", baseDir);
-    }
-
     public File getExampleDir(String name) {
         File exampleDir = new File(membraneHome, "examples" + separator + name);
         if (!exampleDir.exists())
-            throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
+            throw new RuntimeException("Example dir %s does not exist.".formatted(exampleDir.getAbsolutePath()));
         return exampleDir;
     }
 

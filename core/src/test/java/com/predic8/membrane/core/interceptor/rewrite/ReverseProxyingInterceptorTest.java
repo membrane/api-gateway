@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.junit.jupiter.api.*;
 
@@ -32,7 +32,7 @@ public class ReverseProxyingInterceptorTest {
 
 	@Test
 	public void localRedirect() {
-		rp.init(new Router());
+		rp.init(new DefaultRouter());
 		// invalid by spec, redirection location should not be rewritten
 		assertEquals("/local", getRewrittenRedirectionLocation("membrane", 2000, "http://target/foo", "/local"));
 	}

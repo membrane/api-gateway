@@ -30,6 +30,7 @@ import org.springframework.expression.spel.standard.*;
 
 import static java.lang.Boolean.*;
 import static org.springframework.expression.spel.SpelCompilerMode.*;
+import static org.springframework.expression.spel.SpelMessage.METHOD_NOT_FOUND;
 
 public class SpELExchangeExpression extends AbstractExchangeExpression {
 
@@ -82,13 +83,19 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             }
             throw new RuntimeException("Cannot cast %s to %s".formatted(o,type));
         } catch (SpelEvaluationException see) {
-            log.error("Error in expression '{}': {}",expression, see.getLocalizedMessage());
             ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);
-            if (see.getCause() instanceof ConverterNotFoundException cnfe) {
+            String msg ;
+            if (see.getMessageCode() == METHOD_NOT_FOUND) {
+                msg = "Method not found in expression '%s' use a SpEL function or one of Membrane's: %s".formatted(expression, SpELBuiltInFunctions.getBuiltInFunctionNames());
+            } else if (see.getCause() instanceof ConverterNotFoundException cnfe) {
+                msg = "Type converter not found for expression '%s' from '%s' to '%s'.".formatted(expression, cnfe.getSourceType(), cnfe.getTargetType());
                 eee.extension("sourceType", cnfe.getSourceType())
                         .extension("targetType", cnfe.getTargetType());
+            } else {
+                msg = "Error in expression '%s': %s".formatted( expression, see.getMessage());
             }
-            eee.stacktrace(false);
+            log.warn(msg);
+            eee.detail(msg);
             throw eee;
         }
     }

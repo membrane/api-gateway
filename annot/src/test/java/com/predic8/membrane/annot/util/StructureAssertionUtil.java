@@ -14,10 +14,9 @@
 
 package com.predic8.membrane.annot.util;
 
-import com.predic8.membrane.annot.yaml.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import org.junit.jupiter.api.Assertions;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;

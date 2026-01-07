@@ -81,7 +81,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
         }
         parseSrc(resolve(
                 router.getResolverMap(),
-                router.getBaseLocation(),
+                router.getConfiguration().getBaseLocation(),
                 getWellKnownUrl(internalSrc == null ? src : internalSrc)));
         if(internalSrc != null) {
             publicAuthorizationEndpoint = src + new URI(authorizationEndpoint).getPath();
