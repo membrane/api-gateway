@@ -231,8 +231,9 @@ public abstract class DistributionExtractingTestcase {
     protected void mavenPackage() throws Exception {
         BufferLogger logger = new BufferLogger();
         try (Process2 mvn = new Process2.Builder().in(baseDir).executable(mavenCommand("package")).withWatcher(logger).start()) {
-            if (mvn.waitForExit(60000) != 0)
-                throw new RuntimeException("Maven exited with code %d: %s".formatted(mvn.waitForExit(60000), logger));
+            int exitCode = mvn.waitForExit(60000);
+            if (exitCode != 0)
+                throw new RuntimeException("Maven exited with code %d: %s".formatted(exitCode, logger));
         }
     }
 
