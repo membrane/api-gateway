@@ -16,6 +16,7 @@ package com.predic8.membrane.annot;
 import com.predic8.membrane.annot.generator.*;
 import com.predic8.membrane.annot.generator.kubernetes.*;
 import com.predic8.membrane.annot.model.*;
+import jakarta.annotation.Resource;
 
 import javax.annotation.processing.*;
 import javax.lang.model.*;
@@ -184,7 +185,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
             if (!annotations.isEmpty()) { // a class with one of our annotation needs to be compiled
 
-                status = "working with " + getCachedElementsAnnotatedWith(roundEnv, MCMain.class).size() + " and " + getCachedElementsAnnotatedWith(roundEnv, MCElement.class).size();
+                status = "working with " + getCachedElementsAnnotatedWith(roundEnv, MCMain.class).size()
+                        + " and " + getCachedElementsAnnotatedWith(roundEnv, MCElement.class).size()
+                        + " and " + getCachedElementsAnnotatedWith(roundEnv, Resource.class).size();
                 log(status);
 
                 Model m = new Model();
@@ -285,6 +288,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                         processingEnv.getMessager().printMessage(ERROR, "@MCMain but no @MCElement found.", mcmains.iterator().next());
                         return true;
                     }
+                }
+
+                for (Element element : getCachedElementsAnnotatedWith(roundEnv, Resource.class)) {
+                    m.getResources().add((TypeElement) element);
                 }
 
                 process(m);
@@ -524,6 +531,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         new Parsers(processingEnv).writeParserDefinitior(m);
         new HelpReference(processingEnv).writeHelp(m);
         new NamespaceInfo(processingEnv).writeInfo(m);
+        new ResourceInfo(processingEnv).write(m);
         if (processingEnv.getElementUtils().getTypeElement("org.apache.aries.blueprint.ParserContext") != null) {
             new BlueprintParsers(processingEnv).writeParserDefinitior(m);
             new BlueprintParsers(processingEnv).writeParsers(m);

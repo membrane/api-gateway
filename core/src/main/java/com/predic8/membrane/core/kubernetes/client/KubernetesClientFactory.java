@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.kubernetes.client;
 
 import com.predic8.membrane.core.transport.http.*;
+import jakarta.annotation.Resource;
 
 import java.util.*;
 
@@ -28,6 +29,7 @@ import java.util.*;
  * Note: "baseUrl" is the KubernetesClient's only supported configuration. (KubernetesClientBuilder supports more, which
  * would need to be implemented here.)
  */
+@Resource
 public class KubernetesClientFactory {
     private WeakHashMap<String, KubernetesClient> clients;
     private final HttpClientFactory httpClientFactory;

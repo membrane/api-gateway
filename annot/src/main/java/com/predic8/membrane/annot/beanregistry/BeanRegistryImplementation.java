@@ -27,6 +27,7 @@ import java.util.concurrent.*;
 import java.util.function.*;
 
 import static com.predic8.membrane.annot.yaml.WatchAction.ADDED;
+import static java.util.List.of;
 
 /**
  * TODO:
@@ -53,6 +54,8 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
     // uid -> bean container
     private final Map<String, BeanContainer> bcs = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
 
+    private final List<FallbackBeanDefiner> fallbacks = Collections.synchronizedList(new ArrayList<>());
+
     @GuardedBy("uidsToActivate")
     private final Set<UidAction> uidsToActivate = Collections.synchronizedSet(new LinkedHashSet<>()); // keeps order
 
@@ -68,6 +71,25 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
     }
 
     record PreDestroyCallback(Object bean, Method method) {
+    }
+
+    record FallbackBeanDefiner(BeanRegistryImplementation registry, Class<?> clazz, Supplier<?> supplier) {
+
+        public boolean produces(Class<?> clazz) {
+            return clazz.isAssignableFrom(this.clazz());
+        }
+
+        public synchronized Object defineIfNecessary() {
+            if (!registry.hasDefinitionFor(clazz))
+                return define();
+            return null;
+        }
+
+        public synchronized Object define() {
+            Object bean = supplier.get();
+            registry.register(null, bean);
+            return bean;
+        }
     }
 
     public BeanRegistryImplementation(Grammar grammar) {
@@ -154,6 +176,9 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
 
     @Override
     public List<Object> getBeans() {
+        for (FallbackBeanDefiner fallbackBeanDefiner : fallbacks) {
+            fallbackBeanDefiner.defineIfNecessary();
+        }
         return bcs.values().stream().filter(bd -> !bd.getDefinition().isComponent())
                 .map(bc -> bc.getOrCreate(this, grammar))
                 .filter(Objects::nonNull)
@@ -165,15 +190,27 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
         return grammar;
     }
 
+    protected boolean hasDefinitionFor(Class<?> clazz) {
+        return bcs.values().stream().anyMatch(bd -> bd.produces(clazz));
+    }
+
     @Override
     public <T> List<T> getBeans(Class<T> clazz) {
-        return bcs.values().stream()
+        List<T> result = bcs.values().stream()
                 .filter(bd -> bd.produces(clazz))
                 .map(bc -> bc.getOrCreate(this, grammar))
                 .filter(Objects::nonNull)
                 .filter(clazz::isInstance)
                 .map(clazz::cast)
                 .toList();
+        if (!result.isEmpty())
+            return result;
+
+        for (FallbackBeanDefiner fallbackBeanDefiner : fallbacks) {
+            if (fallbackBeanDefiner.produces(clazz))
+                return (List<T>) of(fallbackBeanDefiner.defineIfNecessary());
+        }
+        return Collections.emptyList();
     }
 
     public <T> Optional<T> getBean(Class<T> clazz) {
@@ -183,7 +220,13 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
             log.error(msg);
             throw new RuntimeException(msg);
         }
-        return beans.size() == 1 ? Optional.of(beans.getFirst()) : Optional.empty();
+        if (!beans.isEmpty())
+            return Optional.of(beans.getFirst());
+        for (FallbackBeanDefiner fallbackBeanDefiner : fallbacks) {
+            if (fallbackBeanDefiner.produces(clazz))
+                return Optional.of((T) fallbackBeanDefiner.defineIfNecessary());
+        }
+        return Optional.empty();
     }
 
     public <T> Optional<T> getBean(String beanname, Class<T> clazz) {
@@ -208,16 +251,13 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
         singletonBeans.put(uuid, bean);
         // the return value of 'put' is ignored, since bean registration with
         // random keys should not yield duplicates anyway.
+
+        if (bean instanceof BeanRegistryAware beanRegistryAware)
+            beanRegistryAware.setRegistry(this);
     }
 
-    public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
-        synchronized (uniqueClassInitialization) {
-            return getBean(type).orElseGet(() -> getBean(type).orElseGet(() -> {
-                T created = supplier.get();
-                register(null, created);
-                return created;
-            }));
-        }
+    public <T> void registerFallbackIfAbsent(Class<T> type, Supplier<T> supplier) {
+        fallbacks.add(new FallbackBeanDefiner(this, type, supplier));
     }
 
     private static @NotNull String computeBeanName(String beanName, String uuid) {

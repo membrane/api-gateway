@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.*;
+import jakarta.annotation.Resource;
 import org.slf4j.*;
 
 import java.util.Timer;
@@ -22,6 +23,7 @@ import java.util.TimerTask;
 /**
  * Manages periodic tasks with a single timer.
  */
+@Resource
 public class TimerManager {
 
     private static final Logger log = LoggerFactory.getLogger(TimerManager.class);

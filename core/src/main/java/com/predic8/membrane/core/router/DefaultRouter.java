@@ -35,6 +35,7 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
@@ -119,6 +120,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
      * But it does not start the router itself. Use {@link #start()} to start the router.
      * If start() is called a separate call to init() is not needed.
      */
+    @PostConstruct
     public void init() {
         log.debug("Initializing.");
 

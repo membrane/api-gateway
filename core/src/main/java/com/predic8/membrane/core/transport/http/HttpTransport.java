@@ -21,6 +21,7 @@ import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.annotation.Resource;
 import org.slf4j.*;
 
 import java.io.*;
@@ -45,6 +46,7 @@ import static java.util.concurrent.TimeUnit.*;
  *
  *
  */
+@Resource(type = Transport.class)
 @MCElement(name="transport")
 public class HttpTransport extends Transport {
 

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport.http.client;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.config.spring.*;
+import jakarta.annotation.Resource;
 import org.springframework.beans.*;
 import org.springframework.context.*;
 
@@ -45,6 +46,7 @@ import java.util.*;
  * </code></pre>
  * @topic 4. Transports and Clients
  */
+@Resource
 @MCElement(name = "httpClientConfig")
 public class HttpClientConfiguration implements ApplicationContextAware {
 

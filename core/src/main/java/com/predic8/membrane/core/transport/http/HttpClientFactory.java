@@ -13,8 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.TimerManager;
+import jakarta.annotation.Resource;
 
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -29,6 +31,7 @@ import static java.util.Objects.hash;
  * <li>The HttpClient only uses one connection pool.</li>
  * </ul>
  */
+@Resource
 public class HttpClientFactory {
     @Nullable
     private final TimerManager timerManager;

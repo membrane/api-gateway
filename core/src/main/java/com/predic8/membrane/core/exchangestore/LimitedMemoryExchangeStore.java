@@ -20,6 +20,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.*;
+import jakarta.annotation.Resource;
 import org.slf4j.*;
 
 import java.text.*;
@@ -34,6 +35,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
  * new exchanges arrive then old exchanges will be dropped (starting from oldest ascending) until the exchange can be
  * stored. The LimitedMemoryExchangeStore is the default ExchangeStore Membrane uses.
  */
+@Resource(type = ExchangeStore.class)
 @MCElement(name="limitedMemoryExchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 

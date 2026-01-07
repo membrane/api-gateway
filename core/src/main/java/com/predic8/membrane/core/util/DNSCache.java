@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
+import jakarta.annotation.Resource;
+
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -24,6 +26,7 @@ import java.util.Map;
  * <p>
  * Java 1.5 implementation of InetAddress Caching differs from Java 1.6 one.
  */
+@Resource
 public class DNSCache {
 
 	private final Map<InetAddress, String> hostNames = new Hashtable<>();

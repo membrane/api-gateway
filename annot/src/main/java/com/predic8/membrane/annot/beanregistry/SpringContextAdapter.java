@@ -58,7 +58,7 @@ public class SpringContextAdapter implements BeanRegistry {
     }
 
     @Override
-    public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
+    public <T> void registerFallbackIfAbsent(Class<T> type, Supplier<T> supplier) {
         throw new UnsupportedOperationException();
     }
 

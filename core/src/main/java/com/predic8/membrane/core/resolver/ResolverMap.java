@@ -23,6 +23,8 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import com.predic8.xml.util.*;
+import jakarta.annotation.Priority;
+import jakarta.annotation.Resource;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.ls.*;
@@ -45,6 +47,7 @@ import static com.predic8.membrane.core.util.URIUtil.*;
  * Note that this class is not thread-safe! The ResolverMap is setup during
  * Membrane's single-threaded startup and is only used read-only thereafter.
  */
+@Resource
 @MCElement(name = "resolverMap")
 public class ResolverMap implements Cloneable, Resolver {
 
@@ -155,6 +158,12 @@ public class ResolverMap implements Cloneable, Resolver {
 
     public ResolverMap() {
         this(null, null);
+    }
+
+    @Priority(1)
+    public ResolverMap(HttpClientFactory httpClientFactory, KubernetesClientFactory kubernetesClientFactory, Router router) {
+        this(httpClientFactory, kubernetesClientFactory);
+        addRuleResolver(router);
     }
 
     public ResolverMap(HttpClientFactory httpClientFactory, KubernetesClientFactory kubernetesClientFactory) {

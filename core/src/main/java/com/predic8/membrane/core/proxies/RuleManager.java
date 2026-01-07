@@ -22,6 +22,8 @@ import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.annotation.Priority;
+import jakarta.annotation.Resource;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -31,6 +33,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.util.URIUtil.*;
 
+@Resource
 public class RuleManager {
 
     private static final Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
@@ -40,6 +43,15 @@ public class RuleManager {
     protected final List<Proxy> proxies = new Vector<>();
     private final List<RuleDefinitionSource> ruleSources = new ArrayList<>();
     private final Set<IRuleChangeListener> listeners = new HashSet<>();
+
+    @Priority(1)
+    public RuleManager(Router router) {
+        this.router = router;
+    }
+
+    public RuleManager() {
+
+    }
 
     public enum RuleDefinitionSource {
         /**

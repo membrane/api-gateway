@@ -18,6 +18,8 @@ import java.util.List;
 
 import com.predic8.membrane.annot.MCMain;
 
+import javax.lang.model.element.TypeElement;
+
 /**
  * Keeps track of all information during one (or several incremental) compiler runs.
  * <p>
@@ -25,6 +27,7 @@ import com.predic8.membrane.annot.MCMain;
  */
 public class Model {
 	private List<MainInfo> mains = new ArrayList<>();
+	private List<TypeElement> resources = new ArrayList<>();
 
 	public List<MainInfo> getMains() {
 		return mains;
@@ -32,5 +35,9 @@ public class Model {
 
 	public void setMains(List<MainInfo> mains) {
 		this.mains = mains;
+	}
+
+	public List<TypeElement> getResources() {
+		return resources;
 	}
 }

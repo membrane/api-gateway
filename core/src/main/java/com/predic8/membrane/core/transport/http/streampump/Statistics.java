@@ -13,6 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http.streampump;
 
+import jakarta.annotation.Resource;
+
+@Resource
 public class Statistics {
 	private final StreamPump.StreamPumpStats streamPumpStats = new StreamPump.StreamPumpStats();
 

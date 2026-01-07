@@ -376,9 +376,7 @@ public class GenericYamlParserTest {
         public void register(String beanName, Object object) {}
 
         @Override
-        public <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier) {
-            return type.cast(null);
-        }
+        public <T> void registerFallbackIfAbsent(Class<T> type, Supplier<T> supplier) {}
 
         @Override
         public void close() {}

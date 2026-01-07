@@ -17,6 +17,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
+import jakarta.annotation.Resource;
 import org.slf4j.*;
 
 import java.util.*;
@@ -52,6 +53,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * {@link AbortException} is thrown. The stack is unwound calling
  * {@link Interceptor#handleAbort(Exchange)} on each interceptor on it.
  */
+@Resource
 public class FlowController {
 
     private static final Logger log = LoggerFactory.getLogger(FlowController.class);
