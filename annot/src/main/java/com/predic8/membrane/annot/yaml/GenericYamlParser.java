@@ -313,8 +313,8 @@ public class GenericYamlParser {
      * registered within the registry.
      */
     private static <T> T handlePostConstructAndPreDestroy(ParsingContext<?> ctx, T bean) {
-        if (bean instanceof BeanRegistryAware) {
-            ((BeanRegistryAware) bean).setRegistry(ctx.registry());
+        if (bean instanceof BeanRegistryAware beanRegistryAware) {
+            beanRegistryAware.setRegistry(ctx.registry());
         }
         ReflectionUtils.doWithMethods(bean.getClass(), method -> {
             if (method.isAnnotationPresent(PostConstruct.class)) {
