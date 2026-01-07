@@ -104,7 +104,7 @@ public class AcmeRenewTest {
                 Trust trust = new Trust();
                 Certificate certificate = new Certificate();
                 certificate.setContent(sim.getCA().getCertificate());
-                trust.setCertificateList(ImmutableList.of(certificate));
+                trust.setCertificates(ImmutableList.of(certificate));
                 sslParser1.setTrust(trust);
                 e.setProperty(SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getConfiguration().getBaseLocation()));
                 hc.call(e);

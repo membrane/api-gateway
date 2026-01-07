@@ -31,7 +31,7 @@ class NamespacesTest {
         Namespaces.Namespace ns = new Namespaces.Namespace();
         ns.prefix = "p8";
         ns.uri = "https://predic8.de";
-        namespaces.setNamespace(List.of(ns));
+        namespaces.setNamespaces(List.of(ns));
     }
 
     @Test

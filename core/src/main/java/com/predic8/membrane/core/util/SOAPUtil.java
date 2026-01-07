@@ -17,7 +17,6 @@ package com.predic8.membrane.core.util;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.xml.beautifier.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
 
@@ -29,10 +28,9 @@ import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.util.xml.XMLUtil.*;
-import static java.nio.charset.StandardCharsets.*;
-import static javax.xml.stream.XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES;
-import static javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES;
+import static javax.xml.stream.XMLInputFactory.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class SOAPUtil {
@@ -62,10 +60,8 @@ public class SOAPUtil {
     public enum FaultCode {Server, Client}
 
     public static Response createSOAPFaultResponse(FaultCode code, String faultstring, Map<String,Object> details) {
-        Response response = createRawSOAPErrorResponse();
         try {
-            response.setBodyContent(xmlNode2String(createSOAP11Fault(code, faultstring, details)).getBytes(UTF_8));
-            return response;
+            return ok().contentType(TEXT_XML_UTF8).body(xmlNode2String(createSOAP11Fault(code, faultstring, details))).build();
         } catch (Exception e) {
             throw new RuntimeException("Should not happen", e);
         }
@@ -99,33 +95,6 @@ public class SOAPUtil {
         }
 
         return env;
-    }
-
-    private static @NotNull Response createRawSOAPErrorResponse() {
-        Response response = new Response();
-        response.setStatusCode(200); // SOAP 1.1 is always 200 even in case of error!
-        response.setStatusMessage("Bad request");
-        response.setHeader(HttpUtil.createHeaders(TEXT_XML_UTF8));
-        return response;
-    }
-
-    public static String getFaultSOAP12Body(String title, String text) {
-
-
-        return """
-                <soapenv:Envelope xmlns:soapenv="%s">
-                <soapenv:Body>
-                <soapenv:Fault>
-                <soapenv:Code>
-                <soapenv:Value>soapenv:Receiver</soapenv:Value>
-                </soapenv:Code>
-                <soapenv:Reason><soapenv:Text xml:lang="en-US">%s</soapenv:Text></soapenv:Reason>
-                <soapenv:Detail><Text>%s</Text></soapenv:Detail>
-                </soapenv:Fault>
-                </soapenv:Body>
-                </soapenv:Envelope>"""
-                .formatted(SOAP12_NS, escapeXml11(title), escapeXml11(text))
-                .replace("\n", CRLF);
     }
 
     public record SOAPAnalysisResult(boolean isSOAP, boolean isFault, SoapVersion version, QName soapElement) {

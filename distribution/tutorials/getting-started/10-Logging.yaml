@@ -15,7 +15,7 @@
 #
 # 2.) Call the API:
 #
-#       curl http://localhost:2000
+#     curl http://localhost:2000
 #
 #     Check the console output to see the logged request and response details.
 #

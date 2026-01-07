@@ -14,11 +14,15 @@
 
 package com.predic8.membrane.examples.withoutinternet;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.examples.util.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
+import java.util.concurrent.atomic.*;
+
+import static io.restassured.RestAssured.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ChainExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -27,27 +31,45 @@ public class ChainExampleTest extends AbstractSampleMembraneStartStopTestcase {
         return "/extending-membrane/reusable-plugin-chains";
     }
 
-    // @formatter:off
+
     @Test
-    public void request1() {
+    void request1() {
+        AtomicBoolean pathFound = addPathWatcher();
+
+        // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000")
+            .get("http://localhost:2000/foo")
         .then()
             .assertThat()
-            .body(containsString("CORS headers applied"))
             .statusCode(200);
+        // @formatter:on
+
+        assertTrue(pathFound.get());
     }
 
     @Test
-    public void request2() {
+    void request2() {
+        AtomicBoolean pathFound = addPathWatcher();
+
+        // @formatter:off
         given()
         .when()
-            .get("http://localhost:2001")
+            .get("http://localhost:2000/bar")
         .then()
             .assertThat()
-            .body(containsString("CORS headers applied"))
-            .statusCode(404);
+                .header(Header.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+            .statusCode(200);
+        // @formatter:on
+
+        assertTrue(pathFound.get());
     }
-    // @formatter:on
+
+    private @NotNull AtomicBoolean addPathWatcher() {
+        AtomicBoolean pathFound = new AtomicBoolean();
+        process.addConsoleWatcher((error, line) -> {
+            if (line.contains("Path:")) pathFound.set(true);
+        });
+        return pathFound;
+    }
 }
