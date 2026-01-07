@@ -23,6 +23,8 @@
   - Documentation
   - See JmxExporter
 - remove basic-xml-interceptor example?
+- refactor JdbcUserDataProvider
+
 
 # 7.0.4
 
