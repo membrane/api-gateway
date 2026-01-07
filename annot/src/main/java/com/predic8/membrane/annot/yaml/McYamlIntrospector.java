@@ -146,16 +146,16 @@ public final class McYamlIntrospector {
         return toLowerCase(property.charAt(0)) + property.substring(1);
     }
 
-    public static boolean hasOtherAttributesButNoAttributesAndNoChildren(Class<?> clazz) {
-        AtomicInteger otherAttributesCount = new AtomicInteger();
-        AtomicInteger attributesCount = new AtomicInteger();
-        AtomicInteger childrenCount = new AtomicInteger();
-        stream(clazz.getMethods()).forEach(m -> {
-            if (m.isAnnotationPresent(MCOtherAttributes.class)) otherAttributesCount.incrementAndGet();
-            if (m.isAnnotationPresent(MCAttribute.class)) attributesCount.incrementAndGet();
-            if (m.isAnnotationPresent(MCChildElement.class)) childrenCount.incrementAndGet();
-        });
-        return otherAttributesCount.get() == 1 && attributesCount.get() == 0 && childrenCount.get() == 0;
+    public static boolean hasOtherAttributes(Class<?> clazz) {
+        return stream(clazz.getMethods()).filter(m -> m.isAnnotationPresent(MCOtherAttributes.class)).count() > 0;
+    }
+
+    public static boolean hasAttributes(Class<?> clazz) {
+        return stream(clazz.getMethods()).filter(m -> m.isAnnotationPresent(MCAttribute.class)).count() > 0;
+    }
+
+    public static boolean hasChildren(Class<?> clazz) {
+        return stream(clazz.getMethods()).filter(m -> m.isAnnotationPresent(MCChildElement.class)).count() > 0;
     }
 
     public static <T> Method getAnySetter(Class<T> clazz) {
