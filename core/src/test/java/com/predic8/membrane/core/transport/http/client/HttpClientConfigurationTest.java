@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -145,13 +145,13 @@ class HttpClientConfigurationTest {
     }
 
     private @NotNull Proxy getApi1() {
-        Proxy api1 = router.getRules().stream().filter(proxy -> proxy.getName().equals("API1")).findFirst().orElseThrow();
+        Proxy api1 = router.getRuleManager().getRuleByName("API1", Proxy.class);
         assertNotNull(api1);
         return api1;
     }
 
     private void setupRouter(String globalHcc) {
-        router = Router.initFromXMLString(globalHcc);
+        router = RouterXmlBootstrap.initFromXMLString(globalHcc);
         assertNotNull(router.getHttpClientConfig());
         assertNotNull(router.getResolverMap().getHTTPSchemaResolver().getHttpClientConfig());
     }

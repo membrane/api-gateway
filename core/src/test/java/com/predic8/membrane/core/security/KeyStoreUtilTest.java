@@ -13,10 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.security;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -44,12 +43,12 @@ class KeyStoreUtilTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-        router = new HttpRouter();
+        router = new DummyTestRouter();
         SSLParser sslParser = new SSLParser();
         sslParser.setKeyStore(new KeyStore());
         sslParser.getKeyStore().setLocation("classpath:/alias-keystore.p12");
         sslParser.getKeyStore().setKeyPassword(KEYSTORE_PASSWORD);
-        keyStore = getAndLoadKeyStore(sslParser.getKeyStore(), router.getResolverMap(), router.getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
+        keyStore = getAndLoadKeyStore(sslParser.getKeyStore(), router.getResolverMap(), router.getConfiguration().getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
     }
 
     @AfterAll
@@ -62,7 +61,7 @@ class KeyStoreUtilTest {
         KeyStore store = new KeyStore();
         store.setLocation("classpath:/alias-keystore.p12");
         store.setKeyPassword(KEYSTORE_PASSWORD);
-        java.security.KeyStore loadedKeyStore = getAndLoadKeyStore(store, router.getResolverMap(), router.getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
+        java.security.KeyStore loadedKeyStore = getAndLoadKeyStore(store, router.getResolverMap(), router.getConfiguration().getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
         assertNotNull(loadedKeyStore);
         assertEquals(2, loadedKeyStore.size());
         java.security.KeyStore filteredKeyStore = filterKeyStoreByAlias(loadedKeyStore, "secret".toCharArray(), "key1");
@@ -80,7 +79,7 @@ class KeyStoreUtilTest {
         KeyStore store = new KeyStore();
         store.setLocation("classpath:/alias-keystore.p12");
         store.setKeyPassword(KEYSTORE_PASSWORD);
-        java.security.KeyStore loadedKeyStore = getAndLoadKeyStore(store, router.getResolverMap(), router.getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
+        java.security.KeyStore loadedKeyStore = getAndLoadKeyStore(store, router.getResolverMap(), router.getConfiguration().getBaseLocation(), "PKCS12", KEYSTORE_PASSWORD.toCharArray());
         assertNotNull(loadedKeyStore);
         assertTrue(loadedKeyStore.size() > 0);
         assertTrue(loadedKeyStore.containsAlias(ALIAS));

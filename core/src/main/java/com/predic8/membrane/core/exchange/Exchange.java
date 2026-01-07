@@ -85,18 +85,6 @@ public class Exchange extends AbstractExchange {
         return originalHostHeader.replaceFirst(":.*", "");
     }
 
-    public void block(Message msg) throws TerminateException {
-        try {
-            log.debug("Message thread waits");
-            msg.wait();
-            log.debug("Message thread received notify");
-            if (isForcedToStop())
-                throw new TerminateException("Force the exchange to stop.");
-        } catch (InterruptedException e1) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
     public String getOriginalHostHeaderPort() {
         int pos = originalHostHeader.indexOf(':');
         if (pos == -1) {

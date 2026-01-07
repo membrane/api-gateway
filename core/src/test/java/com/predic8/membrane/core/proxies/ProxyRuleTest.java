@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.acl.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -30,7 +30,7 @@ public class ProxyRuleTest {
 
 	@BeforeAll
 	public static void setUp() {
-		router = Router.init("src/test/resources/proxy-rules-test-monitor-beans.xml");
+		router = RouterXmlBootstrap.initByXML("src/test/resources/proxy-rules-test-monitor-beans.xml");
 		proxy = new ProxyRule(new ProxyRuleKey(8888));
 		proxy.setName("Rule 1");
 		// TODO: this is not possible anymore rule.setInboundTLS(true);
@@ -40,7 +40,7 @@ public class ProxyRuleTest {
 
 	@AfterAll
 	public static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.config.xml.*;
@@ -23,6 +22,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.ssl.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -35,7 +35,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         if (target.getPort() == -1)
             target.setPort(target.getSslParser() != null ? 443 : 80);
         if (target.getSslParser() != null)
-            setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
+            setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getConfiguration().getBaseLocation()));
         target.init(router);
     }
 

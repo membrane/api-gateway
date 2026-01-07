@@ -47,7 +47,7 @@ public class CodeFlow extends OAuth2Flow{
         String state = null;
         String redirectUrl;
 
-        String rawQuery = URLUtil.getPathQuery(authServer.getRouter().getUriFactory(),exc.getRequestURI());
+        String rawQuery = URLUtil.getPathQuery(authServer.getRouter().getConfiguration().getUriFactory(),exc.getRequestURI());
         if(rawQuery.startsWith(authServer.getBasePath() + "/"))
             rawQuery = rawQuery.substring(authServer.getBasePath().length() + 1);
         if(rawQuery.startsWith("?"))

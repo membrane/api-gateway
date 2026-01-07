@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.*;
 
 import java.util.*;
 
@@ -52,6 +52,10 @@ public interface Interceptor {
 			return this.equals(ABORT);
 		}
 	}
+
+	void init(Router router);
+
+	void init(Router router, Proxy proxy);
 
 	Outcome handleRequest(Exchange exchange);
 	Outcome handleResponse(Exchange exchange);
@@ -93,7 +97,5 @@ public interface Interceptor {
      */
 	String getHelpId();
 
-	void init(Router router);
 
-	void init(Router router, Proxy proxy);
 }

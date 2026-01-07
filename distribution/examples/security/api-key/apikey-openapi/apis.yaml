@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+components:
+  store:
+    apiKeyFileStore:
+      location: ./demo-keys.txt
+---
+
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: fruitshop-api-v2-openapi-3-security.yml
+        validateSecurity: true
+  flow:
+    - apiKey:
+        # API keys are validated in the OpenAPI validator with validateSecurity: true. See the OpenAPI document for details.
+        required: false
+        extractors:
+          - headerExtractor:
+              name: "X-Api-Key"
+      # The API key must be extracted before the OpenAPI validator is called.
+      # Normally, the OpenAPI is validated before the flow is executed. By explicitly
+      # setting the openapiValidator to this position, the OpenAPI is validated after the apiKey plugin.
+    - openapiValidator: {}

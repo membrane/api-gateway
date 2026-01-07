@@ -16,9 +16,9 @@ package com.predic8.membrane.core.interceptor.session;
 import com.bornium.security.oauth2openid.token.*;
 import com.google.common.cache.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.router.*;
 import org.jose4j.json.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jwt.*;
@@ -68,12 +68,12 @@ public class JwtSessionManager extends SessionManager {
         if (jwk == null) {
             rsaJsonWebKey = generateKey();
             log.warn("""
-                    jwtSessionManager uses a generated key ('{}'). Sessions of this instance 
+                    jwtSessionManager uses a generated key ('{}'). Sessions of this instance
                     will not be compatible with sessions of other (e.g. restarted)
                     instances. To solve this, write the JWK into a file and reference it using <jwtSessionManager><jwk location="...">.
                     """, rsaJsonWebKey.toJson(INCLUDE_PRIVATE));
         } else {
-            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
+            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation())));
         }
 
         idTokenProvider = new IdTokenProvider(rsaJsonWebKey);

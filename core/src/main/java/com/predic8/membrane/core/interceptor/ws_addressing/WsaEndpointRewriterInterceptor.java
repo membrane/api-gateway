@@ -56,7 +56,7 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
             new WsaEndpointRewriter().rewriteEndpoint(message.getBodyAsStreamDecoded(), output, new Location( protocol, host,  port));
         } catch (Exception e) {
 			log.error("",e);
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not rewrite endpoint!")
 					.exception(e)
 					.buildAndSetResponse(exchange);

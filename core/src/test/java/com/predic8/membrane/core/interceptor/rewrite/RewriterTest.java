@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -35,7 +35,7 @@ public class RewriterTest {
         mappings.add(new Mapping("/hello/(.*)", "/$1", null));
         rewriter.setMappings(mappings);
 
-        rewriter.init(new HttpRouter());
+        rewriter.init(new DummyTestRouter());
     }
 
     @Test

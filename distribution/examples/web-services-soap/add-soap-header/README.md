@@ -104,19 +104,24 @@ Run the appropriate command based on your operating system:
 1. The interceptor is compiled into a `.jar` file using Maven.
 2. The compiled `.jar` is placed into the `libs` directory of Membrane API Gateway.
 
-### Configuring the Interceptor in `proxies.xml`
-The following configuration in `proxies.xml` registers the interceptor as a `Spring Bean`:
-```xml
-<spring:bean id="headerAddInterceptor" class="com.predic8.AddSoapHeaderInterceptor" />
+### Configuring the Interceptor in `apis.yaml`
+The following configuration in `apis.yaml` registers the interceptor as a `Component`:
+```yaml
+components:
+   headerAddInterceptor:
+      bean:
+         class: com.predic8.AddSoapHeaderInterceptor
 ```
 
 Next, the interceptor is applied to an API by referencing the bean name:
-```xml
-<api name="echo" port="2000">
-  <interceptor refid="headerAddInterceptor"/>
-  <beautifier />
-  <echo/>
-</api>
+```yaml
+api:
+   port: 2000
+   name: echo
+   flow:
+      - $ref: '#/components/headerAddInterceptor'
+      - log: {}
+      - return: {}
 ```
 
 ### Interceptor Logic

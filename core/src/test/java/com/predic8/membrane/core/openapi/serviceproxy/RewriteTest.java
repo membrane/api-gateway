@@ -17,10 +17,10 @@
 package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -49,9 +49,9 @@ class RewriteTest {
         rewriteAll.protocol = "https";
         rewriteAll.basePath = "/foo";
 
-        Router router = new Router();
-        router.setUriFactory(new URIFactory());
-        router.setBaseLocation("");
+        DefaultRouter router = new DefaultRouter();
+        router.getConfiguration().setUriFactory(new URIFactory());
+        router.getConfiguration().setBaseLocation("");
 
         OpenAPIRecordFactory openAPIRecordFactory = new OpenAPIRecordFactory(router);
 

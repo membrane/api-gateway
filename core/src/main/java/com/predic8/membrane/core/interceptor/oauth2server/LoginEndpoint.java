@@ -17,7 +17,7 @@
 //import com.bornium.security.oauth2openid.providers.Session;
 //import com.bornium.security.oauth2openid.server.AuthorizationServer;
 //import com.bornium.security.oauth2openid.server.endpoints.Endpoint;
-//import com.predic8.membrane.core.Router;
+//import com.predic8.membrane.core.router.Router;
 //import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 //import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
 //import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
@@ -45,7 +45,7 @@
 //        this.csf = csf;
 //        loginDialog = new LoginDialog2(userDataProvider,null,sessionManager,null,loginDialogLocation,loginPath,true,null);
 //        loginDialog.init(router);
-//        uriFactory = router.getUriFactory();
+//        uriFactory = router.getConfiguration().getUriFactory();
 //    }
 //
 //    @Override

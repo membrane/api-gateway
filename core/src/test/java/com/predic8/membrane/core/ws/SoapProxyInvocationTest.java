@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.ws;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.lang.*;
@@ -22,6 +21,7 @@ import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import io.restassured.response.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -65,11 +65,11 @@ public class SoapProxyInvocationTest {
     }
 
     private static void setupGateway() throws Exception {
-        gw = new HttpRouter();
-        gw.setHotDeploy(false);
-        gw.getRuleManager().addProxyAndOpenPortIfNew(createCitiesSoapProxyGateway());
-        gw.getRuleManager().addProxyAndOpenPortIfNew(createTwoServicesSOAPProxyGateway("ServiceA"));
-        gw.init();
+        gw = new TestRouter();
+        gw.getConfiguration().setHotDeploy(false);
+        gw.add(createCitiesSoapProxyGateway());
+        gw.add(createTwoServicesSOAPProxyGateway("ServiceA"));
+        gw.start();
     }
 
     private static @NotNull SOAPProxy createCitiesSoapProxyGateway() {
@@ -89,10 +89,10 @@ public class SoapProxyInvocationTest {
     }
 
     private static void setupBackend() throws Exception {
-        backend = new HttpRouter();
-        backend.getRuleManager().addProxyAndOpenPortIfNew(createAServiceProxy());
-        backend.getRuleManager().addProxyAndOpenPortIfNew(createCitiesServiceProxy());
-        backend.init();
+        backend = new TestRouter();
+        backend.add(createAServiceProxy());
+        backend.add(createCitiesServiceProxy());
+        backend.start();
     }
 
     private static @NotNull APIProxy createCitiesServiceProxy() {
@@ -132,8 +132,8 @@ public class SoapProxyInvocationTest {
 
     @AfterAll
     public static void teardown() {
-        gw.shutdown();
-        backend.shutdown();
+        gw.stop();
+        backend.stop();
     }
 
     @Test

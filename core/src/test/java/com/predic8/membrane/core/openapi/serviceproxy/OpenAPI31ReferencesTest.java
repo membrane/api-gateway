@@ -16,8 +16,8 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.media.*;
@@ -40,8 +40,8 @@ public class OpenAPI31ReferencesTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        router = new HttpRouter();
-        router.setUriFactory(new URIFactory());
+        router = new TestRouter();
+        router.getConfiguration().setUriFactory(new URIFactory());
 
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = getPathFromResource( "openapi/specs/oas31/request-reference.yaml");
@@ -50,19 +50,19 @@ public class OpenAPI31ReferencesTest {
         api = new APIProxy();
         api.setPort(2000);
         api.setSpecs(List.of(spec));
-        router.getRuleManager().addProxyAndOpenPortIfNew(api);
+        router.add(api);
 
         APIProxy backend = new APIProxy();
         backend.setPort(3000);
         backend.getFlow().add(new ReturnInterceptor());
-        router.getRuleManager().addProxyAndOpenPortIfNew(backend);
+        router.add(backend);
 
-        router.init();
+        router.start();
     }
 
     @AfterAll
     public static void shutdown() {
-        router.shutdown();
+        router.stop();
     }
 
     @Test

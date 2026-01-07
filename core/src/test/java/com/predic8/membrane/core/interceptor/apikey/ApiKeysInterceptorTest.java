@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExpressionExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
 import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyQueryParamExtractor;
 import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore;
 import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.security.SecurityScheme;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -57,17 +57,17 @@ public class ApiKeysInterceptorTest {
     static void setup() {
         store = new ApiKeyFileStore();
         store.setLocation(getKeyfilePath("apikeys/keys.txt"));
-        store.init(new Router());
+        store.init(new DummyTestRouter());
 
         mergeStore = new ApiKeyFileStore();
         mergeStore.setLocation(getKeyfilePath("apikeys/merge-keys.txt"));
-        mergeStore.init(new Router());
+        mergeStore.init(new DummyTestRouter());
 
         ahe = new ApiKeyHeaderExtractor();
         aqe = new ApiKeyQueryParamExtractor();
         aee = new ApiKeyExpressionExtractor();
         aee.setExpression("json['api-key']");
-        aee.init(new Router());
+        aee.init(new DummyTestRouter());
 
         akiWithProp = new ApiKeysInterceptor();
         akiWithProp.setExtractors(of(ahe));
@@ -169,7 +169,7 @@ public class ApiKeysInterceptorTest {
     void handleDuplicateApiKeys() {
         var dupeStore = new ApiKeyFileStore();
         dupeStore.setLocation(getKeyfilePath("apikeys/duplicate-api-keys.txt"));
-        assertThrows(RuntimeException.class, () -> dupeStore.init(new Router()));
+        assertThrows(RuntimeException.class, () -> dupeStore.init(new DummyTestRouter()));
     }
 
     private static String getKeyfilePath(String name) {

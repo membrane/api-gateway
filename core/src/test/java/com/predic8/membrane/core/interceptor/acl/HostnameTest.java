@@ -13,21 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HostnameTest {
 
-	static Router router;
+	static DefaultRouter router;
 
 	static Hostname h1;
 	static Hostname h2;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		router = new Router();
+		router = new DefaultRouter();
 
 		h1 = new Hostname(router);
 		h1.setSchema("^localhost$");

@@ -20,7 +20,7 @@
 //import com.predic8.membrane.annot.MCAttribute;
 //import com.predic8.membrane.annot.MCChildElement;
 //import com.predic8.membrane.annot.MCElement;
-//import com.predic8.membrane.core.Router;
+//import com.predic8.membrane.core.router.Router;
 //import com.predic8.membrane.core.exchange.Exchange;
 //import com.predic8.membrane.core.http.Response;
 //import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
@@ -185,7 +185,7 @@
 //    }
 //
 //    private Outcome disableUnsupportedFlows(Exchange exc) throws Exception {
-//        Map<String, String> params = URLParamUtil.getParams(getRouter().getUriFactory(), exc);
+//        Map<String, String> params = URLParamUtil.getParams(getRouter().getConfiguration().getUriFactory(), exc);
 //        String responseType = params.get(Constants.PARAMETER_RESPONSE_TYPE);
 //
 //        if(responseType != null && (responseType.equals(Constants.PARAMETER_VALUE_CODE) || responseType.equals(Constants.PARAMETER_VALUE_TOKEN))){

@@ -77,7 +77,7 @@ public class Process2 implements AutoCloseable {
 			if (id != null)
 				throw new IllegalStateException("executable or script is already set.");
 			id = script;
-			line = isWindows() ? "cmd /c " + script + ".cmd" : "bash " + script + ".sh";
+			line = isWindows() ? "cmd /c %s.cmd".formatted(script) : "bash %s.sh".formatted(script);
 			return this;
 		}
 
@@ -156,7 +156,7 @@ public class Process2 implements AutoCloseable {
 		log.info("exampleDir = {}, id = {}, startCommand = {}, consoleWatchers = {}, waitAfterStartFor = {}", exampleDir,id,startCommand,consoleWatchers,waitAfterStartFor);
 
 		if (!exampleDir.exists())
-			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
+			throw new RuntimeException("Example dir %s does not exist.".formatted(exampleDir.getAbsolutePath()));
 
 		p = getProcessBuilder(exampleDir, startCommand, envVars).start();
 		p.getOutputStream().close();
@@ -179,7 +179,7 @@ public class Process2 implements AutoCloseable {
 				throw new RuntimeException(e);
 			}
 		}
-		sleep(100);
+		sleep(50);
 	}
 
 	private Stream<ProcessHandle> getChildrenRecursively(ProcessHandle p) {

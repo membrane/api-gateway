@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Request.*;
 import com.predic8.membrane.core.http.Response.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.security.*;
 
 import static com.predic8.membrane.core.interceptor.Outcome.*;
@@ -40,7 +40,7 @@ class ConditionalEvaluationTestContext {
         ifInt.setLanguage(lang);
         ifInt.setFlow(of(mockInt));
         ifInt.setTest(condition);
-        ifInt.init(new HttpRouter());
+        ifInt.init(new DummyTestRouter());
 
         Outcome outcome;
         if (builder instanceof Builder b) {

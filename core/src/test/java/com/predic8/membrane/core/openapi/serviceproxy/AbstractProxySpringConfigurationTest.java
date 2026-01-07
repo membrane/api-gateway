@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.springframework.context.support.*;
 import org.springframework.core.io.*;
 
@@ -32,14 +32,16 @@ abstract class AbstractProxySpringConfigurationTest {
                 </router>
             </spring:beans>
             """;
-    protected static Router startSpringContextAndReturnRouter(String api) {
+    protected static DefaultRouter startSpringContextAndReturnRouter(String api) {
         GenericXmlApplicationContext ctx = new GenericXmlApplicationContext();
         ctx.load(new ByteArrayResource(config.formatted(api).getBytes()));
         ctx.refresh();
-        return ctx.getBean("router", Router.class);
+        var router = ctx.getBean("router", DefaultRouter.class);
+        router.init();
+        return router;
     }
 
-    protected static APIProxy getApiProxy(Router router) {
+    protected static APIProxy getApiProxy(DefaultRouter router) {
         return router.getRuleManager().getRuleByName("bool-api",APIProxy.class);
     }
 }

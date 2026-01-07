@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -38,7 +38,7 @@ class XMLProtectionInterceptorTest {
         exc.setOriginalHostHeader("thomas-bayer.com:80");
 
         interceptor = new XMLProtectionInterceptor();
-        interceptor.init(new Router());
+        interceptor.init(new DefaultRouter());
     }
 
     private void runOn(String resource, boolean expectSuccess) throws Exception {

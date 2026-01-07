@@ -13,17 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.ssl.acme;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.core.azure.AzureDns;
-import com.predic8.membrane.core.azure.AzureTableStorage;
-import com.predic8.membrane.core.azure.api.dns.DnsProvisionable;
-import com.predic8.membrane.core.azure.api.AzureApiClient;
-import com.predic8.membrane.core.transport.http.HttpClientFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.azure.*;
+import com.predic8.membrane.core.azure.api.*;
+import com.predic8.membrane.core.azure.api.dns.*;
+import com.predic8.membrane.core.router.*;
+import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 import javax.annotation.Nullable;
-import java.util.Arrays;
+import java.util.*;
 
 public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEngine, DnsProvisionable {
 
@@ -39,10 +38,10 @@ public class AcmeAzureTableApiStorageEngine implements AcmeSynchronizedStorageEn
     public AcmeAzureTableApiStorageEngine(
             AzureTableStorage tableStorage,
             @Nullable AzureDns azureDns,
-            @Nullable HttpClientFactory httpClientFactory
-    ) {
+            @NotNull Router router
+            ) {
         this.azureDns = azureDns;
-        apiClient = new AzureApiClient(azureDns == null ? null : azureDns.getIdentity(), tableStorage, httpClientFactory);
+        apiClient = new AzureApiClient(azureDns == null ? null : azureDns.getIdentity(), tableStorage, router);
 
         try {
             apiClient.tableStorage().table().create();

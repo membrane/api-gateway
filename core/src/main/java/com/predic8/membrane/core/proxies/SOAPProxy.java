@@ -15,16 +15,15 @@ package com.predic8.membrane.core.proxies;
 
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.wsdl.*;
@@ -57,7 +56,7 @@ import static com.predic8.membrane.core.Constants.*;
  * {@link Router}, which periodically attempts to restore the proxy.
  * @topic 1. Proxies and Flow
  */
-@MCElement(name = "soapProxy")
+@MCElement(name = "soapProxy", topLevel = true, component = false)
 public class SOAPProxy extends AbstractServiceProxy {
 
     private static final Logger log = LoggerFactory.getLogger(SOAPProxy.class.getName());
@@ -155,7 +154,6 @@ public class SOAPProxy extends AbstractServiceProxy {
         RewriteInterceptor ri = new RewriteInterceptor();
         ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
         interceptors.addFirst(ri);
-        automaticallyAddedInterceptorCount++;
     }
 
     private static @NotNull String getTargetPath(URL url) {
@@ -179,7 +177,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private @NotNull WSDLParserContext getWsdlParserContext() {
         WSDLParserContext ctx = new WSDLParserContext();
-        ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
+        ctx.setInput(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsdl));
         return ctx;
     }
 
@@ -215,7 +213,7 @@ public class SOAPProxy extends AbstractServiceProxy {
     private void setTarget(URL url) {
         if (wsdl.startsWith("internal:")) {
             try {
-                target.setUrl(UriUtil.getPathFromURL(router.getUriFactory(), wsdl)); // TODO
+                target.setUrl(UriUtil.getPathFromURL(router.getConfiguration().getUriFactory(), wsdl)); // TODO
             } catch (URISyntaxException e) {
                 throw new RuntimeException(e);
             }
@@ -273,13 +271,10 @@ public class SOAPProxy extends AbstractServiceProxy {
         return null;
     }
 
-    private int automaticallyAddedInterceptorCount;
-
     private void addWSDLInterceptor() {
         if (getFirstInterceptorOfType(WSDLInterceptor.class).isEmpty()) {
             WSDLInterceptor wsdlInterceptor = new WSDLInterceptor();
             interceptors.addFirst(wsdlInterceptor);
-            automaticallyAddedInterceptorCount++;
         }
     }
 
@@ -313,7 +308,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private @NotNull String getReplacementName(String keyPath) {
         try {
-            return URLUtil.getName(router.getUriFactory(), keyPath);
+            return URLUtil.getName(router.getConfiguration().getUriFactory(), keyPath);
         } catch (URISyntaxException e) {
             log.error("Error parsing URL {}", keyPath, e);
             throw new RuntimeException("Check!");
@@ -325,7 +320,6 @@ public class SOAPProxy extends AbstractServiceProxy {
         sui.setWsdl(wsdl);
         sui.setPortName(portName);
         interceptors.addFirst(sui);
-        automaticallyAddedInterceptorCount++;
     }
 
     private void addWSDLPublisherInterceptor() {
@@ -336,7 +330,6 @@ public class SOAPProxy extends AbstractServiceProxy {
         wp.setWsdl(wsdl);
         wp.init(router);
         interceptors.addFirst(wp);
-        automaticallyAddedInterceptorCount++;
     }
 
     private boolean hasWSDLPublisherInterceptor() {

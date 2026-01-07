@@ -17,13 +17,13 @@ import com.floreysoft.jmte.*;
 import com.floreysoft.jmte.message.*;
 import com.floreysoft.jmte.token.*;
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.*;
 import org.apache.commons.lang3.*;
@@ -85,19 +85,19 @@ public class LoginDialog {
 	}
 
 	public void init(Router router) {
-		uriFactory = router.getUriFactory();
+		uriFactory = router.getConfiguration().getUriFactory();
 		wsi.init(router);
         try {
 			// This is only a check if index.html is present
-            router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
+            router.getResolverMap().resolve(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsi.getDocBase(), "index.html")).close();
         } catch (ResourceRetrievalException e) {
             throw new ConfigurationException("""
 					Cannot access index.html at:
 					Location base: %s
 					Doc base: %s
-					""".formatted( router.getBaseLocation(), wsi.getDocBase()),e);
+					""".formatted( router.getConfiguration().getBaseLocation(), wsi.getDocBase()),e);
         } catch (IOException e) {
-			log.error("Cannot access index.html (baseLocation={}, docBase={})" , router.getBaseLocation(), wsi.getDocBase(), e);
+			log.error("Cannot access index.html (baseLocation={}, docBase={})" , router.getConfiguration().getBaseLocation(), wsi.getDocBase(), e);
         }
     }
 

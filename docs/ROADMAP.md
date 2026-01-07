@@ -2,16 +2,42 @@
 
 # YAML Support
 
-- Rename json schema document:
-  - Short name to keep schema ref in YAML instance documents short
-  - Ideas:
-    - membrane-v1.schema.json
-    - membrane-v1.json
-    - v1.json
-- Name from metadata/name or spec/name?
 - Correct YAML example on GitHub README
-- Rename in apis.yaml
 
+# 7.X
+
+- Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
+- Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
+- Rewrite ACL to use the YAML configuration instead of external XML files
+- Fix maven central publish job
+- JMXExporter:
+  - Tutorial
+  - Documentation
+  - See JmxExporter
+- remove basic-xml-interceptor example?
+- logs:
+  - Instead of:
+    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2000'
+    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2001'
+    => listening at *:2000, *:2001
+- refactor JdbcUserDataProvider
+
+
+# 7.0.4
+
+- Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- YAML parsing:
+  - When the reason for a parse error is clear. Shorten error message.
+- BalancerHealthMonitor:
+  - @PostConstruct instead of InitializingBean, DisposableBean
+- Scripting: expose beanRegistry
+- Migrate deprecated finally to try with ressources
+- if: Add hint in documentation: use choice otherwise for else
+- accessControl:
+     - Warning: Gets complicated!
+     - Migrate to simple yaml config
+     - Restrict on ips, hostname not paths
+     - ipv6, wildcards
 
 # 7.1.0
 
@@ -19,17 +45,18 @@
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 - Remove GroovyTemplateInterceptor (Not Template Interceptor)
   - Old an unused
+- Configuration independent lookup of beans. I just want bean foo and I do not care where it is defined.
+  - See: ChainInterceptor.getBean(String)
+  - Maybe a BeanRegistry implementation for Spring?
 
 # 7.0.4
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- do not pass a `Router` reference into all sorts of beans: Access to global functionality should happen only on a very limited basis.
 
 
 # 7.0.1
 
-- Adding a configuration flag to enable/disable colorized output
-- Constant or methods to centralize color formatting: ANSIColors
-- Detecting terminal support before applying colors (e.g., check if System.console() is available)
 - Central description of Membrane Languages, Cheat Sheets, links to their docs.
 - Central desciption of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
@@ -38,10 +65,11 @@
 - Fix `YAMLParsingTest.errorInListItemUniqueness()`
 - Check 404 in AdminConsole => Client Requests
   - API to get client requests returns 404, if called without admin console access 
-  
+ 
 
 ## (Breaking) Interface Changes
-
+- JMX: Name changes to "io.membrane-api:00=routers, name="
+- Removed GateKeeperClientInterceptor
 - Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
 - Remove WADLInterceptor
 - HttpClient TB (done)
@@ -76,6 +104,7 @@
 - YAML Configuration as default
 - Use of colors in logs
 - Removed camelCase conversion of header access in Groovy scripts instead of header.contentType use header['Content-Type']
+- JMX namespace changed from org.membrane-soa to io.membrane-api.
 
 ## Minor
  - Rewrite JSONAssert Tests with RESTAssured

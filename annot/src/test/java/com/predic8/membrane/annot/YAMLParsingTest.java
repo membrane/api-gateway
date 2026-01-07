@@ -14,12 +14,16 @@
 
 package com.predic8.membrane.annot;
 
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.SpringContextAdapter;
 import com.predic8.membrane.annot.util.CompilerHelper;
 import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
@@ -33,7 +37,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
         }
         """);
@@ -54,7 +58,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             public String attr;
         
@@ -87,7 +91,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -126,7 +130,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
         }
         """);
@@ -151,7 +155,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -207,7 +211,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -276,7 +280,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", noEnvelope=true, topLevel=true)
+        @MCElement(name="demo", noEnvelope=true, topLevel=true, component=false)
         public class DemoElement {
             List<Child1Element> children;
         
@@ -332,7 +336,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="outer", topLevel=true)
+        @MCElement(name="outer", topLevel=true, component=false)
         public class OuterElement {
             List<DemoElement> child;
         
@@ -433,7 +437,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -455,7 +459,7 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="demo2", topLevel=true)
+        @MCElement(name="demo2", topLevel=true, component=false)
         public class Demo2Element {
         }
         ---
@@ -483,7 +487,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo", topLevel=true)
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             ChildElement child;
         
@@ -600,5 +604,70 @@ public class YAMLParsingTest {
             return getCause(ite.getTargetException());
         return e;
     }
+
+    @Test
+    public void postConstructAndPreDestroy() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="root", topLevel=true, component=false)
+        public class DemoElement {
+            ChildElement child;
+        
+            public ChildElement getChild() { return child; }
+            @MCChildElement
+            public void setChild(ChildElement child) { this.child = child; }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import jakarta.annotation.*;
+        import static org.junit.jupiter.api.Assertions.assertEquals;
+        @MCElement(name="child")
+        public class ChildElement {
+            int value = 0;
+            public int getValue() {
+                return value; 
+            }
+        
+            @PostConstruct
+            public void afterPropertiesSet() throws Exception {
+                assertEquals(0, value);
+                value = 1;
+            }
+            @PreDestroy
+            public void destroy() throws Exception {
+                assertEquals(1, value);
+                value = 2;
+            }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        BeanRegistry br = parseYAML(result, """
+                root:
+                    child: {}
+                """);
+
+        assertStructure(
+                br,
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(1))))));
+
+        List<Object> beans = br.getBeans(); // 'list of beans' must be retrieved before closing the context
+
+        br.close();
+
+        assertStructure(
+                beans,
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(2))))));
+
+    }
+
 
 }

@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class MethodTest {
 
-	private static HttpRouter router;
+	private static Router router;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
@@ -43,14 +43,14 @@ public class MethodTest {
 			}
 		});
 		proxy.getFlow().add(new ExceptionTestInterceptor()); // Cause exception
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-		router.init();
+		router = new TestRouter();
+		router.add(proxy);
+		router.start();
 	}
 
 	@AfterAll
 	public static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

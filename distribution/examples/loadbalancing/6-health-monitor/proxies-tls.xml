@@ -16,7 +16,8 @@
         </httpClientConfig>
     </balancerHealthMonitor>
 
-    <router production="false">
+    <router>
+        <configuration production="true" />
 
         <!-- Public LB endpoint (HTTPS) -->
         <api port="8443">

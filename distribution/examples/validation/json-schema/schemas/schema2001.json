@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:app:schema2001",
+  "type": "object",
+  "required": [
+    "params",
+    "meta"
+  ],
+  "properties": {
+    "params": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "urn:app:base_def#/$defs/BaseParameter"
+      }
+    },
+    "meta": {
+      "$ref": "urn:app:meta_def#/$defs/Meta"
+    }
+  },
+  "additionalProperties": false
+}

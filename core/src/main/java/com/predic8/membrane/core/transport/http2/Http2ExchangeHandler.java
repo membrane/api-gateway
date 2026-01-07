@@ -163,7 +163,7 @@ public class Http2ExchangeHandler implements Runnable {
     }
 
     private Response generateErrorResponse(Exception e) {
-        return internal(transport.getRouter().isProduction(),"http2-exchange-handler")
+        return internal(transport.getRouter().getConfiguration().isProduction(),"http2-exchange-handler")
                 .exception(e)
                 .build();
     }

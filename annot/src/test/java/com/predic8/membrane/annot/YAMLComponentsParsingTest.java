@@ -15,7 +15,7 @@
 package com.predic8.membrane.annot;
 
 import com.predic8.membrane.annot.util.CompilerHelper;
-import com.predic8.membrane.annot.yaml.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
 import org.junit.jupiter.api.Test;
 
@@ -340,6 +340,35 @@ public class YAMLComponentsParsingTest {
     }
 
     @Test
+    public void componentIdIsWordFromGrammar() {
+        assertStructure(
+                parse("""
+                        components:
+                          bearerToken:
+                            bearerToken:
+                              header: Authorization
+                        ---
+                        api:
+                          flow:
+                            - oauth2authserver:
+                                issuer: https://issuer
+                                otherFields: abc
+                                $ref: "#/components/bearerToken"
+                        """),
+                clazz("Components"),
+                clazz("ApiElement",
+                        property("flow", list(
+                                clazz("OAuth2AuthServerElement",
+                                        property("issuer", value("https://issuer")),
+                                        property("otherFields", value("abc")),
+                                        property("bearerToken",
+                                                clazz("BearerTokenElement",
+                                                        property("header", value("Authorization")))))
+                        )))
+        );
+    }
+
+    @Test
     public void topLevelElementNotAllowedAsNestedChild() {
         var ex = assertThrows(RuntimeException.class, () -> parseWithTopLevelOnlySources("""
             outer:
@@ -387,7 +416,7 @@ public class YAMLComponentsParsingTest {
         import com.predic8.membrane.annot.*;
         import java.util.List;
 
-        @MCElement(name="outer", topLevel=true)
+        @MCElement(name="outer", topLevel=true, component=false)
         public class OuterElement {
             List<ItemBase> items;
 
@@ -413,7 +442,7 @@ public class YAMLComponentsParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
 
-        @MCElement(name="topThing", topLevel=true)
+        @MCElement(name="topThing", topLevel=true, component=false)
         public class TopThingElement extends ItemBase {}
         """;
 
@@ -473,7 +502,7 @@ public class YAMLComponentsParsingTest {
             import com.predic8.membrane.annot.*;
             import java.util.List;
 
-            @MCElement(name="api", topLevel=true)
+            @MCElement(name="api", topLevel=true, component=false)
             public class ApiElement {
                 List<FlowItem> flow;
 

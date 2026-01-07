@@ -15,13 +15,16 @@ package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.*;
 import com.networknt.schema.*;
 import com.networknt.schema.Error;
 import com.predic8.membrane.annot.*;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import com.predic8.membrane.annot.beanregistry.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import org.springframework.util.ReflectionUtils;
 
 import java.io.*;
 import java.lang.reflect.*;
@@ -32,6 +35,7 @@ import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static com.predic8.membrane.annot.yaml.MethodSetter.*;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.List.of;
 import static java.util.UUID.*;
 
 public class GenericYamlParser {
@@ -88,29 +92,22 @@ public class GenericYamlParser {
     }
 
     /**
-     * Entry point used by the runtime to consume a YAML stream and turn it into
-     * a {@link BeanRegistry} that the router can work with.
+     * Entry point used by the runtime to consume a YAML stream.
      * <ul>
      *   <li>Reads the entire stream as UTF-8.</li>
      *   <li>Splits multi-document YAML ("---" separators).</li>
      *   <li>Validates each document against the JSON Schema provided by {@code grammar}.</li>
      *   <li>Emits helpful line/column locations for malformed multi-document input.</li>
      * </ul>
-     * The returned registry is fully populated and {@link BeanRegistryImplementation#fireConfigurationLoaded()} has been called.
      * @param resource the input stream to parse. The method takes care of closing the stream.
      * @param grammar the grammar to use for type resolution and schema location
-     * @return the bean registry
+     * @return list of parsed bean definitions
      */
     public static List<BeanDefinition> parseMembraneResources(@NotNull InputStream resource, Grammar grammar) throws IOException {
         try (resource) {
             return parseToBeanDefinitions(resource, grammar);
         } catch (JsonParseException e) {
-            throw new IOException(
-                    "Invalid YAML: multiple configurations must be separated by '---' "
-                            + "(at line " + e.getLocation().getLineNr()
-                            + ", column " + e.getLocation().getColumnNr() + ").",
-                    e
-            );
+            throw new IOException("Invalid YAML: multiple configurations must be separated by '---' (at line %d, column %d).".formatted(e.getLocation().getLineNr(), e.getLocation().getColumnNr()), e);
         }
     }
 
@@ -143,12 +140,19 @@ public class GenericYamlParser {
      * <p>Ensures the node contains exactly one key (the kind), resolves the Java class via the
      * grammar and delegates to {@link #createAndPopulateNode(ParsingContext, Class, JsonNode)}.</p>
      */
-    public static Object readMembraneObject(String kind, Grammar grammar, JsonNode node, BeanRegistry registry) throws ParsingException {
+    public static <R extends BeanRegistry & BeanLifecycleManager> Object readMembraneObject(String kind, Grammar grammar, JsonNode node, R registry) throws ParsingException {
+        return createAndPopulateNode(new ParsingContext<>(kind, registry, grammar), decideClazz(kind, grammar, node), node.get(kind));
+    }
+
+    /**
+     * Detects the class that will be selected to represent the node in Java.
+     */
+    public static Class<?> decideClazz(String kind, Grammar grammar, JsonNode node) {
         ensureSingleKey(node);
         Class<?> clazz = grammar.getElement(kind);
         if (clazz == null)
             throw new ParsingException("Did not find java class for kind '%s'.".formatted(kind), node);
-        return createAndPopulateNode(new ParsingContext(kind, registry, grammar), clazz, node.get(kind));
+        return clazz;
     }
 
     /**
@@ -158,7 +162,7 @@ public class GenericYamlParser {
      *   values are produced by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)}. A top-level {@code "$ref"} injects a previously defined bean.
      * All failures are wrapped in a {@link ParsingException} with location information.
      */
-    public static <T> T createAndPopulateNode(ParsingContext ctx, Class<T> clazz, JsonNode node) throws ParsingException {
+    public static <T> T createAndPopulateNode(ParsingContext<?> ctx, Class<T> clazz, JsonNode node) throws ParsingException {
         try {
             T configObj = clazz.getConstructor().newInstance();
             if (node.isArray()) {
@@ -193,7 +197,15 @@ public class GenericYamlParser {
             }
             if (!required.isEmpty())
                 throw new ParsingException("Missing required fields: " + required.stream().map(McYamlIntrospector::getSetterName).toList(), node);
-            return configObj;
+            return handlePostConstructAndPreDestroy(ctx, configObj);
+        } catch (NoClassDefFoundError e) {
+            if (e.getCause() != null) {
+                var missingClass = e.getCause().getMessage(); // TODO: Better use ExceptionUtil.getRootCause() but it isn't visible in annot.
+                var msg = "Could not create bean with class: %s\nMissing class: %s\n".formatted(clazz, missingClass);
+                log.error(msg);
+                throw new ParsingException(msg, node); // TODO: Cause we know the reason, shorten output.
+            }
+            throw new ParsingException(e, node);
         } catch (Throwable cause) {
             throw new ParsingException(cause, node);
         }
@@ -201,7 +213,7 @@ public class GenericYamlParser {
 
     private static List<BeanDefinition> extractComponentBeanDefinitions(JsonNode componentsNode) {
         if (componentsNode == null || componentsNode.isNull())
-            return List.of();
+            return of();
 
         if (!componentsNode.isObject())
             throw new ParsingException("Expected object for 'components'.", componentsNode);
@@ -237,7 +249,7 @@ public class GenericYamlParser {
      * into the parent object via the matching @MCChildElement setter.
      * Rejects "$ref" if the same child is already configured inline.
      */
-    private static <T> void applyObjectLevelRef(ParsingContext ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) throws ParsingException {
+    private static <T> void applyObjectLevelRef(ParsingContext<?> ctx, Class<T> parentClass, JsonNode parentNode, JsonNode refNode, T obj) throws ParsingException {
         ensureTextual(refNode, "Expected a string after the '$ref' key.");
         Object referenced = getReferenced(ctx, refNode);
         String refKey = getElementName(referenced.getClass());
@@ -259,20 +271,20 @@ public class GenericYamlParser {
         }
     }
 
-    private static Object getReferenced(ParsingContext ctx, JsonNode refNode) {
+    private static Object getReferenced(ParsingContext<?> ctx, JsonNode refNode) {
         try {
-            return ctx.registry().resolveReference(refNode.asText());
+            return ctx.registry().resolve(refNode.asText());
         } catch (RuntimeException e) {
             throw new ParsingException(e, refNode);
         }
     }
 
-    public static List<Object> parseListIncludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+    public static List<Object> parseListIncludingStartEvent(ParsingContext<?> context, JsonNode node) throws ParsingException {
         ensureArray(node);
         return parseListExcludingStartEvent(context, node);
     }
 
-    private static @NotNull List<Object> parseListExcludingStartEvent(ParsingContext context, JsonNode node) throws ParsingException {
+    private static @NotNull List<Object> parseListExcludingStartEvent(ParsingContext<?> context, JsonNode node) throws ParsingException {
         List<Object> res = new ArrayList<>();
         for (int i = 0; i < node.size(); i++) {
             res.add(parseMapToObj(context, node.get(i)));
@@ -284,15 +296,42 @@ public class GenericYamlParser {
      * Parses a single-item map node like { kind: {...} } by extracting the only key and
      * delegating to {@link #parseMapToObj(ParsingContext, JsonNode, String)}.
      */
-    private static Object parseMapToObj(ParsingContext context, JsonNode node) throws ParsingException {
+    private static Object parseMapToObj(ParsingContext<?> context, JsonNode node) throws ParsingException {
         ensureSingleKey(node);
         String key = node.fieldNames().next();
         return parseMapToObj(context, node.get(key), key);
     }
 
-    private static Object parseMapToObj(ParsingContext ctx, JsonNode node, String key) throws ParsingException {
+    private static Object parseMapToObj(ParsingContext<?> ctx, JsonNode node, String key) throws ParsingException {
         if ("$ref".equals(key))
-            return ctx.registry().resolveReference(node.asText());
+            return ctx.registry().resolve(node.asText());
         return createAndPopulateNode(ctx.updateContext(key), ctx.resolveClass(key), node);
+    }
+
+    /**
+     * Calls the @PostConstruct method on the bean and returns it. If there are @PreDestroy methods, they will be
+     * registered within the registry.
+     */
+    private static <T> T handlePostConstructAndPreDestroy(ParsingContext<?> ctx, T bean) {
+        if (bean instanceof BeanRegistryAware beanRegistryAware) {
+            beanRegistryAware.setRegistry(ctx.registry());
+        }
+        ReflectionUtils.doWithMethods(bean.getClass(), method -> {
+            if (method.isAnnotationPresent(PostConstruct.class)) {
+                try {
+                    method.setAccessible(true);
+                    method.invoke(bean);
+                } catch (InvocationTargetException e) {
+                    throw new RuntimeException(e.getTargetException());
+                } catch (IllegalAccessException | IllegalArgumentException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            if (method.isAnnotationPresent(PreDestroy.class)) {
+                method.setAccessible(true);
+                ctx.registry().addPreDestroyCallback(bean, method);
+            }
+        });
+        return bean;
     }
 }

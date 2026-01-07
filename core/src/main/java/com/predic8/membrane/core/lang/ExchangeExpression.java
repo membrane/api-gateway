@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -23,6 +22,7 @@ import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.lang.jsonpath.*;
 import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.lang.xpath.*;
+import com.predic8.membrane.core.router.*;
 
 /**
  * Language expression that takes an exchange as input

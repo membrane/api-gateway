@@ -38,11 +38,14 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.examples.util.TestFileUtil.getFileContentAsLines;
 import static com.predic8.membrane.examples.util.TestFileUtil.writeLinesToFile;
@@ -69,6 +72,7 @@ public class ConsistentVersionNumbers {
 	private static final Pattern CONSTANTS_VERSION_PATTERN = Pattern.compile("(\\s*String version = \")(\\d+.\\d+)(\";.*)");
 	private static final Pattern RPM_SPEC_VERSION_PATTERN = Pattern.compile("(Version:\\s+)(\\S+)(.*)");
 	private static final Pattern HELP_REFERENCE_VERSION_PATTERN = Pattern.compile("(path.replace\\(\"%VERSION%\", \")([^\"]*)(\"\\))");
+	private static final Pattern YAML_SCHEMA_VERSION_PATTERN = Pattern.compile("(\\s*#\\s*yaml-language-server:\\s*\\$schema=https://www\\.membrane-api\\.io/v)(\\d+\\.\\d+(?:\\.\\d+)?)(\\.json\\b.*)");
 
 	@Test
 	public void doit() throws Exception {
@@ -142,6 +146,8 @@ public class ConsistentVersionNumbers {
 		handleHelpReference(new File(baseDirectory.getAbsolutePath(), "/annot/src/main/java/com/predic8/membrane/annot/generator/HelpReference.java"), versionTransformer);
 		handleRpmSpec(new File(baseDirectory.getAbsolutePath(), "/membrane.spec"), versionTransformer);
 		handleConstants(new File(baseDirectory.getAbsolutePath(), "core/src/main/java/com/predic8/membrane/core/Constants.java"), versionTransformer);
+
+		handleYamlSchemas(baseDirectory, versionTransformer);
 	}
 
 	private static void handleConstants(File file, VersionTransformer versionTransformer) throws Exception {
@@ -277,4 +283,59 @@ public class ConsistentVersionNumbers {
 	private interface VersionTransformer {
 		Semver map(File file, Semver old);
 	}
+
+	private static void handleYamlSchemas(File baseDirectory, VersionTransformer versionTransformer) throws Exception {
+		try (Stream<Path> s = Files.walk(baseDirectory.toPath())) {
+			s.filter(Files::isRegularFile)
+					.filter(p -> {
+						String n = p.getFileName().toString();
+						return n.endsWith(".yml") || n.endsWith(".yaml");
+					})
+					.filter(p -> !p.toString().contains(File.separator + "target" + File.separator))
+					.forEach(p -> {
+						try {
+							handleYamlSchemaFile(p.toFile(), versionTransformer);
+						} catch (Exception e) {
+							throw new RuntimeException("in file " + p.toAbsolutePath(), e);
+						}
+					});
+		}
+	}
+
+	private static void handleYamlSchemaFile(File file, VersionTransformer versionTransformer) throws Exception {
+		List<String> content = getFileContentAsLines(file);
+
+		boolean touched = false;
+		for (int i = 0; i < content.size(); i++) {
+			Matcher m = YAML_SCHEMA_VERSION_PATTERN.matcher(content.get(i));
+			if (!m.find())
+				continue;
+
+			touched = true;
+
+			Semver mapped = versionTransformer.map(file, new MembraneVersion(m.group(2)));
+
+			// Snapshot must NOT change YAML schema.
+			if (!isFullRelease(mapped))
+				continue;
+
+            content.set(i, m.replaceFirst(Matcher.quoteReplacement(m.group(1) + formatYamlSchemaVersion(mapped) + m.group(3))));
+		}
+
+		if (touched) {
+			writeLinesToFile(file, content);
+		}
+	}
+
+	private static boolean isFullRelease(Semver v) {
+        return v.getValue().indexOf('-') < 0;
+	}
+
+	private static String formatYamlSchemaVersion(Semver v) {
+		if (v.getPatch() == null) {
+			return "%d.%d".formatted(v.getMajor(), v.getMinor() == null ? 0 : v.getMinor());
+		}
+		return "%d.%d.%d".formatted(v.getMajor(), v.getMinor() == null ? 0 : v.getMinor(), v.getPatch());
+	}
+
 }

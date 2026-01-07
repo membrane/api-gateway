@@ -11,11 +11,11 @@ Some functionalities, such as authentication and rate limiting, are required acr
 2. **Test the APIs:**
     - **API 1 (Port 2000) → Returns `200 OK`**
       ```sh
-      curl -i http://localhost:2000
+      curl -i http://localhost:2000/foo
       ```
     - **API 2 (Port 2001) → Returns `404 Not Found`**
       ```sh
-      curl -i http://localhost:2001
+      curl -i http://localhost:2001/bar
       ```  
       **Check the request:** both contain CORS headers
-3. **Check `proxies.xml`** to see how the global interceptors are applied.
+3. **Check `apis.yaml`** to see how the global interceptors are applied.

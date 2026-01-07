@@ -17,13 +17,13 @@
 package com.predic8.membrane.core.interceptor.javascript;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.javascript.*;
+import com.predic8.membrane.core.router.*;
 import org.graalvm.polyglot.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -42,7 +42,7 @@ public class JavascriptInterceptorTest {
 
     private final static ObjectMapper om = new ObjectMapper();
 
-    final Router router = new Router();
+    final DefaultRouter router = new DefaultRouter();
     JavascriptInterceptor interceptor;
     Exchange exc;
 

@@ -17,11 +17,11 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.*;
 import com.fasterxml.jackson.databind.*;
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.io.*;
 import org.apache.http.client.config.*;
 import org.apache.http.client.methods.*;
@@ -36,61 +36,32 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SessionInterceptorTest {
 
-    private HttpRouter router;
+    private Router router;
     private CloseableHttpClient httpClient;
 
     @BeforeEach
     public void setUp() {
-        router = new HttpRouter();
+        router = new TestRouter();
         httpClient = createHttpClient();
     }
 
     @AfterEach
     void shutDown() throws IOException {
-        router.shutdown();
+        router.stop();
         httpClient.close();
     }
 
     @Test
-    public void generalSessionUsageTest() throws Exception {
+    public void generalSessionUsageTest() throws IOException {
         ServiceProxy sp = createTestServiceProxy();
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
 
-        AtomicLong counter = new AtomicLong(0);
-        List<Long> vals = new ArrayList<>();
-
-        AbstractInterceptorWithSession interceptor = defineInterceptor(counter,vals);
-
-        sp.getFlow().add(interceptor);
-        sp.getFlow().add(testResponseInterceptor());
-
-        router.init();
-
-        IntStream.range(0, 50).forEach(i -> sendRequest());
-
-        assertNull(vals.getFirst());
-        for(int i = 1; i < 98; i+=2){
-            int index = Math.round((i-1)/2f);
-            assertEquals(index,vals.get(i).intValue());
-        }
-        assertEquals(49,vals.get(99).intValue());
-    }
-
-    private ServiceProxy createTestServiceProxy() {
-        return new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "api.predic8.de", 80);
-    }
-
-    @Test
-    public void expirationTest() throws Exception{
-        ServiceProxy sp = createTestServiceProxy();
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
 
         AtomicLong counter = new AtomicLong(0);
         List<Long> vals = new ArrayList<>();
@@ -100,49 +71,76 @@ public class SessionInterceptorTest {
         sp.getFlow().add(interceptor);
         sp.getFlow().add(testResponseInterceptor());
 
-        router.init();
+        router.add(sp);
+        router.start();
 
+        IntStream.range(0, 50).forEach(i -> sendRequest());
+
+        assertNull(vals.getFirst());
+        for (int i = 1; i < 98; i += 2) {
+            int index = Math.round((i - 1) / 2f);
+            assertEquals(index, vals.get(i).intValue());
+        }
+        assertEquals(49, vals.get(99).intValue());
+    }
+
+    private ServiceProxy createTestServiceProxy() {
+        return new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "api.predic8.de", 80);
+    }
+
+    @Test
+    public void expirationTest() throws IOException {
+        List<Long> vals = new ArrayList<>();
+
+        AbstractInterceptorWithSession interceptor = defineInterceptor(new AtomicLong(0), vals);
+
+        ServiceProxy sp = createTestServiceProxy();
+        sp.getFlow().add(interceptor);
+        sp.getFlow().add(testResponseInterceptor());
+
+        router.add(sp);
+        router.start();
         interceptor.getSessionManager().setExpiresAfterSeconds(0);
 
         IntStream.range(0, 50).forEach(i -> sendRequest());
 
-        for(int i = 0; i < 100; i+=2)
+        for (int i = 0; i < 100; i += 2)
             assertNull(vals.get(i));
     }
 
     @Test
-    public void noUnneededRenewalOnReadOnlySession() throws Exception{
+    public void noUnneededRenewalOnReadOnlySession() {
         ServiceProxy sp = createTestServiceProxy();
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
+        router.getRuleManager().addProxy(sp, MANUAL);
 
         sp.getFlow().add(createAndReadOnlySessionInterceptor());
         sp.getFlow().add(testResponseInterceptor());
 
-        router.init();
+        router.start();
 
-        List<Map<String,Object>> bodies = new ArrayList<>();
+        List<Map<String, Object>> bodies = new ArrayList<>();
 
         int lowerBound = 0;
         int upperBound = 1000;
 
         IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
 
-        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> assertEquals(bodies.get(i),bodies.get(i+1)));
+        IntStream.range(lowerBound + 1, upperBound - 1).forEach(i -> assertEquals(bodies.get(i), bodies.get(i + 1)));
     }
 
     @Disabled
     @Test
-    public void renewalOnReadOnlySession() throws Exception{
+    public void renewalOnReadOnlySession() {
         ServiceProxy sp = createTestServiceProxy();
         AbstractInterceptorWithSession createAndReadOnlySessionInterceptor = createAndReadOnlySessionInterceptor();
 
         sp.getFlow().add(createAndReadOnlySessionInterceptor);
         sp.getFlow().add(testResponseInterceptor());
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(sp);
-        router.init();
+        router.getRuleManager().addProxy(sp, MANUAL);
+        router.start();
 
-        List<Map<String,Object>> bodies = new ArrayList<>();
+        List<Map<String, Object>> bodies = new ArrayList<>();
 
         int lowerBound = 0;
         int upperBound = 10;
@@ -151,15 +149,15 @@ public class SessionInterceptorTest {
 
         bodies.forEach(this::printCookie);
 
-        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1))));
+        IntStream.range(lowerBound + 1, upperBound - 1).forEach(i -> assertEquals(getCookieKey(bodies.get(i)), getCookieKey(bodies.get(i + 1))));
 
-        String cookieOne = getCookieKey(bodies.get(upperBound-1));
+        String cookieOne = getCookieKey(bodies.get(upperBound - 1));
 
-        Duration origRenewalTime = ((JwtSessionManager)createAndReadOnlySessionInterceptor.getSessionManager()).getRenewalTime();
+        Duration origRenewalTime = ((JwtSessionManager) createAndReadOnlySessionInterceptor.getSessionManager()).getRenewalTime();
 
-        ((JwtSessionManager)createAndReadOnlySessionInterceptor.getSessionManager()).setRenewalTime(Duration.ofMillis(0));
+        ((JwtSessionManager) createAndReadOnlySessionInterceptor.getSessionManager()).setRenewalTime(Duration.ofMillis(0));
         sendRequest();
-        ((JwtSessionManager)createAndReadOnlySessionInterceptor.getSessionManager()).setRenewalTime(origRenewalTime);
+        ((JwtSessionManager) createAndReadOnlySessionInterceptor.getSessionManager()).setRenewalTime(origRenewalTime);
 
         bodies.clear();
 
@@ -167,19 +165,19 @@ public class SessionInterceptorTest {
 
         bodies.forEach(this::printCookie);
 
-        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1))));
+        IntStream.range(lowerBound + 1, upperBound - 1).forEach(i -> assertEquals(getCookieKey(bodies.get(i)), getCookieKey(bodies.get(i + 1))));
 
-        String cookieTwo = getCookieKey(bodies.get(upperBound-1));
-        assertNotEquals(cookieOne,cookieTwo);
+        String cookieTwo = getCookieKey(bodies.get(upperBound - 1));
+        assertNotEquals(cookieOne, cookieTwo);
 
     }
 
-    public void printCookie(Map body){
+    public void printCookie(Map body) {
         System.out.println(getCookieKey(body));
     }
 
-    public String getCookieKey(Map cookie){
-        String raw = ((Map<?, ?>)cookie.get("request")).get("Cookie").toString();
+    public String getCookieKey(Map cookie) {
+        String raw = ((Map<?, ?>) cookie.get("request")).get("Cookie").toString();
         return raw.split("=")[0];
     }
 
@@ -187,7 +185,7 @@ public class SessionInterceptorTest {
         return new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                if(exc.getResponse() == null)
+                if (exc.getResponse() == null)
                     exc.setResponse(Response.ok().build());
                 try {
                     exc.getResponse().setBodyContent(createTestResponseBody(exc).getBytes());
@@ -224,24 +222,24 @@ public class SessionInterceptorTest {
         Map response = new HashMap();
 
         Stream.of("Cookie")
-                .forEach(cookieName -> addJoinedHeaderTo(request,cookieName,exc.getRequest()));
+                .forEach(cookieName -> addJoinedHeaderTo(request, cookieName, exc.getRequest()));
 
         Stream.of("Set-Cookie")
-                .forEach(cookieName -> addJoinedHeaderTo(response,cookieName,exc.getResponse()));
+                .forEach(cookieName -> addJoinedHeaderTo(response, cookieName, exc.getResponse()));
 
         ImmutableMap<String, Map> value = ImmutableMap.of("request", request, "response", response);
         return new ObjectMapper().writeValueAsString(value);
     }
 
-    private Stream<HeaderField> getHeader(String name, Message msg){
-        if(msg == null)
+    private Stream<HeaderField> getHeader(String name, Message msg) {
+        if (msg == null)
             return Stream.empty();
         return Stream.of(msg.getHeader().getAllHeaderFields())
                 .filter(hf -> hf.getHeaderName().getName().equalsIgnoreCase(name));
     }
 
-    private void addJoinedHeaderTo(Map cache, String name, Message msg){
-        cache.put(name, getHeader(name,msg)
+    private void addJoinedHeaderTo(Map cache, String name, Message msg) {
+        cache.put(name, getHeader(name, msg)
                 .map(HeaderField::getValue)
                 .collect(Collectors.joining(";")));
     }
@@ -250,13 +248,14 @@ public class SessionInterceptorTest {
         return HttpClients.custom().setConnectionManager(new BasicHttpClientConnectionManager()).setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()).build();
     }
 
-    private Map<String,Object> sendRequest() {
+    private Map<String, Object> sendRequest() {
         Map<String, Object> result;
         HttpGet httpGet = new HttpGet("http://localhost:3001");
         try {
             try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
                 String string = IOUtils.toString(response.getEntity().getContent(), UTF_8);
-                result = new ObjectMapper().readValue(string, new TypeReference<>() {});
+                result = new ObjectMapper().readValue(string, new TypeReference<>() {
+                });
                 EntityUtils.consume(response.getEntity());
             }
         } catch (Exception e) {
@@ -267,20 +266,20 @@ public class SessionInterceptorTest {
 
     private AbstractInterceptorWithSession defineInterceptor(AtomicLong counter, List<Long> vals) {
         return new AbstractInterceptorWithSession() {
-                @Override
-                public Outcome handleRequestInternal(Exchange exc) {
-                    Session s = getSessionManager().getSession(exc);
-                    vals.add(s.get("value"));
-                    long nextVal = counter.getAndIncrement();
-                    s.put("value", nextVal);
-                    vals.add(s.get("value"));
-                    return CONTINUE;
-                }
+            @Override
+            public Outcome handleRequestInternal(Exchange exc) {
+                Session s = getSessionManager().getSession(exc);
+                vals.add(s.get("value"));
+                long nextVal = counter.getAndIncrement();
+                s.put("value", nextVal);
+                vals.add(s.get("value"));
+                return CONTINUE;
+            }
 
-                @Override
-                protected Outcome handleResponseInternal(Exchange exc) {
-                    return CONTINUE;
-                }
-            };
+            @Override
+            protected Outcome handleResponseInternal(Exchange exc) {
+                return CONTINUE;
+            }
+        };
     }
 }
