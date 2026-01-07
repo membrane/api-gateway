@@ -260,7 +260,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
     private void handleAsynchronousInitializationResult(boolean empty) {
         synchronized (observers) {
             for (BeanCacheObserver observer : observers) {
-                observer.handleAsynchronousInitializationResult(uidsToActivate.isEmpty());
+                observer.handleAsynchronousInitializationResult(empty);
             }
         }
     }

@@ -35,7 +35,6 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.beans.factory.*;
