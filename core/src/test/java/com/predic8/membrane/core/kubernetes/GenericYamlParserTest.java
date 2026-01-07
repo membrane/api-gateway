@@ -368,6 +368,11 @@ public class GenericYamlParserTest {
         }
 
         @Override
+        public <T> Optional<T> getBean(String beanName, Class<T> clazz) {
+            return Optional.empty();
+        }
+
+        @Override
         public void register(String beanName, Object object) {}
 
         @Override

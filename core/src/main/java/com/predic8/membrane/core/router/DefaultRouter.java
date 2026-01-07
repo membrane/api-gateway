@@ -405,7 +405,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     @Override
     public BeanRegistry getRegistry() {
-       return mainComponents.getRegistry();
+        return mainComponents.getRegistry();
     }
 
     public void applyConfiguration(Configuration configuration) {

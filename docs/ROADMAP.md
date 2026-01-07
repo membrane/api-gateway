@@ -48,6 +48,16 @@
   - Maybe move it to configuration
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
+- Remove GroovyTemplateInterceptor (Not Template Interceptor)
+  - Old an unused
+- Configuration independent lookup of beans. I just want bean foo and I do not care where it is defined.
+  - See: ChainInterceptor.getBean(String)
+  - Maybe a BeanRegistry implementation for Spring?
+
+# 7.0.4
+
+- Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- do not pass a `Router` reference into all sorts of beans: Access to global functionality should happen only on a very limited basis.
 
 
 # 7.0.1
