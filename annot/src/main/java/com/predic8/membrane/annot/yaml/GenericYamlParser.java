@@ -141,11 +141,18 @@ public class GenericYamlParser {
      * grammar and delegates to {@link #createAndPopulateNode(ParsingContext, Class, JsonNode)}.</p>
      */
     public static <R extends BeanRegistry & BeanLifecycleManager> Object readMembraneObject(String kind, Grammar grammar, JsonNode node, R registry) throws ParsingException {
+        return createAndPopulateNode(new ParsingContext<>(kind, registry, grammar), decideClazz(kind, grammar, node), node.get(kind));
+    }
+
+    /**
+     * Detects the class that will be selected to represent the node in Java.
+     */
+    public static Class<?> decideClazz(String kind, Grammar grammar, JsonNode node) {
         ensureSingleKey(node);
         Class<?> clazz = grammar.getElement(kind);
         if (clazz == null)
             throw new ParsingException("Did not find java class for kind '%s'.".formatted(kind), node);
-        return createAndPopulateNode(new ParsingContext<>(kind, registry, grammar), clazz, node.get(kind));
+        return clazz;
     }
 
     /**
@@ -306,6 +313,9 @@ public class GenericYamlParser {
      * registered within the registry.
      */
     private static <T> T handlePostConstructAndPreDestroy(ParsingContext<?> ctx, T bean) {
+        if (bean instanceof BeanRegistryAware beanRegistryAware) {
+            beanRegistryAware.setRegistry(ctx.registry());
+        }
         ReflectionUtils.doWithMethods(bean.getClass(), method -> {
             if (method.isAnnotationPresent(PostConstruct.class)) {
                 try {

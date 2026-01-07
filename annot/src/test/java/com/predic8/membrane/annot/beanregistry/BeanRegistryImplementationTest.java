@@ -29,7 +29,8 @@ class BeanRegistryImplementationTest {
     @BeforeEach
     void setup() {
         aware = Mockito.mock(BeanRegistryAware.class);
-        registry = new BeanRegistryImplementation(null, aware, null);
+        registry = new BeanRegistryImplementation(null);
+        registry.register("aware", aware);
     }
 
     @Test
