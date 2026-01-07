@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+api:
+  port: 2001
+  name: Protected Resource
+  flow:
+    - jwtAuth:
+        expectedAud: order
+        jwks:
+          jwks:
+            - jwk:
+                location: jwk.json
+    - template:
+        src: |
+          You accessed protected content!
+          JWT Scopes: ${property.jwt.get("scope")}
+    - return: {}
