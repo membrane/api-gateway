@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+components:
+  staxInterceptor:
+    bean:
+      class: com.predic8.StaxConverterInterceptor
+
+---
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - $ref: "#/components/staxInterceptor"
+    - beautifier: {}
+    - echo: {}
+
