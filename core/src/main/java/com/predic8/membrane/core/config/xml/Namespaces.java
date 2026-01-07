@@ -21,7 +21,7 @@ import java.util.*;
 
 import static javax.xml.XMLConstants.NULL_NS_URI;
 
-@MCElement(name="namespaces", component = false)
+@MCElement(name="namespaces", component = false, noEnvelope = true)
 public class Namespaces {
 
     private List<Namespace> namespaces;
