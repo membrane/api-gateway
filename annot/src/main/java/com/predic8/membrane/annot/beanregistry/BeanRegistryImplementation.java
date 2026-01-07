@@ -176,8 +176,10 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
 
     @Override
     public List<Object> getBeans() {
-        for (FallbackBeanDefiner fallbackBeanDefiner : fallbacks) {
-            fallbackBeanDefiner.defineIfNecessary();
+        synchronized (fallbacks) {
+            for (FallbackBeanDefiner fallbackBeanDefiner : fallbacks) {
+                fallbackBeanDefiner.defineIfNecessary();
+            }
         }
         return bcs.values().stream().filter(bd -> !bd.getDefinition().isComponent())
                 .map(bc -> bc.getOrCreate(this, grammar))
@@ -224,9 +226,11 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
         }
         if (!beans.isEmpty())
             return Optional.of(beans.getFirst());
-        for (FallbackBeanDefiner fallbackBeanDefiner : fallbacks) {
-            if (fallbackBeanDefiner.produces(clazz))
-                return Optional.of((T) fallbackBeanDefiner.defineIfNecessary());
+        synchronized (fallbacks) {
+            for (FallbackBeanDefiner fallbackBeanDefiner : fallbacks) {
+                if (fallbackBeanDefiner.produces(clazz))
+                    return Optional.of((T) fallbackBeanDefiner.defineIfNecessary());
+            }
         }
         return Optional.empty();
     }
