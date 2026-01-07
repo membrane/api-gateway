@@ -20,10 +20,13 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
+
+import static com.predic8.membrane.annot.yaml.WatchAction.ADDED;
 
 /**
  * TODO:
@@ -41,7 +44,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
 
     private static final Logger log = LoggerFactory.getLogger(BeanRegistryImplementation.class);
 
-    private final BeanCacheObserver observer;
+    private final List<BeanCacheObserver> observers = Collections.synchronizedList(new ArrayList<>());
     private final Grammar grammar;
 
     // uid -> bean
@@ -67,34 +70,45 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
     record PreDestroyCallback(Object bean, Method method) {
     }
 
-    public BeanRegistryImplementation(BeanCacheObserver observer, BeanRegistryAware registryAware, Grammar grammar) {
-        this.observer = observer;
+    public BeanRegistryImplementation(Grammar grammar) {
         this.grammar = grammar;
-        registryAware.setRegistry(this);
     }
 
     @Override
     public void start() {
+        for (BeanContainer bc : bcs.values()) {
+            bc.getOrCreate(this, grammar);
+        }
     }
 
     @Override
     public void handle(ChangeEvent changeEvent, boolean isLast) {
         if (changeEvent instanceof StaticConfigurationLoaded) {
             activationRun();
-            observer.handleAsynchronousInitializationResult(uidsToActivate.isEmpty());
+            handleAsynchronousInitializationResult(uidsToActivate.isEmpty());
         }
         if (changeEvent instanceof BeanDefinitionChanged(WatchAction action, BeanDefinition bd)) {
             // Keep the latest BeanDefinition for all actions so activationRun
             // can see both metadata and the action (including DELETED).
-            bcs.put(bd.getUid(), new BeanContainer(bd));
-
-            if (!bd.isComponent() && observer.isActivatable(bd)) {
-                uidsToActivate.add(new UidAction(bd.getUid(), action));
-            }
+            handleBeanContainerChange(action, new BeanContainer(bd, grammar));
             if (isLast)
                 activationRun();
         }
     }
+
+    private void handleBeanContainerChange(WatchAction action, BeanContainer bc) {
+        bcs.put(bc.getDefinition().getUid(), bc);
+
+        if (bc.produces(BeanCacheObserver.class)) {
+            observers.add((BeanCacheObserver) bc.getOrCreate(this, grammar));
+            log.debug("Registered BeanRegistry observer: " + bc);
+        }
+
+        if (!bc.getDefinition().isComponent() && isActivatable(bc)) {
+            uidsToActivate.add(new UidAction(bc.getDefinition().getUid(), action));
+        }
+    }
+
 
     private void activationRun() {
         Set<UidAction> uidsToRemove = new HashSet<>();
@@ -103,8 +117,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
             try {
                 Object bean = bc.getOrCreate(this, grammar);
 
-                // e.g., inform router about a new ApiProxy or GlobalInterceptor
-                observer.handleBeanEvent(new BeanDefinitionChanged(uidAction.action, bc.getDefinition()), bean, getOldBean(uidAction.action, bc.getDefinition()));
+                handleBeanEvent(new BeanDefinitionChanged(uidAction.action, bc.getDefinition()), bean, getOldBean(uidAction.action, bc.getDefinition()));
 
                 if (uidAction.action.isAdded() || uidAction.action.isModified())
                     singletonBeans.put(bc.getDefinition().getUid(), bean);
@@ -155,6 +168,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
     @Override
     public <T> List<T> getBeans(Class<T> clazz) {
         return bcs.values().stream()
+                .filter(bd -> bd.produces(clazz))
                 .map(bc -> bc.getOrCreate(this, grammar))
                 .filter(Objects::nonNull)
                 .filter(clazz::isInstance)
@@ -183,15 +197,14 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
             throw new IllegalArgumentException("bean must not be null");
 
         var uuid = UUID.randomUUID().toString();
-        bcs.put(uuid,
-                new BeanContainer(
-                    new BeanDefinition(
-                            "component",
-                            computeBeanName(beanName, uuid),
-                            null,
-                            uuid,
-                            null),
-                    bean));
+        handleBeanContainerChange(ADDED, new BeanContainer(
+                new BeanDefinition(
+                        "component",
+                        computeBeanName(beanName, uuid),
+                        null,
+                        uuid,
+                        null),
+                bean));
         singletonBeans.put(uuid, bean);
         // the return value of 'put' is ignored, since bean registration with
         // random keys should not yield duplicates anyway.
@@ -233,6 +246,40 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
                 log.error("Could not invoke preDestroy method of {}: {}", pc.bean, e.getMessage());
             }
         });
+    }
+
+    /**
+     * Checks whether any registered Observer is interested in the given bean.
+     */
+    private boolean isActivatable(BeanContainer bd) {
+        synchronized (observers) {
+            for (BeanCacheObserver observer : observers) {
+                if (observer.isActivatable(bd)) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Notifies all registered Observers about the result of the asynchronous initialization.
+     */
+    private void handleAsynchronousInitializationResult(boolean empty) {
+        synchronized (observers) {
+            for (BeanCacheObserver observer : observers) {
+                observer.handleAsynchronousInitializationResult(empty);
+            }
+        }
+    }
+
+    /**
+     * Notifies all registered Observers about a bean change.
+     */
+    private void handleBeanEvent(BeanDefinitionChanged event, Object newBean, @Nullable Object oldBean) throws IOException {
+        synchronized (observers) {
+            for (BeanCacheObserver observer : observers)
+                // e.g., inform router about a new ApiProxy or GlobalInterceptor
+                observer.handleBeanEvent(event, newBean, oldBean);
+        }
     }
 
 }

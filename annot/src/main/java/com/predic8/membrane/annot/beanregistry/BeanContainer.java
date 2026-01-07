@@ -28,6 +28,10 @@ public class BeanContainer {
 
     private final BeanDefinition definition;
     /**
+     * The class of the bean.
+     */
+    private final Class clazz;
+    /**
      * Constructed bean after initialization.
      */
     private final AtomicReference<Object> singleton = new AtomicReference<>();
@@ -35,16 +39,18 @@ public class BeanContainer {
     /**
      * Creates a BeanDefinition where the bean has not yet been instantiated and initialized.
      */
-    public BeanContainer(BeanDefinition definition) {
+    public BeanContainer(BeanDefinition definition, Grammar grammar) {
         this.definition = definition;
+        this.clazz = GenericYamlParser.decideClazz(definition.getKind(), grammar, definition.getNode());
     }
 
     /**
      * Creates a BeanDefinition where the bean has already been instantiated and initialized.
      */
-    public BeanContainer(BeanDefinition definition, Object singleton) {
+    public BeanContainer(BeanDefinition definition, @NotNull Object singleton) {
         this.definition = definition;
         this.singleton.set(singleton);
+        this.clazz = singleton.getClass();
     }
 
     /**
@@ -95,6 +101,7 @@ public class BeanContainer {
             return define(registry, grammar);
         }
 
+
         // Singleton: ensure define() runs at most once per BeanContainer.
         synchronized (this) {
             Object existing = getSingleton();
@@ -117,4 +124,10 @@ public class BeanContainer {
         );
     }
 
+    /**
+     * Checks whether this bean definition will produce a bean which can be assigned to the clazz.
+     */
+    public <T> boolean produces(Class<T> clazz) {
+        return clazz.isAssignableFrom(this.clazz);
+    }
 }

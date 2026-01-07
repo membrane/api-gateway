@@ -37,14 +37,6 @@ public class YamlParser {
      */
     private final BeanRegistry beanRegistry;
 
-    private static class TestRouter implements BeanRegistryAware {
-
-        @Override
-        public void setRegistry(BeanRegistry registry) {
-
-        }
-    }
-
     public YamlParser(String resourceName) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException, InterruptedException {
         Grammar generator = getGrammar();
 
@@ -55,11 +47,11 @@ public class YamlParser {
         String normalized = resourceName.startsWith("/") ?
                 resourceName.substring(1) : resourceName;
 
-        BeanRegistryImplementation impl = new BeanRegistryImplementation(getLatchObserver(cdl), new TestRouter(), generator);
+        BeanRegistryImplementation impl = new BeanRegistryImplementation(generator);
         impl.parseYamls(requireNonNull(cl.getResourceAsStream(normalized)), generator);
-        beanRegistry = impl;
+        impl.start();
 
-        cdl.await();
+        beanRegistry = impl;
     }
 
     private @NotNull Grammar getGrammar()
@@ -76,28 +68,6 @@ public class YamlParser {
         );
 
         return (Grammar) grammarClass.getConstructor().newInstance();
-    }
-
-    /**
-     * Used to get notification about termination of parsing
-     */
-    private static @NotNull BeanCacheObserver getLatchObserver(CountDownLatch cdl) {
-        return new BeanCacheObserver() {
-            @Override
-            public void handleAsynchronousInitializationResult(boolean empty) {
-                cdl.countDown();
-            }
-
-            @Override
-            public void handleBeanEvent(BeanDefinitionChanged bdc, Object bean, Object oldBean) {
-
-            }
-
-            @Override
-            public boolean isActivatable(BeanDefinition bd) {
-                return true;
-            }
-        };
     }
 
     /**
