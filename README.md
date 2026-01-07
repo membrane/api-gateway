@@ -1190,7 +1190,7 @@ This API will expose metrics for Prometheus at [http://localhost:2000/metrics](h
 ![Grafana Dashborad for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
 Grafana dashboard from Membrane metrics.
  
-See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus).
+See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus-grafana).
 
 ### OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry** traces using the `openTelemetry` plugin and the `W3C` propagation standard. This enables detailed tracing of requests across Membrane and backend services.
