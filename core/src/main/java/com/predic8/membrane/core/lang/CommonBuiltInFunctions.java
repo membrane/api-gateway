@@ -33,6 +33,7 @@ import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static java.lang.System.getenv;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
 import static java.util.Objects.*;
@@ -174,7 +175,7 @@ public class CommonBuiltInFunctions {
     public static String env(String name) {
         if (name == null || name.isBlank())
             return null;
-        return System.getenv(name);
+        return getenv(name);
     }
 
 }
