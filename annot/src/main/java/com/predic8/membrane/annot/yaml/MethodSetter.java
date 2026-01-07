@@ -14,23 +14,21 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.annot.MCChildElement;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
 import org.jetbrains.annotations.*;
 
-import javax.lang.model.util.Types;
+import javax.lang.model.util.*;
 import java.lang.reflect.*;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static com.predic8.membrane.annot.yaml.GenericYamlParser.createAndPopulateNode;
-import static com.predic8.membrane.annot.yaml.GenericYamlParser.parseListIncludingStartEvent;
+import static com.predic8.membrane.annot.yaml.GenericYamlParser.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static java.lang.Long.parseLong;
-import static java.util.Locale.ROOT;
+import static java.lang.Boolean.*;
+import static java.lang.Double.*;
+import static java.lang.Integer.*;
+import static java.lang.Long.*;
+import static java.util.Locale.*;
 
 public class MethodSetter {
 
@@ -93,27 +91,53 @@ public class MethodSetter {
     private Object resolveSetterValue(ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
         Class<?> wanted = getParameterType();
 
+        // Collections / repeated elements
         List<Object> list = getObjectList(ctx, node, key, wanted);
         if (list != null) return list;
 
+        // Structured objects
+        if (McYamlIntrospector.isStructured(setter)) {
+            if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);
+            return createAndPopulateNode(ctx.updateContext(key), wanted, node);
+        }
+
+        return coerceScalarOrReference(ctx, node, key, wanted);
+    }
+
+    /**
+     * Attempts to coerce a given JSON node into the desired scalar, enum, reference, or map type,
+     * as specified by the provided target class.
+     *
+     * @param ctx The parsing context, providing access to type resolution and bean lookup mechanisms.
+     * @param node The JSON node to be coerced into the desired type.
+     * @param key The key corresponding to the JSON node, often used for error messages or map assignments.
+     * @param wanted The target class specifying the type into which the node should be converted.
+     * @return The coerced object, matching the desired type, derived from the input node.
+     * @throws WrongEnumConstantException If the node value does not match any of the constants in the enum type.
+     * @throws ParsingException If the provided type is unsupported for coercion or other unexpected issues arise.
+     */
+    Object coerceScalarOrReference(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
+        // Scalars, enums, bean refs, "other attributes"
         if (wanted.isEnum()) return parseEnum(wanted, node);
         if (wanted.equals(String.class)) return node.asText();
 
-        if (wanted == Integer.TYPE || wanted == Integer.class) return parseInt(node.asText());
-        if (wanted == Long.TYPE || wanted == Long.class) return parseLong(node.asText());
-        if (wanted == Boolean.TYPE || wanted == Boolean.class) return parseBoolean(node.asText());
-        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asText());
+        if (wanted == int.class || wanted == Integer.class)
+            return node.isInt() ? node.intValue() : parseInt(node.asText());
+        if (wanted == long.class || wanted == Long.class)
+            return node.isLong() || node.isInt() ? node.longValue() : parseLong(node.asText());
+        if (wanted == double.class || wanted == Double.class)
+            return node.isNumber() ? node.doubleValue() : parseDouble(node.asText());
+        if (wanted == boolean.class || wanted == Boolean.class)
+            return node.isBoolean() ? node.booleanValue() : parseBoolean(node.asText());
+        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter))
+            return Map.of(key, node.asText());
 
         if (node.isTextual() && isBeanReference(wanted)) {
             return resolveReference(ctx, node, key, wanted);
         }
 
-        if (McYamlIntrospector.isStructured(setter)) {
-            if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);
-            return createAndPopulateNode(ctx.updateContext(key), wanted, node);
-        }
         if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolve(node.asText());
-        throw new RuntimeException("Not implemented setter type " + wanted);
+        throw new ParsingException("Unsupported setter type: %s for key '%s' with node type %s".formatted(wanted.getName(), key, node.getNodeType()), node);
     }
 
     private @Nullable List<Object> getObjectList(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
@@ -126,7 +150,7 @@ public class MethodSetter {
                     if (o == null) continue;
                     if (!elemType.isAssignableFrom(o.getClass())) {
                         throw new ParsingException("Value of type '%s' is not allowed in list '%s'. Expected '%s'."
-                                        .formatted(McYamlIntrospector.getElementName(o.getClass()), key, elemType.getSimpleName()), node);
+                                .formatted(McYamlIntrospector.getElementName(o.getClass()), key, elemType.getSimpleName()), node);
                     }
                 }
             }

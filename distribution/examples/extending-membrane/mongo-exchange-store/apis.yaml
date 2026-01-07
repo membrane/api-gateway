@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+components:
+  my-store:
+    mongoDBExchangeStore:
+      connection: mongodb://localhost:27017/
+      collection: exchange
+      database: exchange
+
+---
+
+api:
+  name: predic8
+  port: 2000
+  target:
+    url: https://api.predic8.de
+
+---
+
+api:
+  port: 9000
+  flow:
+    - adminConsole: {}

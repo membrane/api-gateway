@@ -100,4 +100,7 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
         return CommonBuiltInFunctions.getDefaultSessionLifetime(beanName, exchange);
     }
 
+    public String env(String s) {
+        return CommonBuiltInFunctions.env(s);
+    }
 }

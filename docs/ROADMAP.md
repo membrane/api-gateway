@@ -14,14 +14,32 @@
 
 # 7.X
 
+- Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
 - Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
 - Rewrite ACL to use the YAML configuration instead of external XML files
 - Fix maven central publish job
 - JMXExporter:
   - Tutorial
   - Documentation
-  - See JmxExporter
-- Synchronization of BeanRegistry
+    - See JmxExporter
+- logs:
+  - Instead of:
+    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2000'
+    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2001'
+    => listening at *:2000, *:2001
+- refactor JdbcUserDataProvider
+
+
+# 7.0.4
+
+- Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- YAML parsing:
+  - When the reason for a parse error is clear. Shorten error message.
+- BalancerHealthMonitor:
+  - @PostConstruct instead of InitializingBean, DisposableBean
+- Scripting: expose beanRegistry  
+- IfInterceptor:
+  - Add "else"
 
 # 7.1.0
 
@@ -44,9 +62,6 @@
 
 # 7.0.1
 
-- Adding a configuration flag to enable/disable colorized output
-- Constant or methods to centralize color formatting: ANSIColors
-- Detecting terminal support before applying colors (e.g., check if System.console() is available)
 - Central description of Membrane Languages, Cheat Sheets, links to their docs.
 - Central desciption of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
@@ -55,7 +70,7 @@
 - Fix `YAMLParsingTest.errorInListItemUniqueness()`
 - Check 404 in AdminConsole => Client Requests
   - API to get client requests returns 404, if called without admin console access 
-  
+ 
 
 ## (Breaking) Interface Changes
 - JMX: Name changes to "io.membrane-api:00=routers, name="

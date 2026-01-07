@@ -15,6 +15,7 @@ package com.predic8.membrane.annot.beanregistry;
 
 import com.predic8.membrane.annot.*;
 
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.*;
 
@@ -65,4 +66,9 @@ public interface BeanRegistry {
      * @return the existing or newly created and registered bean instance
      */
      <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier);
+
+    /**
+     * Release all resources.
+     */
+    void close();
 }
