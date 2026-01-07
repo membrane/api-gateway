@@ -1,9 +1,8 @@
-# Securing a WSDL
+# Using a secured WSDL for a SOAP Proxy
 
-## How it works
-- The `soapProxy` acts as an entry point, listening on port `2010` and forwarding WSDL requests to the internal `wsdl-proxy`.
-- The `wsdl-proxy` provides full authentication configuration.
-- To secure a WSDL service, replace `<sampleSoapService/>` with a <target> definition specifying the actual WSDL endpoint. Authentication settings should be configured within the `wsdl-proxy` to ensure proper access control.
+Usually WSDL documents are not secured and can be freely accessed by anyone. But sometimes WSDL documentation is considered sensitive and is protected by access control.
 
-**Refer to [`proxies.xml`](./proxies.xml) for further details, settings, and modifications.**
+To reference a secured WSDL in Membrane, configure an internal API to handle authentication and authorization with the server hosting the WSDL.
+
+See the `apis.yaml` for a starting point.
 

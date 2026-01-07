@@ -56,7 +56,7 @@ import static com.predic8.membrane.core.Constants.*;
  * {@link Router}, which periodically attempts to restore the proxy.
  * @topic 1. Proxies and Flow
  */
-@MCElement(name = "soapProxy")
+@MCElement(name = "soapProxy", topLevel = true, component = false)
 public class SOAPProxy extends AbstractServiceProxy {
 
     private static final Logger log = LoggerFactory.getLogger(SOAPProxy.class.getName());

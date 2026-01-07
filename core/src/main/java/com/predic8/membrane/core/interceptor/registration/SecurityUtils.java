@@ -23,11 +23,19 @@ import java.util.regex.Pattern;
 public class SecurityUtils {
 
     private static final SecureRandom secureRandom = new SecureRandom();
+    public static final Pattern HEX_PASSWORD_PATTERN = Pattern.compile("\\$([^$]+)\\$([^$]+)\\$.+");
+    public static final String $ = Pattern.quote("$");
 
     public static boolean isHashedPassword(String postDataPassword) {
-        // TODO do a better check here
         String[] split = postDataPassword.split(Pattern.quote("$"));
-        return split.length == 4 && split[0].isEmpty() && split[3].length() >= 20;
+        if (split.length != 4)
+            return false;
+        if (!split[0].isEmpty())
+            return false;
+        if (split[3].length() < 20)
+            return false;
+        // Check if the second part is a valid hex
+        return HEX_PASSWORD_PATTERN.matcher(postDataPassword).matches();
     }
 
     static String createPasswdCompatibleHash(String password) {
@@ -41,7 +49,7 @@ public class SecurityUtils {
     }
 
     public static String extractSalt(String password) {
-        return password.split(Pattern.quote("$"))[2];
+        return password.split($)[2];
     }
 
     public static String createPasswdCompatibleHash(String algo, String password, String salt) {
@@ -53,6 +61,10 @@ public class SecurityUtils {
     }
 
     public static String extractMagicString(String password) {
-        return password.split(Pattern.quote("$"))[1];
+        try{
+            return password.split(Pattern.quote("$"))[1];
+        } catch (Exception e) {
+            throw new RuntimeException("Password must be in hash notation", e);
+        }
     }
 }

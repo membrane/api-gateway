@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+components:
+  headerAddInterceptor:
+    bean:
+      class: com.predic8.AddSoapHeaderInterceptor
+
+---
+
+api:
+  port: 2000
+  name: echo
+  flow:
+    - $ref: '#/components/headerAddInterceptor'
+    - log: {}
+    - return: {}
