@@ -122,7 +122,7 @@ class SetPropertyInterceptorXPathTest {
         p8.prefix = "p8";
         p8.uri = "https://predic8.de";
         var ns = new Namespaces();
-        ns.setNamespace(List.of(p8));
+        ns.setNamespaces(List.of(p8));
         return ns;
     }
 }

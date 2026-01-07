@@ -34,8 +34,8 @@ public class Namespaces {
     /**
      * @description Defines XML namespace mappings (prefix to URI) for use in XPath expressions.
      */
-    @MCChildElement(allowForeign = false)
-    public void setNamespace(List<Namespace> namespace) {
+    @MCChildElement
+    public void setNamespaces(List<Namespace> namespace) {
         this.namespaces = namespace;
     }
 
