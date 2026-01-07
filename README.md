@@ -869,80 +869,81 @@ api:
 
 # Security
 
-Membrane offers lots of security features to protect backend servers.
+Membrane offers all kinds of security features to protect APIs and backend servers.
 
 ## API Keys
 
-You can define APIs keys directly in your configuration, and Membrane will validate incoming requests against them.
+API keys can be defined in the configuration, loaded from a file, or stored in a database. Requests are authenticated by validating the provided API key against these sources.
 
-### Example Configuration
-The following configuration secures the `Fruitshop API` by validating an API key provided as a query parameter:
+You can also define permissions using scopes in OpenAPI and enforce them with API keys, OAuth 2.0, or JWT-based authentication.
 
-```xml
-<api port="2000">
-    <apiKey>
-        <!-- Define valid API keys -->
-        <simple>
-            <secret value="abc123" />
-            <secret value="secret" />
-            <secret value="Paris2025" />
-        </simple>
-        
-        <!-- Extract the API key from the query parameter -->
-        <queryParamExtractor paramName="api-key" />
-    </apiKey>
-    <target url="https://api.predic8.de" />
-</api>
-```  
+This configuration secures all APIs globally. Alternatively, API keys can be defined for individual APIs only.
 
-### Testing the Configuration
-To test the configuration, pass a valid API key in the query string:
-
-```bash
-curl "http://localhost:2000/shop/v2/products/4?api-key=abc123"
-```  
-
-If the key is invalid or missing, Membrane denies access and returns an error response (HTTP 401 Unauthorized).
+```yaml
+global:
+  - apiKey:
+      stores:
+        - simple:
+            - secret:
+                value: aed8bcc4-7c83-44d5-8789-21e4024ac873
+            - secret:
+                value: 08f121fa-3cda-49c6-90db-1f189ff80756
+      extractors:
+        - headerExtractor:
+            headerName: X-Api-Key
+```
 
 ### Advanced Use Cases
-For more complex setups, such as API keys in the HTTP header, role-based access control (RBAC) or file-based key storage, see the [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md).
+
+More advanced scenarios are supported, including:
+
+- API keys in headers, query parameters or at any other location using expressions.
+- Role-based access control (RBAC) with fine-grained permissions.
+- OpenAPI-defined permissions.
+
+See the [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md) for detailed configurations.
 
 ## JSON Web Tokens
 
-The API below only allows requests with valid tokens from Microsoft's Azure AD. You can also use the JWT validator for other identity providers.
+The API below only allows requests that present a valid JSON Web Token issued by Microsoft Azure Entra ID. The JWT validator can also be used with other identity providers.
 
-```xml
-<api port="8080">
-  <jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
-    <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys"/>
-  </jwtAuth>
-  <target url="https://your-backend"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - jwtAuth:
+        expectedAud: api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0
+        jwks:
+          jwksUris: https://login.microsoftonline.com/common/discovery/keys
+  target:
+    url: https://your-backend
 ```
 
 ## OAuth2
 
 ### Secure APIs with OAuth2
 
-Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak or Membrane authentication servers.
+Use OAuth2/OpenID to secure endpoints against Google, Azure Entra ID, GitHub, Keycloak or Membrane Authentication Servers.
 
-```xml
-<api port="2001">
-  <oauth2Resource2>
-    <membrane src="https://accounts.google.com"
-              clientId="INSERT_CLIENT_ID"
-              clientSecret="INSERT_CLIENT_SECRET"
-              scope="email profile"
-              subject="sub"/>
-  </oauth2Resource2>
-  <groovy>
-    // Get email from OAuth2 and forward it to the backend
-    def oauth2 = exc.properties.'membrane.oauth2'
-    header.setValue('X-EMAIL',oauth2.userinfo.email)
-    CONTINUE
-  </groovy>
-  <target url="https://backend"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - oauth2Resource2:
+        membrane:
+          src: http://localhost:8000
+          clientId: abc
+          clientSecret: def
+          scope: openid profile
+          claims: username
+          claimsIdt: sub
+    - request:
+        # Forward the authenticated user’s email to the backend in an HTTP header.
+        - setHeader:
+            name: X-EMAIL
+            value: ${property['membrane.oauth2'].userinfo['email']}
+  target:
+    url: http://backend
 ```
 
 Try the tutorial [OAuth2 with external OpenID Providers](https://membrane-soa.org/api-gateway-doc/current/oauth2-openid.html)
@@ -1156,7 +1157,7 @@ This API will expose metrics for Prometheus at [http://localhost:2000/metrics](h
 ![Grafana Dashborad for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
 Grafana dashboard from Membrane metrics.
  
-See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus).
+See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus-grafana).
 
 ### OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry** traces using the `openTelemetry` plugin and the `W3C` propagation standard. This enables detailed tracing of requests across Membrane and backend services.
