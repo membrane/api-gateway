@@ -340,6 +340,35 @@ public class YAMLComponentsParsingTest {
     }
 
     @Test
+    public void componentIdIsWordFromGrammar() {
+        assertStructure(
+                parse("""
+                        components:
+                          bearerToken:
+                            bearerToken:
+                              header: Authorization
+                        ---
+                        api:
+                          flow:
+                            - oauth2authserver:
+                                issuer: https://issuer
+                                otherFields: abc
+                                $ref: "#/components/bearerToken"
+                        """),
+                clazz("Components"),
+                clazz("ApiElement",
+                        property("flow", list(
+                                clazz("OAuth2AuthServerElement",
+                                        property("issuer", value("https://issuer")),
+                                        property("otherFields", value("abc")),
+                                        property("bearerToken",
+                                                clazz("BearerTokenElement",
+                                                        property("header", value("Authorization")))))
+                        )))
+        );
+    }
+
+    @Test
     public void topLevelElementNotAllowedAsNestedChild() {
         var ex = assertThrows(RuntimeException.class, () -> parseWithTopLevelOnlySources("""
             outer:

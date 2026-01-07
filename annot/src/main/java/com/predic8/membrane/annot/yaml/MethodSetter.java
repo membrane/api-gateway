@@ -57,11 +57,9 @@ public class MethodSetter {
         }
         Class<?> beanClass = null;
         if (setter == null) {
-
-            // TODO: Find more robust solution than this workaround.
-            // If object is a child of Component use this shortcut. Otherwise there is a problem, if the name of the component is a name of a configuration element like log, request, flow, ...
-            // Problem: Components is a generated class that is not available at compile time
-            if ("com.predic8.membrane.core.config.spring.Components".equals(clazz.getName())) {
+            // if the element ONLY has a MCOtherAttributes and no MCAttributes and no MCChildElement setters, we avoid
+            // global keyword resolution: the keyword will always be a key for MCOtherAttributes
+            if (hasOtherAttributesButNoAttributesAndNoChildren(clazz)) {
                 return new MethodSetter(getAnySetter(clazz), beanClass);
             }
 

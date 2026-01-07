@@ -19,6 +19,7 @@ import org.jetbrains.annotations.*;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.*;
 
 import static java.lang.Character.*;
@@ -143,6 +144,18 @@ public final class McYamlIntrospector {
             throw new IllegalArgumentException("Method is not a setter: " + setter.getName());
         String property = setter.getName().substring(3);
         return toLowerCase(property.charAt(0)) + property.substring(1);
+    }
+
+    public static boolean hasOtherAttributesButNoAttributesAndNoChildren(Class<?> clazz) {
+        AtomicInteger otherAttributesCount = new AtomicInteger();
+        AtomicInteger attributesCount = new AtomicInteger();
+        AtomicInteger childrenCount = new AtomicInteger();
+        stream(clazz.getMethods()).forEach(m -> {
+            if (m.isAnnotationPresent(MCOtherAttributes.class)) otherAttributesCount.incrementAndGet();
+            if (m.isAnnotationPresent(MCAttribute.class)) attributesCount.incrementAndGet();
+            if (m.isAnnotationPresent(MCChildElement.class)) childrenCount.incrementAndGet();
+        });
+        return otherAttributesCount.get() == 1 && attributesCount.get() == 0 && childrenCount.get() == 0;
     }
 
     public static <T> Method getAnySetter(Class<T> clazz) {
