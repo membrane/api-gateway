@@ -58,7 +58,7 @@ public class MethodSetter {
             // if the element ONLY has a MCOtherAttributes and no MCAttributes and no MCChildElement setters, we avoid
             // global keyword resolution: the keyword will always be a key for MCOtherAttributes
             if (hasOtherAttributes(clazz) && !hasAttributes(clazz) && !hasChildren(clazz)) {
-                return new MethodSetter(getAnySetter(clazz), beanClass);
+                return new MethodSetter(getAnySetter(clazz), null);
             }
 
             try {
