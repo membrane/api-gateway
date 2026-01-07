@@ -34,6 +34,7 @@ import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,6 +58,7 @@ public class DefaultMainComponents implements MainComponents {
 
     protected Transport transport;
 
+    @GuardedBy("this")
     boolean beansDefined = false;
 
     public DefaultMainComponents(DefaultRouter router) {
