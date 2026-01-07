@@ -20,6 +20,9 @@ import org.apache.commons.codec.digest.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.createPasswdCompatibleHash;
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.isHashedPassword;
+
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
  * @explanation <p>
@@ -60,7 +63,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 			String algo = userHashSplit[1];
 			String salt = userHashSplit[2];
 			try {
-				pw = createPasswdCompatibleHash(algo,postDataPassword,salt);
+				pw = createPasswdCompatibleHash(algo, postDataPassword, salt);
 			} catch (Exception e) {
 				throw new RuntimeException(e.getMessage());
 			}
@@ -72,22 +75,6 @@ public class StaticUserDataProvider implements UserDataProvider {
 		if (pw2 == null || !pw2.equals(pw))
 			throw new NoSuchElementException();
 		return userAttributes.getAttributes();
-	}
-
-	public boolean isHashedPassword(String postDataPassword) {
-		String[] split = postDataPassword.split(Pattern.quote("$"));
-		if (split.length != 4)
-			return false;
-		if (!split[0].isEmpty())
-			return false;
-		if (split[3].length() < 20)
-			return false;
-		// Check if second part is a valid hex
-		return Pattern.matches("\\$([^$]+)\\$([^$]+)\\$.+", postDataPassword);
-	}
-
-	private String createPasswdCompatibleHash(String algo, String password, String salt) {
-		return Crypt.crypt(password, "$" + algo + "$" + salt);
 	}
 
 	@MCElement(name="user", component =false, id="staticUserDataProvider-user")

@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+components:
+  log:
+    chainDef:
+      flow:
+        - request:
+          - log:
+              message: "Path: ${path}"
+  cors:
+    chainDef:
+      flow:
+        - response:
+            - setHeader:
+                name: Access-Control-Allow-Origin
+                value: "*"
+            - setHeader:
+                name: Access-Control-Allow-Methods
+                value: POST, PUT
+---
+
+api:
+  port: 2000
+  path:
+    uri: /foo
+  flow:
+    - chain:
+        ref: '#/components/log'
+    - return:
+        status: 200
+---
+
+api:
+  port: 2000
+  path:
+    uri: /bar
+  flow:
+    - chain:
+        # Chains can be applied to more than one API
+        ref: '#/components/log'
+    - chain:
+        # Referencing long chains can keep API definitions small and comprehensible
+        ref: '#/components/cors'
+    - return:
+        status: 200

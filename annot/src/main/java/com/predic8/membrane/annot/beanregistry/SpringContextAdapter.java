@@ -48,6 +48,11 @@ public class SpringContextAdapter implements BeanRegistry {
     }
 
     @Override
+    public <T> Optional<T> getBean(String name, Class<T> clazz) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void register(String beanName, Object bean) {
         throw new UnsupportedOperationException();
     }

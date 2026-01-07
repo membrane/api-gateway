@@ -253,7 +253,7 @@ public class SSLContextTest {
 		Trust trust = new Trust();
 		Certificate cert = new Certificate();
 		cert.setContent(Resources.toString(getResource("ca/ca.pem"), UTF_8));
-		trust.setCertificateList(List.of(cert));
+		trust.setCertificates(List.of(cert));
 		sslParser.setTrust(trust);
 		StaticSSLContext ctx = new StaticSSLContext(sslParser, new ResolverMap(), "");
 		return ctx;

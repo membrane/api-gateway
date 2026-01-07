@@ -2,15 +2,7 @@
 
 # YAML Support
 
-- Rename json schema document:
-  - Short name to keep schema ref in YAML instance documents short
-  - Ideas:
-    - membrane-v1.schema.json
-    - membrane-v1.json
-    - v1.json
-- Name from metadata/name or spec/name?
 - Correct YAML example on GitHub README
-- Rename in apis.yaml
 
 # 7.X
 
@@ -22,6 +14,13 @@
   - Tutorial
   - Documentation
   - See JmxExporter
+- logs:
+  - Instead of:
+    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2000'
+    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2001'
+    => listening at *:2000, *:2001
+- refactor JdbcUserDataProvider
+
 
 # 7.0.4
 
@@ -30,17 +29,29 @@
   - When the reason for a parse error is clear. Shorten error message.
 - BalancerHealthMonitor:
   - @PostConstruct instead of InitializingBean, DisposableBean
-- Scripting: expose beanRegistry  
-- IfInterceptor:
-  - Add "else"
+- Scripting: expose beanRegistry
+- Migrate deprecated finally to try with ressources
+- if: Add hint in documentation: use choice otherwise for else
+- accessControl:
+     - Warning: Gets complicated!
+     - Migrate to simple yaml config
+     - Restrict on ips, hostname not paths
+     - ipv6, wildcards
 
 # 7.1.0
 
-- reverseDNS
-  - Now it is in transport
-  - Maybe move it to configuration
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
+- Remove GroovyTemplateInterceptor (Not Template Interceptor)
+  - Old an unused
+- Configuration independent lookup of beans. I just want bean foo and I do not care where it is defined.
+  - See: ChainInterceptor.getBean(String)
+  - Maybe a BeanRegistry implementation for Spring?
+
+# 7.0.4
+
+- Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- do not pass a `Router` reference into all sorts of beans: Access to global functionality should happen only on a very limited basis.
 
 
 # 7.0.1
