@@ -40,6 +40,15 @@ public interface BeanRegistry {
     <T> Optional<T> getBean(Class<T> clazz);
 
     /**
+     * Retrieves a bean with the specified name.
+     * @param name the name of the bean
+     * @param clazz the class of the bean
+     * @return Optional containing the bean
+     * @param <T> the bean type
+     */
+    <T> Optional<T> getBean(String name, Class<T> clazz);
+
+    /**
      * Registers a bean with the specified name.
      *
      * @param beanName the name to register the bean under

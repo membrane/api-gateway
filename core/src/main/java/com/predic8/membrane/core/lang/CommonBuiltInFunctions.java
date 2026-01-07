@@ -33,6 +33,7 @@ import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static java.lang.System.getenv;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
 import static java.util.Objects.*;
@@ -169,6 +170,12 @@ public class CommonBuiltInFunctions {
             log.info("Failed to resolve bean with name '{}'", beanName);
             return -1;
         }
+    }
+
+    public static String env(String name) {
+        if (name == null || name.isBlank())
+            return null;
+        return getenv(name);
     }
 
 }

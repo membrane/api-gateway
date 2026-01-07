@@ -41,7 +41,7 @@ import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource
  */
 public class TestRouter extends AbstractRouter implements BeanRegistryAware {
 
-    protected BeanRegistry registry = new BeanRegistryImplementation(null, this, null);
+    protected BeanRegistry registry = new BeanRegistryImplementation(null);
 
     protected Transport transport = new HttpTransport();
 
@@ -66,6 +66,7 @@ public class TestRouter extends AbstractRouter implements BeanRegistryAware {
 
     @Override
     public void init() {
+        registry.register("router", this);
         transport.init(this);
         ruleManager.setRouter(this);
     }

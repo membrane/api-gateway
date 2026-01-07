@@ -69,7 +69,8 @@ public class DefaultMainComponents implements MainComponents {
         log.debug("Initializing.");
 
         if (registry == null) {
-            registry = new BeanRegistryImplementation(null, router, null);
+            registry = new BeanRegistryImplementation(null);
+            registry.register("router", router);
         }
 
         registry.registerIfAbsent(HttpClientConfiguration.class, HttpClientConfiguration::new);
@@ -175,8 +176,10 @@ public class DefaultMainComponents implements MainComponents {
     }
 
     public BeanRegistry getRegistry() {
-        if (registry == null)
-            registry = new BeanRegistryImplementation(null, router, null);
+        if (registry == null) {
+            registry = new BeanRegistryImplementation(null);
+            registry.register("router", router);
+        }
         return registry;
     }
 
