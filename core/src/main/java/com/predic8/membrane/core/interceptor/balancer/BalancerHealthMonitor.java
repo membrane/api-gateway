@@ -15,12 +15,16 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.balancer.Node.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.*;
@@ -46,7 +50,7 @@ import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCause
  * @topic 4. Monitoring, Logging and Statistics
  */
 @MCElement(name = "balancerHealthMonitor")
-public class BalancerHealthMonitor implements ApplicationContextAware, InitializingBean, DisposableBean {
+public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegistryAware, InitializingBean, DisposableBean {
 
     private static final Logger log = LoggerFactory.getLogger(BalancerHealthMonitor.class);
     public static final String BALANCER_HEALTH_MONITOR = "balancer-health-monitor";
@@ -162,10 +166,17 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     }
 
     @Override
+    public void setRegistry(BeanRegistry registry) {
+        this.router = registry.getBean(Router.class).orElseThrow();
+    }
+
+    @PostConstruct
+    @Override
     public void afterPropertiesSet() {
         init();
     }
 
+    @PreDestroy
     @Override
     public void destroy() {
         stopped = true;

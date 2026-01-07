@@ -101,15 +101,15 @@ public class YAMLBeanParsingTest {
 
     @Test
     void missingClassFailsFastOnResolve() {
-        BeanRegistry r = parse("""
+        var ex = assertThrows(RuntimeException.class, () -> {
+            BeanRegistry r = parse("""
             components:
               x:
                 bean:
                   scope: singleton
             """);
-
-        var ex = assertThrows(RuntimeException.class, () -> r.resolve("#/components/x"));
-        assertAnyErrorContains(ex, "Missing/blank 'class'");
+        });
+        assertAnyErrorContains(ex, "Missing/blank 'class' in bean spec.");
     }
 
     @Test
