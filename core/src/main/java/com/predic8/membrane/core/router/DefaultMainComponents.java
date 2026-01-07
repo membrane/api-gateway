@@ -126,7 +126,7 @@ public class DefaultMainComponents implements MainComponents {
         if (constructors.length == 0)
             throw new RuntimeException("No constructor annotated with @Priority found.");
         Arrays.sort(constructors, Comparator.comparingInt(c -> c.getAnnotation(Priority.class).value()));
-        return constructors[constructors.length - 1];
+        return constructors[0];
     }
 
     public void init() {
