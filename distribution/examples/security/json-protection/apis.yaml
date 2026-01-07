@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+global:
+  - jsonProtection:
+      maxTokens: 15
+      maxSize: 110
+      maxDepth: 3
+      maxStringLength: 5
+      maxKeyLength: 1
+      maxObjectSize: 3
+      maxArraySize: 3
+
+---
+
+api:
+  port: 2000
+  flow:
+    - return:
+        status: 200
