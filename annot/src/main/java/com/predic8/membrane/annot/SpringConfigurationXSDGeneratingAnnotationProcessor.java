@@ -173,10 +173,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         // * in the last round, "roundEnv.processingOver()" is true
         try {
 
-            String status = "process() a=" + annotations.size() +
-                            " r=" + roundEnv.getRootElements().size() +
-                            " h=" + hashCode() +
-                            (roundEnv.processingOver() ? " processing-over" : " ");
+            String status = "process() a=%d r=%d h=%d%s".formatted(
+                    annotations.size(),
+                    roundEnv.getRootElements().size(),
+                    hashCode(),
+                    roundEnv.processingOver() ? " processing-over" : " ");
             log(status);
 
             read();
@@ -185,9 +186,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
             if (!annotations.isEmpty()) { // a class with one of our annotation needs to be compiled
 
-                status = "working with " + getCachedElementsAnnotatedWith(roundEnv, MCMain.class).size()
-                        + " and " + getCachedElementsAnnotatedWith(roundEnv, MCElement.class).size()
-                        + " and " + getCachedElementsAnnotatedWith(roundEnv, Resource.class).size();
+                status = "working with %d and %d and %d".formatted(
+                        getCachedElementsAnnotatedWith(roundEnv, MCMain.class).size(),
+                        getCachedElementsAnnotatedWith(roundEnv, MCElement.class).size(),
+                        getCachedElementsAnnotatedWith(roundEnv, Resource.class).size());
                 log(status);
 
                 Model m = new Model();

@@ -82,7 +82,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
         public synchronized Object defineIfNecessary() {
             if (!registry.hasDefinitionFor(clazz))
                 return define();
-            return null;
+            return registry.getBean(clazz).orElseThrow();
         }
 
         public synchronized Object define() {
@@ -206,9 +206,11 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
         if (!result.isEmpty())
             return result;
 
-        for (FallbackBeanDefiner fallbackBeanDefiner : fallbacks) {
-            if (fallbackBeanDefiner.produces(clazz))
-                return (List<T>) of(fallbackBeanDefiner.defineIfNecessary());
+        synchronized (fallbacks) {
+            for (FallbackBeanDefiner fallbackBeanDefiner : fallbacks) {
+                if (fallbackBeanDefiner.produces(clazz))
+                    return (List<T>) of(fallbackBeanDefiner.defineIfNecessary());
+            }
         }
         return Collections.emptyList();
     }

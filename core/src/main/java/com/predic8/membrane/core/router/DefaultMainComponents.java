@@ -71,7 +71,7 @@ public class DefaultMainComponents implements MainComponents {
      *
      * The constructor's parameters are resolved from the registry.
      */
-    public void defineResourceBeans() {
+    public synchronized void defineResourceBeans() {
         if (beansDefined)
             return;
         beansDefined = true;
@@ -121,6 +121,8 @@ public class DefaultMainComponents implements MainComponents {
         if (constructors.length == 1)
             return constructors[0];
         constructors = Streams.of(constructors).filter(c -> c.isAnnotationPresent(Priority.class)).toArray(Constructor<?>[]::new);
+        if (constructors.length == 0)
+            throw new RuntimeException("No constructor annotated with @Priority found.");
         Arrays.sort(constructors, Comparator.comparingInt(c -> c.getAnnotation(Priority.class).value()));
         return constructors[constructors.length - 1];
     }

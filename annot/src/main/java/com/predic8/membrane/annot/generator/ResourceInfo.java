@@ -30,6 +30,9 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Generates a resources.txt resource, which contains the fully qualified class names for all classes annotated with @Resource.
+ */
 public class ResourceInfo {
 
 	private final ProcessingEnvironment processingEnv;
