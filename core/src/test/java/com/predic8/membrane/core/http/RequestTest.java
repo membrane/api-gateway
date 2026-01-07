@@ -31,26 +31,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
 
-    private Request request;
-
-    private InputStream getReq;
-    private InputStream inPost;
-    private InputStream inEmptyBody;
-    private InputStream inEmptyBodyContentLength;
-    private InputStream inEmptyBodyContentType;
-    private InputStream inNoChunks;
-    private InputStream inChunked;
-
-    private ByteArrayOutputStream tempOut;
-
-    private InputStream tempIn;
-
     private static final String GET = """
             GET /foo HTTP/1.1
             X-Bar: 42
             
             """;
-
     private static final String POST = """
             POST /operation/call HTTP/1.1
             Host: service-repository.com:80
@@ -59,7 +44,6 @@ public class RequestTest {
             Content-Type: application/x-www-form-urlencoded
             
             endpoint=http%3A%2F%2Fwww.thomas-bayer.com%3A80%2Faxis2%2Fservices%2FBLZService&xpath%3A%2FgetBank%2Fblz=38070024&id=65657&operation=getBank&portType=BLZServicePortType""";
-
     private static final String CHUNKED = """
             POST /axis2/services/BLZService HTTP/1.1
             Content-Type: application/soap+xml; charset=UTF-8; action="http://thomas-bayer.com/blz/BLZServicePortType/getBankRequest"
@@ -69,7 +53,6 @@ public class RequestTest {
             ff
             <?xml version='1.0' encoding='UTF-8'?><soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope"><soapenv:Body><ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/"><ns1:blz>66762332</ns1:blz></ns1:getBank></soapenv:Body></soapenv:Envelope>
             0""";
-
     /**
      * No body related headers
      */
@@ -78,21 +61,18 @@ public class RequestTest {
             Host: api.predic8.de:443
             
             """;
-
     private static final String EMPTY_BODY_CONTENT_LENGTH = """
             POST /operation/call HTTP/1.1
             Host: api.predic8.de:443
             Content-Length: 0
             
             """;
-
     private static final String EMPTY_BODY_CONTENT_TYPE = """
             POST /operation/call HTTP/1.1
             Host: api.predic8.de:443
             Content-Type: application/json
             
             """;
-
     // Trailing line is needed for chunked parsing
     @SuppressWarnings("TrailingWhitespacesInTextBlock")
     private static final String NO_CHUNKS = """
@@ -101,8 +81,24 @@ public class RequestTest {
             Transfer-Encoding: chunked
             
             0
-                    
+            
             """;
+    private Request request;
+    private InputStream getReq;
+    private InputStream inPost;
+    private InputStream inEmptyBody;
+    private InputStream inEmptyBodyContentLength;
+    private InputStream inEmptyBodyContentType;
+    private InputStream inNoChunks;
+    private InputStream inChunked;
+    private ByteArrayOutputStream tempOut;
+    private InputStream tempIn;
+
+    private static void shouldBodyBeRead(String message, boolean expect) throws IOException, EndOfStreamException {
+        Request req = new Request();
+        req.read(new ByteArrayInputStream(message.getBytes(UTF_8)), true);
+        assertEquals(expect, !req.shouldNotContainBody());
+    }
 
     @BeforeEach
     public void setUp() {
@@ -118,34 +114,15 @@ public class RequestTest {
 
     @AfterEach
     public void tearDown() throws Exception {
-        if (getReq != null) {
-            getReq.close();
-        }
-        if (inPost != null) {
-            inPost.close();
-        }
-        if (inEmptyBody != null) {
-            inEmptyBody.close();
-        }
-        if (inEmptyBodyContentLength != null) {
-            inEmptyBodyContentLength.close();
-        }
-        if (inEmptyBodyContentType != null) {
-            inEmptyBodyContentType.close();
-        }
-        if (inNoChunks != null) {
-            inNoChunks.close();
-        }
-        if (inChunked != null) {
-            inChunked.close();
-        }
-        if (tempIn != null) {
-            tempIn.close();
-        }
-        if (tempOut != null) {
-            tempOut.close();
-        }
-
+        closeQuietly(getReq);
+        closeQuietly(inPost);
+        closeQuietly(inEmptyBody);
+        closeQuietly(inEmptyBodyContentLength);
+        closeQuietly(inEmptyBodyContentType);
+        closeQuietly(inNoChunks);
+        closeQuietly(inChunked);
+        closeQuietly(tempIn);
+        closeQuietly(tempOut);
     }
 
     @Test
@@ -183,7 +160,6 @@ public class RequestTest {
         assertNotNull(request.getBody());
         assertEquals(0, request.getBody().getLength());
     }
-
 
     @Test
     void emptyBody() throws Exception {
@@ -333,12 +309,6 @@ public class RequestTest {
                 """, false);
     }
 
-    private static void shouldBodyBeRead(String message, boolean expect) throws IOException, EndOfStreamException {
-        Request req = new Request();
-        req.read(new ByteArrayInputStream(message.getBytes(UTF_8)), true);
-        assertEquals(expect, !req.shouldNotContainBody());
-    }
-
     /**
      * Same as setBodyShouldReadTheOriginalBody test but with Request.setBodyContent
      */
@@ -379,5 +349,14 @@ public class RequestTest {
 
         r.createBody(in);
         return r;
+    }
+
+    private void closeQuietly(AutoCloseable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (Exception ignore) {
+            }
+        }
     }
 }
