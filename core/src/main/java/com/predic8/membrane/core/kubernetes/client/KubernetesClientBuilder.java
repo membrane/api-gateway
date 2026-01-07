@@ -154,7 +154,7 @@ public class KubernetesClientBuilder {
             }
             if (ca != null) {
                 Trust trust = new Trust();
-                trust.setCertificateList(certList(ca));
+                trust.setCertificates(certList(ca));
                 sslParser.setTrust(trust);
             }
             StaticSSLContext sslContext = new StaticSSLContext(sslParser, null, null);

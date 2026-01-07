@@ -94,6 +94,10 @@ public class SpELBuiltInFunctions {
         return CommonBuiltInFunctions.base64Encode(s);
     }
 
+    public static String env(String s, SpELExchangeEvaluationContext ignored) {
+        return CommonBuiltInFunctions.env(s);
+    }
+
     public static List<String> getBuiltInFunctionNames() {
         return Arrays.stream(SpELBuiltInFunctions.class.getDeclaredMethods())
                 .filter(m -> isPublic(m.getModifiers()))

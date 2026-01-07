@@ -1,4 +1,4 @@
-![Membrane Logo](distribution/media/membrane-logo-m-text.png)
+![Membrane Logo](distribution/media/membrane-logo-m-text.svg)
 
 # API Gateway
 
@@ -297,11 +297,11 @@ api:
 #### Viewing Deployed APIs
 Once configured, a list of deployed APIs is available at: [http://localhost:2000/api-docs](http://localhost:2000/api-docs)
 
-![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.png)
+![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.jpg)
 
 Click on an API title in the list to open the Swagger UI for interactive exploration and testing:
 
-![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.png)
+![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.jpg)
 
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
@@ -882,11 +882,11 @@ The following configuration secures the `Fruitshop API` by validating an API key
 <api port="2000">
     <apiKey>
         <!-- Define valid API keys -->
-        <keys>
+        <simple>
             <secret value="abc123" />
             <secret value="secret" />
             <secret value="Paris2025" />
-        </keys>
+        </simple>
         
         <!-- Extract the API key from the query parameter -->
         <queryParamExtractor paramName="api-key" />

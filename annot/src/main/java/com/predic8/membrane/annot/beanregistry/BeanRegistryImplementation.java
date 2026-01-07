@@ -20,6 +20,7 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
@@ -36,7 +37,7 @@ import java.util.function.*;
  * For K8S UUID and name is needed cause name is only unique within a namespace.
  *
  */
-public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
+public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, BeanLifecycleManager {
 
     private static final Logger log = LoggerFactory.getLogger(BeanRegistryImplementation.class);
 
@@ -57,7 +58,13 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
      */
     private final Object uniqueClassInitialization = new Object();
 
+    @GuardedBy("preDestroyCallbacks")
+    private final List<PreDestroyCallback> preDestroyCallbacks = new ArrayList<>();
+
     record UidAction(String uid, WatchAction action) {
+    }
+
+    record PreDestroyCallback(Object bean, Method method) {
     }
 
     public BeanRegistryImplementation(BeanCacheObserver observer, BeanRegistryAware registryAware, Grammar grammar) {
@@ -202,6 +209,30 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector {
 
     private static @NotNull String computeBeanName(String beanName, String uuid) {
         return beanName != null ? beanName : "#" + uuid;
+    }
+
+    /**
+     * Registers a @PreDestroy callback for the given bean.
+     */
+    public void addPreDestroyCallback(Object bean, Method method) {
+        synchronized (preDestroyCallbacks) {
+            preDestroyCallbacks.add(new PreDestroyCallback(bean, method));
+        }
+    }
+
+    public void close() {
+        List<PreDestroyCallback> callbacks;
+        synchronized (preDestroyCallbacks) {
+            callbacks = new ArrayList<>(preDestroyCallbacks);
+            preDestroyCallbacks.clear();
+        }
+        callbacks.reversed().forEach(pc -> {
+            try {
+                pc.method.invoke(pc.bean);
+            } catch (Exception e) {
+                log.error("Could not invoke preDestroy method of {}: {}", pc.bean, e.getMessage());
+            }
+        });
     }
 
 }
