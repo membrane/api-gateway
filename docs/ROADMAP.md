@@ -2,15 +2,7 @@
 
 # YAML Support
 
-- Rename json schema document:
-  - Short name to keep schema ref in YAML instance documents short
-  - Ideas:
-    - membrane-v1.schema.json
-    - membrane-v1.json
-    - v1.json
-- Name from metadata/name or spec/name?
 - Correct YAML example on GitHub README
-- Rename in apis.yaml
 
 # 7.X
 
@@ -22,23 +14,22 @@
   - Tutorial
   - Documentation
   - See JmxExporter
-
-# 7.0.4
-
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
 - YAML parsing:
   - When the reason for a parse error is clear. Shorten error message.
 - BalancerHealthMonitor:
   - @PostConstruct instead of InitializingBean, DisposableBean
-- Scripting: expose beanRegistry  
-- IfInterceptor:
-  - Add "else"
+- Scripting: expose beanRegistry
+- Migrate deprecated finally to try with ressources
+- if: Add hint in documentation: use choice otherwise for else
+- accessControl:
+     - Warning: Gets complicated!
+     - Migrate to simple yaml config
+     - Restrict on ips, hostname not paths
+     - ipv6, wildcards
 
 # 7.1.0
 
-- reverseDNS
-  - Now it is in transport
-  - Maybe move it to configuration
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 
