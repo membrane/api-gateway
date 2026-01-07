@@ -899,7 +899,7 @@ More advanced scenarios are supported, including:
 
 - API keys in headers, query parameters or at any other location using expressions.
 - Role-based access control (RBAC) with fine-grained permissions.
-- OpenAPI defined permissions.
+- OpenAPI-defined permissions.
 
 See the [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md) for detailed configurations.
 
