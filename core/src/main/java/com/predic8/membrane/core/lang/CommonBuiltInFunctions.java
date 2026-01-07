@@ -171,4 +171,10 @@ public class CommonBuiltInFunctions {
         }
     }
 
+    public static String env(String name) {
+        if (name == null || name.isBlank())
+            return null;
+        return System.getenv(name);
+    }
+
 }
