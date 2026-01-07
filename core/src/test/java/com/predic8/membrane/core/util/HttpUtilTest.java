@@ -25,6 +25,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,13 +34,23 @@ public class HttpUtilTest {
     private static final String s1 = "foo" + CRLF + "bar" + CRLF + CRLF;
     private static InputStream is1;
 
+    private static final String POST_REQUEST = """
+		POST /operation/call HTTP/1.1
+		Host: service-repository.com:80
+		Connection: keep-alive
+		Content-Length: 168
+		Content-Type: application/x-www-form-urlencoded
+		
+		endpoint=http%3A%2F%2Fwww.thomas-bayer.com%3A80%2Faxis2%2Fservices%2FBLZService&xpath%3A%2FgetBank%2Fblz=38070024&id=65657&operation=getBank&portType=BLZServicePortType
+		""";
+
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         is1 = new ByteArrayInputStream(s1.getBytes());
     }
 
     @Test
-    public void testReadLine() throws IOException {
+    void testReadLine() throws IOException {
         assertEquals("foo", readLine(is1));
         assertEquals("bar", readLine(is1));
         assertEquals("", readLine(is1));
@@ -47,8 +58,8 @@ public class HttpUtilTest {
 
     @SuppressWarnings("DataFlowIssue")
     @Test
-    public void testReadLineMessage() throws Exception {
-        assertEquals("POST /operation/call HTTP/1.1", readLine(getClass().getClassLoader().getResourceAsStream("request-post.msg")));
+    void readLineMessage() throws Exception {
+        assertEquals("POST /operation/call HTTP/1.1", readLine( convertMessage(POST_REQUEST)));
     }
 
     @Test

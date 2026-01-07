@@ -20,6 +20,8 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.http.Response.ok;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageAnalyserTest {
@@ -62,16 +64,12 @@ public class MessageAnalyserTest {
 
 	private Exchange getResponse(String path) throws IOException {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(Response.ok().body(getClass().getClassLoader().getResourceAsStream(path), true).build());
+		exc.setResponse(ok().body(getClass().getClassLoader().getResourceAsStream(path), true).build());
 		return exc;
 	}
 
-	private Exchange getRequest(String path) throws IOException {
-		Exchange exc = new Exchange(null);
-		Request req = new Request();
-		req.create("POST", "http://test", "HTTP/", new Header(), getClass().getClassLoader().getResourceAsStream(path));
-		exc.setRequest(req);
-		return exc;
+	private Exchange getRequest(String path) throws Exception {
+		return post("/test").body(getClass().getClassLoader().getResourceAsStream(path)).buildExchange();
 	}
 
 }
