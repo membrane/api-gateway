@@ -1,5 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
-
+# Works with most JDBC databases. With PostgreSQL, an exception may be logged, but the functionality is not affected.
 components:
   dataSource:
     bean:
@@ -7,16 +6,16 @@ components:
       properties:
         - property:
             name: driverClassName
-            value: org.h2.Driver
+            value: org.postgresql.Driver
         - property:
             name: url
-            value: jdbc:h2:tcp://localhost/mem:userdata
+            value: jdbc:postgresql://localhost:5432/postgres
         - property:
             name: username
-            value: sa
+            value: user
         - property:
             name: password
-            value:
+            value: password
 
 ---
 
@@ -26,8 +25,8 @@ api:
     - basicAuthentication:
         jdbcUserDataProvider:
           datasource: '#/components/dataSource'
-          tableName: accounts
+          tableName: users
           userColumnName: nickname
           passwordColumnName: password
   target:
-    url: https://api.predic8.de
+    url: https://apis.predic8.de
