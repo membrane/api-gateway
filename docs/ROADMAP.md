@@ -48,6 +48,7 @@
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 - Remove GroovyTemplateInterceptor (Not Template Interceptor)
   - Old an unused
+- create test asserting that connection reuse via proxy works
 - Configuration independent lookup of beans. I just want bean foo and I do not care where it is defined.
   - See: ChainInterceptor.getBean(String)
   - Maybe a BeanRegistry implementation for Spring?
