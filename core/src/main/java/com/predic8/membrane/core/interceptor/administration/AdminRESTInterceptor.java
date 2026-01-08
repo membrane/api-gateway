@@ -311,19 +311,26 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		gen.writeNumberField("duration", exc.getTimeResReceived() - exc.getTimeReqSent());
 		gen.writeStringField("msgFilePath", JDBCUtil.getFilePath(exc));
 
-		if (detail) {
-			List<String> destinations = exc.getDestinations();
-			if (destinations != null) {
-				gen.writeArrayFieldStart("destinations");
-				for (String destination : destinations) {
-					if (destination == null)
-						gen.writeNull();
-					else
-						gen.writeString(destination);
-				}
-				gen.writeEndArray();
+		if (detail)
+			writeExchangeDetailFields(exc, gen);
+
+		gen.writeEndObject();
+	}
+
+	private static void writeExchangeDetailFields(AbstractExchange exc, JsonGenerator gen) throws IOException {
+		List<String> destinations = exc.getDestinations();
+		if (destinations != null) {
+			gen.writeArrayFieldStart("destinations");
+			for (String destination : destinations) {
+				if (destination == null)
+					gen.writeNull();
+				else
+					gen.writeString(destination);
 			}
-			int[] nodeStatusCodes = exc.getNodeStatusCodes();
+			gen.writeEndArray();
+		}
+		if (exc.getNodeStatusTracker() != null) {
+			int[] nodeStatusCodes = exc.getNodeStatusTracker().getNodeStatusCodes();
 			if (nodeStatusCodes != null) {
 				gen.writeArrayFieldStart("nodeStatusCodes");
 				for (int statusCode : nodeStatusCodes) {
@@ -331,7 +338,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 				}
 				gen.writeEndArray();
 			}
-			Exception[] nodeExceptions = exc.getNodeExceptions();
+			Exception[] nodeExceptions = exc.getNodeStatusTracker().getNodeExceptions();
 			if (nodeExceptions != null) {
 				gen.writeArrayFieldStart("nodeExceptions");
 				for (Exception ex : nodeExceptions) {
@@ -343,8 +350,6 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 				gen.writeEndArray();
 			}
 		}
-
-		gen.writeEndObject();
 	}
 
 	public static String getClientAddr(boolean useXForwardedForAsClientAddr, AbstractExchange exc) {
