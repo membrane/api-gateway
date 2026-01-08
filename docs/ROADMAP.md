@@ -19,6 +19,7 @@
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 - Remove GroovyTemplateInterceptor (Not Template Interceptor)
   - Old an unused
+- create test asserting that connection reuse via proxy works
 
 # 7.0.4
 
