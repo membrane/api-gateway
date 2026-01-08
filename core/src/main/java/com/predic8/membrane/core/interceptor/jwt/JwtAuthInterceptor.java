@@ -50,7 +50,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         return "JWT does not contain '" + key + "'";
     }
     public static final String ERROR_JWT_VALUE_NOT_PRESENT_ID = "jwt-payload-entry-missing";
-    private static final Logger log = LoggerFactory.getLogger(JwtSignInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthInterceptor.class);
 
     final ObjectMapper mapper = new ObjectMapper();
     JwtRetriever jwtRetriever;
@@ -84,6 +84,9 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                                 \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
                                         This key is for demonstration purposes only and UNSAFE for production use.          \s
                                 ---------------------------------------------------------------------------------------------""");
+                            if (router.getConfiguration().isProduction()) {
+                                throw new RuntimeException("Default JWK detected in production environment. Please use a secure key.");
+                            }
                         }
 
                         return new RsaJsonWebKey(params);
