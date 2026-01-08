@@ -126,10 +126,10 @@ public class StaticSSLContext extends SSLContext {
         KeyStore trustStore = KeyStore.getInstance(PKCS_12);
         trustStore.load(null, "".toCharArray());
 
-        for (int j = 0; j < sslParser.getTrust().getCertificateList().size(); j++)
+        for (int j = 0; j < sslParser.getTrust().getCertificates().size(); j++)
             trustStore.setCertificateEntry("inlinePemCertificate" + j,
                     PEMSupport.getInstance().parseCertificate(
-                            sslParser.getTrust().getCertificateList().get(j).get(resourceResolver, baseLocation)));
+                            sslParser.getTrust().getCertificates().get(j).get(resourceResolver, baseLocation)));
         return trustStore;
     }
 

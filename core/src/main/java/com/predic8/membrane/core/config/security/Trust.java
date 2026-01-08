@@ -44,7 +44,7 @@ public class Trust {
         return Objects.hash(algorithm, checkRevocation, certificateList);
     }
 
-    public List<Certificate> getCertificateList() {
+    public List<Certificate> getCertificates() {
         return certificateList;
     }
 
