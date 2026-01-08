@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
+#
+# Membrane Tutorial: SOAP Proxy
+#
+
+soapProxy:
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
