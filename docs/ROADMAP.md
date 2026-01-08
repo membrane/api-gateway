@@ -22,6 +22,8 @@
     18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2001'
     => listening at *:2000, *:2001
 - refactor JdbcUserDataProvider
+- Refine YAML for balancer: clustersFromSpring
+- wsdlRewriter YAML is not working
 
 
 # 7.0.4
@@ -46,6 +48,7 @@
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 - Remove GroovyTemplateInterceptor (Not Template Interceptor)
   - Old an unused
+- create test asserting that connection reuse via proxy works
 - Configuration independent lookup of beans. I just want bean foo and I do not care where it is defined.
   - See: ChainInterceptor.getBean(String)
   - Maybe a BeanRegistry implementation for Spring?

@@ -52,8 +52,8 @@ public class ConnectionTest {
 
 
 	@Test
-	void isSame() {
-		assertTrue(conLocalhost.isSame("127.0.0.1", 2000));
-		assertTrue(con127_0_0_1.isSame("localhost", 2000));
+	public void testIsSame() {
+		assertTrue(conLocalhost.isSame("localhost", 2000));
+		assertTrue(con127_0_0_1.isSame("127.0.0.1", 2000));
 	}
 }

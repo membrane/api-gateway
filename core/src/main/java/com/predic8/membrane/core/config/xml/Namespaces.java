@@ -39,7 +39,7 @@ public class Namespaces {
         this.namespaces = namespace;
     }
 
-    public List<Namespace> getNamespace() {
+    public List<Namespace> getNamespaces() {
         return namespaces;
     }
 
