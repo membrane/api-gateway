@@ -63,7 +63,6 @@ public class WSDLRewriterTutorialTest extends AbstractSOAPTutorialTest {
     void webServiceExplorer() {
         // @formatter:off
         given()
-            .body("Invalid")
         .when()
             .get("http://localhost:2000/my-service")
         .then()

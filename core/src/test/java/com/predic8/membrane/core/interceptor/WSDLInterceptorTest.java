@@ -37,7 +37,7 @@ public class WSDLInterceptorTest {
 	private WSDLInterceptor interceptor;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	void setUp() throws Exception {
 		exc = new Exchange(new FakeHttpHandler(3011));
 		exc.setRequest(get("/axis2/services/BLZService?wsdl").build());
         exc.setResponse(ok()
@@ -58,7 +58,7 @@ public class WSDLInterceptorTest {
 	 *
 	 */
 	@Test
-	void testProtocolSet() throws Exception {
+	void protocolSet() throws Exception {
 		interceptor.setProtocol("https");
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 
@@ -70,7 +70,7 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testProtocolDefault() throws Exception {
+	void protocolDefault() throws Exception {
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 
 		assertTrue(getLocationAttributeFor(
@@ -82,7 +82,7 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testPortEmpty() throws Exception {
+	void portEmpty() throws Exception {
 		interceptor.setPort("");
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertFalse(matchSoap11(".*:80.*"));
@@ -91,7 +91,7 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testPortDefault() throws Exception {
+	void portDefault() throws Exception {
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11(".*:3011.*"));
 		assertTrue(matchSoap12(".*:3011.*"));
@@ -99,8 +99,8 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testPortSet() throws Exception {
-		interceptor.setPort("2000");
+	void portSet() throws Exception {
+		interceptor.setPort(2000);
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11(".*:2000.*"));
 		assertTrue(matchSoap12(".*:2000.*"));
@@ -108,7 +108,7 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testHostSet() throws Exception {
+	void hostSet() throws Exception {
 		interceptor.setHost("abc.com");
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11("http://abc.com.*"));
@@ -117,7 +117,7 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testHostDefault() throws Exception {
+	void hostDefault() throws Exception {
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11("http://thomas-bayer.com.*"));
 		assertTrue(matchSoap12("http://thomas-bayer.com.*"));
