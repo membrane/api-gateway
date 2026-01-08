@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+#
+# 1.) Start Membrane:
+#     ./membrane.sh
+#
+# 2.) Try:
+#     curl -H "Content-Type: application/xml" -d @city-soap.xml http://localhost:2000
+#     curl -H "Content-Type: application/xml" -d @invalid-city-soap.xml http://localhost:2000
+#     => Should return a SOAP Fault XML
+
+soapProxy:
+  port: 2000
+  # WSDL has a service with location=localhost:2001
+  wsdl: city-service.wsdl
+  flow:
+    - validator: {}
+
+---
+# API to test the soapProxy
+api:
+  port: 2001
+  flow:
+    - sampleSoapService: {}

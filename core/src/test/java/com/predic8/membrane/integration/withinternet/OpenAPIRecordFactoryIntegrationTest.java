@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.integration.withinternet;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -27,7 +27,7 @@ public class OpenAPIRecordFactoryIntegrationTest {
 
     @BeforeAll
     static void setUp() {
-        factory = new OpenAPIRecordFactory(new Router());
+        factory = new OpenAPIRecordFactory(new DefaultRouter());
     }
 
     @Test

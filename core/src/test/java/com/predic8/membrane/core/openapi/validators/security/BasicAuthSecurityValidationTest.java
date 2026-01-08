@@ -16,18 +16,17 @@
 
 package com.predic8.membrane.core.openapi.validators.security;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
@@ -42,8 +41,7 @@ public class BasicAuthSecurityValidationTest {
 
     @BeforeEach
     void setUpSpec() {
-        Router router = new Router();
-        router.setUriFactory(new URIFactory());
+        Router router = new DummyTestRouter();
 
         OpenAPISpec spec = new OpenAPISpec();
         spec.location = getPathFromResource("openapi/specs/security/http-basic.yml");
@@ -64,7 +62,7 @@ public class BasicAuthSecurityValidationTest {
 
     @Test
     void noAuthHeader() throws Exception {
-        Exchange exc = Request.get("/v1/foo").buildExchange();
+        Exchange exc = get("/v1/foo").buildExchange();
         exc.setOriginalRequestUri("/v1/foo");
         assertEquals(ABORT, baInterceptor.handleRequest(exc));  // TODO Should we return RETURN instead. How is it in OAuth2?
     }
@@ -72,15 +70,13 @@ public class BasicAuthSecurityValidationTest {
     @Test
     void withAuthorizationHeader() throws Exception {
 
-        Exchange exc = Request.get("/v1/foo").authorization("alice","secret").buildExchange();
+        Exchange exc = get("/v1/foo").authorization("alice","secret").buildExchange();
         exc.setOriginalRequestUri("/v1/foo");
 
         Outcome outcome = baInterceptor.handleRequest(exc);
-
         assertEquals(CONTINUE,outcome);
 
         outcome = oasInterceptor.handleRequest(exc);
-
         assertEquals(CONTINUE, outcome);
     }
 }

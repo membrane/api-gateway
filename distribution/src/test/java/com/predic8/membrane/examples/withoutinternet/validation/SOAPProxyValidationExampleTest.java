@@ -22,6 +22,7 @@ import java.io.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static java.io.File.*;
+import static org.hamcrest.CoreMatchers.*;
 
 public class SOAPProxyValidationExampleTest extends DistributionExtractingTestcase {
 
@@ -31,7 +32,7 @@ public class SOAPProxyValidationExampleTest extends DistributionExtractingTestca
     }
 
     @Test
-    public void testValidCitySoapRequest() throws Exception {
+    void testValidCitySoapRequest() throws Exception {
         try (Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
 			given()
@@ -40,14 +41,14 @@ public class SOAPProxyValidationExampleTest extends DistributionExtractingTestca
 			.when()
 				.post("http://localhost:2000/")
 			.then()
-				.statusCode(200)
-				.extract().asString();
+				.body(not(containsString("faultcode")))
+				.statusCode(200);
 			// @formatter:on
         }
     }
 
     @Test
-    public void testInvalidCitySoapRequest() throws IOException, InterruptedException {
+    void testInvalidCitySoapRequest() throws IOException, InterruptedException {
         try (Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
 			given()
@@ -57,7 +58,8 @@ public class SOAPProxyValidationExampleTest extends DistributionExtractingTestca
 				.post("http://localhost:2000/")
 			.then()
 				.log().ifValidationFails()
-				.statusCode(200);
+				.body(containsString("faultcode"))
+				.statusCode(200); // SOAP: even errors return 200 :-)
 			// @formatter:on
         }
     }

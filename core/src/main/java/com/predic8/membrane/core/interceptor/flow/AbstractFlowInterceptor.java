@@ -14,12 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.ProxyAware;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -28,28 +28,29 @@ import static org.apache.commons.httpclient.HttpVersion.HTTP_1_0;
 import static org.apache.http.params.CoreProtocolPNames.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("deprecation")
 public class Http10Test {
-    private static HttpRouter router;
-	private static HttpRouter router2;
+    private static Router router;
+	private static Router router2;
 
 	@BeforeAll
 	public static void setUp() throws Exception {
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
 		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
-        router2 = new HttpRouter();
-		router2.getRuleManager().addProxyAndOpenPortIfNew(proxy2);
-		router2.init();
+        router2 = new TestRouter();
+		router2.add(proxy2);
+
 		ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "localhost", 2000);
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-		router.init();
+		router = new TestRouter();
+		router.add(proxy);
+
+		router2.start();
+		router.start();
 	}
 
 	@AfterAll
 	public static void tearDown() {
-		router2.shutdown();
-		router.shutdown();
+		router2.stop();
+		router.stop();
 	}
 
 	@Test

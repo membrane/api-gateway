@@ -14,11 +14,10 @@
 
 package com.predic8.membrane.integration.withinternet;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
 import com.predic8.membrane.core.proxies.ProxyRule;
 import com.predic8.membrane.core.proxies.ProxyRuleKey;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.jupiter.api.AfterEach;
@@ -29,19 +28,19 @@ import static com.predic8.membrane.test.StringAssertions.assertContains;
 
 class ProxySSLConnectionMethodTest {
 
-	private Router router;
+	private TestRouter router;
 
 	@BeforeEach
 	void setUp() throws Exception {
-		router = new HttpRouter();
+		router = new TestRouter();
 		router.setExchangeStore(new MemoryExchangeStore());
-		router.getRuleManager().addProxyAndOpenPortIfNew(new ProxyRule(new ProxyRuleKey(3129)));
-		router.init();
+		router.add(new ProxyRule(new ProxyRuleKey(3129)));
+		router.start();
 	}
 
 	@AfterEach
 	void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	@Test

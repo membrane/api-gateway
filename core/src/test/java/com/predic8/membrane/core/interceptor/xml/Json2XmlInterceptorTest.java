@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xml;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.router.*;
 import io.restassured.path.json.*;
 import io.restassured.path.xml.*;
 import org.junit.jupiter.api.*;
@@ -62,7 +62,7 @@ public class Json2XmlInterceptorTest {
     @BeforeEach
     void setUp() {
         interceptor = new Json2XmlInterceptor();
-        interceptor.init(new Router());
+        interceptor.init(new DefaultRouter());
     }
 
     @Test

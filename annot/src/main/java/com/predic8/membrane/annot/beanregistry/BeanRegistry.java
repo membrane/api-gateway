@@ -15,7 +15,9 @@ package com.predic8.membrane.annot.beanregistry;
 
 import com.predic8.membrane.annot.*;
 
+import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.*;
 
 public interface BeanRegistry {
 
@@ -26,4 +28,47 @@ public interface BeanRegistry {
     Grammar getGrammar();
 
     <T> List<T> getBeans(Class<T> clazz);
+
+    /**
+     * Retrieves a single bean of the specified type.
+     *
+     * @param clazz the class of the bean to retrieve
+     * @param <T>   the bean type
+     * @return Optional containing the bean if exactly one exists, empty otherwise
+     * @throws RuntimeException if multiple beans of the specified type exist
+     */
+    <T> Optional<T> getBean(Class<T> clazz);
+
+    /**
+     * Retrieves a bean with the specified name.
+     * @param name the name of the bean
+     * @param clazz the class of the bean
+     * @return Optional containing the bean
+     * @param <T> the bean type
+     */
+    <T> Optional<T> getBean(String name, Class<T> clazz);
+
+    /**
+     * Registers a bean with the specified name.
+     *
+     * @param beanName the name to register the bean under
+     * @param bean   instance to register (must not be null)
+     */
+    void register(String beanName, Object bean);
+
+    /**
+     * Registers a bean of the specified type with the given name if it is not already registered.
+     * If a bean with the given name is already present, the existing instance is returned.
+     * Otherwise, the supplier is used to create and register a new instance.
+     * @param type the class type of the bean
+     * @param supplier a supplier that provides a new instance of the bean if not already registered
+     * @param <T> the generic type of the bean
+     * @return the existing or newly created and registered bean instance
+     */
+     <T> T registerIfAbsent(Class<T> type, Supplier<T> supplier);
+
+    /**
+     * Release all resources.
+     */
+    void close();
 }

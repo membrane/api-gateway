@@ -13,20 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 public abstract class AbstractTestWithRouter {
 
-    protected static Router router;
+    protected Router router;
 
-    @BeforeAll
-    static void setUp() {
-        router = new HttpRouter();
+    @BeforeEach
+    void setUp() {
+        router = new TestRouter();
     }
 
-    @AfterAll
-    static void shutDown() {
-        router.shutdown();
+    @AfterEach
+    void shutDown() {
+        router.stop();
     }
 }

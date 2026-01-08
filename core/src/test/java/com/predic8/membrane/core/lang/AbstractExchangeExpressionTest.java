@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -30,13 +30,13 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 public abstract class AbstractExchangeExpressionTest {
 
-    protected static Router router;
+    protected static DefaultRouter router;
     protected static Exchange exchange;
     protected static Flow flow;
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        router = new Router();
+        router = new DefaultRouter();
         exchange = getRequestBuilder()
                 .header("name","Jelly Fish")
                 .header("foo","42")
@@ -61,7 +61,7 @@ public abstract class AbstractExchangeExpressionTest {
 
     @AfterAll
     static void tearDown() {
-        router.shutdown();
+        router.stop();
     }
 
     protected abstract Request.Builder getRequestBuilder() throws URISyntaxException;

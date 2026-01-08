@@ -75,7 +75,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
         if (reportError != null) {
             return reportError;
         }
-        return !router.isProduction();
+        return !router.getConfiguration().isProduction();
     }
 
     private abstract static class Context {

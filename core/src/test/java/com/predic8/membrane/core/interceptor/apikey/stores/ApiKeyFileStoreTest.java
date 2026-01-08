@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.AbstractMap.*;
@@ -100,7 +100,7 @@ public class ApiKeyFileStoreTest {
 
     private static void loadFromFile(ApiKeyFileStore store, String path) {
         store.setLocation(requireNonNull(ApiKeyFileStoreTest.class.getClassLoader().getResource(path)).getPath());
-        store.init(new Router());
+        store.init(new DummyTestRouter());
     }
 
     @Test

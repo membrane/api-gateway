@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
@@ -22,6 +21,7 @@ import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.StaticClientList;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import org.junit.jupiter.api.*;
@@ -202,11 +202,17 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     }
 
     @BeforeEach
-    public void setUp() throws Exception{
-        router = new HttpRouter();
+    void setUp() throws Exception{
+        router = new TestRouter();
+        router.start();
         initOasi();
         initMas();
         initLoginMockParametersForJohn();
+    }
+
+    @AfterEach
+    void tearDown() {
+        router.stop();
     }
 
     public static Collection<Object[]> data() throws Exception {
@@ -281,7 +287,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         //mas.init2();    // requires pull request 330
     }
 
-    private void initOasi() throws Exception {
+    private void initOasi() {
         oasi = new OAuth2AuthorizationServerInterceptor() {
             @Override
             public String computeBasePath() {

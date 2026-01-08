@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 
 import java.io.*;
@@ -61,7 +61,7 @@ public class ApiKeyFileStore implements ApiKeyStore {
     @Override
     public void init(Router router) {
         try {
-            scopes = readKeyData(readFile(location, router.getResolverMap(), router.getBaseLocation()));
+            scopes = readKeyData(readFile(location, router.getResolverMap(), router.getConfiguration().getBaseLocation()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

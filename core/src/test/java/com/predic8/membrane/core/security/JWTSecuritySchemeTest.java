@@ -13,11 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.security;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.jwt.*;
-import com.predic8.membrane.core.resolver.*;
+import com.predic8.membrane.core.router.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jws.*;
 import org.jose4j.jwt.*;
@@ -26,8 +24,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static com.predic8.membrane.core.http.Request.*;
 
 class JWTSecuritySchemeTest {
 
@@ -45,25 +42,16 @@ class JWTSecuritySchemeTest {
 
         JwtAuthInterceptor interceptor = prepareInterceptor(publicOnly);
 
-        Exchange exc = new Request.Builder()
-                .get("")
-                .header("Authorization", "Bearer " + getSignedJwt(privateKey) + "1")
-                .buildExchange();
-
+        Exchange exc = get("").header("Authorization", "Bearer " + getSignedJwt(privateKey) + "1").buildExchange();
         interceptor.handleRequest(exc);
-
-        //
     }
 
     private JwtAuthInterceptor prepareInterceptor(RsaJsonWebKey publicOnly) throws Exception {
         return initInterceptor(createInterceptor(publicOnly));
     }
 
-    private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) throws Exception {
-        Router routerMock = mock(Router.class);
-        when(routerMock.getBaseLocation()).thenReturn("");
-        when(routerMock.getResolverMap()).thenReturn(new ResolverMap());
-        interceptor.init(routerMock);
+    private JwtAuthInterceptor initInterceptor(JwtAuthInterceptor interceptor) {
+        interceptor.init(new DummyTestRouter());
         return interceptor;
     }
 
@@ -98,13 +86,10 @@ class JWTSecuritySchemeTest {
 
     private static String getSignedJwt(RsaJsonWebKey privateKey, JwtClaims claims) throws JoseException {
         JsonWebSignature jws = new JsonWebSignature();
-
         jws.setPayload(claims.toJson());
-
         jws.setKey(privateKey.getPrivateKey());
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
         jws.setKeyIdHeaderValue("membrane");
-
         return jws.getCompactSerialization();
     }
 

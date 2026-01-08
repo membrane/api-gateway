@@ -13,12 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
+
+import java.io.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
@@ -28,11 +30,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class Http2DowngradeTest {
 
-    private static HttpRouter router;
+    private static Router router;
 
     @BeforeAll
-    public static void beforeAll() {
-        router = new HttpRouter();
+    public static void beforeAll() throws IOException {
+        router = new TestRouter();
         ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey(3064), null, 0);
         proxy.getFlow().add(new AbstractInterceptor() {
             @Override
@@ -41,7 +43,7 @@ public class Http2DowngradeTest {
                 return RETURN;
             }
         });
-        router.getRules().add(proxy);
+        router.add(proxy);
         router.start();
     }
 

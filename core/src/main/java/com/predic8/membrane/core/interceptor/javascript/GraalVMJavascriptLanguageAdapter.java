@@ -16,9 +16,9 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.lang.javascript.*;
+import com.predic8.membrane.core.router.*;
 import org.graalvm.polyglot.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
@@ -32,7 +32,7 @@ public class GraalVMJavascriptLanguageAdapter extends LanguageAdapter {
 
     @Override
     public ProblemDetails getProblemDetails(Exception e) {
-        ProblemDetails pd = internal(router.isProduction(),"javascript");
+        ProblemDetails pd = internal(router.getConfiguration().isProduction(),"javascript");
         if (e instanceof PolyglotException pe) {
             pd.internal("column",  pe.getSourceLocation().getStartColumn());
             pd.internal("line", pe.getSourceLocation().getStartLine() - preScriptLineLength );

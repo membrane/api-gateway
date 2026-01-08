@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.SOAPUtil;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SOAPFaultTest {
 	public static final String ARTICLE_SERVICE_WSDL = getPathFromResource( "/validation/ArticleService.wsdl");
-	final Router r = new Router();
+	final Router r = new DummyTestRouter();
 
 	@Test
 	public void testValidateFaults() {

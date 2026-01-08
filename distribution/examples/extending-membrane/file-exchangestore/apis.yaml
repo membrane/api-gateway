@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+components:
+  # If there is an exchange store component, Membrane will use it
+  # The name of the component doesn't matter
+  my-store:
+    fileExchangeStore:
+      dir: "./exchanges"
+---
+
+api:
+  port: 2000
+  target:
+    url: https://api.predic8.de

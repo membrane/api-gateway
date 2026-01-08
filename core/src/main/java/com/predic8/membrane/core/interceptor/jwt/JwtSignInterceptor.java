@@ -39,7 +39,7 @@ import static org.jose4j.jws.AlgorithmIdentifiers.*;
 public class JwtSignInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JwtSignInterceptor.class);
-    private static final String DEFAULT_PKEY = "wP1ITsKxAWOO03eywdOj73T5Po1OFXZlFgzf1CJaf8D3piuxS0C5JSHTKTO354_r9cg2WyQ3nEqJ6YScV3-NfW8xXbiyMr5Xokzn7YpuB9dtby0veEn4w7JHChH5lV2fwrjH2iL6IIOLrND9D_Dxoc3mmLMaie0mTW9-UHGOunk";
+    public static final String DEFAULT_PKEY = "wP1ITsKxAWOO03eywdOj73T5Po1OFXZlFgzf1CJaf8D3piuxS0C5JSHTKTO354_r9cg2WyQ3nEqJ6YScV3-NfW8xXbiyMr5Xokzn7YpuB9dtby0veEn4w7JHChH5lV2fwrjH2iL6IIOLrND9D_Dxoc3mmLMaie0mTW9-UHGOunk";
 
     private JwtSessionManager.Jwk jwk;
     private RsaJsonWebKey rsaJsonWebKey;
@@ -52,7 +52,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         try {
-            Map<String, Object> params = JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation()));
+            Map<String, Object> params = JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation()));
             if (Objects.equals(params.get("p"), DEFAULT_PKEY)) {
                 log.warn("""
                     \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
@@ -89,7 +89,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
             return CONTINUE;
         } catch (Exception e) {
             log.error("Error during attempt to sign JWT payload", e);
-            security(router.isProduction(),getDisplayName())
+            security(router.getConfiguration().isProduction(),getDisplayName())
                     .addSubSee("crypto")
                     .detail("Error during attempt to sign JWT payload.")
                     .exception(e)

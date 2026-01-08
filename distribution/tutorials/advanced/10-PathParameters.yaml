@@ -1,11 +1,11 @@
 
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
 # Membrane Tutorial: Path Parameters
 #
 # 1.) Start Membrane:
 #
-#     membrane.sh -c 10-PathParameters.yaml
+#     ./membrane.sh -c 10-PathParameters.yaml
 #
 # 2.) Call the API:
 #

@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.sslinterceptor;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.ssl.SSLExchange;
 
 public interface SSLInterceptor {
-    void init(Router router) throws Exception;
+    void init(Router router);
 
     Outcome handleRequest(SSLExchange exc) throws Exception;
 }

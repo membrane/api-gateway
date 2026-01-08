@@ -14,20 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.chain;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.flow.AbstractFlowWithChildrenInterceptor;
-import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.util.*;
+import org.springframework.beans.factory.*;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
- *  @description A Chain groups multiple interceptors into reusable components, reducing redundancy in API configurations.
+ * @description A Chain groups multiple interceptors into reusable components, reducing redundancy in API configurations.
  */
 @MCElement(name = "chain")
 public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
@@ -42,9 +39,28 @@ public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     private List<Interceptor> getInterceptorChainForRef(String ref) {
-        return Optional.of(router.getBeanFactory().getBean(ref, ChainDef.class))
-                .map(ChainDef::getFlow)
-                .orElseThrow(() -> new ConfigurationException("No chain found for reference: " + ref));
+        return getBean(ref, ChainDef.class)
+                .orElseThrow(() -> new ConfigurationException("No chain found for reference: " + ref))
+                .getFlow();
+    }
+
+    /**
+     * TODO: Temporary fix till we have a central configuration independant lookup
+     */
+    private <T> Optional<T> getBean(String name, Class<T> clazz) {
+        if (router.getRegistry() != null) {
+            var bean = router.getRegistry().getBean(name, clazz);
+            if (bean.isPresent())
+                return bean;
+        }
+        // From XML
+        if (router.getBeanFactory() != null) {
+            try {
+                return Optional.of(router.getBeanFactory().getBean(name, clazz));
+            } catch (NoSuchBeanDefinitionException ignored) {
+            }
+        }
+        return Optional.empty();
     }
 
     @Override

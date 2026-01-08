@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -30,7 +30,7 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 
 	@BeforeAll
 	static void setUp() {
-		router = Router.init("src/test/resources/ref.proxies.xml");
+		router = RouterXmlBootstrap.initByXML("src/test/resources/ref.proxies.xml");
 		proxies = router.getRuleManager().getRules();
 	}
 
@@ -65,7 +65,7 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 
 	@AfterAll
 	static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 }

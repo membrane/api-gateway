@@ -14,10 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -28,7 +27,7 @@ import static com.predic8.membrane.core.http.Request.get;
 
 abstract class AbstractSetPropertyInterceptorTest {
 
-    Router router;
+    DefaultRouter router;
     Exchange exc;
     AbstractSetterInterceptor interceptor;
 
@@ -38,7 +37,7 @@ abstract class AbstractSetPropertyInterceptorTest {
     void setUp() throws URISyntaxException {
         interceptor = new SetPropertyInterceptor();
         interceptor.setLanguage(getLanguage());
-        router = new Router();
+        router = new DefaultRouter();
         exc = get("/dummy")
                 .contentType(APPLICATION_JSON)
                 .body("""

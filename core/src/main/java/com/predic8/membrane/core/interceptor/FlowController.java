@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.slf4j.*;
 
@@ -94,7 +94,7 @@ public class FlowController {
             } catch (Exception e) {
                 String msg = "Aborting! Exception caused in %s during %s %s flow.".formatted(interceptor.getDisplayName(), exchange.getRequest().getUri(), flow);
                 log.warn(msg, e);
-                internal(router.isProduction(),interceptor.getDisplayName())
+                internal(router.getConfiguration().isProduction(),interceptor.getDisplayName())
                         .detail(msg)
                         .exception(e)
                         .buildAndSetResponse(exchange);

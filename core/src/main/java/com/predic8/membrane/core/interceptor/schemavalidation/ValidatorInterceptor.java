@@ -134,7 +134,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     private @Nullable String getBaseLocation() {
-        return router == null ? null : router.getBaseLocation();
+        return router == null ? null : router.getConfiguration().getBaseLocation();
     }
 
     @Override
@@ -153,7 +153,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
                 return CONTINUE;
         } catch (IOException e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .addSubSee("io")
                     .detail("Could not read message body")
                     .exception(e)
@@ -165,7 +165,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             return validator.validateMessage(exc, flow);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Error validating message")
                     .addSubSee("generic")
                     .internal("validator", validator.getName())

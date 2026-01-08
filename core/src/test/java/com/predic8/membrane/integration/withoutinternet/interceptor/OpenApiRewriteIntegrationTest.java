@@ -13,12 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.integration.withoutinternet.interceptor;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.hamcrest.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -30,18 +29,19 @@ import static java.util.Collections.*;
 
 public class OpenApiRewriteIntegrationTest {
 
-    private final Router r = new HttpRouter();
+    private Router r;
 
     @BeforeEach
     public void setUp() throws Exception {
-        r.getRuleManager().addProxyAndOpenPortIfNew(getApiProxy());
-        r.getRuleManager().addProxyAndOpenPortIfNew(getTargetProxy());
-        r.init();
+        r = new TestRouter();
+        r.add(getApiProxy());
+        r.add(getTargetProxy());
+        r.start();
     }
 
     @AfterEach
     public void tearDown() {
-        r.shutdown();
+        r.stop();
     }
 
     @NotNull

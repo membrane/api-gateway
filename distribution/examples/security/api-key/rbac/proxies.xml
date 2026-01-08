@@ -16,7 +16,7 @@
     <router>
 
         <!--API key authorization, providing key is optional. Certain scopes allow for additional access rights.-->
-        <api port="3000">
+        <api port="2000">
             <apiKey required="false">
                 <headerExtractor name="X-Key" />
             </apiKey>

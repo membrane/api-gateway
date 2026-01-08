@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor.ws_addressing;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.ws_addressing.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -29,7 +29,7 @@ public class WsaEndpointRewriterInterceptorTest {
 
 	@BeforeEach
 	public void setUp() throws Exception {
-		Router router = new HttpRouter();
+		Router router = new DummyTestRouter();
 		router.init();
 		rewriter = new WsaEndpointRewriterInterceptor();
 		rewriter.init(router);

@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators.security;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
@@ -42,8 +42,6 @@ public abstract class AbstractSecurityValidatorTest {
     }
 
     protected static Router getRouter() {
-        Router router = new Router();
-        router.setUriFactory(new URIFactory());
-        return router;
+        return new DummyTestRouter();
     }
 }

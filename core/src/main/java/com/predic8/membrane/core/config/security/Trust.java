@@ -44,7 +44,7 @@ public class Trust {
         return Objects.hash(algorithm, checkRevocation, certificateList);
     }
 
-    public List<Certificate> getCertificateList() {
+    public List<Certificate> getCertificates() {
         return certificateList;
     }
 
@@ -53,7 +53,7 @@ public class Trust {
      * @param certificateList
      */
     @MCChildElement
-    public void setCertificateList(List<Certificate> certificateList) {
+    public void setCertificates(List<Certificate> certificateList) {
         this.certificateList = certificateList;
     }
 

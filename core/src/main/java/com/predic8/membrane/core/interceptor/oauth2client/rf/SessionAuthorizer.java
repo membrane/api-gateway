@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -25,6 +24,7 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Statistics;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

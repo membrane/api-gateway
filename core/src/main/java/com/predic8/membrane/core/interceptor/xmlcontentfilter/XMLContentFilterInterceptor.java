@@ -98,7 +98,7 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
             return CONTINUE;
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .title("XML Error")
                     .exception(e)
                     .buildAndSetResponse(exc);

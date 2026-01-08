@@ -16,11 +16,11 @@ package com.predic8.membrane.core.interceptor.authentication.xen;
 import com.bornium.security.oauth2openid.Constants;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.*;
@@ -141,7 +141,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         private final SecureRandom random = new SecureRandom();
 
         public void init(Router router) throws Exception {
-            String key = jwk.get(router.getResolverMap(), router.getBaseLocation());
+            String key = jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation());
             if (key == null || key.isEmpty())
                 rsaJsonWebKey = generateKey();
             else

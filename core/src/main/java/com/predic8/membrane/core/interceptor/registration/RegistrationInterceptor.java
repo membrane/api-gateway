@@ -71,7 +71,7 @@ public class RegistrationInterceptor extends AbstractInterceptor {
             connection.createStatement().executeUpdate(getInsertAccountIntoDatabaseSQL(user));
         } catch (SQLException e) {
             log.error("",e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Could not access database")
                     .exception(e)
                     .buildAndSetResponse(exc);

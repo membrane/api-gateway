@@ -16,11 +16,11 @@
 
 package com.predic8.application;
 
-import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
 import com.predic8.membrane.core.interceptor.websocket.custom.MyWebSocketLogInterceptor;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.*;
 
 public class MyApplication {
 
@@ -32,15 +32,15 @@ public class MyApplication {
 
         // create an enclosing WebSocket interceptor to add our own Logging interceptor to it
         WebSocketInterceptor ws = new WebSocketInterceptor();
-        ws.getInterceptors().add(new MyWebSocketLogInterceptor());
+        ws.getFlow().add(new MyWebSocketLogInterceptor());
 
         // attach the WebSocket interceptor to the service proxy
-        sp.getInterceptors().add(ws);
+        sp.getFlow().add(ws);
 
         // add the service proxy to a new router instance and start it
-        HttpRouter router = new HttpRouter();
+        Router router = new DefaultRouter();
         router.add(sp);
-        router.init();
+        router.start();
 
         System.out.println("Starting finished - Waiting for WebSocket communication");
     }

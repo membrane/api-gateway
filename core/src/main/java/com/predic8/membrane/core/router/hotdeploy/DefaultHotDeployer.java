@@ -14,8 +14,9 @@
 
 package com.predic8.membrane.core.router.hotdeploy;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.spring.*;
+import com.predic8.membrane.core.router.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
@@ -24,43 +25,52 @@ public class DefaultHotDeployer implements HotDeployer {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultHotDeployer.class.getName());
 
-    @GuardedBy("this")
+    @GuardedBy("lock")
     private HotDeploymentThread hdt;
 
-    private Router router;
+    private DefaultRouter router;
+
+    private final Object lock = new Object();
 
     @Override
-    public void init(Router router) {
-        this.router = router;
+    public void start(@NotNull DefaultRouter defaultRouter) {
+        this.router = defaultRouter;
+        startInternal();
     }
 
-    @Override
-    public void start() {
+    private void startInternal() {
         // Prevent multiple threads from starting hot deployment at the same time.
-        synchronized (this) {
-            if (hdt != null)
-                throw new IllegalStateException("Hot deployment already started.");
-
-            if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
-                log.warn("""
-                        ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
-                        """);
+        synchronized (lock) {
+            if (hdt != null) {
+                log.warn("Hot deployment already started.");
                 return;
             }
 
-            hdt = new HotDeploymentThread(router.getRef());
-            hdt.setFiles(tac.getFiles());
-            hdt.start();
+            // Start from XML
+            if (router.getBeanFactory() != null) {
+                if (!(router.getBeanFactory() instanceof TrackingApplicationContext tac)) {
+                    log.warn("""
+                            ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy="false">.
+                            """);
+                    return;
+                }
+                hdt = new HotDeploymentThread(router.getRef());
+                hdt.setFiles(tac.getFiles());
+                hdt.start();
+                return;
+            }
+
+            log.debug("Hot deployment is not yet supported for the YAML configuration.");
         }
     }
 
     @Override
     public void stop() {
-        synchronized (this) {
+        synchronized (lock) {
             if (hdt == null)
                 return;
 
-            router.stopAutoReinitializer();
+            router.getReinitializer().stop();
             hdt.stopASAP();
             hdt = null;
         }
@@ -68,8 +78,8 @@ public class DefaultHotDeployer implements HotDeployer {
 
     @Override
     public void setEnabled(boolean enabled) {
-        if (enabled)
-            start();
+        if (enabled && router != null)
+            startInternal();
         else
             stop();
     }

@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.formvalidation;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -30,7 +30,7 @@ public class FormValidationInterceptorTest {
 	@Test
 	public void testValidation() throws Exception {
 		FormValidationInterceptor interceptor = new FormValidationInterceptor();
-		interceptor.init(new HttpRouter());
+		interceptor.init(new DummyTestRouter());
 
 		Field article = new Field();
 		article.setName("article");

@@ -1,4 +1,4 @@
-![Membrane Logo](distribution/media/membrane-logo-m-text.png)
+![Membrane Logo](distribution/media/membrane-logo-m-text.svg)
 
 # API Gateway
 
@@ -297,11 +297,11 @@ api:
 #### Viewing Deployed APIs
 Once configured, a list of deployed APIs is available at: [http://localhost:2000/api-docs](http://localhost:2000/api-docs)
 
-![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.png)
+![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.jpg)
 
 Click on an API title in the list to open the Swagger UI for interactive exploration and testing:
 
-![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.png)
+![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.jpg)
 
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
@@ -869,80 +869,81 @@ api:
 
 # Security
 
-Membrane offers lots of security features to protect backend servers.
+Membrane offers all kinds of security features to protect APIs and backend servers.
 
 ## API Keys
 
-You can define APIs keys directly in your configuration, and Membrane will validate incoming requests against them.
+API keys can be defined in the configuration, loaded from a file, or stored in a database. Requests are authenticated by validating the provided API key against these sources.
 
-### Example Configuration
-The following configuration secures the `Fruitshop API` by validating an API key provided as a query parameter:
+You can also define permissions using scopes in OpenAPI and enforce them with API keys, OAuth 2.0, or JWT-based authentication.
 
-```xml
-<api port="2000">
-    <apiKey>
-        <!-- Define valid API keys -->
-        <keys>
-            <secret value="abc123" />
-            <secret value="secret" />
-            <secret value="Paris2025" />
-        </keys>
-        
-        <!-- Extract the API key from the query parameter -->
-        <queryParamExtractor paramName="api-key" />
-    </apiKey>
-    <target url="https://api.predic8.de" />
-</api>
-```  
+This configuration secures all APIs globally. Alternatively, API keys can be defined for individual APIs only.
 
-### Testing the Configuration
-To test the configuration, pass a valid API key in the query string:
-
-```bash
-curl "http://localhost:2000/shop/v2/products/4?api-key=abc123"
-```  
-
-If the key is invalid or missing, Membrane denies access and returns an error response (HTTP 401 Unauthorized).
+```yaml
+global:
+  - apiKey:
+      stores:
+        - simple:
+            - secret:
+                value: aed8bcc4-7c83-44d5-8789-21e4024ac873
+            - secret:
+                value: 08f121fa-3cda-49c6-90db-1f189ff80756
+      extractors:
+        - headerExtractor:
+            headerName: X-Api-Key
+```
 
 ### Advanced Use Cases
-For more complex setups, such as API keys in the HTTP header, role-based access control (RBAC) or file-based key storage, see the [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md).
+
+More advanced scenarios are supported, including:
+
+- API keys in headers, query parameters or at any other location using expressions.
+- Role-based access control (RBAC) with fine-grained permissions.
+- OpenAPI-defined permissions.
+
+See the [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md) for detailed configurations.
 
 ## JSON Web Tokens
 
-The API below only allows requests with valid tokens from Microsoft's Azure AD. You can also use the JWT validator for other identity providers.
+The API below only allows requests that present a valid JSON Web Token issued by Microsoft Azure Entra ID. The JWT validator can also be used with other identity providers.
 
-```xml
-<api port="8080">
-  <jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
-    <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys"/>
-  </jwtAuth>
-  <target url="https://your-backend"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - jwtAuth:
+        expectedAud: api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0
+        jwks:
+          jwksUris: https://login.microsoftonline.com/common/discovery/keys
+  target:
+    url: https://your-backend
 ```
 
 ## OAuth2
 
 ### Secure APIs with OAuth2
 
-Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak or Membrane authentication servers.
+Use OAuth2/OpenID to secure endpoints against Google, Azure Entra ID, GitHub, Keycloak or Membrane Authentication Servers.
 
-```xml
-<api port="2001">
-  <oauth2Resource2>
-    <membrane src="https://accounts.google.com"
-              clientId="INSERT_CLIENT_ID"
-              clientSecret="INSERT_CLIENT_SECRET"
-              scope="email profile"
-              subject="sub"/>
-  </oauth2Resource2>
-  <groovy>
-    // Get email from OAuth2 and forward it to the backend
-    def oauth2 = exc.properties.'membrane.oauth2'
-    header.setValue('X-EMAIL',oauth2.userinfo.email)
-    CONTINUE
-  </groovy>
-  <target url="https://backend"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - oauth2Resource2:
+        membrane:
+          src: http://localhost:8000
+          clientId: abc
+          clientSecret: def
+          scope: openid profile
+          claims: username
+          claimsIdt: sub
+    - request:
+        # Forward the authenticated user’s email to the backend in an HTTP header.
+        - setHeader:
+            name: X-EMAIL
+            value: ${property['membrane.oauth2'].userinfo['email']}
+  target:
+    url: http://backend
 ```
 
 Try the tutorial [OAuth2 with external OpenID Providers](https://membrane-soa.org/api-gateway-doc/current/oauth2-openid.html)
@@ -1069,7 +1070,6 @@ Limit the number of incoming requests:
 Distribute workload to multiple backend nodes. [See the example](distribution/examples/loadbalancing)
 
 ```xml
-
 <api port="8080">
     <balancer name="balancer">
         <clusters>
@@ -1105,24 +1105,31 @@ Integrate legacy services.
 
 ## API configuration from WSDL
 
-SOAP proxies configure themselves by analysing WSDL:
+Membrane reads the WSDL and automatically generates a SOAP proxy.
 
-```xml
-
-<soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl"/>
+```yaml
+soapProxy:
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
 ```
+
+After startup, Membrane exposes:
+
+- A SOAP endpoint at http://localhost:2000/city-service
+- A WSDL at http://localhost:2000/city-service?wsdl
 
 ## Message Validation against WSDL and XSD
 
 The _validator_ checks SOAP messages against a WSDL document including referenced XSD schemas.
 
-```xml
-
-<soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
-    <validator/>
-</soapProxy>
+```yaml
+soapProxy:
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
+  flow:
+    # Validates SOAP messages against the WSDL and XSDs
+    - validator: {}
 ```
-
 
 # Operation
 
@@ -1156,7 +1163,7 @@ This API will expose metrics for Prometheus at [http://localhost:2000/metrics](h
 ![Grafana Dashborad for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
 Grafana dashboard from Membrane metrics.
  
-See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus).
+See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus-grafana).
 
 ### OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry** traces using the `openTelemetry` plugin and the `W3C` propagation standard. This enables detailed tracing of requests across Membrane and backend services.

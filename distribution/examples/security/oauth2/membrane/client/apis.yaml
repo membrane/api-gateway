@@ -1,9 +1,7 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.1.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 api:
-  name: Resource Server
   port: 2000
   flow:
-    - log: {}
     # Protects a resource with OAuth2 - blocks on invalid login
     - oauth2Resource2:
         membrane:
@@ -13,29 +11,25 @@ api:
           scope: openid profile
           claims: username
           claimsIdt: sub
-    # Use the information from the authentication server and pass it to the resource server (optional)
-    - groovy:
-        src: |
-          def oauth2 = exc.properties.'membrane.oauth2'
-          // Put the eMail into the header X-EMAIL and pass it to the protected server.
-          exc.request.header.setValue('X-EMAIL',oauth2.userinfo.email)
-          CONTINUE
+    - request:
+        # Forward the authenticated user’s email to the backend in an HTTP header.
+        - setHeader:
+            name: X-EMAIL
+            value: ${property['membrane.oauth2'].userinfo['email']}
   target:
-    host: localhost
-    port: 3000
+    url: http://localhost:3000
 
 ---
-
 api:
   port: 3000
   flow:
-    - groovy:
-        src: |
-          exc.setResponse(Response.ok("You accessed the protected resource! Hello " + exc.request.header.getFirstValue("X-EMAIL")).build())
-          RETURN
+    - request:
+        - template:
+            src: You accessed the protected resource! Hello ${header["X-EMAIL"]}
+        - return:
+            status: 200
 
 ---
-
 api:
   port: 9001
   flow:
