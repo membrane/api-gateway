@@ -36,7 +36,7 @@ import static java.nio.charset.StandardCharsets.*;
  * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
  * @topic 5. Web Services with SOAP and WSDL
  */
-@MCElement(name = "wsdlRewriter", excludeFromFlow = true)
+@MCElement(name = "wsdlRewriter", excludeFromFlow = false)
 public class WSDLInterceptor extends RelocatingInterceptor {
 
     private final static Logger log = LoggerFactory.getLogger(WSDLInterceptor.class.getName());

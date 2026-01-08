@@ -29,6 +29,7 @@ import java.util.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.http.Response.notFound;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 
@@ -54,9 +55,9 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     /**
      * Note that this class fulfills two purposes:
      * <p>
-     * * During the initial processDocuments() run, the XSDs are enumerated.
+     * During the initial processDocuments() run, the XSDs are enumerated.
      * <p>
-     * * During later runs (as well as the initial run, but that's result is discarded),
+     * During later runs (as well as the initial run, but that result is discarded),
      * the documents are rewritten.
      */
     private final class RelativePathRewriter implements PathRewriter {
@@ -109,7 +110,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                     String doc = documents_to_process.poll();
                     if (doc == null)
                         break;
-                    log.debug("WSDLPublisherInterceptor: processing {}", doc);
+                    log.debug("processing: {}", doc);
                     exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), doc));
                     WSDLInterceptor wi = new WSDLInterceptor();
                     wi.setRewriteEndpoint(false);
@@ -218,7 +219,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             exc.setResponse(HttpUtil.setHTMLErrorResponse(Response.internalServerError(), "Bad parameter format.", ""));
             return ABORT;
         } catch (ResourceRetrievalException e) {
-            exc.setResponse(Response.notFound().build());
+            exc.setResponse(notFound().build());
             return ABORT;
         }
 
@@ -227,7 +228,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "Publishes the WSDL at " + wsdl + " under \"?wsdl\" (as well as its dependent schemas under similar URLs).";
+        return "Publishes the WSDL at %s under \"?wsdl\" (as well as its dependent schemas under similar URLs).".formatted(wsdl);
     }
 
     public void setSoapProxy(SOAPProxy soapProxy) {

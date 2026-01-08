@@ -329,7 +329,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
         wp.setWsdl(wsdl);
         wp.init(router);
-        interceptors.addFirst(wp);
+        interceptors.addLast(wp);
     }
 
     private boolean hasWSDLPublisherInterceptor() {
