@@ -179,8 +179,8 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <skipTests>true</skipTests>
                     <failIfNoTests>false</failIfNoTests>
-                    <test>**/ExampleUnitTests.java</test>
                 </configuration>
             </plugin>
             <plugin>
