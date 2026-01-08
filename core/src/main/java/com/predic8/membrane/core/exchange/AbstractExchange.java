@@ -28,7 +28,9 @@ import java.net.*;
 import java.text.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exchange.Exchange.TRACK_NODE_STATUS;
 import static com.predic8.membrane.core.exchange.ExchangeState.*;
+import static java.lang.Boolean.TRUE;
 
 public abstract class AbstractExchange {
 	private static final Logger log = LoggerFactory.getLogger(AbstractExchange.class.getName());
@@ -67,6 +69,9 @@ public abstract class AbstractExchange {
 	private String remoteAddrIp;
 
 	private ArrayList<Interceptor> interceptorStack = new ArrayList<>(10);
+
+	private int[] nodeStatusCodes;
+	private Exception[] nodeExceptions;
 
 	private int estimatedHeapSize = -1;
 
@@ -408,6 +413,7 @@ public abstract class AbstractExchange {
 
 	protected int estimateHeapSize() {
 		return 2600 +
+				(nodeExceptions != null ? nodeExceptions.length * 4096 : 0) +
 				(originalRequestUri != null ? originalRequestUri.length() : 0) +
 				(request != null ? request.estimateHeapSize() : 0) +
 				(response != null ? response.estimateHeapSize() : 0);
@@ -436,6 +442,12 @@ public abstract class AbstractExchange {
 		copy.setRemoteAddr(source.getRemoteAddr());
 		copy.setRemoteAddrIp(source.getRemoteAddrIp());
 		copy.setInterceptorStack(new ArrayList<>(source.getInterceptorStack()));
+		int[] nodeStatusCodes = source.getNodeStatusCodes();
+		if (nodeStatusCodes != null)
+			copy.setNodeStatusCodes(nodeStatusCodes.clone());
+		Exception[] nodeExceptions = source.getNodeExceptions();
+		if (nodeExceptions != null)
+			copy.setNodeExceptions(nodeExceptions.clone());
 
 		return copy;
 	}
@@ -480,4 +492,37 @@ public abstract class AbstractExchange {
 			return request;
 		return response; // RESPONSE and ABORT flow both work on the response
 	}
+
+	public void setNodeStatusCode(int tryCounter, int code) {
+		if (nodeStatusCodes == null) {
+			nodeStatusCodes = new int[getDestinations().size()];
+		}
+		nodeStatusCodes[tryCounter % getDestinations().size()] = code;
+	}
+
+	public void trackNodeException(int tryCounter, Exception e) {
+		if (!TRUE.equals(properties.get(TRACK_NODE_STATUS)))
+			return;
+		if (nodeExceptions == null) {
+			nodeExceptions = new Exception[getDestinations().size()];
+		}
+		nodeExceptions[tryCounter % getDestinations().size()] = e;
+	}
+
+	void setNodeStatusCodes(int[] nodeStatusCodes) {
+		this.nodeStatusCodes = nodeStatusCodes;
+	}
+
+	public int[] getNodeStatusCodes() {
+		return nodeStatusCodes;
+	}
+
+	void setNodeExceptions(Exception[] nodeExceptions) {
+		this.nodeExceptions = nodeExceptions;
+	}
+
+	public Exception[] getNodeExceptions() {
+		return nodeExceptions;
+	}
+
 }

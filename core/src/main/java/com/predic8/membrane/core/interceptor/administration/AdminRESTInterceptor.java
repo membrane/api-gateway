@@ -225,7 +225,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			return Response.notFound().build();
 		}
 
-		return json(gen -> writeExchange(exc, gen));
+		return json(gen -> writeExchange(exc, gen, true));
 	}
 
 	@Mapping("/admin/rest/exchanges(/?\\?.*)?")
@@ -241,7 +241,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			gen.writeStartObject();
 			gen.writeArrayFieldStart("exchanges");
 			for (AbstractExchange e : res.getExchanges()) {
-				writeExchange(e, gen);
+				writeExchange(e, gen, false);
 			}
 			gen.writeEndArray();
 			gen.writeNumberField("total", res.getCount());
@@ -250,7 +250,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		});
 	}
 
-	private void writeExchange(AbstractExchange exc, JsonGenerator gen) throws IOException {
+	private void writeExchange(AbstractExchange exc, JsonGenerator gen, boolean detail) throws IOException {
 		gen.writeStartObject();
 		gen.writeNumberField("id", exc.getId());
 		if (exc.getResponse() != null) {
@@ -310,6 +310,40 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 		gen.writeNumberField("duration", exc.getTimeResReceived() - exc.getTimeReqSent());
 		gen.writeStringField("msgFilePath", JDBCUtil.getFilePath(exc));
+
+		if (detail) {
+			List<String> destinations = exc.getDestinations();
+			if (destinations != null) {
+				gen.writeArrayFieldStart("destinations");
+				for (String destination : destinations) {
+					if (destination == null)
+						gen.writeNull();
+					else
+						gen.writeString(destination);
+				}
+				gen.writeEndArray();
+			}
+			int[] nodeStatusCodes = exc.getNodeStatusCodes();
+			if (nodeStatusCodes != null) {
+				gen.writeArrayFieldStart("nodeStatusCodes");
+				for (int statusCode : nodeStatusCodes) {
+					gen.writeNumber(statusCode);
+				}
+				gen.writeEndArray();
+			}
+			Exception[] nodeExceptions = exc.getNodeExceptions();
+			if (nodeExceptions != null) {
+				gen.writeArrayFieldStart("nodeExceptions");
+				for (Exception ex : nodeExceptions) {
+					if (ex == null || ex.getMessage() == null)
+						gen.writeNull();
+					else
+						gen.writeString(ex.getMessage());
+				}
+				gen.writeEndArray();
+			}
+		}
+
 		gen.writeEndObject();
 	}
 
