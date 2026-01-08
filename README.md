@@ -1025,12 +1025,12 @@ The next example secures the public endpoint, enabling TLS for connections from 
 api:
   port: 443
   ssl:
-    key:
-      private:
-        location: keystore.p12
-      certificates:
-        - certificate:
-            location: truststore.p12
+    keystore:
+      location: keystore.p12
+      password: changeit
+    truststore:
+      location: keystore.p12
+      password: changeit
   target:
     url: http://backend
 ```
