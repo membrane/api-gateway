@@ -66,7 +66,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private ResolverMap resourceResolver;
     private ApplicationContext applicationContext;
 
-    private SchemaMappings schemaMappings;
+    private SchemaMappings schemaMappings = new SchemaMappings();
 
     public ValidatorInterceptor() {
         name = "validator";
