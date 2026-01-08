@@ -180,7 +180,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <failIfNoTests>false</failIfNoTests>
-                    <test>**/ExampleUnitTests.java</test>
                 </configuration>
             </plugin>
             <plugin>
