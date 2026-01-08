@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
+#
+# Tutorial: WSDL Rewriter
+#
+# By default, WSDL rewriting uses the hostname and port on which the API Gateway
+# is reachable. This is sufficient for direct access.
+#
+# If the API Gateway is deployed behind a reverse proxy or load balancer, these
+# defaults are usually incorrect. In such cases, the public-facing host, protocol,
+# port, and path must be rewritten explicitly.
+#
+# This example shows how to override these values.
+#
+# 1.) Start Membrane
+#
+# 2.) WSDL
+#     http://localhost:2000/my-service?wsdl
+#     Inspect the address/@location attribute near the end of the document.
+
+soapProxy:
+  path:
+    uri: /my-service
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
+  flow:
+    - wsdlRewriter:
+        host: my.host.example.com
+        protocol: https
+        port: 443

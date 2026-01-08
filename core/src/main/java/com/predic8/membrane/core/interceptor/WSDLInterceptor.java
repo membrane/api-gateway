@@ -200,8 +200,8 @@ public class WSDLInterceptor extends RelocatingInterceptor {
      * @example 4000
      */
     @MCAttribute
-    @Override
-    public void setPort(String port) {
-        super.setPort(port);
+    public void setPort(int port) {
+        super.setPort(Integer.toString(port));
     }
+
 }

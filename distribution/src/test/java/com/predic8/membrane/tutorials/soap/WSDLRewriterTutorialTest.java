@@ -16,15 +16,47 @@ package com.predic8.membrane.tutorials.soap;
 
 import org.junit.jupiter.api.*;
 
+import java.io.*;
+
+import static com.predic8.membrane.core.Constants.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.http.ContentType.*;
 import static org.hamcrest.Matchers.*;
 
-public class SOAPProxyTutorialTest extends AbstractCityServiceTest {
+public class WSDLRewriterTutorialTest extends AbstractSOAPTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "20-SOAPProxy.yaml";
+        return "30-WSDL-Rewriter.yaml";
+    }
+
+    @Test
+    void wsdl() {
+        // @formatter:off
+        given()
+        .when()
+            .get("http://localhost:2000/my-service?wsdl")
+        .then()
+            .statusCode(200)
+            .contentType(XML)
+            .body(containsString(WSDL_SOAP11_NS))
+
+            // s:address/@location must be rewritten
+            .body("definitions.service.port.address.@location", equalTo("https://my.host.example.com/my-service"));
+        // @formatter:on
+    }
+
+    @Test
+    void soapCall() throws IOException {
+        // @formatter:off
+        given()
+            // File is read from FS use the same file as the user
+            .body(readFileFromBaseDir("../data/city-request.soap.xml"))
+        .when()
+            .post("http://localhost:2000/my-service")
+        .then()
+            .body("Envelope.Body.getCityResponse.population", equalTo("34665600"));
+         // @formatter:on
     }
 
     @Test
@@ -33,9 +65,8 @@ public class SOAPProxyTutorialTest extends AbstractCityServiceTest {
         given()
             .body("Invalid")
         .when()
-            .get("http://localhost:2000/city-service")
+            .get("http://localhost:2000/my-service")
         .then()
-            .log().body()
             .statusCode(200)
             .contentType(HTML)
             .body(containsString("Membrane API Gateway: CityService"));

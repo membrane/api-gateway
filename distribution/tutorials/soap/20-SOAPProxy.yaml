@@ -1,7 +1,22 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
-# Membrane Tutorial: SOAP Proxy
+# Tutorial: SOAP Proxy
 #
+# A SOAP proxy configured from a WSDL document.
+#
+# When a WSDL is exposed through an API Gateway, it must be rewritten so that:
+# - The service address points to the gateway, not the backend.
+# - References to imported XSD schema files are adjusted accordingly.
+# The serviceProxy rewrites the WSDL automatically on the fly.
+#
+# 1.) Start Membrane
+#
+# 2.) WSDL
+#     http://localhost:2000/city-service?wsdl
+#     Take a look at the address/@location attribute at the end of the WSDL
+#
+# 3.) Invoke
+#    curl -d @../data/city-request.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
 
 soapProxy:
   port: 2000
