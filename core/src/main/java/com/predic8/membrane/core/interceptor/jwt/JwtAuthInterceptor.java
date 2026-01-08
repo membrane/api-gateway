@@ -21,11 +21,14 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.security.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jwt.consumer.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.jwt.JwtSignInterceptor.DEFAULT_PKEY;
 import static java.util.EnumSet.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
@@ -47,7 +50,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         return "JWT does not contain '" + key + "'";
     }
     public static final String ERROR_JWT_VALUE_NOT_PRESENT_ID = "jwt-payload-entry-missing";
-
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthInterceptor.class);
 
     final ObjectMapper mapper = new ObjectMapper();
     JwtRetriever jwtRetriever;
@@ -75,7 +78,18 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         kidToKey = jwks.getJwks().stream()
                 .map(jwk -> {
                     try {
-                        return new RsaJsonWebKey(mapper.readValue(jwk.getJwk(router.getResolverMap(), router.getConfiguration().getBaseLocation(),mapper),Map.class));
+                        Map params = mapper.readValue(jwk.getJwk(router.getResolverMap(), router.getConfiguration().getBaseLocation(), mapper), Map.class);
+                        if (Objects.equals(params.get("p"), DEFAULT_PKEY)) {
+                            log.warn("""
+                                \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
+                                        This key is for demonstration purposes only and UNSAFE for production use.          \s
+                                ---------------------------------------------------------------------------------------------""");
+                            if (router.getConfiguration().isProduction()) {
+                                throw new RuntimeException("Default JWK detected in production environment. Please use a secure key.");
+                            }
+                        }
+
+                        return new RsaJsonWebKey(params);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
