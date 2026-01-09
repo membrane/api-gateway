@@ -194,9 +194,9 @@ public final class McYamlIntrospector {
         return type.getSimpleName();
     }
 
-    public static boolean isSingleAttribute(Class<?> clazz) {
+    public static boolean isCollapsed(Class<?> clazz) {
         MCElement el = clazz.getAnnotation(MCElement.class);
-        return el != null && el.singleAttribute();
+        return el != null && el.collapsed();
     }
 
 }

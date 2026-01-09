@@ -110,7 +110,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
+    private AbstractSchema<?> createParser(Model m, MainInfo main, ElementInfo elementInfo) {
         String parserName = elementInfo.getXSDTypeName(m);
 
         if (isComponentsMap(elementInfo)) {
@@ -133,6 +133,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             return ref(parserName).ref("#/$defs/%sParser".formatted(childName));
         }
 
+        // enforce the inline form for collapsed elements
+        if (elementInfo.getAnnotation().collapsed()) {
+            if (elementInfo.getAnnotation().noEnvelope()) {
+                throw new ProcessingException("@MCElement(collapsed=true) is not compatible with noEnvelope=true.", elementInfo.getElement());
+            }
+            return createCollapsedInlineParser(elementInfo, parserName);
+        }
+
         SchemaObject parser = getParserSchemaObject(elementInfo, parserName);
 
         collectProperties(m, main, elementInfo, parser);
@@ -144,49 +152,52 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                     .required(false));
         }
 
-        // allow scalar inline form for single-attribute elements
-        if (elementInfo.getAnnotation().singleAttribute()) {
-            return anyOf(List.of(
-                    parser,
-                    createSingleAttributeInlineVariant(elementInfo)
-            )).name(parserName);
-        }
-
         return parser;
     }
 
-    private AbstractSchema<?> createSingleAttributeInlineVariant(ElementInfo ei) {
-        // Only count attributes that are actually part of the schema.
-        var attrs = ei.getAis().stream()
-                .filter(ai -> !ai.excludedFromJsonSchema())
-                .toList();
+    private AbstractSchema<?> createCollapsedInlineParser(ElementInfo ei, String parserName) {
+        var attrs = ei.getAis().stream().toList();
 
-        if (attrs.size() != 1) {
-            throw new ProcessingException(
-                    "@MCElement(singleAttribute=true) requires exactly one @MCAttribute.",
-                    ei.getElement()
-            );
+        boolean hasText = ei.getTci() != null;
+        boolean hasChildren = !ei.getChildElementSpecs().isEmpty();
+
+        if (hasChildren) {
+            throw new ProcessingException("@MCElement(collapsed=true) must not declare child elements.", ei.getElement());
         }
-        if (ei.getTci() != null || !ei.getChildElementSpecs().isEmpty()) {
-            throw new ProcessingException(
-                    "@MCElement(singleAttribute=true) must not declare text content or child elements.",
-                    ei.getElement()
-            );
+        if (hasText && !attrs.isEmpty()) {
+            throw new ProcessingException("@MCElement(collapsed=true) must not mix @MCTextContent with @MCAttribute.", ei.getElement());
         }
 
-        AttributeInfo ai = attrs.getFirst();
-        String type = ai.getSchemaType(processingEnv.getTypeUtils());
-
-        AbstractSchema<?> s = SchemaFactory.from(type)
-                .type(type)
-                .description(getDescriptionContent(ai));
-
-        if (ai.isEnum(processingEnv.getTypeUtils()) && !"boolean".equals(type)) {
-            s.enumValues(ai.enumsAsLowerCaseList(processingEnv.getTypeUtils()));
+        // collapsed via single @MCTextContent -> scalar string
+        if (hasText) {
+            return SchemaFactory.from("string")
+                    .name(parserName)
+                    .type("string")
+                    .description(getDescriptionContent(ei));
         }
 
-        return s;
+        // collapsed via a single @MCAttribute-> scalar of that attribute type
+        if (attrs.size() == 1) {
+            AttributeInfo ai = attrs.getFirst();
+            String type = ai.getSchemaType(processingEnv.getTypeUtils());
+
+            AbstractSchema<?> s = SchemaFactory.from(type)
+                    .name(parserName)
+                    .type(type)
+                    .description(getDescriptionContent(ai).isEmpty() ? getDescriptionContent(ei) : getDescriptionContent(ai));
+
+            if (ai.isEnum(processingEnv.getTypeUtils()) && !"boolean".equals(type)) {
+                s.enumValues(ai.enumsAsLowerCaseList(processingEnv.getTypeUtils()));
+            }
+            return s;
+        }
+
+        throw new ProcessingException(
+                "@MCElement(collapsed=true) requires exactly one @MCAttribute or exactly one @MCTextContent.",
+                ei.getElement()
+        );
     }
+
 
     private SchemaObject getParserSchemaObject(ElementInfo elementInfo, String parserName) {
         return object(parserName)
