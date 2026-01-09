@@ -145,7 +145,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
 
         // allow scalar inline form for single-attribute elements
-        if (elementInfo.getAnnotation().singleAttribute()) {
+        if (elementInfo.getAnnotation().collapsed()) {
             return anyOf(List.of(
                     parser,
                     createSingleAttributeInlineVariant(elementInfo)

@@ -196,7 +196,7 @@ public final class McYamlIntrospector {
 
     public static boolean isSingleAttribute(Class<?> clazz) {
         MCElement el = clazz.getAnnotation(MCElement.class);
-        return el != null && el.singleAttribute();
+        return el != null && el.collapsed();
     }
 
 }

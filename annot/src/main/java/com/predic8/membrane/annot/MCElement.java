@@ -71,5 +71,5 @@ public @interface MCElement {
      * e.g.
      * allow: foo
      */
-    boolean singleAttribute() default false;
+    boolean collapsed() default false;
 }

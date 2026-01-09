@@ -680,7 +680,7 @@ public class YAMLParsingTest {
         import com.predic8.membrane.annot.*;
         import jakarta.annotation.*;
         import static org.junit.jupiter.api.Assertions.assertEquals;
-        @MCElement(name="child", singleAttribute=true)
+        @MCElement(name="child", collapsed=true)
         public class ChildElement {
         
             int value = 0;
@@ -734,7 +734,7 @@ public class YAMLParsingTest {
         import com.predic8.membrane.annot.*;
         import jakarta.annotation.*;
         import static org.junit.jupiter.api.Assertions.assertEquals;
-        @MCElement(name="child", singleAttribute=true)
+        @MCElement(name="child", collapsed=true)
         public class ChildElement {
         
             String value = "foo";
