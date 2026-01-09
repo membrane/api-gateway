@@ -124,7 +124,7 @@ public class ByteStreamLogging {
             @Override
             public int read(byte[] b, int off, int len) throws IOException {
                 int res = in.read(b, off, len);
-                log(name, b,off,len);
+                log(name, b,off,res);
                 return res;
             }
 
