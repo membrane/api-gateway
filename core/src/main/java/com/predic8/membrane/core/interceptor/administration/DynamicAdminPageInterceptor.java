@@ -771,6 +771,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				end();
 				div().id("tab1");
 				creatExchangeMetaTable("request-meta");
+				div().id("node-status").style("display:none");
+				h3().text("Node Status").end();
+				createExchangeNodeStatusTable("request-node-status");
+				end();
 				h3().text("Content").end();
 				div().align("right").a().id("request-download-button").text("Download").end().end();
 				div().id("requestContentTab");

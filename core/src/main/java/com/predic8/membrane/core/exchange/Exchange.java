@@ -54,9 +54,6 @@ public class Exchange extends AbstractExchange {
 
     private Connection targetConnection;
 
-    private int[] nodeStatusCodes;
-
-    private Exception[] nodeExceptions;
 
     private long id;
 
@@ -158,22 +155,6 @@ public class Exchange extends AbstractExchange {
                 .collect(toMap(Map.Entry::getKey, e -> (String) e.getValue()));
     }
 
-    public void setNodeStatusCode(int tryCounter, int code) {
-        if (nodeStatusCodes == null) {
-            nodeStatusCodes = new int[getDestinations().size()];
-        }
-        nodeStatusCodes[tryCounter % getDestinations().size()] = code;
-    }
-
-    public void trackNodeException(int tryCounter, Exception e) {
-        if (!TRUE.equals(properties.get(TRACK_NODE_STATUS)))
-            return;
-        if (nodeExceptions == null) {
-            nodeExceptions = new Exception[getDestinations().size()];
-        }
-        nodeExceptions[tryCounter % getDestinations().size()] = e;
-    }
-
     @Override
     public void detach() {
         super.detach();
@@ -198,14 +179,6 @@ public class Exchange extends AbstractExchange {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public int[] getNodeStatusCodes() {
-        return nodeStatusCodes;
-    }
-
-    public Exception[] getNodeExceptions() {
-        return nodeExceptions;
     }
 
     public String getInboundProtocol() {
