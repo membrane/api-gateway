@@ -96,21 +96,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private AbstractSchema<?> createTopLevelProperty(ElementInfo e, Model m) {
-
-        String name = e.getAnnotation().name();
-        String refName = "#/$defs/" + e.getXSDTypeName(m);
-
-        schema.property(ref(name).ref(refName));
-
-        return object()
-                .title(name)
-                .additionalProperties(false)
-                .property(ref(name)
-                        .ref(refName)
-                        .required(true));
-    }
-
     private void addParserDefinitions(Model m, MainInfo main) {
         for (ElementInfo elementInfo : main.getElements().values()) {
 
