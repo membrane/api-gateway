@@ -192,16 +192,18 @@ public class GenericYamlParser {
                 return configObj;
             }
 
-            // scalar inline form for @MCElement(singleAttribute=true)
+            // scalar inline form for @MCElement(collapsed=true)
             if (isCollapsed(clazz)) {
-                if (!node.isObject()) {
-                    applyCollapsedScalar(clazz, node, configObj);
-                    return handlePostConstructAndPreDestroy(ctx, configObj);
+                if (node.isNull()) {
+                    throw new ParsingException("Collapsed element must not be null.", node);
                 }
-                // enforce "inline only" even if schema validation is bypassed (should not happen)
-                throw new ParsingException("Element is collapsed; expected an inline value, not an object.", node);
+                if (node.isArray() || node.isObject()) {
+                    throw new ParsingException("Element is collapsed; expected an inline scalar value, not " +
+                            (node.isArray() ? "an array" : "an object") + ".", node);
+                }
+                applyCollapsedScalar(clazz, node, configObj);
+                return handlePostConstructAndPreDestroy(ctx, configObj);
             }
-
             ensureMappingStart(node);
             if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");

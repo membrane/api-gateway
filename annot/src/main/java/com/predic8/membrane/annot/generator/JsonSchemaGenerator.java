@@ -156,7 +156,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private AbstractSchema<?> createCollapsedInlineParser(ElementInfo ei, String parserName) {
-        var attrs = ei.getAis().stream().filter(ai -> !ai.excludedFromJsonSchema()).toList();
+        var attrs = ei.getAis().stream().toList();
 
         boolean hasText = ei.getTci() != null;
         boolean hasChildren = !ei.getChildElementSpecs().isEmpty();

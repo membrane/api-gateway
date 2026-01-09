@@ -101,7 +101,7 @@ public class YAMLParsingCollapsedTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child", collapsed=true)
+        @MCElement(name="child", collapsed=true, mixed=true)
         public class ChildElement {
             String content;
             public String getContent() { return content; }
@@ -138,7 +138,7 @@ public class YAMLParsingCollapsedTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child", collapsed=true)
+        @MCElement(name="child", collapsed=true, mixed=true)
         public class ChildElement {
             String content;
             public String getContent() { return content; }
