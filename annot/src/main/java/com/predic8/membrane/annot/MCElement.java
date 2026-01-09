@@ -69,7 +69,14 @@ public @interface MCElement {
      * Whether the element has only one attribute.
      * Enables inline yaml object configuration
      * e.g.
+     * <pre><code>
      * allow: foo
+     * </code></pre>
+     * instead of
+     * <pre><code>
+     * allow:
+     *   value: foo
+     *  </code></pre>
      */
     boolean collapsed() default false;
 }
