@@ -904,6 +904,19 @@ public class AdminPageBuilder extends Html {
         end();
     }
 
+    protected void createExchangeNodeStatusTable(String id) {
+        table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
+                "class", "display", "id", id);
+        thead();
+        tr();
+        createThs("Node", "Result");
+        end();
+        end();
+        tbody();
+        end();
+        end();
+    }
+
     protected void creatHeaderTable(String id) {
         table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
                 "class", "display", "id", id);

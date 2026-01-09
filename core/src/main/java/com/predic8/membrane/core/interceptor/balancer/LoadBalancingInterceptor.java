@@ -50,6 +50,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     private SessionIdExtractor sessionIdExtractor;
     private boolean failOver = true;
     private final Balancer balancer = new Balancer();
+    private boolean trackNodeStatus;
 
     public LoadBalancingInterceptor() {
         name = "balancer";
@@ -105,6 +106,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         exc.getDestinations().add(dispatchedNode.getDestinationURL(exc));
 
         setFailOverNodes(exc, dispatchedNode);
+
+        if (trackNodeStatus)
+            exc.initNodeStatusTracker();
 
         return CONTINUE;
     }
@@ -296,5 +300,18 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     @Override
     public String getShortDescription() {
         return "Performs load-balancing between <a href=\"/admin/balancers\">several nodes</a>.";
+    }
+
+    public boolean isTrackNodeStatus() {
+        return trackNodeStatus;
+    }
+
+    /**
+     * @description Whether to track the per-node result on every Exchange.
+     * @default false
+     */
+    @MCAttribute
+    public void setTrackNodeStatus(boolean trackNodeStatus) {
+        this.trackNodeStatus = trackNodeStatus;
     }
 }

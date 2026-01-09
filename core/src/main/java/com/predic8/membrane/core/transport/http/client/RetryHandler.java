@@ -110,7 +110,8 @@ public class RetryHandler {
                 }
 
                 log.debug("Retryable failure on attempt #{} to {}: {}", attempt, dest, e.getMessage());
-                exc.trackNodeException(attempt, e);
+                if (exc.getNodeStatusTracker() != null)
+                    exc.getNodeStatusTracker().trackNodeException(attempt, e);
             }
             if (attempt < retries) {
                 delayBetweenCalls(exc, currentDelay);

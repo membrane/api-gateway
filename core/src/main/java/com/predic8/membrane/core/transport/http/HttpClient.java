@@ -85,9 +85,8 @@ public class HttpClient implements AutoCloseable {
 
         protocolHandlerFactory.getHandlerForConnection(exc, outConType).handle(exc, outConType, hcp);
 
-        if (trackNodeStatus(exc)) {
-            exc.setNodeStatusCode(attempt, exc.getResponse().getStatusCode());
-        }
+        if (exc.getNodeStatusTracker() != null)
+            exc.getNodeStatusTracker().setNodeStatusCode(attempt, exc.getResponse().getStatusCode());
 
         // Check for protocol upgrades
         String upgradedProtocol = exc.getProperty(UPGRADED_PROTOCOL, String.class);
