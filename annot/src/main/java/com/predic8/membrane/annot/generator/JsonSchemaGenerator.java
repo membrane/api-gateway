@@ -159,7 +159,48 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                     .required(false));
         }
 
+        // allow scalar inline form for single-attribute elements
+        if (elementInfo.getAnnotation().singleAttribute()) {
+            return anyOf(List.of(
+                    parser,
+                    createSingleAttributeInlineVariant(elementInfo)
+            )).name(parserName);
+        }
+
         return parser;
+    }
+
+    private AbstractSchema<?> createSingleAttributeInlineVariant(ElementInfo ei) {
+        // Only count attributes that are actually part of the schema.
+        var attrs = ei.getAis().stream()
+                .filter(ai -> !ai.excludedFromJsonSchema())
+                .toList();
+
+        if (attrs.size() != 1) {
+            throw new ProcessingException(
+                    "@MCElement(singleAttribute=true) requires exactly one @MCAttribute.",
+                    ei.getElement()
+            );
+        }
+        if (ei.getTci() != null || !ei.getChildElementSpecs().isEmpty()) {
+            throw new ProcessingException(
+                    "@MCElement(singleAttribute=true) must not declare text content or child elements.",
+                    ei.getElement()
+            );
+        }
+
+        AttributeInfo ai = attrs.getFirst();
+        String type = ai.getSchemaType(processingEnv.getTypeUtils());
+
+        AbstractSchema<?> s = SchemaFactory.from(type)
+                .type(type)
+                .description(getDescriptionContent(ai));
+
+        if (ai.isEnum(processingEnv.getTypeUtils()) && !"boolean".equals(type)) {
+            s.enumValues(ai.enumsAsLowerCaseList(processingEnv.getTypeUtils()));
+        }
+
+        return s;
     }
 
     private SchemaObject getParserSchemaObject(ElementInfo elementInfo, String parserName) {
@@ -255,8 +296,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private static @NotNull ArrayList<SchemaObject> getSchemaObjects(Model m, MainInfo main, ChildElementInfo cei) {
-        var sos = new ArrayList<SchemaObject>();
+    private static @NotNull ArrayList<AbstractSchema<?>> getSchemaObjects(Model m, MainInfo main, ChildElementInfo cei) {
+        var sos = new ArrayList<AbstractSchema<?>>();
 
         for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
             if (ei.getAnnotation().excludeFromFlow())
@@ -293,7 +334,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return "com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface".equals(cei.getTypeDeclaration().getQualifiedName().toString());
     }
 
-    private AbstractSchema<?> processList(ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
+    private AbstractSchema<?> processList(ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei, ArrayList<AbstractSchema<?>> sos) {
         SchemaObject items = object("items");
 
         if (shouldGenerateFlowParserType(cei)) {
@@ -314,7 +355,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return items;
     }
 
-    private void addFlowParserRef(AbstractSchema<?> so, List<SchemaObject> sos) {
+    private void addFlowParserRef(AbstractSchema<?> so, List<AbstractSchema<?>> sos) {
         if (!flowDefCreated) {
             schema.definition(array("flowParser").items(anyOf(sos)));
             flowDefCreated = true;
@@ -386,8 +427,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return parser;
     }
 
-    private static @NotNull ArrayList<SchemaObject> getComponents(Model m, MainInfo main) {
-        var variants = new ArrayList<SchemaObject>();
+    private static @NotNull ArrayList<AbstractSchema<?>> getComponents(Model m, MainInfo main) {
+        var variants = new ArrayList<AbstractSchema<?>>();
 
         for (ElementInfo comp : main.getElements().values()) {
             if (!comp.getAnnotation().component()) continue;

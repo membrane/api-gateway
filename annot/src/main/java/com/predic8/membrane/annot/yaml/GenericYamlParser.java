@@ -13,36 +13,53 @@
    limitations under the License. */
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.networknt.schema.*;
+import com.fasterxml.jackson.core.JsonLocation;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.networknt.schema.Error;
-import com.predic8.membrane.annot.*;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaLocation;
+import com.networknt.schema.SchemaRegistry;
+import com.predic8.membrane.annot.Grammar;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import com.predic8.membrane.annot.beanregistry.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.ReflectionUtils;
 
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
-import static com.networknt.schema.SpecificationVersion.*;
+import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static com.predic8.membrane.annot.yaml.MethodSetter.*;
+import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.List.of;
-import static java.util.UUID.*;
+import static java.util.UUID.randomUUID;
 
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
     private static final String EMPTY_DOCUMENT_WARNING = "Skipping empty document. Maybe there are two --- separators but no configuration in between.";
 
     private final List<BeanDefinition> beanDefs = new ArrayList<>();
+
+    private static final ObjectMapper SCALAR_MAPPER = new ObjectMapper();
 
     /**
      * Parses one or more YAML documents into bean definitions.
@@ -171,6 +188,17 @@ public class GenericYamlParser {
                 method.invoke(configObj, parseListExcludingStartEvent(ctx, node));
                 return configObj;
             }
+
+            // scalar inline form for @MCElement(singleAttribute=true)
+            if (!node.isObject()) {
+                if (isSingleAttribute(clazz)) {
+                    applySingleAttributeScalar(clazz, node, configObj);
+                    return handlePostConstructAndPreDestroy(ctx, configObj);
+                }
+                // anything non-object is invalid here
+                ensureMappingStart(node);
+            }
+
             ensureMappingStart(node);
             if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
@@ -333,5 +361,52 @@ public class GenericYamlParser {
             }
         });
         return bean;
+    }
+
+    private static boolean isSingleAttribute(Class<?> clazz) {
+        MCElement el = clazz.getAnnotation(MCElement.class);
+        return el != null && el.singleAttribute();
+    }
+
+    private static <T> void applySingleAttributeScalar(Class<T> clazz, JsonNode node, T target) {
+        if (node == null || node.isNull()) {
+            throw new ParsingException("singleAttribute element must not be null.", node);
+        }
+
+        Method setter = findSingleAttributeSetter(clazz);
+
+        Class<?> paramType = setter.getParameterTypes()[0];
+        Object value;
+        try {
+            value = SCALAR_MAPPER.convertValue(node, paramType);
+        } catch (IllegalArgumentException e) {
+            throw new ParsingException("Cannot convert scalar value to " + paramType.getSimpleName() + ".", node);
+        }
+
+        try {
+            setter.setAccessible(true);
+            setter.invoke(target, value);
+        } catch (InvocationTargetException e) {
+            throw new ParsingException(e.getTargetException(), node);
+        } catch (Throwable t) {
+            throw new ParsingException(t, node);
+        }
+    }
+
+    private static Method findSingleAttributeSetter(Class<?> clazz) {
+        List<Method> setters = new ArrayList<>();
+        ReflectionUtils.doWithMethods(clazz, m -> {
+            if (m.isAnnotationPresent(MCAttribute.class) && m.getParameterCount() == 1) {
+                setters.add(m);
+            }
+        });
+
+        if (setters.size() != 1) {
+            throw new ParsingException(
+                    "@MCElement(singleAttribute=true) requires exactly one @MCAttribute setter, but found " + setters.size() + ".",
+                    JsonNodeFactory.instance.nullNode()
+            );
+        }
+        return setters.getFirst();
     }
 }
