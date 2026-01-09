@@ -25,7 +25,6 @@ import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
@@ -361,11 +360,6 @@ public class GenericYamlParser {
             }
         });
         return bean;
-    }
-
-    private static boolean isSingleAttribute(Class<?> clazz) {
-        MCElement el = clazz.getAnnotation(MCElement.class);
-        return el != null && el.singleAttribute();
     }
 
     private static <T> void applySingleAttributeScalar(Class<T> clazz, JsonNode node, T target) {
