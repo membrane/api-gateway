@@ -47,6 +47,7 @@ public class Request extends Message {
 
 	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet(METHOD_GET, METHOD_HEAD, METHOD_CONNECT);
 	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
+			METHOD_POST,
 			METHOD_DELETE,
 			/* some WebDAV methods, see http://www.ietf.org/rfc/rfc2518.txt */
 			METHOD_OPTIONS,
@@ -105,18 +106,6 @@ public class Request extends Message {
 		this.uri = uri;
 	}
 
-	public void create(String method, String uri, String protocol, Header header, InputStream in) throws IOException {
-		this.method = method;
-		this.uri = uri;
-		if (!protocol.startsWith("HTTP/"))
-			throw new RuntimeException("Unknown protocol '" + protocol + "'");
-		this.version = protocol.substring(5);
-		this.header = header;
-
-		createBody(in);
-	}
-
-
 	@Override
 	public String getStartLine() {
 		return method + " " + uri + " HTTP/" + version + CRLF;
@@ -161,7 +150,6 @@ public class Request extends Message {
 				return header.getContentLength() == 0;
             return header.getFirstValue(TRANSFER_ENCODING) == null;
         }
-    
 		return false;
 	}
 
