@@ -35,7 +35,7 @@ api:
         status: 200
 
 ---
-api:
+internal:
   name: order
   flow:
     - static:
@@ -44,7 +44,7 @@ api:
         status: 200
 
 ---
-api:
+internal:
   name: express
   flow:
     - static:
