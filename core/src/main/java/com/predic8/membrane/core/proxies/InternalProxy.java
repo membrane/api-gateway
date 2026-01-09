@@ -22,7 +22,7 @@ import com.predic8.membrane.core.util.*;
  * <p>Internal proxies are useful to better structure the configuration of the gateway.</p>
  * @topic 1. Proxies and Flow
  */
-@MCElement(name="internal")
+@MCElement(name="internal", topLevel = true, component = false)
 public class InternalProxy extends AbstractServiceProxy implements NotPortOpeningProxy {
 
     public InternalProxy() {
