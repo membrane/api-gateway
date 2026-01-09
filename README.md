@@ -950,7 +950,7 @@ Try the tutorial [OAuth2 with external OpenID Providers](https://membrane-soa.or
 
 ### Membrane as Authorization Server
 
-Membrane includes a fully functional OAuth 2.0 Authorization Server and can also operate as an OpenID Connect Provider.
+Membrane includes a fully functional OAuth 2.0 Authorization Server and can also act as an OpenID Connect Provider.
 
 The following example shows a minimal configuration for running Membrane as an OAuth 2.0 authorization server with a static client definition and basic claim and scope setup.
 
@@ -962,8 +962,12 @@ api:
         issuer: http://localhost:8000
         location: logindialog
         consentFile: consentFile.json
-        ldapUserDataProvider:
-          map: {} # Configure LDAP mapping here 
+        staticUserDataProvider:
+          users:
+            - user:
+                username: john
+                password: secret
+                email: john@predic8.de
         staticClientList:
           clients:
             - client:
@@ -982,9 +986,9 @@ api:
                 claims: username email
 ```
 
-If no LDAP server is available, you can use file-based, database-backed, or in-memory user data providers instead.
+User accounts can be stored directly in the configuration, loaded from a file, or backed by a database.
 
-For a complete walkthrough of the authorization code flow, see the OAuth2 Authorization Server example [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-code-flow-example.html).
+For a full walkthrough of the authorization code flow, see the OAuth2 Authorization Server example [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-code-flow-example.html).
 
 ## Basic Authentication
 
