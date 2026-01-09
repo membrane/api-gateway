@@ -14,15 +14,10 @@
 
 package com.predic8.membrane.examples.withoutinternet;
 
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static io.restassured.RestAssured.given;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JwtVerificationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
