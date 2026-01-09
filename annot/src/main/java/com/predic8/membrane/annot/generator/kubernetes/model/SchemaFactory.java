@@ -61,7 +61,7 @@ public class SchemaFactory {
         return new SchemaRef(ref);
     }
 
-    public static AnyOf anyOf(List<SchemaObject> anyOfs) {
+    public static AnyOf anyOf(List<AbstractSchema<?>> anyOfs) {
         var anyOf = new AnyOf(anyOfs);
         anyOf.name = "anyOf";
         return anyOf;

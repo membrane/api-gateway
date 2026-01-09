@@ -15,16 +15,15 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.predic8.membrane.annot.*;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.*;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.*;
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static java.lang.Character.*;
-import static java.util.Arrays.*;
-import static org.springframework.core.annotation.AnnotationUtils.*;
+import static java.lang.Character.toLowerCase;
+import static java.util.Arrays.stream;
+import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
 
 public final class McYamlIntrospector {
 
@@ -147,15 +146,15 @@ public final class McYamlIntrospector {
     }
 
     public static boolean hasOtherAttributes(Class<?> clazz) {
-        return stream(clazz.getMethods()).filter(m -> m.isAnnotationPresent(MCOtherAttributes.class)).count() > 0;
+        return stream(clazz.getMethods()).anyMatch(m -> m.isAnnotationPresent(MCOtherAttributes.class));
     }
 
     public static boolean hasAttributes(Class<?> clazz) {
-        return stream(clazz.getMethods()).filter(m -> m.isAnnotationPresent(MCAttribute.class)).count() > 0;
+        return stream(clazz.getMethods()).anyMatch(m -> m.isAnnotationPresent(MCAttribute.class));
     }
 
     public static boolean hasChildren(Class<?> clazz) {
-        return stream(clazz.getMethods()).filter(m -> m.isAnnotationPresent(MCChildElement.class)).count() > 0;
+        return stream(clazz.getMethods()).anyMatch(m -> m.isAnnotationPresent(MCChildElement.class));
     }
 
     public static <T> Method getAnySetter(Class<T> clazz) {
@@ -193,6 +192,11 @@ public final class McYamlIntrospector {
         if (ann != null && ann.name() != null && !ann.name().isBlank())
             return ann.name();
         return type.getSimpleName();
+    }
+
+    public static boolean isSingleAttribute(Class<?> clazz) {
+        MCElement el = clazz.getAnnotation(MCElement.class);
+        return el != null && el.singleAttribute();
     }
 
 }

@@ -64,4 +64,12 @@ public @interface MCElement {
      * Whether the element should be configurable as part of the interceptor flow
      */
     boolean excludeFromFlow() default false;
+
+    /**
+     * Whether the element has only one attribute.
+     * Enables inline yaml object configuration
+     * e.g.
+     * allow: foo
+     */
+    boolean singleAttribute() default false;
 }
