@@ -93,12 +93,12 @@ public class SOAPProxyTest {
 
         // @formatter: off
         given().when()
-            .body(OpenAPITestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
-            .post("http://localhost:2000/city-service")
-        .then()
-            .log().ifValidationFails(ALL)
-            .statusCode(200)
-            .contentType(TEXT_XML);
+                .body(OpenAPITestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
+                .post("http://localhost:2000/city-service")
+                .then()
+                .log().ifValidationFails(ALL)
+                .statusCode(200)
+                .contentType(TEXT_XML);
         // @formatter: on
     }
 
@@ -107,7 +107,24 @@ public class SOAPProxyTest {
         proxy.setServiceName("WrongService");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
 
-        assertThrows(IllegalArgumentException.class, () -> {router.add(proxy); router.start();
+        assertThrows(IllegalArgumentException.class, () -> {
+            router.add(proxy);
+            router.start();
         });
+    }
+
+    static class TestableSOAPProxy extends SOAPProxy {
+        TestableSOAPProxy(Router router) {
+            this.router = router;
+        }
+    }
+
+    @Test
+    void getProxyEndpointName() throws IOException {
+        SOAPProxy sp = new TestableSOAPProxy(new DummyTestRouter());
+        sp.setWsdl("http://localhost/a-service?wsdl");
+        assertEquals("my-service", sp.getProxyEndpointName("/my-service"));
+        assertEquals("orders", sp.getProxyEndpointName("/api/orders"));
+        assertEquals("orders", sp.getProxyEndpointName("/api/orders/"));
     }
 }

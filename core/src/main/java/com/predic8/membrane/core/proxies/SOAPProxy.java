@@ -18,7 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.openapi.util.*;
@@ -87,8 +87,8 @@ public class SOAPProxy extends AbstractServiceProxy {
         configureFromWSDL();
         super.init(); // Must be called last! Otherwise, SSL will not be configured!
 
-        for(Interceptor interceptor: interceptors) {
-            if(interceptor instanceof WSDLPublisherInterceptor wpi) {
+        for (Interceptor interceptor : interceptors) {
+            if (interceptor instanceof WSDLPublisherInterceptor wpi) {
                 wpi.setSoapProxy(this);
             } else if (interceptor instanceof ValidatorInterceptor vi) {
                 vi.setSoapProxy(this);
@@ -273,8 +273,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private void addWSDLInterceptor() {
         if (getFirstInterceptorOfType(WSDLInterceptor.class).isEmpty()) {
-            WSDLInterceptor wsdlInterceptor = new WSDLInterceptor();
-            interceptors.addFirst(wsdlInterceptor);
+            interceptors.addFirst(new WSDLInterceptor());
         }
     }
 
@@ -290,23 +289,40 @@ public class SOAPProxy extends AbstractServiceProxy {
         }
 
         final String keyPath = key.getPath();
-        final String name = getReplacementName(keyPath);
-        wsdlInterceptor.get().setPathRewriter(path2 -> {
+        wsdlInterceptor.get().setPathRewriter(path -> {
             try {
-                if (path2.contains("://")) {
-                    return new URL(new URL(path2), keyPath).toString();
-                } else {
-                    Matcher m = relativePathPattern.matcher(path2);
-                    return m.replaceAll("./" + name + "?");
+                if (path.contains("://")) {
+                    return new URL(new URL(path), keyPath).toString();
                 }
+                var replacementName = getProxyEndpointName(keyPath);
+                return rewriteRelativeWsdlPath(path, replacementName);
             } catch (MalformedURLException e) {
-                log.error("Cannot parse URL {}", path2);
+                log.error("Cannot parse URL {}", path);
             }
-            return path2;
+            return path;
         });
     }
 
-    private @NotNull String getReplacementName(String keyPath) {
+    private static String rewriteRelativeWsdlPath(String path, String replacementName) {
+        return relativePathPattern.matcher(path).replaceAll("./" + replacementName + "?");
+    }
+
+    /**
+     * Extracts the proxy's published endpoint name from the configured proxy path.
+     *
+     * <p>The returned value is typically the last path segment of the proxy key path
+     * and is used when rewriting relative WSDL references so that they point to the
+     * gateway instead of the backend service.</p>
+     *
+     * <p>For example, if the proxy key path is {@code "/my-service"}, this method
+     * returns {@code "my-service"}.</p>
+     *
+     * @param keyPath the path of the proxy key, usually taken from the WSDL address or
+     *                from the explicitly configured proxy path
+     * @return the endpoint name that should appear in rewritten WSDL URLs
+     * @throws RuntimeException if the given path cannot be parsed as a URI
+     */
+    @NotNull String getProxyEndpointName(String keyPath) {
         try {
             return URLUtil.getName(router.getConfiguration().getUriFactory(), keyPath);
         } catch (URISyntaxException e) {
@@ -316,7 +332,7 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     private void addWebServiceExplorer() {
-        WebServiceExplorerInterceptor sui = new WebServiceExplorerInterceptor();
+        var sui = new WebServiceExplorerInterceptor();
         sui.setWsdl(wsdl);
         sui.setPortName(portName);
         interceptors.addFirst(sui);
@@ -326,10 +342,10 @@ public class SOAPProxy extends AbstractServiceProxy {
         if (hasWSDLPublisherInterceptor())
             return;
 
-        WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
+        var wp = new WSDLPublisherInterceptor();
         wp.setWsdl(wsdl);
         wp.init(router);
-        interceptors.addLast(wp);
+        interceptors.add(wp);
     }
 
     private boolean hasWSDLPublisherInterceptor() {
