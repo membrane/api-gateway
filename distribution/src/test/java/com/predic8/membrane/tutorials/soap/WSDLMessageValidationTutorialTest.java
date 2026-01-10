@@ -18,8 +18,9 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 public class WSDLMessageValidationTutorialTest extends AbstractCityServiceTest {
 
@@ -31,12 +32,17 @@ public class WSDLMessageValidationTutorialTest extends AbstractCityServiceTest {
     @Override
     @Test
     void soapCall() throws IOException {
+        // @formatter:off
         given()
-            // File is read from FS use the same file as the user
+            // File is read from FS uses the same file as the user
             .body(readFileFromBaseDir("../data/invalid-city.soap.xml"))
+            .contentType(TEXT_XML_UTF8)
         .when()
             .post("http://localhost:2000/city-service")
         .then()
-            .body("Envelope.Body.Fault.faultstring", equalTo("WSDL message validation failed"));
+            .log().body()
+            .body("Envelope.Body.Fault.faultstring", equalTo("WSDL message validation failed"))
+            .body(containsString("INVALID") );
+        // @formatter:on
     }
 }

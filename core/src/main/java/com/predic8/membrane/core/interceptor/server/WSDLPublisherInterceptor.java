@@ -29,9 +29,8 @@ import java.util.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.http.Response.notFound;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.resolver.ResolverMap.*;
 
 /**
  * @description <p>
@@ -47,6 +46,8 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     private WebServerInterceptor webServerInterceptor;
 
     private SOAPProxy soapProxy;
+
+    private String wsdl;
 
     public WSDLPublisherInterceptor() {
         name = "wsdl publisher";
@@ -86,7 +87,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                         path = Integer.toString(n);
                     }
                 }
-                path = "./" + URLUtil.getName(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst()) + "?xsd=" + path;
+                path = "./" + URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst()) + "?xsd=" + path;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -94,10 +95,23 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         }
     }
 
+    @Override
+    public void init() {
+        super.init();
+
+        webServerInterceptor = new WebServerInterceptor();
+        webServerInterceptor.init(router);
+
+        // inherit wsdl="..." from SoapProxy
+        if (wsdl != null)
+            return;
+        getWSDLFromEmbeddingSOAPProxy();
+    }
+
     @GuardedBy("paths")
-    private final HashMap<Integer, String> paths = new HashMap<>();
+    private final Map<Integer, String> paths = new HashMap<>();
     @GuardedBy("paths")
-    private final HashMap<String, Integer> paths_reverse = new HashMap<>();
+    private final Map<String, Integer> paths_reverse = new HashMap<>();
     @GuardedBy("paths")
     private final Queue<String> documents_to_process = new LinkedList<>();
 
@@ -123,8 +137,6 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         }
     }
 
-    private String wsdl;
-
     public String getWsdl() {
         return wsdl;
     }
@@ -144,19 +156,6 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         }
     }
 
-    @Override
-    public void init() {
-        super.init();
-
-        webServerInterceptor = new WebServerInterceptor();
-        webServerInterceptor.init(router);
-
-        // inherit wsdl="..." from SoapProxy
-        if (wsdl != null)
-            return;
-        getWSDLFromEmbeddingSOAPProxy();
-    }
-
     private void getWSDLFromEmbeddingSOAPProxy() {
         if (soapProxy == null) {
             throw new ConfigurationException("<wsdlPublisher> can only be used within a <soapProxy> or needs to declare <wsdlPublisher wsdl='...'>");
@@ -171,7 +170,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.getConfiguration().isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .detail("Could not return WSDL document!")
                     .exception(e)
                     .buildAndSetResponse(exc);

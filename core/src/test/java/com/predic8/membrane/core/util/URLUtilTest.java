@@ -70,4 +70,13 @@ public class URLUtilTest {
 		assertEquals(80, getPortFromURL(new URL("http://localhost")));
 		assertEquals(443, getPortFromURL(new URL("https://api.predic8.de")));
     }
+
+	@Test
+	void testGetName() throws Exception {
+		assertEquals("foo", URLUtil.getNameComponent(new URIFactory(), "foo"));
+		assertEquals("foo", URLUtil.getNameComponent(new URIFactory(), "/foo"));
+		assertEquals("bar", URLUtil.getNameComponent(new URIFactory(), "/foo/bar"));
+		assertEquals("bar", URLUtil.getNameComponent(new URIFactory(), "foo/bar"));
+		assertEquals("", URLUtil.getNameComponent(new URIFactory(), "foo/bar/"));
+	}
 }

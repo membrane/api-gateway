@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -25,11 +26,13 @@ import org.slf4j.*;
 import javax.xml.namespace.*;
 import java.io.*;
 import java.net.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.util.soap.WSDLUtil.rewriteRelativeWsdlPath;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -58,6 +61,26 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     public void init() {
         super.init();
         hc = router.getHttpClientFactory().createClient(null);
+    }
+
+    public void setPathRewriterOnWSDLInterceptor(String keypath) {
+        if (keypath == null)
+            return;
+        setPathRewriter(generatePathRewriter(keypath));
+    }
+
+    Relocator.@NotNull PathRewriter generatePathRewriter(String keypath) {
+        return path -> {
+            try {
+                if (path.contains("://")) {
+                    return new URL(new URL(path), keypath).toString();
+                }
+                return rewriteRelativeWsdlPath(path, URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), keypath));
+            } catch (URISyntaxException | MalformedURLException e) {
+                log.error("Cannot parse URL {}", path);
+            }
+            return path;
+        };
     }
 
     @Override

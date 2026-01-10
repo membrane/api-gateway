@@ -43,13 +43,8 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 			return CONTINUE;
 		}
 
-		if (!wasGetRequest(exc)) {
+		if (! exc.getRequest().isGETRequest()) {
 			log.debug("{} HTTP method wasn't GET: No relocating done!",name);
-			return CONTINUE;
-		}
-
-		if (!hasContent(exc)) {
-			log.debug("{} No Content: No relocating done!",name);
 			return CONTINUE;
 		}
 
@@ -76,10 +71,6 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
 	private boolean hasContent(Exchange exc) {
 		return exc.getResponse().getHeader().getContentType() != null;
-	}
-
-	private boolean wasGetRequest(Exchange exc) {
-		return Request.METHOD_GET.equals(exc.getRequest().getMethod());
 	}
 
 	protected int getLocationPort(Exchange exc) {

@@ -26,17 +26,17 @@ import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.soap.WSDLUtil;
 import com.predic8.wsdl.*;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import javax.xml.namespace.*;
 import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.util.soap.WSDLUtil.*;
 
 /**
  * @description <p>
@@ -60,7 +60,6 @@ import static com.predic8.membrane.core.Constants.*;
 public class SOAPProxy extends AbstractServiceProxy {
 
     private static final Logger log = LoggerFactory.getLogger(SOAPProxy.class.getName());
-    private static final Pattern relativePathPattern = Pattern.compile("^./[^/?]*\\?");
 
     // configuration attributes
     protected String wsdl;
@@ -111,12 +110,12 @@ public class SOAPProxy extends AbstractServiceProxy {
 
         prepareRouting(location);
 
-        // add interceptors (in reverse order) to position 0.
-        addWebServiceExplorer();
-        addWSDLPublisherInterceptor();
-        addWSDLInterceptor();
-        renameMe();
-
+        // Add interceptors (in reverse order) cause each one calls List.addFirst.
+        // This is needed because there might be already a validator interceptor that must go last
+        addWebServiceExplorer(); // Will be last to validator
+        addWSDLPublisherInterceptor(); // Will be before WebServiceExploroer
+        var wsdlInterceptor = addAndGetWSDLInterceptor(); // WSDLInterceptor will be first
+        setPathRewriterOnWSDLInterceptor(wsdlInterceptor);
     }
 
     private Definitions parseWSDLOnly() {
@@ -239,96 +238,33 @@ public class SOAPProxy extends AbstractServiceProxy {
                     return port;
             throw new IllegalArgumentException("No port with name '" + portName + "' found.");
         }
-        return getPort(ports);
+        return WSDLUtil.getPort(ports);
     }
 
-    private static Port getPort(List<Port> ports) {
-        Port port = getPortByNamespace(ports, WSDL_SOAP11_NS);
-        if (port == null)
-            port = getPortByNamespace(ports, WSDL_SOAP12_NS);
-        if (port == null)
-            throw new IllegalArgumentException("No SOAP/1.1 or SOAP/1.2 ports found in WSDL.");
-        return port;
+    private WSDLInterceptor addAndGetWSDLInterceptor() {
+        return getFirstInterceptorOfType(WSDLInterceptor.class)
+                .orElseGet(() -> {
+                    var i = new WSDLInterceptor();
+                    interceptors.addFirst(i);
+                    return i;
+                });
     }
 
-    private static Port getPortByNamespace(List<Port> ports, String namespace) {
-        for (Port port : ports) {
-            try {
-                if (port.getBinding() == null)
-                    continue;
-                if (port.getBinding().getBinding() == null)
-                    continue;
-                AbstractBinding binding = port.getBinding().getBinding();
-                if (!"http://schemas.xmlsoap.org/soap/http".equals(binding.getProperty("transport")))
-                    continue;
-                if (!namespace.equals(((QName) binding.getElementName()).getNamespaceURI()))
-                    continue;
-                return port;
-            } catch (Exception e) {
-                log.warn("Error inspecting WSDL port binding.", e);
-            }
-        }
-        return null;
-    }
-
-    private void addWSDLInterceptor() {
-        if (getFirstInterceptorOfType(WSDLInterceptor.class).isEmpty()) {
-            interceptors.addFirst(new WSDLInterceptor());
-        }
-    }
-
-    private void renameMe() {
+    private void setPathRewriterOnWSDLInterceptor(WSDLInterceptor wsdlInterceptor) {
         if (key.getPath() == null)
             return;
-
-        Optional<WSDLInterceptor> wsdlInterceptor = getFirstInterceptorOfType(WSDLInterceptor.class);
-
-        if (wsdlInterceptor.isEmpty()) {
-            log.warn("No wsdl interceptor set.");
-            return;
-        }
-
         final String keyPath = key.getPath();
-        wsdlInterceptor.get().setPathRewriter(path -> {
+        wsdlInterceptor.setPathRewriter(path -> {
             try {
                 if (path.contains("://")) {
                     return new URL(new URL(path), keyPath).toString();
                 }
-                var replacementName = getProxyEndpointName(keyPath);
-                return rewriteRelativeWsdlPath(path, replacementName);
-            } catch (MalformedURLException e) {
-                log.error("Cannot parse URL {}", path);
+                return rewriteRelativeWsdlPath(path, URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), keyPath));
+            } catch (URISyntaxException | MalformedURLException e) {
+                log.error("Cannot parse URL {}",path);
             }
             return path;
         });
-    }
-
-    private static String rewriteRelativeWsdlPath(String path, String replacementName) {
-        return relativePathPattern.matcher(path).replaceAll("./" + replacementName + "?");
-    }
-
-    /**
-     * Extracts the proxy's published endpoint name from the configured proxy path.
-     *
-     * <p>The returned value is typically the last path segment of the proxy key path
-     * and is used when rewriting relative WSDL references so that they point to the
-     * gateway instead of the backend service.</p>
-     *
-     * <p>For example, if the proxy key path is {@code "/my-service"}, this method
-     * returns {@code "my-service"}.</p>
-     *
-     * @param keyPath the path of the proxy key, usually taken from the WSDL address or
-     *                from the explicitly configured proxy path
-     * @return the endpoint name that should appear in rewritten WSDL URLs
-     * @throws RuntimeException if the given path cannot be parsed as a URI
-     */
-    @NotNull String getProxyEndpointName(String keyPath) {
-        try {
-            return URLUtil.getName(router.getConfiguration().getUriFactory(), keyPath);
-        } catch (URISyntaxException e) {
-            log.error("Error parsing URL {}", keyPath, e);
-            throw new RuntimeException("Check!");
-        }
     }
 
     private void addWebServiceExplorer() {
@@ -345,7 +281,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         var wp = new WSDLPublisherInterceptor();
         wp.setWsdl(wsdl);
         wp.init(router);
-        interceptors.add(wp);
+        interceptors.addFirst(wp);
     }
 
     private boolean hasWSDLPublisherInterceptor() {

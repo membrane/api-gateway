@@ -18,6 +18,7 @@ import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -111,20 +112,5 @@ public class SOAPProxyTest {
             router.add(proxy);
             router.start();
         });
-    }
-
-    static class TestableSOAPProxy extends SOAPProxy {
-        TestableSOAPProxy(Router router) {
-            this.router = router;
-        }
-    }
-
-    @Test
-    void getProxyEndpointName() throws IOException {
-        SOAPProxy sp = new TestableSOAPProxy(new DummyTestRouter());
-        sp.setWsdl("http://localhost/a-service?wsdl");
-        assertEquals("my-service", sp.getProxyEndpointName("/my-service"));
-        assertEquals("orders", sp.getProxyEndpointName("/api/orders"));
-        assertEquals("orders", sp.getProxyEndpointName("/api/orders/"));
     }
 }
