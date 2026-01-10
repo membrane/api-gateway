@@ -69,10 +69,6 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
 	abstract void rewrite(Exchange exc) throws Exception;
 
-	private boolean hasContent(Exchange exc) {
-		return exc.getResponse().getHeader().getContentType() != null;
-	}
-
 	protected int getLocationPort(Exchange exc) {
 		if ("".equals(port)) {
 			return -1;

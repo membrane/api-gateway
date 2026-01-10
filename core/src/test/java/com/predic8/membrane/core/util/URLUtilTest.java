@@ -28,12 +28,12 @@ public class URLUtilTest {
 
 	@Test
 	void host() {
-		assertEquals(getHost("internal:a"), "a");
-		assertEquals(getHost("internal://a"), "a");
-		assertEquals(getHost("a"), "a");
-		assertEquals(getHost("a/b"), "a");
-		assertEquals(getHost("internal:a/b"), "a");
-		assertEquals(getHost("internal://a/b"), "a");
+		assertEquals("a", getHost("internal:a"));
+		assertEquals("a", getHost("internal://a"));
+		assertEquals("a", getHost("a"));
+		assertEquals("a", getHost("a/b"));
+		assertEquals("a", getHost("internal:a/b"));
+		assertEquals("a", getHost("internal://a/b"));
 	}
 
 	@Test
