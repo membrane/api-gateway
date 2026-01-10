@@ -1,0 +1,3 @@
+<?xml version="1.0"?>
+<!DOCTYPE n [<!ELEMENT n (#PCDATA)>]>
+<n>Hello</n>
