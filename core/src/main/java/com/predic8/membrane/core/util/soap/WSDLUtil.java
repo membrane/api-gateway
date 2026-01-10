@@ -9,15 +9,18 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static java.util.regex.Matcher.quoteReplacement;
 
 public class WSDLUtil {
 
     private static final Logger log = LoggerFactory.getLogger(WSDLUtil.class.getName());
 
-    private static final Pattern relativePathPattern = Pattern.compile("^./[^/?]*\\?");
+    private static final Pattern relativePathPattern = Pattern.compile("^\\./[^/?]*\\?");
 
     public static String rewriteRelativeWsdlPath(String path, String replacementName) {
-        return relativePathPattern.matcher(path).replaceAll("./%s?".formatted(replacementName));
+        return relativePathPattern
+                .matcher(path)
+                .replaceAll(quoteReplacement("./%s?".formatted(replacementName)));
     }
 
     /**

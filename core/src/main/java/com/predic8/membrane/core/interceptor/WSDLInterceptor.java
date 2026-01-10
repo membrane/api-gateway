@@ -77,7 +77,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
                 }
                 return rewriteRelativeWsdlPath(path, URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), keypath));
             } catch (URISyntaxException | MalformedURLException e) {
-                log.error("Cannot parse URL {}", path);
+                log.error("Cannot parse URL {} - {}", path,e.getMessage());
             }
             return path;
         };

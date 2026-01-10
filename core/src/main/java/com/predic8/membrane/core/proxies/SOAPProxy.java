@@ -36,8 +36,6 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.util.soap.WSDLUtil.*;
-
 /**
  * @description <p>
  * A SOAP proxy automatically configures itself using a WSDL description. It reads the WSDL to extract:
@@ -113,9 +111,9 @@ public class SOAPProxy extends AbstractServiceProxy {
         // Add interceptors (in reverse order) cause each one calls List.addFirst.
         // This is needed because there might be already a validator interceptor that must go last
         addWebServiceExplorer(); // Will be last to validator
-        addWSDLPublisherInterceptor(); // Will be before WebServiceExploroer
+        addWSDLPublisherInterceptor(); // Will be before WebServiceExplorer
         var wsdlInterceptor = addAndGetWSDLInterceptor(); // WSDLInterceptor will be first
-        setPathRewriterOnWSDLInterceptor(wsdlInterceptor);
+        wsdlInterceptor.setPathRewriterOnWSDLInterceptor(key.getPath());
     }
 
     private Definitions parseWSDLOnly() {
@@ -248,23 +246,6 @@ public class SOAPProxy extends AbstractServiceProxy {
                     interceptors.addFirst(i);
                     return i;
                 });
-    }
-
-    private void setPathRewriterOnWSDLInterceptor(WSDLInterceptor wsdlInterceptor) {
-        if (key.getPath() == null)
-            return;
-        final String keyPath = key.getPath();
-        wsdlInterceptor.setPathRewriter(path -> {
-            try {
-                if (path.contains("://")) {
-                    return new URL(new URL(path), keyPath).toString();
-                }
-                return rewriteRelativeWsdlPath(path, URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), keyPath));
-            } catch (URISyntaxException | MalformedURLException e) {
-                log.error("Cannot parse URL {}",path);
-            }
-            return path;
-        });
     }
 
     private void addWebServiceExplorer() {

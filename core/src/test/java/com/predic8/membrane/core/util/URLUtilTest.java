@@ -22,6 +22,7 @@ import java.net.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
+import static com.predic8.membrane.core.util.URLUtil.getNameComponent;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class URLUtilTest {
@@ -72,11 +73,13 @@ public class URLUtilTest {
     }
 
 	@Test
-	void testGetName() throws Exception {
-		assertEquals("foo", URLUtil.getNameComponent(new URIFactory(), "foo"));
-		assertEquals("foo", URLUtil.getNameComponent(new URIFactory(), "/foo"));
-		assertEquals("bar", URLUtil.getNameComponent(new URIFactory(), "/foo/bar"));
-		assertEquals("bar", URLUtil.getNameComponent(new URIFactory(), "foo/bar"));
-		assertEquals("", URLUtil.getNameComponent(new URIFactory(), "foo/bar/"));
+	void testGetNameComponent() throws Exception {
+		assertEquals("", getNameComponent(new URIFactory(), ""));
+		assertEquals("", getNameComponent(new URIFactory(), "/"));
+		assertEquals("foo", getNameComponent(new URIFactory(), "foo"));
+		assertEquals("foo", getNameComponent(new URIFactory(), "/foo"));
+		assertEquals("bar", getNameComponent(new URIFactory(), "/foo/bar"));
+		assertEquals("bar", getNameComponent(new URIFactory(), "foo/bar"));
+		assertEquals("", getNameComponent(new URIFactory(), "foo/bar/"));
 	}
 }
