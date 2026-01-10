@@ -96,21 +96,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private AbstractSchema<?> createTopLevelProperty(ElementInfo e, Model m) {
-
-        String name = e.getAnnotation().name();
-        String refName = "#/$defs/" + e.getXSDTypeName(m);
-
-        schema.property(ref(name).ref(refName));
-
-        return object()
-                .title(name)
-                .additionalProperties(false)
-                .property(ref(name)
-                        .ref(refName)
-                        .required(true));
-    }
-
     private void addParserDefinitions(Model m, MainInfo main) {
         for (ElementInfo elementInfo : main.getElements().values()) {
 
@@ -125,7 +110,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private SchemaObject createParser(Model m, MainInfo main, ElementInfo elementInfo) {
+    private AbstractSchema<?> createParser(Model m, MainInfo main, ElementInfo elementInfo) {
         String parserName = elementInfo.getXSDTypeName(m);
 
         if (isComponentsMap(elementInfo)) {
@@ -148,6 +133,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             return ref(parserName).ref("#/$defs/%sParser".formatted(childName));
         }
 
+        // enforce the inline form for collapsed elements
+        if (elementInfo.getAnnotation().collapsed()) {
+            if (elementInfo.getAnnotation().noEnvelope()) {
+                throw new ProcessingException("@MCElement(collapsed=true) is not compatible with noEnvelope=true.", elementInfo.getElement());
+            }
+            return createCollapsedInlineParser(elementInfo, parserName);
+        }
+
         SchemaObject parser = getParserSchemaObject(elementInfo, parserName);
 
         collectProperties(m, main, elementInfo, parser);
@@ -161,6 +154,50 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         return parser;
     }
+
+    private AbstractSchema<?> createCollapsedInlineParser(ElementInfo ei, String parserName) {
+        var attrs = ei.getAis().stream().toList();
+
+        boolean hasText = ei.getTci() != null;
+        boolean hasChildren = !ei.getChildElementSpecs().isEmpty();
+
+        if (hasChildren) {
+            throw new ProcessingException("@MCElement(collapsed=true) must not declare child elements.", ei.getElement());
+        }
+        if (hasText && !attrs.isEmpty()) {
+            throw new ProcessingException("@MCElement(collapsed=true) must not mix @MCTextContent with @MCAttribute.", ei.getElement());
+        }
+
+        // collapsed via single @MCTextContent -> scalar string
+        if (hasText) {
+            return SchemaFactory.from("string")
+                    .name(parserName)
+                    .type("string")
+                    .description(getDescriptionContent(ei));
+        }
+
+        // collapsed via a single @MCAttribute-> scalar of that attribute type
+        if (attrs.size() == 1) {
+            AttributeInfo ai = attrs.getFirst();
+            String type = ai.getSchemaType(processingEnv.getTypeUtils());
+
+            AbstractSchema<?> s = SchemaFactory.from(type)
+                    .name(parserName)
+                    .type(type)
+                    .description(getDescriptionContent(ai).isEmpty() ? getDescriptionContent(ei) : getDescriptionContent(ai));
+
+            if (ai.isEnum(processingEnv.getTypeUtils()) && !"boolean".equals(type)) {
+                s.enumValues(ai.enumsAsLowerCaseList(processingEnv.getTypeUtils()));
+            }
+            return s;
+        }
+
+        throw new ProcessingException(
+                "@MCElement(collapsed=true) requires exactly one @MCAttribute or exactly one @MCTextContent.",
+                ei.getElement()
+        );
+    }
+
 
     private SchemaObject getParserSchemaObject(ElementInfo elementInfo, String parserName) {
         return object(parserName)
@@ -255,8 +292,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private static @NotNull ArrayList<SchemaObject> getSchemaObjects(Model m, MainInfo main, ChildElementInfo cei) {
-        var sos = new ArrayList<SchemaObject>();
+    private static @NotNull ArrayList<AbstractSchema<?>> getSchemaObjects(Model m, MainInfo main, ChildElementInfo cei) {
+        var sos = new ArrayList<AbstractSchema<?>>();
 
         for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
             if (ei.getAnnotation().excludeFromFlow())
@@ -293,7 +330,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return "com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface".equals(cei.getTypeDeclaration().getQualifiedName().toString());
     }
 
-    private AbstractSchema<?> processList(ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei, ArrayList<SchemaObject> sos) {
+    private AbstractSchema<?> processList(ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei, ArrayList<AbstractSchema<?>> sos) {
         SchemaObject items = object("items");
 
         if (shouldGenerateFlowParserType(cei)) {
@@ -314,7 +351,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return items;
     }
 
-    private void addFlowParserRef(AbstractSchema<?> so, List<SchemaObject> sos) {
+    private void addFlowParserRef(AbstractSchema<?> so, List<AbstractSchema<?>> sos) {
         if (!flowDefCreated) {
             schema.definition(array("flowParser").items(anyOf(sos)));
             flowDefCreated = true;
@@ -386,8 +423,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return parser;
     }
 
-    private static @NotNull ArrayList<SchemaObject> getComponents(Model m, MainInfo main) {
-        var variants = new ArrayList<SchemaObject>();
+    private static @NotNull ArrayList<AbstractSchema<?>> getComponents(Model m, MainInfo main) {
+        var variants = new ArrayList<AbstractSchema<?>>();
 
         for (ElementInfo comp : main.getElements().values()) {
             if (!comp.getAnnotation().component()) continue;
