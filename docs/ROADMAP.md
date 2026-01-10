@@ -24,6 +24,7 @@
 - refactor JdbcUserDataProvider
 - Refine YAML for balancer: clustersFromSpring
 - wsdlRewriter YAML is not working
+- use @MCElement(collapsed=true) for suitable classes
 
 
 # 7.0.4
