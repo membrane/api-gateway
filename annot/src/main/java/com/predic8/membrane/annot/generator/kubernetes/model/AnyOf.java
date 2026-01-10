@@ -21,9 +21,9 @@ import java.util.*;
 
 public class AnyOf extends SchemaObject {
 
-    private final List<SchemaObject> anyOfs;
+    private final List<AbstractSchema<?>> anyOfs;
 
-    AnyOf(List<SchemaObject> anyOfs) {
+    AnyOf(List<AbstractSchema<?>> anyOfs) {
         super(null);
         this.anyOfs = anyOfs;
     }
@@ -35,7 +35,7 @@ public class AnyOf extends SchemaObject {
 
     private ArrayNode getAnyNode() {
         ArrayNode list = jnf.arrayNode();
-        for (SchemaObject anyOf : anyOfs) {
+        for (AbstractSchema<?> anyOf : anyOfs) {
             list.add(anyOf.json(jnf.objectNode()));
         }
         return list;
