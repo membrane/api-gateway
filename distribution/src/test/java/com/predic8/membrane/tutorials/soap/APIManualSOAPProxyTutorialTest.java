@@ -14,10 +14,8 @@
 
 package com.predic8.membrane.tutorials.soap;
 
+/**
+ * With defaults from super the tests will run on port 2000
+ */
 public class APIManualSOAPProxyTutorialTest extends AbstractManualSOAPProxyTutorialTest {
-
-    @Override
-    protected int getPort() {
-        return 2000;
-    }
 }

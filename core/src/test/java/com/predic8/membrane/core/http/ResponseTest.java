@@ -183,7 +183,7 @@ public class ResponseTest {
             assertEquals(res3.getBody().getContent().length, resTemp.getBody().getContent().length);
             assertArrayEquals(res3.getBody().getContent(), resTemp.getBody().getContent());
         } else
-            assertEquals(res3.getBody().getContent().length, 0);
+            assertEquals(0, res3.getBody().getContent().length);
     }
 
     @Test
