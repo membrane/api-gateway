@@ -76,28 +76,28 @@ public class ResponseTest {
     }
 
     @Test
-    public void testParseStartLine1() throws IOException, EndOfStreamException {
+    void parseStartLine1() throws IOException {
         res1.parseStartLine(in1);
         assertEquals(200, res1.getStatusCode());
         assertEquals("1.1", res1.getVersion());
     }
 
     @Test
-    public void testParseStartLine2() throws IOException, EndOfStreamException {
+    void testParseStartLine2() throws IOException {
         res2.parseStartLine(in2);
         assertEquals(200, res2.getStatusCode());
         assertEquals("1.1", res2.getVersion());
     }
 
     @Test
-    public void testParseStartLine3() throws IOException, EndOfStreamException {
+    void testParseStartLine3() throws IOException {
         res3.parseStartLine(in3);
         assertEquals(200, res3.getStatusCode());
         assertEquals("1.1", res3.getVersion());
     }
 
     @Test
-    public void testUnchunkedHtmlRead() throws Exception {
+    void testUnchunkedHtmlRead() throws Exception {
         res1.read(in1, true);
         assertEquals(200, res1.getStatusCode());
         assertTrue(res1.isHTTP11());
@@ -108,11 +108,10 @@ public class ResponseTest {
     }
 
     @Test
-    public void testUnchunkedHtmlWrite() throws Exception {
+    void testUnchunkedHtmlWrite() throws Exception {
         tempOut = new ByteArrayOutputStream();
         res1.read(in1, true);
         res1.write(tempOut, true);
-
 
         tempIn = new ByteArrayInputStream(tempOut.toByteArray());
 
@@ -126,7 +125,7 @@ public class ResponseTest {
     }
 
     @Test
-    public void testUnchunkedImageRead() throws Exception {
+    void testUnchunkedImageRead() throws Exception {
         res2.read(in2, true);
         assertEquals(200, res2.getStatusCode());
         assertTrue(res2.isHTTP11());
@@ -138,7 +137,7 @@ public class ResponseTest {
 
 
     @Test
-    public void testUnchunkedImageWrite() throws Exception {
+    void testUnchunkedImageWrite() throws Exception {
         tempOut = new ByteArrayOutputStream();
         res2.read(in2, true);
         res2.write(tempOut, true);
@@ -156,9 +155,8 @@ public class ResponseTest {
         assertArrayEquals(res2.getBody().getContent(), resTemp.getBody().getContent());
     }
 
-
     @Test
-    public void testChunkedHtmlRead() throws Exception {
+    void testChunkedHtmlRead() throws Exception {
         res3.read(in3, true);
         assertEquals(200, res3.getStatusCode());
         assertTrue(res3.isHTTP11());
@@ -168,11 +166,10 @@ public class ResponseTest {
 
 
     @Test
-    public void testChunkedHtmlWrite() throws Exception {
+    void testChunkedHtmlWrite() throws Exception {
         tempOut = new ByteArrayOutputStream();
         res3.read(in3, true);
         res3.write(tempOut, true);
-
 
         tempIn = new ByteArrayInputStream(tempOut.toByteArray());
 
@@ -187,7 +184,6 @@ public class ResponseTest {
             assertArrayEquals(res3.getBody().getContent(), resTemp.getBody().getContent());
         } else
             assertEquals(res3.getBody().getContent().length, 0);
-
     }
 
     @Test
@@ -202,7 +198,7 @@ public class ResponseTest {
     }
 
     @Test
-    public void isNotEmpty() throws Exception {
+    void isNotEmpty() throws Exception {
         assertFalse(ok("ABC").build().isBodyEmpty());
     }
 
