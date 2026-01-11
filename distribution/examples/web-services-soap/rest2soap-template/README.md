@@ -24,7 +24,7 @@ It demonstrates how Membrane can be used for **legacy integration** scenarios wh
    }
    ```
 
-5. Take a look at `proxies.xml` to see how it works.
+5. Take a look at `apis.yaml` to see how it works.
 
 ## Use Cases
 

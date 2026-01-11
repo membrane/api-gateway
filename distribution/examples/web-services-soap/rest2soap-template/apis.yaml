@@ -7,7 +7,6 @@ api:
   flow:
     - request:
         - soapBody:
-            version: '1.1'
             src: |
               <getCity xmlns="https://predic8.de/cities">
                   <name>${pathParam.city}</name>
@@ -20,17 +19,10 @@ api:
             contentType: application/json
             src: |
               {
-              	"country": "${property.country}",
-              	"population": ${property.population}
+              	"country": "${fn.xpath('//country')}",
+              	"population": ${fn.xpath('//population')}
               }
-        - setProperty:
-            name: country
-            value: ${//country}
-            language: xpath
-        - setProperty:
-            name: population
-            value: ${//population}
-            language: xpath
   target:
+    # POST is required for SOAP requests
     method: POST
     url: https://www.predic8.de/city-service

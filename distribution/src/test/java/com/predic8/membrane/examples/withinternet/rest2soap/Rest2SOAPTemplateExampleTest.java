@@ -29,7 +29,7 @@ public class Rest2SOAPTemplateExampleTest extends DistributionExtractingTestcase
     }
 
     @Test
-    public void test() throws Exception {
+    void test() throws Exception {
 
         try (Process2 ignored = startServiceProxyScript()) {
             // @formatter:off
@@ -43,5 +43,4 @@ public class Rest2SOAPTemplateExampleTest extends DistributionExtractingTestcase
             // @formatter:on
         }
     }
-
 }
