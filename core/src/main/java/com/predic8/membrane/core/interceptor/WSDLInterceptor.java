@@ -26,13 +26,12 @@ import org.slf4j.*;
 import javax.xml.namespace.*;
 import java.io.*;
 import java.net.*;
-import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.util.soap.WSDLUtil.rewriteRelativeWsdlPath;
+import static com.predic8.membrane.core.util.soap.WSDLUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**

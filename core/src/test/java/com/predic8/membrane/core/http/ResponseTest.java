@@ -32,15 +32,11 @@ import static org.junit.jupiter.params.provider.Arguments.*;
 public class ResponseTest {
 
     private Response res1;
-
     private Response res2;
-
     private Response res3;
 
     private InputStream in1;
-
     private InputStream in2;
-
     private InputStream in3;
 
     private ByteArrayOutputStream tempOut;
@@ -303,5 +299,32 @@ public class ResponseTest {
         res.read(getResourceAsStream(this,"response-205-reset.http"),true);
         assertTrue(res.isBodyEmpty());
         assertInstanceOf(EmptyBody.class, res.getBody());
+    }
+
+    @Nested
+    class RealResponses {
+
+        private static final String chunkedCharset = """
+            HTTP/1.1 404 Not Found
+            date: Fri, 09 Jan 2026 13:29:16 GMT
+            content-type: text/plain; charset=us-ascii
+            transfer-encoding: chunked
+            set-cookie: cc370ea6bd994adee940ea801664=09ea03894683df52e5cfd3fa1c8; path=/; HttpOnly; Secure; SameSite=None
+            Strict-Transport-Security: max-age=157680000; includeSubDomains
+            
+            17
+            No Mapping Rule matched
+            0
+            
+            """;
+
+        @Test
+        void chunkedCharset() throws Exception {
+            Response res = new Response();
+            res.read(new ByteArrayInputStream( StringTestUtil.normalizeCRLF(chunkedCharset).getBytes()),true);
+            assertEquals(404, res.getStatusCode());
+            assertEquals("text/plain; charset=us-ascii", res.getHeader().getContentType());
+            assertEquals("No Mapping Rule matched",res.getBodyAsStringDecoded());
+        }
     }
 }

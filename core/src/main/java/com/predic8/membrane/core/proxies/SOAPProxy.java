@@ -36,6 +36,8 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.interceptor.InterceptorUtil.moveToFirstPosition;
+
 /**
  * @description <p>
  * A SOAP proxy automatically configures itself using a WSDL description. It reads the WSDL to extract:
@@ -240,12 +242,7 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     private WSDLInterceptor addAndGetWSDLInterceptor() {
-        return getFirstInterceptorOfType(WSDLInterceptor.class)
-                .orElseGet(() -> {
-                    var i = new WSDLInterceptor();
-                    interceptors.addFirst(i);
-                    return i;
-                });
+        return moveToFirstPosition(interceptors, WSDLInterceptor.class, WSDLInterceptor::new).orElseThrow();
     }
 
     private void addWebServiceExplorer() {

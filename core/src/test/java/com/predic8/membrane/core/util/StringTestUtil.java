@@ -21,4 +21,19 @@ public class StringTestUtil {
     public static InputStream inputStreamFrom(String string) {
         return new ByteArrayInputStream(string.getBytes());
     }
+
+    /**
+     * For tests that need a CRLF terminated HTTP message but the message is provided as a Java String.
+     * @param s String with HTTP message with LF terminated lines.
+     * @return String with HTTP message with CRLF terminated lines.
+     */
+    public static String normalizeCRLF(String s) {
+        // First normalize all possible line endings to LF
+        String lf = s.replace("\r\n", "\n")
+                .replace("\r", "\n");
+
+        // Then convert LF to CRLF
+        return lf.replace("\n", "\r\n");
+    }
+
 }

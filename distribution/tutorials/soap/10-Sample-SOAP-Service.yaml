@@ -4,7 +4,7 @@
 #
 # A minimal SOAP endpoint for development and debugging.
 #
-# 1.) Run
+# 1.) Start Membrane
 #    Linux/Mac:
 #      ./membrane.sh -c 10-Sample-SOAP-Service.yaml
 #    Windows:
@@ -14,7 +14,7 @@
 #     http://localhost:2000/city-service?wsdl
 #
 # 3.) Invoke
-#    curl -d @../data/city-request.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
+#    curl -d @../data/city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
 
 api:
   port: 2000

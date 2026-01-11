@@ -2,16 +2,17 @@
 #
 # Tutorial: WSDL Rewriter
 #
-# By default, WSDL rewriting uses the hostname and port on which the API Gateway
-# is reachable. This is sufficient for direct access.
+# If Membrane runs behind a reverse proxy or load balancer, the public URL differs from
+# the internal one. In that case, override the external host, protocol, and port so the
+# generated WSDL describes the public endpoint.
 #
-# If the API Gateway is deployed behind a reverse proxy or load balancer, these
-# defaults are usually incorrect. In such cases, the public-facing host, protocol,
-# port, and path must be rewritten explicitly.
-#
-# This example shows how to override these values.
+# This example shows how to override the default values.
 #
 # 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 30-WSDL-Rewriter.yaml
+#    Windows:
+#      membrane.cmd -c 30-WSDL-Rewriter.yaml
 #
 # 2.) WSDL
 #     http://localhost:2000/my-service?wsdl
@@ -23,6 +24,7 @@ soapProxy:
   port: 2000
   wsdl: https://www.predic8.de/city-service?wsdl
   flow:
+    # You should find those values in the WSDL returned by the proxy above.
     - wsdlRewriter:
         host: my.host.example.com
         protocol: https
