@@ -22,18 +22,19 @@ import java.net.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
+import static com.predic8.membrane.core.util.URLUtil.getNameComponent;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class URLUtilTest {
 
 	@Test
 	void host() {
-		assertEquals(getHost("internal:a"), "a");
-		assertEquals(getHost("internal://a"), "a");
-		assertEquals(getHost("a"), "a");
-		assertEquals(getHost("a/b"), "a");
-		assertEquals(getHost("internal:a/b"), "a");
-		assertEquals(getHost("internal://a/b"), "a");
+		assertEquals("a", getHost("internal:a"));
+		assertEquals("a", getHost("internal://a"));
+		assertEquals("a", getHost("a"));
+		assertEquals("a", getHost("a/b"));
+		assertEquals("a", getHost("internal:a/b"));
+		assertEquals("a", getHost("internal://a/b"));
 	}
 
 	@Test
@@ -70,4 +71,15 @@ public class URLUtilTest {
 		assertEquals(80, getPortFromURL(new URL("http://localhost")));
 		assertEquals(443, getPortFromURL(new URL("https://api.predic8.de")));
     }
+
+	@Test
+	void testGetNameComponent() throws Exception {
+		assertEquals("", getNameComponent(new URIFactory(), ""));
+		assertEquals("", getNameComponent(new URIFactory(), "/"));
+		assertEquals("foo", getNameComponent(new URIFactory(), "foo"));
+		assertEquals("foo", getNameComponent(new URIFactory(), "/foo"));
+		assertEquals("bar", getNameComponent(new URIFactory(), "/foo/bar"));
+		assertEquals("bar", getNameComponent(new URIFactory(), "foo/bar"));
+		assertEquals("", getNameComponent(new URIFactory(), "foo/bar/"));
+	}
 }

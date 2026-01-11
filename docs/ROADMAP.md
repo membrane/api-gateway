@@ -24,7 +24,9 @@
 - Refine YAML for balancer: clustersFromSpring
 - wsdlRewriter YAML is not working
 - use @MCElement(collapsed=true) for suitable classes
-
+- StreamTracing:
+  - Take out zeros
+  - Line Break after []
 
 # 7.0.4
 

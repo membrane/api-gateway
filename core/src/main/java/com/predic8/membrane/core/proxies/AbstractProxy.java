@@ -33,9 +33,6 @@ public abstract class AbstractProxy implements Proxy {
     protected String name = "";
     protected RuleKey key;
 
-    protected volatile boolean blockRequest;
-    protected volatile boolean blockResponse;
-
     protected List<Interceptor> interceptors = new ArrayList<>();
 
     private final RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();

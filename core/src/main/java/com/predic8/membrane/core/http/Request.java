@@ -161,7 +161,6 @@ public class Request extends Message {
 				return header.getContentLength() == 0;
             return header.getFirstValue(TRANSFER_ENCODING) == null;
         }
-    
 		return false;
 	}
 
@@ -185,7 +184,7 @@ public class Request extends Message {
 
 	@Override
 	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
-		Request result = createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
+		var result = createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
 		result.setUri(getUri());
 		result.setMethod(getMethod());
 		return (T) result;
@@ -195,7 +194,7 @@ public class Request extends Message {
 		out.write(getMethod().getBytes(UTF_8));
 		out.write(10);
 		for (HeaderField hf : header.getAllHeaderFields())
-			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(UTF_8));
+			out.write(("%s:%s\n".formatted(hf.getHeaderName().toString(), hf.getValue())).getBytes(UTF_8));
 		out.write(10);
 		body.write(new PlainBodyTransferer(out), retainBody);
 	}

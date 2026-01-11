@@ -40,19 +40,9 @@ public class Relocator {
     private final XMLEventWriter writer;
     private final PathRewriter pathRewriter;
 
-    private Map<QName, String> relocatingAttributes = new HashMap<>();
+    private final Map<QName, String> relocatingAttributes = new HashMap<>();
 
     private boolean wsdlFound;
-
-    public Relocator(Writer w, String protocol, String host, int port, String contextPath, PathRewriter pathRewriter)
-            throws Exception {
-        this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(w);
-        this.host = host;
-        this.port = port;
-        this.protocol = protocol;
-        this.contextPath = contextPath;
-        this.pathRewriter = pathRewriter;
-    }
 
     public Relocator(OutputStreamWriter osw, String protocol, String host,
                      int port, String contextPath, PathRewriter pathRewriter) throws Exception {
@@ -64,8 +54,7 @@ public class Relocator {
         this.pathRewriter = pathRewriter;
     }
 
-    public static String getNewLocation(String addr, String protocol,
-                                        String host, int port, String contextPath) {
+    public static String getNewLocation(String addr, String protocol, String host, int port, String contextPath) {
         try {
             URL oldURL = new URL(addr);
             if (port == -1) {
@@ -80,11 +69,6 @@ public class Relocator {
             log.error("", e);
         }
         return "";
-    }
-
-    @Deprecated
-    public void relocate(InputStreamReader isr) throws Exception {
-        relocate(XMLInputFactoryFactory.inputFactory().createXMLEventReader(isr));
     }
 
     public void relocate(InputStream is) throws Exception {
@@ -142,10 +126,6 @@ public class Relocator {
         return relocatingAttributes;
     }
 
-    public void setRelocatingAttributes(Map<QName, String> relocatingAttributes) {
-        this.relocatingAttributes = relocatingAttributes;
-    }
-
     public interface PathRewriter {
         String rewrite(String path);
     }
@@ -193,5 +173,4 @@ public class Relocator {
         } catch (Exception ignore) {
         }
     }
-
 }

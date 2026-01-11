@@ -15,10 +15,28 @@
 package com.predic8.membrane.core.util;
 
 import java.io.*;
+import java.nio.charset.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StringTestUtil {
 
     public static InputStream inputStreamFrom(String string) {
-        return new ByteArrayInputStream(string.getBytes());
+        return new ByteArrayInputStream(string.getBytes(UTF_8));
     }
+
+    /**
+     * For tests that need a CRLF terminated HTTP message but the message is provided as a Java String.
+     * @param s String with HTTP message. Line ending does not matter.
+     * @return String with HTTP message with CRLF terminated lines.
+     */
+    public static String normalizeCRLF(String s) {
+        // First normalize all possible line endings to LF
+        String lf = s.replace("\r\n", "\n")
+                .replace("\r", "\n");
+
+        // Then convert LF to CRLF
+        return lf.replace("\n", "\r\n");
+    }
+
 }
