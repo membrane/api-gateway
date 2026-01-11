@@ -23,6 +23,6 @@ api:
               	"population": ${fn.xpath('//population')}
               }
   target:
-    # Change method to POST
+    # POST is required for SOAP requests
     method: POST
     url: https://www.predic8.de/city-service
