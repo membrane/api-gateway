@@ -22,7 +22,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
-public class ManualSOAPProxyTutorialTest extends WSDLRewriterTutorialTest {
+public abstract class AbstractManualSOAPProxyTutorialTest extends WSDLRewriterTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
@@ -37,7 +37,7 @@ public class ManualSOAPProxyTutorialTest extends WSDLRewriterTutorialTest {
             .body(readFileFromBaseDir("../data/invalid-city.soap.xml"))
             .contentType(TEXT_XML_UTF8)
         .when()
-            .post("http://localhost:2000/my-service")
+            .post("http://localhost:%d/my-service".formatted(getPort()))
         .then()
             .log().body()
             .body("Envelope.Body.Fault.faultstring", equalTo("WSDL message validation failed"))

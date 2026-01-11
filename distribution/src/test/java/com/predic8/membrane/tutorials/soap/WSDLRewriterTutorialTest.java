@@ -30,12 +30,16 @@ public class WSDLRewriterTutorialTest extends AbstractSOAPTutorialTest {
         return "30-WSDL-Rewriter.yaml";
     }
 
+    protected int getPort() {
+        return 2000;
+    }
+
     @Test
     void wsdl() {
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/my-service?wsdl")
+            .get("http://localhost:%d/my-service?wsdl".formatted(getPort()))
         .then()
             .statusCode(200)
             .contentType(XML)
@@ -53,7 +57,7 @@ public class WSDLRewriterTutorialTest extends AbstractSOAPTutorialTest {
             // File is read from FS use the same file as the user
             .body(readFileFromBaseDir("../data/city.soap.xml"))
         .when()
-            .post("http://localhost:2000/my-service")
+            .post("http://localhost:%d/my-service".formatted(getPort()))
         .then()
             .body("Envelope.Body.getCityResponse.population", equalTo("34665600"));
          // @formatter:on
@@ -64,7 +68,7 @@ public class WSDLRewriterTutorialTest extends AbstractSOAPTutorialTest {
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/my-service")
+            .get("http://localhost:%d/my-service".formatted(getPort()))
         .then()
             .statusCode(200)
             .contentType(HTML)

@@ -15,11 +15,14 @@
 package com.predic8.membrane.core.util;
 
 import java.io.*;
+import java.nio.charset.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StringTestUtil {
 
     public static InputStream inputStreamFrom(String string) {
-        return new ByteArrayInputStream(string.getBytes());
+        return new ByteArrayInputStream(string.getBytes(UTF_8));
     }
 
     /**
