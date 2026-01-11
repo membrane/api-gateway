@@ -51,6 +51,11 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     private boolean rewriteEndpoint = true;
     private HttpClient hc;
 
+    /**
+     * Path of the service location to rewrite
+     */
+    private String path;
+
     public WSDLInterceptor() {
         name = "wsdl rewriting";
         setAppliedFlow(RESPONSE_FLOW);
@@ -60,6 +65,9 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     public void init() {
         super.init();
         hc = router.getHttpClientFactory().createClient(null);
+
+        if (path != null)
+            setPathRewriterOnWSDLInterceptor(path);
     }
 
     public void setPathRewriterOnWSDLInterceptor(String keypath) {
@@ -76,9 +84,9 @@ public class WSDLInterceptor extends RelocatingInterceptor {
                 }
                 return rewriteRelativeWsdlPath(path, URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), keypath));
             } catch (URISyntaxException | MalformedURLException e) {
-                log.error("Cannot parse URL {} - {}", path,e.getMessage());
+                log.error("Cannot parse URL {} - {}", path, e);
+                throw new RuntimeException(e);
             }
-            return path;
         };
     }
 
@@ -226,4 +234,19 @@ public class WSDLInterceptor extends RelocatingInterceptor {
         super.setPort(Integer.toString(port));
     }
 
+    /**
+     * When the wsdlRewriter is used in a SOAPProxy, the path is set to the path/uri from the SOAPProxy.
+     *
+     * @param path
+     * @description Path to use for the service location
+     * @default soapProxy/path/uri
+     */
+    @MCAttribute
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getPath() {
+        return path;
+    }
 }

@@ -24,7 +24,7 @@ public class StringTestUtil {
 
     /**
      * For tests that need a CRLF terminated HTTP message but the message is provided as a Java String.
-     * @param s String with HTTP message with LF terminated lines.
+     * @param s String with HTTP message. Line ending does not matter.
      * @return String with HTTP message with CRLF terminated lines.
      */
     public static String normalizeCRLF(String s) {

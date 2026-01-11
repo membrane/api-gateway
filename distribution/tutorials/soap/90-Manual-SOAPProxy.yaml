@@ -1,27 +1,51 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
 #
-# Tutorial: Manual SOAP Proxy
+# Tutorial: Manual SOAPProxy
 #
+# Membrane provides the `soapProxy` shortcut for SOAP web services.
+# A `soapProxy` reads the WSDL and automatically adds:
+# - `wsdlRewriter`
+# - `wsdlPublisher`
+# - `webServiceExplorer`
+#
+# `soapProxy` is convenient, but it does not give you full control over the interceptor chain.
+# If you need precise ordering or want to include only specific interceptors (e.g. only a
+# rewriter or only a validator), define an `api` and wire the interceptors manually.
+#
+# The `api` and the `soapProxy` below are equivalent.
 
 api:
+  port: 2000
   path:
-    uri: /manual-soap-proxy
+    uri: /my-service
   flow:
+    # The wsdlRewriter must be the first of the following interceptors.
+    - rewriter:
+      - map:
+          # Put values in quotes when using special characters
+          from: "/my-service/(.*)"
+          to: "/city-service/$1"
     - wsdlRewriter:
         host: my.host.example.com
         protocol: https
         port: 443
-    - wsdlPublisher: {}
-    - wsdlExplorer: {}
-    - validator: {}
-
+        path: /my-service
+    - wsdlPublisher:
+        wsdl: https://www.predic8.de/city-service?wsdl
+    - webServiceExplorer:
+        wsdl: https://www.predic8.de/city-service?wsdl
+    # The validator must be the last
+    - validator:
+        wsdl: https://www.predic8.de/city-service?wsdl
+  target:
+    url: https://www.predic8.de/city-service
 
 ---
-
+# Same behavior as above, but using a soapProxy
 soapProxy:
   path:
     uri: /my-service
-  port: 2000
+  port: 2001
   wsdl: https://www.predic8.de/city-service?wsdl
   flow:
     # You should find those values in the WSDL returned by the proxy above.
