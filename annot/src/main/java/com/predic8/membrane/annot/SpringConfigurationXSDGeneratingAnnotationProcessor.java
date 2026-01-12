@@ -236,9 +236,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                             throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCTextContent to be not present.", ii.getElement());
                     }
 
+                    // A collapsed class has exactly one @MCAttribute OR exactly one @MCTextContent and no @MCElement or @MCAttribute.
                     if (ii.getAnnotation().collapsed()) {
                         int attrCount = ii.getAis().size();
-                        if ((attrCount > 0 ? 1 : 0) + (ii.getTci() != null ? 1 : 0) != 1)
+                        if (hasAttributeAndTextContent(attrCount, ii))
                             throw new ProcessingException("@MCElement(collapsed=true) requires exactly one @MCAttribute OR exactly one @MCTextContent.", ii.getElement());
                         if (attrCount != 0 && attrCount != 1)
                             throw new ProcessingException("@MCElement(collapsed=true) allows only one @MCAttribute setter.", ii.getElement());
@@ -311,6 +312,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                 processingEnv.getMessager().printMessage(ERROR, i == 0 ? e1.getMessage() : "also here", e1.getElements()[i]);
             return true;
         }
+    }
+
+    private static boolean hasAttributeAndTextContent(int attrCount, ElementInfo ii) {
+        return (attrCount > 0 ? 1 : 0) + (ii.getTci() != null ? 1 : 0) != 1;
     }
 
     private boolean isComponent(TypeElement type) {
