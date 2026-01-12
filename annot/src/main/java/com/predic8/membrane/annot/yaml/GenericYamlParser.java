@@ -25,6 +25,8 @@ import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
@@ -38,6 +40,7 @@ import org.springframework.util.ReflectionUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -51,6 +54,7 @@ import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.List.of;
 import static java.util.UUID.randomUUID;
+import static org.springframework.util.ReflectionUtils.doWithMethods;
 
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
@@ -188,16 +192,18 @@ public class GenericYamlParser {
                 return configObj;
             }
 
-            // scalar inline form for @MCElement(singleAttribute=true)
-            if (!node.isObject()) {
-                if (isSingleAttribute(clazz)) {
-                    applySingleAttributeScalar(clazz, node, configObj);
-                    return handlePostConstructAndPreDestroy(ctx, configObj);
+            // scalar inline form for @MCElement(collapsed=true)
+            if (isCollapsed(clazz)) {
+                if (node.isNull()) {
+                    throw new ParsingException("Collapsed element must not be null.", node);
                 }
-                // anything non-object is invalid here
-                ensureMappingStart(node);
+                if (node.isArray() || node.isObject()) {
+                    throw new ParsingException("Element is collapsed; expected an inline scalar value, not " +
+                            (node.isArray() ? "an array" : "an object") + ".", node);
+                }
+                applyCollapsedScalar(clazz, node, configObj);
+                return handlePostConstructAndPreDestroy(ctx, configObj);
             }
-
             ensureMappingStart(node);
             if (isNoEnvelope(clazz))
                 throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
@@ -343,7 +349,7 @@ public class GenericYamlParser {
         if (bean instanceof BeanRegistryAware beanRegistryAware) {
             beanRegistryAware.setRegistry(ctx.registry());
         }
-        ReflectionUtils.doWithMethods(bean.getClass(), method -> {
+        doWithMethods(bean.getClass(), method -> {
             if (method.isAnnotationPresent(PostConstruct.class)) {
                 try {
                     method.setAccessible(true);
@@ -362,19 +368,27 @@ public class GenericYamlParser {
         return bean;
     }
 
-    private static <T> void applySingleAttributeScalar(Class<T> clazz, JsonNode node, T target) {
+    private static <T> void applyCollapsedScalar(Class<T> clazz, JsonNode node, T target) {
         if (node == null || node.isNull()) {
-            throw new ParsingException("singleAttribute element must not be null.", node);
+            throw new ParsingException("Collapsed element must not be null.", node);
         }
 
-        Method setter = findSingleAttributeSetter(clazz);
+        Method attributeSetter = findSingleSetterOrNullForAnnotation(clazz, MCAttribute.class);
+        Method textSetter = findSingleSetterOrNullForAnnotation(clazz, MCTextContent.class);
 
+        if ((attributeSetter == null) == (textSetter == null)) {
+            // both null or both non-null -> invalid
+            throw new ParsingException("@MCElement(collapsed=true) requires exactly one @MCAttribute setter OR exactly one @MCTextContent setter.", node);
+        }
+
+        Method setter = (attributeSetter != null) ? attributeSetter : textSetter;
         Class<?> paramType = setter.getParameterTypes()[0];
+
         Object value;
         try {
             value = SCALAR_MAPPER.convertValue(node, paramType);
         } catch (IllegalArgumentException e) {
-            throw new ParsingException("Cannot convert scalar value to " + paramType.getSimpleName() + ".", node);
+            throw new ParsingException("Cannot convert inline value to " + paramType.getSimpleName() + ".", node);
         }
 
         try {
@@ -387,20 +401,22 @@ public class GenericYamlParser {
         }
     }
 
-    private static Method findSingleAttributeSetter(Class<?> clazz) {
+    private static Method findSingleSetterOrNullForAnnotation(Class<?> clazz, Class<? extends java.lang.annotation.Annotation> annotation) {
         List<Method> setters = new ArrayList<>();
-        ReflectionUtils.doWithMethods(clazz, m -> {
-            if (m.isAnnotationPresent(MCAttribute.class) && m.getParameterCount() == 1) {
+        doWithMethods(clazz, m -> {
+            if (m.isAnnotationPresent(annotation) && m.getParameterCount() == 1) {
                 setters.add(m);
             }
         });
 
+        if (setters.isEmpty()) return null;
         if (setters.size() != 1) {
             throw new ParsingException(
-                    "@MCElement(singleAttribute=true) requires exactly one @MCAttribute setter, but found " + setters.size() + ".",
+                    "Multiple @%s setters found for collapsed element.".formatted(annotation.getSimpleName()),
                     JsonNodeFactory.instance.nullNode()
             );
         }
         return setters.getFirst();
     }
+
 }
