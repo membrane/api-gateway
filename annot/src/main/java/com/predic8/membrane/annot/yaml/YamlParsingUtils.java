@@ -14,6 +14,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static org.springframework.util.ReflectionUtils.doWithMethods;
@@ -22,13 +23,19 @@ public final class YamlParsingUtils {
 
     private YamlParsingUtils() {}
 
+    private static final ConcurrentHashMap<String, Schema> SCHEMA_CACHE = new ConcurrentHashMap<>();
+
     static void validate(Grammar grammar, JsonNode input) throws YamlSchemaValidationException {
-        Schema schema = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {}).getSchema(SchemaLocation.of(grammar.getSchemaLocation()));
-        schema.initializeValidators();
+        Schema schema = SCHEMA_CACHE.computeIfAbsent(grammar.getSchemaLocation(), loc -> {
+            Schema s = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, b -> {})
+                    .getSchema(SchemaLocation.of(loc));
+            s.initializeValidators();
+            return s;
+        });
+
         List<Error> errors = schema.validate(input);
-        if (!errors.isEmpty()) {
+        if (!errors.isEmpty())
             throw new YamlSchemaValidationException("Invalid YAML.", errors);
-        }
     }
 
     /**
