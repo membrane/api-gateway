@@ -36,6 +36,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
@@ -333,11 +334,12 @@ public class GenericYamlParser {
             throw new ParsingException("Collapsed element must not be null.", node);
         }
 
+        // Collapsed classes can only have one matching setter (ensured by SpringConfigurationXSDGeneratingAnnotationProcessor)
         Method attributeSetter = findSingleSetterOrNullForAnnotation(clazz, MCAttribute.class);
         Method textSetter = findSingleSetterOrNullForAnnotation(clazz, MCTextContent.class);
 
         Method setter = (attributeSetter != null) ? attributeSetter : textSetter;
-        Class<?> paramType = setter.getParameterTypes()[0];
+        Class<?> paramType = Objects.requireNonNull(setter).getParameterTypes()[0];
 
         Object value;
         try {
