@@ -48,6 +48,7 @@ public class ScriptingUtils {
         HashMap<String, Object> params = new HashMap<>();
 
         params.put("spring", router.getBeanFactory());
+        params.put("registry", router.getRegistry());
 
         // support both
         params.put("exc", exc);
