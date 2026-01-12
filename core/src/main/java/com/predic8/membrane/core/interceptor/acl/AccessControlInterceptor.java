@@ -37,7 +37,7 @@ import static com.predic8.membrane.core.util.HttpUtil.*;
  * requested resource.
  * @topic 3. Security and Validation
  */
-@MCElement(name = "accessControl")
+@MCElement(name = "accessControl2")
 public class AccessControlInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(AccessControlInterceptor.class.getName());
