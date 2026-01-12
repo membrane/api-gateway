@@ -45,7 +45,6 @@ public class Node extends AbstractXmlElement {
 	private int port;
 	private String healthUrl;
 
-	// TODO: works standalone or use with balancerHealthMonitor?
 	private boolean tcpCheck = false;
 	private int priority = 10;
 

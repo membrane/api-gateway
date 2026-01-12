@@ -121,7 +121,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
 
     private Status isHealthy(Node node) {
         if (node.isTcpCheck()) {
-            return tcpHealthy(node) ? Status.UP : DOWN;
+            return tcpHealthy(node);
         }
 
         String url = getNodeHealthEndpoint(node);
@@ -133,17 +133,17 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
         }
     }
 
-    private boolean tcpHealthy(Node node) {
+    private Status tcpHealthy(Node node) {
         final String host = node.getHost();
         final int port = node.getPort();
 
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(host, port), httpClientConfig.getConnection().getTimeout()); // TODO keep the httpClientConfig timeout?
+            socket.connect(new InetSocketAddress(host, port), httpClientConfig.getConnection().getTimeout());
             log.debug("Node {}:{} is healthy", node.getHost(), node.getPort());
-            return true;
+            return UP;
         } catch (Exception e) {
             log.warn("TCP health check failed for {}:{} - {}", host, port, e.getMessage());
-            return false;
+            return DOWN;
         }
     }
 
