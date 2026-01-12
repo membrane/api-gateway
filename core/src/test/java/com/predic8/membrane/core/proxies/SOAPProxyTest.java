@@ -18,6 +18,7 @@ import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -93,12 +94,12 @@ public class SOAPProxyTest {
 
         // @formatter: off
         given().when()
-            .body(OpenAPITestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
-            .post("http://localhost:2000/city-service")
-        .then()
-            .log().ifValidationFails(ALL)
-            .statusCode(200)
-            .contentType(TEXT_XML);
+                .body(OpenAPITestUtils.getResourceAsStream(this, "/soap-sample/soap-request-bonn.xml"))
+                .post("http://localhost:2000/city-service")
+                .then()
+                .log().ifValidationFails(ALL)
+                .statusCode(200)
+                .contentType(TEXT_XML);
         // @formatter: on
     }
 
@@ -107,7 +108,9 @@ public class SOAPProxyTest {
         proxy.setServiceName("WrongService");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
 
-        assertThrows(IllegalArgumentException.class, () -> {router.add(proxy); router.start();
+        assertThrows(IllegalArgumentException.class, () -> {
+            router.add(proxy);
+            router.start();
         });
     }
 }

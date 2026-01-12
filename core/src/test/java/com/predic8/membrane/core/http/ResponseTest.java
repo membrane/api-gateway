@@ -32,15 +32,11 @@ import static org.junit.jupiter.params.provider.Arguments.*;
 public class ResponseTest {
 
     private Response res1;
-
     private Response res2;
-
     private Response res3;
 
     private InputStream in1;
-
     private InputStream in2;
-
     private InputStream in3;
 
     private ByteArrayOutputStream tempOut;
@@ -80,28 +76,28 @@ public class ResponseTest {
     }
 
     @Test
-    public void testParseStartLine1() throws IOException, EndOfStreamException {
+    void parseStartLine1() throws IOException {
         res1.parseStartLine(in1);
         assertEquals(200, res1.getStatusCode());
         assertEquals("1.1", res1.getVersion());
     }
 
     @Test
-    public void testParseStartLine2() throws IOException, EndOfStreamException {
+    void testParseStartLine2() throws IOException {
         res2.parseStartLine(in2);
         assertEquals(200, res2.getStatusCode());
         assertEquals("1.1", res2.getVersion());
     }
 
     @Test
-    public void testParseStartLine3() throws IOException, EndOfStreamException {
+    void testParseStartLine3() throws IOException {
         res3.parseStartLine(in3);
         assertEquals(200, res3.getStatusCode());
         assertEquals("1.1", res3.getVersion());
     }
 
     @Test
-    public void testUnchunkedHtmlRead() throws Exception {
+    void testUnchunkedHtmlRead() throws Exception {
         res1.read(in1, true);
         assertEquals(200, res1.getStatusCode());
         assertTrue(res1.isHTTP11());
@@ -112,11 +108,10 @@ public class ResponseTest {
     }
 
     @Test
-    public void testUnchunkedHtmlWrite() throws Exception {
+    void testUnchunkedHtmlWrite() throws Exception {
         tempOut = new ByteArrayOutputStream();
         res1.read(in1, true);
         res1.write(tempOut, true);
-
 
         tempIn = new ByteArrayInputStream(tempOut.toByteArray());
 
@@ -130,7 +125,7 @@ public class ResponseTest {
     }
 
     @Test
-    public void testUnchunkedImageRead() throws Exception {
+    void testUnchunkedImageRead() throws Exception {
         res2.read(in2, true);
         assertEquals(200, res2.getStatusCode());
         assertTrue(res2.isHTTP11());
@@ -142,7 +137,7 @@ public class ResponseTest {
 
 
     @Test
-    public void testUnchunkedImageWrite() throws Exception {
+    void testUnchunkedImageWrite() throws Exception {
         tempOut = new ByteArrayOutputStream();
         res2.read(in2, true);
         res2.write(tempOut, true);
@@ -160,9 +155,8 @@ public class ResponseTest {
         assertArrayEquals(res2.getBody().getContent(), resTemp.getBody().getContent());
     }
 
-
     @Test
-    public void testChunkedHtmlRead() throws Exception {
+    void testChunkedHtmlRead() throws Exception {
         res3.read(in3, true);
         assertEquals(200, res3.getStatusCode());
         assertTrue(res3.isHTTP11());
@@ -172,11 +166,10 @@ public class ResponseTest {
 
 
     @Test
-    public void testChunkedHtmlWrite() throws Exception {
+    void testChunkedHtmlWrite() throws Exception {
         tempOut = new ByteArrayOutputStream();
         res3.read(in3, true);
         res3.write(tempOut, true);
-
 
         tempIn = new ByteArrayInputStream(tempOut.toByteArray());
 
@@ -190,8 +183,7 @@ public class ResponseTest {
             assertEquals(res3.getBody().getContent().length, resTemp.getBody().getContent().length);
             assertArrayEquals(res3.getBody().getContent(), resTemp.getBody().getContent());
         } else
-            assertEquals(res3.getBody().getContent().length, 0);
-
+            assertEquals(0, res3.getBody().getContent().length);
     }
 
     @Test
@@ -206,7 +198,7 @@ public class ResponseTest {
     }
 
     @Test
-    public void isNotEmpty() throws Exception {
+    void isNotEmpty() throws Exception {
         assertFalse(ok("ABC").build().isBodyEmpty());
     }
 
@@ -303,5 +295,32 @@ public class ResponseTest {
         res.read(getResourceAsStream(this,"response-205-reset.http"),true);
         assertTrue(res.isBodyEmpty());
         assertInstanceOf(EmptyBody.class, res.getBody());
+    }
+
+    @Nested
+    class RealResponses {
+
+        private static final String chunkedCharset = """
+            HTTP/1.1 404 Not Found
+            date: Fri, 09 Jan 2026 13:29:16 GMT
+            content-type: text/plain; charset=us-ascii
+            transfer-encoding: chunked
+            set-cookie: cc370ea6bd994adee940ea801664=09ea03894683df52e5cfd3fa1c8; path=/; HttpOnly; Secure; SameSite=None
+            Strict-Transport-Security: max-age=157680000; includeSubDomains
+            
+            17
+            No Mapping Rule matched
+            0
+            
+            """;
+
+        @Test
+        void chunkedCharset() throws Exception {
+            Response res = new Response();
+            res.read(new ByteArrayInputStream( StringTestUtil.normalizeCRLF(chunkedCharset).getBytes()),true);
+            assertEquals(404, res.getStatusCode());
+            assertEquals("text/plain; charset=us-ascii", res.getHeader().getContentType());
+            assertEquals("No Mapping Rule matched",res.getBodyAsStringDecoded());
+        }
     }
 }
