@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
+#
+# Tutorial: WSDL Rewriter
+#
+# If Membrane runs behind a reverse proxy or load balancer, the public URL differs from
+# the internal one. In that case, override the external host, protocol, and port so the
+# generated WSDL describes the public endpoint.
+#
+# This example shows how to override the default values.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 30-WSDL-Rewriter.yaml
+#    Windows:
+#      membrane.cmd -c 30-WSDL-Rewriter.yaml
+#
+# 2.) WSDL
+#     http://localhost:2000/my-service?wsdl
+#     Inspect the address/@location attribute near the end of the document.
+
+soapProxy:
+  path:
+    uri: /my-service
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
+  flow:
+    # You should find those values in the WSDL returned by the proxy above.
+    - wsdlRewriter:
+        host: my.host.example.com
+        protocol: https
+        port: 443
