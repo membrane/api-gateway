@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
@@ -32,11 +33,12 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  * <p>
  * It will print all bytes transmitted or received by the HttpClient on a HTTP or HTTPS connection.
  * <p>
- * HTTPS content will be printed <b>unencrypted</b>.
+ * HTTPS content will be printed <b>unencryptedly</b>.
  * <p>
  * This will create log entries like the following:
  * <code>
- * 08:15:50,047 TRACE 56 router /127.0.0.1:50835 ByteStreamLogging:52 {} - [c-569960249 out] [ 71 69 84 32 47 32 ... ] GET / HTTP/1.1
+ * 08:15:50,047 TRACE 56 router /127.0.0.1:50835 ByteStreamLogging:52 {} - [c-569960249 out] [ 71 69 84 32 47 32 ... ]
+ * GET / HTTP/1.1
  * User-Agent: Jakarta Commons-HttpClient/3.1
  * ...
  * </code>
@@ -59,7 +61,7 @@ public class ByteStreamLogging {
     }
 
     public static void log(String name, byte... b){
-        log(name, b,0,b.length);
+        log(name, b, 0, b.length);
     }
 
     public static void log(String name, byte[] b, int off, int len){
@@ -68,8 +70,9 @@ public class ByteStreamLogging {
         for(int i = off; i < off+len; i++) {
             sb.append(b[i]).append(" ");
         }
-        sb.append("] ");
-        sb.append(new String(b,off,len, US_ASCII));
+        sb.append("]");
+        sb.append(lineSeparator());
+        sb.append(new String(b, off, len, US_ASCII));
         log.trace(sb.toString());
     }
 
@@ -89,7 +92,7 @@ public class ByteStreamLogging {
 
             @Override
             public void write(byte[] b, int off, int len) throws IOException {
-                log(name, b,off,len);
+                log(name, b, off, len);
                 out.write(b, off, len);
             }
 
@@ -110,21 +113,24 @@ public class ByteStreamLogging {
             @Override
             public int read() throws IOException {
                 int res = in.read();
-                log(name, res);
+                if (res != -1)
+                    log(name, res);
                 return res;
             }
 
             @Override
             public int read(byte[] b) throws IOException {
                 int res = in.read(b);
-                log(name, b);
+                if (res != -1)
+                    log(name, b, 0, res);
                 return res;
             }
 
             @Override
             public int read(byte[] b, int off, int len) throws IOException {
                 int res = in.read(b, off, len);
-                log(name, b,off,res);
+                if (res != -1)
+                    log(name, b, off, res);
                 return res;
             }
 
