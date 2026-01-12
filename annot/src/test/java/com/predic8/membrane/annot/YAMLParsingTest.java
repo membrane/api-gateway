@@ -15,12 +15,9 @@
 package com.predic8.membrane.annot;
 
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.beanregistry.SpringContextAdapter;
 import com.predic8.membrane.annot.util.CompilerHelper;
 import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.ConfigurableApplicationContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -244,11 +241,11 @@ public class YAMLParsingTest {
             @MCElement(name="child2", component=false)
             public static class Child2Element {
                 public String attr;
-            
+        
                 public String getAttr() {
                     return attr;
                 }
-            
+        
                 @MCAttribute
                 public void setAttr(String attr) {
                     this.attr = attr;
@@ -597,14 +594,6 @@ public class YAMLParsingTest {
         }
     }
 
-    private Throwable getCause(Throwable e) {
-        if (e.getCause() != null)
-            return getCause(e.getCause());
-        if (e instanceof InvocationTargetException ite)
-            return getCause(ite.getTargetException());
-        return e;
-    }
-
     @Test
     public void postConstructAndPreDestroy() {
         var sources = splitSources(MC_MAIN_DEMO + """
@@ -669,5 +658,12 @@ public class YAMLParsingTest {
 
     }
 
+    private Throwable getCause(Throwable e) {
+        if (e.getCause() != null)
+            return getCause(e.getCause());
+        if (e instanceof InvocationTargetException ite)
+            return getCause(ite.getTargetException());
+        return e;
+    }
 
 }
