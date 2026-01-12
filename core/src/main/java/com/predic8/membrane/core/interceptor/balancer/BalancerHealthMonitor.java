@@ -28,6 +28,8 @@ import org.springframework.beans.factory.*;
 import org.springframework.context.*;
 
 import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
@@ -113,13 +115,16 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
     }
 
     private Status isHealthy(Node node) {
-        String url = getNodeHealthEndpoint(node);
-        try {
-            return getStatus(node, doCall(url));
-        } catch (Exception e) {
-            log.warn("Calling health endpoint failed: {}, {}", url, e.getMessage());
-            return DOWN;
+        String healthUrl = node.getHealthUrl();
+        if(healthUrl != null) {
+            try {
+                return getStatus(node, doCall(healthUrl));
+            } catch (Exception e) {
+                log.warn("Calling health endpoint failed: {}, {}", healthUrl, e.getMessage());
+                return DOWN;
+            }
         }
+        return tcpHealthy(node);
     }
 
     private static Status getStatus(Node node, Exchange exc) {
@@ -140,10 +145,18 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
         return UP;
     }
 
-    private static String getNodeHealthEndpoint(Node node) {
-        return node.getHealthUrl() != null
-                ? node.getHealthUrl()
-                : getUrl(node.getHost(), node.getPort());
+    public Status tcpHealthy(Node node) {
+        final String host = node.getHost();
+        final int port = node.getPort();
+
+        try(Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), httpClientConfig.getConnection().getTimeout());
+            log.debug("Node {}:{} is healthy", host, port);
+            return UP;
+        } catch (Exception e) {
+            log.warn("TCP health check failed for {}:{} - {}", host, port, e);
+            return DOWN;
+        }
     }
 
     private Exchange doCall(String url) throws Exception {

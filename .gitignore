@@ -126,3 +126,5 @@ maven-plugin/target/surefire/
 /docs/router-conf.xsd
 .vscode/
 /core/derby.log
+/distribution/conf/apis.yaml
+/distribution/conf/membrane.log
