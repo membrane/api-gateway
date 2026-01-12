@@ -30,16 +30,22 @@ public class ArrayExplodeTest {
 
     @BeforeEach
     void setUp() {
-        var apiRecord = new OpenAPIRecord(
+        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(
                 parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/parameters/array-explode.yaml")),
                 new OpenAPISpec()
-        );
-        validator = new OpenAPIValidator(new URIFactory(), apiRecord);
+        ));
     }
 
     @Test
     void numbers() {
         assertEquals(0, validator.validate(get().path("/foo?numbers=1&numbers=2")).size());
+    }
+
+    @Test
+    void numbersInvalid() {
+        var err = validator.validate(get().path("/foo?numbers=1&numbers=notANumber"));
+        assertEquals(1, err.size());
+        assertTrue(err.get(0).getMessage().contains("does not match any of [number]"));
     }
 
     @Test
@@ -52,4 +58,13 @@ public class ArrayExplodeTest {
         assertEquals(0, validator.validate(get().path("/foo?strings=abc&strings=123")).size());
     }
 
+    @Test
+    void onlyNumberAsString() {
+        assertEquals(0, validator.validate(get().path("/foo?strings=456&strings=123")).size());
+    }
+
+    @Test
+    void oneNumberAsString() {
+        assertEquals(0, validator.validate(get().path("/foo?strings=456")).size());
+    }
 }
