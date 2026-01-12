@@ -301,7 +301,7 @@ public class ProblemDetails {
         }
         internalMap.put(SEE, getFullType(type));
         internalMap.put(ATTENTION, """
-                Membrane is in development mode. Set 'production' to 'true' in your configuration to hide detailed error information in production.""");
+                Membrane is running in development mode. Enable production mode in the configuration to prevent detailed information from appearing in error responses.""");
         return internalMap;
     }
 
