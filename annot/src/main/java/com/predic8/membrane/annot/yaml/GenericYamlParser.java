@@ -25,7 +25,6 @@ import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
@@ -36,11 +35,9 @@ import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.ReflectionUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -382,11 +379,6 @@ public class GenericYamlParser {
         Method attributeSetter = findSingleSetterOrNullForAnnotation(clazz, MCAttribute.class);
         Method textSetter = findSingleSetterOrNullForAnnotation(clazz, MCTextContent.class);
 
-        if ((attributeSetter == null) == (textSetter == null)) {
-            // both null or both non-null -> invalid
-            throw new ParsingException("@MCElement(collapsed=true) requires exactly one @MCAttribute setter OR exactly one @MCTextContent setter.", node);
-        }
-
         Method setter = (attributeSetter != null) ? attributeSetter : textSetter;
         Class<?> paramType = setter.getParameterTypes()[0];
 
@@ -416,12 +408,6 @@ public class GenericYamlParser {
         });
 
         if (setters.isEmpty()) return null;
-        if (setters.size() != 1) {
-            throw new ParsingException(
-                    "Multiple @%s setters found for collapsed element.".formatted(annotation.getSimpleName()),
-                    JsonNodeFactory.instance.nullNode()
-            );
-        }
         return setters.getFirst();
     }
 
