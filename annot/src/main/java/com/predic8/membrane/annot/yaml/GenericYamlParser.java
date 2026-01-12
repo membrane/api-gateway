@@ -19,19 +19,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.networknt.schema.Error;
-import com.networknt.schema.Schema;
-import com.networknt.schema.SchemaLocation;
-import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,14 +37,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
+import static com.predic8.membrane.annot.yaml.YamlParsingUtils.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.List.of;
 import static java.util.UUID.randomUUID;
-import static org.springframework.util.ReflectionUtils.doWithMethods;
 
 public class GenericYamlParser {
     private static final Logger log = LoggerFactory.getLogger(GenericYamlParser.class);
@@ -142,14 +134,6 @@ public class GenericYamlParser {
         return jsonNode.fieldNames().next();
     }
 
-    private static void validate(Grammar grammar, JsonNode input) throws YamlSchemaValidationException {
-        Schema schema = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, builder -> {}).getSchema(SchemaLocation.of(grammar.getSchemaLocation()));
-        schema.initializeValidators();
-        List<Error> errors = schema.validate(input);
-        if (!errors.isEmpty()) {
-            throw new YamlSchemaValidationException("Invalid YAML.", errors);
-        }
-    }
 
 
     /**
@@ -237,7 +221,7 @@ public class GenericYamlParser {
 
     private static <T> @NotNull T handleCollapsed(ParsingContext<?> ctx, Class<T> clazz, JsonNode node, T configObj) {
         if (node.isNull()) throw new ParsingException("Collapsed element must not be null.", node);
-        if (node.isArray() || node.isObject()) throw new ParsingException("Element is collapsed; expected an inline scalar value, not " +(node.isArray() ? "an array" : "an object") + ".", node);
+        if (node.isArray() || node.isObject()) throw new ParsingException("Element is collapsed; expected an inline scalar value, not " + (node.isArray() ? "an array" : "an object") + ".", node);
         applyCollapsedScalar(clazz, node, configObj);
         return handlePostConstructAndPreDestroy(ctx, configObj);
     }
@@ -344,33 +328,6 @@ public class GenericYamlParser {
         return createAndPopulateNode(ctx.updateContext(key), ctx.resolveClass(key), node);
     }
 
-    /**
-     * Calls the @PostConstruct method on the bean and returns it. If there are @PreDestroy methods, they will be
-     * registered within the registry.
-     */
-    private static <T> T handlePostConstructAndPreDestroy(ParsingContext<?> ctx, T bean) {
-        if (bean instanceof BeanRegistryAware beanRegistryAware) {
-            beanRegistryAware.setRegistry(ctx.registry());
-        }
-        doWithMethods(bean.getClass(), method -> {
-            if (method.isAnnotationPresent(PostConstruct.class)) {
-                try {
-                    method.setAccessible(true);
-                    method.invoke(bean);
-                } catch (InvocationTargetException e) {
-                    throw new RuntimeException(e.getTargetException());
-                } catch (IllegalAccessException | IllegalArgumentException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (method.isAnnotationPresent(PreDestroy.class)) {
-                method.setAccessible(true);
-                ctx.registry().addPreDestroyCallback(bean, method);
-            }
-        });
-        return bean;
-    }
-
     private static <T> void applyCollapsedScalar(Class<T> clazz, JsonNode node, T target) {
         if (node == null || node.isNull()) {
             throw new ParsingException("Collapsed element must not be null.", node);
@@ -399,16 +356,6 @@ public class GenericYamlParser {
         }
     }
 
-    private static Method findSingleSetterOrNullForAnnotation(Class<?> clazz, Class<? extends java.lang.annotation.Annotation> annotation) {
-        List<Method> setters = new ArrayList<>();
-        doWithMethods(clazz, m -> {
-            if (m.isAnnotationPresent(annotation) && m.getParameterCount() == 1) {
-                setters.add(m);
-            }
-        });
 
-        if (setters.isEmpty()) return null;
-        return setters.getFirst();
-    }
 
 }
