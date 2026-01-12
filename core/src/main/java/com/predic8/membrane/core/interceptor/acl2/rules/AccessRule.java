@@ -8,7 +8,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 
 import java.util.Optional;
 
-@MCElement(name = "accessRule", mixed = true, singleAttribute = true)
+@MCElement(name = "accessRule", collapsed = true)
 public abstract class AccessRule {
 
     protected Target target;

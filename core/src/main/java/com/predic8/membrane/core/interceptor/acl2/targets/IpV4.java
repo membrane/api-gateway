@@ -16,7 +16,10 @@ public class IpV4 extends Target {
     private final int cidr;
 
     public static boolean accepts(String address) {
-        return IPV4_PATTERN.matcher(address).matches();
+        Matcher matcher = IPV4_PATTERN.matcher(address);
+        matcher.matches();
+        matcher.group("cidr");
+        return ;
     }
 
     public IpV4(String address) {
