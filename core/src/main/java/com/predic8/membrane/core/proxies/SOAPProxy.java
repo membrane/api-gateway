@@ -18,7 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.openapi.util.*;
@@ -26,17 +26,17 @@ import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.soap.WSDLUtil;
 import com.predic8.wsdl.*;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import javax.xml.namespace.*;
 import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.interceptor.InterceptorUtil.moveToFirstPosition;
 
 /**
  * @description <p>
@@ -60,7 +60,6 @@ import static com.predic8.membrane.core.Constants.*;
 public class SOAPProxy extends AbstractServiceProxy {
 
     private static final Logger log = LoggerFactory.getLogger(SOAPProxy.class.getName());
-    private static final Pattern relativePathPattern = Pattern.compile("^./[^/?]*\\?");
 
     // configuration attributes
     protected String wsdl;
@@ -87,8 +86,8 @@ public class SOAPProxy extends AbstractServiceProxy {
         configureFromWSDL();
         super.init(); // Must be called last! Otherwise, SSL will not be configured!
 
-        for(Interceptor interceptor: interceptors) {
-            if(interceptor instanceof WSDLPublisherInterceptor wpi) {
+        for (Interceptor interceptor : interceptors) {
+            if (interceptor instanceof WSDLPublisherInterceptor wpi) {
                 wpi.setSoapProxy(this);
             } else if (interceptor instanceof ValidatorInterceptor vi) {
                 vi.setSoapProxy(this);
@@ -111,12 +110,12 @@ public class SOAPProxy extends AbstractServiceProxy {
 
         prepareRouting(location);
 
-        // add interceptors (in reverse order) to position 0.
-        addWebServiceExplorer();
-        addWSDLPublisherInterceptor();
-        addWSDLInterceptor();
-        renameMe();
-
+        // Add interceptors (in reverse order) cause each one calls List.addFirst.
+        // This is needed because there might be already a validator interceptor that must go last
+        addWebServiceExplorer(); // Will be last to validator
+        addWSDLPublisherInterceptor(); // Will be before WebServiceExplorer
+        var wsdlInterceptor = addAndGetWSDLInterceptor(); // WSDLInterceptor will be first
+        wsdlInterceptor.setPathRewriterOnWSDLInterceptor(key.getPath());
     }
 
     private Definitions parseWSDLOnly() {
@@ -239,84 +238,15 @@ public class SOAPProxy extends AbstractServiceProxy {
                     return port;
             throw new IllegalArgumentException("No port with name '" + portName + "' found.");
         }
-        return getPort(ports);
+        return WSDLUtil.getPort(ports);
     }
 
-    private static Port getPort(List<Port> ports) {
-        Port port = getPortByNamespace(ports, WSDL_SOAP11_NS);
-        if (port == null)
-            port = getPortByNamespace(ports, WSDL_SOAP12_NS);
-        if (port == null)
-            throw new IllegalArgumentException("No SOAP/1.1 or SOAP/1.2 ports found in WSDL.");
-        return port;
-    }
-
-    private static Port getPortByNamespace(List<Port> ports, String namespace) {
-        for (Port port : ports) {
-            try {
-                if (port.getBinding() == null)
-                    continue;
-                if (port.getBinding().getBinding() == null)
-                    continue;
-                AbstractBinding binding = port.getBinding().getBinding();
-                if (!"http://schemas.xmlsoap.org/soap/http".equals(binding.getProperty("transport")))
-                    continue;
-                if (!namespace.equals(((QName) binding.getElementName()).getNamespaceURI()))
-                    continue;
-                return port;
-            } catch (Exception e) {
-                log.warn("Error inspecting WSDL port binding.", e);
-            }
-        }
-        return null;
-    }
-
-    private void addWSDLInterceptor() {
-        if (getFirstInterceptorOfType(WSDLInterceptor.class).isEmpty()) {
-            WSDLInterceptor wsdlInterceptor = new WSDLInterceptor();
-            interceptors.addFirst(wsdlInterceptor);
-        }
-    }
-
-    private void renameMe() {
-        if (key.getPath() == null)
-            return;
-
-        Optional<WSDLInterceptor> wsdlInterceptor = getFirstInterceptorOfType(WSDLInterceptor.class);
-
-        if (wsdlInterceptor.isEmpty()) {
-            log.warn("No wsdl interceptor set.");
-            return;
-        }
-
-        final String keyPath = key.getPath();
-        final String name = getReplacementName(keyPath);
-        wsdlInterceptor.get().setPathRewriter(path2 -> {
-            try {
-                if (path2.contains("://")) {
-                    return new URL(new URL(path2), keyPath).toString();
-                } else {
-                    Matcher m = relativePathPattern.matcher(path2);
-                    return m.replaceAll("./" + name + "?");
-                }
-            } catch (MalformedURLException e) {
-                log.error("Cannot parse URL {}", path2);
-            }
-            return path2;
-        });
-    }
-
-    private @NotNull String getReplacementName(String keyPath) {
-        try {
-            return URLUtil.getName(router.getConfiguration().getUriFactory(), keyPath);
-        } catch (URISyntaxException e) {
-            log.error("Error parsing URL {}", keyPath, e);
-            throw new RuntimeException("Check!");
-        }
+    private WSDLInterceptor addAndGetWSDLInterceptor() {
+        return moveToFirstPosition(interceptors, WSDLInterceptor.class, WSDLInterceptor::new).orElseThrow();
     }
 
     private void addWebServiceExplorer() {
-        WebServiceExplorerInterceptor sui = new WebServiceExplorerInterceptor();
+        var sui = new WebServiceExplorerInterceptor();
         sui.setWsdl(wsdl);
         sui.setPortName(portName);
         interceptors.addFirst(sui);
@@ -326,7 +256,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         if (hasWSDLPublisherInterceptor())
             return;
 
-        WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
+        var wp = new WSDLPublisherInterceptor();
         wp.setWsdl(wsdl);
         wp.init(router);
         interceptors.addFirst(wp);

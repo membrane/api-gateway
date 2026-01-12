@@ -8,8 +8,9 @@ Start by looking at [10-Sample-SOAP-Service.yaml](10-Sample-SOAP-Service.yaml).
 
 Planned topics include:
 
-- SOAPProxy
 - soapTemplate
+- WSDL validation
 - More SOAP-related features
+- REST to SOAP transformation
 
 More examples are available in the examples folder.

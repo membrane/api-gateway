@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -30,13 +31,14 @@ import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.util.soap.WSDLUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
  * @topic 5. Web Services with SOAP and WSDL
  */
-@MCElement(name = "wsdlRewriter", excludeFromFlow = true)
+@MCElement(name = "wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
 
     private final static Logger log = LoggerFactory.getLogger(WSDLInterceptor.class.getName());
@@ -49,6 +51,11 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     private boolean rewriteEndpoint = true;
     private HttpClient hc;
 
+    /**
+     * Path of the service location to rewrite
+     */
+    private String path;
+
     public WSDLInterceptor() {
         name = "wsdl rewriting";
         setAppliedFlow(RESPONSE_FLOW);
@@ -58,6 +65,29 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     public void init() {
         super.init();
         hc = router.getHttpClientFactory().createClient(null);
+
+        if (path != null)
+            setPathRewriterOnWSDLInterceptor(path);
+    }
+
+    public void setPathRewriterOnWSDLInterceptor(String keypath) {
+        if (keypath == null)
+            return;
+        setPathRewriter(generatePathRewriter(keypath));
+    }
+
+    Relocator.@NotNull PathRewriter generatePathRewriter(String keypath) {
+        return path -> {
+            try {
+                if (path.contains("://")) {
+                    return new URL(new URL(path), keypath).toString();
+                }
+                return rewriteRelativeWsdlPath(path, URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), keypath));
+            } catch (URISyntaxException | MalformedURLException e) {
+                log.error("Cannot parse URL {} - {}", path, e);
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     @Override
@@ -200,8 +230,23 @@ public class WSDLInterceptor extends RelocatingInterceptor {
      * @example 4000
      */
     @MCAttribute
-    @Override
-    public void setPort(String port) {
-        super.setPort(port);
+    public void setPort(int port) {
+        super.setPort(Integer.toString(port));
+    }
+
+    /**
+     * When the wsdlRewriter is used in a SOAPProxy, the path is set to the path/uri from the SOAPProxy.
+     *
+     * @param path
+     * @description Path to use for the service location
+     * @default soapProxy/path/uri
+     */
+    @MCAttribute
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getPath() {
+        return path;
     }
 }

@@ -33,9 +33,18 @@ public class URLUtil {
 		return (path.isEmpty() ? "/" : path) + (query == null ? "" : "?" + query);
 	}
 
-	public static String getName(URIFactory uriFactory, String uri) throws URISyntaxException {
-		URI u = uriFactory.create(uri);
-		String p = u.getPath();
+	/**
+	 * Extracts and returns the name component from the path of a URI. The name
+	 * corresponds to the substring after the last '/' in the path. If no '/' is
+	 * found, the entire path is returned.
+	 *
+	 * @param uriFactory An instance of {@code URIFactory} used to create the {@code URI} object.
+	 * @param uri The URI string to process.
+	 * @return The name component extracted from the URI's path.
+	 * @throws URISyntaxException If the URI string is invalid and cannot be converted into a {@code URI}.
+	 */
+	public static String getNameComponent(URIFactory uriFactory, String uri) throws URISyntaxException {
+        var p = uriFactory.create(uri).getPath();
 		int i = p.lastIndexOf('/');
 		return i == -1 ? p : p.substring(i+1);
 	}
