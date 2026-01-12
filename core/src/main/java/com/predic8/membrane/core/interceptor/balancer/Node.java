@@ -45,7 +45,6 @@ public class Node extends AbstractXmlElement {
 	private int port;
 	private String healthUrl;
 
-	private boolean tcpCheck = false;
 	private int priority = 10;
 
 	// Initialize with a starttime
@@ -150,20 +149,6 @@ public class Node extends AbstractXmlElement {
 
 	public String getHealthUrl() {
 		return healthUrl;
-	}
-
-	/**
-	 * Sets whether a TCP check should be used for the node's health verification.
-	 *
-	 * @param tcpCheck true to enable TCP-based health checks; false to disable.
-	 */
-	@MCAttribute
-	public void setTcpCheck(boolean tcpCheck) {
-		this.tcpCheck = tcpCheck;
-	}
-
-	public boolean isTcpCheck() {
-		return tcpCheck;
 	}
 
     /**

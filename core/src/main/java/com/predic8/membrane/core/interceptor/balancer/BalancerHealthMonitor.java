@@ -34,7 +34,6 @@ import org.springframework.context.*;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.time.Duration;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
@@ -120,17 +119,16 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
     }
 
     private Status isHealthy(Node node) {
-        if (node.isTcpCheck()) {
-            return tcpHealthy(node);
+        String healthUrl = node.getHealthUrl();
+        if (healthUrl != null) {
+            try {
+                return getStatus(node, doCall(healthUrl));
+            } catch (Exception e) {
+                log.warn("Calling health endpoint failed: {}, {}", healthUrl, e.getMessage());
+                return DOWN;
+            }
         }
-
-        String url = getNodeHealthEndpoint(node);
-        try {
-            return getStatus(node, doCall(url));
-        } catch (Exception e) {
-            log.warn("Calling health endpoint failed: {}, {}", url, e.getMessage());
-            return DOWN;
-        }
+        return tcpHealthy(node);
     }
 
     private Status tcpHealthy(Node node) {
@@ -163,12 +161,6 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
         }
         log.debug("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
         return UP;
-    }
-
-    private static String getNodeHealthEndpoint(Node node) {
-        return node.getHealthUrl() != null
-                ? node.getHealthUrl()
-                : getUrl(node.getHost(), node.getPort());
     }
 
     private Exchange doCall(String url) throws Exception {
