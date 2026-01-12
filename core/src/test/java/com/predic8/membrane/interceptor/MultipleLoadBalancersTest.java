@@ -85,7 +85,7 @@ public class MultipleLoadBalancersTest {
         service1 = new MockService(2001);
         service2 = new MockService(2002);
         service11 = new MockService(2011);
-        service12 = new MockService(2026 predic8);
+        service12 = new MockService(2026);
 
         balancer = new TestRouter();
 
