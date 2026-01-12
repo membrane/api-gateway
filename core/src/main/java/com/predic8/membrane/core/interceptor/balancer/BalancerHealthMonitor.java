@@ -32,6 +32,9 @@ import org.springframework.beans.factory.*;
 import org.springframework.context.*;
 
 import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.time.Duration;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
@@ -117,12 +120,30 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
     }
 
     private Status isHealthy(Node node) {
+        if (node.isTcpCheck()) {
+            return tcpHealthy(node) ? Status.UP : DOWN;
+        }
+
         String url = getNodeHealthEndpoint(node);
         try {
             return getStatus(node, doCall(url));
         } catch (Exception e) {
             log.warn("Calling health endpoint failed: {}, {}", url, e.getMessage());
             return DOWN;
+        }
+    }
+
+    private boolean tcpHealthy(Node node) {
+        final String host = node.getHost();
+        final int port = node.getPort();
+
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), httpClientConfig.getConnection().getTimeout()); // TODO keep the httpClientConfig timeout?
+            log.debug("Node {}:{} is healthy", node.getHost(), node.getPort());
+            return true;
+        } catch (Exception e) {
+            log.warn("TCP health check failed for {}:{} - {}", host, port, e.getMessage());
+            return false;
         }
     }
 
