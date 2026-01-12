@@ -185,28 +185,18 @@ public class GenericYamlParser {
     public static <T> T createAndPopulateNode(ParsingContext<?> ctx, Class<T> clazz, JsonNode node) throws ParsingException {
         try {
             T configObj = clazz.getConstructor().newInstance();
+
+            // when this is a list, we are on a @MCElement(..., noEnvelope=true)
             if (node.isArray()) {
-                // when this is a list, we are on a @MCElement(..., noEnvelope=true)
-                Method method = getSingleChildSetter(clazz);
-                method.invoke(configObj, parseListExcludingStartEvent(ctx, node));
-                return configObj;
+                return handleNoEnvelopeList(ctx, clazz, node, configObj);
             }
 
             // scalar inline form for @MCElement(collapsed=true)
             if (isCollapsed(clazz)) {
-                if (node.isNull()) {
-                    throw new ParsingException("Collapsed element must not be null.", node);
-                }
-                if (node.isArray() || node.isObject()) {
-                    throw new ParsingException("Element is collapsed; expected an inline scalar value, not " +
-                            (node.isArray() ? "an array" : "an object") + ".", node);
-                }
-                applyCollapsedScalar(clazz, node, configObj);
-                return handlePostConstructAndPreDestroy(ctx, configObj);
+                return handleCollapsed(ctx, clazz, node, configObj);
             }
             ensureMappingStart(node);
-            if (isNoEnvelope(clazz))
-                throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
+            if (isNoEnvelope(clazz)) throw new RuntimeException("Class " + clazz.getName() + " is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.");
 
             JsonNode refNode = node.get("$ref");
             if (refNode != null) {
@@ -214,20 +204,8 @@ public class GenericYamlParser {
             }
 
             List<Method> required = findRequiredSetters(clazz);
+            populateObjectFields(ctx, clazz, node, required, configObj);
 
-            for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
-                String key = it.next();
-                if ("$ref".equals(key))
-                    continue;
-
-                try {
-                    MethodSetter methodSetter = getMethodSetter(ctx, clazz, key);
-                    required.remove(methodSetter.getSetter());
-                    methodSetter.setSetter(configObj, ctx, node, key);
-                } catch (Throwable cause) {
-                    throw new ParsingException(cause, node.get(key));
-                }
-            }
             if (!required.isEmpty())
                 throw new ParsingException("Missing required fields: " + required.stream().map(McYamlIntrospector::getSetterName).toList(), node);
             return handlePostConstructAndPreDestroy(ctx, configObj);
@@ -242,6 +220,34 @@ public class GenericYamlParser {
         } catch (Throwable cause) {
             throw new ParsingException(cause, node);
         }
+    }
+
+    private static <T> void populateObjectFields(ParsingContext<?> ctx, Class<T> clazz, JsonNode node, List<Method> required, T configObj) {
+        for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
+            String key = it.next();
+            if ("$ref".equals(key))
+                continue;
+
+            try {
+                MethodSetter methodSetter = getMethodSetter(ctx, clazz, key);
+                required.remove(methodSetter.getSetter());
+                methodSetter.setSetter(configObj, ctx, node, key);
+            } catch (Throwable cause) {
+                throw new ParsingException(cause, node.get(key));
+            }
+        }
+    }
+
+    private static <T> @NotNull T handleCollapsed(ParsingContext<?> ctx, Class<T> clazz, JsonNode node, T configObj) {
+        if (node.isNull()) throw new ParsingException("Collapsed element must not be null.", node);
+        if (node.isArray() || node.isObject()) throw new ParsingException("Element is collapsed; expected an inline scalar value, not " +(node.isArray() ? "an array" : "an object") + ".", node);
+        applyCollapsedScalar(clazz, node, configObj);
+        return handlePostConstructAndPreDestroy(ctx, configObj);
+    }
+
+    private static <T> T handleNoEnvelopeList(ParsingContext<?> ctx, Class<T> clazz, JsonNode node, T configObj) throws IllegalAccessException, InvocationTargetException {
+        getSingleChildSetter(clazz).invoke(configObj, parseListExcludingStartEvent(ctx, node));
+        return configObj;
     }
 
     private static List<BeanDefinition> extractComponentBeanDefinitions(JsonNode componentsNode) {
