@@ -25,32 +25,9 @@ A quick guide to setting up a JDBC-based API key store using PostgreSQL.
       site: [https://jdbc.postgresql.org/download/](https://jdbc.postgresql.org/download/).
     - Place it in the `lib` directory of your Membrane installation.
 
-3. **Configure `proxies.xml`:**
+3. **Take a look at the configuration in the [`apis.yaml`](apis.yaml)**
 
-    - Example configuration for PostgreSQL:
-
-   ```xml
-    <spring:bean id="datasource" class="org.apache.commons.dbcp2.BasicDataSource">
-                    <spring:property name="driverClassName" value="org.postgresql.Driver" />
-                    <spring:property name="url" value="jdbc:postgresql://localhost:5432/postgres" />
-                    <spring:property name="username" value="user" />
-                    <spring:property name="password" value="password" />
-                </spring:bean>
-   ```
-   ```xml
-    <api port="2000">
-            <apiKey>
-                <databaseApiKeyStore datasource="dataSource">
-                    <keyTable>key</keyTable>
-                    <scopeTable>scope</scopeTable>
-                </databaseApiKeyStore>
-                <headerExtractor />
-            </apiKey>
-            <target url="https://api.predic8.de"/>
-    </api>
-   ```
-
-4. **run service.proxy.sh script:**
+4. **run the membrane.sh script:**
 
 ```shell
 ./membrane.sh

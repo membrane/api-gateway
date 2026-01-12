@@ -1,4 +1,4 @@
-![Membrane Logo](distribution/media/membrane-logo-m-text.png)
+![Membrane Logo](distribution/media/membrane-logo-m-text.svg)
 
 # API Gateway
 
@@ -7,72 +7,84 @@
 
 <img src="docs/images/api-gateway-demo.gif" alt="Animated demo of Membrane API Gateway" width="800">
 
-Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy SOAP Web Services**, easily extended with powerful plugins and Java.
+Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy Web Services**, easily extended with powerful plugins.
 
-Solve even complex custom API requirements with simple configurations.
+Based on the Java platform, Membrane integrates smoothly with major enterprise technologies. Load tests show that Java provides an excellent foundation for high performance and scalability. On a 2021 MacBook Pro, Membrane handles more than 20,000 requests per second, supports up to 10,000 concurrent clients, and can host over 100,000 APIs on a single instance.
+
+The examples below demonstrate how to address a wide range of API Gateway requirements using simple configurations. Version **7.0.0 or newer** is required.
 
 **Forwarding Requests from Port 2000 to a Backend:** 
-```xml
-<api port="2000">
-  <target url="https://api.predic8.de"/>
-</api>
-```
 
-**Path Rewriting with an URI Template:**
-```xml
-<api port="2000">
-    <path>/fruit/{id}</path>
-    <target url="https://api.predic8.de/shop/v2/products/${pathParam.id}"/>
-</api>
-```
-
-**Deploy OpenAPI and enable Request Validation:** 
-```xml
-<api port="2000">
-    <openapi location="fruitshop-api.yml" validateRequests="yes"/>
-</api>
-```
-
-**YAML Configuration (beta):**
 ```yaml
 api:
   port: 2000
-  interceptors:
-    - log:
-        message: Header ${header}
   target:
     url: https://api.predic8.de
 ```
 
-See: [YAML configuration](distribution/examples/yaml-configuration#yaml-configuration)
-
-**Issue JSON Web Tokens for API Keys:**
-
-Simple implementation of a token server. A request is authenticated by API key and a JWT for the user is created, signed and returned. By changing the template you can decide whats included in the JWT.
-
-```xml
-<api port="2000">
-   <apiKey required="true">
-       <apiKeyFileStore location="keys.txt" />
-   </apiKey>
-   <request>
-       <setProperty name="scopes" value="${scopes()}"/> 
-       <template>
-           {
-              "sub": "user@example.com",
-              "aud": "order",
-              "scope": "${property.scopes}"   <!-- Scopes defined in keys.txt -->
-           }
-       </template>
-       <jwtSign>
-           <jwk location="jwk.json"/> <!-- Sign with RS256 -->
-       </jwtSign>
-   </request>
-   <return /> <!-- return token-->
-</api>
+**Path Rewriting with an URI Template:**
+```yaml
+api:
+  port: 2000
+  path:
+    uri: /fruit/{id}
+  target:
+    url: https://api.predic8.de/shop/v2/products/${pathParam.id}
 ```
 
-These are just a few examples; see the descriptions below for more.
+**Deploy OpenAPI and enable Request Validation:** 
+```yaml
+api:
+  port: 2000
+  specs:
+    - openapi:
+        location: "fruitshop-api.yml"
+        validateRequests: yes
+```
+
+**Issue JSON Web Tokens:**
+
+To issue a JWT for a user, create an API that acts as a simple token endpoint:
+
+```yaml
+api:
+  port: 2000
+  path:
+    uri: /token
+  flow:
+    - basicAuthentication:
+        fileUserDataProvider:
+          htpasswdPath: .htpasswd
+    - request:
+        - template:
+            src: |
+              {
+                "sub": "${fn.user()}"
+              }
+        - jwtSign:
+            jwk:
+              location: jwk.json
+    - return:
+        status: 200
+```
+
+Authenticated requests to '/token' return a signed JWT in which the username from Basic Authentication is used as the sub claim.
+
+```text
+{
+  "typ": "JWT",
+  "alg": "RS256"
+}
+.
+{
+  "sub": "alice",
+  "iat": 1765222877,
+  "exp": 1765223177
+}
+.hTL_0-AS8IZgiDUJ6Kg...
+```
+
+This example is intentionally minimal, but it highlights the basic building blocks: authenticate the caller, shape the token payload, and sign the result. From there, you can extend it with additional claims, custom logic, or stricter policies to implement tailored API security flows.
 
 ## API Gateway eBook
 
@@ -90,7 +102,7 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 - Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
 
 ### **API Security**
-- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm).
+- [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-api.io/docs/current/basicAuthentication.html).
 - Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
 - [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
@@ -116,14 +128,14 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 
 # Content
 
-1. [Getting Started](#Getting-Started)
-   - [Java](#java)
-   - [Docker](#docker)
-2. [Basics](#Basics) Routing, rewriting
-   - [API Definition and Configuration](#API-Definition-and-Configuration)
-   - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
+1. [Getting Started](#getting-started)
+    - [Java](#java)
+    - [Docker](#docker)
+2. [Basics](#basics) Routing, rewriting
+    - [API Definition and Configuration](#api-definition-and-configuration)
+    - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
 3. [OpenAPI Support](#openapi-support)
-   - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
+    - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
 4. [Routing](#routing)
     - [Short Circuit](#short-circuit)
     - [URL Rewriting](#url-rewriting)
@@ -144,19 +156,20 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
     - [SSL/TLS](#ssltls)
     - [JSON Web Tokens](#json-web-tokens) JWT
     - [OAuth2](#oauth2)
-      - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
-      - [Membrane as Authorization Server](#membrane-as-authorization-server)
-    - [XML and JSON Protection](#xml-and-json-protection)
-9. [Traffic Control](#Traffic-Control) Rate limiting, Load balancing
+    - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
+        - [Membrane as Authorization Server](#membrane-as-authorization-server)
+        - [XML and JSON Protection](#xml-and-json-protection)
+9. [Traffic Control](#traffic-control) Rate limiting, Load balancing
     - [Rate Limiting](#rate-limiting)
     - [Load Balancing](#load-balancing)
 10. [Legacy Web Services](#soap-web-services) SOAP and WSDL
     - [API configuration from WSDL](#api-configuration-from-wsdl)
     - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
-11. [Operation](#Operation)
-   - [Logging](#log-http)
-   - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
-   - [OpenTelemetry](#opentelemetry-integration)
+11. [Operation](#operation)
+    - [Logging](#log-http)
+    - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
+    - [OpenTelemetry](#opentelemetry-integration)
+12. [Community and professional Support](#support)
 
 # Installation
 
@@ -165,19 +178,19 @@ You can run Membrane as Docker container, standalone Java application or install
 ## Java
 
 1. **Download and extract**
-  - [Download a release](https://github.com/membrane/api-gateway/releases) and unzip it.
+    - [Download a release](https://github.com/membrane/api-gateway/releases) and unzip it.
 2. **Start the Gateway**
-  - Open a terminal in the extracted folder.
-  - Make sure Java 21 or newer is installed:
+    - Open a terminal in the extracted folder.
+    - Make sure Java 21 or newer is installed:
     ```bash
     java -version
     ```
-  - Start:
-    - **Linux/Mac:** `./membrane.sh`
-    - **Windows:** `membrane.cmd`
-4. **Access the Gateway**
-  - Open [http://localhost:2000](http://localhost:2000)
-5. **Change the Configuration**
+    - Start:
+        - **Linux/Mac:** `./membrane.sh`
+        - **Windows:** `membrane.cmd`
+3. **Access the Gateway**
+    - Open [http://localhost:2000](http://localhost:2000)
+4. **Change the Configuration**
 
    Modify the preconfigured APIs or add APIs by editing the `proxies.xml` file in the `conf` folder.
 
@@ -284,11 +297,11 @@ api:
 #### Viewing Deployed APIs
 Once configured, a list of deployed APIs is available at: [http://localhost:2000/api-docs](http://localhost:2000/api-docs)
 
-![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.png)
+![List of OpenAPI Deployments](distribution/examples/openapi/openapi-proxy/api-overview.jpg)
 
 Click on an API title in the list to open the Swagger UI for interactive exploration and testing:
 
-![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.png)
+![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.jpg)
 
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
@@ -393,7 +406,6 @@ api:
     - return:
         statusCode: 404
 ---
-# yaml-language-server: $schema=https://www.membrane-api.io/v6.3.11.json
 api:
   port: 2000
   flow:
@@ -410,14 +422,16 @@ The URLs of request can be rewritten dynamically before forwarding them to the b
 #### Example
 The following configuration rewrites requests starting with `/fruitshop` to `/shop/v2`, preserving the remainder of the path:
 
-```xml
-<api port="2000">
-    <path>/fruitshop</path>
-    <rewriter>
-        <map from="^/fruitshop(.*)" to="/shop/v2/$1"/>
-    </rewriter>
-    <target url="https://api.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - rewriter:
+       - map:
+          from: ^/fruitshop/(.*)
+          to: /shop/v2/$1
+  target:
+    url: https://api.predic8.de
 ```
 
 #### Testing
@@ -445,14 +459,16 @@ Membrane has powerful scripting features that allow to modify the desired of an 
 
 The following API executes a Groovy script during the request and the response. 
 
-```xml
-<api port="2000">
-  <groovy>
-    println "I'm executed in the ${flow} flow" 
-    println "HTTP Headers:\n${header}"
-  </groovy>
-  <target url="https://api.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - groovy:
+        src: |
+          println "I'm executed in the ${flow} flow"
+          println "HTTP Headers:\n${header}"
+  target:
+    url: https://api.predic8.de
 ```
 
 After invoking [http://localhost:2000](http://localhost:2000) you can see the following output in the console where you have started Membrane:
@@ -474,17 +490,16 @@ Content-Type: application/json
 
 You can realize a load balancer by setting the destination randomly.  
 
-```xml
-<api port="2000">
-  <request>
-    <groovy>
-      sites = ["https://api.predic8.de","https://membrane-api.io","https://predic8.de"]
-      Collections.shuffle sites
-      exchange.setDestinations(sites)
-    </groovy>
-  </request>
-  <target/> <!-- No details needed target uses destinations from exchange -->
-</api>
+```yaml
+api:
+  port: 2013
+  flow:
+    - groovy:
+        src: |
+          sites = ["https://api.predic8.de","https://membrane-api.io","https://predic8.de"]
+          Collections.shuffle sites
+          exchange.destinations = sites
+  target: {} # No details needed target uses destinations from exchange
 ```
 
 ### Creating Responses with Groovy
@@ -494,20 +509,20 @@ The `groovy` plugin in Membrane allows you to dynamically generate custom respon
 #### Example
 The following example creates a custom JSON response with a status code of `200`, a specific content type, and a custom header:
 
-```xml
-<api port="2000">
-  <groovy>
-    Response.ok() 
-      .contentType("application/json")   
-      .header("X-Foo", "bar")           
-      .body("""
-        {
-            "success": true
-        }
-        """)                             
-    .build()
-  </groovy>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - groovy:
+        src: |
+          Response.ok()
+            .contentType("application/json")
+            .header("X-Foo", "bar")
+            .body("""
+              {
+                "success": true
+              }""")
+            .build()
 ```  
 
 #### How It Works
@@ -543,20 +558,19 @@ In addition to Groovy, Membrane supports JavaScript for implementing custom beha
 #### Example
 The following example logs all HTTP headers from incoming requests and responses to the console:
 
-```xml
-<api port="2000">
-  <javascript>
-    console.log("------------ Headers: -------------");
-
-    var fields = header.getAllHeaderFields();
-    for (var i = 0; i < fields.length; i++) {
-        console.log(fields[i]);
-    }
-      
-    CONTINUE;
-  </javascript>
-  <target url="https://api.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - javascript:
+        src: |
+          console.log("------------ Headers: -------------");
+          var fields = header.getAllHeaderFields();
+          for (var i = 0; i < fields.length; i++) {
+            console.log(fields[i]);
+          }
+  target:
+    url: https://api.predic8.de
 ```  
 
 The `CONTINUE` keyword ensures that the request continues processing and is forwarded to the target URL.
@@ -565,17 +579,17 @@ When a JavaScript script returns a `Response` object as the last line of code, t
 
 The following example generates a JSON response and sends it directly to the client:
 
-```xml
-<api port="2000">
-  <javascript>
-    var body = JSON.stringify({
-      foo: 7,
-      bar: 42
-    });
-
-   Response.ok(body).contentType("application/json").build();
-  </javascript>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - javascript:
+        src: |
+          var body = JSON.stringify({
+            foo: 7,
+            bar: 42
+          });
+          Response.ok(body).contentType("application/json").build();
 ```
 
 #### Learn More
@@ -590,14 +604,19 @@ You can modify HTTP headers in requests or responses using Membrane's `setHeader
 #### Example: Adding CORS Headers
 The following configuration adds `CORS` headers to the responses received from the backend:
 
-```xml
-<api port="2000">
-    <response>
-        <setHeader name="Access-Control-Allow-Origin" value="*" />
-        <setHeader name="Access-Control-Allow-Methods" value="GET" />
-    </response>
-    <target url="https://api.predic8.de" />
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+        - setHeader:
+            name: Access-Control-Allow-Origin
+            value: "*"
+        - setHeader:
+            name: Access-Control-Allow-Methods
+            value: GET
+  target:
+    url: https://api.predic8.de
 ```
 
 ### Example: Setting Headers from JSON Body Content
@@ -607,17 +626,21 @@ Membrane allows dynamic extraction of values from the JSON body of a request or 
 #### Example Configuration
 The following example extracts the `id` and `name` fields from a JSON body and sets them as custom headers in the response:
 
-```xml
-<api port="2000">
-    <response>
-        <!-- Extract the "id" field from the JSON body and set it as the X-Product-Id header -->
-        <setHeader name="X-Product-Id" value="${jsonPath('$.id')}"/>
-        
-        <!-- Extract the "name" field from the JSON body and set it as the X-Product-Name header -->
-        <setHeader name="X-Product-Name" value="${jsonPath('$.name')}"/>
-    </response>
-    <target url="https://api.predic8.de" />
-</api>  
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+      - setHeader:
+          name: X-Product-Id
+          value: ${jsonPath('$.id')}
+          language: spel
+      - setHeader:
+          name: X-Product-Name
+          value: ${$.name}
+          language: jsonpath
+  target:
+    url: https://api.predic8.de
 ```
 
 ### Removing HTTP Headers
@@ -627,16 +650,19 @@ You can easily remove specific HTTP headers from requests or responses (or both)
 #### Example: Header Filtering
 The following configuration demonstrates how to manage headers:
 
-```xml
-<api port="2000">
-  <response>
-  <headerFilter>
-    <include>X-XSS-Protection</include> <!-- Keep the X-XSS-Protection header -->
-    <exclude>X-.*</exclude>             <!-- Remove all headers starting with "X-" except those explicitly included -->
-  </headerFilter>
-  </response>
-  <target url="https://www.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+      - headerFilter:
+          rules:
+            - include:
+                pattern: "X-XSS-Protection"
+            - exclude:
+                pattern: "X-.*"
+  target:
+    url: https://www.predic8.de
 ```  
 
 - **`<include>`:** Specifies headers to retain.
@@ -646,18 +672,21 @@ The first matching rule will be acted upon by the filter.
 
 ### Create JSON from Query Parameters
 
-```xml
-<api port="2000" method="GET">
-  <request>
-    <template contentType="application/json" pretty="yes">
-      { "answer": ${params.answer} }
-    </template>
-  </request>
-  <return/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            contentType: application/json
+            pretty: true
+            src: |
+              { "answer": ${params.answer} }
+    - return:
+        status: 200
 ```
 
-Call this API with `http://localhost:2000?answer=42` . Replace `<return.../>` with your `<target url="backend-server"/>`.
+Call this API with `http://localhost:2000?answer=42`.
 
 ## Transform JSON into TEXT, JSON or XML with Templates
 
@@ -669,56 +698,67 @@ curl -d '{"city":"Berlin"}' -H "Content-Type: application/json" "http://localhos
 
 This template will transform the JSON input into plain text:
 
-```xml
-
-<api port="2000" method="POST">
-    <request>
-        <template contentType="text/plain">
-            City: ${json.city}
-        </template>
-    </request>
-    <return statusCode="200"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            contentType: text/plain
+            src: |
+              City: ${json.city}
+        - return:
+            status: 200
 ```
 
-...into JSON:
+...into a different JSON:
 
-```xml
-
-<template contentType="application/json" pretty="true">
-    {
-    "destination": "${json.city}"
-    }
-</template>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "destination": "${json.city}"
+              }
+    - return:
+        status: 200
 ```
 
-...and into XML:
+...or into XML:
 
-```xml
-
-<template contentType="application/xml">
-    <![CDATA[
-    <places>
-        <place>${json.city}</place>
-    </places>
-    ]]>
-</template>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            contentType: application/xml
+            src: |
+              <places>
+                  <place>${json.city}</place>
+              </places>            
+    - return:
+        status: 200
 ```
 
 ### Transform XML into Text or JSON
 
-Using `setProperty` you can extract values from XML request or response bodies and store it in properties. Then the properties are available as variables inside the `template` plugin.
-plugin.
+You can use XPath to extract values from an XML message and insert them into a `template`.
 
-```xml
-
-<api port="2000">
-    <request>
-        <setProperty name="fn" value="${/person/@firstname}" language="xpath"/>
-        <template>Buenas Noches, ${property.fn}sito!</template>
-    </request>
-    <return/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - template:
+            src: |
+              Buenas noches, ${fn.xpath('/person/@firstname')}
+        - return:
+            status: 200
 ```
 
 See: [message-transformation examples](./distribution/examples/message-transformation)
@@ -727,16 +767,17 @@ See: [message-transformation examples](./distribution/examples/message-transform
 
 Use the Javascript or Groovy plugin for more powerful yet simple transformations.
 
-```xml
-
-<api port="2000">
-    <request>
-        <javascript>
-            ({ id:7, place: json.city })
-        </javascript>
-    </request>
-    <return contentType="application/json"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - javascript:
+            src: |
+              ({ id:7, place: json.city })
+    - return:
+        status: 200
+        contentType: application/json
 ```
 
 Call the API with this curl command:
@@ -749,154 +790,160 @@ curl -d '{"city":"Berlin"}' -H "Content-Type: application/json" "http://localhos
 
 This script transforms the input and adds some calculations.
 
-```xml
+```yaml
+api:
+  port: 2000
+  flow:
+    - request:
+        - javascript:
+            src: |
+              function convertDate(d) {
+                return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2);
+              }
 
-<api port="2000">
-    <request>
-        <javascript>
-
-            function convertDate(d) {
-            return d.getFullYear() + "-" + ("0"+(d.getMonth()+1)).slice(-2) + "-" + ("0"+d.getDate()).slice(-2);
-            }
-
-            ({
-            id: json.id,
-            date: convertDate(new Date(json.date)),
-            client: json.customer,
-            total: json.items.map(i => i.quantity * i.price).reduce((a,b) => a+b),
-            positions: json.items.map(i => ({
-            pieces: i.quantity,
-            price: i.price,
-            article: i.description
-            }))
-            })
-        </javascript>
-    </request>
-    <return/>
-</api>
+              ({
+                id: json.id,
+                date: convertDate(new Date(json.date)),
+                client: json.customer,
+                total: json.items.map(i => i.quantity * i.price).reduce((a,b) => a+b),
+                positions: json.items.map(i => ({
+                pieces: i.quantity,
+                price: i.price,
+                article: i.description
+              }))
+              })
+    - return:
+        status: 200
 ```
 
 See [examples/javascript](distribution/examples/scripting/javascript) for a detailed explanation. The same transformation can also be realized with [Groovy](distribution/examples/scripting/groovy)
 
 ## JSON and XML Beautifier
 
-You can beautify a JSON or XML using the `<beautifier/>` plugin.
+Use the `beautifier` to pretty print JSON or XML.
 
-```xml
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+        - beautifier: {}
+        - template:
+            contentType: application/json
+            src: |
+              { "foo": { "bar": { "baz": 99 }}}
+    - return:
+        status: 200
+```
 
-<api port="2000">
-    <template contentType="application/xml"><![CDATA[
-        <foo><bar>baz</bar></foo>
-    ]]></template>
+Result:
 
-    <beautifier/>
-
-    <return statusCode="200"/>
-</api>
-```  
-
-Returns:
-
-```xml
-
-<foo>
-    <bar>baz</bar>
-</foo>
+```json
+{
+  "foo" : {
+    "bar" : {
+      "baz" : 99
+    }
+  }
+}
 ```
 
 # Conditionals with if
 
-Replace `5XX` error messages from a backend:
+This example shows how to intercept error responses from a backend and replace them with a custom response.
 
-```xml
-<api port="2000">
-  <response>
-    <if test="statusCode matches '5\d\d'" language="SpEL">
-      <static>
-        Error!
-      </static>
-    </if>
-  </response>
-  <return/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - response:
+        - if:
+            test: statusCode >= 500
+            language: spel
+            flow:
+              - static:
+                  src: Failure!
+    - target:
+        url: https://httpbin.org/status/500
 ```
 
 # Security
 
-Membrane offers lots of security features to protect backend servers.
+Membrane offers all kinds of security features to protect APIs and backend servers.
 
 ## API Keys
 
-You can define APIs keys directly in your configuration, and Membrane will validate incoming requests against them.
+API keys can be defined in the configuration, loaded from a file, or stored in a database. Requests are authenticated by validating the provided API key against these sources.
 
-### Example Configuration
-The following configuration secures the `Fruitshop API` by validating a key provided as a query parameter:
+You can also define permissions using scopes in OpenAPI and enforce them with API keys, OAuth 2.0, or JWT-based authentication.
 
-```xml
-<api port="2000">
-    <apiKey>
-        <!-- Define valid API keys -->
-        <keys>
-            <secret value="abc123" />
-            <secret value="secret" />
-            <secret value="Paris2025" />
-        </keys>
-        
-        <!-- Extract the API key from the query parameter -->
-        <queryParamExtractor paramName="api-key" />
-    </apiKey>
-    <target url="https://api.predic8.de" />
-</api>
-```  
+This configuration secures all APIs globally. Alternatively, API keys can be defined for individual APIs only.
 
-### Testing the Configuration
-To test the configuration, pass a valid API key in the query string:
-
-```bash
-curl "http://localhost:2000/shop/v2/products/4?api-key=abc123"
-```  
-
-If the key is invalid or missing, Membrane denies access and returns an error response (HTTP 401 Unauthorized).
+```yaml
+global:
+  - apiKey:
+      stores:
+        - simple:
+            - secret:
+                value: aed8bcc4-7c83-44d5-8789-21e4024ac873
+            - secret:
+                value: 08f121fa-3cda-49c6-90db-1f189ff80756
+      extractors:
+        - headerExtractor:
+            headerName: X-Api-Key
+```
 
 ### Advanced Use Cases
-For more complex setups, such as API keys in the HTTP header, role-based access control (RBAC) or file-based key storage, see the [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md).
+
+More advanced scenarios are supported, including:
+
+- API keys in headers, query parameters or at any other location using expressions.
+- Role-based access control (RBAC) with fine-grained permissions.
+- OpenAPI-defined permissions.
+
+See the [API Key Plugin Examples](./distribution/examples/security/api-key/rbac/README.md) for detailed configurations.
 
 ## JSON Web Tokens
 
-The API below only allows requests with valid tokens from Microsoft's Azure AD. You can also use the JWT validator for other identity providers.
+The API below only allows requests that present a valid JSON Web Token issued by Microsoft Azure Entra ID. The JWT validator can also be used with other identity providers.
 
-```xml
-<api port="8080">
-  <jwtAuth expectedAud="api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0">
-    <jwks jwksUris="https://login.microsoftonline.com/common/discovery/keys"/>
-  </jwtAuth>
-  <target url="https://your-backend"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - jwtAuth:
+        expectedAud: api://2axxxx16-xxxx-xxxx-xxxx-faxxxxxxxxf0
+        jwks:
+          jwksUris: https://login.microsoftonline.com/common/discovery/keys
+  target:
+    url: https://your-backend
 ```
 
 ## OAuth2
 
 ### Secure APIs with OAuth2
 
-Use OAuth2/OpenID to secure endpoints against Google, Azure AD, GitHub, Keycloak or Membrane authentication servers.
+Use OAuth2/OpenID to secure endpoints against Google, Azure Entra ID, GitHub, Keycloak or Membrane Authentication Servers.
 
-```xml
-<api port="2001">
-  <oauth2Resource2>
-    <membrane src="https://accounts.google.com"
-              clientId="INSERT_CLIENT_ID"
-              clientSecret="INSERT_CLIENT_SECRET"
-              scope="email profile"
-              subject="sub"/>
-  </oauth2Resource2>
-  <groovy>
-    // Get email from OAuth2 and forward it to the backend
-    def oauth2 = exc.properties.'membrane.oauth2'
-    header.setValue('X-EMAIL',oauth2.userinfo.email)
-    CONTINUE
-  </groovy>
-  <target url="https://backend"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - oauth2Resource2:
+        membrane:
+          src: http://localhost:8000
+          clientId: abc
+          clientSecret: def
+          scope: openid profile
+          claims: username
+          claimsIdt: sub
+    - request:
+        # Forward the authenticated user’s email to the backend in an HTTP header.
+        - setHeader:
+            name: X-EMAIL
+            value: ${property['membrane.oauth2'].userinfo['email']}
+  target:
+    url: http://backend
 ```
 
 Try the tutorial [OAuth2 with external OpenID Providers](https://membrane-soa.org/api-gateway-doc/current/oauth2-openid.html)
@@ -1023,7 +1070,6 @@ Limit the number of incoming requests:
 Distribute workload to multiple backend nodes. [See the example](distribution/examples/loadbalancing)
 
 ```xml
-
 <api port="8080">
     <balancer name="balancer">
         <clusters>
@@ -1059,24 +1105,31 @@ Integrate legacy services.
 
 ## API configuration from WSDL
 
-SOAP proxies configure themselves by analysing WSDL:
+Membrane reads the WSDL and automatically generates a SOAP proxy.
 
-```xml
-
-<soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl"/>
+```yaml
+soapProxy:
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
 ```
+
+After startup, Membrane exposes:
+
+- A SOAP endpoint at http://localhost:2000/city-service
+- A WSDL at http://localhost:2000/city-service?wsdl
 
 ## Message Validation against WSDL and XSD
 
 The _validator_ checks SOAP messages against a WSDL document including referenced XSD schemas.
 
-```xml
-
-<soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
-    <validator/>
-</soapProxy>
+```yaml
+soapProxy:
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
+  flow:
+    # Validates SOAP messages against the WSDL and XSDs
+    - validator: {}
 ```
-
 
 # Operation
 
@@ -1106,8 +1159,11 @@ This API will expose metrics for Prometheus at [http://localhost:2000/metrics](h
   <prometheus />
 </api>
 ```
+
+![Grafana Dashborad for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
+Grafana dashboard from Membrane metrics.
  
-See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus).
+See [Prometheus and Grafana example](distribution/examples/monitoring-tracing/prometheus-grafana).
 
 ### OpenTelemetry Integration
 Membrane supports integration with **OpenTelemetry** traces using the `openTelemetry` plugin and the `W3C` propagation standard. This enables detailed tracing of requests across Membrane and backend services.
@@ -1128,3 +1184,15 @@ The configuration below shows Membrane forwarding requests to a backend, while e
 ```  
 
 For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/monitoring-tracing/opentelemetry).
+
+# Support
+
+## Community Support
+
+To get support from our community, please post your questions to our [Discussions](https://github.com/membrane/api-gateway/discussions) page @GitHub.
+
+If you find a bug, please report it using [GitHub Issues](https://github.com/membrane/api-gateway/issues). Please provide a minimal example that reproduces the issue and the version of Membrane you are using.
+
+## Enterprise-grade Support
+
+See [commercial support options and pricing](https://www.membrane-api.io/api-gateway-pricing.html).

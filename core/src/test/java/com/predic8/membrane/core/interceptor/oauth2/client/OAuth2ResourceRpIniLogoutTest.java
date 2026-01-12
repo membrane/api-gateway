@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
@@ -30,6 +29,7 @@ import com.predic8.membrane.core.interceptor.oauth2client.rf.FormPostGenerator;
 import com.predic8.membrane.core.interceptor.session.InMemorySessionManager;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import org.jetbrains.annotations.NotNull;
@@ -59,12 +59,12 @@ import static org.junit.jupiter.api.Assertions.*;
 public class OAuth2ResourceRpIniLogoutTest {
 
     protected final BrowserMock browser = new BrowserMock();
-    protected HttpRouter mockAuthServer;
+    protected Router mockAuthServer;
     protected final ObjectMapper om = new ObjectMapper();
     final int serverPort = 3062;
     private final String serverHost = "localhost";
     private final int clientPort = 31337;
-    private HttpRouter oauth2Resource;
+    private Router oauth2Resource;
     private final AtomicBoolean isLoggedOutAtOP = new AtomicBoolean(false);
     private RsaJsonWebKey rsaJsonWebKey;
     private String jwksResponse;
@@ -81,14 +81,14 @@ public class OAuth2ResourceRpIniLogoutTest {
     public void init() throws IOException, JoseException {
         createKey();
 
-        mockAuthServer = new HttpRouter();
-        mockAuthServer.setHotDeploy(false);
-        mockAuthServer.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy());
+        mockAuthServer = new TestRouter();
+        mockAuthServer.getConfiguration().setHotDeploy(false);
+        mockAuthServer.add(getMockAuthServiceProxy());
         mockAuthServer.start();
 
-        oauth2Resource = new HttpRouter();
-        oauth2Resource.setHotDeploy(false);
-        oauth2Resource.getRuleManager().addProxyAndOpenPortIfNew(getConfiguredOAuth2Resource());
+        oauth2Resource = new TestRouter();
+        oauth2Resource.getConfiguration().setHotDeploy(false);
+        oauth2Resource.add(getConfiguredOAuth2Resource());
         oauth2Resource.start();
     }
 

@@ -14,29 +14,29 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.JsonPath;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
+import com.fasterxml.jackson.databind.*;
+import com.jayway.jsonpath.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
-import com.predic8.membrane.core.security.SecurityScheme;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.security.*;
+import com.predic8.membrane.core.util.xml.*;
+import com.predic8.membrane.core.util.xml.parser.*;
+import org.slf4j.*;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
+import javax.xml.xpath.*;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Predicate;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static java.lang.System.getenv;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Collections.*;
+import static java.util.Objects.*;
 
 /**
  * Place to share built-in functions between SpEL and Groovy.
@@ -47,6 +47,9 @@ public class CommonBuiltInFunctions {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private static final XPathFactory xPathFactory = XPathFactory.newInstance();
+    private static final XmlParser parser = HardenedXmlParser.getInstance();
+
     public static Object jsonPath(String jsonPath, Message msg) {
         try {
             return JsonPath.read(objectMapper.readValue(msg.getBodyAsStringDecoded(), Map.class), jsonPath);
@@ -55,9 +58,25 @@ public class CommonBuiltInFunctions {
         }
     }
 
+    public static String xpath(String xpath, Message message) {
+        XPath xPath = xPathFactory.newXPath();
+
+        // TODO: Leave the comment in till the XML namespace support is realized!
+        // - When there is the new registry use it to obtain the XMLConfig.
+        //        if (xmlConfig != null && xmlConfig.getNamespaces() != null) {
+        //            xPath.setNamespaceContext(xmlConfig.getNamespaces().getNamespaceContext());
+        //        }
+
+        try {
+            return xPath.evaluate(xpath, parser.parse(XMLUtil.getInputSource(message)), XPathConstants.STRING).toString();
+        } catch (XPathExpressionException ignored) {
+            return null;
+        }
+    }
+
     public static String user(Exchange exchange) {
-        List<SecurityScheme> schemes = exchange.getProperty(SECURITY_SCHEMES, List.class );
-        for (SecurityScheme scheme :schemes) {
+        List<SecurityScheme> schemes = exchange.getProperty(SECURITY_SCHEMES, List.class);
+        for (SecurityScheme scheme : schemes) {
             if (scheme instanceof BasicHttpSecurityScheme basic) {
                 return basic.getUsername();
             }
@@ -100,7 +119,7 @@ public class CommonBuiltInFunctions {
 
     public static boolean isBearerAuthorization(Exchange exc) {
         return exc.getRequest().getHeader().contains(AUTHORIZATION)
-                && exc.getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
+               && exc.getRequest().getHeader().getFirstValue(AUTHORIZATION).startsWith("Bearer");
     }
 
     private static List<String> getSchemeScopes(Predicate<SecurityScheme> predicate, Exchange exc) {
@@ -151,6 +170,12 @@ public class CommonBuiltInFunctions {
             log.info("Failed to resolve bean with name '{}'", beanName);
             return -1;
         }
+    }
+
+    public static String env(String name) {
+        if (name == null || name.isBlank())
+            return null;
+        return getenv(name);
     }
 
 }

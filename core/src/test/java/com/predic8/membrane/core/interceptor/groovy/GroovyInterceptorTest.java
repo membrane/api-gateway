@@ -14,9 +14,9 @@
 package com.predic8.membrane.core.interceptor.groovy;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 import org.springframework.context.*;
 
@@ -35,12 +35,12 @@ public class GroovyInterceptorTest {
 
 	private final ApplicationContext applicationContext = mock(ApplicationContext.class);
 
-	HttpRouter router;
+	DummyTestRouter router;
 	Exchange exc;
 
 	@BeforeEach
 	void setup() {
-		router = new HttpRouter();
+		router = new DummyTestRouter();
 		router.setApplicationContext(applicationContext);
 		when(applicationContext.getBean("abc")).thenReturn("OK");
 		exc = new Exchange(null);

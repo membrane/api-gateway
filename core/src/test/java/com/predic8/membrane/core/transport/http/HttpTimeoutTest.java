@@ -15,11 +15,12 @@
 package com.predic8.membrane.core.transport.http;
 
 import com.google.common.base.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -34,7 +35,7 @@ public class HttpTimeoutTest {
 
     public final int BACKEND_DELAY_MILLIS = 300;
 
-    HttpRouter slowBackend, proxyRouter;
+    Router slowBackend, proxyRouter;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -42,26 +43,41 @@ public class HttpTimeoutTest {
         setupSlowBackend();
     }
 
-    private void setupMembrane() {
+    @AfterEach
+    public void tearDown() {
+        slowBackend.stop();
+        proxyRouter.stop();
+    }
+
+    private void setupMembrane() throws IOException {
         HttpClientConfiguration hcc = new HttpClientConfiguration();
         hcc.getConnection().setSoTimeout(1);
-        hcc.setMaxRetries(1);
+        hcc.getRetryHandler().setRetries(1);
 
-        proxyRouter = new HttpRouter();
-        proxyRouter.setHotDeploy(false);
-        proxyRouter.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(hcc);
-        ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*",
-                "*", ".*", 3023), "localhost", 3022);
-        proxyRouter.getRules().add(sp2);
+        proxyRouter = new TestRouter();
+        ServiceProxy sp2 = getServiceProxy(3023, "localhost", 3022);
+        proxyRouter.add(sp2);
         proxyRouter.start();
+        var client = proxyRouter.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
+        client.setHttpClientConfig(hcc);
+        client.init(); // Copies the config into the HttpClient. It is needed to call because router.start() above already called init()
+    }
+
+    private static @NotNull ServiceProxy getServiceProxy(int port, String localhost, int targetPort) {
+        return new ServiceProxy(new ServiceProxyKey("*",
+                "*", ".*", port), localhost, targetPort);
     }
 
     private void setupSlowBackend() throws Exception {
-        slowBackend = new HttpRouter();
-        slowBackend.setHotDeploy(false);
-        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("*",
-                "*", ".*", 3022), "", -1);
-        sp.getFlow().add(new AbstractInterceptor(){
+        slowBackend = new TestRouter();
+        ServiceProxy sp = getServiceProxy(3022, "", -1);
+        sp.getFlow().add(getHandler());
+        slowBackend.add(sp);
+        slowBackend.start();
+    }
+
+    private @NotNull AbstractInterceptor getHandler() {
+        return new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
                 try {
@@ -77,21 +93,13 @@ public class HttpTimeoutTest {
                 exc.setResponse(ok("OK.").build());
                 return RETURN;
             }
-        });
-        slowBackend.getRuleManager().addProxyAndOpenPortIfNew(sp);
-        slowBackend.init();
-    }
-
-    @AfterEach
-    public void tearDown() {
-        slowBackend.stop();
-        proxyRouter.stop();
+        };
     }
 
     @Test
     void httpTimeout() throws Exception {
         HttpClientConfiguration hcc = new HttpClientConfiguration();
-        hcc.setMaxRetries(1);
+        hcc.getRetryHandler().setRetries(1);
 
         Stopwatch watch = createStarted();
 
@@ -100,8 +108,6 @@ public class HttpTimeoutTest {
             client.call(exc);
 
             assertEquals(500, exc.getResponse().getStatusCode());
-            System.out.println(exc.getResponse());
-            System.out.println(exc.getResponse().getBodyAsStringDecoded());
         }
 
         watch.stop();

@@ -14,11 +14,11 @@
 package com.predic8.membrane.core.interceptor.flow.choice;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.router.*;
 
 import java.util.*;
 
@@ -42,7 +42,7 @@ abstract class InterceptorContainer {
     }
 
     private void handleInvocationProblemDetails(Exchange exc, Exception e, Router router) {
-        internal(router.isProduction(),"interceptor-container")
+        internal(router.getConfiguration().isProduction(),"interceptor-container")
             .detail("Error invoking plugin.")
             .exception(e)
             .buildAndSetResponse(exc);

@@ -23,7 +23,7 @@ import com.predic8.membrane.annot.Required;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.*;
 
 /**
  * @explanation <p>
@@ -37,7 +37,7 @@ import com.predic8.membrane.core.Router;
  *              provider could verify the user, the login attempt fails.
  *              </p>
  */
-@MCElement(name="unifyingUserDataProvider", topLevel=false, noEnvelope = true)
+@MCElement(name="unifyingUserDataProvider", component =false, noEnvelope = true)
 public class UnifyingUserDataProvider implements UserDataProvider {
 
 	private List<UserDataProvider> userDataProviders = new ArrayList<>();

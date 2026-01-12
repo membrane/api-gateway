@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;
@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @description Caching User Data provider caches previous successful logins in order to make authentication faster
  */
-@MCElement(name="cachingUserDataProvider", topLevel=false)
+@MCElement(name="cachingUserDataProvider", component =false)
 public class CachingUserDataProvider implements UserDataProvider {
 
     private static final Logger log = LoggerFactory.getLogger(CachingUserDataProvider.class.getName());

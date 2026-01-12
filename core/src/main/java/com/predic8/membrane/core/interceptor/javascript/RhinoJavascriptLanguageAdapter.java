@@ -16,9 +16,9 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.lang.javascript.*;
+import com.predic8.membrane.core.router.*;
 
 import javax.script.*;
 
@@ -31,7 +31,7 @@ public class RhinoJavascriptLanguageAdapter extends LanguageAdapter {
 
     @Override
     public ProblemDetails getProblemDetails(Exception e) {
-        ProblemDetails pd = ProblemDetails.internal(router.isProduction(),"javascript");
+        ProblemDetails pd = ProblemDetails.internal(router.getConfiguration().isProduction(),"javascript");
         if (e.getCause() instanceof ScriptException se) {
             pd.internal("column", se.getColumnNumber() + 1);
             pd.internal("line", se.getLineNumber() - preScriptLineLength + 1);

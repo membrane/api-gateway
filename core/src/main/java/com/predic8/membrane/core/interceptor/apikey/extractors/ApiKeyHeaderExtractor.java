@@ -22,7 +22,6 @@ import java.util.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
 
 /**
- * @deprecated Set an expression like ${header['api']} on apiKey
  * @description Extracts an API key from a specific HTTP request header. By default, the header name
  * is <code>X-Api-Key</code>. If the header is present, its first value is returned as the API key.
  * <p>
@@ -36,7 +35,7 @@ import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
  * </apiKey></code></pre>
  * @topic 3. Security and Validation
  */
-@MCElement(name="headerExtractor", topLevel = false)
+@MCElement(name="headerExtractor", component = false)
 public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
 
     private HeaderName headerName = new HeaderName("X-Api-Key");

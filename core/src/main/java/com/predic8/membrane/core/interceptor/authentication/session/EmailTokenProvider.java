@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.floreysoft.jmte.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.router.*;
 import jakarta.mail.*;
 import jakarta.mail.Message.*;
 import jakarta.mail.internet.*;
@@ -51,7 +51,7 @@ import static java.nio.charset.StandardCharsets.*;
  *              will be replaced by the numeric token value.
  *              </p>
  */
-@MCElement(name="emailTokenProvider", topLevel=false)
+@MCElement(name="emailTokenProvider", component =false)
 public class EmailTokenProvider extends NumericTokenProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(EmailTokenProvider.class.getName());

@@ -81,23 +81,9 @@ membrane.cmd
 - The interceptor is packaged as a `.jar` file using Maven.
 - The compiled `.jar` is automatically copied to the `lib` directory of Membrane API Gateway during the `package` phase.
 
-### Configuring the Interceptor in `proxies.xml`
+### Configuring the Interceptor
 
-To make the interceptor active, register it in `proxies.xml` as a Spring bean:
-```xml
-<spring:bean id="staxInterceptor" class="com.predic8.myInterceptor.StaxConverterInterceptor" />
-```
-
-Apply the interceptor to API requests by referencing the bean inside the `<request>` block:
-```xml
-<api name="stax-api" port="2000">
-  <request>
-    <interceptor refid="staxInterceptor"/>
-  </request>
-  <beautifier />
-  <echo/>
-</api>
-```
+See: `apis.yaml`
 
 ### Interceptor Logic
 - **Request Interception:** When a request is received, the interceptor inspects the XML payload.

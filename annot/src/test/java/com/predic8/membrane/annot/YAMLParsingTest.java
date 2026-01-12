@@ -14,12 +14,13 @@
 
 package com.predic8.membrane.annot;
 
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.annot.util.CompilerHelper;
 import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
@@ -33,7 +34,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo")
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
         }
         """);
@@ -54,7 +55,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo")
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             public String attr;
         
@@ -87,7 +88,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo")
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -103,7 +104,7 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child1", topLevel=false)
+        @MCElement(name="child1", component=false)
         public class Child1Element {
         }
         """);
@@ -126,7 +127,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo")
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
         }
         """);
@@ -151,7 +152,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo")
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -167,7 +168,7 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child1", topLevel=false)
+        @MCElement(name="child1", component=false)
         public class Child1Element {
             Child2Element child;
         
@@ -183,7 +184,7 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child2", topLevel=false)
+        @MCElement(name="child2", component=false)
         public class Child2Element {
         }
         """);
@@ -207,7 +208,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo")
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -237,14 +238,14 @@ public class YAMLParsingTest {
                 this.child = child;
             }
         
-            @MCElement(name="child2", topLevel=false)
+            @MCElement(name="child2", component=false)
             public static class Child2Element {
                 public String attr;
-            
+        
                 public String getAttr() {
                     return attr;
                 }
-            
+        
                 @MCAttribute
                 public void setAttr(String attr) {
                     this.attr = attr;
@@ -271,12 +272,68 @@ public class YAMLParsingTest {
     }
 
     @Test
+    public void noEnvelope() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="demo", noEnvelope=true, topLevel=true, component=false)
+        public class DemoElement {
+            List<Child1Element> children;
+        
+            public List<Child1Element> getChildren() {
+                return children;
+            }
+        
+            @MCChildElement
+            public void setChildren(List<Child1Element> children) {
+                this.children = children;
+            }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="child1")
+        public class Child1Element {
+            public String attr;
+        
+            public String getAttr() {
+                return attr;
+            }
+        
+            @MCAttribute
+            public void setAttr(String attr) {
+                this.attr = attr;
+            }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        assertStructure(
+                parseYAML(result, """
+                demo:
+                  - child1:
+                        attr: here
+                  - child1:
+                        attr: here2
+                """),
+                clazz("DemoElement",
+                        property("children", list(
+                                clazz("Child1Element",
+                                        property("attr", value("here"))),
+                                clazz("Child1Element",
+                                        property("attr", value("here2")))))));
+    }
+
+    @Test
     public void nestedListOfChildsWithAttr2() {
         var sources = splitSources(MC_MAIN_DEMO + """
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="outer")
+        @MCElement(name="outer", topLevel=true, component=false)
         public class OuterElement {
             List<DemoElement> child;
         
@@ -323,7 +380,7 @@ public class YAMLParsingTest {
                 this.child = child;
             }
         
-            @MCElement(name="child2", mixed=true, topLevel=false)
+            @MCElement(name="child2", mixed=true, component=false)
             public static class Child2Element {
                 public String attr;
                 public String content;
@@ -377,7 +434,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo")
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             Child1Element child;
         
@@ -393,13 +450,13 @@ public class YAMLParsingTest {
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="child1", topLevel=false)
+        @MCElement(name="child1", component=false)
         public class Child1Element {
         }
         ---
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
-        @MCElement(name="demo2")
+        @MCElement(name="demo2", topLevel=true, component=false)
         public class Demo2Element {
         }
         ---
@@ -427,7 +484,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         import java.util.List;
-        @MCElement(name="demo")
+        @MCElement(name="demo", topLevel=true, component=false)
         public class DemoElement {
             ChildElement child;
         
@@ -475,7 +532,6 @@ public class YAMLParsingTest {
         }
     }
 
-    @Disabled("This test currently fails, but because of the wrong reason. Disabling it.")
     @Test
     public void errorInListItemUniqueness() {
         var sources = splitSources(MC_MAIN_DEMO + """
@@ -533,9 +589,73 @@ public class YAMLParsingTest {
         } catch (RuntimeException e) {
             YamlSchemaValidationException e2 = (YamlSchemaValidationException) getCause(e);
             assertEquals(1, e2.getErrors().size());
-            assertEquals("/demo: property 'errorHere' is not defined in the schema and the schema does not allow additional properties",
+            assertEquals(": property 'demo' is not defined in the schema and the schema does not allow additional properties",
                     e2.getErrors().getFirst().toString());
         }
+    }
+
+    @Test
+    public void postConstructAndPreDestroy() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="root", topLevel=true, component=false)
+        public class DemoElement {
+            ChildElement child;
+        
+            public ChildElement getChild() { return child; }
+            @MCChildElement
+            public void setChild(ChildElement child) { this.child = child; }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import jakarta.annotation.*;
+        import static org.junit.jupiter.api.Assertions.assertEquals;
+        @MCElement(name="child")
+        public class ChildElement {
+            int value = 0;
+            public int getValue() {
+                return value; 
+            }
+        
+            @PostConstruct
+            public void afterPropertiesSet() throws Exception {
+                assertEquals(0, value);
+                value = 1;
+            }
+            @PreDestroy
+            public void destroy() throws Exception {
+                assertEquals(1, value);
+                value = 2;
+            }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        BeanRegistry br = parseYAML(result, """
+                root:
+                    child: {}
+                """);
+
+        assertStructure(
+                br,
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(1))))));
+
+        List<Object> beans = br.getBeans(); // 'list of beans' must be retrieved before closing the context
+
+        br.close();
+
+        assertStructure(
+                beans,
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(2))))));
+
     }
 
     private Throwable getCause(Throwable e) {

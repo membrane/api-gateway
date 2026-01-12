@@ -15,8 +15,8 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.registration.SecurityUtils;
+import com.predic8.membrane.core.router.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.annot.Required;
@@ -26,6 +26,9 @@ import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.*;
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.isHashedPassword;
 
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {
@@ -44,11 +47,9 @@ public class JdbcUserDataProvider implements UserDataProvider {
         getDatasourceIfNull();
 
         try {
-            createTableIfNeeded();
+            createTableIfNeeded(); // @todo: works with postgres but prints stacktrace and warning
         } catch (SQLException e) {
-            e.printStackTrace();
-            log.error("Something went wrong at jdbcUserDataProvider table creation");
-            log.error(e.getMessage());
+            log.warn("Error creating table.",e);
         }
     }
 
@@ -122,11 +123,10 @@ public class JdbcUserDataProvider implements UserDataProvider {
             log.error(e.getMessage());
         }
 
-        if (result != null && result.size() > 0) {
+        if (result != null && !result.isEmpty()) {
             String passwordFromDB = result.get(getPasswordColumnName().toLowerCase());
-            if (!SecurityUtils.isHashedPassword(password))
-                password = SecurityUtils.createPasswdCompatibleHash(SecurityUtils.extractMagicString(passwordFromDB), password, SecurityUtils.extractSalt(passwordFromDB));
-
+            if (!isHashedPassword(password) && isHashedPassword(passwordFromDB))
+                password = createPasswdCompatibleHash(extractMagicString(passwordFromDB), password, extractSalt(passwordFromDB));
             if (username.equals(result.get(getUserColumnName().toLowerCase())) && password.equals(passwordFromDB))
                 return result;
         }

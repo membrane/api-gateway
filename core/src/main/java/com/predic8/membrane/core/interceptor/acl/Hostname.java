@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,6 +104,6 @@ public class Hostname extends AbstractClientAddress {
 	@Override
 	public void init(Router router) {
 		super.init(router);
-		reverseDNS = router.getTransport().isReverseDNS();
+		reverseDNS = router.getTransport() != null && router.getTransport().isReverseDNS();
 	}
 }

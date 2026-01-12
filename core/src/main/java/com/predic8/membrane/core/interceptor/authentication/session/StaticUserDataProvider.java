@@ -13,16 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCOtherAttributes;
-import com.predic8.membrane.core.Router;
-import org.apache.commons.codec.digest.Crypt;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
+import org.apache.commons.codec.digest.*;
 
-import java.security.SecureRandom;
 import java.util.*;
-import java.util.regex.Pattern;
+import java.util.regex.*;
+
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.createPasswdCompatibleHash;
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.isHashedPassword;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
@@ -44,8 +43,6 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	private List<User> users = new ArrayList<>();
 	private Map<String, User> usersByName = new HashMap<>();
-	private SecureRandom random = new SecureRandom();
-	private int saltByteSize = 128;
 
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {
@@ -66,7 +63,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 			String algo = userHashSplit[1];
 			String salt = userHashSplit[2];
 			try {
-				pw = createPasswdCompatibleHash(algo,postDataPassword,salt);
+				pw = createPasswdCompatibleHash(algo, postDataPassword, salt);
 			} catch (Exception e) {
 				throw new RuntimeException(e.getMessage());
 			}
@@ -80,23 +77,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		return userAttributes.getAttributes();
 	}
 
-	public boolean isHashedPassword(String postDataPassword) {
-		String[] split = postDataPassword.split(Pattern.quote("$"));
-		if (split.length != 4)
-			return false;
-		if (!split[0].isEmpty())
-			return false;
-		if (split[3].length() < 20)
-			return false;
-		// Check if second part is a valid hex
-		return Pattern.matches("\\$([^$]+)\\$([^$]+)\\$.+", postDataPassword);
-	}
-
-	private String createPasswdCompatibleHash(String algo, String password, String salt) {
-		return Crypt.crypt(password, "$" + algo + "$" + salt);
-	}
-
-	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
+	@MCElement(name="user", component =false, id="staticUserDataProvider-user")
 	public static class User {
 		final Map<String, String> attributes = new HashMap<>();
 
@@ -136,7 +117,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		}
 
 		/**
-		 * @description The user's phone number (if used in combination with the {@link TelekomSMSTokenProvider}).
+		 * @description The user's phone number
 		 */
 		@MCAttribute
 		public void setSms(String value) {

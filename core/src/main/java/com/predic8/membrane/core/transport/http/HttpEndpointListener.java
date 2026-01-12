@@ -17,11 +17,9 @@ package com.predic8.membrane.core.transport.http;
 import com.predic8.membrane.core.transport.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.text.*;
 import org.slf4j.Logger;
 import org.slf4j.*;
 
-import javax.annotation.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -46,7 +44,6 @@ public class HttpEndpointListener extends Thread {
     private final KeySetView<Socket, Boolean> idleSockets = ConcurrentHashMap.newKeySet();
     private final KeySetView<Socket, Boolean> openSockets = ConcurrentHashMap.newKeySet();
     private final ConcurrentHashMap<InetAddress, ClientInfo> ipConnectionCount = new ConcurrentHashMap<>();
-    private TimerManager timerManager; // a TimerManager we have created ourselves
 
     private volatile boolean closed;
 
@@ -74,15 +71,13 @@ public class HttpEndpointListener extends Thread {
         }
     }
 
-    public HttpEndpointListener(IpPort p, HttpTransport transport, SSLProvider sslProvider, @Nullable TimerManager timerManager) throws IOException {
+    public HttpEndpointListener(IpPort p, HttpTransport transport, SSLProvider sslProvider) throws IOException {
         this.transport = transport;
         this.sslProvider = sslProvider;
         try {
             serverSocket = getServerSocket(p);
 
-            if (timerManager == null)
-                timerManager = this.timerManager = new TimerManager();
-            timerManager.schedulePeriodicTask(new TimerTask() {
+            transport.getRouter().getTimerManager().schedulePeriodicTask(new TimerTask() {
                 @Override
                 public void run() {
                     ipConnectionCount.entrySet().removeIf(entry -> {
@@ -211,8 +206,6 @@ public class HttpEndpointListener extends Thread {
                 log.error("Error closing connection to {}", s.getRemoteSocketAddress());
             }
         }
-        if (timerManager != null)
-            timerManager.shutdown();
         return openSockets.isEmpty();
     }
 

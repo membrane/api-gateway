@@ -39,7 +39,7 @@ import static java.util.Locale.US;
  * </p>
  * @topic 6. Misc
  */
-@MCElement(name = "rewriter", noEnvelope = true, topLevel = false)
+@MCElement(name = "rewriter", noEnvelope = true, component = false)
 public class RewriteInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
@@ -50,7 +50,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         REDIRECT_PERMANENT,
     }
 
-    @MCElement(name = "map", topLevel = false, id = "rewriter-map")
+    @MCElement(name = "map", component = false, id = "rewriter-map")
     public static class Mapping {
         public String to;
         public String from;
@@ -149,7 +149,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         ListIterator<String> it = exc.getDestinations().listIterator();
         while (it.hasNext()) {
             String dest = it.next();
-            String pathQuery = getPathQueryOrSetError(router.getUriFactory(), dest, exc);
+            String pathQuery = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), dest, exc);
             if (pathQuery == null)
                 return RETURN;
 
@@ -189,7 +189,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
         if (mapping != null && mapping.do_ == REWRITE) {
             String newDest = replace(exc.getRequest().getUri(), mapping);
             if (newDest.contains("://")) {
-                newDest = getPathQueryOrSetError(router.getUriFactory(), newDest, exc);
+                newDest = getPathQueryOrSetError(router.getConfiguration().getUriFactory(), newDest, exc);
                 if (newDest == null)
                     return RETURN;
             }

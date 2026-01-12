@@ -16,13 +16,14 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
+import java.net.*;
+
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,14 +37,13 @@ public class OpenAPI31Test {
     final Exchange exc = new Exchange(null);
 
     @BeforeEach
-    public void setUp() {
-        Router router = new Router();
-        router.setUriFactory(new URIFactory());
+    void setUp() throws URISyntaxException {
+        Router router = new DummyTestRouter();
 
         petstore_v3_1 = new OpenAPISpec();
         petstore_v3_1.location = getPathFromResource("openapi/specs/petstore-v3.1.json");
 
-        exc.setRequest(new Request.Builder().method("GET").build());
+        exc.setRequest(get("/foo").build());
 
         interceptor = new OpenAPIInterceptor(createProxy(router, petstore_v3_1));
         interceptor.init(router);
@@ -52,7 +52,6 @@ public class OpenAPI31Test {
     @Test
     void simple() {
         exc.getRequest().setUri("/pets");
-        Outcome actual = interceptor.handleRequest(exc);
-        assertEquals(Outcome.RETURN, actual);
+        assertEquals(RETURN, interceptor.handleRequest(exc));
     }
 }

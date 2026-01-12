@@ -66,7 +66,7 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
             outcome = handleRequestInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .flow(REQUEST)
                     .detail("Error handling request!")
                     .exception(e)
@@ -85,7 +85,7 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
             return outcome;
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .flow(RESPONSE)
                     .detail("Error handling response!")
                     .exception(e)

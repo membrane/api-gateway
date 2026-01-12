@@ -15,9 +15,9 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +51,7 @@ import java.net.URLEncoder;
  *              WhateverMobile SMS Gateway.
  *              </p>
  */
-@MCElement(name="whateverMobileSMSTokenProvider", topLevel=false)
+@MCElement(name="whateverMobileSMSTokenProvider", component =false)
 public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(WhateverMobileSMSTokenProvider.class.getName());

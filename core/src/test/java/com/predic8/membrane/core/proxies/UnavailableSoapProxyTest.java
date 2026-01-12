@@ -13,21 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import org.junit.jupiter.api.*;
 
+import java.io.*;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UnavailableSoapProxyTest {
 
-	private Router r, r2;
-	private static Router backendRouter;
+	private static DefaultRouter r, r2;
+	private static DefaultRouter backendRouter;
 	private SOAPProxy sp;
 	private ServiceProxy sp3;
 
@@ -35,24 +36,26 @@ public class UnavailableSoapProxyTest {
 	static void setup() throws Exception {
 		ServiceProxy cityAPI = new ServiceProxy(new ServiceProxyKey(4000), null, 0);
 		cityAPI.getFlow().add(new SampleSoapServiceInterceptor());
-		backendRouter = new HttpRouter();
-		backendRouter.getRuleManager().addProxyAndOpenPortIfNew(cityAPI);
-		backendRouter.init();
+		backendRouter = new DefaultRouter();
+		backendRouter.add(cityAPI);
+		backendRouter.start();
 	}
 
 	@AfterAll
 	static void teardown() {
-		backendRouter.shutdown();
+		backendRouter.stop();
+		r.stop();
+		r2.stop();
 	}
 
 	@BeforeEach
-	void startRouter() {
-		r = new Router();
+	void startRouter() throws IOException {
+		r = new DefaultRouter();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
-		httpClientConfig.setMaxRetries(1);
+		httpClientConfig.getRetryHandler().setRetries(1);
 		r.setHttpClientConfig(httpClientConfig);
-		r.setHotDeploy(false);
-		r.setRetryInit(true);
+		r.getConfiguration().setHotDeploy(false);
+		r.getConfiguration().setRetryInit(true);
 
 		sp = new SOAPProxy();
 		sp.setPort(2000);
@@ -68,15 +71,15 @@ public class UnavailableSoapProxyTest {
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
 		sp2.setWsdl("http://localhost:4000?wsdl");
-		r2 = new Router();
-		r2.setHotDeploy(false);
-		r2.getRules().add(sp2);
+		r2 = new DefaultRouter();
+		r2.getConfiguration().setHotDeploy(false);
+		r2.add(sp2);
 	}
 
 	@AfterEach
-	void shutdownRouter() {
-		r.shutdown();
-		r2.shutdown();
+	void teardownEach() {
+		r.stop();
+		r2.stop();
 	}
 
 	private void test() {
@@ -85,13 +88,13 @@ public class UnavailableSoapProxyTest {
 		List<Proxy> proxies = r.getRuleManager().getRules();
 		assertEquals(1, proxies.size());
 		assertFalse(proxies.getFirst().isActive());
-		r.tryReinitialization();
+		r.getReinitializer().retry();
 
 		proxies = r.getRuleManager().getRules();
 		assertEquals(1, proxies.size());
 		assertFalse(proxies.getFirst().isActive());
 		r2.start();
-		r.tryReinitialization();
+		r.getReinitializer().retry();
 
 		proxies = r.getRuleManager().getRules();
 		assertEquals(1, proxies.size());
@@ -99,21 +102,21 @@ public class UnavailableSoapProxyTest {
 	}
 
 	@Test
-	void checkWSDLDownloadFailureInSoapProxy() {
-		r.getRules().add(sp);
+	void checkWSDLDownloadFailureInSoapProxy() throws IOException {
+		r.add(sp);
 		test();
 	}
 
 	@Test
-	void checkWSDLDownloadFailureInSoapProxyAndValidator() {
+	void checkWSDLDownloadFailureInSoapProxyAndValidator() throws IOException {
 		sp.getFlow().add(new ValidatorInterceptor());
-		r.getRules().add(sp);
+		r.add(sp);
 		test();
 	}
 
 	@Test
-	void checkWSDLDownloadFailureInValidatorOfServiceProxy() {
-		r.getRules().add(sp3);
+	void checkWSDLDownloadFailureInValidatorOfServiceProxy() throws IOException {
+		r.add(sp3);
 		test();
 	}
 }

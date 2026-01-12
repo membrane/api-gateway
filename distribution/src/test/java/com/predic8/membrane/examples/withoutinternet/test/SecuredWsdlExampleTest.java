@@ -28,11 +28,24 @@ public class SecuredWsdlExampleTest extends AbstractSampleMembraneStartStopTestc
     }
 
     @Test
-    void testSecuredWsdl() {
+    void wsdlFromInternalAPI() {
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2010/services?wsdl")
+            .get("http://localhost:2001/?wsdl")
+        .then()
+            .statusCode(200)
+            .contentType(XML)
+            .body(containsString("wsdl:definitions"));
+        // @formatter:on
+    }
+
+    @Test
+    void wsdlFromSOAPProxy() {
+        // @formatter:off
+        given()
+        .when()
+            .get("http://localhost:2000/?wsdl")
         .then()
             .statusCode(200)
             .contentType(XML)

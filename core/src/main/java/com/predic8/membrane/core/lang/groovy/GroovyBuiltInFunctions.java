@@ -26,6 +26,7 @@ import java.util.List;
  *  Difference to SpEL:
  *  The functions are called with ${fn.functionname()} instead of ${functionname()} in the template interceptor
  */
+@SuppressWarnings("unused")
 public class GroovyBuiltInFunctions extends GroovyObjectSupport {
 
     private final Exchange exchange;
@@ -43,6 +44,10 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
 
     public Object jsonPath(String jsonPath) {
         return CommonBuiltInFunctions.jsonPath(jsonPath, exchange.getMessage(flow));
+    }
+
+    public String xpath(String xpath) {
+        return CommonBuiltInFunctions.xpath(xpath, exchange.getMessage(flow));
     }
 
     public List<String> scopes() {
@@ -69,6 +74,8 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
         return CommonBuiltInFunctions.isXML(exchange, flow);
     }
 
+
+
     public boolean isJSON() {
         return CommonBuiltInFunctions.isJSON(exchange, flow);
     }
@@ -93,4 +100,7 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
         return CommonBuiltInFunctions.getDefaultSessionLifetime(beanName, exchange);
     }
 
+    public String env(String s) {
+        return CommonBuiltInFunctions.env(s);
+    }
 }

@@ -24,7 +24,7 @@ import static java.util.stream.Collectors.*;
 /**
  * @description Stores api keys inline as XML.
  */
-@MCElement(name = "keys", topLevel = false, noEnvelope = true)
+@MCElement(name = "simple", component = false, noEnvelope = true)
 public class SimpleKeyStore implements ApiKeyStore {
 
     private final List<Key> keys = new ArrayList<>();
@@ -45,9 +45,7 @@ public class SimpleKeyStore implements ApiKeyStore {
     public Optional<Set<String>> getScopes(String apiKey) throws UnauthorizedApiKeyException {
         var key = keys.stream().filter(k -> k.getValue().equals(apiKey)).findFirst();
         if (key.isPresent()) {
-            Set<String> scopeValues = key.get().getScopes().stream()
-                    .map(Scope::getValue)
-                    .collect(toSet());
+            Set<String> scopeValues = new HashSet<>(key.get().getScopes());
             return ofNullable(scopeValues.isEmpty() ? null : scopeValues);
         } else {
             throw new UnauthorizedApiKeyException();

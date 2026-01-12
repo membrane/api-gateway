@@ -28,7 +28,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @SuppressWarnings("unused")
-@MCElement(name="ruleMatching")
+@MCElement(name="ruleMatching", excludeFromFlow = true)
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(RuleMatchingInterceptor.class.getName());
@@ -50,7 +50,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 		if (proxy instanceof NullProxy) {
 			// Do not log. 404 is too common
-            user(getRouter().isProduction(), "routing")
+            user(router.getConfiguration().isProduction(), "routing")
                     .status(404)
                     .title("Invalid path or method")
                     .detail("The requested path or HTTP method is not supported.")

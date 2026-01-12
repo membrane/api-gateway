@@ -15,20 +15,20 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.MCChildElement;
-import org.jetbrains.annotations.NotNull;
+import com.predic8.membrane.annot.*;
+import org.jetbrains.annotations.*;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import javax.lang.model.util.*;
+import java.lang.reflect.*;
 import java.util.*;
 
 import static com.predic8.membrane.annot.yaml.GenericYamlParser.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.findSetterForKey;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static java.lang.Long.parseLong;
-import static java.util.Locale.ROOT;
+import static java.lang.Boolean.*;
+import static java.lang.Double.*;
+import static java.lang.Integer.*;
+import static java.lang.Long.*;
+import static java.util.Locale.*;
 
 public class MethodSetter {
 
@@ -55,6 +55,12 @@ public class MethodSetter {
         }
         Class<?> beanClass = null;
         if (setter == null) {
+            // if the element ONLY has a MCOtherAttributes and no MCAttributes and no MCChildElement setters, we avoid
+            // global keyword resolution: the keyword will always be a key for MCOtherAttributes
+            if (hasOtherAttributes(clazz) && !hasAttributes(clazz) && !hasChildren(clazz)) {
+                return new MethodSetter(getAnySetter(clazz), null);
+            }
+
             try {
                 beanClass = ctx.grammar().getLocal(ctx.context(), key);
                 if (beanClass == null)
@@ -82,23 +88,100 @@ public class MethodSetter {
 
     private Object resolveSetterValue(ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
         Class<?> wanted = getParameterType();
-        if (Collection.class.isAssignableFrom(wanted))
-            return parseListIncludingStartEvent(ctx, node);
 
-        if (wanted.isEnum()) return parseEnum(wanted, node);
-        if (wanted.equals(String.class)) return node.asText();
+        // Collections / repeated elements
+        List<Object> list = getObjectList(ctx, node, key, wanted);
+        if (list != null) return list;
 
-        if (wanted == Integer.TYPE || wanted == Integer.class) return parseInt(node.asText());
-        if (wanted == Long.TYPE || wanted == Long.class) return parseLong(node.asText());
-        if (wanted == Boolean.TYPE || wanted == Boolean.class) return parseBoolean(node.asText());
-
-        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter)) return Map.of(key, node.asText());
+        // Structured objects
         if (McYamlIntrospector.isStructured(setter)) {
             if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key), beanClass, node);
             return createAndPopulateNode(ctx.updateContext(key), wanted, node);
         }
-        if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolveReference(node.asText());
-        throw new RuntimeException("Not implemented setter type " + wanted);
+
+        return coerceScalarOrReference(ctx, node, key, wanted);
+    }
+
+    /**
+     * Attempts to coerce a given JSON node into the desired scalar, enum, reference, or map type,
+     * as specified by the provided target class.
+     *
+     * @param ctx The parsing context, providing access to type resolution and bean lookup mechanisms.
+     * @param node The JSON node to be coerced into the desired type.
+     * @param key The key corresponding to the JSON node, often used for error messages or map assignments.
+     * @param wanted The target class specifying the type into which the node should be converted.
+     * @return The coerced object, matching the desired type, derived from the input node.
+     * @throws WrongEnumConstantException If the node value does not match any of the constants in the enum type.
+     * @throws ParsingException If the provided type is unsupported for coercion or other unexpected issues arise.
+     */
+    Object coerceScalarOrReference(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
+        // Scalars, enums, bean refs, "other attributes"
+        if (wanted.isEnum()) return parseEnum(wanted, node);
+        if (wanted.equals(String.class)) return node.asText();
+
+        if (wanted == int.class || wanted == Integer.class)
+            return node.isInt() ? node.intValue() : parseInt(node.asText());
+        if (wanted == long.class || wanted == Long.class)
+            return node.isLong() || node.isInt() ? node.longValue() : parseLong(node.asText());
+        if (wanted == double.class || wanted == Double.class)
+            return node.isNumber() ? node.doubleValue() : parseDouble(node.asText());
+        if (wanted == boolean.class || wanted == Boolean.class)
+            return node.isBoolean() ? node.booleanValue() : parseBoolean(node.asText());
+        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter))
+            return Map.of(key, node.asText());
+
+        if (node.isTextual() && isBeanReference(wanted)) {
+            return resolveReference(ctx, node, key, wanted);
+        }
+
+        if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolve(node.asText());
+        throw new ParsingException("Unsupported setter type: %s for key '%s' with node type %s".formatted(wanted.getName(), key, node.getNodeType()), node);
+    }
+
+    private @Nullable List<Object> getObjectList(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
+        if (Collection.class.isAssignableFrom(wanted)) {
+            List<Object> list = parseListIncludingStartEvent(ctx, node);
+
+            Class<?> elemType = getCollectionElementType(setter);
+            if (elemType != null) {
+                for (Object o : list) {
+                    if (o == null) continue;
+                    if (!elemType.isAssignableFrom(o.getClass())) {
+                        throw new ParsingException("Value of type '%s' is not allowed in list '%s'. Expected '%s'."
+                                .formatted(McYamlIntrospector.getElementName(o.getClass()), key, elemType.getSimpleName()), node);
+                    }
+                }
+            }
+            return list;
+        }
+        return null;
+    }
+
+    private static @NotNull Object resolveReference(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
+        String ref = node.asText();
+        final Object resolved;
+        try {
+            resolved = ctx.registry().resolve(ref);
+        } catch (RuntimeException e) {
+            throw new ParsingException(e, node);
+        }
+        if (!wanted.isAssignableFrom(resolved.getClass())) {
+            throw new ParsingException(
+                    "Referenced bean '%s' has type '%s' but '%s' expects '%s'."
+                            .formatted(ref, resolved.getClass().getName(), key, wanted.getName()),
+                    node
+            );
+        }
+        return resolved;
+    }
+
+    /**
+     * Mirrors {@link com.predic8.membrane.annot.model.AttributeInfo#analyze(Types)}.
+     */
+    private boolean isBeanReference(Class<?> wanted) {
+        if (wanted == Integer.TYPE || wanted == Long.TYPE || wanted == Float.TYPE || wanted == Double.TYPE || wanted == Boolean.TYPE || wanted == String.class)
+            return false;
+        return !wanted.isEnum();
     }
 
     public Method getSetter() {
@@ -111,12 +194,23 @@ public class MethodSetter {
 
     private static <E extends Enum<E>> E parseEnum(Class<?> enumClass, JsonNode node) throws WrongEnumConstantException {
         String value = node.asText().toUpperCase(ROOT);
-        @SuppressWarnings("unchecked")
-        Class<E> castEnumClass = (Class<E>) enumClass;
         try {
-            return Enum.valueOf(castEnumClass, value);
+            return Enum.valueOf((Class<E>) enumClass, value);
         } catch (IllegalArgumentException e) {
             throw new WrongEnumConstantException(enumClass, value);
         }
+    }
+
+    private static Class<?> getCollectionElementType(Method setter) {
+        Type t = setter.getGenericParameterTypes()[0];
+        if (!(t instanceof ParameterizedType pt)) return null;
+        Type arg = pt.getActualTypeArguments()[0];
+        if (arg instanceof Class<?> c) return c;
+        if (arg instanceof WildcardType wt) {
+            Type[] upper = wt.getUpperBounds();
+            if (upper.length == 1 && upper[0] instanceof Class<?> uc) return uc;
+        }
+        if (arg instanceof ParameterizedType p2 && p2.getRawType() instanceof Class<?> rc) return rc;
+        return null;
     }
 }

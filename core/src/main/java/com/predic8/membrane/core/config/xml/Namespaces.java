@@ -21,7 +21,7 @@ import java.util.*;
 
 import static javax.xml.XMLConstants.NULL_NS_URI;
 
-@MCElement(name="namespaces", topLevel = false)
+@MCElement(name="namespaces", component = false, noEnvelope = true)
 public class Namespaces {
 
     private List<Namespace> namespaces;
@@ -34,16 +34,16 @@ public class Namespaces {
     /**
      * @description Defines XML namespace mappings (prefix to URI) for use in XPath expressions.
      */
-    @MCChildElement(allowForeign = false)
-    public void setNamespace(List<Namespace> namespace) {
+    @MCChildElement
+    public void setNamespaces(List<Namespace> namespace) {
         this.namespaces = namespace;
     }
 
-    public List<Namespace> getNamespace() {
+    public List<Namespace> getNamespaces() {
         return namespaces;
     }
 
-    @MCElement(name = "namespace", topLevel = false, id = "xml-namespace")
+    @MCElement(name = "namespace", component = false, id = "xml-namespace")
     public static class Namespace {
 
         public String prefix;

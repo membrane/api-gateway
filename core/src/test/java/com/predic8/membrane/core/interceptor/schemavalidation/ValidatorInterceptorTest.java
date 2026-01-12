@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +29,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
@@ -56,10 +57,10 @@ public class ValidatorInterceptorTest {
 
     @BeforeAll
     public static void setUp() throws URISyntaxException {
-        requestTB = Request.post("http://thomas-bayer.com").build();
-        requestXService = Request.post("http://ws.xwebservices.com").build();
+        requestTB = post("http://thomas-bayer.com").build();
+        requestXService = post("http://ws.xwebservices.com").build();
         exc = new Exchange(null);
-        router = new Router();
+        router = new DummyTestRouter();
     }
 
     @Test

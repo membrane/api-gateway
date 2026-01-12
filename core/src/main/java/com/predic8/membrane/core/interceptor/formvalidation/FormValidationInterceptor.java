@@ -37,7 +37,7 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 @MCElement(name="formValidation")
 public class FormValidationInterceptor extends AbstractInterceptor {
 
-	@MCElement(name="field", topLevel=false, id="formValidation-field")
+	@MCElement(name="field", component =false, id="formValidation-field")
 	public static class Field extends AbstractXmlElement {
 		public String name;
 		public String regex;
@@ -113,9 +113,9 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
         Map<String, String> propMap;
         try {
-            propMap = URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
+            propMap = URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, ERROR);
         } catch (Exception e) {
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not parse query parameters!")
 					.topLevel("uri", exc.getRequest().getUri())
 					.exception(e)

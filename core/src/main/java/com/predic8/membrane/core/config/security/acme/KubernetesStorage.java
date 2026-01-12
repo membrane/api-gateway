@@ -19,7 +19,7 @@ import com.predic8.membrane.annot.Required;
 
 import java.util.Objects;
 
-@MCElement(name = "kubernetesStorage", topLevel = false)
+@MCElement(name = "kubernetesStorage", component = false)
 public class KubernetesStorage implements AcmeSynchronizedStorage {
     String baseURL;
     String namespace;

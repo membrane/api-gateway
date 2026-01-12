@@ -81,7 +81,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 SLF4JBridgeHandler.install();
             }
         } catch (Throwable t) {
-            log.warn("jul-to-slf4j not available; OpenTelemetry logs may go to stderr.", t);
+            log.warn("jul-to-slf4j is not available; OpenTelemetry logs may go to stderr. Add the jul-to-slf4j JAR to the lib folder if you want to avoid this.");
         }
 
         otel = OpenTelemetryConfigurator.openTelemetry("Membrane", exporter, getSampleRate());
@@ -263,7 +263,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         return sampleRate;
     }
 
-    @MCElement(name = "customAttribute", topLevel = false)
+    @MCElement(name = "customAttribute", component = false)
     public static class CustomAttribute {
 
         private String name;

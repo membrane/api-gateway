@@ -18,12 +18,12 @@ import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -46,7 +46,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * <p>
  * This interceptor is helpful in scenarios with multiple redundant routers for inbound HTTP requests.
  */
-@MCElement(id = "sslProxy-routerIpResolver", name = "routerIpResolver", topLevel = false)
+@MCElement(id = "sslProxy-routerIpResolver", name = "routerIpResolver", component = false)
 public class RouterIpResolverInterceptor implements SSLInterceptor {
 
     private final Logger log = LoggerFactory.getLogger(RouterIpResolverInterceptor.class);
@@ -112,10 +112,10 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
     }
 
     @Override
-    public void init(Router router) throws Exception {
+    public void init(Router router) {
         httpClient = router.getHttpClientFactory().createClient(httpClientConfiguration);
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
     }
 
     @Override

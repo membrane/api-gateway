@@ -14,7 +14,6 @@
 package com.predic8.membrane.integration.withoutinternet.interceptor;
 
 import com.google.common.collect.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.Certificate;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.config.security.acme.*;
@@ -22,6 +21,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.transport.ssl.acme.AcmeServerSimulator;
@@ -67,8 +67,7 @@ public class AcmeRenewTest {
         acme.setContacts("mailto:jsmith@example.com");
         acme.setAcmeSynchronizedStorage(new MemoryStorage());
 
-        HttpRouter router = new HttpRouter();
-        router.setHotDeploy(false);
+        Router router = new TestRouter();
         SSLParser sslParser = new SSLParser();
         sslParser.setAcme(acme);
         ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey(3051), "localhost", 80);
@@ -85,7 +84,8 @@ public class AcmeRenewTest {
         AcmeHttpChallengeInterceptor acmeHttpChallengeInterceptor = new AcmeHttpChallengeInterceptor();
         acmeHttpChallengeInterceptor.setIgnorePort(true);
         sp2.getFlow().add(acmeHttpChallengeInterceptor);
-        router.setRules(ImmutableList.of(sp1, sp2));
+        router.add(sp1);
+        router.add(sp2);
         router.start();
 
         try {
@@ -104,9 +104,9 @@ public class AcmeRenewTest {
                 Trust trust = new Trust();
                 Certificate certificate = new Certificate();
                 certificate.setContent(sim.getCA().getCertificate());
-                trust.setCertificateList(ImmutableList.of(certificate));
+                trust.setCertificates(ImmutableList.of(certificate));
                 sslParser1.setTrust(trust);
-                e.setProperty(SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getBaseLocation()));
+                e.setProperty(SSL_CONTEXT, new StaticSSLContext(sslParser1, router.getResolverMap(), router.getConfiguration().getBaseLocation()));
                 hc.call(e);
             }
 

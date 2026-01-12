@@ -19,6 +19,7 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.io.*;
 import org.junit.jupiter.api.*;
 
@@ -36,7 +37,7 @@ public class Xml2JsonInterceptorTest {
     @BeforeAll
     static void setup() {
         interceptor = new Xml2JsonInterceptor();
-        interceptor.init(new Router());
+        interceptor.init(new DefaultRouter());
     }
 
     @Test

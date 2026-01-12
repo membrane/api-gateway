@@ -1,0 +1,32 @@
+# Works with most JDBC databases. With PostgreSQL, an exception may be logged, but the functionality is not affected.
+components:
+  dataSource:
+    bean:
+      class: org.apache.commons.dbcp2.BasicDataSource
+      properties:
+        - property:
+            name: driverClassName
+            value: org.postgresql.Driver
+        - property:
+            name: url
+            value: jdbc:postgresql://localhost:5432/postgres
+        - property:
+            name: username
+            value: user
+        - property:
+            name: password
+            value: password
+
+---
+
+api:
+  port: 2000
+  flow:
+    - basicAuthentication:
+        jdbcUserDataProvider:
+          datasource: '#/components/dataSource'
+          tableName: users
+          userColumnName: nickname
+          passwordColumnName: password
+  target:
+    url: https://apis.predic8.de

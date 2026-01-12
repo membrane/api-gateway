@@ -42,7 +42,7 @@ public class MethodOverrideInterceptor extends AbstractInterceptor {
                     break;
             }
         } catch (IOException e) {
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Could overwrite method.")
                     .internal("method", methodHeader)
                     .exception(e)

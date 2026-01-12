@@ -44,7 +44,7 @@ servers:
 
 If the basepath does not match, the next API is checked. 
 
-It is also possible to configure the backend address using a [target](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/target.htm) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
+It is also possible to configure the backend address using a [target](https://www.membrane-api.io/docs/current/target.html) in the configuration. Then the addresses in the ```server``` field of the OpenAPI are ignored and the request is sent to the address from the _target_ element.
 
 ```xml
 <serviceProxy>
@@ -87,7 +87,7 @@ x-membrane-validation:
 
 The __api__ has a UI that can be reached on its port e.g. [http://localhost:2000/api-docs](http://localhost:2000/api-docs). Follow the links on the left to access the Swagger UI or the link on the right to download the OpenAPI document.
 
-![Overview UI](openapi-proxy/api-overview.png)
+![Overview UI](openapi-proxy/api-overview.jpg)
 
 To get a JSON description of the deployed OpenAPI documents call the same `<a href="curl http://localhost:2000/api-docs">URL</a>` outside the browser e.g. in curl or Postman:
 
@@ -169,7 +169,7 @@ If you use the rewritten OpenAPI-document for your client, then requests will be
 
 # SSL/TLS
 
-TLS for incoming and outgoing connections can be configured in the same way as for the _serviceProxy_. See the documentation for the [ssl](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/ssl.htm) element.
+TLS for incoming and outgoing connections can be configured in the same way as for the _serviceProxy_. See the documentation for the [ssl](https://www.membrane-api.io/docs/current/ssl.htm) element.
 
 ```xml
 <api port="2000">
@@ -190,7 +190,7 @@ TLS for incoming and outgoing connections can be configured in the same way as f
 
 # Plugins / Interceptors
 
-The behaviour of the _api_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and the [configuration reference](http://membrane-soa.org/api-gateway-doc/current/configuration/reference/).
+The behaviour of the _api_ can be modified like other proxies with plugins and interceptors. See the [examples](..) and the [configuration reference](http://membrane-api.io/docs/current/).
 
 ```xml
 <api port="2000">

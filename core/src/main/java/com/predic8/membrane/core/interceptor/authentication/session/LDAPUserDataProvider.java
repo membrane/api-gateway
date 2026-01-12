@@ -37,6 +37,7 @@ import javax.naming.directory.SearchResult;
 import javax.net.SocketFactory;
 
 import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.slf4j.Logger;
@@ -46,7 +47,6 @@ import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 
 /**
  * @description A <i>user data provider</i> querying an LDAP server to authorize users and retrieve attributes.
@@ -91,7 +91,7 @@ import com.predic8.membrane.core.Router;
  *              attributes.
  *              </p>
  */
-@MCElement(name="ldapUserDataProvider", topLevel=false)
+@MCElement(name="ldapUserDataProvider", component =false)
 public class LDAPUserDataProvider implements UserDataProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(LDAPUserDataProvider.class.getName());
@@ -110,10 +110,10 @@ public class LDAPUserDataProvider implements UserDataProvider {
 	AttributeMap map;
 	SSLParser sslParser;
 
-	@MCElement(name="map", topLevel=false, id="ldapUserDataProvider-map", noEnvelope = true)
+	@MCElement(name="map", component =false, id="ldapUserDataProvider-map", noEnvelope = true)
 	public static class AttributeMap {
 
-		@MCElement(name="attribute", topLevel=false)
+		@MCElement(name="attribute", component =false)
 		public static class Attribute {
 			String from;
 			String to;
@@ -442,7 +442,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		}
 
 		if (sslParser != null)
-			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
 	}
 
 	public AttributeMap getMap() {

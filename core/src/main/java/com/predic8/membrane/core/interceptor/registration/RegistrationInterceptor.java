@@ -32,7 +32,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 /**
  * @description Allows account registration (!Experimental!)
  */
-@MCElement(name = "accountRegistration")
+@MCElement(name = "accountRegistration", excludeFromFlow = true)
 public class RegistrationInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(RegistrationInterceptor.class);
@@ -71,7 +71,7 @@ public class RegistrationInterceptor extends AbstractInterceptor {
             connection.createStatement().executeUpdate(getInsertAccountIntoDatabaseSQL(user));
         } catch (SQLException e) {
             log.error("",e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Could not access database")
                     .exception(e)
                     .buildAndSetResponse(exc);

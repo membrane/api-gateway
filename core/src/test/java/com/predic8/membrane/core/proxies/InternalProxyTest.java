@@ -13,21 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.groovy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import org.hamcrest.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 class InternalProxyTest {
 
-    private static Router router;
+    private Router router;
 
-    @BeforeAll
-    public static void setup() throws Exception {
-        router = new HttpRouter();
+    @BeforeEach
+    void setup() throws Exception {
+        router = new TestRouter();
 
         router.add(new APIProxy() {{
             key = new APIProxyKey(2001);
@@ -72,13 +74,44 @@ class InternalProxyTest {
             interceptors.add(RETURN);
         }});
 
-        router.init();
+        router.add(new APIProxy() {{
+            key = new APIProxyKey(2100);
+            target = new Target() {{
+                setUrl("internal://tservice");
+            }};
+        }});
+
+        router.add(new APIProxy() {{
+            key = new APIProxyKey(2101);
+            target = new Target() {{
+                setUrl("internal://tservice/");
+            }};
+        }});
+
+        router.add(new APIProxy() {{
+            key = new APIProxyKey(2102);
+            target = new Target() {{
+                setUrl("internal://tservice/a");
+            }};
+        }});
+
+        router.add(new InternalProxy() {{
+            name = "tservice";
+            interceptors.add(new ResponseInterceptor() {{
+                interceptors.add(new GroovyInterceptor() {{
+                    setSrc("exc.getResponse().setBodyContent(exc.getRequest().getUri().getBytes())");
+                }});
+            }});
+            interceptors.add(RETURN);
+        }});
+
+        router.start();
 
     }
 
-    @AfterAll
-    public static void teardown() {
-        router.shutdown();
+    @AfterEach
+    void teardown() {
+        router.stop();
     }
 
     @Test
@@ -87,7 +120,7 @@ class InternalProxyTest {
         when()
             .get("http://localhost:2000/foo")
         .then()
-            .body(Matchers.equalTo(">a>b<b<a"));
+            .body(equalTo(">a>b<b<a"));
         // @formatter:on
     }
 
@@ -99,7 +132,53 @@ class InternalProxyTest {
         .when()
             .post("http://localhost:2000/to-external")
         .then()
-            .body(Matchers.equalTo("client>c>d>e<e<d<c"));
-        // @formatter:off
+            .body(equalTo("client>c>d>e<e<d<c"));
+        // @formatter:on
     }
+
+    @Test
+    void internalUrl_noTrailingSlash() {
+        // @formatter:off
+        when()
+            .get("http://localhost:2100/")
+        .then()
+            .body(equalTo("/"));
+
+        when()
+            .get("http://localhost:2100/foo")
+        .then()
+            .body(equalTo("/foo"));
+        // @formatter:on
+    }
+
+    @Test
+    void internalUrl_withTrailingSlash() {
+        // @formatter:off
+        when()
+            .get("http://localhost:2101/")
+        .then()
+            .body(equalTo("/"));
+
+        when()
+            .get("http://localhost:2101/foo")
+        .then()
+            .body(equalTo("/foo"));
+        // @formatter:on
+    }
+
+    @Test
+    void internalUrl_withFixedPathSegment() {
+        // @formatter:off
+        when()
+            .get("http://localhost:2102/")
+        .then()
+            .body(equalTo("/a"));
+
+        when()
+            .get("http://localhost:2102/foo")
+        .then()
+            .body(equalTo("/a"));
+        // @formatter:on
+    }
+
 }

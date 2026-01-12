@@ -14,12 +14,12 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.*;
 import com.predic8.membrane.core.interceptor.oauth2.SessionFinder;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
 
@@ -39,7 +39,7 @@ import java.util.*;
  *              timeout is 5 minutes.
  *              </p>
  */
-@MCElement(name="sessionManager", topLevel=false)
+@MCElement(name="sessionManager", component =false)
 public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;
 	private long timeout;

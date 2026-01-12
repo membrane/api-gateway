@@ -27,7 +27,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
-@MCElement(name="wsaEndpointRewriter")
+@MCElement(name="wsaEndpointRewriter", excludeFromFlow = true)
 public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(WsaEndpointRewriterInterceptor.class);
@@ -56,7 +56,7 @@ public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
             new WsaEndpointRewriter().rewriteEndpoint(message.getBodyAsStreamDecoded(), output, new Location( protocol, host,  port));
         } catch (Exception e) {
 			log.error("",e);
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not rewrite endpoint!")
 					.exception(e)
 					.buildAndSetResponse(exchange);

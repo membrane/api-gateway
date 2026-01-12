@@ -17,8 +17,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
+import com.predic8.membrane.core.router.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
  *              Authenticator App</a> to store the pre-shared secret and generate such tokens.
  *              </p>
  */
-@MCElement(name="totpTokenProvider", topLevel=false)
+@MCElement(name="totpTokenProvider", component =false)
 public class TOTPTokenProvider implements TokenProvider {
 
 	final Logger log = LoggerFactory.getLogger(TOTPTokenProvider.class);

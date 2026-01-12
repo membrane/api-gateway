@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.client.b2c;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -24,16 +23,16 @@ import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.core.RuleManager.RuleDefinitionSource.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * A locally running Membrane with various B2C features to test (1 ServiceProxy per feature). Primarily:
@@ -52,7 +51,7 @@ public class B2CMembrane {
 
     private final ObjectMapper om = new ObjectMapper();
 
-    private HttpRouter oauth2Resource;
+    private TestRouter oauth2Resource;
     private OAuth2Resource2Interceptor oAuth2Resource2Interceptor;
 
     public RequireAuth requireAuth;
@@ -62,18 +61,14 @@ public class B2CMembrane {
         this.sessionManager = sessionManager;
     }
 
-    public void init() {
-        oauth2Resource = new HttpRouter();
-        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(10000);
-        oauth2Resource.getTransport().setBacklog(10000);
-        oauth2Resource.getTransport().setSocketTimeout(10000);
-        oauth2Resource.setHotDeploy(false);
-        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(tc.limit * 100);
+    public void init() throws IOException {
+        oauth2Resource = new TestRouter();
 
         ServiceProxy sp1_oauth2resource2 = createOAuth2Resource2ServiceProxy();
         ServiceProxy sp2_flowInitiator_logoutBeforeFlow = createFlowInitiatorServiceProxy("/pe/", tc.peFlowId, true);
         ServiceProxy sp3_flowInitiator_noLogout = createFlowInitiatorServiceProxy("/pe2/", tc.pe2FlowId, false);
         sp1_oauth2resource2.init(oauth2Resource);
+
         ServiceProxy sp4_requireAuth = createRequireAuthServiceProxy(tc.api1Id, "/api/", ra -> {
             requireAuth = ra;
             ra.setScope("https://localhost/" + tc.api1Id + "/Read");
@@ -89,15 +84,20 @@ public class B2CMembrane {
         ServiceProxy sp7_requireAuth = createRequireAuthServiceProxy(tc.api2Id, "/api2/", ra -> ra.setScope("https://localhost/" + tc.api2Id + "/Read"));
         ServiceProxy sp8_afterLogout = createAfterLogoutServiceProxy();
 
-        oauth2Resource.getRuleManager().addProxy(sp8_afterLogout, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp7_requireAuth, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp6_requireAuth_ErrorStatus403, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp5_requireAuth_AuthNotRequired, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp4_requireAuth, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp3_flowInitiator_noLogout, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp2_flowInitiator_logoutBeforeFlow, MANUAL);
-        oauth2Resource.getRuleManager().addProxy(sp1_oauth2resource2, MANUAL);
+        oauth2Resource.add(sp8_afterLogout);
+        oauth2Resource.add(sp7_requireAuth);
+        oauth2Resource.add(sp6_requireAuth_ErrorStatus403);
+        oauth2Resource.add(sp5_requireAuth_AuthNotRequired);
+        oauth2Resource.add(sp4_requireAuth);
+        oauth2Resource.add(sp3_flowInitiator_noLogout);
+        oauth2Resource.add(sp2_flowInitiator_logoutBeforeFlow);
+        oauth2Resource.add(sp1_oauth2resource2);
         oauth2Resource.start();
+
+        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(10000);
+        oauth2Resource.getTransport().setBacklog(10000);
+        oauth2Resource.getTransport().setSocketTimeout(10000);
+        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(tc.limit * 100);
 
     }
 

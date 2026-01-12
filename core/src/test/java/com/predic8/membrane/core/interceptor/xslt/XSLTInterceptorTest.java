@@ -22,7 +22,7 @@ import javax.xml.xpath.XPathFactory;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 
-import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
@@ -40,7 +40,7 @@ public class XSLTInterceptorTest {
 
 		XSLTInterceptor i = new XSLTInterceptor();
 		i.setXslt("classpath:/customer2person.xsl");
-		i.init(new HttpRouter());
+		i.init(new DummyTestRouter());
 		i.handleResponse(exc);
 
 		//printBodyContent();
@@ -60,7 +60,7 @@ public class XSLTInterceptorTest {
 
 		XSLTInterceptor i = new XSLTInterceptor();
 		i.setXslt("classpath:/customer2personAddCompany.xsl");
-		i.init(new HttpRouter());
+		i.init(new DummyTestRouter());
 		i.handleResponse(exc);
 
 		//printBodyContent();

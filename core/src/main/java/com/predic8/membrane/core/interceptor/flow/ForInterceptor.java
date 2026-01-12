@@ -80,7 +80,7 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
         try {
             o = exchangeExpression.evaluate(exc, flow, Object.class);
         } catch (ExchangeExpressionException e) {
-           ProblemDetails pd =  ProblemDetails.internal(router.isProduction(), getDisplayName());
+           ProblemDetails pd =  ProblemDetails.internal(router.getConfiguration().isProduction(), getDisplayName());
             e.provideDetails(pd)
                     .detail("Error evaluating expression on exchange.")
                     .component(getDisplayName())

@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class OAuth2ResourceB2CTestSetup {
-    protected final Logger LOG = LoggerFactory.getLogger(OAuth2ResourceB2CTestSetup.class);
+    protected final Logger log = LoggerFactory.getLogger(OAuth2ResourceB2CTestSetup.class);
     protected final B2CTestConfig tc = new B2CTestConfig();
     protected final ObjectMapper om = new ObjectMapper();
     protected final AtomicBoolean didLogIn = new AtomicBoolean();

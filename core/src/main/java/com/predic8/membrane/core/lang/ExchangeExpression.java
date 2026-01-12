@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -23,6 +22,7 @@ import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.lang.jsonpath.*;
 import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.lang.xpath.*;
+import com.predic8.membrane.core.router.*;
 
 /**
  * Language expression that takes an exchange as input
@@ -61,7 +61,7 @@ public interface ExchangeExpression {
     static ExchangeExpression expression(Interceptor interceptor, Language language, String expression) {
         return switch (language) {
             case GROOVY -> new GroovyExchangeExpression(interceptor, expression);
-            case SPEL -> new SpELExchangeExpression(expression,null);
+            case SPEL -> new SpELExchangeExpression(expression,null); // parserContext is null on purpose ${} or #{} are not needed here
             case XPATH -> new XPathExchangeExpression(interceptor,expression);
             case JSONPATH -> new JsonpathExchangeExpression(expression);
         };

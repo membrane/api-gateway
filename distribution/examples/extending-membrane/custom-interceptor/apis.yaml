@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+
+components:
+  myInterceptor:
+    bean:
+      class: com.predic8.MyInterceptor
+
+---
+
+api:
+  port: 2000
+  flow:
+    - $ref: "#/components/myInterceptor"
+    - return: {}

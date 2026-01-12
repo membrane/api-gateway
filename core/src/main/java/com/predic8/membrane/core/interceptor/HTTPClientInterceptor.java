@@ -40,7 +40,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * its outgoing HTTP connection that is different from the global
  * configuration in the transport.
  */
-@MCElement(name = "httpClient")
+@MCElement(name = "httpClient", excludeFromFlow= true)
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
@@ -87,7 +87,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
             log.warn(msg + PROXIES_HINT);
-            gateway(router.isProduction(), getDisplayName())
+            gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("connect")
                     .status(502)
                     .detail(msg)
@@ -95,7 +95,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (SocketTimeoutException e) {
             // Details are logged further down in the HTTPClient
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("socket-timeout")
                     .detail("Target %s is not reachable.".formatted(exc.getDestinations()))
                     .buildAndSetResponse(exc);
@@ -103,7 +103,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (UnknownHostException e) {
             String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName());
             log.warn(msg + PROXIES_HINT);
-            gateway(router.isProduction(), getDisplayName())
+            gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("unknown-host")
                     .status(502)
                     .detail(msg)
@@ -112,7 +112,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         } catch (MalformedURLException e) {
             log.info("Malformed URL. Requested path is: {} {}",exc.getRequest().getUri() , e.getMessage());
             log.debug("",e);
-            user(router.isProduction(), getDisplayName())
+            user(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Request path or 'Host' header is malformed")
                     .addSubSee("malformed-url")
                     .exception(e)
@@ -123,7 +123,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (ProtocolUpgradeDeniedException e) {
             log.debug("Denied protocol upgrade request. uri={} protocol={}", exc.getRequest().getUri(), e.getProtocol());
-            gateway(router.isProduction(), getDisplayName())
+            gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .status(401)
                     .title("Protocol upgrade has been denied.")
                     .addSubSee("denied-protocol-upgrade")
@@ -134,7 +134,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .exception(e)
                     .internal("proxy", exc.getProxy().getName())
                     .buildAndSetResponse(exc);

@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * request into a new response. The response has a status code of 200.
  * Useful for testing.
  */
-@MCElement(name="echo", topLevel = false)
+@MCElement(name="echo", component = false)
 public class EchoInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(EchoInterceptor.class.getName());
@@ -43,7 +43,7 @@ public class EchoInterceptor extends AbstractInterceptor {
 			}
 		} catch (Exception e) {
 			log.error("Could not create echo.", e);
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Could not create echo!")
 					.exception(e)
 					.stacktrace(false)

@@ -13,13 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.integration.withinternet;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -27,14 +28,14 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.lang.Integer.MAX_VALUE;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.lang.Integer.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class LargeBodyTest {
 
-    private static HttpRouter router, router2;
+    private static Router router, router2;
     private static HttpClientConfiguration hcc;
     private static final AtomicReference<Exchange> middleExchange = new AtomicReference<>();
 
@@ -43,9 +44,9 @@ public class LargeBodyTest {
 
         // streaming only works for maxRetries = 1
         hcc = new HttpClientConfiguration();
-        hcc.setMaxRetries(1);
+        hcc.getRetryHandler().setRetries(1);
 
-        ServiceProxy proxy = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3040), "thomas-bayer.com", 80);
+        ServiceProxy proxy = getProxy(3040, "thomas-bayer.com", 80);
         proxy.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -53,14 +54,10 @@ public class LargeBodyTest {
                 return RETURN;
             }
         });
-        router = new HttpRouter();
 
-        setClientConfigHTTPClientOnInterceptor(router);
+        router = startNewRouter(proxy);
 
-        router.getRuleManager().addProxyAndOpenPortIfNew(proxy);
-        router.init();
-
-        ServiceProxy proxy1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3041), "localhost", 3040);
+        ServiceProxy proxy1 = getProxy(3041, "localhost", 3040);
         proxy1.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -68,24 +65,32 @@ public class LargeBodyTest {
                 return super.handleRequest(exc);
             }
         });
-        router2 = new HttpRouter();
 
-        setClientConfigHTTPClientOnInterceptor(router2);
-
-        router2.getRuleManager().addProxyAndOpenPortIfNew(proxy1);
-        router2.init();
+        router2 = startNewRouter(proxy1);
     }
 
-    private static void setClientConfigHTTPClientOnInterceptor(HttpRouter router2) {
-        router2.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).get().setHttpClientConfig(hcc);
+    private static @NotNull ServiceProxy getProxy(int port, String targetHost, int targetPort) {
+        return new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), targetHost, targetPort);
+    }
+
+    private static Router startNewRouter(ServiceProxy proxy) throws IOException {
+        var router = new TestRouter();
+        router.add(proxy);
+        router.start();
+        setClientConfigHTTPClientOnInterceptor(router);
+        return router;
+    }
+
+    private static void setClientConfigHTTPClientOnInterceptor(TestRouter router2) {
+        var i = router2.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
+        i.setHttpClientConfig(hcc);
+        i.init();
     }
 
     @AfterAll
     public static void shutdown() {
-        if (router != null)
-            router.shutdown();
-        if (router2 != null)
-            router2.shutdown();
+        router.stop();
+        router2.stop();
     }
 
     @Test

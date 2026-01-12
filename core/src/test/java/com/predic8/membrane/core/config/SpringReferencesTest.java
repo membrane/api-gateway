@@ -13,10 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.log.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -29,17 +29,17 @@ public class SpringReferencesTest {
 
 	@BeforeAll
 	public static void before() {
-		r = Router.init("classpath:/proxies-using-spring-refs.xml");
+		r = RouterXmlBootstrap.initByXML("classpath:/proxies-using-spring-refs.xml");
 	}
 
 	@AfterAll
 	public static void after() {
-		r.shutdown();
+		r.stop();
 	}
 
 	@Test
 	public void doit() {
-		ServiceProxy p = (ServiceProxy) r.getRules().iterator().next();
+		ServiceProxy p = (ServiceProxy) r.getRuleManager().getRules().getFirst();
 		List<Interceptor> is = p.getFlow();
 
 		assertEquals(LogInterceptor.class, is.get(0).getClass());

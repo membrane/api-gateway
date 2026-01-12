@@ -14,11 +14,19 @@
 
 package com.predic8.membrane.annot;
 
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.SpringContextAdapter;
 import com.predic8.membrane.annot.util.CompilerHelper;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ConfigurableApplicationContext;
+
+import java.util.List;
 
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
+import static com.predic8.membrane.annot.util.StructureAssertionUtil.*;
+import static com.predic8.membrane.annot.util.StructureAssertionUtil.clazz;
 
 public class ParsingTest {
 
@@ -48,7 +56,7 @@ public class ParsingTest {
         var result = CompilerHelper.compile(sources, false);
         assertCompilerResult(true, result);
 
-        parse(result, wrapSpring("""
+        parseXML(result, wrapSpring("""
                 <demo />
                 """));
     }
@@ -84,10 +92,209 @@ public class ParsingTest {
         var result = CompilerHelper.compile(sources, false);
         assertCompilerResult(true, result);
 
-        parse(result, wrapSpring("""
+        parseXML(result, wrapSpring("""
                 <root>
                     <child1 />
                 </root>
                 """));
     }
+
+    @Test
+    public void afterPropertiesSetAndDestroy() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="root")
+        public class DemoElement {
+            ChildElement child;
+        
+            public ChildElement getChild() { return child; }
+            @MCChildElement
+            public void setChild(ChildElement child) { this.child = child; }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import org.springframework.beans.factory.*;
+        import static org.junit.jupiter.api.Assertions.assertEquals;
+        @MCElement(name="child")
+        public class ChildElement implements InitializingBean, DisposableBean {
+            int value = 0;
+            public int getValue() { return value; }
+        
+            public void afterPropertiesSet() throws Exception {
+                assertEquals(0, value);
+                value = 1;
+            }
+            public void destroy() throws Exception {
+                assertEquals(1, value);
+                value = 2;
+            }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        BeanRegistry br = parseXML(result, wrapSpring("""
+                <root>
+                    <child />
+                </root>
+                """));
+
+        assertStructure(
+                br,
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(1))))));
+
+        List<Object> beans = br.getBeans(); // 'list of beans' must be retrieved before closing the context
+
+        ((ConfigurableApplicationContext) ((SpringContextAdapter)br).getApplicationContext()).close();
+
+        assertStructure(
+                beans,
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(2))))));
+
+    }
+
+    @Test
+    public void afterPropertiesSetAndDestroyAndPostConstructAndPreDestroy() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="root")
+        public class DemoElement {
+            ChildElement child;
+        
+            public ChildElement getChild() { return child; }
+            @MCChildElement
+            public void setChild(ChildElement child) { this.child = child; }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import org.springframework.beans.factory.*;
+        import jakarta.annotation.*;
+        import static org.junit.jupiter.api.Assertions.assertEquals;
+        @MCElement(name="child")
+        public class ChildElement implements InitializingBean, DisposableBean {
+            int value = 0;
+            public int getValue() { return value; }
+        
+            @PostConstruct
+            public void afterPropertiesSet() throws Exception {
+                assertEquals(0, value);
+                value = 1;
+            }
+            @PreDestroy
+            public void destroy() throws Exception {
+                assertEquals(1, value);
+                value = 2;
+            }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        BeanRegistry br = parseXML(result, wrapSpring("""
+                <spring:bean class="org.springframework.context.annotation.CommonAnnotationBeanPostProcessor" />
+                
+                <root>
+                    <child />
+                </root>
+                """));
+
+        assertStructure(
+                br,
+                clazz("CommonAnnotationBeanPostProcessor"),
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(1))))));
+
+        List<Object> beans = br.getBeans(); // 'list of beans' must be retrieved before closing the context
+
+        ((ConfigurableApplicationContext) ((SpringContextAdapter)br).getApplicationContext()).close();
+
+        assertStructure(
+                beans,
+                clazz("CommonAnnotationBeanPostProcessor"),
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(2))))));
+
+    }
+
+    @Test
+    public void postConstructAndPreDestroy() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="root")
+        public class DemoElement {
+            ChildElement child;
+        
+            public ChildElement getChild() { return child; }
+            @MCChildElement
+            public void setChild(ChildElement child) { this.child = child; }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import jakarta.annotation.*;
+        import static org.junit.jupiter.api.Assertions.assertEquals;
+        @MCElement(name="child")
+        public class ChildElement {
+            int value = 0;
+            public int getValue() {
+                return value; 
+            }
+        
+            @PostConstruct
+            public void afterPropertiesSet() throws Exception {
+                assertEquals(0, value);
+                value = 1;
+            }
+            @PreDestroy
+            public void destroy() throws Exception {
+                assertEquals(1, value);
+                value = 2;
+            }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        BeanRegistry br = parseXML(result, wrapSpring("""
+                <spring:bean class="org.springframework.context.annotation.CommonAnnotationBeanPostProcessor" />
+                
+                <root>
+                    <child />
+                </root>
+                """));
+
+        assertStructure(
+                br,
+                clazz("CommonAnnotationBeanPostProcessor"),
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(1))))));
+
+        List<Object> beans = br.getBeans(); // 'list of beans' must be retrieved before closing the context
+
+        ((ConfigurableApplicationContext) ((SpringContextAdapter)br).getApplicationContext()).close();
+
+        assertStructure(
+                beans,
+                clazz("CommonAnnotationBeanPostProcessor"),
+                clazz("DemoElement",
+                        property("child", clazz("ChildElement",
+                                property("value", value(2))))));
+
+    }
+
 }

@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +39,7 @@ public class BasicAuthenticationInterceptorTest {
 				new User("admin", "admin"),
 				new User("admin", "$6$12345678$jwCsYagMo/KNcTDqnrWL25Dy3AfAT5U94abA5a/iPFO.Cx2zAkMpPxZBNKY/P/xiRrCfCFDxdBp7pvNEMoBcr0")
 		));
-		bai.init(new Router());
+		bai.init(new DefaultRouter());
 	}
 
 	@Test

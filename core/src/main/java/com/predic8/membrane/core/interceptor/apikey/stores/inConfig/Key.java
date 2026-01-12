@@ -23,22 +23,22 @@ import java.util.List;
 /**
  * @description Contains api keys and scopes.
  */
-@MCElement(name = "secret", topLevel = false)
+@MCElement(name = "secret", component = false)
 public class Key {
 
-    private final List<Scope> scopes = new ArrayList<>();
+    private final List<String> scopes = new ArrayList<>();
 
     private String value;
 
     /**
-     * @description <scope>...</scope> elements for defining scopes for this key.
+     * @description Scopes for this key.
      */
     @MCChildElement(allowForeign = true)
-    public void setScopes(List<Scope> scopes) {
+    public void setScopes(List<String> scopes) {
         this.scopes.addAll(scopes);
     }
 
-    public List<Scope> getScopes() {
+    public List<String> getScopes() {
         return scopes;
     }
 

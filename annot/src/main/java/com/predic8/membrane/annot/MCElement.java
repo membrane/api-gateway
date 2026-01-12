@@ -28,9 +28,14 @@ public @interface MCElement {
     boolean mixed() default false;
 
     /**
+     * Whether the element can be defined at the top-level of the config.
+     */
+    boolean topLevel() default false;
+
+    /**
      * Whether the element can be a separate bean in the XML schema, or a separate document in YAML/JSON.
      */
-    boolean topLevel() default true;
+    boolean component() default true;
 
     String configPackage() default "";
 
@@ -54,4 +59,24 @@ public @interface MCElement {
      * This does not have any effect on the XML grammar.
      */
     boolean noEnvelope() default false;
+
+    /**
+     * Whether the element should be configurable as part of the interceptor flow
+     */
+    boolean excludeFromFlow() default false;
+
+    /**
+     * Whether the element has only one attribute.
+     * Enables inline yaml object configuration
+     * e.g.
+     * <pre><code>
+     * allow: foo
+     * </code></pre>
+     * instead of
+     * <pre><code>
+     * allow:
+     *   value: foo
+     *  </code></pre>
+     */
+    boolean collapsed() default false;
 }

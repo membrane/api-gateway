@@ -8,4 +8,4 @@ These examples demonstrate how to protect an API or a Web application using __HT
 
 ---
 See:
-- [basicAuthentication](https://www.membrane-soa.org/api-gateway-doc/current/configuration/reference/basicAuthentication.htm) reference
+- [basicAuthentication](https://www.membrane-api.io/docs/current/basicAuthentication.html) reference

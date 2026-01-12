@@ -44,7 +44,7 @@ import static com.predic8.membrane.core.util.StringUtil.maskNonPrintableCharacte
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
  * @topic 1. Proxies and Flow
  */
-@MCElement(name = "api")
+@MCElement(name = "api", topLevel = true, component = false)
 public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(APIProxy.class.getName());
@@ -204,7 +204,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
                 url = rec.spec.getRewrite().basePath;
             }
             try {
-                paths.put(UriUtil.getPathFromURL(router.getUriFactory(), url), rec);
+                paths.put(UriUtil.getPathFromURL(router.getConfiguration().getUriFactory(), url), rec);
             } catch (URISyntaxException e) {
                 log.error("Cannot parse URL {} Error: {}", url,e.getMessage());
                 throw new RuntimeException("Cannot parse URL %s Error: %s".formatted(url,e.getMessage()),e);
@@ -258,7 +258,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         this.language = language;
     }
 
-    @MCElement(name = "description", topLevel = false, mixed = true)
+    @MCElement(name = "description", component = false, mixed = true)
     public static class ApiDescription {
         private String content;
 

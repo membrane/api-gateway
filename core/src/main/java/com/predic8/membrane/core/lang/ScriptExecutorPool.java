@@ -26,9 +26,9 @@ public abstract class ScriptExecutorPool<T, R> implements Function<Map<String, O
 	private static final int concurrency = Runtime.getRuntime().availableProcessors() * 2;
 	final ArrayBlockingQueue<T> scripts = new ArrayBlockingQueue<>(concurrency);
 
-	public void init(ExecutorService executorService) {
+	public void init() {
 		scripts.add(createOneScript());
-		executorService.execute(() -> {
+		Thread.ofVirtual().start(() -> {
 			try {
 				for (int i = 1; i < concurrency; i++)
 					scripts.add(createOneScript());

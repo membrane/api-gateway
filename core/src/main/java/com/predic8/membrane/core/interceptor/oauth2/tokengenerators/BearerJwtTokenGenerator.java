@@ -15,9 +15,9 @@ package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
+import com.predic8.membrane.core.router.*;
 import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -59,7 +59,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
                                 "reference it using <bearerJwtToken><jwk location=\"...\">.",
                         rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         } else {
-            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
+            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation())));
         }
     }
 
@@ -172,7 +172,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
         this.jwk = jwk;
     }
 
-    @MCElement(name="jwk", mixed = true, topLevel = false, id="bearerJwtToken-jwk")
+    @MCElement(name="jwk", mixed = true, component = false, id="bearerJwtToken-jwk")
     public static class Jwk extends Blob {
 
     }

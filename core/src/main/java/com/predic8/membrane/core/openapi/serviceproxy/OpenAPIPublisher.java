@@ -16,9 +16,9 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.router.*;
 import groovy.text.*;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.parser.*;
@@ -135,7 +135,7 @@ public class OpenAPIPublisher {
 
     private Outcome returnOpenApiAsYaml(Exchange exc, OpenAPIRecord rec, Router router) throws IOException, URISyntaxException {
         exc.setResponse(ok().yaml()
-                .body(omYaml.writeValueAsBytes(rec.rewriteOpenAPI(exc, router.getUriFactory())))
+                .body(omYaml.writeValueAsBytes(rec.rewriteOpenAPI(exc, router.getConfiguration().getUriFactory())))
                 .build());
         return RETURN;
     }
@@ -149,7 +149,7 @@ public class OpenAPIPublisher {
         tempCtx.put("apis", apis);
         tempCtx.put("pathUi", PATH_UI);
         tempCtx.put("path", PATH);
-        tempCtx.put("uriFactory", router.getUriFactory());
+        tempCtx.put("uriFactory", router.getConfiguration().getUriFactory());
         return apiOverviewHtmlTemplate.make(tempCtx).toString();
     }
 

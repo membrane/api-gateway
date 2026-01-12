@@ -15,7 +15,7 @@
 package com.predic8.membrane.annot.util;
 
 import com.predic8.membrane.annot.Grammar;
-import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.beanregistry.*;
 import org.jetbrains.annotations.*;
 
 import java.io.IOException;
@@ -47,12 +47,11 @@ public class YamlParser {
         String normalized = resourceName.startsWith("/") ?
                 resourceName.substring(1) : resourceName;
 
-        beanRegistry = new BeanRegistryImplementation(getLatchObserver(cdl),generator);
-        beanRegistry.registerBeanDefinitions(GenericYamlParser.parseMembraneResources(
-                requireNonNull(cl.getResourceAsStream(normalized)), generator));
-        beanRegistry.start();
+        BeanRegistryImplementation impl = new BeanRegistryImplementation(generator);
+        impl.parseYamls(requireNonNull(cl.getResourceAsStream(normalized)), generator);
+        impl.start();
 
-        cdl.await();
+        beanRegistry = impl;
     }
 
     private @NotNull Grammar getGrammar()
@@ -69,28 +68,6 @@ public class YamlParser {
         );
 
         return (Grammar) grammarClass.getConstructor().newInstance();
-    }
-
-    /**
-     * Used to get notification about termination of parsing
-     */
-    private static @NotNull BeanCacheObserver getLatchObserver(CountDownLatch cdl) {
-        return new BeanCacheObserver() {
-            @Override
-            public void handleAsynchronousInitializationResult(boolean empty) {
-                cdl.countDown();
-            }
-
-            @Override
-            public void handleBeanEvent(BeanDefinition bd, Object bean, Object oldBean) {
-
-            }
-
-            @Override
-            public boolean isActivatable(BeanDefinition bd) {
-                return true;
-            }
-        };
     }
 
     /**

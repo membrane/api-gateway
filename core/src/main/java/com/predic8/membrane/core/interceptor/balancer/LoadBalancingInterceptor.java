@@ -76,7 +76,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             //2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
             String msg = "No backend node found that is ready to handle this request. Check health of backends and balancer configuration.";
             log.error(msg);
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .status(503)
                     .title("Service unavailable")
                     .addSubSee("node-dispatching")
@@ -84,7 +84,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .status(503)
                     .title("Service unavailable")
                     .addSubSee("node-dispatching")
@@ -117,7 +117,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
             try {
                 sessionId = sessionIdExtractor.getSessionId(exc, RESPONSE);
             } catch (Exception e) {
-                internal(router.isProduction(),getDisplayName())
+                internal(router.getConfiguration().isProduction(),getDisplayName())
                         .addSubSee("sessionid-extraction")
                         .detail("Could not get session id!")
                         .exception(e)

@@ -142,7 +142,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * host: thomas-bayer.com
  * </code>
  */
-@MCElement(name = "kubernetesValidation")
+@MCElement(name = "kubernetesValidation", excludeFromFlow = true)
 public class KubernetesValidationInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(KubernetesValidationInterceptor.class.getName());
@@ -182,7 +182,7 @@ public class KubernetesValidationInterceptor extends AbstractInterceptor {
             return RETURN;
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .component(getDisplayName())
                     .detail("Error handling request!")
                     .exception(e)

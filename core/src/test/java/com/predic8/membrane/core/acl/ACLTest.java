@@ -13,8 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.acl;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.acl.*;
+import com.predic8.membrane.core.router.*;
+import org.junit.jupiter.api.*;
 
 import java.util.function.*;
 
@@ -22,9 +23,21 @@ import static java.util.regex.Pattern.*;
 
 public abstract class ACLTest extends AccessControlInterceptor {
 
+    protected Router router;
+
+    @BeforeEach
+    void setUpEach() {
+        router = new DummyTestRouter();
+        router.start();
+    }
+
+    @AfterEach
+    void tearDownEach() {
+        router.stop();
+    }
+
     private AccessControlInterceptor createRouter(boolean isReverseDNS, boolean useForwardedFor, Function<Router, Resource> f) {
-        Router router = new Router();
-        AccessControlInterceptor aci = buildAci(f.apply(router), router);
+        AccessControlInterceptor aci = buildAci(f.apply(router));
         aci.setUseXForwardedForAsClientAddr(useForwardedFor);
         return aci;
     }
@@ -33,11 +46,11 @@ public abstract class ACLTest extends AccessControlInterceptor {
         return createRouter(isReverseDNS, useForwardedFor, router -> getIpResource(scheme, ptype, router));
     }
 
-    AccessControlInterceptor createHostnameACI(String scheme, boolean isReverseDNS) throws Exception {
+    AccessControlInterceptor createHostnameACI(String scheme, boolean isReverseDNS) {
         return createRouter(isReverseDNS, false, router -> getHostnameResource(scheme, router));
     }
 
-    private static AccessControlInterceptor buildAci(Resource resource, Router router) {
+    private static AccessControlInterceptor buildAci(Resource resource) {
         return new ACLTest() {{
             setAccessControl(new AccessControl(router) {{
                 addResource(resource);

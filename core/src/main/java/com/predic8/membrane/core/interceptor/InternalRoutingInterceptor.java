@@ -57,7 +57,7 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             String detail = "Could not invoke request handler for internal route.";
             log.error(detail, e); // Most should be handled inside the interceptors
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .flow(Flow.REQUEST)
                     .detail(detail)
                     .exception(e)
@@ -81,7 +81,7 @@ public class InternalRoutingInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             String detail = "Could not invoke response handler for internal route.";
             log.error(detail, e); // Most should be handled inside the interceptors
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .flow(Flow.RESPONSE)
                     .detail(detail)
                     .exception(e)

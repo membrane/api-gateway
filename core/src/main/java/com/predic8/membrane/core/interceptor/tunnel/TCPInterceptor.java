@@ -25,7 +25,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
  *              and not inspected.
  * @default false
  */
-@MCElement(name = "tcp")
+@MCElement(name = "tcp", excludeFromFlow = true)
 public class TCPInterceptor extends AbstractInterceptor {
 
 	public TCPInterceptor() {

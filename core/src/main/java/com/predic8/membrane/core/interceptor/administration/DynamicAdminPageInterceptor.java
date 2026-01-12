@@ -60,7 +60,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
             o = dispatchRequest(exc);
         } catch (Exception e) {
 			log.error("", e);
-			internal(router.isProduction(),getDisplayName())
+			internal(router.getConfiguration().isProduction(),getDisplayName())
 					.detail("Error in dynamic administration request!")
 					.exception(e)
 					.buildAndSetResponse(exc);
@@ -270,12 +270,14 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			static final int mb = 1024*1024;
 			final DecimalFormat formatter = new DecimalFormat("#.00");
 
-			private String formatMemoryValue(float value){
-				float newValue = value / (float)mb;
+			private String formatMemoryValue(float value) {
+				float newValue = value / (float) mb;
 
 				String unit = "MB";
-				if(newValue > 1024)
+				if (newValue >= 1024f) {
+					newValue /= 1024f;
 					unit = "GB";
+				}
 
 				return formatter.format(newValue) + " " + unit;
 			}
@@ -852,7 +854,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome dispatchRequest(Exchange exc) throws URISyntaxException, IOException, InvocationTargetException, IllegalAccessException {
-		String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().getFirst());
+		String pathQuery = URLUtil.getPathQuery(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst());
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
@@ -864,7 +866,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws URISyntaxException, IOException {
-		return URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
+		return URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, ERROR);
 	}
 
 	private Response respond(String page) {

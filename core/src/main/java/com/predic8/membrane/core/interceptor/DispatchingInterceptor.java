@@ -41,7 +41,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * object. The dispatching interceptor needs the service proxy to
  * get information about the target.
  */
-@MCElement(name = "dispatching")
+@MCElement(name = "dispatching", excludeFromFlow = true)
 public class DispatchingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
@@ -66,7 +66,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
                 pd.buildAndSetResponse(exc);
                 return ABORT;
             } catch (Exception e) {
-                internal(router.isProduction(), getDisplayName())
+                internal(router.getConfiguration().isProduction(), getDisplayName())
                         .detail("Could not get forwarding destination to dispatch request")
                         .exception(e)
                         .buildAndSetResponse(exc);
@@ -109,12 +109,12 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
         if (p.getTargetURL() != null) {
             String targetURL = p.getTarget().compileUrl(exc, REQUEST);
-            if (targetURL.startsWith("http")) {
-                String basePath = UriUtil.getPathFromURL(router.getUriFactory(), targetURL);
-                if (basePath.isEmpty() || "/".equals(basePath)) {
-                    URL base = new URL(targetURL);
+            if (targetURL.startsWith("http") || targetURL.startsWith("internal")) {
+                String basePath = UriUtil.getPathFromURL(router.getConfiguration().getUriFactory(), targetURL);
+                if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
+                    URI base = new URI(targetURL);
                     // Resolve and normalize slashes consistently with the branch below.
-                    return new URL(base, getUri(exc)).toString();
+                    return base.resolve(getUri(exc)).toString();
                 }
             }
             return targetURL;
@@ -131,7 +131,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         if (exc.getRequest().isCONNECTRequest()) {
             return exc.getRequest().getUri();
         }
-        return router.getUriFactory().create(exc.getRequest().getUri()).getPathWithQuery();
+        return router.getConfiguration().getUriFactory().create(exc.getRequest().getUri()).getPathWithQuery();
     }
 
     @Override

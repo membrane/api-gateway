@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2025 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -22,18 +22,14 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
+import java.util.concurrent.TimeUnit;
 
-import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static java.io.File.separator;
-import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Objects.requireNonNull;
 import static org.apache.commons.io.FileUtils.copyFileToDirectory;
-import static org.apache.commons.io.FileUtils.writeStringToFile;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
+
 
     @Override
     protected String getExampleDirName() {
@@ -41,69 +37,72 @@ public class LoggingJDBCExampleTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    public void test() throws Exception {
-        copyDerbyLibraries();
-
-        writeStringToFile(new File(baseDir, "proxies.xml"),  readFileFromBaseDir("proxies.xml").
-                replace("org.apache.derby.jdbc.ClientDriver", "org.apache.derby.jdbc.EmbeddedDriver").
-                replace("jdbc:derby://localhost:1527/membranedb;create=true", "jdbc:derby:derbyDB;create=true"), UTF_8);
+    void test() throws Exception {
+        copyH2JarToMembraneLib();
 
         try (Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-            ha.getAndAssert200("http://localhost:2000/");
+            ha.getAndAssert200("http://localhost:2000/?t="+ System.nanoTime());
+            assertLogged("GET", "/?t=", 200);
         }
-
-        assertLogToDerbySucceeded();
     }
 
-    private void copyDerbyLibraries() throws IOException {
-        copyDerbyJarToMembraneLib("org.apache.derby.jdbc.EmbeddedDriver");
-        copyDerbyJarToMembraneLib("org.apache.derby.iapi.jdbc.JDBCBoot");
-        copyDerbyJarToMembraneLib("org.apache.derby.shared.common.error.StandardException");
-    }
+    private void assertLogged(String method, String pathContains, int status) {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (System.nanoTime() < deadline) {
+            try (Connection c = DriverManager.getConnection(h2JdbcUrl(), "membrane", "secret");
+                 ResultSet rs = c.prepareStatement("select * from statistic limit 200").executeQuery()) {
 
-    private void assertLogToDerbySucceeded() throws Exception {
-        sleep(1000); // We have to wait till the Membrane process is terminated, otherwise the derbyDB file is still used by Membrane
-        Class.forName("org.apache.derby.jdbc.EmbeddedDriver").getDeclaredConstructor().newInstance();
+                ResultSetMetaData md = rs.getMetaData();
+                int methodIdx = findCol(md, "METHOD", "HTTP_METHOD");
+                int pathIdx   = findCol(md, "PATH", "URI", "URL");
+                int statusIdx = findCol(md, "STATUS_CODE", "STATUS");
 
-        try (Connection conn = getConnection()) {
-            try (Statement stmt = conn.createStatement()) {
-                //noinspection SqlResolve,SqlNoDataSourceInspection
-                try (ResultSet rs = stmt.executeQuery("select METHOD from MEMBRANE.STATISTIC")) {
-                    assertTrue(rs.next());
-                    assertEquals("GET", rs.getString(1));
+                while (rs.next()) {
+                    boolean okMethod = methodIdx == 0 || method.equals(rs.getString(methodIdx));
+                    boolean okPath   = pathIdx == 0   || (rs.getString(pathIdx) != null && rs.getString(pathIdx).contains(pathContains));
+                    boolean okStatus = statusIdx == 0 || status == rs.getInt(statusIdx);
+
+                    if (okMethod && okPath && okStatus) return;
                 }
-            }
+            } catch (SQLException ignored) {}
         }
+
+        fail("Expected log entry not found (method=%s, path~=%s, status=%d).".formatted(method, pathContains, status));
+    }
+
+    private static int findCol(ResultSetMetaData md, String... candidates) throws SQLException {
+        int n = md.getColumnCount();
+        for (int i = 1; i <= n; i++) {
+            String name = md.getColumnLabel(i);
+            if (name == null || name.isBlank()) name = md.getColumnName(i);
+            String up = name == null ? "" : name.toUpperCase();
+            for (String c : candidates)
+                if (up.equals(c)) return i;
+        }
+        return 0;
+    }
+
+
+    private String h2JdbcUrl() {
+        return "jdbc:h2:" + new File(getExampleDir(), "membranedb").getAbsolutePath().replace('\\', '/') + ";AUTO_SERVER=TRUE";
+    }
+
+    private File getExampleDir() {
+        return new File(getMembraneHome(), "examples" + separator + getExampleDirName());
+    }
+
+    private void copyH2JarToMembraneLib() throws IOException {
         try {
-            DriverManager.getConnection("jdbc:derby:;shutdown=true");
-        } catch (SQLException e) {
-            // do nothing
+            File jar = new File(org.h2.Driver.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI());
+
+            if (!jar.isFile() || !jar.getName().endsWith(".jar"))
+                throw new AssertionError("H2 is not loaded from a jar: " + jar);
+
+            copyFileToDirectory(jar, new File(getMembraneHome(), "lib"));
+        } catch (Exception e) {
+            throw new IOException("Failed to locate/copy H2 jar.", e);
         }
     }
 
-    private Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:derby:" + getDBFile().getAbsolutePath().replace("\\", "/"));
-    }
-
-    private File getDBFile() {
-        return new File(baseDir, "derbyDB");
-    }
-
-    private void copyDerbyJarToMembraneLib(String clazz) throws IOException {
-
-        File derbyJar = getDerbyJarFile(getClassJar(clazz));
-
-        if (!derbyJar.exists())
-            throw new AssertionError("derby jar not found in classpath (it's either missing or the detection logic broken). classJar=" + getClassJar(clazz));
-
-        copyFileToDirectory(derbyJar, new File(getMembraneHome(), "lib"));
-    }
-
-    private String getClassJar(String clazz) {
-        return requireNonNull(getClass().getResource("/" + clazz.replace('.', '/') + ".class")).getPath();
-    }
-
-    private File getDerbyJarFile(String classJar) {
-        return new File(classJar.split("!")[0].substring(isWindows() ? 6 : 5));
-    }
 }

@@ -15,6 +15,9 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
 
 /**
  * Immutable parsing state passed down while traversing YAML.
@@ -22,7 +25,7 @@ import com.predic8.membrane.annot.*;
  * - registry: access to already materialized beans (e.g., for $ref/reference attributes).
  * - grammar: resolves element names to Java classes via local/global lookups.
  */
-public record ParsingContext(String context, BeanRegistry registry, Grammar grammar) {
+public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(String context, T registry, Grammar grammar) {
 
     ParsingContext updateContext(String context) {
         return new ParsingContext(context, registry, grammar);

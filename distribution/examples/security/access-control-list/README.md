@@ -86,7 +86,7 @@ The access permissions are scanned from top to bottom, therefore the order of th
 
 ---
 See:
-- [accessControl](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/accessControl.htm) reference
+- [accessControl](https://membrane-api.io/docs/current/accessControl.html) reference
 
 
 

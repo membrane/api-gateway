@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.router.*;
 
 import java.util.*;
 import java.util.function.Function;
@@ -33,7 +33,7 @@ public class ClaimList {
         this.supportedClaims = supportedClaims;
     }
 
-    @MCElement(name="scope", topLevel=false, id="claims-scope")
+    @MCElement(name="scope", component =false, id="claims-scope")
     public static class Scope{
         private String id;
         private String claims;

@@ -41,18 +41,18 @@ curl localhost:2000/api-docs
 
 Open the same URL [http://localhost:2000/api-doc](http://localhost:2000/api-doc) in the browser, and you get a UI.
 
-![API Overview](api-overview.png)
+![API Overview](api-overview.jpg)
 
 
 
 
 3. Click on [Fruit Shop API](http://localhost:2000/api-doc/ui/fruit-shop-api-v1-0) on the left to open the Swagger UI of the API.
 
-![Swagger UI](swagger-ui.png)
+![Swagger UI](swagger-ui.jpg)
 
 4. Click on __POST /products__ to expand it.
 
-![POST /products](post-products.png)
+![POST /products](post-products.jpg)
 
 5. Next click on _Try it out_ and then on _Execute_. The call should succeed and create a new product.
 
@@ -104,4 +104,4 @@ For more about the OpenAPI Validation features of Membrane have a look at:
 
 ---
 See:
-- [openapi](https://membrane-soa.org/api-gateway-doc/current/configuration/reference/openapi.htm) reference
+- [openapi](https://membrane-api.io/docs/current/openapi.html) reference

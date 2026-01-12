@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.templating.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.router.*;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.junit.jupiter.api.*;
@@ -30,15 +30,15 @@ public class AdjustContentLengthTest {
 
 	@BeforeAll
 	public static void setUp() throws Exception {
-		router = new HttpRouter();
-		router.getRuleManager().addProxyAndOpenPortIfNew(createMonitorRule());
-		router.getRuleManager().addProxyAndOpenPortIfNew(createEndpointRule());
-		router.init();
+		router = new TestRouter();
+		router.add(createMonitorRule());
+		router.add(createEndpointRule());
+		router.start();
 	}
 
 	@AfterAll
 	public static void tearDown() {
-		router.shutdown();
+		router.stop();
 	}
 
 	private static ServiceProxy createMonitorRule() {
