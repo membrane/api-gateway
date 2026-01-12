@@ -1,4 +1,4 @@
-/* Copyright 2014 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public class BlueprintParsers {
 						sources.toArray(new Element[0]));
                 try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
                     String copyright = """
-                            /* Copyright 2014 predic8 GmbH, www.predic8.com
+                            /* Copyright 2026 predic8 GmbH, www.predic8.com
                             
                                Licensed under the Apache License, Version 2.0 (the "License");
                                you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ public class BlueprintParsers {
 					FileObject o = processingEnv.getFiler().createSourceFile(main.getAnnotation().outputPackage() + ".blueprint" + "." + ii.getParserClassSimpleName(),
 							sources.toArray(new Element[0]));
                     try (BufferedWriter bw = new BufferedWriter(o.openWriter())) {
-                        bw.write("/* Copyright 2014 predic8 GmbH, www.predic8.com\r\n" +
+                        bw.write("/* Copyright 2026 predic8 GmbH, www.predic8.com\r\n" +
                                 "\r\n" +
                                 "   Licensed under the Apache License, Version 2.0 (the \"License\");\r\n" +
                                 "   you may not use this file except in compliance with the License.\r\n" +

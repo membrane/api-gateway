@@ -170,7 +170,7 @@ sed -i 's#CLASSPATH="$membrane_home/conf:#CLASSPATH="/etc/membrane:#' %{buildroo
 %{homedir}
 
 %changelog
-* Mon Sep 18 2023 predic8 <info@predic8.de>
+* Mon Sep 18 2026 predic8 <info@predic8.de>
 - Updated Membrane version to 5.2.0
-* Thu Mar 16 2023 predic8 <info@predic8.de>
+* Thu Mar 16 2026 predic8 <info@predic8.de>
 - initial example

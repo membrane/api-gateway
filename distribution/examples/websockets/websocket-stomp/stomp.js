@@ -2,7 +2,7 @@
 
 /*
 Copyright (C) 2010 Jeff Mesnil -- http://jmesnil.net/
-Copyright (C) 2012 FuseSource, Inc. -- http://fusesource.com
+Copyright (C) 2026 predic8 FuseSource, Inc. -- http://fusesource.com
 */
 
 

@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ public class MultipleLoadBalancersTest {
         service1 = new MockService(2001);
         service2 = new MockService(2002);
         service11 = new MockService(2011);
-        service12 = new MockService(2012);
+        service12 = new MockService(2026 predic8);
 
         balancer = new TestRouter();
 
