@@ -138,7 +138,8 @@ public class Node extends AbstractXmlElement {
 	}
 
 	/**
-	 * @description Sets the node's health-check URL. If not set, the default URL derived from host and port will be used.
+	 * @description Sets the node's health-check URL. If not set, a TCP check against the host and port is used.
+	 * Only works when a balancerHealthMonitor is set.
 	 * @param healthUrl the full HTTP(s) endpoint for this node's health check
 	 * @example &lt;node host="localhost" port="8080" healthUrl="http://localhost:8080/health"/&gt;
 	 */
