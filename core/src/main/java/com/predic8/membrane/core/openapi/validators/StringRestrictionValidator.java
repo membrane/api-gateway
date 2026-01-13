@@ -19,6 +19,9 @@ package com.predic8.membrane.core.openapi.validators;
 import com.fasterxml.jackson.databind.node.*;
 import io.swagger.v3.oas.models.media.*;
 
+import java.util.regex.*;
+
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
 import static java.lang.String.*;
 
 public class StringRestrictionValidator {
@@ -48,21 +51,33 @@ public class StringRestrictionValidator {
             return null;
         if (value instanceof BooleanNode)
             return null;
-        if (value instanceof DoubleNode)
-            return null;
-        if (value instanceof DecimalNode)
+        if (value instanceof NumericNode)
             return null;
 
-        ValidationErrors errors = new ValidationErrors();
-        String str = getStringValue(value);
+        var err = new ValidationErrors();
+        var str = getStringValue(value);
 
         if (isMaxlenExceeded(str)) {
-            errors.add(new ValidationError(ctx.schemaType("string"), format("The string '%s' is %d characters long. MaxLength of %d is exceeded.", str, str.length(), schema.getMaxLength())));
+            err.add(new ValidationError(ctx.schemaType(STRING), format("The string '%s' is %d characters long. MaxLength of %d is exceeded.", str, str.length(), schema.getMaxLength())));
         }
         if (isMinLenExceeded(str)) {
-            errors.add(new ValidationError(ctx.schemaType("string"), format("The string '%s' is %d characters long. The length of the string is shorter than the minLength of %d.", str, str.length(), schema.getMinLength())));
+            err.add(new ValidationError(ctx.schemaType(STRING), format("The string '%s' is %d characters long. The length of the string is shorter than the minLength of %d.", str, str.length(), schema.getMinLength())));
         }
-        return errors;
+        if (isPatternViolated(str)) {
+            err.add(new ValidationError(
+                    ctx.schemaType(STRING),
+                    format("The string '%s' does not match the pattern '%s'.", str, schema.getPattern())
+            ));
+        }
+        if (isEnumViolated(str)) {
+            err.add(new ValidationError(ctx.schemaType(STRING),
+                    format("The string '%s' is not one of the allowed values %s.", str, schema.getEnum())));
+        }
+        if (isConstViolated(str)) {
+            err.add(new ValidationError(ctx.schemaType(STRING),
+                    format("The string '%s' must be equal to the constant value '%s'.", str, schema.getConst())));
+        }
+        return err;
     }
 
     private boolean isMinLenExceeded(String str) {
@@ -82,5 +97,36 @@ public class StringRestrictionValidator {
             str = ((TextNode) value).asText();
         }
         return str;
+    }
+
+    private boolean isPatternViolated(String str) {
+        if (schema.getPattern() == null)
+            return false;
+
+        try {
+            // OpenAPI/JSON Schema semantics: the regex must match somewhere in the string (not necessarily the whole string).
+            return !Pattern.compile(schema.getPattern()).matcher(str).find();
+        } catch (PatternSyntaxException e) {
+            // Invalid regex in spec: treat as validation error (spec/config issue).
+            return true;
+        }
+    }
+
+    private boolean isEnumViolated(String str) {
+        if (schema.getEnum() == null || schema.getEnum().isEmpty())
+            return false;
+
+        for (Object v : schema.getEnum()) {
+            if (v != null && str.equals(v.toString()))
+                return false;
+        }
+        return true;
+    }
+
+    private boolean isConstViolated(String str) {
+        if (schema.getConst() == null)
+            return false;
+
+        return !str.equals(String.valueOf(schema.getConst()));
     }
 }

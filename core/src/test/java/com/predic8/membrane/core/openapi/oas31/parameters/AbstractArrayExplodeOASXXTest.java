@@ -16,7 +16,6 @@ package com.predic8.membrane.core.openapi.oas31.parameters;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
@@ -24,14 +23,16 @@ import static com.predic8.membrane.core.openapi.model.Request.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ArrayExplodeTest {
+public abstract class AbstractArrayExplodeOASXXTest {
 
     OpenAPIValidator validator;
+
+    protected abstract String getOpenAPIFileName();
 
     @BeforeEach
     void setUp() {
         validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(
-                parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/parameters/array-explode.yaml")),
+                parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/parameters/array-explode-3.1.X.yaml")),
                 new OpenAPISpec()
         ));
     }
