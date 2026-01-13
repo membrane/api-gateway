@@ -36,7 +36,7 @@ class StringValidatorTest {
         void canValidateString() {
             assertEquals(STRING, STRING_VALIDATOR.canValidate("abc"));
             assertEquals(STRING, STRING_VALIDATOR.canValidate(JSON_STRING));
-            assertEquals(null, STRING_VALIDATOR.canValidate(JSON_NUMBER));
+            assertNull(STRING_VALIDATOR.canValidate(JSON_NUMBER));
         }
 
         @Test

@@ -78,6 +78,7 @@ class StringRestrictionValidatorTest {
         });
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void enumValues() {
         var validator = new StringRestrictionValidator(

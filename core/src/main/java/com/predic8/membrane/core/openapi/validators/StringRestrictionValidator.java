@@ -43,16 +43,25 @@ public class StringRestrictionValidator {
 
         ctx = ctx.schemaType(schema.getType());
 
-        if (value instanceof ObjectNode)
-            return null;
-        if (value instanceof ArrayNode)
-            return null;
-        if (value instanceof IntNode)
-            return null;
-        if (value instanceof BooleanNode)
-            return null;
-        if (value instanceof NumericNode)
-            return null;
+        switch (value) {
+            case ObjectNode ignored -> {
+                return null;
+            }
+            case ArrayNode ignored -> {
+                return null;
+            }
+            case IntNode ignored -> {
+                return null;
+            }
+            case BooleanNode ignored -> {
+                return null;
+            }
+            case NumericNode ignored -> {
+                return null;
+            }
+            default -> {
+            }
+        }
 
         var err = new ValidationErrors();
         var str = getStringValue(value);
