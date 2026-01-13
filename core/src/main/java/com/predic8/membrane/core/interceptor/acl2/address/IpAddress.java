@@ -11,14 +11,14 @@ public abstract class IpAddress {
     public abstract InetAddress getAddress();
 
     public String getHostname() {
-        return "";
+        return hostname;
     }
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
     }
 
-    enum ipVersion {
+    public enum ipVersion {
         IPV4, IPV6
     }
 }

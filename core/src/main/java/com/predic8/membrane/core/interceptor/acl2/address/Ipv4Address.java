@@ -9,7 +9,6 @@ import java.util.regex.Pattern;
 
 public final class Ipv4Address extends IpAddress {
 
-    // IPv4 + optional /cidr
     private static final Pattern IPV4_PATTERN = Pattern.compile(
             "^(?<address>(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\." +
                     "(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\\." +
@@ -18,8 +17,6 @@ public final class Ipv4Address extends IpAddress {
     );
 
     private final Inet4Address address;
-
-    private String hostname = "";
 
     private Ipv4Address(Inet4Address address) {
         this.address = address;
@@ -52,6 +49,5 @@ public final class Ipv4Address extends IpAddress {
     public InetAddress getAddress() {
         return address;
     }
-
 
 }
