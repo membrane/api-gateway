@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.beanregistry.AsyncBeanCollector;
 import com.predic8.membrane.annot.beanregistry.BeanCollector;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
 import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.interceptor.kubernetes.*;
