@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public final class Ipv4Address implements IpAddress {
+public final class Ipv4Address extends IpAddress {
 
     // IPv4 + optional /cidr
     private static final Pattern IPV4_PATTERN = Pattern.compile(
@@ -44,8 +44,8 @@ public final class Ipv4Address implements IpAddress {
     }
 
     @Override
-    public IpVersion version() {
-        return IpVersion.IPV4;
+    public ipVersion version() {
+        return ipVersion.IPV4;
     }
 
     @Override
@@ -53,13 +53,5 @@ public final class Ipv4Address implements IpAddress {
         return address;
     }
 
-    @Override
-    public String getHostname() {
-        return "";
-    }
 
-    @Override
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
 }

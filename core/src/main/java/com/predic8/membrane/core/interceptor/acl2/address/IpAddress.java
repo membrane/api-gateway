@@ -2,22 +2,23 @@ package com.predic8.membrane.core.interceptor.acl2.address;
 
 import java.net.InetAddress;
 
-import static com.predic8.membrane.core.interceptor.acl2.address.IpAddress.IpVersion.IPV4;
-import static com.predic8.membrane.core.interceptor.acl2.address.IpAddress.IpVersion.IPV6;
+public abstract class IpAddress {
 
-public sealed interface IpAddress permits Ipv4Address, Ipv6Address {
+    private String hostname = "";
 
-    void setHostname(String hostName);
+    public abstract ipVersion version();
 
-    String getHostname();
+    public abstract InetAddress getAddress();
 
-    IpVersion version();
-    InetAddress getAddress();
+    public String getHostname() {
+        return "";
+    }
 
-    default boolean isV4() { return version() == IPV4; }
-    default boolean isV6() { return version() == IPV6; }
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
 
-    enum IpVersion {
+    enum ipVersion {
         IPV4, IPV6
     }
 }
