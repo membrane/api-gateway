@@ -7,6 +7,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.acl2.address.IpAddress;
 import com.predic8.membrane.core.interceptor.acl2.address.Ipv4Address;
+import com.predic8.membrane.core.interceptor.acl2.address.Ipv6Address;
 import com.predic8.membrane.core.interceptor.acl2.rules.AccessRule;
 import com.predic8.membrane.core.interceptor.acl2.targets.Hostname;
 import com.predic8.membrane.core.proxies.Proxy;
@@ -84,9 +85,8 @@ public class AccessControlInterceptor extends AbstractInterceptor {
         Optional<Ipv4Address> v4 = Ipv4Address.parse(raw);
         if (v4.isPresent()) return Optional.of(v4.get());
 
-        // TODO: implement Ipv6Address.parse(raw) analog
-        // Optional<Ipv6Address> v6 = Ipv6Address.parse(raw);
-        // if (v6.isPresent()) return Optional.of(v6.get());
+        Optional<Ipv6Address> v6 = Ipv6Address.parse(raw);
+        if (v6.isPresent()) return Optional.of(v6.get());
 
         return Optional.empty();
 
