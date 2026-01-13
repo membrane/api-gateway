@@ -24,6 +24,7 @@ import org.slf4j.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static java.lang.String.*;
 
 @SuppressWarnings("rawtypes")
@@ -61,11 +62,14 @@ public class StringValidator implements JsonSchemaValidator {
 
         String value;
         if (obj instanceof JsonNode node) {
-            if (!JsonNodeType.STRING.equals(node.getNodeType())) {
+             if (JsonNodeType.STRING.equals(node.getNodeType())) {
+                value = node.textValue();
+            } else if (QUERY_PARAMETER.equals(ctx.getValidatedEntityType())) {
+                value = node.asText();
+            } else {
                 errors.add(ctx, format("String expected but got %s of type %s", node, node.getNodeType()));
                 return errors;
             }
-            value = node.textValue();
         } else if (obj instanceof String s) {
             value = s;
         } else {
