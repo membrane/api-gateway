@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.util.Enumeration;
 
@@ -111,7 +112,6 @@ class HttpServletHandler extends AbstractHttpHandler {
 	}
 
 	private Request createRequest() throws IOException {
-		Request srcReq = new Request();
 
 		String pathQuery = request.getRequestURI();
 		if (request.getQueryString() != null)
@@ -123,13 +123,25 @@ class HttpServletHandler extends AbstractHttpHandler {
 				pathQuery = pathQuery.substring(contextPath.length());
 		}
 
-		srcReq.create(
+		return createRequest(
 				request.getMethod(),
 				pathQuery,
 				request.getProtocol(),
 				createHeader(),
 				request.getInputStream());
-		return srcReq;
+	}
+
+	public Request createRequest(String method, String uri, String protocol, Header header, InputStream in) throws IOException {
+		Request request = new Request();
+		request.setMethod(method);
+		request.setUri(uri);
+		if (!protocol.startsWith("HTTP/"))
+			throw new RuntimeException("Unknown protocol '" + protocol + "'");
+		request.setVersion(protocol.substring(5));
+		request.setHeader(header);
+
+		request.createBody(in);
+		return request;
 	}
 
 	private Header createHeader() {

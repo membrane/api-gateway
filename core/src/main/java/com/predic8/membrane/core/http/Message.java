@@ -164,7 +164,7 @@ public abstract class Message {
 		header.setContentLength(content.length);
 	}
 
-	protected void createBody(InputStream in) throws IOException {
+	public void createBody(InputStream in) throws IOException {
 		log.debug("createBody");
 
 		if (shouldNotContainBody()) {
