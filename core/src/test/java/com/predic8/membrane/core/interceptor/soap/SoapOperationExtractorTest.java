@@ -13,19 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import java.io.IOException;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import org.junit.jupiter.api.*;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-
-import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.SOAP_OPERATION;
-import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.SOAP_OPERATION_NS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SoapOperationExtractorTest {
 
@@ -72,12 +66,8 @@ public class SoapOperationExtractorTest {
 
 	}
 
-	private Exchange getExchange(String path) throws IOException {
-		Exchange exc = new Exchange(null);
-		Request req = new Request();
-		req.create("POST", "http://test", "HTTP/", new Header(), getClass().getClassLoader().getResourceAsStream(path));
-		exc.setRequest(req);
-		return exc;
+	private Exchange getExchange(String path) throws Exception {
+		return post("/test").body(getClass().getClassLoader().getResourceAsStream(path)).buildExchange();
 	}
 
 }

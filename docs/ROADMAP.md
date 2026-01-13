@@ -6,6 +6,7 @@
 
 # 7.X
 
+- Add Example tests for all tutorials
 - Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
 - Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
 - Rewrite ACL to use the YAML configuration instead of external XML files
@@ -24,7 +25,9 @@
 - Refine YAML for balancer: clustersFromSpring
 - wsdlRewriter YAML is not working
 - use @MCElement(collapsed=true) for suitable classes
-
+- StreamTracing:
+  - Take out zeros
+  - Line Break after []
 
 # 7.0.4
 
