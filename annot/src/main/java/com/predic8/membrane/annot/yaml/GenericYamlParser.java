@@ -168,7 +168,7 @@ public class GenericYamlParser {
 
             // when this is a list, we are on a @MCElement(..., noEnvelope=true)
             if (node.isArray()) {
-                return handleNoEnvelopeList(ctx, clazz, node, configObj);
+                return handlePostConstructAndPreDestroy(ctx, handleNoEnvelopeList(ctx, clazz, node, configObj));
             }
 
             // scalar inline form for @MCElement(collapsed=true)
