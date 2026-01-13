@@ -2,7 +2,7 @@ package com.predic8.membrane.core.interceptor.acl2.rules;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.acl2.address.IpAddress;
 import com.predic8.membrane.core.interceptor.acl2.targets.Target;
 import com.predic8.membrane.core.util.ConfigurationException;
 
@@ -13,8 +13,8 @@ public abstract class AccessRule {
 
     protected Target target;
 
-    public Optional<Boolean> apply(Exchange exc) {
-        if (target.peerMatches(exc)) return Optional.of(permitPeer());
+    public Optional<Boolean> apply(IpAddress address) {
+        if (target.peerMatches(address)) return Optional.of(permitPeer());
 
         return Optional.empty();
     }

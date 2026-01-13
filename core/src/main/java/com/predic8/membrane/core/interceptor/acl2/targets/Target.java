@@ -1,6 +1,6 @@
 package com.predic8.membrane.core.interceptor.acl2.targets;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.acl2.address.IpAddress;
 
 public abstract class Target {
 
@@ -10,15 +10,17 @@ public abstract class Target {
         this.address = address;
     }
 
-    public abstract boolean peerMatches(Exchange exc);
+    // TODO add and rewrite tests
+
+    public abstract boolean peerMatches(IpAddress address);
 
     public static Target byMatch(String address) {
-        if (IpV4.accepts(address)) {
-            return new IpV4(address);
+        if (Ipv4Target.accepts(address)) {
+            return new Ipv4Target(address);
         }
 
-        if (IpV6.accepts(address)) {
-            return new IpV6(address);
+        if (Ipv6Target.accepts(address)) {
+            return new Ipv6Target(address);
         }
 
         if (Hostname.accepts(address)) {

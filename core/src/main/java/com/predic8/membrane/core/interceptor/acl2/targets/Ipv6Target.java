@@ -1,6 +1,6 @@
 package com.predic8.membrane.core.interceptor.acl2.targets;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.acl2.address.IpAddress;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -8,9 +8,9 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class IpV6 extends Target {
+public class Ipv6Target extends Target {
 
-    private static final Pattern IPV6_PATTERN = Pattern.compile("^.*$");
+    private static final Pattern IPV6_PATTERN = Pattern.compile("^.*$"); // TODO
 
     private final Inet6Address address;
     private final int cidr;
@@ -19,13 +19,13 @@ public class IpV6 extends Target {
         return IPV6_PATTERN.matcher(address).matches();
     }
 
-    public IpV6(String address) {
+    public Ipv6Target(String address) {
         super(address);
 
         Matcher matcher = IPV6_PATTERN.matcher(address);
 
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("Invalid IPv4 format: " + address);
+            throw new IllegalArgumentException("Invalid IPv6 format: " + address);
         }
 
         try {
@@ -43,7 +43,7 @@ public class IpV6 extends Target {
     }
 
     @Override
-    public boolean peerMatches(Exchange exc) {
+    public boolean peerMatches(IpAddress address) {
         return false;
     }
 }

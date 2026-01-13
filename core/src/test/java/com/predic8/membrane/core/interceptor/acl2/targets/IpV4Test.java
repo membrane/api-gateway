@@ -24,7 +24,7 @@ class IpV4Test {
             "192.168.0.0/24"
     })
     void acceptsValid(String input) {
-        assertTrue(IpV4.accepts(input));
+        assertTrue(Ipv4Target.accepts(input));
     }
 
     @ParameterizedTest(name = "denies: \"{0}\"")
@@ -50,6 +50,6 @@ class IpV4Test {
             "192.168.0.1 "
     })
     void deniesInvalid(String input) {
-        assertFalse(IpV4.accepts(input));
+        assertFalse(Ipv4Target.accepts(input));
     }
 }
