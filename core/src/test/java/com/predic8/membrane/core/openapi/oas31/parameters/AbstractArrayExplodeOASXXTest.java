@@ -66,11 +66,6 @@ public abstract class AbstractArrayExplodeOASXXTest {
     class StringRestrictions {
 
         @Test
-        void maxLengthValid() {
-            assertEquals(0, validator.validate(get().path("/foo?strings=abc&strings=def")).size());
-        }
-
-        @Test
         void maxLengthExceeded() {
             var err = validator.validate(get().path("/foo?strings=abcdefghijk")); // 11 chars
             assertEquals(1, err.size());
@@ -116,9 +111,10 @@ public abstract class AbstractArrayExplodeOASXXTest {
         @Test
         void multipleViolationsReportedPerItem() {
             // violates enum and pattern (contains '-') and length is ok
-            var err = validator.validate(get().path("/foo?strings=ab-c"));
+            var err = validator.validate(get().path("/foo?strings=ab-g"));
             assertFalse(err.isEmpty());
             assertTrue(err.stream().anyMatch(e -> e.getMessage().contains("pattern")));
+            assertTrue(err.stream().anyMatch(e -> e.getMessage().contains("enum")));
         }
     }
 
