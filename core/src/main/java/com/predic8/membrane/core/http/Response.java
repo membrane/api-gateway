@@ -422,7 +422,7 @@ public class Response extends Message {
 	}
 
 	@Override
-	public void createBody(InputStream in) throws IOException {
+	protected void createBody(InputStream in) throws IOException {
 		if (isRedirect() && mayHaveNoBody())
 			return;
 

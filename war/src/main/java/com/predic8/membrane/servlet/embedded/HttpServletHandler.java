@@ -131,17 +131,17 @@ class HttpServletHandler extends AbstractHttpHandler {
 				request.getInputStream());
 	}
 
-	public Request createRequest(String method, String uri, String protocol, Header header, InputStream in) throws IOException {
-		Request request = new Request();
-		request.setMethod(method);
-		request.setUri(uri);
+	public Request createRequest(String method, String uri, String protocol, Header header, InputStream in) {
 		if (!protocol.startsWith("HTTP/"))
 			throw new RuntimeException("Unknown protocol '" + protocol + "'");
-		request.setVersion(protocol.substring(5));
-		request.setHeader(header);
 
-		request.createBody(in);
-		return request;
+		return new Request.Builder()
+				.method(method)
+				.uri(uri)
+				.header(header)
+				.body(in)
+				.version(protocol.substring(5))
+				.build();
 	}
 
 	private Header createHeader() {

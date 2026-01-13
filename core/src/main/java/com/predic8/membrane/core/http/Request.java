@@ -249,6 +249,16 @@ public class Request extends Message {
 			return this;
 		}
 
+		public Builder uri(String uri) {
+			req.setUri(uri);
+			return this;
+		}
+
+		public Builder version(String version) {
+			req.setVersion(version);
+			return this;
+		}
+
 		public Builder authorization(String username, String password) {
 			req.getHeader().setAuthorization(username,password);
 			return this;
