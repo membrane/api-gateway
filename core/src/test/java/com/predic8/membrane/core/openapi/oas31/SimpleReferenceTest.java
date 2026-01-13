@@ -26,6 +26,7 @@ import org.junit.jupiter.params.provider.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.model.Request.post;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,20 +36,15 @@ public class SimpleReferenceTest {
 
     @BeforeEach
     void setUp() {
-        OpenAPIRecord apiRecord = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/simple-reference.yaml")), new OpenAPISpec());
-        validator = new OpenAPIValidator(new URIFactory(), apiRecord);
+        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/simple-reference.yaml")), new OpenAPISpec()));
     }
 
     static Stream<Arguments> requestBodyProvider() {
         return Stream.of(
                 Arguments.of("{\"id\": 1, \"email\": \"max@example.com\", \"createdAt\": \"2023-01-01T12:00:00Z\"}", 0),
-
                 Arguments.of("{\"id\": 1}", 1),
-
                 Arguments.of("{\"id\": 2, \"email\": \"invalid-email\", \"createdAt\": \"2023-01-01T12:00:00Z\"}", 1),
-
                 Arguments.of("{\"id\": 3, \"email\": \"anna@example.com\", \"createdAt\": \"not-a-date-time\"}", 1),
-
                 Arguments.of("{\"id\": \"foo\", \"email\": \"bar\", \"createdAt\": \"baz\"}", 3)
         );
     }
@@ -57,8 +53,8 @@ public class SimpleReferenceTest {
     @MethodSource("requestBodyProvider")
     void testUserSchemaValidation(String requestBody, int expectedErrorSize) throws ParseException {
         ValidationErrors errors = validator.validate(
-                Request.post().path("/users").body(requestBody).mediaType(APPLICATION_JSON)
+                post().path("/users").body(requestBody).mediaType(APPLICATION_JSON)
         );
-        assertEquals(expectedErrorSize, errors.size());
+        assertEquals(expectedErrorSize, errors.size(), "Errors: " + errors);
     }
 }
