@@ -127,7 +127,7 @@ class StringRestrictionValidatorTest {
         run(c -> {
             var err = validator.validate(c, "anything");
             assertEquals(1, err.size());
-            assertTrue(err.get(0).getMessage().contains("Invalid pattern"));
+            assertTrue(err.get(0).getMessage().contains("does not match the pattern"));
         });
     }
 

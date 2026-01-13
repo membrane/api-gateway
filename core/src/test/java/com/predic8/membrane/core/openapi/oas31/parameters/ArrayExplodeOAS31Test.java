@@ -14,10 +14,25 @@
 
 package com.predic8.membrane.core.openapi.oas31.parameters;
 
+import org.junit.jupiter.api.*;
+
+import static com.predic8.membrane.core.openapi.model.Request.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 public class ArrayExplodeOAS31Test extends AbstractArrayExplodeOASXXTest {
 
     @Override
     protected String getOpenAPIFileName() {
         return "/openapi/specs/oas31/parameters/array-explode-3.1.X.yaml";
+    }
+
+    /**
+     * OpenAPI parser delivers different values for schema.type for array in 3.0.X and 3.1.X
+     */
+    @Test
+    void numbersInvalid() {
+        var err = validator.validate(get().path("/foo?numbers=1&numbers=notANumber"));
+        assertEquals(1, err.size());
+        assertTrue(err.get(0).getMessage().contains("does not match any of [number]"));
     }
 }

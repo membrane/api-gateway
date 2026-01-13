@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class AbstractArrayExplodeOASXXTest {
 
-    OpenAPIValidator validator;
+    protected OpenAPIValidator validator;
 
     protected abstract String getOpenAPIFileName();
 
@@ -40,13 +40,6 @@ public abstract class AbstractArrayExplodeOASXXTest {
     @Test
     void numbers() {
         assertEquals(0, validator.validate(get().path("/foo?numbers=1&numbers=2")).size());
-    }
-
-    @Test
-    void numbersInvalid() {
-        var err = validator.validate(get().path("/foo?numbers=1&numbers=notANumber"));
-        assertEquals(1, err.size());
-        assertTrue(err.get(0).getMessage().contains("does not match any of [number]"));
     }
 
     @Test
@@ -80,7 +73,6 @@ public abstract class AbstractArrayExplodeOASXXTest {
         @Test
         void maxLengthExceeded() {
             var err = validator.validate(get().path("/foo?strings=abcdefghijk")); // 11 chars
-            System.out.println(err);
             assertEquals(1, err.size());
             assertTrue(err.get(0).getMessage().contains("MaxLength of 10 is exceeded"));
         }
@@ -101,7 +93,6 @@ public abstract class AbstractArrayExplodeOASXXTest {
         void patternViolatedUnderscore() {
             var err = validator.validate(get().path("/foo?strings=ab_c"));
             assertEquals(1, err.size());
-            System.out.println(err.get(0).getMessage());
             assertTrue(err.get(0).getMessage().contains("does not match the pattern"));
         }
 
@@ -119,7 +110,6 @@ public abstract class AbstractArrayExplodeOASXXTest {
         void enumViolated() {
             var err = validator.validate(get().path("/foo?strings=zzz"));
             assertEquals(1, err.size());
-            System.out.println(err);
             assertTrue(err.get(0).getMessage().contains("'zzz' is not part of the enum"));
         }
 

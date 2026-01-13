@@ -103,6 +103,8 @@ public class SchemaValidator implements JsonSchemaValidator {
 
     private ValidationErrors validateByType(ValidationContext ctx, Object value) {
 
+        // For the same OpenAPI content version 3.0.X and 3.1.X can deliver different values
+        // e.g. an array in the QueryParameter
         var type = schema.getType();
 
         if (schemaHasNoTypeAndTypes(type)) {

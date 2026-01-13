@@ -197,13 +197,4 @@ public class StringValidator implements JsonSchemaValidator {
         }
         return null;
     }
-
-    private String getEnumValues() {
-        //noinspection unchecked
-        return String.join(",", schema.getEnum());
-    }
-
-    private boolean matchRegexPattern(String v) {
-        return Pattern.compile(schema.getPattern()).matcher(v).find();
-    }
 }

@@ -66,6 +66,10 @@ public class StringRestrictionValidator {
         var err = new ValidationErrors();
         var str = getStringValue(value);
 
+        if (str == null) {
+            throw new IllegalStateException("String value expected, got " + value.getClass());
+        }
+
         if (isMaxlenExceeded(str)) {
             err.add(new ValidationError(ctx.schemaType(STRING), format("The string '%s' is %d characters long. MaxLength of %d is exceeded.", str, str.length(), schema.getMaxLength())));
         }
