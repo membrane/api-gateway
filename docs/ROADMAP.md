@@ -17,7 +17,7 @@
   - See JmxExporter
 - remove basic-xml-interceptor example?
 - logs:
-  - Instead of:
+- Instead of:
     18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2000'
     18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2001'
     => listening at *:2000, *:2001
@@ -36,7 +36,6 @@
   - When the reason for a parse error is clear. Shorten error message.
 - BalancerHealthMonitor:
   - @PostConstruct instead of InitializingBean, DisposableBean
-- Scripting: expose beanRegistry
 - Migrate deprecated finally to try with ressources
 - if: Add hint in documentation: use choice otherwise for else
 - accessControl:
