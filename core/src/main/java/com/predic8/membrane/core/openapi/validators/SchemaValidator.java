@@ -91,7 +91,6 @@ public class SchemaValidator implements JsonSchemaValidator {
         if ((value == null || value instanceof NullNode) && isNullable())
             return errors;
 
-        errors.add(new StringRestrictionValidator(schema).validate(ctx, value));
         errors.add(new NumberRestrictionValidator(schema).validate(ctx, value));
         errors.add(validateByType(ctx, value));
         return errors;
@@ -107,7 +106,7 @@ public class SchemaValidator implements JsonSchemaValidator {
         var type = schema.getType();
 
         if (schemaHasNoTypeAndTypes(type)) {
-            return validateMultipleTypes(List.of("string", "number", "integer", "boolean", "array", "object", "null"), ctx, value);
+            return validateMultipleTypes(List.of(STRING, NUMBER, INTEGER, BOOLEAN, ARRAY, OBJECT, NULL), ctx, value);
         }
 
         // type in schema has only one type
@@ -187,11 +186,11 @@ public class SchemaValidator implements JsonSchemaValidator {
             return switch (type) {
                 case NULL -> new NullValidator().validate(ctx, value);
                 case NUMBER -> new NumberValidator().validate(ctx, value);
-                case "integer" -> new IntegerValidator().validate(ctx, value);
-                case "string" -> new StringValidator(schema).validate(ctx, value);
-                case "boolean" -> new BooleanValidator().validate(ctx, value);
-                case "array" -> new ArrayValidator(api, schema).validate(ctx, value);
-                case "object" -> new ObjectValidator(api, schema).validate(ctx, value);
+                case INTEGER -> new IntegerValidator().validate(ctx, value);
+                case STRING -> new StringValidator(schema).validate(ctx, value);
+                case BOOLEAN -> new BooleanValidator().validate(ctx, value);
+                case ARRAY -> new ArrayValidator(api, schema).validate(ctx, value);
+                case OBJECT -> new ObjectValidator(api, schema).validate(ctx, value);
                 default -> throw new RuntimeException("Should not happen! " + type);
             };
         } catch (Exception e) {

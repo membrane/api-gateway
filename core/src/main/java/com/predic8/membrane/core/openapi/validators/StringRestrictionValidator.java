@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
 import io.swagger.v3.oas.models.media.*;
+import org.slf4j.*;
 
 import java.util.regex.*;
 
@@ -25,6 +26,8 @@ import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*
 import static java.lang.String.*;
 
 public class StringRestrictionValidator {
+
+    private static final Logger log = LoggerFactory.getLogger(StringRestrictionValidator.class);
 
     @SuppressWarnings("rawtypes")
     private final Schema schema;
@@ -50,9 +53,6 @@ public class StringRestrictionValidator {
             case ArrayNode ignored -> {
                 return null;
             }
-            case IntNode ignored -> {
-                return null;
-            }
             case BooleanNode ignored -> {
                 return null;
             }
@@ -75,12 +75,12 @@ public class StringRestrictionValidator {
         if (isPatternViolated(str)) {
             err.add(new ValidationError(
                     ctx.schemaType(STRING),
-                    format("The string '%s' does not match the pattern '%s'.", str, schema.getPattern())
+                    format("The string '%s' does not match the pattern %s.", str, schema.getPattern())
             ));
         }
         if (isEnumViolated(str)) {
             err.add(new ValidationError(ctx.schemaType(STRING),
-                    format("The string '%s' is not one of the allowed values %s.", str, schema.getEnum())));
+                    format("'%s' is not part of the enum %s.", str, schema.getEnum())));
         }
         if (isConstViolated(str)) {
             err.add(new ValidationError(ctx.schemaType(STRING),
@@ -117,6 +117,7 @@ public class StringRestrictionValidator {
             return !Pattern.compile(schema.getPattern()).matcher(str).find();
         } catch (PatternSyntaxException e) {
             // Invalid regex in spec: treat as validation error (spec/config issue).
+            log.warn("Invalid pattern in OpenAPI spec: {}", schema.getPattern());
             return true;
         }
     }

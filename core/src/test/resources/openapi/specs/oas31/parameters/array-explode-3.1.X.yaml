@@ -23,6 +23,10 @@ paths:
             type: array
             items:
               type: string
+              maxLength: 10
+              enum: ['123','456',abc,def,abcdefghijk,abc123,a,ab_c]
+              minLength: 2
+              pattern: ^[a-z|0-9]+$
       responses:
         "200":
           description: Ok

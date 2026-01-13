@@ -80,15 +80,7 @@ public class StringValidator implements JsonSchemaValidator {
             errors.add(validateFormat(ctx, value));
         }
 
-        if (schema.getConst() != null && !schema.getConst().equals(value)) {
-            errors.add(ctx, format("The string '%s' does not match the const %s.", value, schema.getConst()));
-        } else if (schema.getEnum() != null && !schema.getEnum().contains(value)) {
-            errors.add(ctx, format("'%s' is not part of the enum %s.", value, getEnumValues()));
-        }
-
-        if (schema.getPattern() != null && !matchRegexPattern(value)) {
-            errors.add(ctx, format("The string '%s' does not match regex pattern %s.", value, schema.getPattern()));
-        }
+        errors.add(new StringRestrictionValidator(schema).validate(ctx, value));
 
         return errors;
     }

@@ -12,12 +12,14 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.openapi.oas31.parameters;
+package com.predic8.membrane.core.openapi.oas30;
 
-public class ArrayExplodeOAS31Test extends AbstractArrayExplodeOASXXTest {
+import com.predic8.membrane.core.openapi.oas31.parameters.*;
+
+public class ArrayExplodeOAS30Test extends AbstractArrayExplodeOASXXTest {
 
     @Override
     protected String getOpenAPIFileName() {
-        return "/openapi/specs/oas31/parameters/array-explode-3.1.X.yaml";
+        return "/openapi/specs/oas30/array-explode-3.0.X.yaml";
     }
 }

@@ -32,7 +32,7 @@ public abstract class AbstractArrayExplodeOASXXTest {
     @BeforeEach
     void setUp() {
         validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(
-                parseOpenAPI(getResourceAsStream(this, "/openapi/specs/oas31/parameters/array-explode-3.1.X.yaml")),
+                parseOpenAPI(getResourceAsStream(this, getOpenAPIFileName())),
                 new OpenAPISpec()
         ));
     }
@@ -68,4 +68,68 @@ public abstract class AbstractArrayExplodeOASXXTest {
     void oneNumberAsString() {
         assertEquals(0, validator.validate(get().path("/foo?strings=456")).size());
     }
+
+    @Nested
+    class StringRestrictions {
+
+        @Test
+        void maxLengthValid() {
+            assertEquals(0, validator.validate(get().path("/foo?strings=abc&strings=def")).size());
+        }
+
+        @Test
+        void maxLengthExceeded() {
+            var err = validator.validate(get().path("/foo?strings=abcdefghijk")); // 11 chars
+            System.out.println(err);
+            assertEquals(1, err.size());
+            assertTrue(err.get(0).getMessage().contains("MaxLength of 10 is exceeded"));
+        }
+
+        @Test
+        void minLengthViolated() {
+            var err = validator.validate(get().path("/foo?strings=a")); // 1 char
+            assertEquals(1, err.size());
+            assertTrue(err.get(0).getMessage().contains("shorter than the minLength of 2"));
+        }
+
+        @Test
+        void patternValidLettersAndDigits() {
+            assertEquals(0, validator.validate(get().path("/foo?strings=abc123")).size());
+        }
+
+        @Test
+        void patternViolatedUnderscore() {
+            var err = validator.validate(get().path("/foo?strings=ab_c"));
+            assertEquals(1, err.size());
+            System.out.println(err.get(0).getMessage());
+            assertTrue(err.get(0).getMessage().contains("does not match the pattern"));
+        }
+
+        @Test
+        void enumValidNumericString() {
+            assertEquals(0, validator.validate(get().path("/foo?strings=123&strings=456")).size());
+        }
+
+        @Test
+        void enumValidAlpha() {
+            assertEquals(0, validator.validate(get().path("/foo?strings=abc&strings=def")).size());
+        }
+
+        @Test
+        void enumViolated() {
+            var err = validator.validate(get().path("/foo?strings=zzz"));
+            assertEquals(1, err.size());
+            System.out.println(err);
+            assertTrue(err.get(0).getMessage().contains("'zzz' is not part of the enum"));
+        }
+
+        @Test
+        void multipleViolationsReportedPerItem() {
+            // violates enum and pattern (contains '-') and length is ok
+            var err = validator.validate(get().path("/foo?strings=ab-c"));
+            assertFalse(err.isEmpty());
+            assertTrue(err.stream().anyMatch(e -> e.getMessage().contains("pattern")));
+        }
+    }
+
 }
