@@ -14,17 +14,13 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.http.Response.ok;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LimitedMemoryExchangeStoreTest {
 
@@ -62,14 +58,10 @@ public class LimitedMemoryExchangeStoreTest {
 		assertEquals(value, store.getAllExchangesAsList().get(pos).getProperty("id"));
 	}
 
-	private Exchange getExchange(String id) throws IOException {
-		Exchange exc = new Exchange(null);
+	private Exchange getExchange(String id) throws Exception {
+		var exc = Request.get("/test").buildExchange();
 		exc.setProperty("id", id);
-		Request req = new Request();
-		req.create("GET", "http://test", "HTTP/", new Header(), null);
-		exc.setRequest(req);
-		exc.setResponse(Response.ok().body("<xml />").build());
+		exc.setResponse(ok().body("<xml />").build());
 		return exc;
 	}
-
 }
