@@ -170,10 +170,10 @@ var membrane = function() {
 			for (var i = 0; i < data.destinations.length; i++) {
 				var status = "";
 				if (data.nodeExceptions && i < data.nodeExceptions.length && data.nodeExceptions[i])
-					status = data.nodeExceptions[i];
+					status = $('<div>').text(data.nodeExceptions[i]).html();
 				else if (data.nodeStatusCodes && i < data.nodeStatusCodes.length && data.nodeStatusCodes[i])
 					status = data.nodeStatusCodes[i];
-				res.push([data.destinations[i], status]);
+				res.push([$('<div>').text(data.destinations[i]).html(), status]);
 			}
 			return res;
 		}));
