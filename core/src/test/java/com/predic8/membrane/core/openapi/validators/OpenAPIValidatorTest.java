@@ -1,0 +1,76 @@
+/*
+ *  Copyright 2022 predic8 GmbH, www.predic8.com
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
+
+package com.predic8.membrane.core.openapi.validators;
+
+import com.predic8.membrane.core.openapi.*;
+import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
+
+import java.io.*;
+
+import static com.predic8.membrane.core.openapi.model.Request.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+class OpenAPIValidatorTest {
+
+    OpenAPIValidator validator;
+
+    @BeforeEach
+    public void setUp() throws IOException {
+        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/customers.yml")), new OpenAPISpec()));
+    }
+
+    @Test
+    void validateSimple() {
+        assertEquals(0, validator.validate(get().path("/customers")).size());
+    }
+
+    @Test
+    void rightMethod() {
+        assertEquals(0, validator.validate(get().path("/customers/7")).size());
+    }
+
+    @Test
+    void wrongPath() {
+        var errors = validator.validate(get().path("/foo"));
+        assertEquals(1, errors.size());
+        assertEquals(404, errors.get(0).getContext().getStatusCode());
+        assertEquals(PATH, errors.get(0).getContext().getValidatedEntityType());
+    }
+
+    @Test
+    void wrongMethod() {
+        var errors = validator.validate(Request.patch().path("/customers/7"));
+        assertEquals(1, errors.size());
+        assertEquals(405, errors.get(0).getContext().getStatusCode());
+        assertEquals(METHOD, errors.get(0).getContext().getValidatedEntityType());
+    }
+
+    @Test
+    void queryStringArrayExploded() {
+        assertEquals(0, validator.validate(get().path("/customers?ids=a&ids=b&ids=c")).size());
+    }
+
+    @Test
+    void queryStringArrayExplodedWithNumbers() {
+        assertEquals(0, validator.validate(get().path("/customers?ids=1&ids=2&ids=3")).size());
+    }
+}
