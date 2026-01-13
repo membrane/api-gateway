@@ -23,6 +23,7 @@ public abstract class AccessRule {
 
     @MCAttribute
     public void setTarget(String target) {
+        if (target == null) throw new ConfigurationException("target cannot be null");
         try {
             this.target = Target.byMatch(target);
         } catch (IllegalArgumentException e) {
