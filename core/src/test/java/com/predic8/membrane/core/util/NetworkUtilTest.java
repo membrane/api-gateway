@@ -18,13 +18,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.net.UnknownHostException;
 
 import static com.predic8.membrane.core.util.NetworkUtil.*;
 import static java.lang.Long.parseUnsignedLong;
+import static java.net.InetAddress.getByName;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NetworkUtilTest {
@@ -48,22 +46,6 @@ class NetworkUtilTest {
         assertEquals("2001:db8::1", removeBracketsIfPresent("[ 2001:db8::1 ]"));
     }
 
-    @ParameterizedTest(name = "maskOf({0}) == {1}")
-    @CsvSource({
-            "0,   0x00000000",
-            "1,   0x80000000",
-            "8,   0xFF000000",
-            "16,  0xFFFF0000",
-            "24,  0xFFFFFF00",
-            "31,  0xFFFFFFFE",
-            "32,  0xFFFFFFFF",
-            "33,  0xFFFFFFFF",
-            "-1,  0x00000000"
-    })
-    void maskOf_builds_expected_masks(int prefix, String expectedHex) {
-        assertEquals((int) parseUnsignedLong(expectedHex.substring(2), 16), maskOf(prefix));
-    }
-
     @ParameterizedTest
     @CsvSource({
             "0.0.0.0,         0x00000000",
@@ -78,36 +60,62 @@ class NetworkUtilTest {
     }
 
     @Test
-    void bytesToInt_matches_parseDottedQuadToInt() throws UnknownHostException {
-        String ip = "192.168.1.10";
-        byte[] bytes = InetAddress.getByName(ip).getAddress();
-        assertEquals(parseDottedQuadToInt(ip), bytesToInt(bytes));
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-            "0.0.0.0",
-            "255.255.255.255",
-            "192.168.1.10",
-            "203.0.113.7",
-            "10.0.0.1"
-    })
-    void toInet4Address_roundtrip(String ip) {
-        int asInt = parseDottedQuadToInt(ip);
-        Inet4Address inet = toInet4Address(asInt);
-        assertEquals(ip, inet.getHostAddress());
-
-        assertEquals(asInt, bytesToInt(inet.getAddress()));
-    }
-
-    @Test
     void toInet4Address_handles_high_bit_addresses() {
         String ip = "200.1.1.1";
         assertEquals(ip, toInet4Address(parseDottedQuadToInt(ip)).getHostAddress());
     }
 
+    @ParameterizedTest(name = "IPv4: {0} vs {1} /{2} -> {3}")
+    @CsvSource({
+            "10.0.0.0,            10.123.45.67,        8,   true",
+            "10.0.0.0,            11.0.0.1,            8,   false",
+
+            "192.168.1.10,        192.168.1.10,        32,  true",
+            "192.168.1.10,        192.168.1.11,        32,  false",
+
+            "192.168.1.10,        192.168.1.11,        31,  true",
+            "192.168.1.10,        192.168.1.12,        31,  false",
+
+            "0.0.0.0,             255.255.255.255,     0,   true"
+    })
+    void matchesPrefix_ipv4(String a, String b, int prefix, boolean expected) throws Exception {
+        assertEquals(
+                expected,
+                matchesPrefix(getByName(a).getAddress(), getByName(b).getAddress(), prefix)
+        );
+    }
+
+    @ParameterizedTest(name = "IPv6: {0} vs {1} /{2} -> {3}")
+    @CsvSource({
+            "'2001:db8::',        '2001:db8::1',        64,  true",
+            "'2001:db8::',        '2001:db9::1',        64,  false",
+
+            "'2001:db8::1',       '2001:db8::1',        128, true",
+            "'2001:db8::1',       '2001:db8::2',        128, false",
+
+            "'2001:db8::',        '2001:db8::1',        127, true",
+            "'2001:db8::',        '2001:db8::2',        127, false",
+
+            "'::',               'ffff::',             0,   true"
+    })
+    void matchesPrefix_ipv6(String a, String b, int prefix, boolean expected) throws Exception {
+        assertEquals(
+                expected,
+                matchesPrefix(getByName(a).getAddress(), getByName(b).getAddress(), prefix)
+        );
+    }
+
     @Test
-    void bytesToInt_requires_4_bytes() {
-        assertThrows(ArrayIndexOutOfBoundsException.class, () -> bytesToInt(new byte[]{1, 2, 3}));
+    void matchesPrefix_ipv6_partialBit_65() throws Exception {
+        byte[] a = getByName("2001:db8:0:0::").getAddress();
+        byte[] b = getByName("2001:db8:0:0:8000::").getAddress();
+        assertTrue(matchesPrefix(a, b, 64));
+        assertFalse(matchesPrefix(a, b, 65));
+    }
+
+    @Test
+    void matchesPrefix_lengthMismatch_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> matchesPrefix(new byte[4], new byte[16], 8));
     }
 }

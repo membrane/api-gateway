@@ -12,6 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV6;
+import static com.predic8.membrane.core.util.NetworkUtil.matchesPrefix;
 import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
@@ -106,20 +107,7 @@ public final class Ipv6Target extends Target {
         if (cidr <= 0) return true;
         if (cidr >= 128) return target.equals(address.getInetAddress());
 
-        byte[] a = target.getAddress();
-        byte[] b = address.getInetAddress().getAddress();
-
-        int fullBytes = cidr / 8;
-        int remainingBits = cidr % 8;
-
-        for (int i = 0; i < fullBytes; i++) {
-            if (a[i] != b[i]) return false;
-        }
-
-        if (remainingBits == 0) return true;
-
-        int partialMask = 0xFF << (8 - remainingBits);
-        return (a[fullBytes] & partialMask) == (b[fullBytes] & partialMask);
+        return matchesPrefix(target.getAddress(), address.getInetAddress().getAddress(), cidr);
     }
 
 

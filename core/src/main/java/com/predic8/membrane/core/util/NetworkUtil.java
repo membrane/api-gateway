@@ -59,15 +59,6 @@ public class NetworkUtil {
         return s;
     }
 
-    /**
-     * Builds an IPv4 subnet mask from a CIDR prefix (/0..32).
-     * /n => top n bits are 1, remaining bits are 0.
-     */
-    public static int maskOf(int prefix) {
-        if (prefix <= 0) return 0;
-        if (prefix >= 32) return 0xFFFFFFFF;
-        return (int) (0xFFFFFFFFL << (32 - prefix));
-    }
 
     /**
      * Parses a validated dotted-quad IPv4 literal into a 32-bit int (big endian).
@@ -78,17 +69,6 @@ public class NetworkUtil {
                 | (parseInt(p[1]) << 16)
                 | (parseInt(p[2]) << 8)
                 | parseInt(p[3]);
-    }
-
-
-    /**
-     * Converts 4 IPv4 bytes (network order) to a 32-bit int. (& 0xFF makes bytes unsigned)
-     */
-    public static int bytesToInt(byte[] b) {
-        return ((b[0] & 0xFF) << 24)
-                | ((b[1] & 0xFF) << 16)
-                | ((b[2] & 0xFF) << 8)
-                | (b[3] & 0xFF);
     }
 
     /**
@@ -107,5 +87,30 @@ public class NetworkUtil {
             // length=4 => should never happen
             throw new IllegalStateException(e);
         }
+    }
+
+    /**
+     * Compares two addresses by the first {@code prefixBits} bits.
+     * Works for IPv4 (4 bytes) and IPv6 (16 bytes) as long as both arrays have the same length.
+     */
+    public static boolean matchesPrefix(byte[] a, byte[] b, int prefixBits) {
+        if (a.length != b.length)
+            throw new IllegalArgumentException("Address length mismatch: " + a.length + " vs " + b.length);
+
+        if (prefixBits <= 0) return true;
+        if (prefixBits >= a.length * 8) {
+            for (int i = 0; i < a.length; i++) if (a[i] != b[i]) return false;
+            return true;
+        }
+        int remainingBits = prefixBits % 8;
+
+        for (int i = 0; i < prefixBits / 8; i++) {
+            if (a[i] != b[i]) return false;
+        }
+
+        if (remainingBits == 0) return true;
+
+        int partialMask = 0xFF << (8 - remainingBits);
+        return (a[prefixBits / 8] & partialMask) == (b[prefixBits / 8] & partialMask);
     }
 }

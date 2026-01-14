@@ -45,10 +45,6 @@ public final class Ipv4Target extends Target {
 
     private final int cidr;
 
-    private final int mask;
-
-    private final int network;
-
     /**
      * Creates an IPv4 target from a raw configuration value such as {@code "10.0.0.0/8"}.
      *
@@ -66,9 +62,6 @@ public final class Ipv4Target extends Target {
         this.cidr = m.group("cidr") != null ? parseInt(m.group("cidr")) : 32;
 
         int addrInt = parseDottedQuadToInt(m.group("address"));
-        this.mask = maskOf(cidr);
-        this.network = addrInt & mask;
-
         this.target = toInet4Address(addrInt);
     }
 
@@ -94,13 +87,13 @@ public final class Ipv4Target extends Target {
      * @param address peer IP
      * @return true if peer matches, otherwise false
      */
+
     @Override
     public boolean peerMatches(IpAddress address) {
+        if (address == null) return false;
         if (address.version() != IPV4) return false;
-        if (cidr <= 0) return true;
-        if (cidr >= 32) return target.equals(address.getInetAddress());
 
-        return (bytesToInt(address.getInetAddress().getAddress()) & mask) == network;
+        return matchesPrefix(target.getAddress(), address.getInetAddress().getAddress(), cidr);
     }
 
     public Inet4Address getTarget() {
