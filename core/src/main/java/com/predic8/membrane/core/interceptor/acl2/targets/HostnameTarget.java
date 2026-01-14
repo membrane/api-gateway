@@ -64,8 +64,9 @@ public final class HostnameTarget extends Target {
      */
     @Override
     public boolean peerMatches(IpAddress address) {
-        if (address == null) return false;
-        return hostnamePattern.matcher(address.getHostname()).matches();
+        String hostname = address.getHostname();
+        if (hostname.isEmpty()) return false;
+        return hostnamePattern.matcher(hostname).matches();
     }
 
     private static boolean isIpLike(String s) {
