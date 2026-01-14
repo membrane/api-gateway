@@ -86,7 +86,6 @@ public final class Ipv4Target extends Target {
      * @param address peer IP
      * @return true if peer matches, otherwise false
      */
-
     @Override
     public boolean peerMatches(IpAddress address) {
         if (address == null) return false;
