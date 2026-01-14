@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.openapi.model.Request.get;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,36 +35,42 @@ class OpenAPIValidatorTest {
 
     @BeforeEach
     public void setUp() throws IOException {
-        OpenAPIRecord rec = new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this,"/openapi/specs/customers.yml")),new OpenAPISpec());
-        validator = new OpenAPIValidator(new URIFactory(), rec);
+        validator = new OpenAPIValidator(new URIFactory(), new OpenAPIRecord(parseOpenAPI(getResourceAsStream(this, "/openapi/specs/customers.yml")), new OpenAPISpec()));
     }
 
     @Test
     void validateSimple() {
-        ValidationErrors errors = validator.validate(Request.get().path("/customers"));
-        assertEquals(0, errors.size());
+        assertEquals(0, validator.validate(get().path("/customers")).size());
     }
 
     @Test
-    void validateRightMethod() {
-        assertEquals(0,validator.validate(Request.get().path("/customers/7")).size());
+    void rightMethod() {
+        assertEquals(0, validator.validate(get().path("/customers/7")).size());
     }
 
     @Test
     void wrongPath() {
-        ValidationErrors errors = validator.validate(Request.get().path("/foo"));
-//        System.out.println("errors = " + errors);
-        assertEquals(1,errors.size());
+        var errors = validator.validate(get().path("/foo"));
+        assertEquals(1, errors.size());
         assertEquals(404, errors.get(0).getContext().getStatusCode());
         assertEquals(PATH, errors.get(0).getContext().getValidatedEntityType());
     }
 
     @Test
-    void validateWrongMethod() {
-        ValidationErrors errors = validator.validate(Request.patch().path("/customers/7"));
-//        System.out.println("errors = " + errors);
-        assertEquals(1,errors.size());
+    void wrongMethod() {
+        var errors = validator.validate(Request.patch().path("/customers/7"));
+        assertEquals(1, errors.size());
         assertEquals(405, errors.get(0).getContext().getStatusCode());
         assertEquals(METHOD, errors.get(0).getContext().getValidatedEntityType());
+    }
+
+    @Test
+    void queryStringArrayExploded() {
+        assertEquals(0, validator.validate(get().path("/customers?ids=a&ids=b&ids=c")).size());
+    }
+
+    @Test
+    void queryStringArrayExplodedWithNumbers() {
+        assertEquals(0, validator.validate(get().path("/customers?ids=1&ids=2&ids=3")).size());
     }
 }
