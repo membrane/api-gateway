@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.predic8.membrane.core.interceptor.acl2.address.IpAddress.ipVersion.IPV6;
 import static java.lang.Integer.parseInt;
 
 
@@ -51,7 +52,7 @@ public class Ipv4Target extends Target {
 
     @Override
     public boolean peerMatches(IpAddress address) {
-        if (address.isV6()) return false;
+        if (address.version().equals(IPV6)) return false;
         int prefix = this.cidr;
         if (prefix <= 0) return true;
         if (prefix >= 32) return target.equals(address.getAddress());
