@@ -63,7 +63,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
     private void setResponseToAccessDenied(Exchange exc) {
         security(false, getDisplayName())
                 .title("Access Denied")
-                .status(401)
+                .status(403)
                 .addSubSee("authorization-denied")
                 .buildAndSetResponse(exc);
     }
