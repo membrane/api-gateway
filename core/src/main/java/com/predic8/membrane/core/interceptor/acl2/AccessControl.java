@@ -5,6 +5,7 @@ import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.DNSCache;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +24,7 @@ import java.util.Optional;
  */
 public class AccessControl {
 
-    private List<AccessRule> rules;
+    private List<AccessRule> rules = new ArrayList<>();
 
     private PeerAddressResolver peerAddressResolver;
 
