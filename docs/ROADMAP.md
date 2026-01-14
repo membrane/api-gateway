@@ -28,7 +28,15 @@
 - StreamTracing:
   - Take out zeros
   - Line Break after []
-
+- Tutorials:
+  - Add how to run the tutorials in a Docker container
+- HotReload for YAML
+- YAML:
+  - method: Suggest GET, POST, ...
+  - A "---" at the end without an API behind it, produces an error. The gateway should tolerantly ignore it.
+  - Language is case sensitve: e.g. language: SPEL is not valid according to the Schema and produces:
+       Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
+  
 # 7.0.4
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
