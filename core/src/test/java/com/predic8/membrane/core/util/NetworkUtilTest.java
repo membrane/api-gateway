@@ -14,13 +14,18 @@
 package com.predic8.membrane.core.util;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
 
-import static com.predic8.membrane.core.util.NetworkUtil.getFreePortEqualAbove;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.util.NetworkUtil.*;
+import static java.lang.Long.parseUnsignedLong;
+import static org.junit.jupiter.api.Assertions.*;
 
 class NetworkUtilTest {
     @Test
@@ -35,5 +40,68 @@ class NetworkUtilTest {
         } catch (IOException e) {
             throw new RuntimeException("Failed to bind port 65535.", e);
         }
+    }
+
+    @ParameterizedTest(name = "maskOf({0}) == {1}")
+    @CsvSource({
+            "0,   0x00000000",
+            "1,   0x80000000",
+            "8,   0xFF000000",
+            "16,  0xFFFF0000",
+            "24,  0xFFFFFF00",
+            "31,  0xFFFFFFFE",
+            "32,  0xFFFFFFFF",
+            "33,  0xFFFFFFFF",
+            "-1,  0x00000000"
+    })
+    void maskOf_builds_expected_masks(int prefix, String expectedHex) {
+        assertEquals((int) parseUnsignedLong(expectedHex.substring(2), 16), maskOf(prefix));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0.0.0.0,         0x00000000",
+            "255.255.255.255, 0xFFFFFFFF",
+            "192.168.1.10,    0xC0A8010A",
+            "203.0.113.7,     0xCB007107",
+            "10.0.0.1,        0x0A000001"
+    })
+    void parseDottedQuadToInt_parses_big_endian(String ip, String expectedHex) {
+        int expected = (int) parseUnsignedLong(expectedHex.substring(2), 16);
+        assertEquals(expected, parseDottedQuadToInt(ip));
+    }
+
+    @Test
+    void bytesToInt_matches_parseDottedQuadToInt() throws UnknownHostException {
+        String ip = "192.168.1.10";
+        byte[] bytes = InetAddress.getByName(ip).getAddress();
+        assertEquals(parseDottedQuadToInt(ip), bytesToInt(bytes));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "0.0.0.0",
+            "255.255.255.255",
+            "192.168.1.10",
+            "203.0.113.7",
+            "10.0.0.1"
+    })
+    void toInet4Address_roundtrip(String ip) {
+        int asInt = parseDottedQuadToInt(ip);
+        Inet4Address inet = toInet4Address(asInt);
+        assertEquals(ip, inet.getHostAddress());
+
+        assertEquals(asInt, bytesToInt(inet.getAddress()));
+    }
+
+    @Test
+    void toInet4Address_handles_high_bit_addresses() {
+        String ip = "200.1.1.1";
+        assertEquals(ip, toInet4Address(parseDottedQuadToInt(ip)).getHostAddress());
+    }
+
+    @Test
+    void bytesToInt_requires_4_bytes() {
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> bytesToInt(new byte[]{1, 2, 3}));
     }
 }

@@ -4,11 +4,15 @@ import com.predic8.membrane.core.interceptor.acl2.*;
 import org.slf4j.*;
 
 import java.net.*;
+import java.util.Optional;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.*;
+import static com.predic8.membrane.core.util.NetworkUtil.*;
 import static java.lang.Integer.*;
 import static java.net.InetAddress.*;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 
 /**
  * IPv4 target definition with optional CIDR prefix (e.g. {@code 192.168.1.0/24}).
@@ -67,14 +71,16 @@ public final class Ipv4Target extends Target {
         this.target = toInet4Address(addrInt);
     }
 
-    public Inet4Address getTarget() {
-        return target;
+    public static Optional<Target> tryCreate(String raw) {
+        try {
+            return of(new Ipv4Target(raw));
+        } catch (IllegalArgumentException e) {
+            return empty();
+        }
     }
 
-    public static boolean accepts(String raw) {
-        String s = raw == null ? "" : raw.trim();
-        if (s.isEmpty()) return false;
-        return IPV4_CIDR_PATTERN.matcher(s).matches();
+    public Inet4Address getTarget() {
+        return target;
     }
 
     /**
@@ -99,47 +105,4 @@ public final class Ipv4Target extends Target {
         return (bytesToInt(address.getInetAddress().getAddress()) & mask) == network;
     }
 
-    // => NetUtil test
-    private static int maskOf(int prefix) {
-        if (prefix <= 0) return 0;
-        if (prefix >= 32) return 0xFFFFFFFF;
-        return (int) (0xFFFFFFFFL << (32 - prefix));
-    }
-
-    /**
-     * Converts a dotted-quad IPv4 string into a 32-bit integer.
-     * Assumes the input has already been validated by {@link #IPV4_CIDR_PATTERN}.
-     */
-    // => NetUtil test
-    private static int parseDottedQuadToInt(String s) {
-        String[] p = s.split("\\.", 4);
-        return (parseInt(p[0]) << 24)
-                | (parseInt(p[1]) << 16)
-                | (parseInt(p[2]) << 8)
-                | parseInt(p[3]);
-    }
-
-    // => NetUtil test
-    private static int bytesToInt(byte[] b) {
-        return ((b[0] & 0xFF) << 24)
-                | ((b[1] & 0xFF) << 16)
-                | ((b[2] & 0xFF) << 8)
-                | (b[3] & 0xFF);
-    }
-
-    // => NetUtil test
-    private static Inet4Address toInet4Address(int ip) {
-        byte[] bytes = new byte[]{
-                (byte) (ip >>> 24),
-                (byte) (ip >>> 16),
-                (byte) (ip >>> 8),
-                (byte) ip
-        };
-        try {
-            return (Inet4Address) getByAddress(bytes);
-        } catch (UnknownHostException e) {
-            // should never happen
-            throw new IllegalStateException(e);
-        }
-    }
 }

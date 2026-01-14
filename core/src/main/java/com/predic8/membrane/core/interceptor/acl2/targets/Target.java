@@ -17,23 +17,13 @@ public abstract class Target {
 
     public abstract boolean peerMatches(IpAddress address);
 
-    public static Target byMatch(String address) {
-
-        // Combine both
-        if (Ipv4Target.accepts(address)) {
-            return new Ipv4Target(address);
-        }
-
-        if (Ipv6Target.accepts(address)) {
-            return new Ipv6Target(address);
-        }
-
-        if (HostnameTarget.accepts(address)) {
-            return new HostnameTarget(address);
-        }
-
-        throw new IllegalArgumentException("Address '" + address + "' is not compatible with any target type.");
+    public static Target byMatch(String addr) {
+        return Ipv4Target.tryCreate(addr)
+                .or(() -> Ipv6Target.tryCreate(addr))
+                .or(() -> HostnameTarget.tryCreate(addr))
+                .orElseThrow(() -> new IllegalArgumentException("Address '" + addr + "' is not compatible with any target type."));
     }
+
 
     @Override
     public String toString() {

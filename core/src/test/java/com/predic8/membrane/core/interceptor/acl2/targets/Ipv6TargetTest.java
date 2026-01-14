@@ -5,7 +5,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.predic8.membrane.core.interceptor.acl2.IpAddress.parse;
-import static com.predic8.membrane.core.interceptor.acl2.targets.Ipv6Target.accepts;
+import static com.predic8.membrane.core.interceptor.acl2.targets.Ipv6Target.tryCreate;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Ipv6TargetTest {
@@ -24,7 +24,7 @@ class Ipv6TargetTest {
             "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"
     })
     void acceptsValid(String input) {
-        assertTrue(accepts(input));
+        assertTrue(tryCreate(input).isPresent());
     }
 
     @ParameterizedTest(name = "denies: \"{0}\"")
@@ -45,7 +45,7 @@ class Ipv6TargetTest {
             "2001:db8::1]"
     })
     void deniesInvalid(String input) {
-        assertFalse(accepts(input));
+        assertFalse(tryCreate(input).isPresent());
     }
 
     @Test
@@ -109,15 +109,15 @@ class Ipv6TargetTest {
 
     @Test
     void accepts_ipv6_with_or_without_cidr() {
-        assertTrue(accepts("2001:db8::1"));
-        assertTrue(accepts("2001:db8::1/64"));
-        assertTrue(accepts("[2001:db8::1]/64"));
-        assertTrue(accepts(" [2001:db8::1]/64 "));
+        assertTrue(tryCreate("2001:db8::1").isPresent());
+        assertTrue(tryCreate("2001:db8::1/64").isPresent());
+        assertTrue(tryCreate("[2001:db8::1]/64").isPresent());
+        assertTrue(tryCreate(" [2001:db8::1]/64 ").isPresent());
 
-        assertFalse(accepts("1.2.3.4"));
-        assertFalse(accepts("1.2.3.4/24"));
-        assertFalse(accepts("2001:db8::1/129"));
-        assertFalse(accepts("not-an-ip"));
+        assertFalse(tryCreate("1.2.3.4").isPresent());
+        assertFalse(tryCreate("1.2.3.4/24").isPresent());
+        assertFalse(tryCreate("2001:db8::1/129").isPresent());
+        assertFalse(tryCreate("not-an-ip").isPresent());
     }
 
     @Test

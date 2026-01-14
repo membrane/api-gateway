@@ -2,8 +2,12 @@ package com.predic8.membrane.core.interceptor.acl2.targets;
 
 import com.predic8.membrane.core.interceptor.acl2.IpAddress;
 
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 
 public class HostnameTarget extends Target {
 
@@ -26,6 +30,14 @@ public class HostnameTarget extends Target {
         }
 
         this.hostname = Pattern.compile(matcher.group("hostname"));
+    }
+
+    public static Optional<Target> tryCreate(String raw) {
+        try {
+            return of(new HostnameTarget(raw));
+        } catch (IllegalArgumentException e) {
+            return empty();
+        }
     }
 
     @Override

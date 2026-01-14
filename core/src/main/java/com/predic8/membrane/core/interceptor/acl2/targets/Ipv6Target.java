@@ -5,8 +5,12 @@ import com.predic8.membrane.core.interceptor.acl2.IpAddress;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 
 public class Ipv6Target extends Target {
 
@@ -15,22 +19,6 @@ public class Ipv6Target extends Target {
 
     private final Inet6Address target;
     private final int cidr;
-
-    public static boolean accepts(String raw) {
-        String s = raw == null ? "" : raw.trim();
-        if (s.isEmpty()) return false;
-
-        Matcher m = IPV6_CIDR_PATTERN.matcher(s);
-        if (!m.matches()) return false;
-
-        String addrStr = IpAddress.removeBracketsIfPresent(m.group("address"));
-
-        try {
-            return InetAddress.getByName(addrStr) instanceof Inet6Address;
-        } catch (UnknownHostException e) {
-            return false;
-        }
-    }
 
     public Ipv6Target(String raw) {
         super(raw);
@@ -57,6 +45,14 @@ public class Ipv6Target extends Target {
 
         String cidrGroup = m.group("cidr");
         this.cidr = cidrGroup != null ? Integer.parseInt(cidrGroup) : 128;
+    }
+
+    public static Optional<Target> tryCreate(String raw) {
+        try {
+            return of(new Ipv6Target(raw));
+        } catch (IllegalArgumentException e) {
+            return empty();
+        }
     }
 
     @Override

@@ -5,7 +5,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.predic8.membrane.core.interceptor.acl2.IpAddress.parse;
-import static com.predic8.membrane.core.interceptor.acl2.targets.Ipv4Target.accepts;
+import static com.predic8.membrane.core.interceptor.acl2.targets.Ipv4Target.tryCreate;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Ipv4TargetTest {
@@ -28,7 +28,7 @@ class Ipv4TargetTest {
             " 10.0.0.0/8 "
     })
     void acceptsValid(String input) {
-        assertTrue(accepts(input));
+        assertTrue(tryCreate(input).isPresent());
     }
 
     @ParameterizedTest(name = "denies: \"{0}\"")
@@ -52,7 +52,7 @@ class Ipv4TargetTest {
             "abc"
     })
     void deniesInvalid(String input) {
-        assertFalse(accepts(input));
+        assertFalse(tryCreate(input).isPresent());
     }
 
     @Test
@@ -127,7 +127,7 @@ class Ipv4TargetTest {
 
     @Test
     void accepts_ipv4_with_or_without_cidr() {
-        assertTrue(accepts("1.2.3.4"));
-        assertTrue(accepts("1.2.3.4/24"));
+        assertTrue(tryCreate("1.2.3.4").isPresent());
+        assertTrue(tryCreate("1.2.3.4/24").isPresent());
     }
 }
