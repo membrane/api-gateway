@@ -53,8 +53,6 @@ public final class Ipv6Target extends Target {
     public Ipv6Target(String raw) {
         super(raw);
 
-        if (address.isEmpty()) throw new IllegalArgumentException("Invalid IPv6 target: " + raw);
-
         Matcher m = IPV6_CIDR_PATTERN.matcher(address);
         if (!m.matches()) throw new IllegalArgumentException("Invalid IPv6 target: " + raw);
 

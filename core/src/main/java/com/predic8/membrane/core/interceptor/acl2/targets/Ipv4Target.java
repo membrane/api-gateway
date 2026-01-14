@@ -54,8 +54,6 @@ public final class Ipv4Target extends Target {
     public Ipv4Target(String raw) {
         super(raw);
 
-        if (address.isEmpty()) throw new IllegalArgumentException("Invalid IPv4 target: " + raw);
-
         Matcher m = IPV4_CIDR_PATTERN.matcher(address);
         if (!m.matches()) throw new IllegalArgumentException("Invalid IPv4 target: " + raw);
 
