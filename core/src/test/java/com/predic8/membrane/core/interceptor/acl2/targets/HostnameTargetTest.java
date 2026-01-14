@@ -39,7 +39,6 @@ class HostnameTargetTest {
     @Test
     void peerMatches_subdomain_regex() {
         HostnameTarget t = new HostnameTarget("^([a-z0-9-]+\\.)*example\\.com$");
-
         IpAddress ip = IpAddress.parse("127.0.0.1");
 
         ip.setHostname("example.com");
@@ -67,5 +66,19 @@ class HostnameTargetTest {
     @ValueSource(strings = {"[", "(*"})
     void tryCreate_returns_empty_for_invalid(String regex) {
         assertTrue(HostnameTarget.tryCreate(regex).isEmpty());
+    }
+
+    @ParameterizedTest(name = "tryCreate rejects ip-like: {0}")
+    @ValueSource(strings = {
+            "1.2.3.4",
+            "1.2.3.4/24",
+            "999.1.1.1/33",
+            "2001:db8::1",
+            "2001:db8::1/64",
+            "[2001:db8::1]/64"
+    })
+    void tryCreate_rejects_ip_like_inputs(String s) {
+        assertTrue(HostnameTarget.tryCreate(s).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> new HostnameTarget(s));
     }
 }

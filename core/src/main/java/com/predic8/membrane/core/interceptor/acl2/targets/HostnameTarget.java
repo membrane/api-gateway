@@ -22,6 +22,9 @@ public final class HostnameTarget extends Target {
 
     private static final Logger log = LoggerFactory.getLogger(HostnameTarget.class);
 
+    private static final Pattern IPV4_LIKE = Pattern.compile("^\\d+(?:\\.\\d+){1,3}(?:/\\d+)?$");
+    private static final Pattern IPV6_LIKE = Pattern.compile("^\\[?[0-9a-fA-F:]+]?(?:/\\d+)?$");
+
     private final Pattern hostnamePattern;
 
     /**
@@ -32,6 +35,10 @@ public final class HostnameTarget extends Target {
      */
     public HostnameTarget(String raw) {
         super(raw);
+
+        if (isIpLike(address)) {
+            throw new IllegalArgumentException("Hostname regex must not be an IP literal/CIDR: " + raw);
+        }
 
         try {
             this.hostnamePattern = Pattern.compile(address);
@@ -59,5 +66,10 @@ public final class HostnameTarget extends Target {
     public boolean peerMatches(IpAddress address) {
         if (address == null) return false;
         return hostnamePattern.matcher(address.getHostname()).matches();
+    }
+
+    private static boolean isIpLike(String s) {
+        return (s.indexOf('.') >= 0 && IPV4_LIKE.matcher(s).matches())
+                || (s.indexOf(':') >= 0 && IPV6_LIKE.matcher(s).matches());
     }
 }
