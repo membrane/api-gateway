@@ -1,15 +1,14 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: Admin Console
+# Tutorial: Admin Console
 #
 # The Admin Console gives you a live view of all running APIs,
 # including traffic statistics, configuration details, and message traces.
 #
 # 1.) Start this configuration.
 #
-# 2.) Open the Admin Console in your browser:
-#
-#       http://localhost:9000
+# 2.) Open the Admin Console in the browser:
+#     http://localhost:9000
 #
 #     Username: admin
 #     Password: admin

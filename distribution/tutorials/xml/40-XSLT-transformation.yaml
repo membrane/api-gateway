@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.4.json
 #
-# Membrane Tutorial: XSLT Transformation
+# Tutorial: XSLT Transformation
 #
-# Transform messages with XSLT stylesheets
+# Use an XSLT stylesheet to transform XML.
 #
 # Try:
-#   curl -d @../data/books.xml localhost:2000
+#   curl -d @books.xml localhost:2000
 
 api:
   port: 2000

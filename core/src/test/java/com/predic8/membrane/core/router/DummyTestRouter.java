@@ -118,7 +118,7 @@ public class DummyTestRouter extends AbstractRouter {
 
     @Override
     public BeanRegistry getRegistry() {
-        throw new UnsupportedOperationException("DummyTestRouter does not have a BeanRegistry.");
+        return null; // DummyTestRouter does not have a BeanRegistry
     }
 
     @Override

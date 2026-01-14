@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.0.json
+#
+# Tutorial: WSDL Message Validation
+#
+# A WSDL document and its imported or included XML Schemas define
+# the exact structure of valid SOAP requests and responses.
+#
+# The WSDL validator loads the WSDL and all referenced XSDs and
+# validates SOAP message against these definitions.
+# Invalid messages are rejected before they reach the backend or
+# the client.
+#
+# 1.) Start Membrane
+#     ./membrane.sh -c 40-WSDL-Message-Validation.yaml
+#
+# 2.) Send valid and invalid SOAP messages
+#     curl -d @city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
+#     curl -d @invalid-city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
+
+soapProxy:
+  port: 2000
+  wsdl: https://www.predic8.de/city-service?wsdl
+  flow:
+    - validator: {}

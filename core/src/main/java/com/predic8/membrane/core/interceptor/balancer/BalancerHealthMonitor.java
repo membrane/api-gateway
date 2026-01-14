@@ -32,6 +32,8 @@ import org.springframework.beans.factory.*;
 import org.springframework.context.*;
 
 import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
@@ -44,7 +46,9 @@ import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCause
  * Periodically checks the health of all clusters registered
  * on the router and updates each {@link Node}'s status accordingly.
  * When initialized, it schedules a task to call each {@link Node}'s health
- * endpoint and marks nodes as {@link Status#UP} or {@link Status#DOWN} based on the HTTP response.
+ * endpoint and marks nodes as {@link Status#UP} or {@link Status#DOWN} based on the result:
+ * If a health URL is configured for the node, it performs an HTTP request against that endpoint.
+ * Otherwise, it performs a TCP check against the node's host and port.
  * This ensures the load balancer always has up-to-date status for routing decisions.
  * @example <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/loadbalancing/6-health-monitor">health monitor example</a>
  * @topic 4. Monitoring, Logging and Statistics
@@ -117,11 +121,28 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
     }
 
     private Status isHealthy(Node node) {
-        String url = getNodeHealthEndpoint(node);
-        try {
-            return getStatus(node, doCall(url));
+        String healthUrl = node.getHealthUrl();
+        if (healthUrl != null) {
+            try {
+                return getStatus(node, doCall(healthUrl));
+            } catch (Exception e) {
+                log.warn("Calling health endpoint failed: {}, {}", healthUrl, e.getMessage());
+                return DOWN;
+            }
+        }
+        return tcpHealthy(node);
+    }
+
+    private Status tcpHealthy(Node node) {
+        final String host = node.getHost();
+        final int port = node.getPort();
+
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(host, port), httpClientConfig.getConnection().getTimeout());
+            log.debug("Node {}:{} is healthy", node.getHost(), node.getPort());
+            return UP;
         } catch (Exception e) {
-            log.warn("Calling health endpoint failed: {}, {}", url, e.getMessage());
+            log.warn("TCP health check failed for {}:{} - {}", host, port, e.getMessage());
             return DOWN;
         }
     }
@@ -142,12 +163,6 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
         }
         log.debug("Node {}:{} is healthy (HTTP {})", node.getHost(), node.getPort(), status);
         return UP;
-    }
-
-    private static String getNodeHealthEndpoint(Node node) {
-        return node.getHealthUrl() != null
-                ? node.getHealthUrl()
-                : getUrl(node.getHost(), node.getPort());
     }
 
     private Exchange doCall(String url) throws Exception {

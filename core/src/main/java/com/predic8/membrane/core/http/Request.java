@@ -47,6 +47,7 @@ public class Request extends Message {
 
 	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet(METHOD_GET, METHOD_HEAD, METHOD_CONNECT);
 	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
+			METHOD_POST,
 			METHOD_DELETE,
 			/* some WebDAV methods, see http://www.ietf.org/rfc/rfc2518.txt */
 			METHOD_OPTIONS,
@@ -105,18 +106,6 @@ public class Request extends Message {
 		this.uri = uri;
 	}
 
-	public void create(String method, String uri, String protocol, Header header, InputStream in) throws IOException {
-		this.method = method;
-		this.uri = uri;
-		if (!protocol.startsWith("HTTP/"))
-			throw new RuntimeException("Unknown protocol '" + protocol + "'");
-		this.version = protocol.substring(5);
-		this.header = header;
-
-		createBody(in);
-	}
-
-
 	@Override
 	public String getStartLine() {
 		return method + " " + uri + " HTTP/" + version + CRLF;
@@ -161,7 +150,6 @@ public class Request extends Message {
 				return header.getContentLength() == 0;
             return header.getFirstValue(TRANSFER_ENCODING) == null;
         }
-    
 		return false;
 	}
 
@@ -185,7 +173,7 @@ public class Request extends Message {
 
 	@Override
 	public <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) {
-		Request result = createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
+		var result = createMessageSnapshot(new Request(), bodyUpdatedCallback, strategy, limit);
 		result.setUri(getUri());
 		result.setMethod(getMethod());
 		return (T) result;
@@ -195,7 +183,7 @@ public class Request extends Message {
 		out.write(getMethod().getBytes(UTF_8));
 		out.write(10);
 		for (HeaderField hf : header.getAllHeaderFields())
-			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(UTF_8));
+			out.write(("%s:%s\n".formatted(hf.getHeaderName().toString(), hf.getValue())).getBytes(UTF_8));
 		out.write(10);
 		body.write(new PlainBodyTransferer(out), retainBody);
 	}
@@ -258,6 +246,16 @@ public class Request extends Message {
 		public Builder url(URIFactory uriFactory, String url) throws URISyntaxException {
 			fullURL = url;
 			req.setUri(URLUtil.getPathQuery(uriFactory, url));
+			return this;
+		}
+
+		public Builder uri(String uri) {
+			req.setUri(uri);
+			return this;
+		}
+
+		public Builder version(String version) {
+			req.setVersion(version);
 			return this;
 		}
 

@@ -1,11 +1,10 @@
 
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: Path Parameter Routing
+# Tutorial: Path Parameter Routing
 #
 # Try:
-#
-#   curl http://localhost:2000/fruits/7
+#   curl http://localhost:2000/fruits/12
 
 api:
   port: 2000

@@ -18,6 +18,7 @@ import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.ExchangeNodeStatusTracker;
 import com.predic8.membrane.core.model.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
@@ -28,7 +29,9 @@ import java.net.*;
 import java.text.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.exchange.Exchange.TRACK_NODE_STATUS;
 import static com.predic8.membrane.core.exchange.ExchangeState.*;
+import static java.lang.Boolean.TRUE;
 
 public abstract class AbstractExchange {
 	private static final Logger log = LoggerFactory.getLogger(AbstractExchange.class.getName());
@@ -67,6 +70,8 @@ public abstract class AbstractExchange {
 	private String remoteAddrIp;
 
 	private ArrayList<Interceptor> interceptorStack = new ArrayList<>(10);
+
+	private ExchangeNodeStatusTracker nodeStatusTracker;
 
 	private int estimatedHeapSize = -1;
 
@@ -408,6 +413,7 @@ public abstract class AbstractExchange {
 
 	protected int estimateHeapSize() {
 		return 2600 +
+				(nodeStatusTracker != null ? nodeStatusTracker.estimateHeapSize() : 0) +
 				(originalRequestUri != null ? originalRequestUri.length() : 0) +
 				(request != null ? request.estimateHeapSize() : 0) +
 				(response != null ? response.estimateHeapSize() : 0);
@@ -436,6 +442,7 @@ public abstract class AbstractExchange {
 		copy.setRemoteAddr(source.getRemoteAddr());
 		copy.setRemoteAddrIp(source.getRemoteAddrIp());
 		copy.setInterceptorStack(new ArrayList<>(source.getInterceptorStack()));
+		copy.setNodeStatusTracker(source.getNodeStatusTracker() == null ? null : source.getNodeStatusTracker().clone());
 
 		return copy;
 	}
@@ -479,5 +486,17 @@ public abstract class AbstractExchange {
 		if (flow.isRequest())
 			return request;
 		return response; // RESPONSE and ABORT flow both work on the response
+	}
+
+	public ExchangeNodeStatusTracker getNodeStatusTracker() {
+		return nodeStatusTracker;
+	}
+
+	public void setNodeStatusTracker(ExchangeNodeStatusTracker nodeStatusTracker) {
+		this.nodeStatusTracker = nodeStatusTracker;
+	}
+
+	public void initNodeStatusTracker() {
+		this.nodeStatusTracker = new ExchangeNodeStatusTracker(destinations.size());
 	}
 }

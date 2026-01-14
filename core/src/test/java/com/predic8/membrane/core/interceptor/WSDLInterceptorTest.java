@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.junit.jupiter.api.*;
 
@@ -37,7 +38,7 @@ public class WSDLInterceptorTest {
 	private WSDLInterceptor interceptor;
 
 	@BeforeEach
-	public void setUp() throws Exception {
+	void setUp() throws Exception {
 		exc = new Exchange(new FakeHttpHandler(3011));
 		exc.setRequest(get("/axis2/services/BLZService?wsdl").build());
         exc.setResponse(ok()
@@ -48,6 +49,7 @@ public class WSDLInterceptorTest {
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
 
 		interceptor = new WSDLInterceptor();
+		interceptor.init(new DummyTestRouter());
 	}
 
 	/**
@@ -58,19 +60,17 @@ public class WSDLInterceptorTest {
 	 *
 	 */
 	@Test
-	void testProtocolSet() throws Exception {
+	void protocolSet() throws Exception {
 		interceptor.setProtocol("https");
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
-
 		XMLEventReader parser = getParser();
-
         assertTrue(getLocationAttributeFor(getElement(parser, WSDL11_ADDRESS_SOAP11)).startsWith("https://"));
 		assertTrue(getLocationAttributeFor(getElement(getParser(), WSDL11_ADDRESS_SOAP12)).startsWith("https://"));
 		assertTrue(getLocationAttributeFor(getElement(getParser(), WSDL11_ADDRESS_HTTP)).startsWith("https://"));
 	}
 
 	@Test
-	void testProtocolDefault() throws Exception {
+	void protocolDefault() throws Exception {
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 
 		assertTrue(getLocationAttributeFor(
@@ -82,7 +82,7 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testPortEmpty() throws Exception {
+	void portEmpty() throws Exception {
 		interceptor.setPort("");
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertFalse(matchSoap11(".*:80.*"));
@@ -91,7 +91,7 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testPortDefault() throws Exception {
+	void portDefault() throws Exception {
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11(".*:3011.*"));
 		assertTrue(matchSoap12(".*:3011.*"));
@@ -99,8 +99,8 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testPortSet() throws Exception {
-		interceptor.setPort("2000");
+	void portSet() throws Exception {
+		interceptor.setPort(2000);
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11(".*:2000.*"));
 		assertTrue(matchSoap12(".*:2000.*"));
@@ -108,7 +108,7 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testHostSet() throws Exception {
+	void hostSet() throws Exception {
 		interceptor.setHost("abc.com");
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11("http://abc.com.*"));
@@ -117,7 +117,7 @@ public class WSDLInterceptorTest {
 	}
 
 	@Test
-	void testHostDefault() throws Exception {
+	void hostDefault() throws Exception {
 		assertEquals(CONTINUE, interceptor.handleResponse(exc));
 		assertTrue(matchSoap11("http://thomas-bayer.com.*"));
 		assertTrue(matchSoap12("http://thomas-bayer.com.*"));
@@ -147,8 +147,7 @@ public class WSDLInterceptorTest {
 		return match(pattern, WSDL11_ADDRESS_HTTP);
 	}
 
-	private boolean match(String pattern, QName addressElementName)
-			throws Exception {
+	private boolean match(String pattern, QName addressElementName) throws Exception {
 		return Pattern
 				.compile(pattern)
 				.matcher(
@@ -156,8 +155,7 @@ public class WSDLInterceptorTest {
 								addressElementName))).matches();
 	}
 
-	private StartElement getElement(XMLEventReader parser, QName qName)
-			throws XMLStreamException {
+	private StartElement getElement(XMLEventReader parser, QName qName) throws XMLStreamException {
 		while (parser.hasNext()) {
 			XMLEvent event = parser.nextEvent();
 
@@ -167,8 +165,14 @@ public class WSDLInterceptorTest {
 				}
 			}
 		}
-		throw new RuntimeException("element " + qName
-				+ " not found in response");
+		throw new RuntimeException("element %s not found in response".formatted(qName));
 	}
 
+	@Test
+	void generatePathRewriter() {
+		var relocator = interceptor.generatePathRewriter("service-a");
+        assertEquals("http://api.predic8.de/service-a", relocator.rewrite("http://api.predic8.de/service-b"));
+		assertEquals("http://api.predic8.de/service-a", relocator.rewrite("http://api.predic8.de/service-b?WSDL"));
+		assertEquals("./service-a?WSDL", relocator.rewrite("./service-b?WSDL"));
+	}
 }

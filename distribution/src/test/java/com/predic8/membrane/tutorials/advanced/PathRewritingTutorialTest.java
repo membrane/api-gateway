@@ -43,10 +43,10 @@ public class PathRewritingTutorialTest extends AbstractAdvancedTutorialTest{
                 // @formatter:off
                 given()
                 .when()
-                    .get("http://localhost:2000/fruits/7")
+                    .get("http://localhost:2000/fruits/12")
                 .then()
                     .statusCode(200)
-                    .body("id", equalTo(7))
+                    .body("id", equalTo(12))
                     .body("name",  notNullValue())
                     .body("modified_at", notNullValue());
                 // @formatter:on
@@ -57,8 +57,8 @@ public class PathRewritingTutorialTest extends AbstractAdvancedTutorialTest{
             String console = out.toString();
             System.out.println(console);
             assertTrue(console.contains("INFO LogInterceptor"));
-            assertTrue(console.contains("Requested /fruits/7"));
-            assertTrue(console.contains("Rewritten /shop/v2/products/7"));
+            assertTrue(console.contains("Requested /fruits/12"));
+            assertTrue(console.contains("Rewritten /shop/v2/products/12"));
         }
     }
 }

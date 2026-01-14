@@ -133,11 +133,11 @@ protected String getOpenAPIFileName() {
 
     @Test
     void regexInvalid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("regex","AA99"))));
+        var errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("regex","AA99"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/regex", e.getContext().getJSONpointer());
-        assertTrue(e.getMessage().contains("regex"));
+        assertTrue(e.getMessage().contains("pattern"));
     }
 
     @Test
@@ -147,7 +147,7 @@ protected String getOpenAPIFileName() {
 
     @Test
     void enumInvalid() {
-        ValidationErrors errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("enum","Stuttgart"))));
+        var errors = validator.validate(Request.post().path("/strings").body(new JsonBody(getStrings("enum","Stuttgart"))));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("/enum", e.getContext().getJSONpointer());
