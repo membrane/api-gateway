@@ -13,7 +13,7 @@
 #    Windows:
 #      membrane.cmd -c 00-First-API.yaml
 #
-#    A log message is indicating that the API is running.
+#    A log message indicates that the API is running.
 #
 # 2.) Call the API:
 #    Open http://localhost:2000 in the browser or run:
