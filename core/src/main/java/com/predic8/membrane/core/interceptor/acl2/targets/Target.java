@@ -2,6 +2,8 @@ package com.predic8.membrane.core.interceptor.acl2.targets;
 
 import com.predic8.membrane.core.interceptor.acl2.IpAddress;
 
+import java.util.Optional;
+
 /**
  * Base type for configured peer selectors used by ACL rules.
  *
