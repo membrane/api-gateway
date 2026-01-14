@@ -5,7 +5,7 @@
 #
 # Try:
 #
-#   curl http://localhost:2000/fruits/7
+#   curl http://localhost:2000/fruits/12
 
 api:
   port: 2000
