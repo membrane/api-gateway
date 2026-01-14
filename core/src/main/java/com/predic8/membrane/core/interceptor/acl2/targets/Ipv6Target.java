@@ -8,23 +8,22 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.interceptor.acl2.address.Ipv6Address.removeBracketsIfPresent;
-
 public class Ipv6Target extends Target {
 
-    private static final Pattern IPV6_CIDR_PATTERN = Pattern.compile("^(?<address>\\[?[^/\\s]+\\]?)(?:/(?<cidr>12[0-8]|1[01][0-9]|[1-9]?[0-9]))?$");
+    private static final Pattern IPV6_CIDR_PATTERN =
+            Pattern.compile("^(?<address>\\[?[^/\\s]+\\]?)(?:/(?<cidr>12[0-8]|1[01][0-9]|[1-9]?[0-9]))?$");
 
     private final Inet6Address target;
     private final int cidr;
 
     public static boolean accepts(String raw) {
-        if (raw == null) return false;
+        String s = raw == null ? "" : raw.trim();
+        if (s.isEmpty()) return false;
 
-        Matcher m = IPV6_CIDR_PATTERN.matcher(raw.trim());
+        Matcher m = IPV6_CIDR_PATTERN.matcher(s);
         if (!m.matches()) return false;
 
-        String addrStr = m.group("address");
-        addrStr = removeBracketsIfPresent(addrStr);
+        String addrStr = IpAddress.removeBracketsIfPresent(m.group("address"));
 
         try {
             return InetAddress.getByName(addrStr) instanceof Inet6Address;
@@ -36,13 +35,13 @@ public class Ipv6Target extends Target {
     public Ipv6Target(String raw) {
         super(raw);
 
-        Matcher m = IPV6_CIDR_PATTERN.matcher(raw == null ? "" : raw.trim());
-        if (!m.matches()) {
-            throw new IllegalArgumentException("Invalid IPv6 target: " + raw);
-        }
+        String s = raw.trim();
+        if (s.isEmpty()) throw new IllegalArgumentException("Invalid IPv6 target: " + raw);
 
-        String addrStr = m.group("address");
-        addrStr = removeBracketsIfPresent(addrStr);
+        Matcher m = IPV6_CIDR_PATTERN.matcher(s);
+        if (!m.matches()) throw new IllegalArgumentException("Invalid IPv6 target: " + raw);
+
+        String addrStr = IpAddress.removeBracketsIfPresent(m.group("address"));
 
         InetAddress inet;
         try {

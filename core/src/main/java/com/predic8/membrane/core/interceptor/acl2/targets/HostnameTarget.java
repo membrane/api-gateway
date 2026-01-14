@@ -5,7 +5,7 @@ import com.predic8.membrane.core.interceptor.acl2.IpAddress;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Hostname extends Target {
+public class HostnameTarget extends Target {
 
     private static final Pattern HOSTNAME_PATTERN = Pattern.compile("^.*$");
 
@@ -15,7 +15,7 @@ public class Hostname extends Target {
         return HOSTNAME_PATTERN.matcher(address).matches();
     }
 
-    public Hostname(String hostname) {
+    public HostnameTarget(String hostname) {
         super(hostname);
 
         // TODO validate configured name/pattern

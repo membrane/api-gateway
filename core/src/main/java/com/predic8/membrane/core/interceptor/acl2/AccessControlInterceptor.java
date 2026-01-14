@@ -1,19 +1,22 @@
 package com.predic8.membrane.core.interceptor.acl2;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.acl2.address.*;
-import com.predic8.membrane.core.interceptor.acl2.rules.*;
-import com.predic8.membrane.core.interceptor.acl2.targets.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.acl2.rules.AccessRule;
+import com.predic8.membrane.core.interceptor.acl2.targets.HostnameTarget;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.DNSCache;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name = "accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {
@@ -56,7 +59,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
         if (rules == null || rules.isEmpty())
             return Optional.empty(); // Log no accessRules, move to init
 
-        Optional<IpAddress> peerIp = parseIp(exc.getRemoteAddr());
+        Optional<IpAddress> peerIp = parseIp(exc.getRemoteAddrIp());
         if (peerIp.isEmpty())
             return Optional.empty();
 
@@ -84,16 +87,22 @@ public class AccessControlInterceptor extends AbstractInterceptor {
     }
 
     // => Util
+    /**
+     * Incoming remote address is expected to be a valid IPv4/IPv6 literal.
+     * Returns empty only if input is null/blank or parsing unexpectedly fails.
+     */
     public static Optional<IpAddress> parseIp(String raw) {
-        Optional<Ipv4Address> v4 = Ipv4Address.parse(raw);
-        if (v4.isPresent()) return Optional.of(v4.get());
+        if (raw == null) return Optional.empty();
+        String s = raw.trim();
+        if (s.isEmpty()) return Optional.empty();
 
-        Optional<Ipv6Address> v6 = Ipv6Address.parse(raw);
-        if (v6.isPresent()) return Optional.of(v6.get());
-
-        return Optional.empty();
-
+        try {
+            return Optional.of(IpAddress.parse(s));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
+
 
     @MCChildElement
     public void setRules(List<AccessRule> rules) {
@@ -105,6 +114,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
     }
 
     private boolean hasHostnameRule() {
-        return rules.stream().anyMatch(rule -> rule.getClass().isAssignableFrom(Hostname.class));
+        return rules.stream().anyMatch(rule -> rule.getClass().isAssignableFrom(HostnameTarget.class));
     }
 }

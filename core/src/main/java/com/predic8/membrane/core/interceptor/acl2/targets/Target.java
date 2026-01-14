@@ -26,8 +26,8 @@ public abstract class Target {
             return new Ipv6Target(address);
         }
 
-        if (Hostname.accepts(address)) {
-            return new Hostname(address);
+        if (HostnameTarget.accepts(address)) {
+            return new HostnameTarget(address);
         }
 
         throw new IllegalArgumentException("Address '" + address + "' is not compatible with any target type.");

@@ -21,10 +21,11 @@ class AccessControlInterceptorTest {
         Exchange exc = new Request.Builder().buildExchange();
         exc.setRemoteAddr("www.example.com");
         exc.setRemoteAddrIp("192.168.1.100");
+        AccessControlInterceptor accessControlInterceptor = new AccessControlInterceptor();
 
         assertEquals(
                 Optional.empty(),
-                AccessControlInterceptor.evaluatePermission(
+                accessControlInterceptor.evaluatePermission(
                         exc,
                         new ArrayList<>()
                 )
@@ -36,10 +37,11 @@ class AccessControlInterceptorTest {
         Exchange exc = new Request.Builder().buildExchange();
         exc.setRemoteAddr("www.example.com");
         exc.setRemoteAddrIp("192.168.1.100");
+        AccessControlInterceptor accessControlInterceptor = new AccessControlInterceptor();
 
         assertEquals(
                 Optional.empty(),
-                AccessControlInterceptor.evaluatePermission(
+                accessControlInterceptor.evaluatePermission(
                         exc,
                         List.of(
                                 new Allow() {{setTarget("192.168.1.205");}},
@@ -54,10 +56,11 @@ class AccessControlInterceptorTest {
         Exchange exc = new Request.Builder().buildExchange();
         exc.setRemoteAddr("www.example.com");
         exc.setRemoteAddrIp("192.168.1.100");
+        AccessControlInterceptor accessControlInterceptor = new AccessControlInterceptor();
 
         assertEquals(
                 Optional.of(TRUE),
-                AccessControlInterceptor.evaluatePermission(
+                accessControlInterceptor.evaluatePermission(
                         exc,
                         List.of(
                                 new Allow() {{setTarget("192.168.1.205");}},
@@ -72,10 +75,11 @@ class AccessControlInterceptorTest {
         Exchange exc = new Request.Builder().buildExchange();
         exc.setRemoteAddr("www.example.com");
         exc.setRemoteAddrIp("192.168.1.100");
+        AccessControlInterceptor accessControlInterceptor = new AccessControlInterceptor();
 
         assertEquals(
                 Optional.of(FALSE),
-                AccessControlInterceptor.evaluatePermission(
+                accessControlInterceptor.evaluatePermission(
                         exc,
                         List.of(
                                 new Deny() {{setTarget("192.168.1.100");}},
