@@ -61,8 +61,7 @@ public final class Ipv4Target extends Target {
 
         this.cidr = m.group("cidr") != null ? parseInt(m.group("cidr")) : 32;
 
-        int addrInt = parseDottedQuadToInt(m.group("address"));
-        this.target = toInet4Address(addrInt);
+        this.target = toInet4Address(parseDottedQuadToInt(m.group("address")));
     }
 
     public static Optional<Target> tryCreate(String target) {

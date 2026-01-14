@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV6;
 import static com.predic8.membrane.core.util.NetworkUtil.matchesPrefix;
 import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
+import static java.lang.Integer.parseInt;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
@@ -70,7 +71,7 @@ public final class Ipv6Target extends Target {
         this.target = inet6;
 
         String cidrGroup = m.group("cidr");
-        this.cidr = cidrGroup != null ? Integer.parseInt(cidrGroup) : 128;
+        this.cidr = cidrGroup != null ? parseInt(cidrGroup) : 128;
     }
 
     /**
@@ -103,9 +104,6 @@ public final class Ipv6Target extends Target {
     public boolean peerMatches(IpAddress address) {
         if (address == null) return false;
         if (address.version() != IPV6) return false;
-
-        if (cidr <= 0) return true;
-        if (cidr >= 128) return target.equals(address.getInetAddress());
 
         return matchesPrefix(target.getAddress(), address.getInetAddress().getAddress(), cidr);
     }
