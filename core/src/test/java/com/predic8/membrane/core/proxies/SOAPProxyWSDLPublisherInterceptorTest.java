@@ -17,7 +17,7 @@ import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.test.TestUtil.getPathFromResource;
+import static com.predic8.membrane.test.TestUtil.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
@@ -40,10 +40,10 @@ public class SOAPProxyWSDLPublisherInterceptorTest {
     @Test
     void publisherOnly() throws Exception {
         SOAPProxy sp = new SOAPProxy() {{
-            wsdl = getPathFromResource( "validation/ArticleService.wsdl");
+            wsdl = getPathFromResource("validation/ArticleService.wsdl");
             key = new ServiceProxyKey(2000);
         }};
-        sp.setPath(new Path(false,"/articles"));
+        sp.setPath(new Path(false, "/articles"));
         router.add(sp);
         router.start();
         downloadAndVerifyDocuments("localhost:2000");
@@ -54,8 +54,7 @@ public class SOAPProxyWSDLPublisherInterceptorTest {
         given()
             .get("http://localhost:2000/articles?wsdl")
         .then()
-            .body("definitions.service.port.address.@location",
-                    equalTo("http://%s/articles".formatted(host)));
+            .body("definitions.service.port.address.@location", equalTo("http://%s/articles".formatted(host)));
 
         given()
             .get("http://localhost:2000/articles?xsd=1")
@@ -76,6 +75,6 @@ public class SOAPProxyWSDLPublisherInterceptorTest {
             .get(("http://localhost:2000/articles?xsd=4"))
         .then()
             .body("definitions.complexType.@name",equalTo("MoneyType"));
-        // @formatter:off
-}
+        // @formatter:on
+    }
 }

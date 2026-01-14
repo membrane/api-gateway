@@ -159,7 +159,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
                            "complexType" : "Person",
                            "schemaType" : "string"
                          }, {
-                           "message" : "The string 'Germany' does not match regex pattern ^\\\\w{2}$.",
+                           "message" : "The string 'Germany' does not match the pattern ^\\\\w{2}$.",
                            "complexType" : "Person",
                            "schemaType" : "string"
                          } ]
@@ -277,7 +277,7 @@ public class OpenAPIValidationExampleTest extends AbstractSampleMembraneStartSto
                       "path" : "/demo-api/v2/persons/4077C19D-2C1D-427B-B2D-FC3112CE89D1",
                       "errors" : {
                         "REQUEST/BODY#/type" : [ {
-                          "message" : "'ARTIST' is not part of the enum PRIVAT,BUSINESS.",
+                          "message" : "'ARTIST' is not part of the enum [PRIVAT, BUSINESS].",
                           "complexType" : "Person",
                           "schemaType" : "string"
                         } ],

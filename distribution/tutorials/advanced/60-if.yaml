@@ -1,9 +1,8 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: if
+# Tutorial: if
 #
 # Try:
-#
 #     curl http://localhost:2000
 #     curl http://localhost:2000/foo -H "X-Id: 7"
 #     curl http://localhost:2000/get -H "X-Id: 7"

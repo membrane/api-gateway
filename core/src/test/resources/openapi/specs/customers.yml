@@ -7,6 +7,15 @@ servers:
   - url: https://api.predic8.de/foo
 paths:
   /customers:
+    parameters:
+      - in: query
+        name: ids
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
     get:
       responses:
         '200':
@@ -41,7 +50,7 @@ paths:
                     minimum: 100
                   message:
                     type: string
-                minLength: 3
+                    minLength: 3
   /customers/{cid}:
     description: Single paths
     parameters:

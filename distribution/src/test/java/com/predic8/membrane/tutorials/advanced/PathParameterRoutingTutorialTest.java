@@ -33,10 +33,10 @@ public class PathParameterRoutingTutorialTest extends AbstractAdvancedTutorialTe
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/fruits/7")
+            .get("http://localhost:2000/fruits/12")
         .then()
             .statusCode(200)
-            .body("id", equalTo(7))
+            .body("id", equalTo(12))
             .body("name",  notNullValue())
             .body("modified_at", notNullValue());
         // @formatter:on

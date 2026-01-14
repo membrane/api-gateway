@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+  <xs:element name="books" type="BooksType"/>
+
+  <xs:complexType name="BooksType">
+    <xs:sequence>
+      <xs:element name="book" type="BookType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="category" type="xs:string"/>
+  </xs:complexType>
+
+  <xs:complexType name="BookType">
+    <xs:sequence>
+      <xs:element name="title" type="xs:string"/>
+      <xs:element name="subtitle" type="xs:string" minOccurs="0"/>
+      <xs:element name="author" type="xs:string" maxOccurs="unbounded"/>
+      <xs:element name="year" type="YearType" minOccurs="0"/>
+      <xs:element name="category" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="id" type="xs:positiveInteger" use="required"/>
+  </xs:complexType>
+
+  <xs:simpleType name="YearType">
+    <xs:restriction base="xs:gYear"/>
+  </xs:simpleType>
+
+</xs:schema>

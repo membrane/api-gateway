@@ -55,7 +55,7 @@ public class ProblemDetails {
     public static final String STACK_TRACE = "stackTrace";
     public static final String LOG_KEY = "logKey";
     public static final String DEVELOPMENT_MODE_WARNING = """
-            Membrane is in development mode. For production set <router production="true"> to reduce details in error messages!""";
+            Membrane is running in development mode. Enable production mode in the configuration to prevent detailed information from appearing in error responses.""";
 
     /**
      * If router is in production mode that should not expose internal details

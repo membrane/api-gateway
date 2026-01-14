@@ -6,6 +6,7 @@
 
 # 7.X
 
+- Add Example tests for all tutorials
 - Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
 - Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
 - Rewrite ACL to use the YAML configuration instead of external XML files
@@ -16,7 +17,7 @@
   - See JmxExporter
 - remove basic-xml-interceptor example?
 - logs:
-  - Instead of:
+- Instead of:
     18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2000'
     18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2001'
     => listening at *:2000, *:2001
@@ -24,7 +25,9 @@
 - Refine YAML for balancer: clustersFromSpring
 - wsdlRewriter YAML is not working
 - use @MCElement(collapsed=true) for suitable classes
-
+- StreamTracing:
+  - Take out zeros
+  - Line Break after []
 
 # 7.0.4
 
@@ -33,7 +36,6 @@
   - When the reason for a parse error is clear. Shorten error message.
 - BalancerHealthMonitor:
   - @PostConstruct instead of InitializingBean, DisposableBean
-- Scripting: expose beanRegistry
 - Migrate deprecated finally to try with ressources
 - if: Add hint in documentation: use choice otherwise for else
 - accessControl:

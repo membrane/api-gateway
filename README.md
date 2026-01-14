@@ -950,63 +950,97 @@ Try the tutorial [OAuth2 with external OpenID Providers](https://membrane-soa.or
 
 ### Membrane as Authorization Server
 
-Operate your own identity provider:
+Membrane includes a fully functional OAuth 2.0 Authorization Server and can also act as an OpenID Connect Provider.
 
-```xml
+The following example shows a minimal configuration for running Membrane as an OAuth 2.0 authorization server with a static client definition and basic claim and scope setup.
 
-<api port="2000">
-  <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
-    <staticUserDataProvider>
-        <user username="john" password="password" email="john@predic8.de"/>
-    </staticUserDataProvider>
-    <staticClientList>
-        <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback"/>
-    </staticClientList>
-    <bearerToken/>
-    <claims value="aud email iss sub username">
-        <scope id="username" claims="username"/>
-        <scope id="profile" claims="username email password"/>
-    </claims>
-  </oauth2authserver>
-</api>
+```yaml
+api:
+  port: 8000
+  flow:
+    - oauth2authserver:
+        issuer: http://localhost:8000
+        location: logindialog
+        consentFile: consentFile.json
+        staticUserDataProvider:
+          users:
+            - user:
+                username: john
+                password: secret
+                email: john@predic8.de
+        staticClientList:
+          clients:
+            - client:
+                clientId: abc
+                clientSecret: def
+                callbackUrl: http://localhost:2000/oauth2callback
+        bearerToken: {}
+        claims:
+          value: aud email iss sub username
+          scopes:
+            - scope:
+                id: username
+                claims: username
+            - scope:
+                id: profile
+                claims: username email
 ```
 
-See the [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-code-flow-example.html) example.
+User accounts can be stored directly in the configuration, loaded from a file, or backed by a database.
+
+For a full walkthrough of the authorization code flow, see the OAuth2 Authorization Server example [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/oauth2-code-flow-example.html).
 
 ## Basic Authentication
 
-```xml
-<api port="2000">
-  <basicAuthentication>
-    <user name="bob" password="secret"/>
-    <user name="alice" password="secret"/>
-  </basicAuthentication>
-  <target host="localhost" port="8080"/>
-</api>
+Sometimes the old basic authentication is enough to provide basic security.
+
+```yaml
+api:
+  port: 2000
+  flow:
+    - basicAuthentication:
+        users:
+          - user:
+              username: alice
+              password: secret
+          - user:
+              username: bob
+              password: secret
+  target:
+    url: https://api.predic8.de
 ```
 
 ## SSL/TLS
 
-Route to SSL/TLS secured endpoints:
+TLS is the base for secure API communication.
 
-```xml
-<api port="8080">
-  <target url="https://api.predic8.de"/> <!-- Note the s in https! -->
-</api>
+The first example shows TLS being used for connections from the API Gateway to the backend:
+
+```yaml
+api:
+  port: 2000
+  # Note the 's' in https!
+  target:
+    url: https://api.predic8.de
 ```
 
-Secure endpoints with SSL/TLS:
+The next example secures the public endpoint, enabling TLS for connections from clients to the API Gateway:
 
-```xml
-
-<api port="8443">
-  <ssl>
-    <keystore location="membrane.p12" password="secret" keyPassword="secret" />
-    <truststore location="membrane.p12" password="secret" />
-  </ssl>
-  <target host="localhost" port="8080"  />
-</api>
+```yaml
+api:
+  port: 443
+  ssl:
+    keystore:
+      location: keystore.p12
+      password: changeit
+    truststore:
+      location: keystore.p12
+      password: changeit
+  target:
+    url: http://backend
 ```
+
+See more [TLS/SSL configuration examples](/distribution/examples/security/ssl-tls)
 
 ### XML and JSON Protection
 
@@ -1014,18 +1048,22 @@ Membrane offers protection mechanisms to secure your APIs from common risks asso
 
 #### XML Protection
 
-The `xmlProtection` plugin inspects incoming XML requests and mitigates risks such as:
+`xmlProtection` inspects incoming XML and reduces common attack vectors, including:
 
-- External entity references (XXE attacks).
-- Excessively large element names.
+- External entity references (XXE).
+- Overly long element names.
 - High numbers of attributes or deeply nested structures.
 
-**Example:**
-```xml
-<api port="2000">
-   <xmlProtection />
-   <target url="https://api.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - xmlProtection:
+        maxAttributeCount: 3
+        maxElementNameLength: 100
+        removeDTD: true
+    - return:
+        status: 200
 ```  
 
 See [XML Protection Reference](https://www.membrane-api.io/docs/current/xmlProtection.html).
@@ -1042,11 +1080,12 @@ The `jsonProtection` plugin safeguards APIs from JSON-based vulnerabilities by s
 
 **Example:**
 
-```xml
-<api port="2000">
-   <jsonProtection maxDepth="5" maxKeyLength="100" maxStringLength="100000"/>
-   <target url="https://api.predic8.de"/>
-</api>
+```yaml
+global:
+  - jsonProtection:
+      maxDepth: 3
+      maxObjectSize: 50
+      maxArraySize: 1000
 ```  
 
 See [JSON Protection](https://www.membrane-api.io/docs/current/jsonProtection.html).
@@ -1057,12 +1096,11 @@ See [JSON Protection](https://www.membrane-api.io/docs/current/jsonProtection.ht
 
 Limit the number of incoming requests:
 
-```xml
-
-<api port="2000">
-    <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
-    <target host="localhost" port="8080"/>
-</api>
+```yaml
+global:
+  - rateLimiter:
+      requestLimit: 1000
+      requestLimitDuration: PT1H
 ```
 
 ## Load balancing
