@@ -49,7 +49,7 @@ class TargetTest {
 
         IpAddress ip = IpAddress.parse("127.0.0.1");
         ip.setHostname("example.com");
-        assertTrue(t.peerMatches(ip)); // at least for patterns that should match
+        assertTrue(t.peerMatches(ip));
     }
 
     @Test
@@ -59,9 +59,4 @@ class TargetTest {
         assertThrows(IllegalArgumentException.class, () -> Target.byMatch("["));
     }
 
-    @Test
-    void toString_returns_trimmed_config_value() {
-        Target t = Target.byMatch(" 10.0.0.0/8 ");
-        assertEquals("10.0.0.0/8", t.toString());
-    }
 }

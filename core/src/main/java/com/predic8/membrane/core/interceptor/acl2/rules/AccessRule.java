@@ -23,7 +23,7 @@ public abstract class AccessRule {
 
     @MCAttribute
     public void setTarget(String target) {
-        if (target == null || target.isEmpty()) throw new ConfigurationException("target cannot be empty");
+        if (target == null || target.trim().isEmpty()) throw new ConfigurationException("target cannot be empty");
         try {
             this.target = byMatch(target.trim());
         } catch (IllegalArgumentException e) {
@@ -33,5 +33,9 @@ public abstract class AccessRule {
 
     public String getTarget() {
         return target.toString();
+    }
+
+    public boolean isHostnameRule() {
+        return target instanceof com.predic8.membrane.core.interceptor.acl2.targets.HostnameTarget;
     }
 }
