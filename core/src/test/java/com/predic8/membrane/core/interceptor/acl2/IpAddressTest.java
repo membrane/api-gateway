@@ -47,12 +47,6 @@ class IpAddressTest {
     }
 
     @Test
-    void removeBracketsIfPresent_removes_and_trims() {
-        assertEquals("2001:db8::1", removeBracketsIfPresent("[2001:db8::1]"));
-        assertEquals("2001:db8::1", removeBracketsIfPresent("[ 2001:db8::1 ]"));
-    }
-
-    @Test
     void of_infers_version_ipv4() throws UnknownHostException {
         InetAddress inet = getByName("127.0.0.1");
         IpAddress ip = of(inet);

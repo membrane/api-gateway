@@ -8,6 +8,7 @@ import java.util.Objects;
 
 import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV4;
 import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV6;
+import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
 import static java.net.InetAddress.getByName;
 
 public final class IpAddress {
@@ -42,13 +43,6 @@ public final class IpAddress {
             // Incoming values should be valid
             throw new IllegalArgumentException("Invalid IP address: " + raw, e);
         }
-    }
-
-    public static String removeBracketsIfPresent(String s) {
-        if (s.length() >= 2 && s.charAt(0) == '[' && s.charAt(s.length() - 1) == ']') {
-            return s.substring(1, s.length() - 1).trim();
-        }
-        return s;
     }
 
     public ipVersion version() {

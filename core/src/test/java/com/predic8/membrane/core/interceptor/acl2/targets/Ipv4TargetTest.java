@@ -24,8 +24,8 @@ class Ipv4TargetTest {
             "10.0.0.0/8",
             "172.16.0.0/12",
             "192.168.0.0/24",
-            " 192.168.0.1 ",
-            " 10.0.0.0/8 "
+            "192.168.0.1",
+            "10.0.0.0/8"
     })
     void acceptsValid(String input) {
         assertTrue(tryCreate(input).isPresent());
@@ -61,14 +61,6 @@ class Ipv4TargetTest {
         assertEquals("203.0.113.7", t.getTarget().getHostAddress());
         assertTrue(t.peerMatches(parse("203.0.113.7")));
         assertFalse(t.peerMatches(parse("203.0.113.8")));
-    }
-
-    @Test
-    void ctor_trims_input() {
-        Ipv4Target t = new Ipv4Target(" 10.0.0.0/8 ");
-        assertEquals("10.0.0.0", t.getTarget().getHostAddress());
-        assertTrue(t.peerMatches(parse("10.123.45.67")));
-        assertFalse(t.peerMatches(parse("11.0.0.1")));
     }
 
     @Test

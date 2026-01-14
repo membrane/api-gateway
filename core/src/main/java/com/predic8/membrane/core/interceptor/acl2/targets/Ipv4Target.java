@@ -56,7 +56,7 @@ public final class Ipv4Target extends Target {
      * @throws IllegalArgumentException if raw is not a valid IPv4[/cidr] value
      */
     public Ipv4Target(String raw) {
-        super(raw.trim());
+        super(raw);
 
         if (address.isEmpty()) throw new IllegalArgumentException("Invalid IPv4 target: " + raw);
 
@@ -81,10 +81,6 @@ public final class Ipv4Target extends Target {
         }
     }
 
-    public Inet4Address getTarget() {
-        return target;
-    }
-
     /**
      * Tests if the given peer {@link IpAddress} matches this IPv4 target.
      *
@@ -106,5 +102,10 @@ public final class Ipv4Target extends Target {
 
         return (bytesToInt(address.getInetAddress().getAddress()) & mask) == network;
     }
+
+    public Inet4Address getTarget() {
+        return target;
+    }
+
 
 }

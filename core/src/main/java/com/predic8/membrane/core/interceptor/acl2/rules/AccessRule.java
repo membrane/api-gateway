@@ -7,6 +7,8 @@ import com.predic8.membrane.core.util.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.acl2.targets.Target.byMatch;
+
 public abstract class AccessRule {
 
     protected Target target;
@@ -23,7 +25,7 @@ public abstract class AccessRule {
     public void setTarget(String target) {
         if (target == null || target.isEmpty()) throw new ConfigurationException("target cannot be empty");
         try {
-            this.target = Target.byMatch(target);
+            this.target = byMatch(target.trim());
         } catch (IllegalArgumentException e) {
             throw new ConfigurationException(e.getMessage());
         }

@@ -42,6 +42,12 @@ class NetworkUtilTest {
         }
     }
 
+    @Test
+    void removeBracketsIfPresent_removes_and_trims() {
+        assertEquals("2001:db8::1", removeBracketsIfPresent("[2001:db8::1]"));
+        assertEquals("2001:db8::1", removeBracketsIfPresent("[ 2001:db8::1 ]"));
+    }
+
     @ParameterizedTest(name = "maskOf({0}) == {1}")
     @CsvSource({
             "0,   0x00000000",
