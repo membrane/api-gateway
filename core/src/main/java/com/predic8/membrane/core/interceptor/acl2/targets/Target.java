@@ -2,6 +2,9 @@ package com.predic8.membrane.core.interceptor.acl2.targets;
 
 import com.predic8.membrane.core.interceptor.acl2.address.IpAddress;
 
+/**
+ * Waht is a Target?
+ */
 public abstract class Target {
 
     protected final String address;

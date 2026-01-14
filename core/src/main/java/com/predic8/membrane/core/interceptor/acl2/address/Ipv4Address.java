@@ -34,6 +34,7 @@ public final class Ipv4Address extends IpAddress {
         try {
             addr = (Inet4Address) Inet4Address.getByName(m.group("address"));
         } catch (UnknownHostException ignored) {
+            // log.debug
             return Optional.empty();
         }
 

@@ -28,6 +28,8 @@ public class Ipv4Target extends Target {
 
     public Ipv4Target(String raw) {
 
+        // raw empty => abbruch
+
         super(raw);
         Matcher m = IPV4_CIDR_PATTERN.matcher(raw == null ? "" : raw.trim());
         if (!m.matches())
@@ -60,11 +62,17 @@ public class Ipv4Target extends Target {
         byte[] a = target.getAddress();
         byte[] b = address.getAddress().getAddress(); // TODO
 
-        int mask = (int) (0xFFFFFFFFL << (32 - prefix));
+        int mask = getMask(prefix);
 
+        // extract
         int ai = ((a[0] & 0xFF) << 24) | ((a[1] & 0xFF) << 16) | ((a[2] & 0xFF) << 8) | (a[3] & 0xFF);
         int bi = ((b[0] & 0xFF) << 24) | ((b[1] & 0xFF) << 16) | ((b[2] & 0xFF) << 8) | (b[3] & 0xFF);
 
         return (ai & mask) == (bi & mask);
+    }
+
+    // TODO test => NetUtil
+    private static int getMask(int prefix) {
+        return (int) (0xFFFFFFFFL << (32 - prefix));
     }
 }

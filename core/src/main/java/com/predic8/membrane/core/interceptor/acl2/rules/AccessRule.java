@@ -1,14 +1,12 @@
 package com.predic8.membrane.core.interceptor.acl2.rules;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.acl2.address.IpAddress;
-import com.predic8.membrane.core.interceptor.acl2.targets.Target;
-import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.acl2.address.*;
+import com.predic8.membrane.core.interceptor.acl2.targets.*;
+import com.predic8.membrane.core.util.*;
 
-import java.util.Optional;
+import java.util.*;
 
-@MCElement(name = "accessRule", collapsed = true)
 public abstract class AccessRule {
 
     protected Target target;
