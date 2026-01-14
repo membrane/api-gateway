@@ -21,7 +21,7 @@ public abstract class AccessRule {
 
     @MCAttribute
     public void setTarget(String target) {
-        if (target == null) throw new ConfigurationException("target cannot be null");
+        if (target == null || target.isEmpty()) throw new ConfigurationException("target cannot be empty");
         try {
             this.target = Target.byMatch(target);
         } catch (IllegalArgumentException e) {

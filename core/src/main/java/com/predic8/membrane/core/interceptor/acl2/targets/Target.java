@@ -18,6 +18,7 @@ public abstract class Target {
     public abstract boolean peerMatches(IpAddress address);
 
     public static Target byMatch(String address) {
+
         if (Ipv4Target.accepts(address)) {
             return new Ipv4Target(address);
         }

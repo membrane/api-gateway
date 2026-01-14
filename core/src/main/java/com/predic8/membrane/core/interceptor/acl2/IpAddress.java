@@ -55,7 +55,7 @@ public final class IpAddress {
         return version;
     }
 
-    public InetAddress getAddress() {
+    public InetAddress getInetAddress() {
         return address;
     }
 

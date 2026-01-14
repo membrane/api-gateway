@@ -66,10 +66,10 @@ public class Ipv6Target extends Target {
 
         int prefix = this.cidr;
         if (prefix <= 0) return true;
-        if (prefix >= 128) return target.equals(address.getAddress());
+        if (prefix >= 128) return target.equals(address.getInetAddress());
 
         byte[] a = target.getAddress();
-        byte[] b = address.getAddress().getAddress();
+        byte[] b = address.getInetAddress().getAddress();
 
         int fullBytes = prefix / 8;
         int remainingBits = prefix % 8;

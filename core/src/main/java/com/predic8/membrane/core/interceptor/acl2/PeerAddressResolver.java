@@ -29,7 +29,7 @@ public final class PeerAddressResolver {
         }
 
         if (checkHostname) {
-            ip.setHostname(dnsCache.getCanonicalHostName(ip.getAddress()));
+            ip.setHostname(dnsCache.getCanonicalHostName(ip.getInetAddress()));
         }
 
         return Optional.of(ip);
