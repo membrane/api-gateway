@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.interceptor.acl2.address;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -9,7 +11,7 @@ import java.util.regex.Pattern;
 
 public final class Ipv6Address extends IpAddress {
 
-    private static final Pattern IPV6_PATTERN = Pattern.compile("TODO"); // TODO
+    private static final Pattern IPV6_PATTERN = Pattern.compile("^(?<address>\\[?[^/\\s]+\\]?)$");
 
     private final Inet6Address address;
 
@@ -25,14 +27,25 @@ public final class Ipv6Address extends IpAddress {
         Matcher m = IPV6_PATTERN.matcher(s);
         if (!m.matches()) return Optional.empty();
 
-        Inet6Address addr;
+        String addrStr = m.group("address");
+        addrStr = removeBracketsIfPresent(addrStr);
+
+        InetAddress inet;
         try {
-            addr = (Inet6Address) Inet6Address.getByName(m.group("address"));
+            inet = InetAddress.getByName(addrStr);
         } catch (UnknownHostException ignored) {
             return Optional.empty();
         }
 
-        return Optional.of(new Ipv6Address(addr));
+        if (!(inet instanceof Inet6Address inet6)) return Optional.empty();
+        return Optional.of(new Ipv6Address(inet6));
+    }
+
+    public static @NotNull String removeBracketsIfPresent(String addrStr) {
+        if (addrStr.startsWith("[") && addrStr.endsWith("]") && addrStr.length() >= 2) {
+            addrStr = addrStr.substring(1, addrStr.length() - 1).trim();
+        }
+        return addrStr;
     }
 
     @Override
@@ -44,5 +57,4 @@ public final class Ipv6Address extends IpAddress {
     public InetAddress getAddress() {
         return address;
     }
-
 }
