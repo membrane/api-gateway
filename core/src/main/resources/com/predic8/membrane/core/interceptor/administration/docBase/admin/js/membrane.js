@@ -147,7 +147,11 @@ var membrane = function() {
 				});
 			} else {
 				loadText('#request-body', requestBodyUrl);
-			}			
+			}
+			
+			if (exc.nodeStatusCodes) {
+				$('#node-status').attr('style', '');
+			}
 		}, 'json');
 
 		$('#request-meta').dataTable(getMetaTableConfiguration(function(data) {
@@ -161,6 +165,18 @@ var membrane = function() {
 		   ["Content Type", data.reqContentType],
 		   ["Length", data.reqContentLength]
 		];}));
+		$('#request-node-status').dataTable(getMetaTableConfiguration(function(data) {
+			var res = [];
+			for (var i = 0; i < data.destinations.length; i++) {
+				var status = "";
+				if (data.nodeExceptions && i < data.nodeExceptions.length && data.nodeExceptions[i])
+					status = $('<div>').text(data.nodeExceptions[i]).html();
+				else if (data.nodeStatusCodes && i < data.nodeStatusCodes.length && data.nodeStatusCodes[i])
+					status = data.nodeStatusCodes[i];
+				res.push([$('<div>').text(data.destinations[i]).html(), status]);
+			}
+			return res;
+		}));
 		$('#request-headers').dataTable(getHeaderTableConfiguration(requestHeaderUrl));
 		loadText('#request-raw', requestRawUrl);
 		
