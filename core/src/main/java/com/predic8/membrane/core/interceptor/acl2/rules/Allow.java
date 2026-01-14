@@ -5,7 +5,11 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 import java.util.Optional;
 
-@MCElement(name = "allow")
+/**
+ * @description
+ * <p>Permits requests from peers matching the configured target.</p>
+ */
+@MCElement(name = "allow", collapsed = true)
 public class Allow extends AccessRule {
 
     @Override

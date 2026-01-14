@@ -5,7 +5,11 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 import java.util.Optional;
 
-@MCElement(name = "deny")
+/**
+ * @description
+ * <p>Denies requests from peers matching the configured target.</p>
+ */
+@MCElement(name = "deny", collapsed = true)
 public class Deny extends AccessRule {
 
     @Override

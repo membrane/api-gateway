@@ -17,7 +17,25 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
-@MCElement(name = "accessControl")
+/**
+ * @topic 3. Security
+ * @description
+ * <p>Applies access control rules to incoming requests based on the peer address.</p>
+ *
+ * <p>The interceptor evaluates the configured child rules in order and uses the first rule that matches the peer to
+ * decide whether the request is permitted. If no rule matches, access is denied.</p>
+ *
+ * <p>Rules can match on IPv4/IPv6 (optionally with CIDR prefix) or on a hostname pattern. Hostname matching requires
+ * the peer hostname to be resolved and is performed only when at least one configured rule uses a hostname target.</p>
+ *
+ * @yaml
+ * <pre><code>
+ * accessControl:
+ *   - allow: "10.0.0.0/8"
+ *   - deny: "0.0.0.0/0"
+ * </code></pre>
+ */
+@MCElement(name = "accessControl", noEnvelope = true)
 public class AccessControlInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(AccessControlInterceptor.class);
@@ -50,6 +68,13 @@ public class AccessControlInterceptor extends AbstractInterceptor {
                 .buildAndSetResponse(exc);
     }
 
+    /**
+     * @description
+     * <p>Configures the ordered list of access rules that will be evaluated for each request.</p>
+     *
+     * <p>Rules are processed in the given order ("first decision wins"). Each rule references a target value that can be
+     * an IPv4/IPv6 literal (optionally with CIDR prefix) or a hostname pattern.</p>
+     */
     @MCChildElement
     public void setRules(List<AccessRule> rules) {
         accessControl.setRules(rules);
