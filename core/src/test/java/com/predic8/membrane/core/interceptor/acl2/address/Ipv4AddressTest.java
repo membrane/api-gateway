@@ -6,15 +6,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.Inet4Address;
 
+import static com.predic8.membrane.core.interceptor.acl2.address.IpAddress.ipVersion.IPV4;
+import static com.predic8.membrane.core.interceptor.acl2.address.Ipv4Address.parse;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Ipv4AddressTest {
 
     @Test
     void parse_null_or_blank_is_empty() {
-        assertTrue(Ipv4Address.parse(null).isEmpty());
-        assertTrue(Ipv4Address.parse("").isEmpty());
-        assertTrue(Ipv4Address.parse("   ").isEmpty());
+        assertTrue(parse(null).isEmpty());
+        assertTrue(parse("").isEmpty());
+        assertTrue(parse("   ").isEmpty());
     }
 
     @ParameterizedTest
@@ -28,8 +30,8 @@ class Ipv4AddressTest {
             " 203.0.113.7 ",
     })
     void parse_valid_ipv4(String s) {
-        var ip = Ipv4Address.parse(s).orElseThrow();
-        assertEquals(IpAddress.ipVersion.IPV4, ip.version());
+        var ip = parse(s).orElseThrow();
+        assertEquals(IPV4, ip.version());
         assertInstanceOf(Inet4Address.class, ip.getAddress());
     }
 
@@ -51,6 +53,6 @@ class Ipv4AddressTest {
             "1.2.3.4/24"
     })
     void parse_invalid_ipv4(String s) {
-        assertTrue(Ipv4Address.parse(s).isEmpty(), () -> "Should be invalid: " + s);
+        assertTrue(parse(s).isEmpty(), () -> "Should be invalid: " + s);
     }
 }
