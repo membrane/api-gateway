@@ -58,7 +58,6 @@ class Ipv4TargetTest {
     @Test
     void ctor_parses_address_and_default_cidr_32() {
         Ipv4Target t = new Ipv4Target("203.0.113.7");
-        assertEquals("203.0.113.7", t.getTarget().getHostAddress());
         assertTrue(t.peerMatches(parse("203.0.113.7")));
         assertFalse(t.peerMatches(parse("203.0.113.8")));
     }

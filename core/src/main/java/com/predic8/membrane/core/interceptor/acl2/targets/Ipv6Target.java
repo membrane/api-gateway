@@ -74,10 +74,6 @@ public final class Ipv6Target extends Target {
         this.cidr = cidrGroup != null ? parseInt(cidrGroup) : 128;
     }
 
-    /**
-     * Factory-style parser used by {@link Target#byMatch(String)}.
-     * Returns {@link Optional#empty()} if the input cannot be parsed as an IPv6 target.
-     */
     public static Optional<Target> tryCreate(String target) {
         try {
             return of(new Ipv6Target(target));
@@ -106,14 +102,5 @@ public final class Ipv6Target extends Target {
         if (address.version() != IPV6) return false;
 
         return matchesPrefix(target.getAddress(), address.getInetAddress().getAddress(), cidr);
-    }
-
-
-    public Inet6Address getTarget() {
-        return target;
-    }
-
-    public int getCidr() {
-        return cidr;
     }
 }

@@ -95,9 +95,4 @@ public final class Ipv4Target extends Target {
         return matchesPrefix(target.getAddress(), address.getInetAddress().getAddress(), cidr);
     }
 
-    public Inet4Address getTarget() {
-        return target;
-    }
-
-
 }
