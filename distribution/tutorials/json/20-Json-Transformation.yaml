@@ -1,17 +1,17 @@
 
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: JSON Template
+# Tutorial: JSON Template
 #
 # Using a template, you can transform incoming JSON into a different JSON shape.
 #
-# 1.) Inspect ../data/order.json
+# 1.) Inspect order.json
 #   Notice it contains an "items" array.
 #
 # 2.) Send a request with a sample payload
-#   curl -d @../data/order.json -H "Content-Type: application/json" http://localhost:2000
+#   curl -d @order.json -H "Content-Type: application/json" http://localhost:2000
 #
-# 3.) Observe how the response structure has changed.
+# 3.) Observe how the response has changed.
 #
 # Troubleshooting:
 #   Always send the header: Content-Type: application/json

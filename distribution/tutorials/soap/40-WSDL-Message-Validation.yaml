@@ -14,8 +14,8 @@
 #     ./membrane.sh -c 40-WSDL-Message-Validation.yaml
 #
 # 2.) Send valid and invalid SOAP messages
-#     curl -d @../data/city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
-#     curl -d @../data/invalid-city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
+#     curl -d @city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
+#     curl -d @invalid-city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
 
 soapProxy:
   port: 2000

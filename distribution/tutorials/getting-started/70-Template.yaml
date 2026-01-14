@@ -1,14 +1,13 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: Template
+# Tutorial: Template
 #
 # The 'static' plugin replaces the response body with a constant string.
 # The 'template' plugin renders a template instead, allowing you to use
 # Groovy expressions inside the template.
 #
 # 1.) Try:
-#
-#       curl localhost:2000/foo
+#     curl localhost:2000/foo
 #
 #     Observe the response.
 

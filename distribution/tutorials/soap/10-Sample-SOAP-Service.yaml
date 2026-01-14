@@ -10,11 +10,11 @@
 #    Windows:
 #      membrane.cmd -c 10-Sample-SOAP-Service.yaml
 #
-# 2.) WSDL
+# 2.) Open the WSDL
 #     http://localhost:2000/city-service?wsdl
 #
 # 3.) Invoke
-#    curl -d @../data/city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
+#    curl -d @city.soap.xml -H "Content-Type: text/xml" http://localhost:2000/city-service
 
 api:
   port: 2000

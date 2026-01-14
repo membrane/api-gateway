@@ -1,10 +1,9 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: OpenAPI Validation
+# Tutorial: OpenAPI Validation
 #
-# 1) Try creating a new product with a negative price:
-#
-#      curl "http://localhost:2000/shop/v2/products" -H 'Content-Type: application/json' -d '{ "name": "Figs", "price": -2.7}'
+# Try creating a new product with a negative price:
+#    curl "http://localhost:2000/shop/v2/products" -H 'Content-Type: application/json' -d '{ "name": "Figs", "price": -2.7}'
 #
 #    Check the validation error in the response.
 
