@@ -1,18 +1,14 @@
 package com.predic8.membrane.core.interceptor.acl2.targets;
 
-import com.predic8.membrane.core.interceptor.acl2.IpAddress;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.interceptor.acl2.*;
+import org.slf4j.*;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.net.*;
+import java.util.regex.*;
 
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV4;
-import static java.lang.Integer.parseInt;
-import static java.net.InetAddress.getByAddress;
+import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.*;
+import static java.lang.Integer.*;
+import static java.net.InetAddress.*;
 
 /**
  * IPv4 target definition with optional CIDR prefix (e.g. {@code 192.168.1.0/24}).
@@ -103,6 +99,7 @@ public final class Ipv4Target extends Target {
         return (bytesToInt(address.getInetAddress().getAddress()) & mask) == network;
     }
 
+    // => NetUtil test
     private static int maskOf(int prefix) {
         if (prefix <= 0) return 0;
         if (prefix >= 32) return 0xFFFFFFFF;
@@ -113,6 +110,7 @@ public final class Ipv4Target extends Target {
      * Converts a dotted-quad IPv4 string into a 32-bit integer.
      * Assumes the input has already been validated by {@link #IPV4_CIDR_PATTERN}.
      */
+    // => NetUtil test
     private static int parseDottedQuadToInt(String s) {
         String[] p = s.split("\\.", 4);
         return (parseInt(p[0]) << 24)
@@ -121,6 +119,7 @@ public final class Ipv4Target extends Target {
                 | parseInt(p[3]);
     }
 
+    // => NetUtil test
     private static int bytesToInt(byte[] b) {
         return ((b[0] & 0xFF) << 24)
                 | ((b[1] & 0xFF) << 16)
@@ -128,6 +127,7 @@ public final class Ipv4Target extends Target {
                 | (b[3] & 0xFF);
     }
 
+    // => NetUtil test
     private static Inet4Address toInet4Address(int ip) {
         byte[] bytes = new byte[]{
                 (byte) (ip >>> 24),

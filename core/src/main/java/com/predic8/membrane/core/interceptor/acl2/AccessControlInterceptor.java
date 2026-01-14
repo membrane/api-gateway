@@ -21,7 +21,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 @MCElement(name = "accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {
 
-    private List<AccessRule> rules;
+    private List<AccessRule> rules; // ac
     private PeerAddressResolver peerAddressResolver;
 
     @Override
@@ -70,10 +70,12 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
     @MCChildElement
     public void setRules(List<AccessRule> rules) {
+        // accessController.setRules(rules);
         this.rules = rules;
     }
 
     public List<AccessRule> getRules() {
+        // return accessController.getRules();
         return rules;
     }
 }

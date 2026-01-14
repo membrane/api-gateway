@@ -19,6 +19,7 @@ public abstract class Target {
 
     public static Target byMatch(String address) {
 
+        // Combine both
         if (Ipv4Target.accepts(address)) {
             return new Ipv4Target(address);
         }
