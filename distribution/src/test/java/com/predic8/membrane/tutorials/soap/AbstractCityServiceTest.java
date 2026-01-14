@@ -47,7 +47,7 @@ public abstract class AbstractCityServiceTest extends AbstractSOAPTutorialTest {
     void soapCall() throws IOException {
         given()
             // File is read from FS use the same file as the user
-            .body(readFileFromBaseDir("../data/city.soap.xml"))
+            .body(readFileFromBaseDir("city.soap.xml"))
         .when()
             .post("http://localhost:2000/city-service")
         .then()

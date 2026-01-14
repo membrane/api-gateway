@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: Short Circuit
+# Tutorial: Short Circuit
 #
 # Normally an API forwards requests to a backend. Sometimes, however,
 # you may want to short-circuit and return a response immediately
@@ -10,14 +10,12 @@
 # 1.) Start this configuration.
 #
 # 2.) Call the API:
-#
-#       curl -v http://localhost:2000
+#     curl -v http://localhost:2000
 #
 #     Observe the status code.
 #
-# 3) Send a request with a body:
-#
-#       curl -d "Bonjour" http://localhost:2000
+# 3.) Send a request with a body:
+#     curl -d "Bonjour" http://localhost:2000
 #
 #     Observe the response body.
 
