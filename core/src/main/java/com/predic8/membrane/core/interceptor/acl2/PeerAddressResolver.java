@@ -4,6 +4,8 @@ import com.predic8.membrane.core.util.DNSCache;
 
 import java.util.Optional;
 
+import static com.predic8.membrane.core.interceptor.acl2.IpAddress.parse;
+
 public final class PeerAddressResolver {
 
     private final boolean checkHostname;
@@ -21,7 +23,7 @@ public final class PeerAddressResolver {
 
         IpAddress ip;
         try {
-            ip = IpAddress.parse(s);
+            ip = parse(s);
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }

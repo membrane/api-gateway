@@ -22,7 +22,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 public class AccessControlInterceptor extends AbstractInterceptor {
 
     private List<AccessRule> rules;
-
     private PeerAddressResolver peerAddressResolver;
 
     @Override
@@ -32,17 +31,18 @@ public class AccessControlInterceptor extends AbstractInterceptor {
         if (rules.isEmpty()) throw new ConfigurationException("No access rules defined.");
     }
 
+    // TODO debug logging in RuleMatching
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if (!isPermitted(exc)) {
+        if (!isPermitted(exc.getRemoteAddrIp())) {
             setResponseToAccessDenied(exc);
             return ABORT;
         }
         return CONTINUE;
     }
 
-    private boolean isPermitted(Exchange exc) {
-        return peerAddressResolver.resolve(exc.getRemoteAddrIp())
+    private boolean isPermitted(String remoteIp) {
+        return peerAddressResolver.resolve(remoteIp)
                 .map(this::evaluatePermission)
                 .orElse(false);
     }
