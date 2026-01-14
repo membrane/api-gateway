@@ -6,13 +6,12 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.acl2.rules.AccessRule;
-import com.predic8.membrane.core.interceptor.acl2.targets.HostnameTarget;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.Router;
-import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Optional;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -21,38 +20,25 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 @MCElement(name = "accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {
 
-    private List<AccessRule> rules; // ac
-    private PeerAddressResolver peerAddressResolver;
+    private static final Logger log = LoggerFactory.getLogger(AccessControlInterceptor.class);
+
+    private final AccessControl accessControl = new AccessControl();
 
     @Override
     public void init(Router router, Proxy proxy) {
         super.init(router, proxy);
-        peerAddressResolver = new PeerAddressResolver(hasHostnameRule(), router.getDnsCache());
-        if (rules.isEmpty()) throw new ConfigurationException("No access rules defined.");
+        accessControl.init(router);
     }
 
-    // TODO debug logging in RuleMatching
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if (!isPermitted(exc.getRemoteAddrIp())) {
+        String remoteIp = exc.getRemoteAddrIp();
+        if (!accessControl.isPermitted(remoteIp)) {
             setResponseToAccessDenied(exc);
+            log.debug("Access denied. remoteIp={} method={} uri={}", remoteIp, exc.getRequest().getMethod(), exc.getRequestURI());
             return ABORT;
         }
         return CONTINUE;
-    }
-
-    private boolean isPermitted(String remoteIp) {
-        return peerAddressResolver.resolve(remoteIp)
-                .map(this::evaluatePermission)
-                .orElse(false);
-    }
-
-    private boolean evaluatePermission(IpAddress address) {
-        for (AccessRule rule : rules) {
-            Optional<Boolean> res = rule.apply(address);
-            if (res.isPresent()) return res.get();
-        }
-        return false;
     }
 
     // Copied from old ACL as is
@@ -64,18 +50,12 @@ public class AccessControlInterceptor extends AbstractInterceptor {
                 .buildAndSetResponse(exc);
     }
 
-    private boolean hasHostnameRule() {
-        return rules.stream().anyMatch(rule -> rule.getClass().isAssignableFrom(HostnameTarget.class));
-    }
-
     @MCChildElement
     public void setRules(List<AccessRule> rules) {
-        // accessController.setRules(rules);
-        this.rules = rules;
+        accessControl.setRules(rules);
     }
 
     public List<AccessRule> getRules() {
-        // return accessController.getRules();
-        return rules;
+        return accessControl.getRules();
     }
 }
