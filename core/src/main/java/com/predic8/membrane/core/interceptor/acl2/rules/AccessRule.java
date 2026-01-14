@@ -1,7 +1,7 @@
 package com.predic8.membrane.core.interceptor.acl2.rules;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.acl2.address.*;
+import com.predic8.membrane.core.interceptor.acl2.IpAddress;
 import com.predic8.membrane.core.interceptor.acl2.targets.*;
 import com.predic8.membrane.core.util.*;
 

@@ -1,6 +1,6 @@
 package com.predic8.membrane.core.interceptor.acl2.targets;
 
-import com.predic8.membrane.core.interceptor.acl2.address.IpAddress;
+import com.predic8.membrane.core.interceptor.acl2.IpAddress;
 import com.predic8.membrane.core.interceptor.acl2.address.Ipv4Address;
 
 import java.net.Inet4Address;
@@ -8,7 +8,7 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.interceptor.acl2.address.IpAddress.ipVersion.IPV6;
+import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV6;
 import static java.lang.Integer.parseInt;
 
 

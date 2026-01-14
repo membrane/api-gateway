@@ -6,7 +6,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.net.Inet4Address;
 
-import static com.predic8.membrane.core.interceptor.acl2.address.IpAddress.ipVersion.IPV4;
+import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV4;
 import static com.predic8.membrane.core.interceptor.acl2.address.Ipv4Address.parse;
 import static org.junit.jupiter.api.Assertions.*;
 

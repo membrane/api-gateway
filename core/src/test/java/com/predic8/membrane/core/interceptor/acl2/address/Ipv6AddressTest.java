@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.acl2.address;
 
+import com.predic8.membrane.core.interceptor.acl2.IpAddress;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

@@ -1,8 +1,6 @@
 package com.predic8.membrane.core.interceptor.acl2.targets;
 
-import com.predic8.membrane.core.interceptor.acl2.address.IpAddress;
-import com.predic8.membrane.core.interceptor.acl2.address.Ipv6Address;
-import org.jetbrains.annotations.NotNull;
+import com.predic8.membrane.core.interceptor.acl2.IpAddress;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;

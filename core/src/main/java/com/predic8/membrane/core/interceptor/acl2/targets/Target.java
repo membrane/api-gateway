@@ -1,6 +1,6 @@
 package com.predic8.membrane.core.interceptor.acl2.targets;
 
-import com.predic8.membrane.core.interceptor.acl2.address.IpAddress;
+import com.predic8.membrane.core.interceptor.acl2.IpAddress;
 
 /**
  * Waht is a Target?
