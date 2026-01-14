@@ -33,7 +33,7 @@ class AccessControlTest {
     @Test
     void init_rejects_empty_rules() {
         acl.setRules(List.of());
-        assertThrows(ConfigurationException.class, () -> acl.init(router));
+        assertThrows(ConfigurationException.class, () -> acl.init(router.getDnsCache()));
     }
 
     @Test
@@ -41,7 +41,7 @@ class AccessControlTest {
         Allow allow = new Allow();
         allow.setTarget("0.0.0.0/0");
         acl.setRules(List.of(allow));
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertFalse(acl.isPermitted(null));
         assertFalse(acl.isPermitted(""));
@@ -55,7 +55,7 @@ class AccessControlTest {
         allow.setTarget("10.0.0.0/8");
 
         acl.setRules(List.of(allow));
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertTrue(acl.isPermitted("10.123.45.67"));
         assertFalse(acl.isPermitted("11.0.0.1"));
@@ -67,7 +67,7 @@ class AccessControlTest {
         deny.setTarget("10.0.0.0/8");
 
         acl.setRules(List.of(deny));
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertFalse(acl.isPermitted("10.123.45.67"));
         assertFalse(acl.isPermitted("11.0.0.1"));
@@ -82,7 +82,7 @@ class AccessControlTest {
         allow.setTarget("10.0.0.0/8");
 
         acl.setRules(List.of(deny, allow));
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertFalse(acl.isPermitted("10.1.2.3"));
     }
@@ -93,7 +93,7 @@ class AccessControlTest {
         allow.setTarget("10.0.0.0/8");
 
         acl.setRules(List.of(allow));
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertFalse(acl.isPermitted("192.168.0.1"));
     }
@@ -106,7 +106,7 @@ class AccessControlTest {
         acl.setRules(List.of(allow));
         when(dnsCache.getCanonicalHostName(any(InetAddress.class))).thenReturn("example.com");
 
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertTrue(acl.isPermitted("1.2.3.4"));
         verify(dnsCache, times(1)).getCanonicalHostName(any(InetAddress.class));
@@ -120,7 +120,7 @@ class AccessControlTest {
         acl.setRules(List.of(allow));
         when(dnsCache.getCanonicalHostName(any(InetAddress.class))).thenReturn("nope.example.org");
 
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertFalse(acl.isPermitted("1.2.3.4"));
         verify(dnsCache, times(1)).getCanonicalHostName(any(InetAddress.class));
@@ -160,7 +160,7 @@ class AccessControlTest {
         allow.setTarget("0.0.0.0/0");
 
         acl.setRules(List.of(allow));
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertTrue(acl.isPermitted("1.2.3.4"));
         verify(dnsCache, never()).getCanonicalHostName(any(InetAddress.class));
@@ -177,7 +177,7 @@ class AccessControlTest {
         acl.setRules(List.of(allowIp, allowHost));
         when(dnsCache.getCanonicalHostName(any(InetAddress.class))).thenReturn("example.com");
 
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertTrue(acl.isPermitted("10.1.2.3"));
         verify(dnsCache, times(1)).getCanonicalHostName(any(InetAddress.class));
@@ -189,7 +189,7 @@ class AccessControlTest {
         allow.setTarget("10.0.0.0/8");
 
         acl.setRules(List.of(allow));
-        acl.init(router);
+        acl.init(router.getDnsCache());
 
         assertTrue(acl.isPermitted(" 10.123.45.67 "));
         assertFalse(acl.isPermitted(" 11.0.0.1 "));

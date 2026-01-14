@@ -52,6 +52,10 @@ public class NetworkUtil {
         return new Pair<>(buffer, offset);
     }
 
+    /**
+     * Removes surrounding square brackets from an address literal, if present.
+     * Useful for inputs like "[2001:db8::1]" where the brackets are part of the textual form.
+     */
     public static String removeBracketsIfPresent(String s) {
         if (s.length() >= 2 && s.charAt(0) == '[' && s.charAt(s.length() - 1) == ']') {
             return s.substring(1, s.length() - 1).trim();

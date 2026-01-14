@@ -45,7 +45,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
     @Override
     public void init(Router router, Proxy proxy) {
         super.init(router, proxy);
-        accessControl.init(router);
+        accessControl.init(router.getDnsCache());
     }
 
     @Override
