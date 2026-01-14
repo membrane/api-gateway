@@ -1,16 +1,17 @@
 package com.predic8.membrane.core.interceptor.acl2.targets;
 
-import com.predic8.membrane.core.interceptor.acl2.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.interceptor.acl2.IpAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
+import java.net.Inet4Address;
 import java.util.Optional;
-import java.util.regex.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.*;
+import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV4;
 import static com.predic8.membrane.core.util.NetworkUtil.*;
-import static java.lang.Integer.*;
-import static java.net.InetAddress.*;
+import static java.lang.Integer.parseInt;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
@@ -71,10 +72,11 @@ public final class Ipv4Target extends Target {
         this.target = toInet4Address(addrInt);
     }
 
-    public static Optional<Target> tryCreate(String raw) {
+    public static Optional<Target> tryCreate(String target) {
         try {
-            return of(new Ipv4Target(raw));
+            return of(new Ipv4Target(target));
         } catch (IllegalArgumentException e) {
+            log.debug("Error parsing {} as IPv4 target: {}", target, e.getMessage(), e);
             return empty();
         }
     }

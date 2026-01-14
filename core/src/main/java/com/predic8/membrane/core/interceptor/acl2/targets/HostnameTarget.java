@@ -1,6 +1,8 @@
 package com.predic8.membrane.core.interceptor.acl2.targets;
 
 import com.predic8.membrane.core.interceptor.acl2.IpAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -10,6 +12,8 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
 public class HostnameTarget extends Target {
+
+    private static final Logger log = LoggerFactory.getLogger(HostnameTarget.class);
 
     private static final Pattern HOSTNAME_PATTERN = Pattern.compile("^.*$");
 
@@ -32,10 +36,11 @@ public class HostnameTarget extends Target {
         this.hostname = Pattern.compile(matcher.group("hostname"));
     }
 
-    public static Optional<Target> tryCreate(String raw) {
+    public static Optional<Target> tryCreate(String target) {
         try {
-            return of(new HostnameTarget(raw));
+            return of(new HostnameTarget(target));
         } catch (IllegalArgumentException e) {
+            log.debug("Error parsing {} as hostname target: {}", target, e.getMessage(), e);
             return empty();
         }
     }

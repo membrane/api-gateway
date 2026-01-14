@@ -1,6 +1,8 @@
 package com.predic8.membrane.core.interceptor.acl2.targets;
 
 import com.predic8.membrane.core.interceptor.acl2.IpAddress;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -13,6 +15,8 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
 public class Ipv6Target extends Target {
+
+    private static final Logger log = LoggerFactory.getLogger(Ipv6Target.class);
 
     private static final Pattern IPV6_CIDR_PATTERN =
             Pattern.compile("^(?<address>\\[?[^/\\s]+\\]?)(?:/(?<cidr>12[0-8]|1[01][0-9]|[1-9]?[0-9]))?$");
@@ -47,10 +51,12 @@ public class Ipv6Target extends Target {
         this.cidr = cidrGroup != null ? Integer.parseInt(cidrGroup) : 128;
     }
 
-    public static Optional<Target> tryCreate(String raw) {
+    public static Optional<Target> tryCreate(String target) {
         try {
-            return of(new Ipv6Target(raw));
+            return of(new Ipv6Target(target));
         } catch (IllegalArgumentException e) {
+
+            log.debug("Error parsing {} as IPv6 target: {}", target, e.getMessage(), e);
             return empty();
         }
     }
