@@ -1,11 +1,10 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: setHeader
+# Tutorial: setHeader
 #
 # 1.) Try:
-#
-#       curl -v http://localhost:2000
-#       curl -v -d "Hugo" http://localhost:2000
+#     curl -v http://localhost:2000
+#     curl -v -d "Hugo" http://localhost:2000
 #
 #     Check the response headers.
 

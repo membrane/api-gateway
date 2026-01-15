@@ -1,19 +1,20 @@
 
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: JSONPath
+# Tutorial: JSONPath
 #
 # Use JSONPath to extract data from JSON documents.
 #
-# 1.) Take a look at ../data/animals.json
+# 1.) Take a look at animals.json
 #
 # 2.) Try:
+#   curl -v -d @animals.json -H "Content-Type: application/json" http://localhost:2000
 #
-#   curl -v -d @../data/animals.json -H "Content-Type: application/json" http://localhost:2000
-#     Inspect the console log.
+#   Inspect the console log.
 #
 #   curl -d "{}" -H "Content-Type: application/json" http://localhost:2000
-#     Should return 404, because the document does not contain an "animals" property
+#
+#   Should return 404, cause the document does not contain an "animals" property
 
 api:
   port: 2000

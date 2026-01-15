@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: First API
+# Tutorial: First API
 #
 # This example starts a simple API that forwards requests from your machine
 # to a public API.
@@ -13,14 +13,14 @@
 #    Windows:
 #      membrane.cmd -c 00-First-API.yaml
 #
-#    Membrane will print a log message indicating that the API is running.
+#    A log message indicates that the API is running.
 #
 # 2.) Call the API:
-#    Open http://localhost:2000 in your browser or run:
+#    Open http://localhost:2000 in the browser or run:
 #
 #      curl http://localhost:2000
 #
-#    You should see the list of public APIs from api.predic8.de.
+#    You should see a list of public APIs.
 #
 #  3.) Stop Membrane:
 #     Press Ctrl+C in the terminal.

@@ -55,7 +55,7 @@ public class WSDLRewriterTutorialTest extends AbstractSOAPTutorialTest {
         // @formatter:off
         given()
             // File is read from FS use the same file as the user
-            .body(readFileFromBaseDir("../data/city.soap.xml"))
+            .body(readFileFromBaseDir("city.soap.xml"))
         .when()
             .post("http://localhost:%d/my-service".formatted(getPort()))
         .then()

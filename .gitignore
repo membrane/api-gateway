@@ -119,6 +119,7 @@ core/src/test/resources/simplelogger.properties
 maven-plugin/target/surefire/
 /distribution/conf/consentFile.json
 /distribution/conf/logindialog/
+/distribution/conf
 
 # Mac
 .DS_Store

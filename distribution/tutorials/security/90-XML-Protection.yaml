@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 #
-# Membrane Tutorial: XML Protection
+# Tutorial: XML Protection
 #
 # Try it:
 #
@@ -8,8 +8,8 @@
 #     curl -d '<foo a="1" b="2" c="3" d="4"/>' -H "Content-Type: text/xml" localhost:2000
 #
 # 2.) DTD Removal
-#     Look at data/hello-dtd.xml
-#     curl -d @data/hello-dtd.xml -H "Content-Type: text/xml" localhost:2000
+#     Look at hello-dtd.xml
+#     curl -d @hello-dtd.xml -H "Content-Type: text/xml" localhost:2000
 
 api:
   port: 2000
