@@ -1,10 +1,10 @@
-package com.predic8.membrane.core.interceptor.acl2;
+package com.predic8.membrane.core.interceptor.acl;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.acl2.rules.AccessRule;
-import com.predic8.membrane.core.interceptor.acl2.rules.Allow;
-import com.predic8.membrane.core.interceptor.acl2.rules.Deny;
+import com.predic8.membrane.core.interceptor.acl.rules.AccessRule;
+import com.predic8.membrane.core.interceptor.acl.rules.Allow;
+import com.predic8.membrane.core.interceptor.acl.rules.Deny;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.TestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;

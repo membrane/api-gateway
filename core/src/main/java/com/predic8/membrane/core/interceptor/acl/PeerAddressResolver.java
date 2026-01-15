@@ -1,10 +1,10 @@
-package com.predic8.membrane.core.interceptor.acl2;
+package com.predic8.membrane.core.interceptor.acl;
 
 import com.predic8.membrane.core.util.DNSCache;
 
 import java.util.Optional;
 
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.parse;
+import static com.predic8.membrane.core.interceptor.acl.IpAddress.parse;
 
 public final class PeerAddressResolver {
 

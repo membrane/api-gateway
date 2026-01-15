@@ -1,7 +1,7 @@
-package com.predic8.membrane.core.interceptor.acl2;
+package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.interceptor.acl2.rules.Allow;
-import com.predic8.membrane.core.interceptor.acl2.rules.Deny;
+import com.predic8.membrane.core.interceptor.acl.rules.Allow;
+import com.predic8.membrane.core.interceptor.acl.rules.Deny;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.DNSCache;

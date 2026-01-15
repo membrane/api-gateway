@@ -1,6 +1,6 @@
-package com.predic8.membrane.core.interceptor.acl2.targets;
+package com.predic8.membrane.core.interceptor.acl.targets;
 
-import com.predic8.membrane.core.interceptor.acl2.IpAddress;
+import com.predic8.membrane.core.interceptor.acl.IpAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV6;
+import static com.predic8.membrane.core.interceptor.acl.IpAddress.ipVersion.IPV6;
 import static com.predic8.membrane.core.util.NetworkUtil.matchesPrefix;
 import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
 import static java.lang.Integer.parseInt;

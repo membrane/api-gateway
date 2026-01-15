@@ -1,6 +1,6 @@
-package com.predic8.membrane.core.interceptor.acl2.targets;
+package com.predic8.membrane.core.interceptor.acl.targets;
 
-import com.predic8.membrane.core.interceptor.acl2.IpAddress;
+import com.predic8.membrane.core.interceptor.acl.IpAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.interceptor.acl2;
+package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -6,8 +6,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Objects;
 
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV4;
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV6;
+import static com.predic8.membrane.core.interceptor.acl.IpAddress.ipVersion.IPV4;
+import static com.predic8.membrane.core.interceptor.acl.IpAddress.ipVersion.IPV6;
 import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
 import static java.net.InetAddress.getByName;
 

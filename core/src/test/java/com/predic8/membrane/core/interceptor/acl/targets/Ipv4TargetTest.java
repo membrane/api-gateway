@@ -1,11 +1,11 @@
-package com.predic8.membrane.core.interceptor.acl2.targets;
+package com.predic8.membrane.core.interceptor.acl.targets;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.parse;
-import static com.predic8.membrane.core.interceptor.acl2.targets.Ipv4Target.tryCreate;
+import static com.predic8.membrane.core.interceptor.acl.IpAddress.parse;
+import static com.predic8.membrane.core.interceptor.acl.targets.Ipv4Target.tryCreate;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Ipv4TargetTest {

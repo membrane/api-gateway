@@ -1,13 +1,13 @@
-package com.predic8.membrane.core.interceptor.acl2.rules;
+package com.predic8.membrane.core.interceptor.acl.rules;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.acl2.IpAddress;
-import com.predic8.membrane.core.interceptor.acl2.targets.*;
+import com.predic8.membrane.core.interceptor.acl.IpAddress;
+import com.predic8.membrane.core.interceptor.acl.targets.*;
 import com.predic8.membrane.core.util.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.acl2.targets.Target.byMatch;
+import static com.predic8.membrane.core.interceptor.acl.targets.Target.byMatch;
 
 public abstract class AccessRule {
 
@@ -36,6 +36,6 @@ public abstract class AccessRule {
     }
 
     public boolean isHostnameRule() {
-        return target instanceof com.predic8.membrane.core.interceptor.acl2.targets.HostnameTarget;
+        return target instanceof com.predic8.membrane.core.interceptor.acl.targets.HostnameTarget;
     }
 }

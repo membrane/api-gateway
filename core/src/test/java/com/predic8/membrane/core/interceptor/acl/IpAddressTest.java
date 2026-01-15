@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.interceptor.acl2;
+package com.predic8.membrane.core.interceptor.acl;
 
 import org.junit.jupiter.api.Test;
 
@@ -7,9 +7,9 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV4;
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.ipVersion.IPV6;
-import static com.predic8.membrane.core.interceptor.acl2.IpAddress.*;
+import static com.predic8.membrane.core.interceptor.acl.IpAddress.ipVersion.IPV4;
+import static com.predic8.membrane.core.interceptor.acl.IpAddress.ipVersion.IPV6;
+import static com.predic8.membrane.core.interceptor.acl.IpAddress.*;
 import static java.net.InetAddress.getByName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
