@@ -33,7 +33,7 @@ public final class HostnameTarget extends Target {
      * @param raw a regex used to match a peer hostname
      * @throws IllegalArgumentException if raw is blank or not a valid regex
      */
-    public HostnameTarget(String raw) {
+    HostnameTarget(String raw) {
         super(raw);
 
         if (isIpLike(address)) {

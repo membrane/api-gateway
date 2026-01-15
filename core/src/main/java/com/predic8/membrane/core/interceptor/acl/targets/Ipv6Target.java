@@ -50,7 +50,7 @@ public final class Ipv6Target extends Target {
      * @param raw raw configuration input
      * @throws IllegalArgumentException if raw is not a valid IPv6[/cidr] value
      */
-    public Ipv6Target(String raw) {
+    Ipv6Target(String raw) {
         super(raw);
 
         Matcher m = IPV6_CIDR_PATTERN.matcher(address);

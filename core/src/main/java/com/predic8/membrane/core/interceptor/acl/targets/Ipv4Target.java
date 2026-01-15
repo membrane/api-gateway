@@ -51,7 +51,7 @@ public final class Ipv4Target extends Target {
      * @param raw raw configuration input
      * @throws IllegalArgumentException if raw is not a valid IPv4[/cidr] value
      */
-    public Ipv4Target(String raw) {
+    Ipv4Target(String raw) {
         super(raw);
 
         Matcher m = IPV4_CIDR_PATTERN.matcher(address);

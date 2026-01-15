@@ -6,12 +6,14 @@ import com.predic8.membrane.core.interceptor.acl.rules.AccessRule;
 import com.predic8.membrane.core.interceptor.acl.rules.Allow;
 import com.predic8.membrane.core.interceptor.acl.rules.Deny;
 import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.DummyTestRouter;
 import com.predic8.membrane.core.router.TestRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.DNSCache;
 import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -22,17 +24,10 @@ import static org.mockito.Mockito.*;
 
 class AccessControlInterceptorTest {
 
-    private static final class RouterWithDns extends TestRouter {
-        private final DNSCache dns;
-
-        private RouterWithDns(DNSCache dns) {
-            this.dns = dns;
-        }
-
-        @Override
-        public DNSCache getDnsCache() {
-            return dns;
-        }
+    private static DummyTestRouter routerWithDns(DNSCache dns) {
+        DummyTestRouter r = spy(new DummyTestRouter());
+        doReturn(dns).when(r).getDnsCache();
+        return r;
     }
 
     private static Allow allow(String target) {
@@ -47,18 +42,17 @@ class AccessControlInterceptorTest {
         return d;
     }
 
-    private static Exchange exc(String remoteIp) {
-        Exchange exc = new Request.Builder().buildExchange();
+    private static Exchange exc(String remoteIp) throws URISyntaxException {
+        Exchange exc = new Request.Builder().get("/foo").buildExchange();
         exc.setRemoteAddr("client");
         exc.setRemoteAddrIp(remoteIp);
-        exc.setOriginalRequestUri("/foo");
         return exc;
     }
 
     private static AccessControlInterceptor interceptor(DNSCache dns, List<AccessRule> rules) {
         AccessControlInterceptor i = new AccessControlInterceptor();
         i.setRules(rules);
-        i.init(new RouterWithDns(dns), mock(Proxy.class));
+        i.init(routerWithDns(dns), mock(Proxy.class));
         return i;
     }
 
@@ -69,16 +63,16 @@ class AccessControlInterceptorTest {
         AccessControlInterceptor i = new AccessControlInterceptor();
         i.setRules(List.of());
 
-        assertThrows(ConfigurationException.class, () -> i.init(new RouterWithDns(dns), mock(Proxy.class)));
+        assertThrows(ConfigurationException.class, () -> i.init(routerWithDns(dns), mock(Proxy.class)));
     }
 
     @Test
-    void denies_when_no_rule_matches_default_deny() {
+    void denies_when_no_rule_matches_default_deny() throws URISyntaxException {
         assertEquals(ABORT, interceptor(mock(DNSCache.class), List.of(allow("10.0.0.0/8"))).handleRequest(exc("192.168.1.100")));
     }
 
     @Test
-    void allows_when_first_matching_rule_allows() {
+    void allows_when_first_matching_rule_allows() throws URISyntaxException {
         assertEquals(
                 CONTINUE,
                 interceptor(mock(DNSCache.class), List.of(
@@ -89,7 +83,7 @@ class AccessControlInterceptorTest {
     }
 
     @Test
-    void denies_when_first_matching_rule_denies_even_if_later_allows() {
+    void denies_when_first_matching_rule_denies_even_if_later_allows() throws URISyntaxException {
         assertEquals(
                 ABORT,
                 interceptor(mock(DNSCache.class), List.of(
@@ -100,7 +94,7 @@ class AccessControlInterceptorTest {
     }
 
     @Test
-    void trims_target_value_via_rule_setter() {
+    void trims_target_value_via_rule_setter() throws URISyntaxException {
         AccessControlInterceptor i = interceptor(mock(DNSCache.class), List.of(
                 allow(" 10.0.0.0/8 ")
         ));
@@ -110,7 +104,7 @@ class AccessControlInterceptorTest {
     }
 
     @Test
-    void denies_when_remote_ip_is_blank_or_invalid() {
+    void denies_when_remote_ip_is_blank_or_invalid() throws URISyntaxException {
         AccessControlInterceptor i = interceptor(mock(DNSCache.class), List.of(
                 allow("0.0.0.0/0")
         ));
@@ -121,7 +115,7 @@ class AccessControlInterceptorTest {
     }
 
     @Test
-    void allows_ipv6_cidr_match() {
+    void allows_ipv6_cidr_match() throws URISyntaxException {
         AccessControlInterceptor i = interceptor(mock(DNSCache.class), List.of(
                 allow("2001:db8::/64")
         ));
@@ -131,7 +125,7 @@ class AccessControlInterceptorTest {
     }
 
     @Test
-    void hostname_rule_triggers_dns_and_allows_on_match() {
+    void hostname_rule_triggers_dns_and_allows_on_match() throws URISyntaxException {
         DNSCache dns = mock(DNSCache.class);
         when(dns.getCanonicalHostName(any(InetAddress.class))).thenReturn("www.example.com");
 
@@ -144,7 +138,7 @@ class AccessControlInterceptorTest {
     }
 
     @Test
-    void hostname_rule_triggers_dns_and_denies_on_mismatch_default_deny() {
+    void hostname_rule_triggers_dns_and_denies_on_mismatch_default_deny() throws URISyntaxException {
         DNSCache dns = mock(DNSCache.class);
         when(dns.getCanonicalHostName(any(InetAddress.class))).thenReturn("bot.example.com");
 
@@ -157,7 +151,7 @@ class AccessControlInterceptorTest {
     }
 
     @Test
-    void dns_is_not_used_when_no_hostname_rules_present() {
+    void dns_is_not_used_when_no_hostname_rules_present() throws URISyntaxException {
         DNSCache dns = mock(DNSCache.class);
 
         AccessControlInterceptor i = interceptor(dns, List.of(
@@ -169,7 +163,7 @@ class AccessControlInterceptorTest {
     }
 
     @Test
-    void first_decision_wins_across_mixed_target_types() {
+    void first_decision_wins_across_mixed_target_types() throws URISyntaxException {
         DNSCache dns = mock(DNSCache.class);
         when(dns.getCanonicalHostName(any(InetAddress.class))).thenReturn("www.example.com");
 
