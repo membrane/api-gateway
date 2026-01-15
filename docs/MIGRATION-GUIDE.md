@@ -96,7 +96,7 @@ The JMX ObjectName format has changed to: `io.membrane-api:00=routers, name=`
     // Membrane 7
     public void call(Exchange exc) throws Exception;
     ```
-- `HttpClientInterceptor.setAdjustHeader(boolean)` has been removed. Header adjustment is new configured via `HttpClientConfiguration`.
+- `HttpClientInterceptor.setAdjustHeader(boolean)` has been removed. Header adjustment is now configured via `HttpClientConfiguration`.
 
 
 # Migration from 5.X to 6
