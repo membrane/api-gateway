@@ -1,0 +1,41 @@
+package com.predic8.membrane.core.interceptor.acl.rules;
+
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.acl.IpAddress;
+import com.predic8.membrane.core.interceptor.acl.targets.*;
+import com.predic8.membrane.core.util.*;
+
+import java.util.*;
+
+import static com.predic8.membrane.core.interceptor.acl.targets.Target.byMatch;
+
+public abstract class AccessRule {
+
+    protected Target target;
+
+    public Optional<Boolean> apply(IpAddress address) {
+        if (target.peerMatches(address)) return Optional.of(permitPeer());
+
+        return Optional.empty();
+    }
+
+    abstract boolean permitPeer();
+
+    @MCAttribute
+    public void setTarget(String target) {
+        if (target == null || target.trim().isEmpty()) throw new ConfigurationException("target cannot be empty");
+        try {
+            this.target = byMatch(target.trim());
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException(e.getMessage());
+        }
+    }
+
+    public String getTarget() {
+        return target.toString();
+    }
+
+    public boolean isHostnameRule() {
+        return target instanceof com.predic8.membrane.core.interceptor.acl.targets.HostnameTarget;
+    }
+}

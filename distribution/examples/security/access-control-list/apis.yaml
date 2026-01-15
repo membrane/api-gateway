@@ -1,8 +1,30 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
 api:
   port: 2000
+  path:
+    uri: /products
   flow:
     - accessControl:
-        file: ./acl.xml
+        - allow: "^localhost$"
   target:
-    url: https://predic8.com
+    url: https://api.predic8.de/shop/v2/products/
+---
+api:
+  port: 2000
+  path:
+    uri: /vendors
+  flow:
+    - accessControl:
+        - deny: ::1
+        - deny: 127.0.0.1
+  target:
+    url: https://api.predic8.de/shop/v2/vendors/
+---
+api:
+  port: 2000
+  flow:
+    - accessControl:
+        - allow: "0.0.0.0/0"
+        - allow: "::/0"
+  target:
+    url: https://api.predic8.de/shop/v2/

@@ -9,7 +9,6 @@
 - Add Example tests for all tutorials
 - Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
 - Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
-- Rewrite ACL to use the YAML configuration instead of external XML files
 - Fix maven central publish job
 - JMXExporter:
   - Tutorial
@@ -74,6 +73,11 @@
  
 
 ## (Breaking) Interface Changes
+- Replaced AccessControlInterceptor: 
+  - `accessControl` is now configured inline in YAML/XML flow (no `file="acl.xml"`).
+  - ACL no longer matches URIs/paths; routing is done via `api.path.uri` with per-API `accessControl`.
+  - Matching is now only by peer IP (CIDR, IPv4+IPv6) or hostname (regex).
+  - First match wins, default is deny if nothing matches.
 - JMX: Name changes to "io.membrane-api:00=routers, name="
 - Removed GateKeeperClientInterceptor
 - Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
