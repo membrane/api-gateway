@@ -31,10 +31,9 @@ public class ACLExampleTest extends DistributionExtractingTestcase {
 		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
 			ha.getAndAssert200("http://localhost:2000/");
 
-			// this request succeeds through membrane, but fails on the backend with 404
-			ha.getAndAssert(404, "http://localhost:2000/contacts/");
+			ha.getAndAssert(200, "http://localhost:2000/products/");
 
-			ha.getAndAssert(401, "http://localhost:2000/open-source/");
+			ha.getAndAssert(403, "http://localhost:2000/vendors/");
 		}
 	}
 }
