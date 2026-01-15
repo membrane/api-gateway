@@ -1,3 +1,104 @@
+# Migration Guide from Membrane 6.X to 7
+
+This guide describes how to migrate existing Membrane installations from version 6 to version 7.  
+Membrane 7 introduces a new YAML based configuration model and a significantly modernized internal architecture.  
+XML based configurations remain supported, but some legacy features and APIs have been removed.
+
+## 1. Recommended Migration Strategy
+
+- Upgrade Membrane to 7.x with your existing XML configuration. Remove all deprecated interceptors and syntax listed below.
+- Try to startup Membrane with the old configuration and look at logs and potential configuration errors.
+- Gradually migrate APIs from XML to YAML using the tutorials as templates or keep the XML configuration.
+- Update scripts, monitoring and CI pipelines to reflect the new JMX and configuration model.
+
+## 2. Configuration Model
+
+- YAML as First Class Configuration Format
+- Membrane 7 introduces a new YAML based configuration format that replaces most use cases of `proxies.xml`.
+- You are encouraged to migrate to YAML, but existing XML configurations continue to work.
+- To use existing XML configurations, just remove the `apis.yaml` file in the `conf` directory. Most of the XML configurations will work without changes.
+
+
+## 3. Removed Interceptors and Plugins
+
+The following legacy interceptors have been removed:
+
+| Removed | Replacement |
+|--------|-------------|
+| `gateKeeperClient` | Use OAuth2, JWT or API Key interceptors |
+| `wadl` | Use OpenAPI |
+| `xmlSessionIdExtractor` | Use language based session handling |
+
+Remove these elements from your configuration and replace them with modern equivalents.
+
+## 4. Internal Routing
+
+Instead of:
+
+```xml
+<target url="service:a"/>
+```
+
+use:
+
+```xml
+<target url="internal://a"/>
+```
+
+## 5. Logging
+
+Instead of `<log headeOnly='true'/>` use `<log body='false'/>`.
+
+## 6. Scripting
+
+```
+headers['X-My-Header']
+```
+
+Returned an object of the `Header` class. Now it returns `Map<String,Object>`.
+
+Instead of:
+
+```
+message.headers.getFirst("X-My-Header")
+```
+
+use:
+
+```
+headers['X-My-Header']
+```
+
+## 7.1. SpEL Expressions
+
+- `headers.foo` delivered only the first value of the header `foo`. Now it returns a comma separated list of values.
+- A nonexisting header like `header['x-unknown']` returned an empty string. Now it returns `null`.
+
+## 7.2. Groovy Expressions
+
+
+
+
+## 8. JMX
+
+The JMX ObjectName format has changed to: `io.membrane-api:00=routers, name=`
+
+
+## 9. Java Interfaces
+
+- `ValidatorInterceptor` the `FailureHandler` has been removed. Logging and error handling must now be implemented directly inside validators.
+- `HttpClient#call` return type changed. The `HttpClient` call method no longer returns an `Exchange`. Use the one from the parameters instead, it is the same instance.
+
+    ```java
+    // Membrane 6
+    public Exchange call(Exchange exc) throws Exception;
+    
+    // Membrane 7
+    public void call(Exchange exc) throws Exception;
+    ```
+- `HttpClientInterceptor.setAdjustHeader(boolean)` has been removed. Header adjustment is configured via `HttpClientConfiguration.
+
+
 # Migration from 5.X to 6
 
 ## Swagger 2
