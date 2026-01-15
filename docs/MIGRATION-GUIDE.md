@@ -47,7 +47,7 @@ use:
 
 ## 5. Logging
 
-Instead of `<log headeOnly='true'/>` use `<log body='false'/>`.
+Instead of `<log headerOnly='true'/>` use `<log body='false'/>`.
 
 ## 6. Scripting
 
@@ -76,7 +76,7 @@ headers['X-My-Header']
 
 ## 7.2. Groovy Expressions
 
-
+- `$header` now returns a `Map<String,String>` instead of an object of class `Header`. Use `$header['x-foo']` instead of `$header.getFirstValue('x-foo')`.
 
 
 ## 8. JMX
@@ -87,7 +87,7 @@ The JMX ObjectName format has changed to: `io.membrane-api:00=routers, name=`
 ## 9. Java Interfaces
 
 - `ValidatorInterceptor` the `FailureHandler` has been removed. Logging and error handling must now be implemented directly inside validators.
-- `HttpClient#call` return type changed. The `HttpClient` call method no longer returns an `Exchange`. Use the one from the parameters instead, it is the same instance.
+- The return type of `HttpClient#call` has changed. The `HttpClient` call method no longer returns an `Exchange`. Use the one from the parameters instead, it is the same instance.
 
     ```java
     // Membrane 6
@@ -96,7 +96,7 @@ The JMX ObjectName format has changed to: `io.membrane-api:00=routers, name=`
     // Membrane 7
     public void call(Exchange exc) throws Exception;
     ```
-- `HttpClientInterceptor.setAdjustHeader(boolean)` has been removed. Header adjustment is configured via `HttpClientConfiguration.
+- `HttpClientInterceptor.setAdjustHeader(boolean)` has been removed. Header adjustment is new configured via `HttpClientConfiguration`.
 
 
 # Migration from 5.X to 6
