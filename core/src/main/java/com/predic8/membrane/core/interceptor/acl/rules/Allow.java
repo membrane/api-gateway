@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,30 +12,19 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.acl;
+package com.predic8.membrane.core.interceptor.acl.rules;
 
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.annot.MCElement;
 
-public class Any extends AbstractClientAddress {
+/**
+ * @description
+ * <p>Permits requests from peers matching the configured target.</p>
+ */
+@MCElement(name = "allow", collapsed = true)
+public class Allow extends AccessRule {
 
-	public static final String ELEMENT_NAME = "any";
-
-	public Any(Router router) {
-		super(router);
-	}
-
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
-
-	@Override
-	public boolean matches(String hostname, String ip) {
-		return true;
-	}
-
-	@Override
-	public String toString() {
-		return "^.*$";
-	}
+    @Override
+    boolean permitPeer() {
+        return true;
+    }
 }

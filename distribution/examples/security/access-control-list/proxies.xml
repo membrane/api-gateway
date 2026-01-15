@@ -1,16 +1,36 @@
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
-	xmlns:spring="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+              xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-					    
-	<router>
 
-		<api port="2000">
-			<accessControl file="./acl.xml" />
-			<target url="https://predic8.com"/>
-		</api>
-	
-	</router>
-	
+    <router>
+
+        <api port="2000">
+            <path>/products</path>
+            <accessControl>
+                <allow target="^localhost$"/>
+            </accessControl>
+            <target url="https://api.predic8.de/shop/v2/products/"/>
+        </api>
+
+        <api port="2000">
+            <path>/vendors</path>
+            <accessControl>
+                <deny target="::1"/>
+                <deny target="127.0.0.1"/>
+            </accessControl>
+            <target url="https://api.predic8.de/shop/v2/vendors/"/>
+        </api>
+
+        <api port="2000">
+            <accessControl>
+                <allow target="0.0.0.0/0"/>
+                <allow target="::/0"/>
+            </accessControl>
+            <target url="https://api.predic8.de/shop/v2/"/>
+        </api>
+
+    </router>
+
 </spring:beans>
