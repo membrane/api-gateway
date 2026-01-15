@@ -79,7 +79,7 @@ public class AbortExchangeTest {
         assertExchangeStoreHas(router.getExchangeStore(), 1, 0);
 
         IOUtils.copy(response.getBodyAsStream(), new ByteArrayOutputStream());
-        sleep(100);
+//        sleep(100);
 
         assertExchangeStoreHas(router.getExchangeStore(), 1, 1);
     }
