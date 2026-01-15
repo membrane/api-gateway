@@ -9,7 +9,6 @@
 - Add Example tests for all tutorials
 - Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
 - Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
-- Rewrite ACL to use the YAML configuration instead of external XML files
 - Fix maven central publish job
 - JMXExporter:
   - Tutorial
