@@ -17,7 +17,7 @@ public class XmlToJsonTutorialTest extends AbstractXmlTutorialTest {
     void xmlIsConvertedToJson() {
         // @formatter:off
         given()
-            .body("animals.xml")
+            .body(classpathText("animals.xml"))
             .contentType(XML)
         .when()
             .post("http://localhost:2000")
