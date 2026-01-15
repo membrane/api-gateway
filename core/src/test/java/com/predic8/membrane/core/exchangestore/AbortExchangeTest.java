@@ -57,7 +57,9 @@ public class AbortExchangeTest {
 
                     @Override
                     public int read() {
-                        if (l++ >= 2000000)
+                        // NOTE: OS/TCP and Java buffering can fully buffer/read small streaming responses before the connection is aborted.
+                        // Use a large streaming body to prevent full-response buffering.
+                        if (l++ >= 40000000)
                             return -1;
                         return 0;
                     }
@@ -91,7 +93,7 @@ public class AbortExchangeTest {
         response.getBodyAsStream().read(new byte[4096]);
 
         assertExchangeStoreHas(router.getExchangeStore(), 1, 0);
-
+        sleep(100);
         BodyUtil.closeConnection(response.getBody());
         sleep(100);
 

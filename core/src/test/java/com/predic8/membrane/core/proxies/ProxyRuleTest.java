@@ -13,13 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.acl.*;
-import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.RouterXmlBootstrap;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,16 +56,13 @@ public class ProxyRuleTest {
 
 		List<Interceptor> inters = proxy.getFlow();
 		assertFalse(inters.isEmpty());
-        assertEquals(2, inters.size());
+        assertEquals(1, inters.size());
 	}
 
 	private static List<Interceptor> getFlow() {
 		List<Interceptor> interceptors = new ArrayList<>();
 		Interceptor balancer = new LoadBalancingInterceptor();
 		interceptors.add(balancer);
-
-		Interceptor acl = new AccessControlInterceptor();
-		interceptors.add(acl);
 		return interceptors;
 	}
 

@@ -1,4 +1,4 @@
-/* Copyright 2009, 2011 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,16 +11,20 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.config.AbstractXmlElement;
+package com.predic8.membrane.core.interceptor.acl.rules;
 
-public class Clients extends AbstractXmlElement {
+import com.predic8.membrane.annot.MCElement;
 
-	public static final String ELEMENT_NAME = "clients";
+/**
+ * @description
+ * <p>Denies requests from peers matching the configured target.</p>
+ */
+@MCElement(name = "deny", collapsed = true)
+public class Deny extends AccessRule {
 
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
+    @Override
+    boolean permitPeer() {
+        return false;
+    }
 }

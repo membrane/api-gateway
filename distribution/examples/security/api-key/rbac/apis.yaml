@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.5.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
 
 # API key stores are designed to retrieve key and scope data from various data sources.
 # In this instance, we use an `ApiKeyFileStore`, which fetches API keys from a specified file.
