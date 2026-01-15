@@ -21,14 +21,19 @@ import static org.springframework.util.ReflectionUtils.doWithMethods;
 
 public final class YamlParsingUtils {
 
-    private YamlParsingUtils() {}
+    private YamlParsingUtils() {
+    }
 
-    private static final ConcurrentHashMap<String, Schema> SCHEMA_CACHE = new ConcurrentHashMap<>();
+    private record SchemaCacheKey(String schemaLocation, ClassLoader classLoader) {
+    }
+
+    private static final ConcurrentHashMap<SchemaCacheKey, Schema> SCHEMA_CACHE = new ConcurrentHashMap<>();
 
     static void validate(Grammar grammar, JsonNode input) throws YamlSchemaValidationException {
-        Schema schema = SCHEMA_CACHE.computeIfAbsent(grammar.getSchemaLocation(), loc -> {
-            Schema s = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, b -> {})
-                    .getSchema(SchemaLocation.of(loc));
+        Schema schema = SCHEMA_CACHE.computeIfAbsent(new SchemaCacheKey(grammar.getSchemaLocation(), Thread.currentThread().getContextClassLoader()), k -> {
+            Schema s = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, b -> {
+                    })
+                    .getSchema(SchemaLocation.of(k.schemaLocation()));
             s.initializeValidators();
             return s;
         });
