@@ -6,6 +6,8 @@
 
 # 7.X
 
+- Change log level to DEBUG::
+  - 18:30:17,492  INFO 1 main RuleReinitializer:35 {} - Starting rule reinitializer.
 - Add Example tests for all tutorials
 - Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
 - Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
@@ -37,10 +39,6 @@
   - Language is case sensitve: e.g. language: SPEL is not valid according to the Schema and produces:
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
-  
-  
-# 7.0.4
-
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
 - YAML parsing:
   - When the reason for a parse error is clear. Shorten error message.
@@ -53,9 +51,6 @@
      - Migrate to simple yaml config
      - Restrict on ips, hostname not paths
      - ipv6, wildcards
-
-# 7.1.0
-
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 - Remove GroovyTemplateInterceptor (Not Template Interceptor)
