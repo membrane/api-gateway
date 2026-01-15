@@ -1,164 +1,86 @@
-/* Copyright 2010, 2012 predic8 GmbH, www.predic8.com
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License. */
-
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.xml.beautifier.*;
-import org.apache.commons.text.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.acl.rules.AccessRule;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.stream.*;
-import java.net.*;
+import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
- * @description Blocks requests whose origin TCP/IP address (hostname or IP address) is not allowed to access the
- * requested resource.
- * @topic 3. Security and Validation
+ * @topic 3. Security
+ * @description
+ * <p>Applies access control rules to incoming requests based on the peer address.</p>
+ *
+ * <p>The interceptor evaluates the configured child rules in order and uses the first rule that matches the peer to
+ * decide whether the request is permitted. If no rule matches, access is denied.</p>
+ *
+ * <p>Rules can match on IPv4/IPv6 (optionally with CIDR prefix) or on a hostname pattern. Hostname matching requires
+ * the peer hostname to be resolved and is performed only when at least one configured rule uses a hostname target.</p>
+ *
+ * @yaml
+ * <pre><code>
+ * accessControl:
+ *   - allow: "10.0.0.0/8"
+ *   - deny: "0.0.0.0/0"
+ * </code></pre>
  */
-@MCElement(name = "accessControl")
+@MCElement(name = "accessControl", noEnvelope = true)
 public class AccessControlInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(AccessControlInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(AccessControlInterceptor.class);
 
-    private String file;
+    private final AccessControl accessControl = new AccessControl();
 
-    private AccessControl accessControl;
-
-    private boolean useXForwardedForAsClientAddr = false;
-
-    public AccessControlInterceptor() {
-        setDisplayName("access control");
-        setAppliedFlow(REQUEST_FLOW);
+    @Override
+    public void init(Router router, Proxy proxy) {
+        super.init(router, proxy);
+        accessControl.init(router.getDnsCache());
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        var remoteAddr = exc.getRemoteAddr();
-        var remoteAddrIp = exc.getRemoteAddrIp();
-
-        var xff = getForwardedForList(exc);
-        if (useXForwardedForAsClientAddr && !xff.isEmpty()) {
-            var xLast = xff.getLast();
-            try {
-                remoteAddrIp = InetAddress.getByName(xLast).getHostAddress();
-            } catch (UnknownHostException e) {
-                remoteAddr = xLast;
-            }
-        }
-
-        Resource resource;
-        try {
-            resource = accessControl.getResourceFor(exc.getOriginalRequestUri());
-        } catch (Exception e) {
-            log.error("", e);
+        String remoteIp = exc.getRemoteAddrIp();
+        if (!accessControl.isPermitted(remoteIp)) {
             setResponseToAccessDenied(exc);
-            return ABORT;
-        }
-
-        if (!resource.checkAccess(remoteAddr, remoteAddrIp)) {
-            setResponseToAccessDenied(exc);
+            log.debug("Access denied. remoteIp={} method={} uri={}", remoteIp, exc.getRequest().getMethod(), exc.getRequestURI());
             return ABORT;
         }
         return CONTINUE;
     }
 
+    // Copied from old ACL as is
     private void setResponseToAccessDenied(Exchange exc) {
-        log.warn("Access Denied. Method: {} Uri: {}", exc.getRequest().getMethod(), exc.getOriginalRequestUri());
         security(false, getDisplayName())
                 .title("Access Denied")
-                .status(401)
+                .status(403)
                 .addSubSee("authorization-denied")
                 .buildAndSetResponse(exc);
     }
 
-    public boolean isUseXForwardedForAsClientAddr() {
-        return useXForwardedForAsClientAddr;
-    }
-
     /**
-     * @description whether to use the last value of the last "X-Forwarded-For" header instead of the remote IP address
-     * @default false
+     * @description
+     * <p>Configures the ordered list of access rules that will be evaluated for each request.</p>
+     *
+     * <p>Rules are processed in the given order ("first decision wins"). Each rule references a target value that can be
+     * an IPv4/IPv6 literal (optionally with CIDR prefix) or a hostname pattern.</p>
      */
-    @MCAttribute
-    public void setUseXForwardedForAsClientAddr(boolean useXForwardedForAsClientAddr) {
-        this.useXForwardedForAsClientAddr = useXForwardedForAsClientAddr;
+    @MCChildElement
+    public void setRules(List<AccessRule> rules) {
+        accessControl.setRules(rules);
     }
 
-    public String getFile() {
-        return file;
+    public List<AccessRule> getRules() {
+        return accessControl.getRules();
     }
-
-    /**
-     * @description Location of the ACL file.
-     * @example acl/acl.xml
-     */
-    @Required
-    @MCAttribute
-    public void setFile(String file) {
-        this.file = file;
-    }
-
-    @Override
-    public void init() {
-        super.init();
-        accessControl = parse(file, router);
-    }
-
-    public void setAccessControl(AccessControl ac) {
-        accessControl = ac;
-    }
-
-    protected AccessControl parse(String fileName, Router router) {
-        try {
-            XMLInputFactory factory = XMLInputFactoryFactory.inputFactory();
-            XMLStreamReader reader = null;
-            try {
-                reader = factory.createXMLStreamReader(
-                        router.getResolverMap().resolve(
-                                ResolverMap.combine(router.getConfiguration().getBaseLocation(), fileName)));
-                AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
-                res.init(router);
-                return res;
-            } finally {
-                if (reader != null) {
-                    try {
-                        reader.close();
-                    } catch (XMLStreamException ignore) {
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error initializing accessControl.", e);
-            System.err.println("Error initializing accessControl: terminating.");
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public String getShortDescription() {
-        return "Authenticates incoming requests based on the file " + StringEscapeUtils.escapeHtml4(file) + " .";
-    }
-
 }
