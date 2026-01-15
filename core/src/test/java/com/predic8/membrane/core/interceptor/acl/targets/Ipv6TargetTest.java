@@ -20,7 +20,6 @@ class Ipv6TargetTest {
             "::/0",
             "[2001:db8::1]",
             "[2001:db8::1]/64",
-            "[2001:db8::1]/64",
             "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/128"
     })
     void acceptsValid(String input) {
