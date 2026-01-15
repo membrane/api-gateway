@@ -36,6 +36,8 @@
   - A "---" at the end without an API behind it, produces an error. The gateway should tolerantly ignore it.
   - Language is case sensitve: e.g. language: SPEL is not valid according to the Schema and produces:
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
+  - openapi/rewrite/protocol provide http and https options
+  
   
 # 7.0.4
 
