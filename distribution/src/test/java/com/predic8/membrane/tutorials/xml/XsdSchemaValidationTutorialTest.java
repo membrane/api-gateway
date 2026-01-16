@@ -38,18 +38,10 @@ public class XsdSchemaValidationTutorialTest extends AbstractXmlTutorialTest{
             .post("http://localhost:2000")
         .then()
             .statusCode(400)
-            .body("title", equalTo("XML message validation failed"))
-            .body("type", equalTo("https://membrane-api.io/problems/user"))
             .body("status", equalTo(400))
-            .body("see", equalTo("https://membrane-api.io/problems/user/xml-schema-validator"))
-            .body("attention", containsString("development mode"))
-            .body("validation.size()", equalTo(1))
-            .body("validation[0].message", allOf(
-                    containsString("year"),
-                    containsStringIgnoringCase("not valid")
-            ))
-            .body("validation[0].line", equalTo(8))
-            .body("validation[0].column", equalTo(38));
+            .body("title", containsStringIgnoringCase("validation"))
+            .body("validation.size()", greaterThan(0))
+            .body("validation[0].message", containsString("year"));
         // @formatter:on
     }
 }

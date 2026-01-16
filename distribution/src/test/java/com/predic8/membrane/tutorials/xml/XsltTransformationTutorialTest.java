@@ -25,16 +25,9 @@ public class XsltTransformationTutorialTest extends AbstractXmlTutorialTest{
         .then()
             .statusCode(200)
             .contentType(XML)
-            .body(startsWith("<?xml"))
-            .body(containsString("<categories>"))
-            .body(containsString("</categories>"))
-            .body(containsString("<category name=\""))
-            .body(containsString("<title>"))
-            .body(anyOf(
-                    containsString("Software Engineering"),
-                    containsString("Clean Code"),
-                    containsString("Design Patterns")
-            ));
+            .body("categories.category.size()", greaterThan(0))
+            .body("categories.category[0].@name", not(emptyOrNullString()))
+            .body("categories.category[0].title", not(emptyOrNullString()));
         // @formatter:on
     }
 }

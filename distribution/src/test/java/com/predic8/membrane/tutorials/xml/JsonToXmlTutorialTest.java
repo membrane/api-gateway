@@ -27,18 +27,11 @@ public class JsonToXmlTutorialTest extends AbstractXmlTutorialTest {
         .then()
             .statusCode(200)
             .contentType(XML)
-            .body(startsWith("<?xml"))
-            .body(containsString("<zoo>"))
-            .body(containsString("</zoo>"))
-            .body(containsString("<number>2</number>"))
-            .body(containsString("<animals>"))
-            .body(containsString("<array>"))
-            .body(containsString("<item>"))
-            .body(containsString("<species>dog</species>"))
-            .body(containsString("<legs>4</legs>"))
-            .body(containsString("<name>Skye</name>"))
-            .body(containsString("<species>cat</species>"))
-            .body(containsString("<name>Molly</name>"));
+            .body("zoo.number", equalTo("2"))
+            .body("zoo.animals.array.item.size()", greaterThanOrEqualTo(2))
+            .body("zoo.animals.array.item.name", hasItems("Skye", "Molly"))
+            .body("zoo.animals.array.item.species", hasItems("dog", "cat"))
+            .body("zoo.animals.array.item.find { it.name == 'Skye' }.legs", equalTo("4"));
         // @formatter:on
     }
 }

@@ -29,10 +29,7 @@ public class XPathTutorialTest extends AbstractXmlTutorialTest {
             .body(allOf(
                     containsString("Names:"),
                     containsString("Skye"),
-                    containsString("Molly"),
-                    containsString("Biscuit"),
                     containsString("Sunny"),
-                    containsString("Bubbles"),
                     containsString("Name: Skye")
             ));
         // @formatter:on

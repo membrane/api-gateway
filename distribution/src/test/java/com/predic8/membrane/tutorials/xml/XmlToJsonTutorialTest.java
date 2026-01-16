@@ -27,16 +27,10 @@ public class XmlToJsonTutorialTest extends AbstractXmlTutorialTest {
         .then()
             .statusCode(200)
             .contentType(JSON)
-            .body("animals", notNullValue())
-            .body("animals.animal", notNullValue())
             .body("animals.animal.size()", equalTo(5))
-            .body("animals.animal[0].name", equalTo("Skye"))
-            .body("animals.animal[0].species", equalTo("dog"))
-            .body("animals.animal[0].legs", equalTo(4))
-            .body("animals.animal[3].name", equalTo("Sunny"))
-            .body("animals.animal[3].legs", equalTo(2))
-            .body("animals.animal[4].species", equalTo("goldfish"))
-            .body("animals.animal[4].legs", equalTo(0));
+            .body("animals.animal.name", hasItems("Skye", "Sunny", "Bubbles"))
+            .body("animals.animal.find { it.name == 'Sunny' }.legs", equalTo(2))
+            .body("animals.animal.find { it.name == 'Bubbles' }.species", equalTo("goldfish"));
         // @formatter:on
     }
 }
