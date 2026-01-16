@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
+import org.bouncycastle.cert.ocsp.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
@@ -29,7 +30,10 @@ import java.net.*;
 import java.nio.charset.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Response.noContent;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static java.util.Objects.*;
@@ -211,23 +215,20 @@ class UtilsTest {
     }
 
     @Test
-    void getOpenapiValidatorRequestFromExchange() throws IOException, ParseException {
-        Exchange exc = new Exchange(null);
-        Header header = new Header();
-        header.setValue("X-Padding", "V0hQCMkJV4mKigp");
-        header.setContentType("text/xml");
-        exc.setOriginalRequestUri("/foo");
-        exc.setRequest(new com.predic8.membrane.core.http.Request.Builder().method("POST").header(header).build());
+    void getOpenapiValidatorRequestFromExchange() throws Exception {
+        var request = Utils.getOpenapiValidatorRequest(post("/foo")
+                .contentType(TEXT_XML)
+                .header("X-Padding","V0hQCMkJV4mKigp")
+                .buildExchange());
 
-        var request = Utils.getOpenapiValidatorRequest(exc);
         assertEquals("/foo",request.getPath());
-        assertEquals("POST", request.getMethod());
+        assertEquals(METHOD_POST, request.getMethod());
 
         assertEquals(2,request.getHeaders().size());
         assertEquals("V0hQCMkJV4mKigp", request.getHeaders().get("X-Padding"));
-        assertEquals("text/xml", request.getHeaders().get("Content-Type"));
+        assertEquals(TEXT_XML, request.getHeaders().get(CONTENT_TYPE));
 
-        assertTrue(new ContentType("text/xml").match(request.getMediaType()));
+        assertTrue(new ContentType(TEXT_XML).match(request.getMediaType()));
     }
 
     @Test
