@@ -33,7 +33,35 @@ The following legacy interceptors have been removed:
 
 Remove these elements from your configuration and replace them with modern equivalents.
 
-## 4. Internal Routing
+## 4. AccessControl
+
+* The ACL for `accessControl` is now defined inline in the YAML/XML configuration (no external `acl.xml`).
+* ACL rules do not match URIs/paths anymore. Use separate API entries for different paths and define `accessControl` per API.
+* Rules match only the peer IP/CIDR (IPv4/IPv6) or hostname (regex). First match wins. If nothing matches, access is denied.
+
+Example:
+
+```yaml
+api:
+  port: 2000
+  path:
+    uri: /foo
+  flow:
+    - accessControl:
+        - allow: "^localhost$"
+---
+api:
+  port: 2000
+  path:
+    uri: /bar
+  flow:
+    - accessControl:
+        - deny: 127.0.0.1
+        - allow: ::1
+```
+    
+
+## 5. Internal Routing
 
 Instead of:
 
@@ -47,11 +75,11 @@ use:
 <target url="internal://a"/>
 ```
 
-## 5. Logging
+## 6. Logging
 
 Instead of `<log headerOnly="true"/>` use `<log body="false"/>`.
 
-## 6. Scripting
+## 7. Scripting
 
 ### 6.1 Groovy Expressions
 
@@ -59,7 +87,7 @@ Instead of `<log headerOnly="true"/>` use `<log body="false"/>`.
 
 Instead of:
 
-```
+```groovy
 headers.getFirst("X-My-Header")
 ```
 
@@ -93,6 +121,19 @@ The JMX ObjectName format has changed to: `io.membrane-api:00=routers, name=`
     ```
 - `HttpClientInterceptor.setAdjustHeader(boolean)` has been removed. Header adjustment is now configured via `HttpClientConfiguration`.
 
+## 9. Router Configuration
+Router settings are now configured via the `configuration` element. 
+
+Example:
+```xml
+<!-- before -->
+<router production="true" />
+
+<!-- now -->
+<router>
+    <configuration production="true" />
+</router>
+```
 
 # Migration from 5.X to 6
 
