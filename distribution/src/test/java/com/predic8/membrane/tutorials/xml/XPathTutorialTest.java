@@ -6,8 +6,7 @@ import java.io.IOException;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.XML;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.*;
 
 public class XPathTutorialTest extends AbstractXmlTutorialTest {
     @Override
@@ -27,9 +26,7 @@ public class XPathTutorialTest extends AbstractXmlTutorialTest {
             .statusCode(200)
             .contentType(XML)
             .body(allOf(
-                    containsString("Names:"),
-                    containsString("Skye"),
-                    containsString("Sunny"),
+                    containsString("Names: Skye Molly Biscuit Sunny Bubbles"),
                     containsString("Name: Skye")
             ));
         // @formatter:on
