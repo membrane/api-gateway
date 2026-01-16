@@ -19,6 +19,20 @@ XML based configurations remain supported, but some legacy features and APIs hav
 - To use existing XML configurations, just remove the `apis.yaml` file in the `conf` directory. Most of the XML configurations will work without changes.
 
 
+### 2.1 Router Configuration
+Router settings are now configured via the `configuration` element.
+
+Example:
+```xml
+<!-- before -->
+<router production="true" />
+
+<!-- now -->
+<router>
+    <configuration production="true" />
+</router>
+```
+
 ## 3. Removed Interceptors and Plugins
 
 The following legacy interceptors have been removed:
@@ -120,20 +134,6 @@ The JMX ObjectName format has changed to: `io.membrane-api:00=routers, name=`
     public void call(Exchange exc) throws Exception;
     ```
 - `HttpClientInterceptor.setAdjustHeader(boolean)` has been removed. Header adjustment is now configured via `HttpClientConfiguration`.
-
-## 9. Router Configuration
-Router settings are now configured via the `configuration` element. 
-
-Example:
-```xml
-<!-- before -->
-<router production="true" />
-
-<!-- now -->
-<router>
-    <configuration production="true" />
-</router>
-```
 
 # Migration from 5.X to 6
 
