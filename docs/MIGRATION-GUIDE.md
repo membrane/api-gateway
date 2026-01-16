@@ -96,7 +96,7 @@ Instead of `<log headerOnly="true"/>` use `<log body="false"/>`.
 
 ## 7. Scripting
 
-### 6.1 Groovy Expressions
+### 7.1 Groovy Expressions
 
 `${header}` now returns a `Map<String,String>` instead of an object of class `Header`. Use `$header['x-foo']` instead of `$header.getFirstValue('x-foo')`.
 
@@ -112,17 +112,17 @@ use now:
 headers['X-My-Header']
 ```
 
-## 6.2. SpEL Expressions
+## 7.2. SpEL Expressions
 
 - `headers.foo` delivered only the first value of the header `foo`. Now it returns a comma separated list of values.
 - A nonexisting header like `header['x-unknown']` returned an empty string. Now it returns `null`.
 
-## 7. JMX
+## 8. JMX
 
 The JMX ObjectName format has changed to: `io.membrane-api:00=routers, name=`
 
 
-## 8. Java Interfaces
+## 9. Java Interfaces
 
 - `ValidatorInterceptor` the `FailureHandler` has been removed. Logging and error handling must now be implemented directly inside validators.
 - The return type of `HttpClient#call` has changed. The `HttpClient` call method no longer returns an `Exchange`. Use the one from the parameters instead, it is the same instance.
