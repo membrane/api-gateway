@@ -52,6 +52,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             log.error("", e);
             user(router.getConfiguration().isProduction(), getDisplayName())
+                    .status(500)
                     .detail("Error inspecting body!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -73,6 +74,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
             log.warn(msg);
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Request discarded by xmlProtection")
+                    .status(415)
                     .detail(msg)
                     .buildAndSetResponse(exc);
             return ABORT;
@@ -83,6 +85,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
             log.warn(msg);
             security(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Content violates XML security policy")
+                    .status(400)
                     .detail(msg)
                     .buildAndSetResponse(exc);
             exc.getResponse().getHeader().add(X_PROTECTION, "Content violates XML security policy");
