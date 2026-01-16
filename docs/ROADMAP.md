@@ -43,7 +43,7 @@ PRIO 3:
 - Migrate deprecated finally to try with resources
 - YAML:
   - method: Suggest GET, POST, ...
-  - Language is case sensitve: e.g. language: SPEL is not valid according to the Schema and produces: TB
+  - Language is case sensitive: e.g. language: SPEL is not valid according to the Schema and produces: TB
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options TB
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
