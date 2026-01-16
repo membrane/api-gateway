@@ -32,7 +32,7 @@ PRIO 3:
 
 - JMXExporter:
   - Tutorial
-  - Examle
+  - Example
   - See JmxExporter
 - upgrade to jackson 3
   - When OpenAPI Parser: swagger-parser-v3 is released with Jackson 3 support
