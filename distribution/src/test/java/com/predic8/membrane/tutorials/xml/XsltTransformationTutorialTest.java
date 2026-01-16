@@ -2,7 +2,10 @@ package com.predic8.membrane.tutorials.xml;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.XML;
 import static org.hamcrest.Matchers.*;
 
 public class XsltTransformationTutorialTest extends AbstractXmlTutorialTest{
@@ -12,25 +15,25 @@ public class XsltTransformationTutorialTest extends AbstractXmlTutorialTest{
     }
 
     @Test
-    void xsltTransformsXml() {
+    void xsltTransformsXml() throws IOException {
         // @formatter:off
         given()
-            .body("books.xml")
-            .contentType("text/xml")
+            .body(readFileFromBaseDir("books.xml"))
+            .contentType(XML)
         .when()
             .post("http://localhost:2000")
         .then()
             .statusCode(200)
-            .contentType(anyOf(containsString("xml"), containsString("application/xml"), containsString("text/xml")))
+            .contentType(XML)
+            .body(startsWith("<?xml"))
+            .body(containsString("<categories>"))
+            .body(containsString("</categories>"))
+            .body(containsString("<category name=\""))
+            .body(containsString("<title>"))
             .body(anyOf(
-                    startsWith("<?xml"),
-                    startsWith("<")
-            ))
-            .body(anyOf(
-                    containsString("category"),
-                    containsString("Category"),
-                    containsString("book"),
-                    containsString("Book")
+                    containsString("Software Engineering"),
+                    containsString("Clean Code"),
+                    containsString("Design Patterns")
             ));
         // @formatter:on
     }

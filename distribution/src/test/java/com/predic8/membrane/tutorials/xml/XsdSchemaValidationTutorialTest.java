@@ -2,7 +2,10 @@ package com.predic8.membrane.tutorials.xml;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.XML;
 import static org.hamcrest.Matchers.*;
 
 public class XsdSchemaValidationTutorialTest extends AbstractXmlTutorialTest{
@@ -12,11 +15,11 @@ public class XsdSchemaValidationTutorialTest extends AbstractXmlTutorialTest{
     }
 
     @Test
-    void validXmlPassesValidation() {
+    void validXmlPassesValidation() throws IOException {
         // @formatter:off
         given()
-            .body("book-valid.xml")
-            .contentType("text/xml")
+            .body(readFileFromBaseDir("book-valid.xml"))
+            .contentType(XML)
         .when()
             .post("http://localhost:2000")
         .then()
@@ -26,21 +29,27 @@ public class XsdSchemaValidationTutorialTest extends AbstractXmlTutorialTest{
     }
 
     @Test
-    void invalidXmlFailsValidation() {
+    void invalidXmlFailsValidation() throws IOException {
         // @formatter:off
         given()
-            .body("book-invalid.xml")
-            .contentType("text/xml")
+            .contentType("application/x-www-form-urlencoded")
+            .body(readFileFromBaseDir("book-invalid.xml"))
         .when()
             .post("http://localhost:2000")
         .then()
-            .statusCode(anyOf(is(400), is(500)))
-            .body(anyOf(
-                    containsStringIgnoringCase("schema"),
-                    containsStringIgnoringCase("xsd"),
-                    containsStringIgnoringCase("validation"),
-                    containsStringIgnoringCase("valid")
-            ));
+            .statusCode(400)
+            .body("title", equalTo("XML message validation failed"))
+            .body("type", equalTo("https://membrane-api.io/problems/user"))
+            .body("status", equalTo(400))
+            .body("see", equalTo("https://membrane-api.io/problems/user/xml-schema-validator"))
+            .body("attention", containsString("development mode"))
+            .body("validation.size()", equalTo(1))
+            .body("validation[0].message", allOf(
+                    containsString("year"),
+                    containsStringIgnoringCase("not valid")
+            ))
+            .body("validation[0].line", equalTo(8))
+            .body("validation[0].column", equalTo(38));
         // @formatter:on
     }
 }

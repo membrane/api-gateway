@@ -19,9 +19,6 @@ import com.predic8.membrane.examples.util.ConsoleWatcher;
 import com.predic8.membrane.examples.util.Process2;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
 public abstract class AbstractMembraneTutorialTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -39,16 +36,5 @@ public abstract class AbstractMembraneTutorialTest extends AbstractSampleMembran
         if (watch != null)
             builder = builder.withWatcher(watch);
         return builder.script(script).waitForMembrane().parameters("-c %s".formatted(getTutorialYaml())).start();
-    }
-
-
-    public static String classpathText(String name) {
-        try (InputStream is = Objects.requireNonNull(
-                AbstractMembraneTutorialTest.class.getResourceAsStream(name.startsWith("/") ? name : "/" + name),
-                "Missing classpath resource: " + name)) {
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

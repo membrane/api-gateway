@@ -2,28 +2,39 @@ package com.predic8.membrane.tutorials.xml;
 
 import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import java.io.IOException;
 
-public class XPathTutorialTest extends AbstractXmlTutorialTest{
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.XML;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
+
+public class XPathTutorialTest extends AbstractXmlTutorialTest {
     @Override
     protected String getTutorialYaml() {
         return "30-XPath.yaml";
     }
 
     @Test
-    void xpathExtractsPropertiesAndSetsHeader() {
+    void xpathExtractsPropertiesAndSetsHeader() throws IOException {
         // @formatter:off
         given()
-            .body("animals.xml")
-            .contentType("text/xml")
+            .body(readFileFromBaseDir("animals.xml"))
+            .contentType(XML)
         .when()
             .post("http://localhost:2000")
         .then()
             .statusCode(200)
-            .contentType(anyOf(containsString("xml"), containsString("application/xml"), containsString("text/xml")))
-            .header("X-Sunny", allOf(containsString("Sunny is a"), not(emptyOrNullString())))
-            .body(allOf(containsString("Names:"), containsString("Name:")));
+            .contentType(XML)
+            .body(allOf(
+                    containsString("Names:"),
+                    containsString("Skye"),
+                    containsString("Molly"),
+                    containsString("Biscuit"),
+                    containsString("Sunny"),
+                    containsString("Bubbles"),
+                    containsString("Name: Skye")
+            ));
         // @formatter:on
     }
 }
