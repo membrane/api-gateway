@@ -37,5 +37,4 @@ public abstract class AbstractMembraneTutorialTest extends AbstractSampleMembran
             builder = builder.withWatcher(watch);
         return builder.script(script).waitForMembrane().parameters("-c %s".formatted(getTutorialYaml())).start();
     }
-
 }
