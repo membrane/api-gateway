@@ -18,7 +18,7 @@ PRIO 1:
 - Register JSON Schema for YAML at: https://www.schemastore.org TB
 - create test asserting that connection reuse via proxy works TP
 - Central description of Membrane Languages, Cheat Sheets, links to their docs.
-- Central desciption of MEMBRANE_* environment variables
+- Central description of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
 
