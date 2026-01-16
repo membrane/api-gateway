@@ -47,7 +47,7 @@ use:
 
 ## 5. Logging
 
-Instead of `<log headerOnly='true'/>` use `<log body='false'/>`.
+Instead of `<log headerOnly="true"/>` use `<log body="false"/>`.
 
 ## 6. Scripting
 
