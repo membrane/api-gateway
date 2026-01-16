@@ -23,11 +23,13 @@ XML based configurations remain supported, but some legacy features and APIs hav
 
 The following legacy interceptors have been removed:
 
-| Removed | Replacement                                                               |
-|--------|---------------------------------------------------------------------------|
-| `gateKeeperClient` | Gatekeeper is not supported anymore                                       |
-| `wadl` | Use OpenAPI                                                               |
-| `xmlSessionIdExtractor` | Use language based session handling. See examples/loadbalancing/4-session |
+| Removed | Replacement                                                                 |
+|--------|-----------------------------------------------------------------------------|
+| `gateKeeperClient` | Gatekeeper is not supported anymore                                         |
+| `wadl` | Use OpenAPI                                                                 |
+| `xmlSessionIdExtractor` | Use language based session handling. See examples/loadbalancing/4-session   |
+| `telekomSMSTokenProvider` | The SMS provider doesn't offer the needed SMS service anymore.              | 
+| `groovyTemplate` | `template` offers the same functionality including Groovy language support. |
 
 Remove these elements from your configuration and replace them with modern equivalents.
 
