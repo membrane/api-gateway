@@ -265,6 +265,7 @@ class UtilsTest {
     @Test
     void getResourceAsStreamInvalidResource() {
         assertThrows(FileNotFoundException.class, () -> {
+            //noinspection EmptyTryBlock
             try (var ignore = getResourceAsStream(this, "/doesnot.exist")) {
             }
         });
