@@ -9,6 +9,7 @@ import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,17 +31,19 @@ public final class YamlParsingUtils {
     private static final ConcurrentHashMap<SchemaCacheKey, Schema> SCHEMA_CACHE = new ConcurrentHashMap<>();
 
     static void validate(Grammar grammar, JsonNode input) throws YamlSchemaValidationException {
-        Schema schema = SCHEMA_CACHE.computeIfAbsent(new SchemaCacheKey(grammar.getSchemaLocation(), Thread.currentThread().getContextClassLoader()), k -> {
+        List<Error> errors = loadSchema(grammar).validate(input);
+        if (!errors.isEmpty())
+            throw new YamlSchemaValidationException("Invalid YAML.", errors);
+    }
+
+    private static @NotNull Schema loadSchema(Grammar grammar) {
+        return SCHEMA_CACHE.computeIfAbsent(new SchemaCacheKey(grammar.getSchemaLocation(), Thread.currentThread().getContextClassLoader()), k -> {
             Schema s = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, b -> {
                     })
                     .getSchema(SchemaLocation.of(k.schemaLocation()));
             s.initializeValidators();
             return s;
         });
-
-        List<Error> errors = schema.validate(input);
-        if (!errors.isEmpty())
-            throw new YamlSchemaValidationException("Invalid YAML.", errors);
     }
 
     /**
