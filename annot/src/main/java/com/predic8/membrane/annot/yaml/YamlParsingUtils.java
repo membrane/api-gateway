@@ -37,6 +37,7 @@ public final class YamlParsingUtils {
     }
 
     private static @NotNull Schema loadSchema(Grammar grammar) {
+        // Schema cache: prevents duplicate loads for multi-doc specs (---).
         return SCHEMA_CACHE.computeIfAbsent(new SchemaCacheKey(grammar.getSchemaLocation(), Thread.currentThread().getContextClassLoader()), k -> {
             Schema s = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, b -> {
                     })
