@@ -123,7 +123,7 @@ public class Exchange extends AbstractExchange {
      * <p>
      * To be used, for example, when generating self-referring web pages.
      */
-    public String getRequestURI() {
+    public String getOriginalRelativeURI() {
         if (HttpUtil.isAbsoluteURI(getOriginalRequestUri())) {
             try {
                 return new URL(getOriginalRequestUri()).getFile();
@@ -133,10 +133,6 @@ public class Exchange extends AbstractExchange {
             }
         }
         return getOriginalRequestUri();
-    }
-
-    public String getOriginalRelativeURI() {
-        return getRequestURI();
     }
 
     public Map<String, String> getStringProperties() {
