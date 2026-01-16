@@ -9,7 +9,6 @@
 - Add Example tests for all tutorials
 - Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
 - Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
-- Rewrite ACL to use the YAML configuration instead of external XML files
 - Fix maven central publish job
 - JMXExporter:
   - Tutorial
@@ -28,7 +27,17 @@
 - StreamTracing:
   - Take out zeros
   - Line Break after []
-
+- Tutorials:
+  - Add how to run the tutorials in a Docker container
+- HotReload for YAML
+- YAML:
+  - method: Suggest GET, POST, ...
+  - A "---" at the end without an API behind it, produces an error. The gateway should tolerantly ignore it.
+  - Language is case sensitve: e.g. language: SPEL is not valid according to the Schema and produces:
+       Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
+  - openapi/rewrite/protocol provide http and https options
+  
+  
 # 7.0.4
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
@@ -74,6 +83,11 @@
  
 
 ## (Breaking) Interface Changes
+- Replaced AccessControlInterceptor: 
+  - `accessControl` is now configured inline in YAML/XML flow (no `file="acl.xml"`).
+  - ACL no longer matches URIs/paths; routing is done via `api.path.uri` with per-API `accessControl`.
+  - Matching is now only by peer IP (CIDR, IPv4+IPv6) or hostname (regex).
+  - First match wins, default is deny if nothing matches.
 - JMX: Name changes to "io.membrane-api:00=routers, name="
 - Removed GateKeeperClientInterceptor
 - Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
