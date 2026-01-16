@@ -1,4 +1,4 @@
-/* Copyright 2023 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,16 +11,10 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.acl.matchers;
 
-import com.predic8.membrane.core.interceptor.acl.TypeMatcher;
+package com.predic8.membrane.core.interceptor.acl.targets;
 
-import static java.util.regex.Pattern.compile;
+class TargetUtilTest {
 
 
-public class RegexMatcher implements TypeMatcher {
-    @Override
-    public boolean matches(String value, String schema) {
-        return compile(schema).matcher(value).matches();
-    }
 }
