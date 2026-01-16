@@ -221,20 +221,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                     if (ii.getAnnotation().component())
                         main.getComponents().put(ii.getAnnotation().name(), ii);
 
-                    if (ii.getAnnotation().noEnvelope()) {
-                        if (ii.getAnnotation().mixed())
-                            throw new ProcessingException("@MCElement(..., noEnvelope=true, mixed=true) is invalid.", ii.getElement());
-                        if (ii.getChildElementSpecs().size() != 1)
-                            throw new ProcessingException("@MCElement(noEnvelope=true) requires exactly one @MCChildElement.", ii.getElement());
-                        if (!ii.getChildElementSpecs().getFirst().isList())
-                            throw new ProcessingException("@MCElement(noEnvelope=true) requires its @MCChildElement() to be a List or Collection.", ii.getElement());
-                        if (!ii.getAis().isEmpty())
-                            throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCAttribute to be not present.", ii.getElement());
-                        if (ii.getOai() != null)
-                            throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCOtherAttributes to be not present.", ii.getElement());
-                        if (ii.getTci() != null)
-                            throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCTextContent to be not present.", ii.getElement());
-                    }
+                    validateNoEnvelope(ii);
+                    validateCollapsed(ii);
+
                     if (ii.getTci() != null && !ii.getAnnotation().mixed())
                         throw new ProcessingException("@MCTextContent requires @MCElement(..., mixed=true) on the class.", ii.getElement());
                     if (ii.getTci() == null && ii.getAnnotation().mixed())
@@ -298,6 +287,42 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                 processingEnv.getMessager().printMessage(ERROR, i == 0 ? e1.getMessage() : "also here", e1.getElements()[i]);
             return true;
         }
+    }
+
+    private static void validateNoEnvelope(ElementInfo ii) {
+        if (ii.getAnnotation().noEnvelope()) {
+            if (ii.getAnnotation().mixed())
+                throw new ProcessingException("@MCElement(..., noEnvelope=true, mixed=true) is invalid.", ii.getElement());
+            if (ii.getChildElementSpecs().size() != 1)
+                throw new ProcessingException("@MCElement(noEnvelope=true) requires exactly one @MCChildElement.", ii.getElement());
+            if (!ii.getChildElementSpecs().getFirst().isList())
+                throw new ProcessingException("@MCElement(noEnvelope=true) requires its @MCChildElement() to be a List or Collection.", ii.getElement());
+            if (!ii.getAis().isEmpty())
+                throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCAttribute to be not present.", ii.getElement());
+            if (ii.getOai() != null)
+                throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCOtherAttributes to be not present.", ii.getElement());
+            if (ii.getTci() != null)
+                throw new ProcessingException("@MCElement(noEnvelope=true) requires @MCTextContent to be not present.", ii.getElement());
+        }
+    }
+
+    private static void validateCollapsed(ElementInfo ii) {
+        // A collapsed class has exactly one @MCAttribute OR exactly one @MCTextContent and no @MCElement or @MCAttribute.
+        if (ii.getAnnotation().collapsed()) {
+            int attrCount = ii.getAis().size();
+            if (hasAttributeAndTextContent(attrCount, ii))
+                throw new ProcessingException("@MCElement(collapsed=true) requires exactly one @MCAttribute OR exactly one @MCTextContent.", ii.getElement());
+            if (attrCount != 0 && attrCount != 1)
+                throw new ProcessingException("@MCElement(collapsed=true) allows only one @MCAttribute setter.", ii.getElement());
+            if (!ii.getChildElementSpecs().isEmpty())
+                throw new ProcessingException("@MCElement(collapsed=true) must not declare @MCChildElement.", ii.getElement());
+            if (ii.getOai() != null)
+                throw new ProcessingException("@MCElement(collapsed=true) must not declare @MCOtherAttributes.", ii.getElement());
+        }
+    }
+
+    private static boolean hasAttributeAndTextContent(int attrCount, ElementInfo ii) {
+        return (attrCount > 0 ? 1 : 0) + (ii.getTci() != null ? 1 : 0) != 1;
     }
 
     private boolean isComponent(TypeElement type) {
