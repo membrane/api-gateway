@@ -221,11 +221,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private boolean isLogoutRequest(Exchange exc) {
-        return logoutUrl != null && exc.getRequestURI().startsWith(logoutUrl);
+        return logoutUrl != null && exc.getOriginalRelativeURI().startsWith(logoutUrl);
     }
 
     private boolean isLogoutBackRequest(Exchange exc) {
-        return logoutUrl != null && exc.getRequestURI().startsWith(logoutUrl + "/back");
+        return logoutUrl != null && exc.getOriginalRelativeURI().startsWith(logoutUrl + "/back");
     }
 
     public void logOutSession(Exchange exc) {
@@ -238,7 +238,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private boolean isFaviconRequest(Exchange exc) {
-        return exc.getRequestURI().startsWith("/favicon.ico");
+        return exc.getOriginalRelativeURI().startsWith("/favicon.ico");
     }
 
     private void applyBackendAuthorization(Exchange exc, Session s) {

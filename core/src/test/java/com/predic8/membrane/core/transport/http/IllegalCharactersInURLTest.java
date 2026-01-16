@@ -42,7 +42,7 @@ class IllegalCharactersInURLTest {
         sp2.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
-                assertEquals("/foo{}", exc.getRequestURI());
+                assertEquals("/foo{}", exc.getRequest().getUri());
                 exc.setResponse(Response.ok().build());
                 return Outcome.RETURN;
             }

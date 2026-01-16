@@ -28,7 +28,7 @@ public class FaviconEndpointProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return exc.getRequestURI().startsWith("/favicon.ico");
+        return exc.getOriginalRelativeURI().startsWith("/favicon.ico");
     }
 
     @Override

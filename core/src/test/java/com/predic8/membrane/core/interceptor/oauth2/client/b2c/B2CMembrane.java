@@ -232,7 +232,7 @@ public class B2CMembrane {
                 Map<String, String> body = new HashMap<>();
                 if (accessToken != null)
                     body.put("accessToken", accessToken);
-                body.put("path", exc.getRequestURI());
+                body.put("path", exc.getOriginalRelativeURI());
                 body.put("method", exc.getRequest().getMethod());
                 body.put("body", exc.getRequest().getBodyAsStringDecoded());
 

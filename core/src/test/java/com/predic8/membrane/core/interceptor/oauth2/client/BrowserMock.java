@@ -360,7 +360,7 @@ public class BrowserMock implements Function<Exchange, Exchange> {
                     httpClient.call(exchange);
                     return exchange;
                 } catch (Exception e) {
-                    throw new RuntimeException("while calling " + exchange.getRequestURI(), e);
+                    throw new RuntimeException("while calling " + exchange.getOriginalRelativeURI(), e);
                 }
             }
         };
