@@ -40,7 +40,7 @@ PRIO 3:
 - Refine YAML for balancer: clustersFromSpring
 - wsdlRewriter YAML is not working
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
-- Migrate deprecated finally to try with ressources
+- Migrate deprecated finally to try with resources
 - YAML:
   - method: Suggest GET, POST, ...
   - Language is case sensitve: e.g. language: SPEL is not valid according to the Schema and produces: TB
