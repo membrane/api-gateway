@@ -23,11 +23,11 @@ XML based configurations remain supported, but some legacy features and APIs hav
 
 The following legacy interceptors have been removed:
 
-| Removed | Replacement |
-|--------|-------------|
-| `gateKeeperClient` | Use OAuth2, JWT or API Key interceptors |
-| `wadl` | Use OpenAPI |
-| `xmlSessionIdExtractor` | Use language based session handling |
+| Removed | Replacement                                                               |
+|--------|---------------------------------------------------------------------------|
+| `gateKeeperClient` | Gatekeeper is not supported anymore                                       |
+| `wadl` | Use OpenAPI                                                               |
+| `xmlSessionIdExtractor` | Use language based session handling. See examples/loadbalancing/4-session |
 
 Remove these elements from your configuration and replace them with modern equivalents.
 
