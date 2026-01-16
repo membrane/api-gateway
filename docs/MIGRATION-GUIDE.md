@@ -44,6 +44,7 @@ The following legacy interceptors have been removed:
 | `xmlSessionIdExtractor` | Use language based session handling. See examples/loadbalancing/4-session   |
 | `telekomSMSTokenProvider` | The SMS provider doesn't offer the needed SMS service anymore.              | 
 | `groovyTemplate` | `template` offers the same functionality including Groovy language support. |
+| `urlNormalizer` | -                                                                           |
 
 Remove these elements from your configuration and replace them with modern equivalents.
 
