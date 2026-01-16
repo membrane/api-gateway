@@ -14,10 +14,9 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
@@ -25,8 +24,7 @@ import org.slf4j.*;
 import java.net.*;
 import java.util.*;
 
-import static java.lang.Boolean.TRUE;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.*;
 
 public class Exchange extends AbstractExchange {
 
@@ -135,6 +133,10 @@ public class Exchange extends AbstractExchange {
             }
         }
         return getOriginalRequestUri();
+    }
+
+    public String getOriginalRelativeURI() {
+        return getRequestURI();
     }
 
     public Map<String, String> getStringProperties() {

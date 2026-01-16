@@ -222,7 +222,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
             return "";
         }
 
-        String base = exc.getRequestURI();
+        String base = exc.getOriginalRelativeURI();
         int lastSlashPos = base.lastIndexOf('/');
         if (lastSlashPos != -1) {
             base = base.substring(lastSlashPos + 1);

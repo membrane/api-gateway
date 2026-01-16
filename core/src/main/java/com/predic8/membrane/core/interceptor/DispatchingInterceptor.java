@@ -80,7 +80,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     }
 
     private static @NotNull String getMessageForURISyntaxException(Exchange exc, URISyntaxException e) {
-        var uri = exc.getRequestURI();
+        var uri = exc.getOriginalRelativeURI();
         if (e.getIndex() >= 0 && e.getIndex() < uri.length()) {
             return "The request path contains an invalid character '%s' at pos %d".formatted(uri.charAt(e.getIndex()), e.getIndex());
         }

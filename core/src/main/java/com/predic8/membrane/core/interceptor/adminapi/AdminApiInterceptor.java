@@ -77,7 +77,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
-            String uri = exc.getRequestURI();
+            String uri = exc.getRequest().getUri();
             if (uri.matches(".*/health.*")) {
                 return handleHealth(exc);
             } else if (uri.matches(".*/apis.*")) {
@@ -242,7 +242,7 @@ public class AdminApiInterceptor extends AbstractInterceptor {
     private Outcome handleCalls(Exchange exc) {
         ExchangeQueryResult res;
         try {
-            QueryParameter qp = new QueryParameter(queryToParameters(new URI(exc.getRequestURI()).getQuery()), null);
+            QueryParameter qp = new QueryParameter(queryToParameters(new URI(exc.getRequest().getUri()).getQuery()), null);
             res = getRouter().getExchangeStore().getFilteredSortedPaged(qp, false);
 
             StringWriter writer = new StringWriter();
