@@ -38,6 +38,10 @@
   - Language is case sensitve: e.g. language: SPEL is not valid according to the Schema and produces:
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
+  
+  
+# 7.0.4
+
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
 - YAML parsing:
   - When the reason for a parse error is clear. Shorten error message.
