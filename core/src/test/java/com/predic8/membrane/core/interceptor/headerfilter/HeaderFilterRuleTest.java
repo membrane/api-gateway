@@ -15,10 +15,20 @@ class HeaderFilterRuleTest {
 
     @Test
     void matchPattern() {
-        var hfr = HeaderFilterRule.keep("X-[F]oo");
+        var hfr = HeaderFilterRule.keep("X-[F|Z]oo");
         assertTrue(hfr.matches("X-Foo"));
+        assertTrue(hfr.matches("X-Zoo"));
         assertFalse(hfr.matches("X-Boo"));
         assertEquals(KEEP, hfr.getAction());
+    }
+
+    @Test
+    void caseInsensitive() {
+        var hfr = HeaderFilterRule.keep("x-bar.*");
+        assertTrue(hfr.matches("x-bar"));
+        assertTrue(hfr.matches("X-Bar"));
+        assertTrue(hfr.matches("X-BARRRR"));
+        assertTrue(hfr.matches("x-Barrrrr"));
     }
 
 }
