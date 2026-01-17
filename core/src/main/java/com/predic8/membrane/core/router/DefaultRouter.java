@@ -165,7 +165,10 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
             handleDuplicateOpenAPIPaths(e);
         } catch (OpenAPIParsingException e) {
             handleOpenAPIParsingException(e);
-        } catch (Exception e) {
+        } catch (PortOccupiedException e) {
+            throw new RuntimeException(e);
+        }
+        catch (Exception e) {
             log.error("Could not start router.", e);
             if (e instanceof RuntimeException)
                 throw (RuntimeException) e;
