@@ -31,7 +31,7 @@ import static com.predic8.membrane.core.interceptor.headerfilter.HeaderFilterInt
 @MCElement(name = "headerFilter", noEnvelope = true)
 public class HeaderFilterInterceptor extends AbstractInterceptor {
 
-    private HeaderFilter filter = new HeaderFilter();
+    private final HeaderFilter filter = new HeaderFilter();
 
     public HeaderFilterInterceptor() {
         name = "header filter";
