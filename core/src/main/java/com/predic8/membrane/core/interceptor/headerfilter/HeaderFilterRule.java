@@ -38,7 +38,7 @@ public class HeaderFilterRule {
         return pattern;
     }
 
-    @MCAttribute
+    @MCTextContent
     public void setPattern(String pattern) {
         this.pattern = pattern;
         p = Pattern.compile(pattern, CASE_INSENSITIVE);

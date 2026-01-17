@@ -5,6 +5,8 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.headerfilter.HeaderFilterInterceptor.Action.REMOVE;
+
 public class HeaderFilter {
 
     private static final Logger log = LoggerFactory.getLogger(HeaderFilter.class);
@@ -31,7 +33,7 @@ public class HeaderFilter {
         if (!rule.matches(headerField))
             return false;
 
-        if (rule.getAction() == HeaderFilterInterceptor.Action.REMOVE) {
+        if (rule.getAction() == REMOVE) {
             log.debug("Removing HTTP header {}", headerField.getHeaderName().toString());
             header.remove(headerField);
         }

@@ -47,7 +47,7 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
     /**
      * @description Contains a Java regex for <i>including</i> message headers.
      */
-    @MCElement(name = "include", collapsed = true)
+    @MCElement(name = "include", collapsed = true,mixed = true)
     public static class Include extends HeaderFilterRule {
         public Include() {
             super(KEEP);
@@ -57,7 +57,7 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
     /**
      * @description Contains a Java regex for <i>excluding</i> message headers.
      */
-    @MCElement(name = "exclude", collapsed = true)
+    @MCElement(name = "exclude", collapsed = true,mixed = true  )
     public static class Exclude extends HeaderFilterRule {
         public Exclude() {
             super(REMOVE);
@@ -82,6 +82,9 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
     }
 
     private void filter(Message msg) {
+        // Needed when called in ABORT flow and there is no response yet.
+        if (msg == null)
+            return;
         filter.filter(msg.getHeader());
     }
 
