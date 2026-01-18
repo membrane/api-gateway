@@ -36,7 +36,21 @@
   - Language is case sensitve: e.g. language: SPEL is not valid according to the Schema and produces:
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
-  
+ 
+# Release Notes 7.0.6
+
+## Breaking Changes
+
+- headerFilter YAML format has changed.
+
+## Bug Fixes
+- `xml2json`: Ensuring content type alignment and better exception handling.  
+
+## Improvements
+
+- `xml2json`: Better exception handling.  
+- Updated documentation and comments for clarity and consistency in related classes (`Header`, `MimeType`, etc.). 
+ 
   
 # 7.0.4
 

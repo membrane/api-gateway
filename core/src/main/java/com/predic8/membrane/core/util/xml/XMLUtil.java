@@ -15,6 +15,7 @@ package com.predic8.membrane.core.util.xml;
 
 import com.predic8.membrane.core.http.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
@@ -24,44 +25,73 @@ import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
+import java.util.regex.*;
 
 import static javax.xml.XMLConstants.*;
+import static javax.xml.transform.OutputKeys.*;
 
 public class XMLUtil {
 
-    // TransformerFactory is *not* specified as thread-safe.
-    // We keep one instance per thread. See:
-    // https://docs.oracle.com/javase/8/docs/api/javax/xml/transform/TransformerFactory.html
-    private static final ThreadLocal<TransformerFactory> TF = ThreadLocal.withInitial(() -> {
+    private static final Logger log = LoggerFactory.getLogger(XMLUtil.class);
+
+    private static final AtomicBoolean loggedSecureProcessing = new AtomicBoolean();
+    private static final AtomicBoolean loggedExternalAccess = new AtomicBoolean();
+
+
+    // TransformerFactory is not specified as thread-safe and is mutable (features/attributes).
+    // Use one instance per thread and create a fresh Transformer per transform (Transformer is not thread-safe).
+    private static final ThreadLocal<TransformerFactory> SAFE_TRANSFORMER_FACTORY = ThreadLocal.withInitial(() -> {
         TransformerFactory f = TransformerFactory.newInstance();
+
+        // Best-effort hardening. Some implementations may not support all flags.
         try {
             // Enable secure processing (limits entity expansion etc.)
             f.setFeature(FEATURE_SECURE_PROCESSING, true);
         } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
-            // Log if you want, but do not fail hard because of missing feature
+            if (loggedSecureProcessing.compareAndSet(false, true)) {
+                log.warn("Could not enable secure XML processing (FEATURE_SECURE_PROCESSING): {}", e.getMessage());
+            }
         }
 
         try {
             // Disallow access to external DTDs and stylesheets (JAXP 1.5+)
             f.setAttribute(ACCESS_EXTERNAL_DTD, "");
             f.setAttribute(ACCESS_EXTERNAL_STYLESHEET, "");
-        } catch (IllegalArgumentException ignored) {
+            f.setAttribute(ACCESS_EXTERNAL_SCHEMA, "");
+        } catch (IllegalArgumentException e) {
             // Attributes not supported by all implementations
+            if (loggedExternalAccess.compareAndSet(false, true)) {
+                log.warn("Could not disable external XML access (ACCESS_EXTERNAL_DTD/ACCESS_EXTERNAL_STYLESHEET): {}", e.getMessage());
+            }
         }
 
         return f;
     });
 
+    /**
+     * Returns a {@link TransformerFactory} instance with XML hardening enabled on a
+     * best-effort basis.
+     * The returned factory is obtained from a thread-local cache because
+     * {@link TransformerFactory} is mutable and not specified as thread-safe.
+     * A fresh {@link javax.xml.transform.Transformer} must be created for each
+     * transformation.
+     *
+     * @return a thread-local {@link TransformerFactory} with best-effort XML security hardening applied
+     */
+    public static TransformerFactory newHardenedBestEffortTransformerFactory() {
+        return SAFE_TRANSFORMER_FACTORY.get();
+    }
 
     public static String xmlNode2String(Node node) throws TransformerException {
         if (node == null) {
             return "";
         }
 
-        Transformer tf = TF.get().newTransformer();
-        tf.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-        tf.setOutputProperty(OutputKeys.METHOD, "xml");
-        tf.setOutputProperty(OutputKeys.INDENT, "yes");
+        Transformer tf = SAFE_TRANSFORMER_FACTORY.get().newTransformer();
+        tf.setOutputProperty(OMIT_XML_DECLARATION, "yes");
+        tf.setOutputProperty(METHOD, "xml");
+        tf.setOutputProperty(INDENT, "yes");
 
         StringWriter writer = new StringWriter();
         tf.transform(new DOMSource(node), new StreamResult(writer));

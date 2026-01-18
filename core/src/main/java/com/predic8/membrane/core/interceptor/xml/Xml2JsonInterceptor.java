@@ -18,34 +18,59 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.*;
+import com.predic8.membrane.core.util.xml.*;
 import org.json.*;
 import org.slf4j.*;
-import org.w3c.dom.*;
 
-import javax.xml.*;
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
 import java.io.*;
+import java.nio.charset.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static java.nio.charset.StandardCharsets.*;
-import static javax.xml.transform.OutputKeys.*;
-
 
 /**
- * @description If enabled converts body content from xml to json.
- * @explanation Can be used for both request and response. Xml file assumed to be in UTF-8. If input is invalid it returns
- * empty json object.
+ * @description Converts an XML message body to JSON.
+ * <p>
+ * The interceptor performs a generic XML-to-JSON transformation using a
+ * structural mapping of XML elements and attributes to JSON objects.
+ * While this works well for simple and data-oriented XML, it has inherent
+ * limitations and challenges.
+ * </p>
+ *
+ * <p>
+ * In particular:
+ * <ul>
+ *   <li>XML attributes and elements are both mapped to JSON properties, which
+ *       can lead to ambiguities.</li>
+ *   <li>Element order, mixed content, and namespaces may not be preserved
+ *       in a meaningful way.</li>
+ *   <li>Repeated elements are heuristically converted into JSON arrays,
+ *       which may not match the intended domain model.</li>
+ * </ul>
+ * </p>
+ *
+ * <p>
+ * This interceptor is intended for integration scenarios where XML is used
+ * as a transport format and the JSON representation is primarily consumed
+ * by applications that do not require full fidelity of the original XML
+ * structure.
+ * </p>
+ *
+ * <p>
+ * For complex XML schemas or contract-driven integrations, a dedicated
+ * transformation using a template, XSLT or a schema-aware mapping is recommended.
+ * </p>
  * @topic 2. Enterprise Integration Patterns
  */
-@MCElement(name="xml2Json")
+@MCElement(name = "xml2Json")
 public class Xml2JsonInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(Xml2JsonInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(Xml2JsonInterceptor.class);
 
     @Override
     public String getShortDescription() {
@@ -54,80 +79,59 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        try {
-            return handleInternal(exc.getRequest());
-        } catch (Exception e) {
-            log.error("", e);
-            internal(router.getConfiguration().isProduction(),getDisplayName())
-                    .flow(REQUEST)
-                    .detail("Could not transform XML to JSON!")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
+        return handleInternal(exc, REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        try {
-            return handleInternal(exc.getResponse());
-        } catch (Exception e) {
-            internal(router.getConfiguration().isProduction(),getDisplayName())
-                    .flow(Flow.RESPONSE)
-                    .detail("Could not return WSDL document!")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
+        return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(Message msg) throws Exception {
-        if(!msg.isXML()){
+    private Outcome handleInternal(Exchange exc, Flow flow) {
+        Message msg = exc.getMessage(flow);
+        if (!msg.isXML()) {
             return CONTINUE;
         }
 
-        if(msg.getHeader().getContentEncoding() != null){
-            msg.setBodyContent(xml2json(msg.getBodyAsStreamDecoded(), msg.getHeader().getContentEncoding()));
+        try {
+            msg.setBodyContent(xml2json(getBodyAsString(msg)));
+        } catch (Exception e) {
+            handleException(exc, flow, e);
+            return ABORT;
         }
-        else{
-            msg.setBodyContent(xml2json(loadXMLFromStream(msg.getBodyAsStreamDecoded())));
-        }
-        msg.getHeader().setContentType(MimeType.APPLICATION_JSON_UTF8);
 
+        msg.getHeader().setContentType(APPLICATION_JSON_UTF8);
         return CONTINUE;
     }
 
-    private byte[] xml2json(InputStream body, String encoding) throws UnsupportedEncodingException {
-        return XML.toJSONObject(new InputStreamReader(body, encoding)).toString().getBytes(UTF_8);
+    private static String getBodyAsString(Message msg) throws IOException {
+        if (msg.getHeader().getCharset() != null)
+            return msg.getBodyAsStringDecoded();
+
+        // Conversion is expensive but needed to get encoding from XML
+        // because org.json.XML ignores the encoding specified in the XML prolog
+        byte[] body = msg.getBody().getContent();
+        var fromProlog = XMLEncodingUtil.getEncodingFromXMLProlog(body);
+        return new String(body, fromProlog != null ? fromProlog : UTF_8.name());
     }
 
+
     private byte[] xml2json(String xml) {
+        // In org.json.XML the encoding is skipped, so xml encoding is always ignored: x.skipPast("?>");
         return XML.toJSONObject(xml).toString().getBytes(UTF_8);
     }
 
-    public static String loadXMLFromStream(InputStream stream) throws Exception
-    {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        return documentToString(factory.newDocumentBuilder().parse(stream));
-    }
-
-    public static String documentToString(Document doc) {
-        try {
-            StringWriter sw = new StringWriter();
-            TransformerFactory tf = TransformerFactory.newInstance();
-            tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            tf.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-            Transformer transformer = tf.newTransformer();
-            transformer.setOutputProperty(OMIT_XML_DECLARATION, "no");
-            transformer.setOutputProperty(METHOD, "xml");
-            transformer.setOutputProperty(INDENT, "no");
-            transformer.setOutputProperty(ENCODING, "UTF-8");
-            transformer.transform(new DOMSource(doc), new StreamResult(sw));
-            return sw.toString();
-        } catch (Exception ex) {
-            throw new RuntimeException("Error converting to String", ex);
-        }
+    private void handleException(Exchange exc, Flow flow, Exception e) {
+        log.info("Could not transform XML to JSON: {}", e.getMessage());
+        log.debug("", e);
+        internal(router.getConfiguration().isProduction(), getDisplayName())
+                .flow(flow)
+                .status(flow == REQUEST ? 400 : 500)
+                .detail("Could not transform XML to JSON!")
+                .exception(e)
+                .topLevel("charset-from-header", exc.getMessage(flow).getHeader().getCharset())
+                .stacktrace(false)
+                .buildAndSetResponse(exc);
     }
 
     @Override

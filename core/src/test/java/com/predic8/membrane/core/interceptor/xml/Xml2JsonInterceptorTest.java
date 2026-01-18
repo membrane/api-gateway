@@ -15,22 +15,28 @@ package com.predic8.membrane.core.interceptor.xml;
 
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.router.*;
 import org.apache.commons.io.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
+import org.slf4j.*;
 
 import java.io.*;
+import java.nio.charset.*;
 
+import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
 @SuppressWarnings({"UnnecessaryUnicodeEscape", "SpellCheckingInspection"})
 public class Xml2JsonInterceptorTest {
+
+    private static final Logger log = LoggerFactory.getLogger(Xml2JsonInterceptorTest.class);
+    public static final String ÜÖÜÖÜÖ = "\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6";
 
     static Xml2JsonInterceptor interceptor;
 
@@ -41,38 +47,56 @@ public class Xml2JsonInterceptorTest {
     }
 
     @Test
-    public void invalidXml() {
+    void invalidXml() {
         assertThrows(RuntimeException.class, () -> getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(
-                new ByteArrayInputStream("5".getBytes(UTF_8))))));
+                new ByteArrayInputStream("<unclosed>".getBytes(UTF_8))))));
     }
 
     @Test
-    public void validTestxml2jsonWithEncodingInXml() throws Exception {
-        assertEquals("\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6",
-                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(loadResource("/xml/convert.xml"))))
+    void validTestxml2jsonWithEncodingInXml() throws Exception {
+        assertEquals(ÜÖÜÖÜÖ,
+                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(loadResource("/xml/content-utf-8-encoding-utf-8.xml"))))
                         .get("bar").get("futf").asText());
     }
 
     @Test
-    public void validTestEncodingInHeader() throws Exception {
-        assertEquals("\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6",
-                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangewithEncodingHeader(loadResource("/xml/convert_without_encoding.xml"),
-                        Constants.ISO_8859_1))).get("bar").get("futf").asText());
+    void validTestEncodingInHeader() throws Exception {
+        assertEquals(ÜÖÜÖÜÖ,
+                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangewithEncodingHeader(loadResource("/xml/content-utf-8-encoding-without.xml"), TEXT_XML_UTF8))).get("bar").get("futf").asText());
     }
 
     @Test
-    public void encodingClashTest() throws Exception {
-        assertNotEquals("\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6",
-                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangewithEncodingHeader(loadResource("/xml/convert.xml"),
-                        Constants.ISO_8859_1))).get("bar").get("futf").asText());
+    void encodingClashTest() throws Exception {
+        assertNotEquals(ÜÖÜÖÜÖ,
+                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangewithEncodingHeader(loadResource("/xml/content-utf-8-encoding-without.xml"),
+                        TEXT_XML_ISO_8859_1))).get("bar").get("futf").asText());
 
     }
 
     @Test
-    public void validTestxml2jsonResponse() throws Exception {
-        //\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6 = ������
-        assertEquals("\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6",
-                getJsonRootFromStream(processThroughInterceptorResponse(loadResource("/xml/convert.xml"))).get("bar").get("futf").asText());
+    void isoEncoded() throws Exception {
+        assertEquals(ÜÖÜÖÜÖ,
+                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangewithEncodingHeader(changeEncoding(loadResource("/xml/content-utf-8-encoding-without.xml"), UTF_8, ISO_8859_1),
+                        TEXT_XML_ISO_8859_1))).get("bar").get("futf").asText());
+
+    }
+
+    @Test
+    void iso88591EncodedWithoutEncodingInHTTPHeader() throws Exception {
+        assertEquals(ÜÖÜÖÜÖ,
+                getJsonRootFromStream(processThroughInterceptor(
+                        fillAndGetExchangewithEncodingHeader(loadResource("/xml/content-utf-8-encoding-iso-8859-1.xml"), TEXT_XML)))
+                        .get("bar").get("futf").asText());
+    }
+
+    private @NotNull InputStream getWithEncoded(String file, Charset charset) throws IOException {
+        return changeEncoding(loadResource(file), UTF_8, charset);
+    }
+
+    @Test
+    void validTestxml2jsonResponse() throws Exception {
+        assertEquals(ÜÖÜÖÜÖ,
+                getJsonRootFromStream(processThroughInterceptorResponse(loadResource("/xml/content-utf-8-encoding-utf-8.xml"))).get("bar").get("futf").asText());
     }
 
     private JsonNode getJsonRootFromStream(InputStream stream) throws IOException {
@@ -90,6 +114,9 @@ public class Xml2JsonInterceptorTest {
     private InputStream processThroughInterceptor(Exchange exc) {
         Outcome outcome = interceptor.handleRequest(exc);
         if (outcome == Outcome.ABORT) {
+            log.error("Interceptor aborted");
+            log.error("Request: {}", exc.getRequest().getBodyAsStringDecoded());
+            log.error("Response: {}", exc.getResponse().getBodyAsStringDecoded());
             throw new RuntimeException("Aborted");
         }
         return exc.getRequest().getBodyAsStream();
@@ -109,10 +136,10 @@ public class Xml2JsonInterceptorTest {
         return getExchangeFromStream(stream);
     }
 
-    private Exchange fillAndGetExchangewithEncodingHeader(InputStream stream, String encoding) throws IOException {
+    private Exchange fillAndGetExchangewithEncodingHeader(InputStream stream, String contentTypeHeader) throws IOException {
         Exchange exc = getExchangeFromStream(stream);
-        exc.getRequest().getHeader().add(new HeaderField(Header.CONTENT_ENCODING, encoding));
-        exc.getResponse().getHeader().add(new HeaderField(Header.CONTENT_ENCODING, encoding));
+        exc.getRequest().getHeader().setContentType(contentTypeHeader);
+        exc.getResponse().getHeader().setContentType(contentTypeHeader);
         return exc;
     }
 
@@ -122,6 +149,12 @@ public class Xml2JsonInterceptorTest {
         exc.setRequest(createRequestFromBytes(bytes));
         exc.setResponse(createResponseFromBytes(bytes));
         return exc;
+    }
+
+    private static InputStream changeEncoding(InputStream in, Charset sourceEncoding, Charset targetEncoding) throws IOException {
+        String text = new String(in.readAllBytes(), sourceEncoding);
+        byte[] outBytes = text.getBytes(targetEncoding);
+        return new ByteArrayInputStream(outBytes);
     }
 
 }
