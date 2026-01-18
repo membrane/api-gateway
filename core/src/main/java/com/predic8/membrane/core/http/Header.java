@@ -190,7 +190,7 @@ public class Header {
     }
 
     /**
-     * Adds all header fields from the given list to this header in a thread-safe manner.
+     * Adds all header fields from the given list to this header.
      *
      * @param fields the list of header fields to add
      */
