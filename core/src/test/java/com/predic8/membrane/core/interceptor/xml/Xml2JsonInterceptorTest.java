@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class Xml2JsonInterceptorTest {
 
     private static final Logger log = LoggerFactory.getLogger(Xml2JsonInterceptorTest.class);
-    public static final String ÜÖÜÖÜÖ = "\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6";
+    public static final String UMLAUTS = "\u00fc\u00f6\u00fc\u00f6\u00fc\u00f6";
 
     static Xml2JsonInterceptor interceptor;
 
@@ -54,48 +54,44 @@ public class Xml2JsonInterceptorTest {
 
     @Test
     void validTestxml2jsonWithEncodingInXml() throws Exception {
-        assertEquals(ÜÖÜÖÜÖ,
+        assertEquals(UMLAUTS,
                 getJsonRootFromStream(processThroughInterceptor(fillAndGetExchange(loadResource("/xml/content-utf-8-encoding-utf-8.xml"))))
                         .get("bar").get("futf").asText());
     }
 
     @Test
     void validTestEncodingInHeader() throws Exception {
-        assertEquals(ÜÖÜÖÜÖ,
-                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangewithEncodingHeader(loadResource("/xml/content-utf-8-encoding-without.xml"), TEXT_XML_UTF8))).get("bar").get("futf").asText());
+        assertEquals(UMLAUTS,
+                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangeWithEncodingHeader(loadResource("/xml/content-utf-8-encoding-without.xml"), TEXT_XML_UTF8))).get("bar").get("futf").asText());
     }
 
     @Test
     void encodingClashTest() throws Exception {
-        assertNotEquals(ÜÖÜÖÜÖ,
-                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangewithEncodingHeader(loadResource("/xml/content-utf-8-encoding-without.xml"),
+        assertNotEquals(UMLAUTS,
+                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangeWithEncodingHeader(loadResource("/xml/content-utf-8-encoding-without.xml"),
                         TEXT_XML_ISO_8859_1))).get("bar").get("futf").asText());
 
     }
 
     @Test
     void isoEncoded() throws Exception {
-        assertEquals(ÜÖÜÖÜÖ,
-                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangewithEncodingHeader(changeEncoding(loadResource("/xml/content-utf-8-encoding-without.xml"), UTF_8, ISO_8859_1),
+        assertEquals(UMLAUTS,
+                getJsonRootFromStream(processThroughInterceptor(fillAndGetExchangeWithEncodingHeader(changeEncoding(loadResource("/xml/content-utf-8-encoding-without.xml"), UTF_8, ISO_8859_1),
                         TEXT_XML_ISO_8859_1))).get("bar").get("futf").asText());
 
     }
 
     @Test
     void iso88591EncodedWithoutEncodingInHTTPHeader() throws Exception {
-        assertEquals(ÜÖÜÖÜÖ,
+        assertEquals(UMLAUTS,
                 getJsonRootFromStream(processThroughInterceptor(
-                        fillAndGetExchangewithEncodingHeader(loadResource("/xml/content-utf-8-encoding-iso-8859-1.xml"), TEXT_XML)))
+                        fillAndGetExchangeWithEncodingHeader(loadResource("/xml/content-utf-8-encoding-iso-8859-1.xml"), TEXT_XML)))
                         .get("bar").get("futf").asText());
-    }
-
-    private @NotNull InputStream getWithEncoded(String file, Charset charset) throws IOException {
-        return changeEncoding(loadResource(file), UTF_8, charset);
     }
 
     @Test
     void validTestxml2jsonResponse() throws Exception {
-        assertEquals(ÜÖÜÖÜÖ,
+        assertEquals(UMLAUTS,
                 getJsonRootFromStream(processThroughInterceptorResponse(loadResource("/xml/content-utf-8-encoding-utf-8.xml"))).get("bar").get("futf").asText());
     }
 
@@ -136,7 +132,7 @@ public class Xml2JsonInterceptorTest {
         return getExchangeFromStream(stream);
     }
 
-    private Exchange fillAndGetExchangewithEncodingHeader(InputStream stream, String contentTypeHeader) throws IOException {
+    private Exchange fillAndGetExchangeWithEncodingHeader(InputStream stream, String contentTypeHeader) throws IOException {
         Exchange exc = getExchangeFromStream(stream);
         exc.getRequest().getHeader().setContentType(contentTypeHeader);
         exc.getResponse().getHeader().setContentType(contentTypeHeader);

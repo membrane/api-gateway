@@ -104,7 +104,7 @@ public class XMLUtil {
 
     /**
      * For XML processing sometimes an InputSource is needed.
-     * @param msg
+     * @param msg Message with body
      * @return InputSource of the message body
      */
     public static @NotNull InputSource getInputSource(Message msg) {

@@ -18,13 +18,11 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.util.xml.*;
 import org.json.*;
 import org.slf4j.*;
 
 import java.io.*;
-import java.nio.charset.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
@@ -92,21 +90,20 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         if (!msg.isXML()) {
             return CONTINUE;
         }
-
         try {
             msg.setBodyContent(xml2json(getBodyAsString(msg)));
+            msg.getHeader().setContentType(APPLICATION_JSON_UTF8);
+            return CONTINUE;
+        } catch (UnsupportedEncodingException e) {
+            handleException(exc, flow, e, "Unsupported encoding: " + e.getMessage());
         } catch (Exception e) {
-            handleException(exc, flow, e);
-            return ABORT;
+            handleException(exc, flow, e, null);
         }
-
-        msg.getHeader().setContentType(APPLICATION_JSON_UTF8);
-        return CONTINUE;
+        return ABORT;
     }
 
     private static String getBodyAsString(Message msg) throws IOException {
-        if (msg.getHeader().getCharset() != null)
-            return msg.getBodyAsStringDecoded();
+        if (msg.getHeader().getCharset() != null) return msg.getBodyAsStringDecoded();
 
         // Conversion is expensive but needed to get encoding from XML
         // because org.json.XML ignores the encoding specified in the XML prolog
@@ -121,13 +118,14 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
         return XML.toJSONObject(xml).toString().getBytes(UTF_8);
     }
 
-    private void handleException(Exchange exc, Flow flow, Exception e) {
-        log.info("Could not transform XML to JSON: {}", e.getMessage());
-        log.debug("", e);
-        internal(router.getConfiguration().isProduction(), getDisplayName())
-                .flow(flow)
-                .status(flow == REQUEST ? 400 : 500)
-                .detail("Could not transform XML to JSON!")
+    private void handleException(Exchange exc, Flow flow, Exception e, String msg) {
+        if (msg == null) {
+            msg = "Could not transform XML to JSON: " + e.getMessage();
+            log.info(msg, e);
+            log.debug("", e);
+        }
+        internal(router.getConfiguration().isProduction(), getDisplayName()).flow(flow).status(flow == REQUEST ? 400 : 500)
+                .detail(msg)
                 .exception(e)
                 .topLevel("charset-from-header", exc.getMessage(flow).getHeader().getCharset())
                 .stacktrace(false)

@@ -4,6 +4,8 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.regex.*;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
 public class XMLEncodingUtil {
 
     // XML declaration must be ASCII-compatible
@@ -16,10 +18,8 @@ public class XMLEncodingUtil {
 
     /**
      * Extracts encoding from an XML prolog using raw bytes.
-     *
      * XML spec guarantees the prolog is ASCII-compatible, so we
      * decode only a small prefix as ISO-8859-1.
-     *
      * @param bytes XML document bytes
      * @return encoding name (e.g. UTF-8, ISO-8859-1) or null if absent
      */
@@ -37,10 +37,10 @@ public class XMLEncodingUtil {
         }
 
         // XML declaration must appear at the start (after BOM + whitespace)
-        int max = Math.min(bytes.length, offset + 4096);
+        int max = Math.min(bytes.length, offset + 1024);
 
         // ISO-8859-1 preserves byte values 1:1 → safe for ASCII parsing
-        String prefix = new String(bytes, offset, max - offset, StandardCharsets.ISO_8859_1);
+        String prefix = new String(bytes, offset, max - offset, ISO_8859_1);
 
         Matcher decl = XML_DECL_PATTERN.matcher(prefix);
         if (!decl.find()) return null;
