@@ -29,8 +29,10 @@ import java.net.*;
 import java.nio.charset.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.noContent;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static java.util.Objects.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,22 +41,22 @@ class UtilsTest {
 
     @Test
     void inputStreamToString() throws IOException {
-        assertEquals("foo",Utils.inputStreamToString(Utils.stringToInputStream("foo")));
+        assertEquals("foo", Utils.inputStreamToString(Utils.stringToInputStream("foo")));
     }
 
     @Test
     void inputStreamToStringUmlauts() throws IOException {
-        assertEquals("äöü",Utils.inputStreamToString(Utils.stringToInputStream("äöü")));
+        assertEquals("äöü", Utils.inputStreamToString(Utils.stringToInputStream("äöü")));
     }
 
     @Test
     void getRequestBodyFromRef() {
-        assertEquals("CustomerRequest",Utils.getComponentLocalNameFromRef("#/components/requestBodies/CustomerRequest"));
+        assertEquals("CustomerRequest", Utils.getComponentLocalNameFromRef("#/components/requestBodies/CustomerRequest"));
     }
 
     @Test
     void getSchemaTypeFromRef() {
-        assertEquals("Customer",Utils.getComponentLocalNameFromRef("#/components/schemas/Customer"));
+        assertEquals("Customer", Utils.getComponentLocalNameFromRef("#/components/schemas/Customer"));
     }
 
     @Test
@@ -105,11 +107,11 @@ class UtilsTest {
     private String getPathFromURL(String s) throws URISyntaxException {
         return UriUtil.getPathFromURL(new URIFactory(), s);
     }
-    
+
     @Test
     void getMediaTypeFromContentTypeHeader() {
-        assertEquals(APPLICATION_JSON,    Utils.getMediaTypeFromContentTypeHeader("application/json; charset=utf-8"));
-        assertEquals(APPLICATION_JSON,    Utils.getMediaTypeFromContentTypeHeader(APPLICATION_JSON));
+        assertEquals(APPLICATION_JSON, Utils.getMediaTypeFromContentTypeHeader("application/json; charset=utf-8"));
+        assertEquals(APPLICATION_JSON, Utils.getMediaTypeFromContentTypeHeader(APPLICATION_JSON));
     }
 
     @Test
@@ -211,37 +213,34 @@ class UtilsTest {
     }
 
     @Test
-    void getOpenapiValidatorRequestFromExchange() throws IOException, ParseException {
-        Exchange exc = new Exchange(null);
-        Header header = new Header();
-        header.setValue("X-Padding", "V0hQCMkJV4mKigp");
-        header.setContentType("text/xml");
-        exc.setOriginalRequestUri("/foo");
-        exc.setRequest(new com.predic8.membrane.core.http.Request.Builder().method("POST").header(header).build());
+    void getOpenapiValidatorRequestFromExchange() throws Exception {
+        var request = Utils.getOpenapiValidatorRequest(post("/foo")
+                .contentType(TEXT_XML)
+                .header("X-Padding", "V0hQCMkJV4mKigp")
+                .buildExchange());
 
-        var request = Utils.getOpenapiValidatorRequest(exc);
-        assertEquals("/foo",request.getPath());
-        assertEquals("POST", request.getMethod());
+        assertEquals("/foo", request.getPath());
+        assertEquals(METHOD_POST, request.getMethod());
 
-        assertEquals(2,request.getHeaders().size());
+        assertEquals(2, request.getHeaders().size());
         assertEquals("V0hQCMkJV4mKigp", request.getHeaders().get("X-Padding"));
-        assertEquals("text/xml", request.getHeaders().get("Content-Type"));
+        assertEquals(TEXT_XML, request.getHeaders().get(CONTENT_TYPE));
 
-        assertTrue(new ContentType("text/xml").match(request.getMediaType()));
+        assertTrue(new ContentType(TEXT_XML).match(request.getMediaType()));
     }
 
     @Test
     void getOpenapiValidatorResponse() throws IOException, ParseException {
 
-        var json = new HashMap<String,Object>();
-        json.put("foo",2);
+        var json = new HashMap<String, Object>();
+        json.put("foo", 2);
 
         Exchange exc = new Exchange(null);
         exc.setResponse(Response.ok().body(json).build());
 
         var res = Utils.getOpenapiValidatorResponse(exc);
-        assertEquals(200,res.getStatusCode());
-        assertEquals("application/json",res.getHeaders().get("Content-Type"));
+        assertEquals(200, res.getStatusCode());
+        assertEquals("application/json", res.getHeaders().get("Content-Type"));
     }
 
     /**
@@ -260,12 +259,16 @@ class UtilsTest {
         assertEquals("baz",
                 new String(requireNonNull(
                         getResourceAsStream(this, "/test/foo.bar")).readAllBytes(), StandardCharsets.UTF_8)
-                );
+        );
     }
 
     @Test
     void getResourceAsStreamInvalidResource() {
-        assertThrows(FileNotFoundException.class, () -> getResourceAsStream(this, "/doesnot.exist"));
+        assertThrows(FileNotFoundException.class, () -> {
+            //noinspection EmptyTryBlock
+            try (var ignore = getResourceAsStream(this, "/doesnot.exist")) {
+            }
+        });
     }
 
     @Test

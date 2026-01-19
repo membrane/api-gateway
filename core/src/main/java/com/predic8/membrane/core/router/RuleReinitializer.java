@@ -32,7 +32,7 @@ public class RuleReinitializer {
     }
 
     synchronized void start() {
-        log.info("Starting rule reinitializer.");
+        log.debug("Starting rule reinitializer.");
         if (timer != null)
             return; // Already started.
 
