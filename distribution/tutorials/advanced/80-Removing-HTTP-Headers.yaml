@@ -1,0 +1,28 @@
+
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Removing HTTP Headers
+#
+# Try:
+#   1.) curl -H "X-Foo: 1" -H "X-bar: 2" localhost:2000
+#
+#   2.) Inspect the log output
+#       Take a look at the output `Before:` and `After:`
+
+api:
+  port: 2000
+  flow:
+    - request:
+      - log:
+          message: "Before:\n${headers}"
+      - headerFilter:
+        # Rules are applied in the given order
+        # When a rule matches for a header, the remaining rules are not applied
+        - include: x-foo        # Matching is case insensitive
+        - exclude: .*cookie.*   # Regex matching
+        - exclude: user-agent
+        - exclude: x-.*
+      - log:
+          message: "After:\n${headers}"
+      - return:
+          status: 200
