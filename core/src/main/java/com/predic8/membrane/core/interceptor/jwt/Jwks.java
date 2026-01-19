@@ -22,6 +22,8 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.text.TextUtil;
 
 import java.io.IOException;
@@ -69,6 +71,10 @@ public class Jwks {
                     jwk.setContent(mapper.writeValueAsString(jwkRaw));
                     this.jwks.add(jwk);
                 }
+            } catch (JsonProcessingException e) {
+                throw new ConfigurationException("Could not parse JWK keys retrieved from %s.".formatted(uri), e);
+            } catch (ResourceRetrievalException e) {
+                throw new ConfigurationException("Could not retrieve JWK keys from %s.".formatted(uri), e);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
