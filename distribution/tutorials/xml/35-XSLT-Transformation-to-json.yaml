@@ -20,7 +20,7 @@ api:
         - setHeader:
             name: Content-Type
             value: application/json
-          # The beautifier needs the right Content-Type to format the output of the transform
+          # The beautifier needs the Content-Type to format the output as JSON
         - beautifier: {}
     - return:
         status: 200

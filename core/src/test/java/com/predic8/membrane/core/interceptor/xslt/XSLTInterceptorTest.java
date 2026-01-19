@@ -75,7 +75,7 @@ public class XSLTInterceptorTest {
     }
 
     @Test
-    void noConentInProlog() throws Exception {
+    void noContentInProlog() throws Exception {
         exc = get("http://localhost/").body("rubbish<?xml verion='1.0'?>").buildExchange();
 
         var i = new XSLTInterceptor();
