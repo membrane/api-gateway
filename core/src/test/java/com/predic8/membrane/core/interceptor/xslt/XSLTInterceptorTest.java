@@ -84,19 +84,8 @@ public class XSLTInterceptorTest {
         assertEquals(ABORT, i.handleRequest(exc));
         assertEquals(400, exc.getResponse().getStatusCode());
         String body = exc.getResponse().getBodyAsStringDecoded();
-        System.out.println(body);
         assertTrue(body.contains("rubbish"));
         assertTrue(body.contains("not allowed in prolog"));
-    }
-
-    @SuppressWarnings("unused")
-    private void printBodyContent() throws Exception {
-        InputStream i = exc.getResponse().getBodyAsStream();
-        int read;
-        byte[] buf = new byte[4096];
-        while ((read = i.read(buf)) != -1) {
-            System.out.write(buf, 0, read);
-        }
     }
 
     private void assertXPath(String xpathExpr, String expected)
@@ -104,5 +93,4 @@ public class XSLTInterceptorTest {
         assertEquals(expected, xpath.evaluate(xpathExpr, new InputSource(exc
                 .getResponse().getBodyAsStream())));
     }
-
 }
