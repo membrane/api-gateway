@@ -30,6 +30,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static com.predic8.membrane.core.util.text.TextUtil.*;
 
 /**
@@ -69,26 +70,27 @@ public class XSLTInterceptor extends AbstractInterceptor {
             transformMsg(msg, xslt, exc.getStringProperties());
         } catch (TransformerException e) {
             log.debug("", e);
-            if (e.getMessage().contains("not allowed in prolog")) {
+            if (e.getMessage() != null && e.getMessage().contains("not allowed in prolog")) {
                 user(router.getConfiguration().isProduction(), getDisplayName())
                         .title("Content not allowed in prolog of XML input.")
                         .detail("Check for extra characters before the XML declaration <?xml ... ?>")
-                        .internal("offendingInput", com.predic8.membrane.core.util.text.StringUtil.truncateAfter(msg.getBodyAsStringDecoded() + "...", 50))
+                        .internal("offendingInput", truncateAfter(msg.getBodyAsStringDecoded() + "...", 50))
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
-            return createErrorResponse(exc, e);
+            return createErrorResponse(exc,e,flow);
         } catch (Exception e) {
             log.info("", e);
-            return createErrorResponse(exc, e);
+            return createErrorResponse(exc,e,flow);
         }
         return CONTINUE;
     }
 
-    private @NotNull Outcome createErrorResponse(Exchange exc, Exception e) {
+    private @NotNull Outcome createErrorResponse(Exchange exc, Exception e, Flow flow) {
         user(router.getConfiguration().isProduction(), getDisplayName())
-                .detail("Error transforming request!")
+                .detail("Error transforming message!")
                 .exception(e)
+                .internal("flow", flow.toString())
                 .buildAndSetResponse(exc);
         return ABORT;
     }

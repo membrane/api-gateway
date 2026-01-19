@@ -8,7 +8,7 @@ import static io.restassured.RestAssured.*;
 import static io.restassured.http.ContentType.*;
 import static org.hamcrest.Matchers.*;
 
-public class XsltJson2XMLTransformationTutorialTest extends AbstractXmlTutorialTest{
+public class XsltXML2JSONTransformationTutorialTest extends AbstractXmlTutorialTest{
     @Override
     protected String getTutorialYaml() {
         return "35-XSLT-Transformation-to-json.yaml";
