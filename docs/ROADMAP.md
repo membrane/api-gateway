@@ -58,7 +58,7 @@ PRIO 3:
   - When the reason for a parse error is clear. Shorten error message.
 - BalancerHealthMonitor:
   - @PostConstruct instead of InitializingBean, DisposableBean
-- Migrate deprecated finally to try with ressources
+- Migrate deprecated finally to try with resources
 - if: Add hint in documentation: use choice otherwise for else
 - accessControl:
      - Warning: Gets complicated!
@@ -68,7 +68,7 @@ PRIO 3:
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 - Remove GroovyTemplateInterceptor (Not Template Interceptor)
-  - Old an unused
+  - Old and unused
 - create test asserting that connection reuse via proxy works
 - Configuration independent lookup of beans. I just want bean foo and I do not care where it is defined.
   - See: ChainInterceptor.getBean(String)
