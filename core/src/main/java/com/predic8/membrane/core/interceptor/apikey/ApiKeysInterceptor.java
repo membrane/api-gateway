@@ -108,7 +108,7 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) {
         var key = getKey(exc);
         if (required && key.isEmpty()) {
-            log.warn("Tried access apiKey protected resource without key. Uri: {}", exc.getRequestURI());
+            log.warn("Tried access apiKey protected resource without key. Uri: {}", exc.getOriginalRelativeURI());
             security(false, getDisplayName())
                     .title(TITLE_4XX)
                     .status(401)

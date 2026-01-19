@@ -131,6 +131,6 @@ public class AbstractExchangeStoreTest {
 
     @NotNull
     private QueryParameter getQueryParameter(String url) throws Exception {
-        return new QueryParameter(URLParamUtil.getParams(new URIFactory(), Request.get(url).buildExchange(), ERROR), pattern.matcher(e1.getRequestURI()));
+        return new QueryParameter(URLParamUtil.getParams(new URIFactory(), Request.get(url).buildExchange(), ERROR), pattern.matcher(e1.getRequest().getUri()));
     }
 }

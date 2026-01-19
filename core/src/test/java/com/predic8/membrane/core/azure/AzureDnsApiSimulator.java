@@ -61,18 +61,18 @@ public class AzureDnsApiSimulator {
             }
 
             public Outcome handleRequestInternal(Exchange exc) throws IOException {
-                log.info("got request {}", exc.getRequestURI());
+                log.info("got request {}", exc.getOriginalRelativeURI());
 
                 if (missingHeaders(exc)) {
                     exc.setResponse(Response.badRequest().build());
                     return RETURN;
                 }
 
-                if (exc.getRequestURI().equals("/Tables")) {
+                if (exc.getOriginalRelativeURI().equals("/Tables")) {
                     return createTableStorageTable(exc);
                 }
 
-                if (exc.getRequestURI().startsWith("/membrane")) {
+                if (exc.getOriginalRelativeURI().startsWith("/membrane")) {
                     return switch (exc.getRequest().getMethod()) {
                         case "PUT" -> insertOrReplaceTableStorageEntity(exc);
                         case "GET" -> getEntityFromTableStorage(exc);
@@ -100,7 +100,7 @@ public class AzureDnsApiSimulator {
     }
 
     private Outcome deleteEntityFromTableStorage(Exchange exc) {
-        var uriPayload = extractValuesFromUri(exc.getRequestURI());
+        var uriPayload = extractValuesFromUri(exc.getOriginalRelativeURI());
 
         if (uriPayload == null) {
             exc.setResponse(Response.badRequest().build());
@@ -131,7 +131,7 @@ public class AzureDnsApiSimulator {
             return RETURN;
         }
 
-        var uriPayload = extractValuesFromUri(exc.getRequestURI());
+        var uriPayload = extractValuesFromUri(exc.getOriginalRelativeURI());
 
         if (uriPayload == null) {
             exc.setResponse(Response.badRequest().build());
@@ -165,7 +165,7 @@ public class AzureDnsApiSimulator {
     }
 
     private Outcome getEntityFromTableStorage(Exchange exc) throws JsonProcessingException {
-        var uriPayload = extractValuesFromUri(exc.getRequestURI());
+        var uriPayload = extractValuesFromUri(exc.getOriginalRelativeURI());
 
         if (uriPayload == null) {
             exc.setResponse(Response.badRequest().build());

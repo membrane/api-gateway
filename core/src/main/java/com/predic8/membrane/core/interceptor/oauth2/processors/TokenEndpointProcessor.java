@@ -32,7 +32,7 @@ public class TokenEndpointProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return exc.getRequestURI().startsWith(authServer.getBasePath() + "/oauth2/token");
+        return exc.getOriginalRelativeURI().startsWith(authServer.getBasePath() + "/oauth2/token");
     }
 
     @Override

@@ -279,15 +279,15 @@ public abstract class OAuth2ResourceTest {
             }
 
             public synchronized Response handleRequestInternal(Exchange exc) throws URISyntaxException, IOException {
-                if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
+                if (exc.getOriginalRelativeURI().endsWith("/.well-known/openid-configuration")) {
                     return Response.ok(wkf.getWellknown()).build();
-                } else if (exc.getRequestURI().startsWith("/auth?")) {
+                } else if (exc.getOriginalRelativeURI().startsWith("/auth?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     return new FormPostGenerator(getClientAddress() + "/oauth2callback")
                             .withParameter("state", params.get("state"))
                             .withParameter("code", params.get("1234"))
                             .build();
-                } else if (exc.getRequestURI().startsWith("/token")) {
+                } else if (exc.getOriginalRelativeURI().startsWith("/token")) {
                     ObjectMapper om = new ObjectMapper();
                     var responseData = Map.ofEntries(
                             Map.entry("access_token", new BigInteger(130, rand).toString(32)),
@@ -296,7 +296,7 @@ public abstract class OAuth2ResourceTest {
                             Map.entry("refresh_token", new BigInteger(130, rand).toString(32))
                     );
                     return Response.ok(om.writeValueAsString(responseData)).contentType(APPLICATION_JSON).build();
-                } else if (exc.getRequestURI().startsWith("/userinfo")) {
+                } else if (exc.getOriginalRelativeURI().startsWith("/userinfo")) {
                     ObjectMapper om = new ObjectMapper();
                     Map<String, String> res = Map.of("username", "dummy");
                     return Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build();
@@ -383,7 +383,7 @@ public abstract class OAuth2ResourceTest {
                 String accessToken = answer.getAccessToken();
                 Map<String, String> body = Map.of(
                         "accessToken", accessToken,
-                        "path", exc.getRequestURI(),
+                        "path", exc.getOriginalRelativeURI(),
                         "method", exc.getRequest().getMethod(),
                         "body", exc.getRequest().getBodyAsStringDecoded()
                 );
