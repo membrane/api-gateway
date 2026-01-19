@@ -22,6 +22,8 @@ import org.springframework.core.io.*;
 import java.nio.charset.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.proxies.ApiInfo.logInfosAboutStartedProxies;
+
 /**
  * Bootstrapping a {@link DefaultRouter} instance using Spring XML-based configuration.
  */
@@ -50,6 +52,7 @@ public class RouterXmlBootstrap {
             );
         }
         DefaultRouter router = bf.getBean("router", DefaultRouter.class);
+        logInfosAboutStartedProxies(router.getRuleManager());
         bf.start(); // Starting ApplicationContext will also call router.start(). Init should happen before.
         return router;
     }
