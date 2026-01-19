@@ -72,7 +72,7 @@ public class Jwks {
                     this.jwks.add(jwk);
                 }
             } catch (JsonProcessingException e) {
-                throw new ConfigurationException("Could parse JWK keys retrieved from %s.".formatted(uri), e);
+                throw new ConfigurationException("Could not parse JWK keys retrieved from %s.".formatted(uri), e);
             } catch (ResourceRetrievalException e) {
                 throw new ConfigurationException("Could not retrieve JWK keys from %s.".formatted(uri), e);
             } catch (Exception e) {
