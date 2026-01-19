@@ -67,7 +67,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
         var msg = exc.getMessage(flow);
 
         try {
-            transformMsg(msg, xslt, exc.getStringProperties());
+            transformMsg(msg, exc.getStringProperties());
         } catch (TransformerException e) {
             log.debug("", e);
             if (e.getMessage() != null && e.getMessage().contains("not allowed in prolog")) {
@@ -95,7 +95,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
         return ABORT;
     }
 
-    private void transformMsg(Message msg, String ss, Map<String, String> parameter) throws Exception {
+    private void transformMsg(Message msg, Map<String, String> parameter) throws Exception {
         if (msg.isBodyEmpty())
             return;
         msg.setBodyContent(xsltTransformer.transform(

@@ -92,7 +92,7 @@ public class XSLTInterceptorTest {
     @SuppressWarnings("unused")
     private void printBodyContent() throws Exception {
         InputStream i = exc.getResponse().getBodyAsStream();
-        int read = 0;
+        int read;
         byte[] buf = new byte[4096];
         while ((read = i.read(buf)) != -1) {
             System.out.write(buf, 0, read);
