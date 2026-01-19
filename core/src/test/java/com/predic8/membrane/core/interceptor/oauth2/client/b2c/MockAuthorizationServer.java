@@ -125,7 +125,7 @@ public class MockAuthorizationServer {
 
             public synchronized Response handleRequestInternal(Exchange exc) throws Exception {
                 Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, ERROR);
-                String requestURI = exc.getRequestURI();
+                String requestURI = exc.getOriginalRelativeURI();
                 if (requestURI.endsWith("/.well-known/openid-configuration")) {
                     return Response.ok(wkf.getWellknown()).build();
                 } else if (requestURI.equalsIgnoreCase(baseUri + "/discovery/v2.0/keys")) {

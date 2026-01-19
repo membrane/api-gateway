@@ -227,7 +227,7 @@ public class Utils {
     }
 
     public static <T extends Body> Request<T> getOpenapiValidatorRequest(Exchange exc) throws IOException, ParseException {
-        Request<T> request = new Request<>(exc.getRequest().getMethod(), exc.getRequestURI());
+        Request<T> request = new Request<>(exc.getRequest().getMethod(), exc.getRequest().getUri());
         for (HeaderField header : exc.getRequest().getHeader().getAllHeaderFields()) {
             request.getHeaders().put(header.getHeaderName().toString(), header.getValue());
         }

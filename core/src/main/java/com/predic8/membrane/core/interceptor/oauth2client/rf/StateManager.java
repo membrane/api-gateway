@@ -120,7 +120,7 @@ public class StateManager {
     }
 
     public String buildStateParameter(Exchange exchange) {
-        return "&state=security_token%3D" + securityToken + "%26url%3D" + urlencode(exchange.getRequestURI())
+        return "&state=security_token%3D" + securityToken + "%26url%3D" + urlencode(exchange.getOriginalRelativeURI())
                 + "%26verifierId%3D" + verifierId + toUrlParam(flowContext);
     }
 

@@ -137,7 +137,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
     }
 
     private String buildRequestUrl(Exchange exc) {
-        return (exc.getTargetConnection().getSslProvider() != null ? "https" : "http") + "://" + exc.getRequest().getHeader().getHost() + exc.getRequestURI();
+        return (exc.getTargetConnection().getSslProvider() != null ? "https" : "http") + "://" + exc.getRequest().getHeader().getHost() + exc.getOriginalRelativeURI();
     }
 
     private void prepareStreamByEmptyingIt(Exchange exc) {

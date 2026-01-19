@@ -40,7 +40,7 @@ public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartS
             .post("http://localhost:2000/service")
         .then()
             .log().ifValidationFails()
-            .statusCode(500)
+            .statusCode(400)
             .body(
                     containsString("<case>a</case>"),
                     containsString("XML Protection: Invalid XML!")

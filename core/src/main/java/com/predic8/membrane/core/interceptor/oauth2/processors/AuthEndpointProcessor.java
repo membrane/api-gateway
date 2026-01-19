@@ -34,7 +34,7 @@ public class AuthEndpointProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        return exc.getRequestURI().startsWith(authServer.getBasePath() + "/oauth2/auth") && !authServer.isLoginViewDisabled();
+        return exc.getOriginalRelativeURI().startsWith(authServer.getBasePath() + "/oauth2/auth") && !authServer.isLoginViewDisabled();
     }
 
     @Override

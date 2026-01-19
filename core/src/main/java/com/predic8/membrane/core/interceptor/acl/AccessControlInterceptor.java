@@ -67,7 +67,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
         String remoteIp = exc.getRemoteAddrIp();
         if (!accessControl.isPermitted(remoteIp)) {
             setResponseToAccessDenied(exc);
-            log.debug("Access denied. remoteIp={} method={} uri={}", remoteIp, exc.getRequest().getMethod(), exc.getRequestURI());
+            log.debug("Access denied. remoteIp={} method={} uri={}", remoteIp, exc.getRequest().getMethod(), exc.getOriginalRelativeURI());
             return ABORT;
         }
         return CONTINUE;

@@ -117,10 +117,10 @@ public class ScriptingUtils {
             return emptyMap();
 
         try {
-            return new HashMap<>(matchTemplate(ap.getPath().getUri(), exchange.getRequestURI())); // Make lazy!
+            return new HashMap<>(matchTemplate(ap.getPath().getUri(), exchange.getRequest().getUri())); // Make lazy!
         } catch (PathDoesNotMatchException ignore) {
             // Log does only show up if path parameters are used in an expression
-            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), exchange.getRequestURI());
+            log.info("No path parameters extracted: uriTemplate {}, path {}", ap.getPath().getUri(), exchange.getRequest().getUri());
         }
         // Add map to avoid a second parsing
         return emptyMap();

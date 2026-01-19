@@ -115,9 +115,9 @@ public class OAuth2ResourceErrorForwardingTest {
 
             @Override
             public synchronized Outcome handleRequest(Exchange exc) {
-                if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
+                if (exc.getOriginalRelativeURI().endsWith("/.well-known/openid-configuration")) {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
-                } else if (exc.getRequestURI().startsWith("/auth?")) {
+                } else if (exc.getOriginalRelativeURI().startsWith("/auth?")) {
                     Map<String, String> params;
                     try {
                         params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
@@ -193,7 +193,7 @@ public class OAuth2ResourceErrorForwardingTest {
                 String accessToken = answer.getAccessToken();
                 Map<String, String> body = Map.of(
                         "accessToken", accessToken,
-                        "path", exc.getRequestURI(),
+                        "path", exc.getOriginalRelativeURI(),
                         "method", exc.getRequest().getMethod(),
                         "body", exc.getRequest().getBodyAsStringDecoded()
                 );
