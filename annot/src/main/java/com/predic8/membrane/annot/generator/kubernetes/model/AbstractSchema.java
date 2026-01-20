@@ -21,11 +21,13 @@ import java.util.*;
 public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISchema {
 
     protected static final JsonNodeFactory jnf = JsonNodeFactory.instance;
+    private static final Set<String> STRING_ALLOWED_TYPES = Set.of("integer", "number", "boolean");
 
     protected String title;
     protected String name;
     protected String type;
     protected String description;
+    protected List<String> typeList;
     private List<String> enumValues;
 
     protected boolean required = false;
@@ -85,7 +87,8 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
     }
 
     public boolean isObject() {
-        return "object".equals(type);
+        if ("object".equals(type)) return true;
+        return typeList != null && typeList.contains("object");
     }
 
     @Override
@@ -93,9 +96,23 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
         if (title != null && !title.isBlank())
             node.put("title", title);
 
-        if (type != null)
+        if (typeList != null) {
+            ArrayNode arr = jnf.arrayNode();
+            for (String t : typeList) arr.add(t);
+            node.set("type", arr);
+        } else if (type != null) {
             node.put("type", type);
+        }
 
         return node;
+    }
+
+    public T typeAllowingString(String type) {
+        if (STRING_ALLOWED_TYPES.contains(type)) {
+            this.typeList = List.of(type, "string");
+        } else {
+            this.type = type;
+        }
+        return self();
     }
 }
