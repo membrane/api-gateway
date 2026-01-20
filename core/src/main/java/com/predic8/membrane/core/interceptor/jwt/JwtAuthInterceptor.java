@@ -69,12 +69,12 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         if(jwtRetriever == null)
             jwtRetriever = new HeaderJwtRetriever("Authorization","Bearer");
 
-        jwks.init(router.getResolverMap(),router.getBaseLocation());
+        jwks.init(router);
 
         kidToKey = jwks.getJwks().stream()
                 .map(jwk -> {
                     try {
-                        return new RsaJsonWebKey(mapper.readValue(jwk.getJwk(router, router.getBaseLocation(),mapper),Map.class));
+                        return new RsaJsonWebKey(mapper.readValue(jwk.getJwk(router, mapper),Map.class));
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

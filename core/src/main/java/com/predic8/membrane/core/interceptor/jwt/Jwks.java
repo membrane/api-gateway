@@ -60,14 +60,14 @@ public class Jwks {
         return this;
     }
 
-    public void init(ResolverMap resolverMap, String baseLocation) {
+    public void init(Router router) {
         if(jwksUris == null || jwksUris.isEmpty())
             return;
 
         ObjectMapper mapper = new ObjectMapper();
         for (String uri : jwksUris.split(" ")) {
             try {
-                for (Object jwkRaw : parseJwksUriIntoList(resolverMap, baseLocation, mapper, uri)) {
+                for (Object jwkRaw : parseJwksUriIntoList(router.getResolverMap(), router.getBaseLocation(), mapper, uri)) {
                     Jwk jwk = new Jwk();
                     jwk.setContent(mapper.writeValueAsString(jwkRaw));
                     this.jwks.add(jwk);
@@ -126,7 +126,7 @@ public class Jwks {
         }
 
 
-        public String getJwk(Router router, String baseLocation, ObjectMapper mapper) throws IOException {
+        public String getJwk(Router router, ObjectMapper mapper) throws IOException {
             ResolverMap rm = router.getResolverMap();
 
             if (httpClientConfig != null) {
@@ -137,7 +137,7 @@ public class Jwks {
                 rm.addSchemaResolver(httpSR);
             }
 
-            String maybeJwk = get(rm, baseLocation);
+            String maybeJwk = get(rm, router.getBaseLocation());
 
             Map<String,Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
             if (mapped.containsKey("keys"))
