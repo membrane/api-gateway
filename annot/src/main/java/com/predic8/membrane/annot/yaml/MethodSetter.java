@@ -201,10 +201,6 @@ public class MethodSetter {
         if (wanted.equals(Map.class) && hasOtherAttributes(setter))
             return Map.of(key, node.asText());
 
-        if (node.isTextual() && isBeanReference(wanted)) {
-            return resolveReference(ctx, node, key, wanted);
-        }
-
         if (isReferenceAttribute(setter)) return ctx.registry().resolve(node.asText());
         throw unsupported(wanted, key, node);
     }
