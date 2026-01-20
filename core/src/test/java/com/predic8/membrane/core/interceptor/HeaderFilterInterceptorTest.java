@@ -15,27 +15,28 @@ package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.*;
+import com.predic8.membrane.core.interceptor.headerfilter.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
 
 import static com.google.common.collect.Lists.*;
-import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.Action.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.interceptor.headerfilter.HeaderFilterRule.keep;
+import static com.predic8.membrane.core.interceptor.headerfilter.HeaderFilterRule.remove;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HeaderFilterInterceptorTest {
 
 	@Test
 	public void doit() throws Exception {
-		Exchange exc = new Exchange(null);
+		var exc = new Exchange(null);
 		exc.setResponse(ok().header("a", "b").header("c", "d").header("c", "d2").header("e", "f").build());
 
-		HeaderFilterInterceptor fhi = new HeaderFilterInterceptor();
-		fhi.setRules(newArrayList(new Rule("Server", REMOVE), // implicitly set by Response.ok()
-                new Rule("a", KEEP),
-                new Rule("c.*", REMOVE)));
+		var fhi = new HeaderFilterInterceptor();
+		fhi.setFilterRules(newArrayList(remove("Server"), // implicitly set by Response.ok()
+                keep("a"),
+                remove("c.*")));
 		fhi.handleResponse(exc);
 
 		HeaderField[] h = exc.getResponse().getHeader().getAllHeaderFields();
@@ -46,12 +47,12 @@ public class HeaderFilterInterceptorTest {
 
 	@Test
 	@DisplayName("Remove header from Response")
-	void remove() throws Exception {
+	void removeHeader() {
 		var exc = new Exchange(null);
 		exc.setResponse(ok().header("Strict-Transport-Security", "foo").build());
 
 		var filter = new HeaderFilterInterceptor();
-		filter.setRules(List.of(new Rule("strict-transport-security", REMOVE)));
+		filter.setFilterRules(List.of(remove("strict-transport-security")));
 
 		filter.handleResponse(exc);
 
@@ -59,7 +60,7 @@ public class HeaderFilterInterceptorTest {
 	}
 
 	@Test
-	void removeWildcard() throws Exception {
+	void removeWildcard() {
 		var exc = new Exchange(null);
 		exc.setResponse(ok()
 				.header("X-Foo", "foo")
@@ -67,7 +68,7 @@ public class HeaderFilterInterceptorTest {
 				.header("X-Bar","bar").build());
 
 		var filter = new HeaderFilterInterceptor();
-		filter.setRules(List.of(new Rule("X-.*", REMOVE)));
+		filter.setFilterRules(List.of(remove("X-.*")));
 
 		filter.handleResponse(exc);
 
