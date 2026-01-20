@@ -184,12 +184,12 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
         try {
             String resource = null;
-            if (exc.getRequestURI().endsWith("?wsdl") || exc.getRequestURI().endsWith("?WSDL")) {
+            if (isRequestForWSDL(exc)) {
                 processDocuments(exc);
                 exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), resource = combine(router.getConfiguration().getBaseLocation(), wsdl)));
                 exc.getResponse().getHeader().setContentType(TEXT_XML);
             }
-            if (exc.getRequestURI().contains("?xsd=")) {
+            if (exc.getRequest().getUri().contains("?xsd=")) {
                 Map<String, String> params = URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                 if (params.containsKey("xsd")) {
                     int n = Integer.parseInt(params.get("xsd"));
@@ -223,6 +223,10 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    private static boolean isRequestForWSDL(Exchange exc) {
+        return exc.getRequest().getUri().endsWith("?wsdl") || exc.getRequest().getUri().endsWith("?WSDL");
     }
 
     @Override

@@ -150,7 +150,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 	private String getClientURL(Exchange exc) {
 		// TODO: move this to some central location
 		try {
-			String uri = exc.getHandler().getContextPath(exc) + exc.getRequestURI();
+			String uri = exc.getHandler().getContextPath(exc) + exc.getRequest().getUri();
 			String host = exc.getRequest().getHeader().getHost();
 			if (host != null) {
 				if (host.contains(":"))
@@ -165,10 +165,13 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 		}
 	}
 
+	/**
+	 * Do not remove! Method is called dynamically by @Mapping!
+	 */
 	@Mapping("(?!.*operation)([^?]*)")
 	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath, final Exchange exc) throws Exception {
 		try {
-			final String myPath = router.getConfiguration().getUriFactory().create(exc.getRequestURI()).getPath();
+			final String myPath = router.getConfiguration().getUriFactory().create(exc.getRequest().getUri()).getPath();
 
 			final Definitions w = getParsedWSDL();
 			final Service service = getService(w);

@@ -197,18 +197,18 @@ public class OAuth2ResourceRpIniLogoutTest {
             }
 
             public synchronized Outcome handleRequestInternal(Exchange exc) throws URISyntaxException, IOException, JoseException, InvalidJwtException {
-                if (exc.getRequestURI().endsWith("/.well-known/openid-configuration")) {
+                if (exc.getOriginalRelativeURI().endsWith("/.well-known/openid-configuration")) {
                     exc.setResponse(Response.ok(wkf.getWellknown()).build());
-                } else if (exc.getRequestURI().equals("/certs")) {
+                } else if (exc.getOriginalRelativeURI().equals("/certs")) {
                     String payload = "{ \"keys\":  [" + jwksResponse + "]}";
                     exc.setResponse(Response.ok(payload).contentType(APPLICATION_JSON).build());
-                } else if (exc.getRequestURI().startsWith("/auth?")) {
+                } else if (exc.getOriginalRelativeURI().startsWith("/auth?")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     exc.setResponse(new FormPostGenerator(getClientAddress() + "/oauth2callback")
                             .withParameter("state", params.get("state"))
                             .withParameter("code", params.get("1234"))
                             .build());
-                } else if (exc.getRequestURI().startsWith("/token")) {
+                } else if (exc.getOriginalRelativeURI().startsWith("/token")) {
                     ObjectMapper om = new ObjectMapper();
                     Map<String, String> res = new HashMap<>();
                     res.put("access_token", new BigInteger(130, rand).toString(32));
@@ -218,12 +218,12 @@ public class OAuth2ResourceRpIniLogoutTest {
                     res.put("id_token", createToken(idToken()));
                     exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
 
-                } else if (exc.getRequestURI().startsWith("/userinfo")) {
+                } else if (exc.getOriginalRelativeURI().startsWith("/userinfo")) {
                     ObjectMapper om = new ObjectMapper();
                     Map<String, String> res = new HashMap<>();
                     res.put("username", "dummy");
                     exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType(APPLICATION_JSON).build());
-                } else if (exc.getRequestURI().startsWith("/end-session")) {
+                } else if (exc.getOriginalRelativeURI().startsWith("/end-session")) {
                     Map<String, String> params = URLParamUtil.getParams(new URIFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                     assertNotNull(params.get("id_token_hint"));
                     JwtClaims claims = jc.processToClaims(params.get("id_token_hint"));
@@ -307,7 +307,7 @@ public class OAuth2ResourceRpIniLogoutTest {
                 String accessToken = answer.getAccessToken();
                 Map<String, String> body = Map.of(
                         "accessToken", accessToken,
-                        "path", exc.getRequestURI(),
+                        "path", exc.getOriginalRelativeURI(),
                         "method", exc.getRequest().getMethod(),
                         "body", exc.getRequest().getBodyAsStringDecoded()
                 );

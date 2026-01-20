@@ -71,7 +71,7 @@ public class GenericYamlParser {
 
         var idx = 0;
         for (JsonNode jsonNode : jsonLocationMap.parseWithLocations(yaml)) {
-            if (jsonNode == null) {
+            if (jsonNode == null || jsonNode.isNull() || jsonNode.isEmpty()) {
                 log.debug(GenericYamlParser.EMPTY_DOCUMENT_WARNING);
                 continue;
             }

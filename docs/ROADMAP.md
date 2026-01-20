@@ -6,34 +6,44 @@
 
 # 7.X
 
-- Add Example tests for all tutorials
-- Question: Should we remove the old rest2soap interceptor(using XSLT) in favor of the new template based examples?
-- Do we need add(Rule,Source) and getRuleBySource(Manual|Spring)?
-- Fix maven central publish job
-- JMXExporter:
-  - Tutorial
-  - Documentation
-  - See JmxExporter
-- remove basic-xml-interceptor example?
-- logs:
-- Instead of:
-    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2000'
-    18:37:33,693  INFO 1 main HttpEndpointListener:92 {} - listening at '*:2001'
-    => listening at *:2000, *:2001
-- refactor JdbcUserDataProvider
-- Refine YAML for balancer: clustersFromSpring
-- wsdlRewriter YAML is not working
-- use @MCElement(collapsed=true) for suitable classes
-- StreamTracing:
-  - Take out zeros
-  - Line Break after []
+PRIO 1:
+
 - Tutorials:
   - Add how to run the tutorials in a Docker container
 - HotReload for YAML
+- YAML parsing:
+  - Shorten YAML error messages
+  - When the reason for a parse error is clear. Shorten error message.
+- if: Add hint in documentation: use choice otherwise for else TB
+- Register JSON Schema for YAML at: https://www.schemastore.org TB
+- create test asserting that connection reuse via proxy works TP
+- Central description of Membrane Languages, Cheat Sheets, links to their docs.
+- Central description of MEMBRANE_* environment variables
+  - Like MEMBRANE_HOME...
+  - @coderabbitai look through the code base for usages of these variables and suggest documentation
+
+
+PRIO 2:
+- Fix maven central publish job
+- Tutorial: Replace httpbin and catfact TB
+- use @MCElement(collapsed=true) for suitable classes
+
+PRIO 3:
+
+- JMXExporter:
+  - Tutorial
+  - Example
+  - See JmxExporter
+- upgrade to jackson 3
+  - When OpenAPI Parser: swagger-parser-v3 is released with Jackson 3 support
+- refactor JdbcUserDataProvider
+- Refine YAML for balancer: clustersFromSpring
+- wsdlRewriter YAML is not working
+- Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
+- Migrate deprecated finally to try with resources
 - YAML:
   - method: Suggest GET, POST, ...
-  - A "---" at the end without an API behind it, produces an error. The gateway should tolerantly ignore it.
-  - Language is case sensitve: e.g. language: SPEL is not valid according to the Schema and produces:
+  - Language is case sensitive: e.g. language: SPEL is not valid according to the Schema and produces: TB
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
  
@@ -59,109 +69,27 @@
   - When the reason for a parse error is clear. Shorten error message.
 - BalancerHealthMonitor:
   - @PostConstruct instead of InitializingBean, DisposableBean
-- Migrate deprecated finally to try with ressources
+- Migrate deprecated finally to try with resources
 - if: Add hint in documentation: use choice otherwise for else
 - accessControl:
      - Warning: Gets complicated!
      - Migrate to simple yaml config
      - Restrict on ips, hostname not paths
      - ipv6, wildcards
-
-# 7.1.0
-
 - Register JSON Schema for YAML at: https://www.schemastore.org
 - Grafana Dashboard: Complete Dashboard for Membrane with documentation in examples/monitoring/grafana
 - Remove GroovyTemplateInterceptor (Not Template Interceptor)
-  - Old an unused
+  - Old and unused
 - create test asserting that connection reuse via proxy works
 - Configuration independent lookup of beans. I just want bean foo and I do not care where it is defined.
   - See: ChainInterceptor.getBean(String)
   - Maybe a BeanRegistry implementation for Spring?
 
-# 7.0.4
+## Discussion
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
 - do not pass a `Router` reference into all sorts of beans: Access to global functionality should happen only on a very limited basis.
-
-
-# 7.0.1
-
-- Central description of Membrane Languages, Cheat Sheets, links to their docs.
-- Central desciption of MEMBRANE_* environment variables
-  - Like MEMBRANE_HOME...
-  - @coderabbitai look through the code base for usages of these variables and suggest documentation
-- Restore Kubernetes Startup Thread
-- Fix `YAMLParsingTest.errorInListItemUniqueness()`
-- Check 404 in AdminConsole => Client Requests
-  - API to get client requests returns 404, if called without admin console access 
- 
-
-## (Breaking) Interface Changes
-- Replaced AccessControlInterceptor: 
-  - `accessControl` is now configured inline in YAML/XML flow (no `file="acl.xml"`).
-  - ACL no longer matches URIs/paths; routing is done via `api.path.uri` with per-API `accessControl`.
-  - Matching is now only by peer IP (CIDR, IPv4+IPv6) or hostname (regex).
-  - First match wins, default is deny if nothing matches.
-- JMX: Name changes to "io.membrane-api:00=routers, name="
-- Removed GateKeeperClientInterceptor
-- Removed support for `internal:<name>` syntax in target URLs, leaving `internal://<name>` as the only valid way to call internal APIs.
-- Remove WADLInterceptor
-- HttpClient TB (done)
-  - Change Signature: public Exchange call(Exchange exc) throws Exception
-    =>  public void call(Exchange exc) throws Exception {
-- Remove HttpClientInterceptor.setAdjustHeader(boolean) it is already in HttpClientConfiguration
-- Remove xmlSessionIdExtractor if we have a replacement with language 
-- Remove HttpUtil.getHTMLErrorBody()
-- LogInterceptor:
-  - Remove: headerOnly
-- ValidatorInterceptor: remove FailureHandler
-  - Predominantly used for logging; move logging into validators.
-  - Migration: replace FailureHandler usages with validator-level logging; ensure correlation IDs/Exchange context remain available for logs.
-  - Check if it is used by customer installations
-- Groovy:
-  - ScriptingUtils: Variable bindings: headers references message.headers with the headers class instead of a map<String,Object>.
-    - Difference to SpEL
-    - SpEL headers.foo should return comma separated list of all values.
-- Delete unneeded proxies.xml in examples CG
-- for distribution: README with Link to Github for XML-based example configurations TB
-- update schema reference to 7.0.0, integrate into ConsistentVersionNumbers.java (done)
-- improve error output on
-  - schema validation error
-  - bean setter exception
-  - port occupied (done)
-
-- header['x-unknown'] returns null instead of empty string !!!!!!!!!!!!
-- SpEL: header is now of class HeaderMap insteadof SpelHeader
-
-## Breaking Changes
-
-- YAML Configuration as default
-- Use of colors in logs
-- Removed camelCase conversion of header access in Groovy scripts instead of header.contentType use header['Content-Type']
-- JMX namespace changed from org.membrane-soa to io.membrane-api.
-
-## Minor
- - Rewrite JSONAssert Tests with RESTAssured
-
-## Discussion
-
-- YAML:
-  - apiKey:
-    - simple method for specifying a couple of keys in the YAML 
-    - SimpleKeyStore: scope feels strange in YAML. Maybe not TextContent for Value
-
-# 6.5.0
-
-- Data Masking
-  - Is JSONPath replacement with Jayway possible? <mask>$.cusomter.payment.creditcard
-    - Other ways to do it.
-- <apiKey/>
-    <scriptXX>${json[key]}</scriptXX>
-  - See: RateLimitInterceptor
-- OpenAPIValidator:
-  - <openapi unknownQueryParameters="accept|report|block" .../>
-    Default: accept
-- YAML: JsonSchemaGenerator enable description fields for editor
+  - Before start discuss with team
 
 # 6.4.0
 
