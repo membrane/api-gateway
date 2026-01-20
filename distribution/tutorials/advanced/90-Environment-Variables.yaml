@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Environment Variables via SpEL (#{env(...)})
+#
+# This tutorial shows how to use environment variables in YAML using SpEL templates:
+#   - #{env('PORT')} reads the environment variable PORT
+#   - #{env('PORT','3000')} reads PORT, or falls back to 3000 if not set
+#
+# 1) Set PORT
+#     Linux/macOS: export PORT=3000
+#     Windows PowerShell: $env:PORT="3000"
+#     Windows CMD: set PORT=3000
+#
+# 2) Try:
+#     curl -v http://localhost:2000/
+#
+api:
+  port: 2000
+  target:
+    url: http://localhost:#{env('PORT')}
+---
+api:
+  port: "#{env('PORT')}"
+  flow:
+    - static:
+        src: |
+          Hello from port #{env('PORT')}
+    - return: {}

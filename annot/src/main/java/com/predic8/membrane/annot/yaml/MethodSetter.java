@@ -136,15 +136,17 @@ public class MethodSetter {
     }
 
     private Object coerceTextual(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
-        final String value = evaluateSpelForString(node, key, node.asText()).trim();
+        final String evaluated = evaluateSpelForString(node, key, node.asText());
+        if (evaluated == null) {
+            throw new ParsingException("SpEL for '%s' evaluated to null, but '%s' expects %s.".formatted(key, key, wanted.getSimpleName(), key.toUpperCase()), node);
+        }
+        final String value = evaluated.trim();
 
         if (isBoolean(wanted)) return parseBoolean(value);
-        if (isNumber(wanted)) return parseNumericOrThrow(key, wanted, value, node);
-        if (wanted.equals(Map.class) && hasOtherAttributes(setter)) return Map.of(key, value);
+        if (isNumber(wanted))  return parseNumericOrThrow(key, wanted, evaluated, node);
+        if (wanted == Map.class && hasOtherAttributes(setter)) return Map.of(key, evaluated);
         if (isBeanReference(wanted)) return resolveReference(ctx, node, key, wanted);
-
-        if (isReferenceAttribute(setter))
-            return ctx.registry().resolve(value);
+        if (isReferenceAttribute(setter)) return ctx.registry().resolve(evaluated);
 
         throw unsupported(wanted, key, node);
     }
