@@ -26,7 +26,7 @@ public class XsltXML2JSONTransformationTutorialTest extends AbstractXmlTutorialT
             .statusCode(200)
             .contentType(JSON)
             .body("books.size()", greaterThan(0))
-            .body("books[0].year", equalTo(1975));
+            .body("books[0].year", equalTo("1975"));
         // @formatter:on
     }
 }
