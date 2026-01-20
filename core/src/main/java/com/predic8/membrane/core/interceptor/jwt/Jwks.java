@@ -111,6 +111,11 @@ public class Jwks {
             return this;
         }
 
+        /**
+         * @description Sets the HTTP client configuration.
+         *
+         * @param httpClientConfig the configuration to set for the HTTP client
+         */
         @MCAttribute
         public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
             this.httpClientConfig = httpClientConfig;
