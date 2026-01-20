@@ -62,9 +62,18 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
                 return type.cast( evaluateAndCastToObject( msg));
             }
             throw  new RuntimeException("Should not Happen!");
-        } catch (XPathExpressionException xee) {
-            throw new ExchangeExpressionException(expression,xee)
-                    .body(msg.getBodyAsStringDecoded());
+        } catch (XPathExpressionException e) {
+            var eee = new ExchangeExpressionException(expression,e);
+            if (e.getMessage() != null && e.getMessage().contains("Prefix must resolve to a namespace")) {
+                var m = "XML prefix is not mapped to a namespace.";
+                if (xmlConfig != null && xmlConfig.getNamespaces() != null) {
+                    m += " Check prefix with xmlConfig.";
+                } else {
+                    m += " xmlConfig and namespace declaration is missing.";
+                }
+                eee.detail(m);
+            }
+            throw eee.body(msg.getBodyAsStringDecoded());
         }
     }
 
