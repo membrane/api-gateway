@@ -74,7 +74,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         kidToKey = jwks.getJwks().stream()
                 .map(jwk -> {
                     try {
-                        return new RsaJsonWebKey(mapper.readValue(jwk.getJwk(router.getResolverMap(), router.getBaseLocation(),mapper),Map.class));
+                        return new RsaJsonWebKey(mapper.readValue(jwk.getJwk(router, router.getBaseLocation(),mapper),Map.class));
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

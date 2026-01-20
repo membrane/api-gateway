@@ -19,9 +19,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.TextUtil;
 
 import java.io.IOException;
@@ -96,6 +99,8 @@ public class Jwks {
 
         String kid;
 
+        private HttpClientConfiguration httpClientConfig;
+
         public String getKid() {
             return kid;
         }
@@ -106,12 +111,31 @@ public class Jwks {
             return this;
         }
 
-        public String getJwk(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper) throws IOException {
-            String maybeJwk = get(resolverMap, baseLocation);
+        @MCAttribute
+        public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+            this.httpClientConfig = httpClientConfig;
+        }
+
+        public HttpClientConfiguration getHttpClientConfig() {
+            return httpClientConfig;
+        }
+
+
+        public String getJwk(Router router, String baseLocation, ObjectMapper mapper) throws IOException {
+            ResolverMap rm = router.getResolverMap();
+
+            if (httpClientConfig != null) {
+                HTTPSchemaResolver httpSR = new HTTPSchemaResolver(router.getHttpClientFactory());
+                httpSR.setHttpClientConfig(httpClientConfig);
+
+                rm = rm.clone();
+                rm.addSchemaResolver(httpSR);
+            }
+
+            String maybeJwk = get(rm, baseLocation);
 
             Map<String,Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
-
-            if(mapped.containsKey("keys"))
+            if (mapped.containsKey("keys"))
                 return handleJwks(mapper, mapped);
 
             return maybeJwk;
