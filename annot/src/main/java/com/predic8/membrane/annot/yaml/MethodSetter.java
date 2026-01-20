@@ -129,23 +129,66 @@ public class MethodSetter {
         if (wanted.isEnum()) return parseEnum(wanted, node);
 
         if (node.isTextual()) {
-            String v = (String) resolveSpelValue(node.asText(), String.class, node);
-            assert v != null;
-            if (wanted == int.class || wanted == Integer.class) return parseInt(v);
-            if (wanted == long.class || wanted == Long.class) return parseLong(v);
-            if (wanted == double.class || wanted == Double.class) return parseDouble(v);
-            if (wanted == boolean.class || wanted == Boolean.class) return parseBoolean(v);
-
-            if (wanted.equals(Map.class) && hasOtherAttributes(setter))
-                return Map.of(key, v);
-
-            if (isBeanReference(wanted))
-                return resolveReference(ctx, node, key, wanted);
-
-            if (isReferenceAttribute(setter))
-                return ctx.registry().resolve(v);
+            return coerceTextual(ctx, node, key, wanted);
         }
 
+        return coerceNonTextual(ctx, node, key, wanted);
+    }
+
+    private Object coerceTextual(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
+        final String raw = node.asText();
+
+        final String v;
+        try {
+            v = (String) resolveSpelValue(raw, String.class, node);
+        } catch (ParsingException pe) {
+            throw new ParsingException("Invalid SpEL in '%s': %s".formatted(key, pe.getMessage()), node);
+        }
+
+        if (v == null) {
+            throw new ParsingException("SpEL in '%s' evaluated to null, but '%s' expects %s."
+                    .formatted(key, key, wanted.getSimpleName()), node);
+        }
+
+        String t = v.trim();
+
+        if (wanted == boolean.class || wanted == Boolean.class)
+            return parseBoolean(t);
+
+        if (wanted == int.class || wanted == Integer.class ||
+                wanted == long.class || wanted == Long.class ||
+                wanted == double.class || wanted == Double.class) {
+            return parseNumericOrThrow(key, wanted, v, t, node);
+        }
+
+        if (wanted.equals(Map.class) && hasOtherAttributes(setter))
+            return Map.of(key, v);
+
+        if (isBeanReference(wanted))
+            return resolveReference(ctx, node, key, wanted);
+
+        if (isReferenceAttribute(setter))
+            return ctx.registry().resolve(v);
+
+        throw unsupported(wanted, key, node);
+    }
+
+    private Object parseNumericOrThrow(String key, Class<?> wanted, String original, String trimmed, JsonNode node) {
+        try {
+            if (wanted == int.class || wanted == Integer.class) return parseInt(trimmed);
+            if (wanted == long.class || wanted == Long.class) return parseLong(trimmed);
+            if (wanted == double.class || wanted == Double.class) return parseDouble(trimmed);
+        } catch (NumberFormatException nfe) {
+            throw new ParsingException(
+                    "Invalid value for '%s': expected %s, but got '%s'. If you meant SpEL, use \"#{...}\" (e.g. \"#{env('PORT')}\")."
+                            .formatted(key, wanted.getSimpleName(), original),
+                    node
+            );
+        }
+        throw unsupported(wanted, key, node);
+    }
+
+    private Object coerceNonTextual(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
         // Non-textual numeric/bool handling as before
         if (wanted == int.class || wanted == Integer.class)
             return node.isInt() ? node.intValue() : parseInt(node.asText());
@@ -163,8 +206,7 @@ public class MethodSetter {
         }
 
         if (isReferenceAttribute(setter)) return ctx.registry().resolve(node.asText());
-        throw new ParsingException("Unsupported setter type: %s for key '%s' with node type %s"
-                .formatted(wanted.getName(), key, node.getNodeType()), node);
+        throw unsupported(wanted, key, node);
     }
 
     private @Nullable List<Object> getObjectList(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
@@ -241,5 +283,13 @@ public class MethodSetter {
         }
         if (arg instanceof ParameterizedType p2 && p2.getRawType() instanceof Class<?> rc) return rc;
         return null;
+    }
+
+    private static ParsingException unsupported(Class<?> wanted, String key, JsonNode node) {
+        return new ParsingException(
+                "Unsupported setter type: %s for key '%s' with node type %s"
+                        .formatted(wanted.getName(), key, node.getNodeType()),
+                node
+        );
     }
 }
