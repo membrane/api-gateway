@@ -120,16 +120,33 @@ public class MethodSetter {
      * @throws ParsingException If the provided type is unsupported for coercion or other unexpected issues arise.
      */
     Object coerceScalarOrReference(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
-        if (node != null && node.isTextual()) {
-            return resolveSpelValue(node.asText(), String.class, node);
-        }
-
         assert node != null;
 
-        // Scalars, enums, bean refs, "other attributes"
-        if (wanted.isEnum()) return parseEnum(wanted, node);
-        if (wanted.equals(String.class)) return node.asText();
+        if (wanted.equals(String.class)) {
+            return node.isTextual() ? resolveSpelValue(node.asText(), String.class, node) : node.asText();
+        }
 
+        if (wanted.isEnum()) return parseEnum(wanted, node);
+
+        if (node.isTextual()) {
+            String v = (String) resolveSpelValue(node.asText(), String.class, node);
+            assert v != null;
+            if (wanted == int.class || wanted == Integer.class) return parseInt(v);
+            if (wanted == long.class || wanted == Long.class) return parseLong(v);
+            if (wanted == double.class || wanted == Double.class) return parseDouble(v);
+            if (wanted == boolean.class || wanted == Boolean.class) return parseBoolean(v);
+
+            if (wanted.equals(Map.class) && hasOtherAttributes(setter))
+                return Map.of(key, v);
+
+            if (isBeanReference(wanted))
+                return resolveReference(ctx, node, key, wanted);
+
+            if (isReferenceAttribute(setter))
+                return ctx.registry().resolve(v);
+        }
+
+        // Non-textual numeric/bool handling as before
         if (wanted == int.class || wanted == Integer.class)
             return node.isInt() ? node.intValue() : parseInt(node.asText());
         if (wanted == long.class || wanted == Long.class)
@@ -138,15 +155,16 @@ public class MethodSetter {
             return node.isNumber() ? node.doubleValue() : parseDouble(node.asText());
         if (wanted == boolean.class || wanted == Boolean.class)
             return node.isBoolean() ? node.booleanValue() : parseBoolean(node.asText());
-        if (wanted.equals(Map.class) && McYamlIntrospector.hasOtherAttributes(setter))
+        if (wanted.equals(Map.class) && hasOtherAttributes(setter))
             return Map.of(key, node.asText());
 
         if (node.isTextual() && isBeanReference(wanted)) {
             return resolveReference(ctx, node, key, wanted);
         }
 
-        if (McYamlIntrospector.isReferenceAttribute(setter)) return ctx.registry().resolve(node.asText());
-        throw new ParsingException("Unsupported setter type: %s for key '%s' with node type %s".formatted(wanted.getName(), key, node.getNodeType()), node);
+        if (isReferenceAttribute(setter)) return ctx.registry().resolve(node.asText());
+        throw new ParsingException("Unsupported setter type: %s for key '%s' with node type %s"
+                .formatted(wanted.getName(), key, node.getNodeType()), node);
     }
 
     private @Nullable List<Object> getObjectList(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {

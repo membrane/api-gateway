@@ -22,12 +22,12 @@ import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
+import com.predic8.membrane.annot.yaml.spel.SpELContext;
+import com.predic8.membrane.annot.yaml.spel.SpELContextFactory;
+import com.predic8.membrane.annot.yaml.spel.SpELEngine;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.expression.*;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.lang.reflect.InvocationTargetException;
@@ -37,10 +37,12 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
-import static com.predic8.membrane.annot.yaml.HashTemplateParserContext.DOLLAR_TEMPLATE_PARSER_CONTEXT;
+import static com.predic8.membrane.annot.yaml.spel.SpELContextFactory.newContext;
 import static org.springframework.util.ReflectionUtils.doWithMethods;
 
 public final class YamlParsingUtils {
+
+    private static final StandardEvaluationContext SPEL_CTX = newContext(new SpELContext());
 
     private YamlParsingUtils() {
     }
@@ -50,8 +52,6 @@ public final class YamlParsingUtils {
 
     private static final ConcurrentHashMap<SchemaCacheKey, Schema> SCHEMA_CACHE = new ConcurrentHashMap<>();
     private static final ObjectMapper SCALAR_MAPPER = new ObjectMapper();
-    private static final ExpressionParser SPEL = new SpelExpressionParser();
-    private static final StandardEvaluationContext SPEL_CTX = newSpelContext();
 
     static void validate(Grammar grammar, JsonNode input) throws YamlSchemaValidationException {
         List<Error> errors = loadSchema(grammar).validate(input);
@@ -118,7 +118,7 @@ public final class YamlParsingUtils {
     static Object resolveSpelValue(String raw, Class<?> targetType, JsonNode node) {
         final Object value;
         try {
-            value = SPEL.parseExpression(raw, DOLLAR_TEMPLATE_PARSER_CONTEXT).getValue(SPEL_CTX);
+            value = SpELEngine.evalTemplate(raw, SPEL_CTX);
         } catch (RuntimeException e) {
             throw new ParsingException("Invalid SpEL template: %s".formatted(e.getMessage()), node);
         }
@@ -128,54 +128,6 @@ public final class YamlParsingUtils {
         if (targetType == String.class) return String.valueOf(value);
 
         return SCALAR_MAPPER.convertValue(value, targetType);
-    }
-
-    private static @NotNull String extractSpelExpression(String raw) {
-        return raw.substring(2, raw.length() - 1).trim();
-    }
-
-    private static final class SpelContext {
-        @SuppressWarnings("unused")
-        public String env(String key) {
-            return System.getenv(key);
-        }
-
-        @SuppressWarnings("unused")
-        public String env(String key, String defaultValue) {
-            String v = System.getenv(key);
-            return v != null ? v : defaultValue;
-        }
-    }
-
-    private static StandardEvaluationContext newSpelContext() {
-        StandardEvaluationContext ctx = new StandardEvaluationContext(new SpelContext());
-        ctx.setTypeLocator(typeName -> {
-            throw new EvaluationException("Type references are not allowed in SpEL.");
-        });
-
-        ctx.setPropertyAccessors(List.of());
-
-        ctx.setMethodResolvers(List.of(new EnvOnlyMethodResolver()));
-
-        ctx.setBeanResolver((context, beanName) -> {
-            throw new EvaluationException("Bean references are not allowed in SpEL.");
-        });
-
-        return ctx;
-    }
-
-    private static final class EnvOnlyMethodResolver implements MethodResolver {
-        private final org.springframework.expression.spel.support.ReflectiveMethodResolver delegate =
-                new org.springframework.expression.spel.support.ReflectiveMethodResolver();
-
-        @Override
-        public MethodExecutor resolve(EvaluationContext context, Object targetObject, String name,
-                                      List<TypeDescriptor> argumentTypes) throws AccessException {
-            if (!(targetObject instanceof SpelContext) || !"env".equals(name)) {
-                throw new AccessException("Only env(...) is allowed in SpEL.");
-            }
-            return delegate.resolve(context, targetObject, name, argumentTypes);
-        }
     }
 
 }
