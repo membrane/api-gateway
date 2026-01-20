@@ -4,15 +4,18 @@
 #
 # This tutorial shows how to use environment variables in YAML using SpEL templates:
 #   - #{env('PORT')} reads the environment variable PORT
-#   - #{env('PORT','3000')} reads PORT, or falls back to 3000 if not set
+#   - use e.g. #{env('PORT') ?: 3000} to set port 3000 as default
 #
 # 1) Set PORT
 #     Linux/macOS: export PORT=3000
 #     Windows PowerShell: $env:PORT="3000"
 #     Windows CMD: set PORT=3000
 #
-# 2) Try:
+# 2) Start membrane from the same terminal
+#
+# 3) Try:
 #     curl -v http://localhost:2000/
+#
 #
 api:
   port: 2000
