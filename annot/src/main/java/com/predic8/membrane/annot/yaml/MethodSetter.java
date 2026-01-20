@@ -121,10 +121,7 @@ public class MethodSetter {
      */
     Object coerceScalarOrReference(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
         if (node != null && node.isTextual()) {
-            String s = node.asText();
-            if (s.startsWith("#{") && !(wanted.equals(Map.class) && hasOtherAttributes(setter))) {
-                return resolveSpelValue(s, wanted, node);
-            }
+            return resolveSpelValue(node.asText(), String.class, node);
         }
 
         assert node != null;

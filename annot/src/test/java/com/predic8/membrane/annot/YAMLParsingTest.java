@@ -623,6 +623,35 @@ public class YAMLParsingTest {
     }
 
     @Test
+    public void spelTemplateNotAtBeginning() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+    
+        @MCElement(name="root", topLevel=true, component=false)
+        public class DemoElement {
+            String msg;
+            public String getMsg() { return msg; }
+    
+            @MCAttribute
+            public void setMsg(String msg) { this.msg = msg; }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        BeanRegistry br = parseYAML(result, """
+        root:
+          msg: "prefix-#{env('MEMBRANE_SPEL_TEST','X')}-suffix"
+        """);
+
+        assertStructure(br,
+                clazz("DemoElement",
+                        property("msg", value("prefix-X-suffix"))));
+    }
+
+
+    @Test
     public void postConstructAndPreDestroy() {
         var sources = splitSources(MC_MAIN_DEMO + """
         package com.predic8.membrane.demo;
