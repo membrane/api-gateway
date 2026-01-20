@@ -595,6 +595,34 @@ public class YAMLParsingTest {
     }
 
     @Test
+    public void spelEnvInYamlScalar() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        
+        @MCElement(name="root", topLevel=true, component=false)
+        public class DemoElement {
+            int timeout;
+            public int getTimeout() { return timeout; }
+        
+            @MCAttribute
+            public void setTimeout(int timeout) { this.timeout = timeout; }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        BeanRegistry br = parseYAML(result, """
+                root:
+                  timeout: "#{env('MEMBRANE_SPEL_TEST','42')}"
+                """);
+
+        assertStructure(br,
+                clazz("DemoElement",
+                        property("timeout", value(42))));
+    }
+
+    @Test
     public void postConstructAndPreDestroy() {
         var sources = splitSources(MC_MAIN_DEMO + """
         package com.predic8.membrane.demo;

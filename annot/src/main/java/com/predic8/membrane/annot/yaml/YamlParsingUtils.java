@@ -15,6 +15,7 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaLocation;
@@ -24,6 +25,10 @@ import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.expression.EvaluationException;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,6 +48,15 @@ public final class YamlParsingUtils {
     }
 
     private static final ConcurrentHashMap<SchemaCacheKey, Schema> SCHEMA_CACHE = new ConcurrentHashMap<>();
+    private static final ObjectMapper SCALAR_MAPPER = new ObjectMapper();
+    private static final ExpressionParser SPEL = new SpelExpressionParser();
+    private static StandardEvaluationContext newSpelContext() {
+        StandardEvaluationContext ctx = new StandardEvaluationContext(new SpelRoot());
+        ctx.setTypeLocator(typeName -> {
+            throw new EvaluationException("Type references are not allowed in SpEL.");
+        });
+        return ctx;
+    }
 
     static void validate(Grammar grammar, JsonNode input) throws YamlSchemaValidationException {
         List<Error> errors = loadSchema(grammar).validate(input);
@@ -103,6 +117,42 @@ public final class YamlParsingUtils {
 
         if (setters.isEmpty()) return null;
         return setters.getFirst();
+    }
+
+
+    static Object resolveSpelValue(String raw, Class<?> targetType, JsonNode node) {
+        if (!raw.endsWith("}")) {
+            throw new ParsingException("Invalid SpEL expression (missing closing '}').", node);
+        }
+
+        final Object value;
+        try {
+            value = SPEL.parseExpression(extractSpelExpression(raw)).getValue(newSpelContext());
+        } catch (RuntimeException e) {
+            throw new ParsingException("Invalid SpEL expression: %s".formatted(e.getMessage()), node);
+        }
+
+        if (value == null) return null;
+        if (targetType == String.class) return String.valueOf(value);
+
+        return SCALAR_MAPPER.convertValue(value, targetType);
+    }
+
+    private static @NotNull String extractSpelExpression(String raw) {
+        return raw.substring(2, raw.length() - 1).trim();
+    }
+
+    private static final class SpelRoot {
+        @SuppressWarnings("unused")
+        public String env(String key) {
+            return System.getenv(key);
+        }
+
+        @SuppressWarnings("unused")
+        public String env(String key, String defaultValue) {
+            String v = System.getenv(key);
+            return v != null ? v : defaultValue;
+        }
     }
 
 }

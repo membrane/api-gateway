@@ -14,21 +14,26 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
-import org.jetbrains.annotations.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.annot.MCChildElement;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.lang.model.util.*;
+import javax.lang.model.util.Types;
 import java.lang.reflect.*;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.annot.yaml.GenericYamlParser.*;
+import static com.predic8.membrane.annot.yaml.GenericYamlParser.createAndPopulateNode;
+import static com.predic8.membrane.annot.yaml.GenericYamlParser.parseListIncludingStartEvent;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static java.lang.Boolean.*;
-import static java.lang.Double.*;
-import static java.lang.Integer.*;
-import static java.lang.Long.*;
-import static java.util.Locale.*;
+import static com.predic8.membrane.annot.yaml.YamlParsingUtils.resolveSpelValue;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+import static java.lang.Long.parseLong;
+import static java.util.Locale.ROOT;
 
 public class MethodSetter {
 
@@ -115,6 +120,15 @@ public class MethodSetter {
      * @throws ParsingException If the provided type is unsupported for coercion or other unexpected issues arise.
      */
     Object coerceScalarOrReference(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
+        if (node != null && node.isTextual()) {
+            String s = node.asText();
+            if (s.startsWith("#{") && !(wanted.equals(Map.class) && hasOtherAttributes(setter))) {
+                return resolveSpelValue(s, wanted, node);
+            }
+        }
+
+        assert node != null;
+
         // Scalars, enums, bean refs, "other attributes"
         if (wanted.isEnum()) return parseEnum(wanted, node);
         if (wanted.equals(String.class)) return node.asText();

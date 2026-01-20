@@ -110,8 +110,10 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
     public T typeAllowingString(String type) {
         if (STRING_ALLOWED_TYPES.contains(type)) {
             this.typeList = List.of(type, "string");
+            this.type = null;
         } else {
             this.type = type;
+            this.typeList = null;
         }
         return self();
     }
