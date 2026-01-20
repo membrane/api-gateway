@@ -136,71 +136,51 @@ public class MethodSetter {
     }
 
     private Object coerceTextual(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
-        final String raw = node.asText();
+        final String value = evaluateSpelForString(node, key, node.asText()).trim();
 
-        final String v;
+        if (isBoolean(wanted)) return parseBoolean(value);
+        if (isNumber(wanted)) return parseNumericOrThrow(key, wanted, value, node);
+        if (wanted.equals(Map.class) && hasOtherAttributes(setter)) return Map.of(key, value);
+        if (isBeanReference(wanted)) return resolveReference(ctx, node, key, wanted);
+
+        if (isReferenceAttribute(setter))
+            return ctx.registry().resolve(value);
+
+        throw unsupported(wanted, key, node);
+    }
+
+    /**
+     * Evaluates the given SpEL expression against the specified JSON node and returns the result as a string.
+     */
+    private static String evaluateSpelForString(JsonNode node, String key, String value) {
         try {
-            v = (String) resolveSpelValue(raw, String.class, node);
+            return (String) resolveSpelValue(value, String.class, node);
         } catch (ParsingException pe) {
             throw new ParsingException("Invalid SpEL in '%s': %s".formatted(key, pe.getMessage()), node);
         }
-
-        if (v == null) {
-            throw new ParsingException("SpEL in '%s' evaluated to null, but '%s' expects %s."
-                    .formatted(key, key, wanted.getSimpleName()), node);
-        }
-
-        String t = v.trim();
-
-        if (wanted == boolean.class || wanted == Boolean.class)
-            return parseBoolean(t);
-
-        if (wanted == int.class || wanted == Integer.class ||
-                wanted == long.class || wanted == Long.class ||
-                wanted == double.class || wanted == Double.class) {
-            return parseNumericOrThrow(key, wanted, v, t, node);
-        }
-
-        if (wanted.equals(Map.class) && hasOtherAttributes(setter))
-            return Map.of(key, v);
-
-        if (isBeanReference(wanted))
-            return resolveReference(ctx, node, key, wanted);
-
-        if (isReferenceAttribute(setter))
-            return ctx.registry().resolve(v);
-
-        throw unsupported(wanted, key, node);
     }
 
-    private Object parseNumericOrThrow(String key, Class<?> wanted, String original, String trimmed, JsonNode node) {
+    /**
+     * Parses a numeric string value into the desired numeric type and returns the parsed result.
+     * If the input string cannot be converted to the specified type, a {@code ParsingException} is thrown.
+     */
+    private Object parseNumericOrThrow(String key, Class<?> wanted, String value, JsonNode node) {
         try {
-            if (wanted == int.class || wanted == Integer.class) return parseInt(trimmed);
-            if (wanted == long.class || wanted == Long.class) return parseLong(trimmed);
-            if (wanted == double.class || wanted == Double.class) return parseDouble(trimmed);
+            if (isInteger(wanted)) return parseInt(value);
+            if (isLong(wanted)) return parseLong(value);
+            if (isDouble(wanted)) return parseDouble(value);
         } catch (NumberFormatException nfe) {
-            throw new ParsingException(
-                    "Invalid value for '%s': expected %s, but got '%s'. If you meant SpEL, use \"#{...}\" (e.g. \"#{env('PORT')}\")."
-                            .formatted(key, wanted.getSimpleName(), original),
-                    node
-            );
+            throw new ParsingException("Invalid value for '%s': expected %s, but got '%s'. If you meant SpEL, use \"#{...}\" (e.g. \"#{env('PORT')}\")." .formatted(key, wanted.getSimpleName(), value), node);
         }
         throw unsupported(wanted, key, node);
     }
 
-    private Object coerceNonTextual(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
-        // Non-textual numeric/bool handling as before
-        if (wanted == int.class || wanted == Integer.class)
-            return node.isInt() ? node.intValue() : parseInt(node.asText());
-        if (wanted == long.class || wanted == Long.class)
-            return node.isLong() || node.isInt() ? node.longValue() : parseLong(node.asText());
-        if (wanted == double.class || wanted == Double.class)
-            return node.isNumber() ? node.doubleValue() : parseDouble(node.asText());
-        if (wanted == boolean.class || wanted == Boolean.class)
-            return node.isBoolean() ? node.booleanValue() : parseBoolean(node.asText());
-        if (wanted.equals(Map.class) && hasOtherAttributes(setter))
-            return Map.of(key, node.asText());
-
+    private Object coerceNonTextual(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
+        if (isInteger(wanted)) return node.isInt() ? node.intValue() : parseInt(node.asText());
+        if (isLong(wanted)) return node.isLong() || node.isInt() ? node.longValue() : parseLong(node.asText());
+        if (isDouble(wanted)) return node.isNumber() ? node.doubleValue() : parseDouble(node.asText());
+        if (isBoolean(wanted)) return node.isBoolean() ? node.booleanValue() : parseBoolean(node.asText());
+        if (wanted.equals(Map.class) && hasOtherAttributes(setter)) return Map.of(key, node.asText());
         if (isReferenceAttribute(setter)) return ctx.registry().resolve(node.asText());
         throw unsupported(wanted, key, node);
     }
@@ -281,11 +261,28 @@ public class MethodSetter {
         return null;
     }
 
-    private static ParsingException unsupported(Class<?> wanted, String key, JsonNode node) {
-        return new ParsingException(
-                "Unsupported setter type: %s for key '%s' with node type %s"
-                        .formatted(wanted.getName(), key, node.getNodeType()),
-                node
-        );
+    private static boolean isInteger(Class<?> wanted) {
+        return wanted == int.class || wanted == Integer.class;
     }
+
+    private static boolean isLong(Class<?> wanted) {
+        return wanted == long.class || wanted == Long.class;
+    }
+
+    private static boolean isDouble(Class<?> wanted) {
+        return wanted == double.class || wanted == Double.class;
+    }
+
+    private static boolean isBoolean(Class<?> wanted) {
+        return wanted == boolean.class || wanted == Boolean.class;
+    }
+
+    private static boolean isNumber(Class<?> wanted) {
+        return isInteger(wanted) || isLong(wanted) || isDouble(wanted);
+    }
+
+    private static ParsingException unsupported(Class<?> wanted, String key, JsonNode node) {
+        return new ParsingException("Unsupported setter type: %s for key '%s' with node type %s".formatted(wanted.getName(), key, node.getNodeType()), node);
+    }
+
 }

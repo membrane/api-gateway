@@ -115,19 +115,18 @@ public final class YamlParsingUtils {
     }
 
 
-    static Object resolveSpelValue(String raw, Class<?> targetType, JsonNode node) {
+    static Object resolveSpelValue(String expression, Class<?> targetType, JsonNode node) {
         final Object value;
         try {
-            value = eval(raw, SPEL_CTX);
+            value = eval(expression, SPEL_CTX);
         } catch (RuntimeException e) {
-            throw new ParsingException("Invalid SpEL template: %s".formatted(e.getMessage()), node);
+            throw new ParsingException("Invalid SpEL expression: %s".formatted(e.getMessage()), node);
         }
 
         if (value == null) return null;
-        if (targetType.isInstance(value)) return value;
         if (targetType == String.class) return String.valueOf(value);
 
-        return SCALAR_MAPPER.convertValue(value, targetType);
+        return targetType.isInstance(value) ? value : SCALAR_MAPPER.convertValue(value, targetType);
     }
 
 }
