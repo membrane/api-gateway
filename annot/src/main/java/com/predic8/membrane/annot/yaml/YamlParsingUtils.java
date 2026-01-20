@@ -23,7 +23,6 @@ import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
 import com.predic8.membrane.annot.yaml.spel.SpELContext;
-import com.predic8.membrane.annot.yaml.spel.SpELContextFactory;
 import com.predic8.membrane.annot.yaml.spel.SpELEngine;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -38,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.annot.yaml.spel.SpELContextFactory.newContext;
+import static com.predic8.membrane.annot.yaml.spel.SpELEngine.eval;
 import static org.springframework.util.ReflectionUtils.doWithMethods;
 
 public final class YamlParsingUtils {
@@ -118,7 +118,7 @@ public final class YamlParsingUtils {
     static Object resolveSpelValue(String raw, Class<?> targetType, JsonNode node) {
         final Object value;
         try {
-            value = SpELEngine.evalTemplate(raw, SPEL_CTX);
+            value = eval(raw, SPEL_CTX);
         } catch (RuntimeException e) {
             throw new ParsingException("Invalid SpEL template: %s".formatted(e.getMessage()), node);
         }

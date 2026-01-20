@@ -13,7 +13,7 @@ public final class SpELEngine {
 
     private SpELEngine() {}
 
-    public static Object evalTemplate(String template, StandardEvaluationContext ctx) {
+    public static Object eval(String template, StandardEvaluationContext ctx) {
         try {
             return PARSER
                     .parseExpression(template, DOLLAR_TEMPLATE_PARSER_CONTEXT)

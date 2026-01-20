@@ -600,7 +600,7 @@ public class YAMLParsingTest {
         package com.predic8.membrane.demo;
         import com.predic8.membrane.annot.*;
         
-        @MCElement(name="root", topLevel=true, component=false)
+        @MCElement(name="root", topLevel=true, component=false, collapsed=true)
         public class DemoElement {
             int timeout;
             public int getTimeout() { return timeout; }
@@ -613,8 +613,7 @@ public class YAMLParsingTest {
         assertCompilerResult(true, result);
 
         BeanRegistry br = parseYAML(result, """
-                root:
-                  timeout: "#{env('MEMBRANE_SPEL_TEST','42')}"
+                root: "#{env('MEMBRANE_SPEL_TEST','42')}"
                 """);
 
         assertStructure(br,

@@ -356,21 +356,8 @@ public class GenericYamlParser {
         }
     }
 
-
     static Object convertScalarOrSpel(JsonNode node, Class<?> targetType) {
-        if (node != null && node.isTextual()) {
-            String s = node.asText();
-            if (targetType == String.class) {
-                return resolveSpelValue(s, String.class, node);
-            }
-
-            Object v = resolveSpelValue(s, targetType, node);
-            if (v == null) {
-                throw new IllegalArgumentException("SpEL evaluated to null.");
-            }
-            return v;
-        }
-
-        return SCALAR_MAPPER.convertValue(node, targetType);
+        if (node == null || !node.isTextual()) return SCALAR_MAPPER.convertValue(node, targetType);
+        return resolveSpelValue(node.asText(), targetType, node);
     }
 }
