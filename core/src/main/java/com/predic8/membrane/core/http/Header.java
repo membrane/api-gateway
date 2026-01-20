@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.*;
 import static java.util.Collections.*;
+import static java.util.Locale.ROOT;
 import static java.util.regex.Pattern.*;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.codec.binary.Base64.*;
@@ -458,7 +459,7 @@ public class Header {
             return null;
 
         try {
-            return new ContentType(getContentType()).getParameter("charset").toUpperCase();
+            return new ContentType(getContentType()).getParameter("charset").toUpperCase(ROOT);
         } catch (Exception e) {
             log.debug("Failed to parse Content-Type: {}", getContentType());
             return null;
