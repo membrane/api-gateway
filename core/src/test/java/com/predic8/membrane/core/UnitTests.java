@@ -24,7 +24,7 @@ import org.junit.platform.suite.api.*;
         "com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2InterceptorTest", // Disabled: incomplete setup; AuthorizationService (and other) not configured
         "com.predic8.membrane.core.util.MemcachedConnectorTest" // Disabled: not standalone; needs Memcached at 127.0.0.1:11211 (fails with Connection refused)
 })
-public class UnitTests {
+public class    UnitTests {
     /*
      * Uncomment below to speed up test execution!
      *

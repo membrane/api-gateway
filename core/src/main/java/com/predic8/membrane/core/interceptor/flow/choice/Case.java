@@ -27,7 +27,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 @MCElement(name = "case", component = false)
-public class Case extends InterceptorContainer implements XMLSupport {
+public class Case extends Choice implements XMLSupport {
 
     private static final Logger log = LoggerFactory.getLogger(Case.class);
 
