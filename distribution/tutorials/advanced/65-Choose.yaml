@@ -5,6 +5,7 @@
 # Try:
 #   1.) curl localhost:2000
 #   2.) curl -H "X-Foo: 1" localhost:2000
+#   3.) curl -H "X-Bar: 1" localhost:2000
 #
 api:
   port: 2000
@@ -15,6 +16,11 @@ api:
             flow:
               - return:
                   status: 200
+        - case:
+            test: headers['X-Bar'] != null
+            flow:
+              - return:
+                  status: 300
         - otherwise:
             - return:
                 status: 400
