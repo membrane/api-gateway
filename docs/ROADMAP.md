@@ -47,7 +47,9 @@ PRIO 3:
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
   
-  
+Breaking Changes:
+- Choose Interceptor configuration
+
 # 7.0.4
 
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
