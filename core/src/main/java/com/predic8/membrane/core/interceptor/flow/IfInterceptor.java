@@ -126,7 +126,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
 
     @Override
     public String getShortDescription() {
-        StringBuilder ret = new StringBuilder("if (" + test + ") {");
+        StringBuilder ret = new StringBuilder("if (%s) {".formatted(test));
         for (Interceptor i : getFlow()) {
             ret.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;").append(i.getDisplayName());
         }

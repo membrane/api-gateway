@@ -86,6 +86,9 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     @Override
     public void init() {
         super.init();
+        if (xmlConfig == null) {
+            xmlConfig = router.getRegistry().getBean(XmlConfig.class).orElseGet(() -> null);
+        }
         if (test != null && !test.isEmpty()) {
             exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, test);
         }
