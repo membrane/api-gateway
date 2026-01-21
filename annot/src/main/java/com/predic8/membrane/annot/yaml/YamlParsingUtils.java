@@ -23,7 +23,6 @@ import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
 import com.predic8.membrane.annot.yaml.spel.SpELContext;
-import com.predic8.membrane.annot.yaml.spel.SpELEngine;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +41,7 @@ import static org.springframework.util.ReflectionUtils.doWithMethods;
 
 public final class YamlParsingUtils {
 
-    private static final StandardEvaluationContext SPEL_CTX = newContext(new SpELContext());
+    private static final StandardEvaluationContext SPEL_CTX = newContext();
 
     private YamlParsingUtils() {
     }

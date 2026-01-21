@@ -12,16 +12,15 @@ public final class SpELContextFactory {
 
     private SpELContextFactory() {}
 
-    public static StandardEvaluationContext newContext(SpELContext root) {
-        StandardEvaluationContext ctx = new StandardEvaluationContext(root);
+    public static StandardEvaluationContext newContext() {
+        StandardEvaluationContext ctx = new StandardEvaluationContext(new SpELContext());
 
         ctx.setTypeLocator(typeName -> {
             throw new EvaluationException("Type references are not allowed in SpEL.");
         });
 
-        ctx.setPropertyAccessors(List.of());
+        ctx.setPropertyAccessors(List.of(new EnvPropertyAccessor()));
 
-        // Allow only methods defined on SpELContext
         ctx.setMethodResolvers(List.of(new RootOnlyMethodResolver(SpELContext.class)));
 
         ctx.setBeanResolver((context, beanName) -> {
