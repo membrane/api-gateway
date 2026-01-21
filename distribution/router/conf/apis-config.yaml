@@ -2,7 +2,7 @@ configuration:
   production: true # Prevent detailed errors from leaking sensitive information
   hotDeploy: true # Whether changes to the configuration should automatically trigger a restart
   retryInit: true # Whether the router should continue startup if initialisation of a rule failed
-  retryInitInterval: 10 # Number of milliseconds after which reinitialization should be attempted periodically
+  retryInitInterval: 1000 # Number of milliseconds after which reinitialization should be attempted periodically
   jmxRouterName: demo # Sets the JMX name for the router
   uriFactory:
     allowIllegalCharacters: true
