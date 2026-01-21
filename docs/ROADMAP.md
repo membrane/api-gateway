@@ -21,6 +21,15 @@ PRIO 1:
 - Central description of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
+- Choose:
+  - YAML configuration needs makeover.
+    - Maybe take out cases?
+    - Now
+      - choose:
+          cases:
+            - case: ...
+            - case: ...
+            - otherwise:
 
 
 PRIO 2:
