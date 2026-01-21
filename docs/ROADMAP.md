@@ -21,12 +21,33 @@ PRIO 1:
 - Central description of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
+- Variable substitution in YAML files
+   - e.g. #{}
+   - Problem port is an integer
+   - JSON Schema support
+
+- Choose:
+  - YAML configuration needs makeover.
+    - Maybe take out cases?
+    - Now
+      - choose:
+          cases:
+            - case: ...
+            - case: ...
+            - otherwise:
 
 
 PRIO 2:
 - Fix maven central publish job
 - Tutorial: Replace httpbin and catfact TB
 - use @MCElement(collapsed=true) for suitable classes
+- if:
+    test: param.case == 'c'
+    flow:
+      - return:
+          status: 500
+    else:
+      - 
 
 PRIO 3:
 
@@ -106,53 +127,3 @@ Breaking Changes:
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
-- JdbcUserDataProvider
-  - Migrate to PreparedStatement
-- OAuth2 refactoring
-  - In Interface com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService
-    - Remove throws:
-      - public abstract String getJwksEndpoint() throws Exception;
-      - public abstract void init() throws Exception;
-      - getEndSessionEndpoint() throws Exception
-      - doDynamicRegistration(List<String> callbackURLs) throws Exception
-- Reduce compiler warnings when building the project with maven
-      
-## Release Notes:
-
-- JSON Schema validation support for JSON Schema 2019-09 and 2020-12 (via networknt json-schema-validator).
-  - Document how to select the schema version (e.g., schemaVersion attribute) and the "format" behavior (annotation vs assertion), with a link to usage docs/examples.
-
-# 6.3.0
-
-- Refactor: Beautifier to use the Code from above
-- Describe RPM Setup (TP)
-- Refactor: interceptor.session
-
-### Internal
-- proxies-6.xsd
-  - new Namespace e.g. https://membrane-api.io...6
-- '<spring:bean class="com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyFileStore">'
-  durch '<apiKeyFileStore .. />' ersetzen (dafür topLevel=true) BT
-
-# Discussion
-
-- Util function to sanitize HTTP Headers in Logs: Authorization, Proxy-Authorization, Cookie, Set-Cookie
-  Replace value with *****
-  - Use it in MessageTracer
-
-
-- <api> without port => Change from port 80 to matches all open ports
-- ProblemDetails: (TB)
-  - When flow = RESPONSE it should always be an internal error!
-- For ADRs
-  - Response Flow guarantee there is a response
-  - Request Flow guarantee there is a request
-  - Return guarantee Response is there
-
-- Wenn Exception/Abort passiert sofort Response mit Error setzen.
-
-
-- Refactor
-  - RouterCli:
-    - Extract JWT functions
-  - SpringConfigurationXSDGeneratingAnnotationProcessor
