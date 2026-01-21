@@ -27,6 +27,13 @@ PRIO 2:
 - Fix maven central publish job
 - Tutorial: Replace httpbin and catfact TB
 - use @MCElement(collapsed=true) for suitable classes
+- if:
+    test: param.case == 'c'
+    flow:
+      - return:
+          status: 500
+    else:
+      - 
 
 PRIO 3:
 

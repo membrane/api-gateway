@@ -22,6 +22,9 @@ import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.slf4j.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
@@ -48,6 +51,8 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
     private ExchangeExpression exchangeExpression;
     private XmlConfig xmlConfig;
 
+    private List<Interceptor> elseFlow = new ArrayList<>();
+
     public IfInterceptor() {
         name = "if";
     }
@@ -55,7 +60,12 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
     @Override
     public void init() {
         super.init();
+        initElse();
         exchangeExpression = expression(this, language, test);
+    }
+
+    private void initElse() {
+        elseFlow.forEach(i -> i.init(router));
     }
 
     @Override
@@ -83,15 +93,18 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
             log.debug("Expression {} returned null and is therefore interpreted as false", test);
             result = false;
         }
-        if (log.isDebugEnabled())
-            log.debug("Expression {} evaluated to {}.", test, result);
+       log.debug("Expression {} evaluated to {}.", test, result);
 
-        if (!result)
-            return CONTINUE;
+        if (!result) {
+            return invokeFlowHandlers(exc, flow, elseFlow);
+        }
+        return invokeFlowHandlers(exc, flow, getFlow());
+    }
 
+    private Outcome invokeFlowHandlers(Exchange exc, Flow flow, List<Interceptor> interceptors) {
         return switch (flow) {
-            case REQUEST -> getFlowController().invokeRequestHandlers(exc, getFlow());
-            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, getFlow());
+            case REQUEST -> getFlowController().invokeRequestHandlers(exc, interceptors);
+            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, interceptors);
             default -> throw new RuntimeException("Should never happen");
         };
     }
@@ -126,7 +139,7 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
 
     @Override
     public String getShortDescription() {
-        StringBuilder ret = new StringBuilder("if (" + test + ") {");
+        StringBuilder ret = new StringBuilder("if (%s) {".formatted(test));
         for (Interceptor i : getFlow()) {
             ret.append("<br/>&nbsp;&nbsp;&nbsp;&nbsp;").append(i.getDisplayName());
         }
@@ -147,5 +160,19 @@ public class IfInterceptor extends AbstractFlowWithChildrenInterceptor implement
     @Override
     public XmlConfig getXmlConfig() {
         return xmlConfig;
+    }
+
+    /**
+     * Sets the list of interceptors to be executed when the test condition evaluates to false.
+     *
+     * @param elseFlow the list of {@link Interceptor} instances to be executed in the "else" case
+     */
+    @MCChildElement(order = 100)
+    public void setElse(List<Interceptor> elseFlow) {
+        this.elseFlow = elseFlow;
+    }
+
+    public List<Interceptor> getElseInterceptor() {
+        return elseFlow;
     }
 }
