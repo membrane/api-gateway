@@ -14,6 +14,4 @@
 
 package com.predic8.membrane.core.interceptor.flow.choice;
 
-import com.predic8.membrane.annot.MCElement;
-
 public abstract class Choice extends InterceptorContainer {}
