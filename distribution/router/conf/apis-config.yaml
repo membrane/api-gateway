@@ -1,0 +1,36 @@
+configuration:
+  production: true # Prevent detailed errors from leaking sensitive information
+  hotDeploy: true # Whether changes to the configuration should automatically trigger a restart
+  retryInit: true # Whether the router should continue startup if initialisation of a rule failed
+  retryInitInterval: 10 # Number of milliseconds after which reinitialization should be attempted periodically
+  jmxRouterName: demo # Sets the JMX name for the router
+  uriFactory:
+    allowIllegalCharacters: true
+    autoEscapeBackslashes: true
+---
+# Global plugins are applied to all endpoints, enabling centralised features like e.g. as global user authentication
+global:
+  - setHeader: # adds the "foo: bar" header to every request and response
+      name: foo
+      value: bar
+---
+components:
+  demoComponent: # id for the component
+    beautifier: {} # referencable plugin
+  jmx: # id for the bean
+    bean:
+      class: com.predic8.membrane.core.jmx.JmxExporter # Exposes runtime metrics and management operations via JMX
+---
+internal: # Internal proxy that can only be invoked by other proxies within the gateway
+  name: internalProxy # The name used to invoke the internal proxy
+  flow:
+    - log: {}
+  target:
+    url: https://api.predic8.de
+---
+api:
+  port: 2000
+  flow:
+    - $ref: '#/components/demoComponent' # references the demo component
+  target:
+    url: internal://internalProxy # uses the internal proxy as the target
