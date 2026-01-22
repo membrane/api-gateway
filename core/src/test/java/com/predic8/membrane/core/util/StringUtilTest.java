@@ -18,8 +18,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.util.StringUtil.*;
-import static com.predic8.membrane.core.util.StringUtil.splitByComma;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StringUtilTest {

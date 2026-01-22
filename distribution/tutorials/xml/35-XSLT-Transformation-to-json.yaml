@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: XSLT Transformation from XML to JSON
+#
+# The `transform` plugin uses a stylesheet to transform XML into a
+# different text format. One common use case is to transform XML into JSON.
+# The templates in the `to-json.xsl` stylesheet could be used as a starting point
+# for own XML to JSON transformations.
+#
+# Try:
+#   curl -d @books.xml -H "Content-Type: text/xml" localhost:2000
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - transform:
+            # The stylesheet to use for the transformation
+            xslt: to-json.xsl
+        - setHeader:
+            name: Content-Type
+            value: application/json
+          # The beautifier needs the Content-Type to format the output as JSON
+        - beautifier: {}
+    - return:
+        status: 200

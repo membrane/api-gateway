@@ -28,7 +28,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.util.StringUtil.*;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.lang.Boolean.*;
 import static java.nio.charset.StandardCharsets.*;
 
