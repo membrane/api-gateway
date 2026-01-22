@@ -118,7 +118,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .internal("proxy", exc.getProxy().getName())
                     .internal("url",exc.getRequest().getUri())
                     .internal("hostHeader", exc.getRequest().getHeader().getHost())
-                    .detail("The exchange's destination URI / does not start with 'http'. Specify a 'target' or make sure the exchanges destinations list contains a valid URI.")
+                    .detail(e.getMessage())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (ProtocolUpgradeDeniedException e) {
