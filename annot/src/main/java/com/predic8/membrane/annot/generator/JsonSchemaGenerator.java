@@ -27,10 +27,7 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
@@ -183,7 +180,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
             AbstractSchema<?> s = SchemaFactory.from(type)
                     .name(parserName)
-                    .type(type)
+                    .typeAllowingString(type)
                     .description(getDescriptionContent(ai).isEmpty() ? getDescriptionContent(ei) : getDescriptionContent(ai));
 
             if (ai.isEnum(processingEnv.getTypeUtils()) && !"boolean".equals(type)) {
@@ -252,7 +249,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         AbstractSchema<?> s = SchemaFactory.from(type)
                 .name(ai.getXMLName())
                 .description(getDescriptionContent(ai))
-                .type(type)
+                .typeAllowingString(type)
                 .required(ai.isRequired());
         // Add enum values if the type is an enum. If it is an enum for a boolean value, rely on the "boolean" type.
         if (ai.isEnum(processingEnv.getTypeUtils()) && !"boolean".equals(type)) {
