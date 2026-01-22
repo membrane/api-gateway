@@ -22,7 +22,6 @@ import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
-import com.predic8.membrane.annot.yaml.spel.SpELContext;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.NotNull;

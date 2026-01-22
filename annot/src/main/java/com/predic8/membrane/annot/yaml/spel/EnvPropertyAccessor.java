@@ -1,6 +1,8 @@
 package com.predic8.membrane.annot.yaml.spel;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.expression.AccessException;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.PropertyAccessor;
@@ -8,13 +10,14 @@ import org.springframework.expression.TypedValue;
 
 import static com.predic8.membrane.annot.yaml.spel.EnvPropertyAccessor.EnvVariables.INSTANCE;
 import static java.lang.System.getenv;
-import static java.util.Locale.ROOT;
 
 public final class EnvPropertyAccessor implements PropertyAccessor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EnvPropertyAccessor.class);
+
     @Override
     public Class<?>[] getSpecificTargetClasses() {
-        return new Class<?>[] { SpELContext.class, EnvVariables.class };
+        return new Class<?>[]{SpELContext.class, EnvVariables.class};
     }
 
     @Override
@@ -29,7 +32,11 @@ public final class EnvPropertyAccessor implements PropertyAccessor {
             return new TypedValue(INSTANCE);
         }
         if (target instanceof EnvVariables) {
-            return new TypedValue(getenv(name.toUpperCase(ROOT)));
+            String value = getenv(name);
+            if (value == null) {
+                LOG.warn("Environment variable '{}' not found. Note: env lookups are case-sensitive.", name);
+            }
+            return new TypedValue(value);
         }
         throw new AccessException("Unsupported target: " + target);
     }

@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
 #
-# Tutorial: Environment Variables via SpEL (#{env(...)})
+# Tutorial: Environment Variables via SpEL (#{env.})
 #
 # This tutorial shows how to use environment variables in YAML using SpEL templates:
 #   - #{env.port} reads the environment variable PORT
@@ -11,7 +11,7 @@
 #     Windows PowerShell: $env:PORT="3000"
 #     Windows CMD: set PORT=3000
 #
-# 2) Start membrane from the same terminal
+# 2) Start membrane from the same terminal so the env var is available
 #
 # 3) Try:
 #     curl -v http://localhost:2000/

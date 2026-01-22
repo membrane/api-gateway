@@ -613,7 +613,7 @@ public class YAMLParsingTest {
         assertCompilerResult(true, result);
 
         BeanRegistry br = parseYAML(result, """
-                root: "#{env('MEMBRANE_SPEL_TEST') ?: '42'}"
+                root: "#{env.MEMBRANE_SPEL_TEST ?: '42'}"
                 """);
 
         assertStructure(br,
@@ -641,7 +641,7 @@ public class YAMLParsingTest {
 
         BeanRegistry br = parseYAML(result, """
         root:
-          msg: "prefix-#{env('MEMBRANE_SPEL_TEST') ?: 'X'}-suffix"
+          msg: "prefix-#{env.MEMBRANE_SPEL_TEST ?: 'X'}-suffix"
         """);
 
         assertStructure(br,
