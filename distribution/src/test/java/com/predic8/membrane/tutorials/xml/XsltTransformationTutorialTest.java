@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.*;
 public class XsltTransformationTutorialTest extends AbstractXmlTutorialTest{
     @Override
     protected String getTutorialYaml() {
-        return "40-XSLT-transformation.yaml";
+        return "40-XSLT-Transformation-group.yaml";
     }
 
     @Test
