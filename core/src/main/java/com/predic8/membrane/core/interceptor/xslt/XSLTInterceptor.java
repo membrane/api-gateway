@@ -108,7 +108,9 @@ public class XSLTInterceptor extends AbstractInterceptor {
         try {
             xsltTransformer = new XSLTTransformer(xslt, router, getConcurrency());
         } catch (Exception e) {
-            throw new ConfigurationException("Could not create XSLT transformer", e);
+			      log.debug("",e);
+            throw new ConfigurationException("Could not create XSLT transformer",e);
+
         }
     }
 
