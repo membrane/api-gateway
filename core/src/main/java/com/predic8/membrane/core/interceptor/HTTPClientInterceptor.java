@@ -118,7 +118,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .internal("proxy", exc.getProxy().getName())
                     .internal("url",exc.getRequest().getUri())
                     .internal("hostHeader", exc.getRequest().getHeader().getHost())
-                    .internal(MESSAGE, e.getMessage())
                     .detail(e.getMessage())
                     .buildAndSetResponse(exc);
             return ABORT;
