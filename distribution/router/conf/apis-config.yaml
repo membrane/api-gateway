@@ -1,19 +1,37 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+
+# This is an example config demonstrating the basic structure of a Membrane API Gateway configuration.
+# It focuses on the main configuration sections where you can attach your plugins.
+# It also shows how to define reusable components and how to reference them from other sections.
+# For plugin information and more detailed examples, please refer to https://www.membrane-api.io/
+---
+
+# Global router settings (use exactly one `configuration` block).
+# Note: changes here require a full gateway restart and are not applied via hotDeploy.
 configuration:
-  production: true # Prevent detailed errors from leaking sensitive information
+  production: true # Reduces the amount of information in error messages to prevent leaking sensitive information
+
+  # Note: hotDeploy, retryInit and retryInitInterval is currently only available for XML configuration.
+  # YAML support is planned.
   hotDeploy: true # Whether changes to the configuration should automatically trigger a restart
   retryInit: true # Whether the router should continue startup if initialisation of a rule failed
   retryInitInterval: 1000 # Number of milliseconds after which reinitialization should be attempted periodically
+
   jmxRouterName: demo # Sets the JMX name for the router
+
   uriFactory:
-    allowIllegalCharacters: true
-    autoEscapeBackslashes: true
+    allowIllegalCharacters: true # Allow non-RFC-compliant characters in URIs
+    autoEscapeBackslashes: true # Escape backslashes in incoming URIs (\\ -> %5C)
 ---
-# Global plugins are applied to all endpoints, enabling centralised features like e.g. as global user authentication
+
+# Global plugins are applied to all endpoints, enabling centralised features like e.g. global user authentication
 global:
   - setHeader: # adds the "foo: bar" header to every request and response
       name: foo
       value: bar
 ---
+
+# Define reusable plugins and custom beans that can be referenced elsewhere in the config.
 components:
   demoComponent: # id for the component
     beautifier: {} # referencable plugin
@@ -21,13 +39,17 @@ components:
     bean:
       class: com.predic8.membrane.core.jmx.JmxExporter # Exposes runtime metrics and management operations via JMX
 ---
-internal: # Internal proxy that can only be invoked by other proxies within the gateway
+
+# Internal proxy that can only be invoked by other proxies within the gateway
+internal:
   name: internalProxy # The name used to invoke the internal proxy
   flow:
     - log: {}
   target:
     url: https://api.predic8.de
 ---
+
+# API endpoint configuration
 api:
   port: 2000
   flow:
