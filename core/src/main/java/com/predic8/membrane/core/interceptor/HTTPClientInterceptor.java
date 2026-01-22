@@ -115,10 +115,10 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Request path or 'Host' header is malformed")
                     .addSubSee("malformed-url")
-                    .exception(e)
                     .internal("proxy", exc.getProxy().getName())
                     .internal("url",exc.getRequest().getUri())
                     .internal("hostHeader", exc.getRequest().getHeader().getHost())
+                    .detail("The exchange's destination URI / does not start with 'http'. Specify a 'target' or make sure the exchanges destinations list contains a valid URI.")
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (ProtocolUpgradeDeniedException e) {
