@@ -28,7 +28,6 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.lang.Boolean.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -81,29 +80,23 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
                 return type.cast(FALSE);
             }
             return null;
-        } catch (InvalidPathException ipe) {
-            var msg = "%s is an invalid jsonpath: %s".formatted(expression, ipe.getMessage());
-            log.error(msg);
-            throw new ExchangeExpressionException(expression, ipe, msg)
+        } catch (InvalidPathException e) {
+            log.error("Invalid JSONPath: {}", expression);
+            throw new ExchangeExpressionException(expression, e, "Invalid JSONPath.")
                     .excludeException();
         } catch (MismatchedInputException e) {
-            String msg = getErrorMessageForJsonPath(exchange, flow);
-            log.info(msg);
-            throw new ExchangeExpressionException(expression, e, msg)
+            log.info("Error evaluating JSONPath: {} Token: {} Target: {}", expression,e.getCurrentToken(),e.getTargetType());
+            throw new ExchangeExpressionException(expression, e, "Error evaluating JSONPath")
+                    .body(exchange.getMessage(flow).getBodyAsStringDecoded())
+                    .extension("token", e.getCurrentToken())
+                    .extension("targetType", e.getTargetType())
                     .excludeException();
         } catch (Exception e) {
-            var msg = "Error evaluating Jsonpath %s. Got message %s".formatted(expression, e.getMessage());
-            log.info(msg);
-            throw new ExchangeExpressionException(expression, e,msg);
+            log.info("Error evaluating JSONPath: {}", expression);
+            throw new ExchangeExpressionException(expression, e, "Error evaluating JSONPath")
+                    .body(exchange.getMessage(flow).getBodyAsStringDecoded())
+                    .excludeException();
         }
-    }
-
-    private @NotNull String getErrorMessageForJsonPath(Exchange exchange, Flow flow) {
-        String body = exchange.getMessage(flow).getBodyAsStringDecoded();
-        if (body == null || body.isEmpty()) {
-            return "Error evaluating Jsonpath %s. Body is empty!".formatted(expression);
-        }
-        return "Error evaluating Jsonpath %s. Body is: %s".formatted(expression, truncateAfter(body, 200));
     }
 
     private <T> @Nullable T castType(Exchange exchange, Flow flow, Class<T> type) throws IOException {
