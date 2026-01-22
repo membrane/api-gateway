@@ -53,7 +53,7 @@ public class FlowTestInterceptors {
 
     public static ChooseInterceptor CHOOSE(Otherwise otherwise, Case... cases) {
         return new ChooseInterceptor() {{
-            var list = new ArrayList<Choice>(cases.length + 1);
+            var list = new ArrayList<AbstractCaseOtherwise>(cases.length + 1);
             Collections.addAll(list, cases);
             if (otherwise != null) list.add(otherwise);
             setChoices(list);

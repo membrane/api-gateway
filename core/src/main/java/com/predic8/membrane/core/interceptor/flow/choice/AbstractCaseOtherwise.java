@@ -14,4 +14,4 @@
 
 package com.predic8.membrane.core.interceptor.flow.choice;
 
-public abstract class Choice extends InterceptorContainer {}
+public abstract class AbstractCaseOtherwise extends InterceptorContainer {}

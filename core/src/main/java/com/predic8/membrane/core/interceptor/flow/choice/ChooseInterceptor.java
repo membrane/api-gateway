@@ -34,11 +34,31 @@ import static java.util.stream.Stream.*;
  * Evaluates {@link Case} elements in order and runs the first matching flow.
  * If no case matches, an optional trailing {@link Otherwise} is executed.
  * The "otherwise" element must be the last element of the list.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - choose:
+ *         - case:
+ *             test: headers['X-Foo'] != null
+ *             flow:
+ *               - return:
+ *                   status: 200
+ *         - case:
+ *             test: headers['X-Bar'] != null
+ *             flow:
+ *               - return:
+ *                   status: 300
+ *         - otherwise:
+ *             - return:
+ *                 status: 400
+ *
+ * </code></pre>
  */
 @MCElement(name = "choose", noEnvelope = true)
 public class ChooseInterceptor extends AbstractFlowInterceptor {
 
-    private List<Choice> choices = new ArrayList<>();
+    private List<AbstractCaseOtherwise> choices = new ArrayList<>();
 
     private final List<Case> cases = new ArrayList<>();
     private Otherwise otherwise;
@@ -91,9 +111,9 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         return null;
     }
 
-    static void validateChoices(List<Choice> choices) {
+    static void validateChoices(List<AbstractCaseOtherwise> choices) {
         for (int i = 0; i < choices.size(); i++) {
-            Choice c = choices.get(i);
+            AbstractCaseOtherwise c = choices.get(i);
 
             if (c instanceof Otherwise) {
                 if (i != choices.size() - 1) {
@@ -104,7 +124,7 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
     }
 
     private void setChoices() {
-        for (Choice c : this.choices) {
+        for (AbstractCaseOtherwise c : this.choices) {
             if (c instanceof Case cc) {
                 cases.add(cc);
             } else if (c instanceof Otherwise o) {
@@ -128,11 +148,11 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
      *                element must be the last in the list if provided.
      */
     @MCChildElement
-    public void setChoices(List<Choice> choices) {
+    public void setChoices(List<AbstractCaseOtherwise> choices) {
         this.choices = choices;
     }
 
-    public List<Choice> getChoices() {
+    public List<AbstractCaseOtherwise> getChoices() {
         return choices;
     }
 
