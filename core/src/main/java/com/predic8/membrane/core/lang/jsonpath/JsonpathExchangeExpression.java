@@ -92,7 +92,7 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
             throw new ExchangeExpressionException(expression, e, msg)
                     .excludeException();
         } catch (Exception e) {
-            var msg = "Error evaluating Jsonpath {}. Got message {}".formatted(expression, e.getMessage());
+            var msg = "Error evaluating Jsonpath %s. Got message %s".formatted(expression, e.getMessage());
             log.info(msg);
             throw new ExchangeExpressionException(expression, e,msg);
         }

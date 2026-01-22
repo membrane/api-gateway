@@ -77,10 +77,6 @@ public class ExchangeExpressionException extends RuntimeException {
         return pd;
     }
 
-    public ExchangeExpressionException message(String message) {
-        return this;
-    }
-
     public ExchangeExpressionException detail(String detail) {
         this.detail = detail;
         return this;

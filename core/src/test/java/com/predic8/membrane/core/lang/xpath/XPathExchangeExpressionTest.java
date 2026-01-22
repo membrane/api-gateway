@@ -172,8 +172,6 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         private static @NotNull ProblemDetails getProblemDetails(ExchangeExpressionException e) {
             var pd = user(false, "test");
             e.provideDetails(pd);
-            pd.getDetail();
-            pd.getInternal().get("body");
             return pd;
         }
     }
