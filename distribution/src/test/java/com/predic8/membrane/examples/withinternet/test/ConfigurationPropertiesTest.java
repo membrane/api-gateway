@@ -32,16 +32,16 @@ public class ConfigurationPropertiesTest extends DistributionExtractingTestcase 
         try (Process2 ignored = startServiceProxyScriptWithEnv("TARGET", "https://www.predic8.de/")) {
             // @formatter:off
             given()
-                    .redirects().follow(false)
-                    .get("http://localhost:2000/")
-                    .then()
-                    .statusCode(307);
+                .redirects().follow(false)
+                .get("http://localhost:2000/")
+            .then()
+                .statusCode(307);
 
             given()
-                    .redirects().follow(false)
-                    .get("http://localhost:2001/")
-                    .then()
-                    .statusCode(200);
+                .redirects().follow(false)
+                .get("http://localhost:2001/")
+            .then()
+                .statusCode(200);
             // @formatter:on
         }
     }
