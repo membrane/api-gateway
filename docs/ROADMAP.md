@@ -8,6 +8,9 @@
 
 PRIO 1:
 
+- Reverse:
+  - First parse
+  - Second validate YAML
 - Tutorials:
   - Add how to run the tutorials in a Docker container
 - HotReload for YAML
@@ -17,7 +20,7 @@ PRIO 1:
 - if: Add hint in documentation: use choice otherwise for else TB
 - Register JSON Schema for YAML at: https://www.schemastore.org TB
 - create test asserting that connection reuse via proxy works TP
-- Central description of Membrane Languages, Cheat Sheets, links to their docs.
+- Central description of Membrane Languages, Cheat Sheets, links to their docs. TP
 - Central description of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
