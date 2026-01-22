@@ -73,12 +73,12 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         if(jwtRetriever == null)
             jwtRetriever = new HeaderJwtRetriever("Authorization","Bearer");
 
-        jwks.init(router.getResolverMap(),router.getConfiguration().getBaseLocation());
+        jwks.init(router);
 
         kidToKey = jwks.getJwks().stream()
                 .map(jwk -> {
                     try {
-                        Map params = mapper.readValue(jwk.getJwk(router.getResolverMap(), router.getConfiguration().getBaseLocation(), mapper), Map.class);
+                        Map params = mapper.readValue(jwk.getJwk(router, mapper), Map.class);
                         if (Objects.equals(params.get("p"), DEFAULT_PKEY)) {
                             log.warn("""
                                 \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
