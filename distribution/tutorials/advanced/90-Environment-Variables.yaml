@@ -3,8 +3,10 @@
 # Tutorial: Environment Variables via SpEL (#{env.})
 #
 # This tutorial shows how to use environment variables in YAML using SpEL templates:
-#   - #{env.port} reads the environment variable PORT
-#   - use e.g. #{env.port ?: 3000} to set port 3000 as default
+#   - #{env.PORT} reads the environment variable PORT
+#   - use e.g. #{env.PORT ?: 3000} to set port 3000 as default
+#
+# Note: The environment variables are case-sensitive
 #
 # 1) Set PORT
 #     Linux/macOS: export PORT=3000
@@ -20,12 +22,12 @@
 api:
   port: 2000
   target:
-    url: http://localhost:#{env.port}
+    url: http://localhost:#{env.PORT}
 ---
 api:
-  port: "#{env.port}"
+  port: "#{env.PORT}"
   flow:
     - static:
         src: |
-          Hello from port #{env.port}
+          Hello from port #{env.PORT}
     - return: {}
