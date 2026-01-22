@@ -57,6 +57,21 @@ PRIO 3:
   - Language is case sensitive: e.g. language: SPEL is not valid according to the Schema and produces: TB
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
+ 
+# Release Notes 7.0.6
+
+## Breaking Changes
+
+- headerFilter YAML format has changed.
+
+## Bug Fixes
+- `xml2json`: Ensuring content type alignment and better exception handling.  
+
+## Improvements
+
+- `xml2json`: Better exception handling.  
+- Updated documentation and comments for clarity and consistency in related classes (`Header`, `MimeType`, etc.). 
+
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
