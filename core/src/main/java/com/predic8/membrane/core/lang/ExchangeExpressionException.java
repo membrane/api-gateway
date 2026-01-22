@@ -23,6 +23,8 @@ public class ExchangeExpressionException extends RuntimeException {
     private final Map<String, Object> extensions = new HashMap<>();
     private String detail;
 
+    private boolean includeException = true;
+
     /*
      * Body that cause the error
      */
@@ -46,7 +48,8 @@ public class ExchangeExpressionException extends RuntimeException {
         }
         if (body != null)
             pd.internal("body", body.length() > 1024 ? body.substring(0, 1024) : body);
-        pd.exception(this);
+        if (includeException)
+            pd.exception(this);
         pd.stacktrace(false);
         return pd;
     }
@@ -75,6 +78,12 @@ public class ExchangeExpressionException extends RuntimeException {
         this.body = body;
         return this;
     }
+
+    public ExchangeExpressionException noException() {
+        this.includeException = false;
+        return this;
+    }
+
 
     public Map<String, Object> getExtensions() {
         return extensions;
