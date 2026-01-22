@@ -17,18 +17,38 @@ import com.predic8.membrane.core.exceptions.*;
 
 import java.util.*;
 
+/**
+ * Gathers information about an error evaluating an exchange expression. It can fill a ProblemDetails object
+ * from that information.
+ */
 public class ExchangeExpressionException extends RuntimeException {
 
+    /**
+     * Expression that caused the error
+     */
     private final String expression;
+
     private final Map<String, Object> extensions = new HashMap<>();
+
+    /**
+     * Detail field to copy in ProblemDetails
+     */
     private String detail;
 
+    /**
+     * Weather to include the exception in the ProblemDetails.
+     */
     private boolean includeException = true;
 
     /*
      * Body that cause the error
      */
     private String body;
+
+    public ExchangeExpressionException(String expression, Throwable cause, String message) {
+        super(message, cause);
+        this.expression = expression;
+    }
 
     public ExchangeExpressionException(String expression, Throwable cause) {
         super(cause);
@@ -40,8 +60,11 @@ public class ExchangeExpressionException extends RuntimeException {
      * @return ProblemDetails filled from exception
      */
     public ProblemDetails provideDetails(ProblemDetails pd) {
-        if (detail != null)
+        if (detail != null) {
             pd.detail(detail);
+        } else {
+            pd.detail(getMessage());
+        }
         pd.internal("expression", expression);
         for (Map.Entry<String, Object> entry : extensions.entrySet()) {
             pd.internal(entry.getKey(), entry.getValue());
@@ -52,6 +75,10 @@ public class ExchangeExpressionException extends RuntimeException {
             pd.exception(this);
         pd.stacktrace(false);
         return pd;
+    }
+
+    public ExchangeExpressionException message(String message) {
+        return this;
     }
 
     public ExchangeExpressionException detail(String detail) {
@@ -79,11 +106,16 @@ public class ExchangeExpressionException extends RuntimeException {
         return this;
     }
 
-    public ExchangeExpressionException noException() {
+    /**
+     * Call this method if the error is described sufficiently in the message or details that
+     * the exception is not needed in the ProblemDetails.
+     *
+     * @return
+     */
+    public ExchangeExpressionException excludeException() {
         this.includeException = false;
         return this;
     }
-
 
     public Map<String, Object> getExtensions() {
         return extensions;

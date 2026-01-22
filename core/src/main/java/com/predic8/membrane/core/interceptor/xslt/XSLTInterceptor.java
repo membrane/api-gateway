@@ -82,6 +82,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
                 user(router.getConfiguration().isProduction(), getDisplayName())
                         .title("Content not allowed in trailing section of XML input.")
                         .detail("Check for extra characters after the XML root element (after the final closing tag like </root>).")
+                        .internal("offendingInput", tail(msg.getBodyAsStringDecoded(), 50))
                         .buildAndSetResponse(exc);
                 return ABORT;
             }

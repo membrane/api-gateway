@@ -82,20 +82,28 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
             }
             return null;
         } catch (InvalidPathException ipe) {
-            log.error("{} is an invalid jsonpath: {}", expression, ipe.getMessage());
-            throw new ExchangeExpressionException(expression, ipe);
+            var msg = "%s is an invalid jsonpath: %s".formatted(expression, ipe.getMessage());
+            log.error(msg);
+            throw new ExchangeExpressionException(expression, ipe, msg)
+                    .excludeException();
         } catch (MismatchedInputException e) {
-            String body = exchange.getMessage(flow).getBodyAsStringDecoded();
-            if (body == null || body.isEmpty()) {
-                log.info("Error evaluating Jsonpath {}. Body is empty!", expression);
-            } else {
-                log.info("Error evaluating Jsonpath {}. Body is: {}", expression, truncateAfter(body, 200));
-            }
-            throw new ExchangeExpressionException(expression, e);
+            String msg = getErrorMessageForJsonPath(exchange, flow);
+            log.info(msg);
+            throw new ExchangeExpressionException(expression, e, msg)
+                    .excludeException();
         } catch (Exception e) {
-            log.info("Error evaluating Jsonpath {}. Got message {}", expression, e);
-            throw new ExchangeExpressionException(expression, e);
+            var msg = "Error evaluating Jsonpath {}. Got message {}".formatted(expression, e.getMessage());
+            log.info(msg);
+            throw new ExchangeExpressionException(expression, e,msg);
         }
+    }
+
+    private @NotNull String getErrorMessageForJsonPath(Exchange exchange, Flow flow) {
+        String body = exchange.getMessage(flow).getBodyAsStringDecoded();
+        if (body == null || body.isEmpty()) {
+            return "Error evaluating Jsonpath %s. Body is empty!".formatted(expression);
+        }
+        return "Error evaluating Jsonpath %s. Body is: %s".formatted(expression, truncateAfter(body, 200));
     }
 
     private <T> @Nullable T castType(Exchange exchange, Flow flow, Class<T> type) throws IOException {

@@ -14,19 +14,20 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.w3c.dom.*;
 
 import java.net.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static org.junit.jupiter.api.Assertions.*;
@@ -122,7 +123,7 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
         @BeforeEach
         void setup() throws URISyntaxException {
-            pExc = Request.post("/person").xml("""
+            pExc = post("/person").xml("""
                     <p8:person xmlns:p8="https://predic8.de">
                         <p8:firstname>Trevor</p8:firstname>
                     </p8:person>
@@ -134,6 +135,46 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
             assertEquals("Trevor", expression( new InterceptorAdapter(router),getLanguage(),
                     "//*[local-name()='firstname']")
                     .evaluate(pExc, REQUEST, String.class));
+        }
+    }
+
+    @Nested
+    class ErrorHandling {
+
+        @Test
+        void contentNoAllowedInProlog() throws URISyntaxException {
+            try {
+                expression(null, XPATH, "/foo").evaluate(post("/person").xml("""
+                        A<foo/>""").buildExchange(), REQUEST, String.class);
+                fail();
+            } catch (ExchangeExpressionException e) {
+                assertFalse(e.getMessage().contains("XmlParseException"));
+                assertTrue(e.getMessage().contains("prolog"));
+                var pd = getProblemDetails(e);
+                assertEquals("A<foo/>", pd.getInternal().get("body").toString());
+            }
+        }
+
+        @Test
+        void trailingCharacters() throws URISyntaxException {
+            try {
+                expression(null, XPATH, "/foo").evaluate(post("/person").xml("""
+                        <foo/>A""").buildExchange(), REQUEST, String.class);
+                fail();
+            } catch (ExchangeExpressionException e) {
+                assertFalse(e.getMessage().contains("XmlParseException"));
+                assertTrue(e.getMessage().contains("trailing"));
+                var pd = getProblemDetails(e);
+                assertEquals("<foo/>A", pd.getInternal().get("body").toString());
+            }
+        }
+
+        private static @NotNull ProblemDetails getProblemDetails(ExchangeExpressionException e) {
+            var pd = user(false, "test");
+            e.provideDetails(pd);
+            pd.getDetail();
+            pd.getInternal().get("body");
+            return pd;
         }
     }
 }
