@@ -60,7 +60,8 @@ public class DispatchingInterceptor extends AbstractInterceptor {
                 var pd = user(getRouter().getConfiguration().isProduction(), "invalid-path")
                         .title("Request path contains an invalid character.")
                         .detail(getMessageForURISyntaxException(exc, e))
-                        .internal("path", exc.getRequest().getUri());
+                        .internal("path", exc.getRequest().getUri())
+                        .internal("destination", e.getInput());
                 if (e.getIndex() >= 0)
                     pd.internal("index", e.getIndex());
                 pd.buildAndSetResponse(exc);
