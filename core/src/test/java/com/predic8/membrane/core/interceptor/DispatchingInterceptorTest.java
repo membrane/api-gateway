@@ -26,6 +26,7 @@ import java.net.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+
 import static com.predic8.membrane.core.router.DummyTestRouter.*;
 import static org.junit.jupiter.api.Assertions.*;
 

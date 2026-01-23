@@ -29,16 +29,6 @@ PRIO 1:
    - Problem port is an integer
    - JSON Schema support
 
-- Choose:
-  - YAML configuration needs makeover.
-    - Maybe take out cases?
-    - Now
-      - choose:
-          cases:
-            - case: ...
-            - case: ...
-            - otherwise:
-
 
 PRIO 2:
 - Fix maven central publish job
@@ -88,3 +78,6 @@ PRIO 3:
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
+
+Breaking Changes:
+- Choose Interceptor configuration
