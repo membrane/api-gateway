@@ -184,7 +184,14 @@ class DispatchingInterceptorTest {
 
 		@Test
 		void validPathWithUnderscore() throws Exception {
-            assertEquals(CONTINUE,  dispatcher.handleRequest(get("/_tb/?test=21").buildExchange()));
+			// An API must be set on the exchange, otherwise in the interceptor a URL is not parsed
+			var api = new APIProxy();
+			api.setTarget(new AbstractServiceProxy.Target() {{
+				setUrl("http://dummy/_tb/?test=21");
+			}});
+			var exc = get("/_tb/?test=21").buildExchange();
+			exc.setProxy(api);
+			assertEquals(CONTINUE,  dispatcher.handleRequest(exc));
 		}
 
 		private @NotNull Exchange getExchange() throws URISyntaxException {
