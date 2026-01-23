@@ -57,7 +57,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             try {
                 exc.getDestinations().add(getForwardingDestination(exc));
             } catch (URISyntaxException e) {
-                ProblemDetails pd = user(false, "invalid-path")
+                var pd = user(getRouter().isProduction(), "invalid-path")
                         .title("Invalid request path")
                         .detail(getMessageForURISyntaxException(exc, e))
                         .internal("path", exc.getRequest().getUri());
