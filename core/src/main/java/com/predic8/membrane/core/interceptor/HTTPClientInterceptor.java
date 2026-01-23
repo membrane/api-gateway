@@ -115,10 +115,10 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Request path or 'Host' header is malformed")
                     .addSubSee("malformed-url")
-                    .exception(e)
                     .internal("proxy", exc.getProxy().getName())
                     .internal("url",exc.getRequest().getUri())
                     .internal("hostHeader", exc.getRequest().getHeader().getHost())
+                    .detail(e.getMessage())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (ProtocolUpgradeDeniedException e) {
