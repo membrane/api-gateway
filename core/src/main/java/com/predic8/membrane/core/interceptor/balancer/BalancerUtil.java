@@ -47,22 +47,19 @@ public class BalancerUtil {
                 .flatMap(List::stream)
                 .filter(LoadBalancingInterceptor.class::isInstance)
                 .map(LoadBalancingInterceptor.class::cast)
+                .distinct()
                 .toList();
     }
 
     public static List<Cluster> collectClusters(Router router) {
         return Stream.concat(
                 collectBalancers(router).stream()
-                        .flatMap(lbi -> lbi.getClusterManager()
-                                .getClusters()
-                                .stream()),
+                        .flatMap(lbi -> lbi.getClusterManager().getClusters().stream()),
                 Optional.ofNullable(router.getBeanFactory())
-                        .map(ctx -> ctx.getBeansOfType(Balancer.class)
-                                .values()
-                                .stream()
+                        .map(ctx -> ctx.getBeansOfType(Balancer.class).values().stream()
                                 .flatMap(b -> b.getClusters().stream()))
                         .orElseGet(Stream::empty)
-        ).toList();
+        ).distinct().toList();
     }
 
     public static Balancer lookupBalancer(Router router, String name) {
