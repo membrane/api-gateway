@@ -52,6 +52,8 @@ public class BalancerUtil {
 		ArrayList<Cluster> result = new ArrayList<>();
 		for (LoadBalancingInterceptor lbi : collectBalancers(router))
 			result.addAll(lbi.getClusterManager().getClusters());
+		for (Balancer b : router.getBeanFactory().getBeansOfType(Balancer.class).values())
+			result.addAll(b.getClusters());
 		return result;
 	}
 
