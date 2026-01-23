@@ -19,14 +19,18 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.text.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
+import static com.predic8.membrane.core.util.text.StringUtil.tail;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static javax.xml.xpath.XPathConstants.*;
 
 public class XPathExchangeExpression extends AbstractExchangeExpression {
@@ -53,28 +57,32 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         Message msg = exchange.getMessage(flow);
         try {
             if (Boolean.class.isAssignableFrom(type)) {
-                return type.cast( evalutateAndCast(msg, BOOLEAN));
+                return type.cast(evalutateAndCast(msg, BOOLEAN));
             }
             if (String.class.isAssignableFrom(type)) {
                 return type.cast(evalutateAndCast(msg, STRING));
             }
             if (Object.class.isAssignableFrom(type)) {
-                return type.cast( evaluateAndCastToObject( msg));
+                return type.cast(evaluateAndCastToObject(msg));
             }
-            throw  new RuntimeException("Should not Happen!");
+            throw new RuntimeException("Should not Happen!");
         } catch (XPathExpressionException e) {
-            var eee = new ExchangeExpressionException(expression,e);
-            if (e.getMessage() != null && e.getMessage().contains("Prefix must resolve to a namespace")) {
-                var m = "XML prefix is not mapped to a namespace.";
-                if (xmlConfig != null && xmlConfig.getNamespaces() != null) {
-                    m += " Check prefix with xmlConfig.";
-                } else {
-                    m += " xmlConfig and namespace declaration is missing.";
-                }
-                eee.detail(m);
-            }
-            throw eee.body(msg.getBodyAsStringDecoded());
+            throw getExchangeExpressionException(e).body(msg.getBodyAsStringDecoded());
         }
+    }
+
+    private @NotNull ExchangeExpressionException getExchangeExpressionException(XPathExpressionException e) {
+        var eee = new ExchangeExpressionException(expression, e);
+        if (e.getMessage() != null && e.getMessage().contains("Prefix must resolve to a namespace")) {
+            var m = "XML prefix is not mapped to a namespace.";
+            if (xmlConfig != null && xmlConfig.getNamespaces() != null) {
+                m += " Check prefix with xmlConfig.";
+            } else {
+                m += " xmlConfig and namespace declaration is missing.";
+            }
+            eee.detail(m);
+        }
+        return eee;
     }
 
     private Object evaluateAndCastToObject(Message msg) throws XPathExpressionException {
@@ -98,7 +106,34 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             xPath.setNamespaceContext(xmlConfig.getNamespaces().getNamespaceContext());
         }
 
-        return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
+        try {
+            return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
+        } catch (RuntimeException e) {
+            // Parser errors may escape as unchecked exceptions.
+            if (causeMessageContains(e, "not allowed in prolog")) {
+                throw new ExchangeExpressionException(expression, e,"Content not allowed in prolog of XML input.")
+                        .detail("There are extra characters before the XML declaration <?xml ... ?>")
+                        .body(truncateAfter(msg.getBodyAsStringDecoded(), 50))
+                        .excludeException();
+            }
+
+            if (causeMessageContains(e, "is not allowed in trailing section")) {
+                throw new ExchangeExpressionException(expression, e,"Content not allowed in trailing section of XML input.")
+                        .detail("There are extra characters after the XML root element (after the final closing tag like </root>).")
+                        .body(tail(msg.getBodyAsStringDecoded(), 50))
+                        .excludeException();
+            }
+            throw e;
+        }
+    }
+
+    private static boolean causeMessageContains(Throwable t, String fragment) {
+        for (Throwable c = t; c != null; c = c.getCause()) {
+            String m = c.getMessage();
+            if (m != null && m.contains(fragment))
+                return true;
+        }
+        return false;
     }
 
     public void setXmlConfig(XmlConfig xmlConfig) {

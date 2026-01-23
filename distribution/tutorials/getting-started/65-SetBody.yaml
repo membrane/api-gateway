@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: setBody
+#
+# Set the body content with a simple template. setBody supports SpEL,
+# JSONPath, XPath and Groovy expressions.
+#
+# Try:
+#     curl localhost:2000/spel
+#     curl -d '{"city": "Seoul"}' -H "Content-Type: application/json" localhost:2000/jsonpath
+api:
+  port: 2000
+  path:
+    uri: /spel
+  flow:
+    - request:
+      - setBody:
+          value: |
+            Path: ${path}
+            Headers: ${header.keySet()}
+          language: spel
+      - return:
+          status: 200
+
+---
+
+api:
+  port: 2000
+  path:
+    uri: /jsonpath
+  flow:
+    - request:
+      - setBody:
+          value: 'City: ${$.city}'
+          language: jsonpath
+      - return:
+          status: 200
