@@ -18,6 +18,8 @@ import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.chain.ChainDef;
 import com.predic8.membrane.core.proxies.*;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationContext;
 
 import java.util.*;
 
@@ -29,16 +31,26 @@ public class BalancerUtil {
 		for (Proxy p : router.getRuleManager().getRules())
 			flows.add(p.getFlow());
 
-		for (ChainDef c : router.getBeanFactory().getBeansOfType(ChainDef.class).values())
-			flows.add(c.getFlow());
+		ApplicationContext beanFactory = getBeanFactory(router);
+		if(beanFactory != null) {
+			Map<String, ChainDef> beansOfType = beanFactory.getBeansOfType(ChainDef.class);
+			if(!beansOfType.isEmpty()) {
+				for (ChainDef c : beansOfType.values())
+					flows.add(c.getFlow());
+			}
+		}
 
 		flows.add(router.getGlobalInterceptor().getFlow());
 
 		return flows;
 	}
 
+	private static ApplicationContext getBeanFactory(Router router) {
+		return router.getBeanFactory();
+	}
+
 	public static List<LoadBalancingInterceptor> collectBalancers(Router router) {
-		ArrayList<LoadBalancingInterceptor> result = new ArrayList<>();
+		List<LoadBalancingInterceptor> result = new ArrayList<>();
 		for (List<Interceptor> flow : allFlows(router)) {
 			if (flow == null) continue;
 			for (Interceptor i : flow)
@@ -49,12 +61,24 @@ public class BalancerUtil {
 	}
 
 	public static List<Cluster> collectClusters(Router router) {
-		ArrayList<Cluster> result = new ArrayList<>();
+		List<Cluster> result = new ArrayList<>();
 		for (LoadBalancingInterceptor lbi : collectBalancers(router))
 			result.addAll(lbi.getClusterManager().getClusters());
-		for (Balancer b : router.getBeanFactory().getBeansOfType(Balancer.class).values())
-			result.addAll(b.getClusters());
+
+		ApplicationContext beanFactory = router.getBeanFactory();
+		if(beanFactory != null) {
+			Map<String, Balancer> beansOfType = getBeansOfType(beanFactory);
+			if(!beansOfType.isEmpty()) {
+				for (Balancer b : beansOfType.values())
+					result.addAll(b.getClusters());
+			}
+		}
+
 		return result;
+	}
+
+	private static @NotNull Map<String, Balancer> getBeansOfType(ApplicationContext beanFactory) {
+		return beanFactory.getBeansOfType(Balancer.class);
 	}
 
 	public static Balancer lookupBalancer(Router router, String name) {
