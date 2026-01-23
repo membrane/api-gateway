@@ -15,6 +15,7 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
 import com.networknt.schema.SchemaLocation;
@@ -24,6 +25,7 @@ import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -32,9 +34,13 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
+import static com.predic8.membrane.annot.yaml.spel.SpELContextFactory.newContext;
+import static com.predic8.membrane.annot.yaml.spel.SpELEngine.eval;
 import static org.springframework.util.ReflectionUtils.doWithMethods;
 
 public final class YamlParsingUtils {
+
+    private static final StandardEvaluationContext SPEL_CTX = newContext();
 
     private YamlParsingUtils() {
     }
@@ -43,6 +49,7 @@ public final class YamlParsingUtils {
     }
 
     private static final ConcurrentHashMap<SchemaCacheKey, Schema> SCHEMA_CACHE = new ConcurrentHashMap<>();
+    private static final ObjectMapper SCALAR_MAPPER = new ObjectMapper();
 
     static void validate(Grammar grammar, JsonNode input) throws YamlSchemaValidationException {
         List<Error> errors = loadSchema(grammar).validate(input);
@@ -103,6 +110,21 @@ public final class YamlParsingUtils {
 
         if (setters.isEmpty()) return null;
         return setters.getFirst();
+    }
+
+
+    static Object resolveSpelValue(String expression, Class<?> targetType, JsonNode node) {
+        final Object value;
+        try {
+            value = eval(expression, SPEL_CTX);
+        } catch (RuntimeException e) {
+            throw new ParsingException("Invalid SpEL expression: %s".formatted(e.getMessage()), node);
+        }
+
+        if (value == null) return null;
+        if (targetType == String.class) return String.valueOf(value);
+
+        return targetType.isInstance(value) ? value : SCALAR_MAPPER.convertValue(value, targetType);
     }
 
 }
