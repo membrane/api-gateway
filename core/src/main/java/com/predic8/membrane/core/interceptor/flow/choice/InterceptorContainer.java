@@ -17,36 +17,29 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.router.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 abstract class InterceptorContainer {
 
     private List<Interceptor> interceptors;
 
     Outcome invokeFlow(Exchange exc, Flow flow, Router router) {
-        try {
-            return switch (flow) {
-                case REQUEST -> router.getFlowController().invokeRequestHandlers(exc, interceptors);
-                case RESPONSE -> router.getFlowController().invokeResponseHandlers(exc, interceptors);
-                default -> throw new RuntimeException("Should never happen");
-            };
-        } catch (Exception e) {
-            handleInvocationProblemDetails(exc, e, router);
-            return ABORT;
-        }
+        return switch (flow) {
+            case REQUEST -> router.getFlowController().invokeRequestHandlers(exc, interceptors);
+            case RESPONSE -> router.getFlowController().invokeResponseHandlers(exc, interceptors);
+            default -> throw new RuntimeException("Should never happen");
+        };
     }
 
     private void handleInvocationProblemDetails(Exchange exc, Exception e, Router router) {
-        internal(router.getConfiguration().isProduction(),"interceptor-container")
-            .detail("Error invoking plugin.")
-            .exception(e)
-            .buildAndSetResponse(exc);
+        internal(router.getConfiguration().isProduction(), "interceptor-container")
+                .detail("Error invoking plugin.")
+                .exception(e)
+                .buildAndSetResponse(exc);
     }
 
     public List<Interceptor> getFlow() {
