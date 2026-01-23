@@ -59,6 +59,12 @@ public class DummyTestRouter extends AbstractRouter {
         this(null);
     }
 
+    public static DummyTestRouter productionRouter() {
+        var r = new DummyTestRouter(null);
+        r.configuration.setProduction(true);
+        return r;
+    }
+
     public DummyTestRouter(ProxyConfiguration proxyConfiguration) {
         transport = createTransport();
         if (proxyConfiguration != null)
