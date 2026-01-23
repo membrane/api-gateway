@@ -78,22 +78,20 @@ Therefore, while most of the project historically used XML, everything can be ex
 
 ## Annotations
 
-This section describes how Membrane configuration is mapped to Java classes via annotations.
+Membrane’s configuration grammar is derived from Java annotations in the `annot` module.  
+`@MCElement` defines which **elements** exist, and method-level annotations define how configuration values map to Java **properties**.
 
-### Overview
+> Annotations are collected from the full class hierarchy (inheritance applies).
 
-- **Class annotation** defines *elements* (tags / YAML objects).
-- **Setter annotations** define how config maps to properties:
-  - **Attributes** (`@MCAttribute`)
-  - **Child elements** (`@MCChildElement`)
-  - **Text content** (Only relevant for xml configuration) (`@MCTextContent`)
-  - **Other / dynamic attributes** (`@MCOtherAttributes`)
-- `@Required` can be used on `@MCAttribute` / `@MCChildElement`.
+### Quick map
 
-TODO
+- **`@MCElement`** (class): defines an element (`<foo>` / `foo:`)
+- **`@MCAttribute`** (setter): defines a scalar property (`attr="..."` / `attr: ...`)
+- **`@MCChildElement`** (setter): defines nested elements / lists
+- **`@MCTextContent`** (setter): defines XML text body (YAML via explicit key)
+- **`@MCOtherAttributes`** (setter): collects arbitrary/dynamic attributes
+- **`@Required`** (setter): marks attribute/child as required
 
-
-Annotations are collected from the whole class hierarchy, meaning that e.g. `@MCAttribute`s can be inherited.
 
 
 ## Class-level annotation `@MCElement`
@@ -114,7 +112,8 @@ Defines a configurable element and its representation in XML/YAML.
 ---
 ## Method-level annotations (setters)
 
-TODO short description
+Method-level annotations are placed on setter methods to declare which configuration properties exist and how they are mapped to XML and YAML.
+For every annotated setter, a corresponding getter MUST be present.
 
 ---
 ### `@MCAttribute`
@@ -202,7 +201,7 @@ Collects arbitrary, not explicitly modeled attributes in addition to declared `@
 
 ### `@Required`
 
-Can be used on methods annotated by `@MCAttribute` or `@MCChildElement`. Marks the property/child as required.
+Can be used on methods annotated with `@MCAttribute` or `@MCChildElement`. Marks the property/child as required.
 
 ---
 
