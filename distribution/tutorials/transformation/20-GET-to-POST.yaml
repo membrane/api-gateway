@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Turn GET into POST
+#
+# Try:
+#    curl "http://localhost:2000/add?name=Lemon&price=0.30"
+#
+# Check if the product is added to the shop:
+#    curl "https://api.predic8.de/shop/v2/products?limit=1000"
+
+api:
+  port: 2000
+  flow:
+    - request:
+      - setBody:
+          value: |
+            {
+              "name": "${param.name}",
+              "price": ${param.price}
+            }
+      - setHeader:
+          name: Content-Type
+          value: application/json
+  target:
+    method: POST
+    url: https://api.predic8.de/shop/v2/products

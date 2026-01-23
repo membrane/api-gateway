@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Turn POST into GET
+#
+# Try:
+#     curl "http://localhost:2000/shop/v2/products" -H "Content-Type: application/json" -d '{"limit": 100,"sort": "name"}'
+
+api:
+  port: 2000
+  target:
+    method: GET
+    url: https://api.predic8.de/shop/v2/products?sort=${$.sort}&limit=${$.limit}
+    language: jsonpath
