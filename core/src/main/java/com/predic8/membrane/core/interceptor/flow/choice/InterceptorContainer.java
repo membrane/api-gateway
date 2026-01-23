@@ -23,6 +23,7 @@ import com.predic8.membrane.core.router.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 abstract class InterceptorContainer {
 
@@ -37,7 +38,7 @@ abstract class InterceptorContainer {
             };
         } catch (Exception e) {
             handleInvocationProblemDetails(exc, e, router);
-            throw new ExchangeExpressionException("Error evaluating expression on exchange in if plugin.", e);
+            return ABORT;
         }
     }
 
