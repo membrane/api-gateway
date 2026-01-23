@@ -16,56 +16,57 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.chain.ChainDef;
 import com.predic8.membrane.core.proxies.*;
 
 import java.util.*;
 
 public class BalancerUtil {
 
-	public static List<Cluster> collectClusters(Router router) {
-		ArrayList<Cluster> result = new ArrayList<>();
-		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getFlow();
-			if (interceptors != null)
-				for (Interceptor i : interceptors)
-					if (i instanceof LoadBalancingInterceptor)
-						result.addAll(((LoadBalancingInterceptor)i).getClusterManager().getClusters());
-		}
-		return result;
+	private static Iterable<List<Interceptor>> allFlows(Router router) {
+		List<List<Interceptor>> flows = new ArrayList<>();
+
+		for (Proxy p : router.getRuleManager().getRules())
+			flows.add(p.getFlow());
+
+		for (ChainDef c : router.getBeanFactory().getBeansOfType(ChainDef.class).values())
+			flows.add(c.getFlow());
+
+		flows.add(router.getGlobalInterceptor().getFlow());
+
+		return flows;
 	}
 
 	public static List<LoadBalancingInterceptor> collectBalancers(Router router) {
 		ArrayList<LoadBalancingInterceptor> result = new ArrayList<>();
-		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getFlow();
-			if (interceptors != null)
-				for (Interceptor i : interceptors)
-					if (i instanceof LoadBalancingInterceptor)
-						result.add((LoadBalancingInterceptor)i);
+		for (List<Interceptor> flow : allFlows(router)) {
+			if (flow == null) continue;
+			for (Interceptor i : flow)
+				if (i instanceof LoadBalancingInterceptor lbi)
+					result.add(lbi);
 		}
 		return result;
 	}
 
+	public static List<Cluster> collectClusters(Router router) {
+		ArrayList<Cluster> result = new ArrayList<>();
+		for (LoadBalancingInterceptor lbi : collectBalancers(router))
+			result.addAll(lbi.getClusterManager().getClusters());
+		return result;
+	}
+
 	public static Balancer lookupBalancer(Router router, String name) {
-		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getFlow();
-			if (interceptors != null)
-				for (Interceptor i : interceptors)
-					if (i instanceof LoadBalancingInterceptor)
-						if (((LoadBalancingInterceptor)i).getName().equalsIgnoreCase(name))
-							return ((LoadBalancingInterceptor) i).getClusterManager();
+		for (LoadBalancingInterceptor lbi : collectBalancers(router)) {
+			if (lbi.getName().equalsIgnoreCase(name))
+				return lbi.getClusterManager();
 		}
 		throw new RuntimeException("balancer with name \"" + name + "\" not found.");
 	}
 
 	public static LoadBalancingInterceptor lookupBalancerInterceptor(Router router, String name) {
-		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getFlow();
-			if (interceptors != null)
-				for (Interceptor i : interceptors)
-					if (i instanceof LoadBalancingInterceptor)
-						if (((LoadBalancingInterceptor)i).getName().equalsIgnoreCase(name))
-							return (LoadBalancingInterceptor) i;
+		for (LoadBalancingInterceptor lbi : collectBalancers(router)) {
+			if (lbi.getName().equalsIgnoreCase(name))
+				return lbi;
 		}
 		throw new RuntimeException("balancer with name \"" + name + "\" not found.");
 	}
