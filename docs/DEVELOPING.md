@@ -76,11 +76,28 @@ api:
 
 Therefore, while most of the project historically used XML, everything can be expressed in YAML.
 
-## Annotations used
+## Annotations
 
-### Annotations for classes
+This section describes how Membrane configuration is mapped to Java classes via annotations.
 
-`@MCElement`
+### Overview
+
+- **Class annotation** defines *elements* (tags / YAML objects).
+- **Setter annotations** define how config maps to properties:
+  - **Attributes** (`@MCAttribute`)
+  - **Child elements** (`@MCChildElement`)
+  - **Text content** (Only relevant for xml configuration) (`@MCTextContent`)
+  - **Other / dynamic attributes** (`@MCOtherAttributes`)
+- `@Required` can be used on `@MCAttribute` / `@MCChildElement`.
+
+TODO
+
+
+Annotations are collected from the whole class hierarchy, meaning that e.g. `@MCAttribute`s can be inherited.
+
+
+## Class-level annotation `@MCElement`
+Defines a configurable element and its representation in XML/YAML.
 
 | Property            | Description                                                                                                                                                                                                                                                                                                                                                                  | Default            |
 |---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------|
@@ -94,13 +111,25 @@ Therefore, while most of the project historically used XML, everything can be ex
 | `excludeFromFlow()` | Whether the element should be configurable as part of the YAML interceptor flow.                                                                                                                                                                                                                                                                                             | `false`            |
 | `collapsed()`       | Enables inline YAML configuration for elements with exactly one configurable value (either a single `@MCAttribute` or a single `@MCTextContent`), allowing a scalar form instead of a nested object.                                                                                                                                                                         | `false`            |
 
-### Annotations for setters (configurable attributes in the config) 
+---
+## Method-level annotations (setters)
 
-`@MCAttribute`
+TODO short description
 
-Can be used on Setter methods. The Java Type of the Setter's parameter must be a simple type, enum, String or a `@MCElement` annotated class. For enums, the name of an enum constant can be used case-insensitively.
-* **XML:** Maps to an attribute string `<tag attr="value" />`.
-* **YAML:** Maps to a key-value pair `attr: value`.
+---
+### `@MCAttribute`
+
+Marks a setter as a configurable **property**.
+
+**Constraints**
+
+* Setter parameter type must be: simple type / enum / `String` / or an `@MCElement` type.
+* Enums: constant names can be used case-insensitively.
+
+**Mapping**
+
+* **XML:** `<tag attr="value" />`
+* **YAML:** `attr: value`
 
 
 | Property            | Description                                                                                                                | Default                                   |
@@ -109,38 +138,22 @@ Can be used on Setter methods. The Java Type of the Setter's parameter must be a
 | `excludeFromJson()` | If `true`, the attribute is omitted from the YAML configuration, while still being available in XML.                       | `false`                                   |
 
 ---
-`@MCChildElement`
+### `@MCChildElement`
 
-Can be used on Setters. The parameter of the Setter must be either a `@MCElement` annotated class or a `List` thereof or an abstract class with `@MCElement` subclasses.
+Marks a setter as a configurable **child element**.
 
-* **XML:** Structurally nests XML Elements (tags).
-* **YAML:** Structurally nests YAML Objects or Lists (Sequences).
+**Constraints**
 
-**Example:**
+* Setter parameter must be:
 
-  ```xml
-  <api>
-    <ssl/>
-    <log/>
-    <groovy/>
-  </api>
-  ```
+  * an `@MCElement` type, or
+  * a `List<@MCElement>` / `Collection<@MCElement>`, or
+  * an abstract base class with `@MCElement` subclasses.
 
-  ```yaml
-  api:
-    ssl: {}       # Single Object child
-    interceptors: # List child
-      - log: {}
-      - groovy: {}
-  ```
+**Mapping**
 
-  Both configuration snippets effectively result in:
-
-  ```java
-  var apiProxy = new ApiProxy();
-  apiProxy.setSSLParser(new SSLParser());
-  apiProxy.setFlow(Lists.of(new LogInterceptor(), new GroovyInterceptor()));
-  ```
+* **XML:** nested elements (tags)
+* **YAML:** nested objects or sequences (lists)
 
 | Property            | Description                                                                                                                                   | Default |
 |---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|---------|
@@ -148,36 +161,50 @@ Can be used on Setters. The parameter of the Setter must be either a `@MCElement
 | `allowForeign()`    | Allows the child element to come from a non-core/foreign schema (e.g., referencing a Spring bean like an `ssl` bean).                         | `false` |
 | `excludeFromJson()` | If `true`, the child element is omitted from the JSON Schema (and therefore YAML/JSON configuration), while still being available in XML/XSD. | `false` |
 
-The child elements MUST appear in the order specified by the numerical `order`.
+**Ordering rule:** Child elements MUST appear in the numerical `order`.
 
 ---
-`@MCTextContent`
+### `@MCTextContent`
 
-Can be used once in a class annotated by `@MCElement`. It must be a setter with a `String` parameter.
+Maps text content for an element. Only relevant for xml configuration. 
 
-* **XML:** The text content constitutes the body of the tag: `<groovy>code</groovy>`.
-* **YAML:** YAML objects cannot have both children/attributes *and* a raw scalar body. Therefore, the content must be mapped to an **explicit key** derived from the setter method name (e.g., `setSrc` -\> `src`).
+**Constraints**
+
+* Can be used **once** per `@MCElement` class.
+* Must be a setter with a single `String` parameter.
+
+**Mapping**
+
+* **XML:** the tag body: `<groovy>println('code')</groovy>`
+* **YAML:** text content cannot be a raw scalar body if the object also has children/attributes; therefore it is mapped to an **explicit key** derived from the setter name (e.g. `setSrc` → `src`):
+
   ```yaml
   groovy:
     src: |
       println('Code')
   ```
----
-`@MCOtherAttribute`
 
-allows an element to accept arbitrary, not explicitly modeled attributes in addition to its declared `@MCAttribute`s.
-Use it on a setter that takes a `Map`:
-
-* `Map<String, String>` for free-form string attributes, or
-* `Map<String, Object>` where each value must be a component.
-
-This is useful for extensible configs where consumers may add custom keys without extending the grammar for each one.
+**Note:** `@MCElement(mixed=true)` is relevant here for XML when embedded markup should not be treated as child elements (which leads to errors).
 
 ---
-* **`@Required`**
-  Can be used on methods annotated by `@MCAttribute` or `@MCChildElement`. It indicates that a certain attribute/child MUST be present.
+### `@MCOtherAttributes`
 
-Annotations are collected from the whole class hierarchy, meaning that e.g. `@MCAttribute`s can be inherited.
+Collects arbitrary, not explicitly modeled attributes in addition to declared `@MCAttribute`'s.
+
+**Constraints**
+
+* Must be a setter that takes a `Map`:
+
+  * `Map<String, String>` for free-form string attributes, or
+  * `Map<String, Object>` where each value must be a **component**.
+
+---
+
+### `@Required`
+
+Can be used on methods annotated by `@MCAttribute` or `@MCChildElement`. Marks the property/child as required.
+
+---
 
 ## Javadoc Format Description
 
