@@ -22,6 +22,7 @@ import com.predic8.membrane.core.router.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 
 abstract class InterceptorContainer {
 
