@@ -15,26 +15,37 @@
 
 package com.predic8.membrane.core.interceptor.log.access;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.log.AdditionalVariable;
-import com.predic8.membrane.core.lang.spel.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
-import java.io.*;
-import java.text.*;
-import java.util.*;
-import java.util.function.*;
-import java.util.stream.*;
+import java.io.IOException;
+import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.util.text.TextUtil.escapeQuotes;
+import static java.lang.Long.parseLong;
+import static java.time.Instant.ofEpochMilli;
+import static java.time.ZoneId.systemDefault;
+import static java.time.format.DateTimeFormatter.ofPattern;
 
 public class AccessLogInterceptorService {
 
     private static final Logger log = LoggerFactory.getLogger(AccessLogInterceptorService.class);
 
-    private final SimpleDateFormat dateTimeFormat;
+    // Fixes AccessLogInterceptor: Synchronization Problem with SimpleDateFormat #2672. Thanks, Bernd
+    private final DateTimeFormatter dateTimeFormat;
     private final String defaultValue;
     private final List<AdditionalVariable> additionalVariables;
     private final boolean excludePayloadSize;
@@ -45,7 +56,7 @@ public class AccessLogInterceptorService {
             List<AdditionalVariable> additionalVariables,
             boolean excludePayloadSize
     ) {
-        this.dateTimeFormat = new SimpleDateFormat(dateTimePattern);
+        this.dateTimeFormat = ofPattern(dateTimePattern).withZone(systemDefault());
         this.defaultValue = defaultValue;
         this.additionalVariables = additionalVariables;
         this.excludePayloadSize = excludePayloadSize;
@@ -158,6 +169,10 @@ public class AccessLogInterceptorService {
     }
 
     private String convert(String timestamp) {
-        return dateTimeFormat.format(Long.parseLong(timestamp));
+        try {
+            return escapeQuotes(dateTimeFormat.format(ofEpochMilli(parseLong(timestamp))));
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 }
