@@ -53,8 +53,8 @@ class ServiceProxyTest {
             .statusCode(400)
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("type", equalTo("https://membrane-api.io/problems/user"))
-            .body("message", Matchers.containsString("/foo"))
-            .body("message", Matchers.containsString("<target>"));
+            .body("detail", Matchers.containsString("/foo"))
+            .body("detail", Matchers.containsString("<target>"));
         // @formatter:on
     }
     

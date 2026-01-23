@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
@@ -27,7 +26,8 @@ import java.net.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.router.DummyTestRouter.productionRouter;
+
+import static com.predic8.membrane.core.router.DummyTestRouter.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DispatchingInterceptorTest {
@@ -181,6 +181,18 @@ class DispatchingInterceptorTest {
 			assertTrue(jn.get(TITLE).asText().contains("invalid character"));
 			assertEquals("https://membrane-api.io/problems/user", jn.get(TYPE).asText());
 			assertFalse(jn.has("path"));
+		}
+
+		@Test
+		void validPathWithUnderscore() throws Exception {
+			// An API must be set on the exchange, otherwise in the interceptor a URL is not parsed
+			var api = new APIProxy();
+			api.setTarget(new AbstractServiceProxy.Target() {{
+				setUrl("http://dummy/_tb/?test=21");
+			}});
+			var exc = get("/_tb/?test=21").buildExchange();
+			exc.setProxy(api);
+			assertEquals(CONTINUE,  dispatcher.handleRequest(exc));
 		}
 
 		private @NotNull Exchange getExchange() throws URISyntaxException {
