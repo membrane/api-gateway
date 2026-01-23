@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.util.TextUtil.escapeQuotes;
+import static java.lang.Long.parseLong;
+import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
 import static java.time.format.DateTimeFormatter.ofPattern;
 
@@ -43,6 +45,7 @@ public class AccessLogInterceptorService {
 
     private static final Logger log = LoggerFactory.getLogger(AccessLogInterceptorService.class);
 
+    // Fixes AccessLogInterceptor: Synchronization Problem with SimpleDateFormat #2672. Thanks, Bernd
     private final DateTimeFormatter dateTimeFormat;
     private final String defaultValue;
     private final List<AdditionalVariable> additionalVariables;
@@ -168,7 +171,7 @@ public class AccessLogInterceptorService {
 
     private String convert(String timestamp) {
         try {
-            return escapeQuotes(dateTimeFormat.format(Instant.ofEpochMilli(Long.parseLong(timestamp))));
+            return escapeQuotes(dateTimeFormat.format(ofEpochMilli(parseLong(timestamp))));
         } catch (Exception e) {
             return defaultValue;
         }
