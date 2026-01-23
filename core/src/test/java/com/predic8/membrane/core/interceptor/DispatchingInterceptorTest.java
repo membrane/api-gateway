@@ -27,6 +27,7 @@ import java.net.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.router.DummyTestRouter.productionRouter;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DispatchingInterceptorTest {
@@ -154,25 +155,50 @@ class DispatchingInterceptorTest {
 
 		@Test
 		void invalidUriErrorMessage() throws Exception {
-			APIProxy api = new APIProxy();
-			api.setTarget(new AbstractServiceProxy.Target() {{
-				setHost("localhost");
-			}});
+			var exc = getExchange();
+			assertEquals(ABORT,  dispatcher.handleRequest(exc));
 
-			Exchange exchange = get("/dummy").buildExchange();
-			exchange.getRequest().setUri("/foo{invalidUri}");
-			exchange.setProxy(api);
-
-            assertEquals(ABORT,  dispatcher.handleRequest(exchange));
-
-			Response r = exchange.getResponse();
+			var r = exc.getResponse();
 			assertEquals(400, r.getStatusCode());
 
-			JsonNode jn = om.readTree(r.getBodyAsStringDecoded());
-			assertEquals("Invalid request path", jn.get(TITLE).asText());
+			var jn = om.readTree(r.getBodyAsStringDecoded());
+			assertTrue(jn.get(TITLE).asText().contains("invalid character"));
 			assertEquals("https://membrane-api.io/problems/user", jn.get(TYPE).asText());
 			assertEquals(4, jn.get("index").asInt());
 			assertEquals("/foo{invalidUri}", jn.get("path").asText());
+		}
+
+		@Test
+		void invalidUriErrorMessageProduction() throws Exception {
+			var exc = getExchange();
+			dispatcher.init(productionRouter());
+			assertEquals(ABORT,  dispatcher.handleRequest(exc));
+
+			var r = exc.getResponse();
+			assertEquals(400, r.getStatusCode());
+
+			var jn = om.readTree(r.getBodyAsStringDecoded());
+			assertTrue(jn.get(TITLE).asText().contains("invalid character"));
+			assertEquals("https://membrane-api.io/problems/user", jn.get(TYPE).asText());
+			assertFalse(jn.has("path"));
+		}
+
+		private @NotNull Exchange getExchange() throws URISyntaxException {
+			// Valid URI to pass first check
+			var exc = get("/dummy").buildExchange();
+
+			// Invalid for test
+			exc.getRequest().setUri("/foo{invalidUri}");
+			exc.setProxy(getApiProxy());
+			return exc;
+		}
+
+		private @NotNull APIProxy getApiProxy() {
+			var api = new APIProxy();
+			api.setTarget(new AbstractServiceProxy.Target() {{
+				setHost("localhost");
+			}});
+			return api;
 		}
 	}
 }
