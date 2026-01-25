@@ -158,8 +158,9 @@ public class ConnectionManager {
 
         OldConnection o = new OldConnection(connection, keepAliveTimeout);
         List<OldConnection> l;
+        ConnectionKey key = connection.getKey();
         synchronized (this) {
-            l = availableConnections.computeIfAbsent(connection.getKey(), k -> new ArrayList<>());
+            l = availableConnections.computeIfAbsent(key, k -> new ArrayList<>());
             l.add(o);
         }
     }
