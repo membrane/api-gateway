@@ -48,7 +48,7 @@ public class ConnectionManager {
 
     private final long keepAliveTimeout;
     private final AtomicInteger numberInPool = new AtomicInteger();
-    private final Map<ConnectionKey, ArrayList<OldConnection>> availableConnections =
+    private final Map<ConnectionKey, List<OldConnection>> availableConnections =
             new HashMap<>(); // guarded by this
     private volatile boolean shutdownWhenDone = false;
     private TimerManager selfCreatedTimerManager;
@@ -166,18 +166,14 @@ public class ConnectionManager {
     }
 
     private int closeOldConnections() {
-        close(getConnectionsToClose());
-        return availableConnections.size();
-    }
-
-    private @NotNull List<Connection> getConnectionsToClose() {
         List<ConnectionKey> toRemove = new ArrayList<>();
         List<Connection> toClose = new ArrayList<>();
         long now = System.currentTimeMillis();
         log.trace("closing old connections");
+        int closed = 0, remaining;
         synchronized (this) {
             // close connections after their timeout
-            for (Map.Entry<ConnectionKey, ArrayList<OldConnection>> e : availableConnections.entrySet()) {
+            for (Map.Entry<ConnectionKey, List<OldConnection>> e : availableConnections.entrySet()) {
                 List<OldConnection> l = e.getValue();
                 for (int i = 0; i < l.size(); i++) {
                     OldConnection o = l.get(i);
@@ -189,8 +185,8 @@ public class ConnectionManager {
                             l.remove(i);
                         else
                             l.set(i, l.removeLast());
-
                         --i;
+                        closed++;
                         toClose.add(o.connection);
                     }
                 }
@@ -199,8 +195,12 @@ public class ConnectionManager {
             }
             for (ConnectionKey remove : toRemove)
                 availableConnections.remove(remove);
+            remaining = availableConnections.size();
         }
-        return toClose;
+        close(toClose);
+        if (closed != 0)
+            log.debug("closed {} connections",closed);
+        return remaining;
     }
 
     /**
@@ -230,7 +230,7 @@ public class ConnectionManager {
         StringBuilder sb = new StringBuilder();
         sb.append("Number in pool: %d\n".formatted(numberInPool.get()));
         synchronized (this) {
-            for (Map.Entry<ConnectionKey, ArrayList<OldConnection>> e : availableConnections.entrySet()) {
+            for (Map.Entry<ConnectionKey, List<OldConnection>> e : availableConnections.entrySet()) {
                 sb.append("To %s: %d\n".formatted(e.getKey(), e.getValue().size()));
             }
         }
