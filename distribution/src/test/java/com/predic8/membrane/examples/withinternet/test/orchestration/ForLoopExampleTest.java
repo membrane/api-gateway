@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.examples.withinternet.test.orchestration;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.containsString;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 public class ForLoopExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -27,18 +27,18 @@ public class ForLoopExampleTest extends AbstractSampleMembraneStartStopTestcase 
         return "orchestration/for-loop";
     }
 
-    // @formatter:off
     @Test
-    void testCall() {
+    void call() {
+        // @formatter:off
         given()
         .when()
             .get("http://localhost:2000")
         .then()
-            .body(
-                containsString("\"products\""),
-                containsString("\"name\""),
-                containsString("\"price\"")
-            ).statusCode(200);
+            .body("products[0].name", notNullValue())
+            .body("products[0].price", instanceOf(Number.class))
+            .body("products.size()", greaterThan(2))
+            .statusCode(200);
+        // @formatter:on
     }
-    // @formatter:on
+
 }

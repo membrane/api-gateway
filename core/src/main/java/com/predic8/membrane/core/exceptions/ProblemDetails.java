@@ -409,4 +409,23 @@ public class ProblemDetails {
     public boolean isStacktrace() {
         return stacktrace;
     }
+
+    @Override
+    public String toString() {
+        return "ProblemDetails{" +
+               "production=" + production +
+               ", status=" + status +
+               ", type='" + type + '\'' +
+               ", subType='" + subType + '\'' +
+               ", title='" + title + '\'' +
+               ", detail='" + detail + '\'' +
+               ", flow=" + flow +
+               ", seeSuffix='" + seeSuffix + '\'' +
+               ", component='" + component + '\'' +
+               ", internalFields=" + internalFields +
+               ", topLevel=" + topLevel +
+               ", exception=" + exception +
+               ", stacktrace=" + stacktrace +
+               '}';
+    }
 }

@@ -95,7 +95,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     }
 
     private void addTypeConverters() {
-        GenericConversionService cs = new DefaultConversionService();
+        var cs = new DefaultConversionService();
         cs.addConverter(new SpELMapToStringTypeConverter());
         cs.addConverter(new SpELBodyToStringTypeConverter());
         cs.addConverter(new ListToStringTypeConverter());
