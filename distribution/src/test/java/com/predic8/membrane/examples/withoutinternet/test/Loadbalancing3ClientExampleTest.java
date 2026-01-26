@@ -19,16 +19,11 @@ import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-
-import static com.predic8.membrane.examples.util.BalancerClientScriptUtil.*;
+import static com.predic8.membrane.examples.util.BalancerClientScriptUtil.addNodeViaScript;
+import static com.predic8.membrane.examples.util.BalancerClientScriptUtil.removeNodeViaScript;
 import static com.predic8.membrane.examples.util.LoadBalancerUtil.assertNodeStatus;
 import static com.predic8.membrane.examples.util.LoadBalancerUtil.getRespondingNode;
-import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.apache.commons.io.FileUtils.writeStringToFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestcase {
