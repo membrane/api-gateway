@@ -256,30 +256,12 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
      * @description Specifies a list of clusters.
      */
     @MCChildElement(order = 2)
-    public void setClustersFromSpring(List<Balancer> balancers) {
-        List<Cluster> clusters = new ArrayList<>();
-        for (Balancer balancer : balancers)
-            clusters.addAll(balancer.getClusters());
+    public void setClusters(List<Cluster> clusters) {
         this.balancer.setClusters(clusters);
     }
 
-    public List<Balancer> getClustersFromSpring() {
-        return new ArrayList<>(Lists.newArrayList(balancer)) {
-            @Serial
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public boolean add(Balancer e) {
-                balancer.setClusters(e.getClusters());
-                return super.add(e);
-            }
-
-            @Override
-            public Balancer set(int index, Balancer element) {
-                balancer.setClusters(element.getClusters());
-                return super.set(index, element);
-            }
-        };
+    public List<Cluster> getClustersFromSpring() {
+        return balancer.getClusters();
     }
 
     public long getSessionTimeout() {
