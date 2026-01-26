@@ -110,9 +110,10 @@ public class ChunkedBody extends AbstractBody {
 
     @Override
     public void read() throws IOException {
-        if (isRead())
-            return;
-        ByteUtil.readStream(getContentAsStream());
+        if (bodyObserved && !bodyComplete)
+            ByteUtil.readStream(getContentAsStream());
+        bodyObserved = true;
+        super.read();
     }
 
     @Override
