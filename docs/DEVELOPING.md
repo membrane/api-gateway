@@ -38,10 +38,10 @@ public class SSLParser { ... }
 public abstract class Interceptor { ... }
 
 @MCElement(name = "log")
-public LogInterceptor extends Interceptor { ... }
+public class LogInterceptor extends Interceptor { ... }
 
 @MCElement(name = "groovy", mixed = true)
-public GroovyInterceptor extends Interceptor {
+public class GroovyInterceptor extends Interceptor {
     @MCTextContent
     public void setSrc(String src) { ... }
 }
@@ -165,7 +165,7 @@ Marks a setter as a configurable **child element**.
 ---
 ### `@MCTextContent`
 
-Maps text content for an element. Only relevant for xml configuration. 
+Maps text content for an element. Only relevant for XML configuration. 
 
 **Constraints**
 
@@ -207,30 +207,116 @@ Can be used on methods annotated with `@MCAttribute` or `@MCChildElement`. Marks
 
 ## Javadoc Format Description
 
-This project uses a structured Javadoc format to document classes, methods, and fields. Since we support both XML and YAML, documentation **must be format-agnostic** where possible.
+This project uses a structured Javadoc format to document configuration **elements** (classes) and their **properties** (methods). The doc generator **only evaluates custom block tags** listed below. 
+> Any plain text that is not part of one of these tags is ignored.
 
-| Tag | Applies To | Purpose / Content | Content |
-| :--- | :--- | :--- | :--- |
-| `@description` | Classes, Methods | Description of the element. <br><br>**Important:** Do not refer to XML-specific structures (like "tag" or "attribute") in the text. Use neutral terms like "element", "property", or "child". | HTML / Text |
-| `@default` | Methods | Default value. | String |
-| `@example` | Methods | **XML** example value or usage snippet. | XML Snippet |
-| `@yaml` | Methods | **YAML** example value or usage snippet. This should demonstrate the exact same logic as the XML `@example`. | YAML Snippet |
-| `@topic` | Classes | Assigns a topic/category to group related classes in the docs (e.g. "1. Proxies"). | Number + Title |
 
-**Comments:**
+### 1) Supported custom Javadoc tags
 
-* Do not use Markdown in Javadocs. Javadocs are HTML.
-* When you refer to elements from the Configuration Language in Javadocs, do not refer to them verbatim (e.g. `<api>`), but XML escape the reference: `&lt;for&gt;`.
-* For `@yaml` examples, ensure indentation is preserved (e.g., wrap in `<pre>` blocks if necessary for the doc generator).
+The `Doc` parser accepts **only** these tags:
 
-**Additional Guidelines for `@default` tag:**
+* `@topic`
+* `@description`
+* `@example`
+* `@default`
+* `@explanation`
+* `@deprecated`
+* `@yaml`
 
-* If an `@MCAttribute` method also has `@Required`, the `@default` Javadoc tag does not make sense. It should therefore be omitted.
-* If an `@MCAttribute` method does not have an explicit default value in its corresponding Java field initializer or `init()` method, and its absence implies a specific behavior (e.g., 'not set', 'uses system default', 'no value'), use `(@default (not set))` or a similarly descriptive phrase.
-* If the attribute is mandatory and has no default, the `@default` tag can be omitted.
+Ignored standard tags: `@author`, `@param`, `@see` (silently dropped).
+Any other tag: **warning** (“Unknown javadoc tag”).
 
-> **Note:**
-> The table lists custom tags used in this project. In addition, all standard Javadoc tags (such as `@param`, `@return`,
-> and `@throws`) are fully supported according to the official Javadoc specification.
+Rules:
 
-See e.g. [CallInterceptor](../core/src/main/java/com/predic8/membrane/core/interceptor/flow/CallInterceptor.java) for usage.
+* Each tag may appear **at most once** per element (duplicate → warning; later one ignored).
+* `{@code ...}` inside any tag value → **error** (“@code not allowed!”).
+* Any XML/HTML entities like `&nbsp;` → **error** (“Entity … not allowed.”). Use only `&lt; &gt; &amp; &quot; &apos;`.
+
+
+### 2) Class-level docs (for `@MCElement` classes)
+
+| Tag            | Notes                                                                                                     |
+|----------------|-----------------------------------------------------------------------------------------------------------|
+| `@topic`       | Used to group elements in “Topics” reference. If missing → element won’t appear in topic list.            |
+| `@description` | Main description shown on the element page. If missing → no description.                                  |
+| `@deprecated`  | Renders a “Deprecated” alert box.                                                                         |
+| `@yaml`        | Used for an example YAML code block on the element page. Use `@yaml` with `<pre><code> ... </code></pre>` |
+| `@explanation` | Deprecated. Use `@description` instead.                                                                   |
+
+Example:
+
+```java
+/**
+ * @topic 1. Proxies
+ * @description Routes requests to an upstream service.
+ * @yaml 
+ * <pre><code>
+ *  serviceProxy: {}
+ * </code></pre>
+ * @deprecated Use FooProxy instead.
+ */
+@MCElement(name="serviceProxy")
+public class ServiceProxy { ... }
+```
+
+---
+
+### 3) Method-level docs (for `@MCAttribute`, `@MCChildElement`, `@MCOtherAttributes`)
+
+#### 3.1 `@MCAttribute` methods
+
+**Rendered in HTML (attribute table):**
+
+* `@description` → Description column
+* `@default` → Default column
+* `@example` → Examples column
+
+If none of these tags are present, the HTML shows `-` for those fields.
+
+```java
+/**
+ * @description Target URL.
+ * @default (not set)
+ * @example https://api.example.com
+ */
+@MCAttribute
+public void setTarget(String target) { ... }
+```
+
+#### 3.2 `@MCChildElement` methods
+
+Use **`@description`** to document the relationship and semantics of the child element(s) for that setter (purpose, constraints, ordering).
+
+```java
+/**
+ * @description Child elements that define request handling. Order matters.
+ */
+@MCChildElement(order = 10)
+public void setInterceptors(List<Interceptor> interceptors) { ... }
+```
+
+#### 3.3 `@MCTextContent` and `@MCOtherAttributes` methods
+
+Use **`@description`** to describe:
+
+* for `@MCTextContent`: what the text content represents and any constraints (format, allowed values, examples in prose)
+* for `@MCOtherAttributes`: which additional attributes are accepted and how they are interpreted/forwarded
+
+> Note: These method-level docs are written into the XSD (`<xsd:documentation>`), but the current HTML parser does not render them yet.
+
+```java
+/**
+ * @description Accepts additional attributes and forwards them unchanged to the underlying component.
+ */
+@MCOtherAttributes
+public void setOtherAttributes(Map<QName, String> attrs) { ... }
+```
+
+### 4) Content format rules (inside tag values)
+
+Inside each custom tag value you may use **well-formed XML/HTML fragments**.
+
+* Must be **well-formed** (closed tags, properly nested), otherwise compiler error and the value becomes empty.
+* No HTML entities except the XML built-ins: `&lt; &gt; &amp; &quot; &apos;`
+* `{@link ...}` is allowed but stays **plain text** (not converted to hyperlinks).
+* For code: use `<pre><code>...</code></pre>` (do **not** use `{@code ...}`).
