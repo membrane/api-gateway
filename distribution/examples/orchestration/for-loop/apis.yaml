@@ -1,40 +1,41 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+
 api:
   port: 2000
   flow:
     - request:
-        # Fetch the complete list of products (limit set to avoid pagination)
         - call:
-            url: https://api.predic8.de/shop/v2/products?limit=1000
-        - setProperty:
-            name: products
-            value: ${$.products}
-            language: jsonpath
+            url: https://api.predic8.de/shop/v2/products?limit=7
         # Iterate over each product to get additional details (price)
         - for:
-            in: property.products
+            in: $.products
+            language: jsonpath
             flow:
               - call:
                   url: https://api.predic8.de/shop/v2/products/${property.it['id']}
-              - setProperty:
-                  name: price
-                  value: ${$.price}
-                  language: jsonpath
+                  language: spel
               - groovy:
-                  src: property.it.price = property.price
+                  src: |
+                    property.result = property.result ?: []
+                    property.result.add(
+                      [ "name": property.it.name,
+                        "price": fn.jsonPath('$.price')
+                      ])
         # Render a simplified JSON response with only product name and price
         - template:
             contentType: application/json
             pretty: true
             src: |
               {
-                    "products": [
-                      <% property.products.eachWithIndex { p, idx -> %>
-                        {
-                            "name": "<%= p.name %>",
-                            "price": "<%= p.price %>"
-                        }<%= idx < property.products.size() - 1 ? ',' : '' %>
-                        <% } %>
+                  "products": [
+                    <% property.result.eachWithIndex { p, idx -> %>
+                      {
+                          "name": "${p.name}",
+                          "price": ${p.price}
+                      }${idx < property.result.size() - 1 ? ',' : ''}
+                    <% } %>
                   ]
               }
-    - return: {}
+    - return:
+        status: 200
+
