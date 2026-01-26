@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -23,8 +22,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serial;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
@@ -260,7 +257,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
         this.balancer.setClusters(clusters);
     }
 
-    public List<Cluster> getClustersFromSpring() {
+    public List<Cluster> getClusters() {
         return balancer.getClusters();
     }
 

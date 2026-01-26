@@ -14,14 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 @MCElement(name="clusters", component =false, noEnvelope = true)
-public class Balancer extends AbstractXmlElement {
+public class Balancer {
 	public static final String DEFAULT_NAME = "Default";
 	private static final Logger log = LoggerFactory.getLogger(Balancer.class.getName());
 

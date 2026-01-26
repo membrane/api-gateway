@@ -71,12 +71,11 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
                 exc.setResponse(Response.forbidden().build());
                 return ABORT;
             }
+            updateClusterManager(m, params);
         } catch (RuntimeException e) {
             exc.setResponse(Response.badRequest().build());
             return ABORT;
         }
-
-        updateClusterManager(m, params);
 
         exc.setResponse(noContent().build());
         return RETURN;

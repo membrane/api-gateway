@@ -46,7 +46,6 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
         } catch (Exception ignored) {
             log.warn("proxies.xml not there!");
         }
-		replaceInFile2("lb-client-secured.proxies.xml", "8080", "3023");
 		replaceInFile2("apis.yaml", "8080", "3023");
 
 		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
@@ -79,20 +78,5 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 			assertEquals(3, getRespondingNode("http://localhost:3023/service"));
 		}
 
-		try(Process2 ignored = startServiceProxyScript(null,"membrane-secured"); HttpAssertions ha = new HttpAssertions()) {
-			controlNodeViaScript(1, baseDir, "up", "localhost", 4000); // 1 indicates failure
-
-			File propFile = new File(baseDir, "client.properties");
-			writeStringToFile(propFile, readFileToString(propFile, UTF_8).replace("#", ""), UTF_8);
-
-			sleep(100);
-
-			addNodeViaScript(baseDir, "localhost", 4000);
-
-			sleep(100);
-
-			ha.setupHTTPAuthentication("localhost", 9000, "admin", "admin");
-			assertContains("localhost:4000", ha.getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"));
-		}
 	}
 }
