@@ -3,9 +3,9 @@
 # Tutorial: Choose
 #
 # Try:
-#   1.) curl localhost:2000
-#   2.) curl -H "X-Foo: 1" localhost:2000
-#   3.) curl -H "X-Bar: 1" localhost:2000
+#   1.) curl -v localhost:2000
+#   2.) curl -v -H "X-Foo: 1" localhost:2000
+#   3.) curl -v -H "X-Bar: 1" localhost:2000
 #
 api:
   port: 2000
