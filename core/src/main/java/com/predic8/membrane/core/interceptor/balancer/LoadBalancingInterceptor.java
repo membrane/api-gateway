@@ -32,8 +32,27 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description Performs load-balancing between several nodes. Nodes sharing session state may be bundled into a cluster.
- * @explanation May only be used as interceptor in a serviceProxy or api.
+ * May only be used as interceptor in a serviceProxy or api.
  * @topic 2. Enterprise Integration Patterns
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - balancer:
+ *         name: DemoBalancer
+ *         priorityStrategy: {}
+ *         clusters:
+ *           - cluster:
+ *               name: PROD
+ *               nodes:
+ *                 - node:
+ *                     host: node1.predic8.com
+ *                     port: 8080
+ *                 - node:
+ *                     host: node2.predic8.com
+ *                     port: 8090
+ * </code></pre>
  */
 @MCElement(name = "balancer")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
