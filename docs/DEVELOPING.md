@@ -67,11 +67,11 @@ api:
   language: GROOVY
   test: "new Random().nextBoolean()"
   ssl: {}
-  interceptors:
-  - log: {}
-  - groovy:
-      src: |
-        println('Here')
+  flow:
+    - log: {}
+    - groovy:
+        src: |
+          println('Here')
 ```
 
 Therefore, while most of the project historically used XML, everything can be expressed in YAML.
