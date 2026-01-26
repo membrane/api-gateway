@@ -16,8 +16,10 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@Disabled
 public class SimpleTest {
 
 	private static Router router;

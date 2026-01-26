@@ -29,8 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.http.Response.noContent;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
@@ -58,14 +57,22 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 
         Matcher m = urlPattern.matcher(exc.getOriginalRequestUri());
 
-        if (!m.matches()) return Outcome.CONTINUE;
+        if (!m.matches()) return CONTINUE;
 
         log.debug("request received: {}", m.group(1));
 
-        Map<String, String> params = getParams(exc);
+        Map<String, String> params;
+        try {
+            params = getParams(exc);
+            if (params.get("host") == null || params.get("port") == null)
+                throw new IllegalArgumentException("Missing host/port");
 
-        if (isTimedout(params)) {
-            exc.setResponse(Response.forbidden().build());
+            if (isTimedout(params)) {
+                exc.setResponse(Response.forbidden().build());
+                return ABORT;
+            }
+        } catch (RuntimeException e) {
+            exc.setResponse(Response.badRequest().build());
             return ABORT;
         }
 
@@ -101,7 +108,12 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
     }
 
     private boolean isTimedout(Map<String, String> params) {
-        return timeout > 0 && System.currentTimeMillis() - Long.parseLong(params.get("time")) > timeout;
+        if (timeout <= 0) return false;
+        String time = params.get("time");
+        if (time == null)
+            throw new IllegalArgumentException("Missing time");
+        long ts = Long.parseLong(time);
+        return System.currentTimeMillis() - ts > timeout;
     }
 
     private int getPortParam(Map<String, String> params) {
