@@ -1,6 +1,5 @@
 package com.predic8.membrane.examples.withoutinternet.openapi;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import org.jetbrains.annotations.NotNull;
@@ -12,10 +11,10 @@ import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
 
+import static com.predic8.membrane.core.util.OSUtil.isWindows;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.cef.OS.isWindows;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.*;
 
