@@ -14,7 +14,7 @@ This example demonstrates how to secure an (Open)API using JWT authentication wi
 
 In `apis.yaml`, reference the OpenAPI file:
 
-```<yaml
+```yaml
   specs:
     - openapi:
         location: secure-shop-api.yml
