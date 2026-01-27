@@ -12,10 +12,13 @@ This example demonstrates how to secure an (Open)API using JWT authentication wi
 
 ## OpenAPI Specification with Scopes
 
-In `proxies.xml`, reference the OpenAPI file:
+In `apis.yaml`, reference the OpenAPI file:
 
-```xml
-<openapi location="secure-shop-api.yml" validateSecurity="yes"/>
+```<yaml
+  specs:
+    - openapi:
+        location: secure-shop-api.yml
+        validateSecurity: true
 ```
 
 This makes Membrane automatically enforce the security rules defined in the spec.
@@ -52,45 +55,50 @@ paths:
 
 ---
 
-## 2. Configure `proxies.xml`
+## 2. Configure `apis.yaml`
 
 **Token Server**:
 
 (Instead of using Membrane API Gateway as the token server, you can also integrate with Keycloak or Microsoft Entra ID. To avoid extra setup for this demo, we use tokens issued by Membrane itself.)
-```xml
-<!-- Token Server -->
-<api port="2000" name="Token Server">
-  <request>
-    <template>{
-      "sub": "user@example.com",
-      "aud": "shop",
-      "scp": "inventory"
-    }</template>
-    <jwtSign>
-      <jwk location="jwk.json"/>
-    </jwtSign>
-  </request>
-  <return/>
-</api>
+```yaml
+# Token Server
+api:
+  name: Token Server
+  port: 2000
+  flow:
+    - request:
+        - template:
+            src: |
+              {
+                "sub": "user@example.com",
+                "aud": "shop",
+                "scp": "inventory"
+              }
+        - jwtSign:
+            jwk:
+              location: jwk.json
+    - return: {}
 ```
 
 **Protected API**:
 
-```xml
-<!-- Protected API -->
-<api port="2001" name="Protected API">
-  <!-- OpenAPI with scope enforcement -->
-  <openapi location="secure-shop-api.yml" validateSecurity="yes"/>
-  
-  <!-- JWT verification -->
-  <jwtAuth expectedAud="shop">
-    <jwks>
-      <jwk location="jwk.json"/>
-    </jwks>
-  </jwtAuth>
-  
-  <openapiValidator/>
-</api>
+```yaml
+# Protected API
+api:
+  name: Protected API
+  port: 2001
+  specs:
+    - openapi:
+        location: secure-shop-api.yml
+        validateSecurity: true
+  flow:
+    - jwtAuth:
+        expectedAud: shop
+        jwks:
+          jwks:
+            - jwk:
+                location: jwk.json
+    - openapiValidator: {}
 ```
 
 ---
