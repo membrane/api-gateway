@@ -18,6 +18,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
@@ -28,14 +29,45 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.util.stream.Stream.*;
 
-@MCElement(name = "choose")
+/**
+ * @description Enables conditional branching.
+ * Evaluates {@link Case} elements in order and runs the first matching flow.
+ * If no case matches, an optional trailing {@link Otherwise} is executed.
+ * The "otherwise" element must be the last element of the list.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - choose:
+ *         - case:
+ *             test: headers['X-Foo'] != null
+ *             flow:
+ *               - return:
+ *                   status: 200
+ *         - case:
+ *             test: headers['X-Bar'] != null
+ *             flow:
+ *               - return:
+ *                   status: 300
+ *         - otherwise:
+ *             - return:
+ *                 status: 400
+ *
+ * </code></pre>
+ */
+@MCElement(name = "choose", noEnvelope = true)
 public class ChooseInterceptor extends AbstractFlowInterceptor {
+
+    private List<AbstractCaseOtherwise> choices = new ArrayList<>();
 
     private final List<Case> cases = new ArrayList<>();
     private Otherwise otherwise;
 
     @Override
     public void init() {
+        validateChoices(choices);
+        setChoices();
+
         cases.forEach(c -> c.init(router));
         interceptors.addAll(concat(
             otherwise != null ? otherwise.getFlow().stream() : empty(),
@@ -79,6 +111,28 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
         return null;
     }
 
+    static void validateChoices(List<AbstractCaseOtherwise> choices) {
+        for (int i = 0; i < choices.size(); i++) {
+            AbstractCaseOtherwise c = choices.get(i);
+
+            if (c instanceof Otherwise) {
+                if (i != choices.size() - 1) {
+                    throw new ConfigurationException("'otherwise' must be the last element in 'choose'.");
+                }
+            }
+        }
+    }
+
+    private void setChoices() {
+        for (AbstractCaseOtherwise c : this.choices) {
+            if (c instanceof Case cc) {
+                cases.add(cc);
+            } else if (c instanceof Otherwise o) {
+                otherwise = o;
+            }
+        }
+    }
+
     private void handleExpressionProblemDetails(ExchangeExpressionException e, Exchange exc) {
         e.provideDetails(internal(router.getConfiguration().isProduction(),getDisplayName()))
             .addSubSee("expression-evaluation")
@@ -86,22 +140,20 @@ public class ChooseInterceptor extends AbstractFlowInterceptor {
             .buildAndSetResponse(exc);
     }
 
-    public List<Case> getCases() {
-        return cases;
+    /**
+     * @description Sets the list of choices. The choices can include "case" and "otherwise" elements to define conditional flows.
+     *
+     * @param choices the list of choices, which can include instances of {@link Case} for conditional logic
+     *                and an optional {@link Otherwise} to specify the default behavior. The "otherwise"
+     *                element must be the last in the list if provided.
+     */
+    @MCChildElement
+    public void setChoices(List<AbstractCaseOtherwise> choices) {
+        this.choices = choices;
     }
 
-    @MCChildElement(order = 1)
-    public void setCases(List<Case> cases) {
-        this.cases.addAll(cases);
-    }
-
-    public Otherwise getOtherwise() {
-        return otherwise;
-    }
-
-    @MCChildElement(order = 2)
-    public void setOtherwise(Otherwise otherwise) {
-        this.otherwise = otherwise;
+    public List<AbstractCaseOtherwise> getChoices() {
+        return choices;
     }
 
 }

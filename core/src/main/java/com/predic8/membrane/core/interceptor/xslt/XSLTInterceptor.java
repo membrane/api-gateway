@@ -78,6 +78,14 @@ public class XSLTInterceptor extends AbstractInterceptor {
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
+            if (e.getMessage() != null && e.getMessage().contains("is not allowed in trailing section")) {
+                user(router.getConfiguration().isProduction(), getDisplayName())
+                        .title("Content not allowed in trailing section of XML input.")
+                        .detail("Check for extra characters after the XML root element (after the final closing tag like </root>).")
+                        .internal("offendingInput", tail(msg.getBodyAsStringDecoded(), 50))
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
             return createErrorResponse(exc,e,flow);
         } catch (Exception e) {
             log.info("", e);

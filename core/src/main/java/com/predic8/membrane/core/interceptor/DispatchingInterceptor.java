@@ -57,17 +57,18 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             try {
                 exc.getDestinations().add(getForwardingDestination(exc));
             } catch (URISyntaxException e) {
-                ProblemDetails pd = user(false, "invalid-path")
-                        .title("Invalid request path")
+                var pd = user(getRouter().getConfiguration().isProduction(), "invalid-path")
+                        .title("Request path contains an invalid character.")
                         .detail(getMessageForURISyntaxException(exc, e))
-                        .internal("path", exc.getRequest().getUri());
+                        .internal("path", exc.getRequest().getUri())
+                        .internal("destination", e.getInput());
                 if (e.getIndex() >= 0)
                     pd.internal("index", e.getIndex());
                 pd.buildAndSetResponse(exc);
                 return ABORT;
             } catch (Exception e) {
                 internal(router.getConfiguration().isProduction(), getDisplayName())
-                        .detail("Could not get forwarding destination to dispatch request")
+                        .detail("Could not get forwarding destination to dispatch request.")
                         .exception(e)
                         .buildAndSetResponse(exc);
                 return ABORT;

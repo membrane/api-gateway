@@ -83,20 +83,23 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             }
             throw new RuntimeException("Cannot cast %s to %s".formatted(o,type));
         } catch (SpelEvaluationException see) {
-            ExchangeExpressionException eee = new ExchangeExpressionException(expression, see);
             String msg ;
+            TypeDescriptor sourceType = null;
+            TypeDescriptor targetType = null;
             if (see.getMessageCode() == METHOD_NOT_FOUND) {
                 msg = "Method not found in expression '%s' use a SpEL function or one of Membrane's: %s".formatted(expression, SpELBuiltInFunctions.getBuiltInFunctionNames());
             } else if (see.getCause() instanceof ConverterNotFoundException cnfe) {
                 msg = "Type converter not found for expression '%s' from '%s' to '%s'.".formatted(expression, cnfe.getSourceType(), cnfe.getTargetType());
-                eee.extension("sourceType", cnfe.getSourceType())
-                        .extension("targetType", cnfe.getTargetType());
+                sourceType = cnfe.getSourceType();
+                targetType = cnfe.getTargetType();
             } else {
                 msg = "Error in expression '%s': %s".formatted( expression, see.getMessage());
             }
             log.warn(msg);
-            eee.detail(msg);
-            throw eee;
+            var eee = new ExchangeExpressionException(expression,see,msg);
+            if (sourceType != null) eee.extension("sourceType", sourceType);
+            if (targetType != null) eee.extension("targetType", targetType);
+            throw eee.excludeException();
         }
     }
 
@@ -104,7 +107,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
         try {
             return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow), Object.class);
         } catch (BuiltInFunctionException e) {
-            throw new ExchangeExpressionException(expression, e).extension("function", e.getFunction());
+            throw new ExchangeExpressionException(expression, e,e.getMessage()).extension("function", e.getFunction());
         }
     }
 

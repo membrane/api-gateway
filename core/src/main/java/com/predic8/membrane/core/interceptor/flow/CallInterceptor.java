@@ -13,34 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 import static com.google.api.client.http.HttpMethods.*;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
 
 /**
  * @description Calls an external endpoint
- *
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "call")
@@ -81,8 +76,15 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
         try (HttpClient client = new HttpClient()) {
             client.call(newExc);
+        } catch (UnknownHostException e) {
+            log.error("Error calling: {} Unknown host: {}", dest, e.getMessage());
+            createProblemDetails(dest)
+                    .detail("Unknown host " + e.getMessage())
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (Exception e) {
             log.error("Error during HTTP call to {}: {}", dest, e.getMessage(), e);
+            createProblemDetails(dest).buildAndSetResponse(exc);
             return ABORT;
         }
 
@@ -103,6 +105,13 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    private ProblemDetails createProblemDetails(String dest) {
+        return internal(router.getConfiguration().isProduction(), "call")
+                .title("Error performing callout.")
+                .internal("expression", exchangeExpression.getExpression())
+                .internal("destination", dest);
     }
 
     private Request getNewRequest(Exchange exchange) {
@@ -145,7 +154,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
             requestHeader.add(field.getHeaderName().getName(), field.getValue());
         }
         // Removes body-related headers when no body is present
-        if(!methodShouldHaveBody(method)) {
+        if (!methodShouldHaveBody(method)) {
             requestHeader.removeFields(CONTENT_TYPE);
             requestHeader.removeFields(CONTENT_LENGTH);
             requestHeader.removeFields(TRANSFER_ENCODING);
@@ -161,7 +170,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                 if (headerField.getHeaderName().getName().equalsIgnoreCase(rmHeader))
                     return;
             }
-            originalExc.getRequest().getHeader().setValue(headerField.getHeaderName().getName(),headerField.getValue());
+            originalExc.getRequest().getHeader().setValue(headerField.getHeaderName().getName(), headerField.getValue());
         });
     }
 

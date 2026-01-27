@@ -3,8 +3,8 @@
 # Tutorial: If Else
 #
 # Try:
-#   1.) curl localhost:2000
-#   2.) curl -H "X-Foo: 1" localhost:2000
+#   1.) curl -v localhost:2000
+#   2.) curl -v -H "X-Foo: 1" localhost:2000
 #
 api:
   port: 2000
