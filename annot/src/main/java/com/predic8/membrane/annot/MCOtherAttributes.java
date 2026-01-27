@@ -18,8 +18,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Marks a setter that receives "additional / unforeseen" configuration attributes that are not explicitly
+ * modeled via {@link MCAttribute}.
+ *
+ * <p>The annotated method must accept a {@link java.util.Map}:
+ * <ul>
+ *   <li>{@code Map<String, String>} for arbitrary string attributes, or</li>
+ *   <li>{@code Map<String, Object>} where the values must be components.</li>
+ * </ul>
+ *
+ * <p>Use this when an element should allow extensible, free-form attributes without extending the grammar
+ * for every possible key.
+ */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MCOtherAttributes {
-
 }

@@ -23,8 +23,28 @@ import java.lang.annotation.Target;
 public @interface MCElement {
     String name();
 
+    /**
+     * Optional identifier for the element. Must be used when defining a local element (component=false) which uses the same `name` as a component (component=true).
+     */
     String id() default "";
 
+    /**
+     * Only relevant for XML configuration on classes that use {@link MCTextContent}.
+     *
+     * <p>By default, the text content is treated as plain character data, e.g.:
+     * <pre>{@code
+     * <demoTextContent>Put your text here</demoTextContent>
+     * }</pre>
+     *
+     * <p>If the text contains markup like:
+     * <pre>{@code
+     * <demoTextContent><h1>Example html text</h1></demoTextContent>
+     * }</pre>
+     * the parser may interpret the inner tags (e.g., {@code <h1>}) as child elements.
+     *
+     * <p>Setting {@code mixed = true} allows element content that mixes text and nested XML,
+     * preventing such tags from being treated as configuration child elements.
+     */
     boolean mixed() default false;
 
     /**
