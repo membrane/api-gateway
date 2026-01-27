@@ -123,7 +123,15 @@ membrane.cmd
 
 ---
 
-## 4. Request a Token
+## 4. Try to access the Protected API
+
+```cmd
+curl http://localhost:2001/shop/v2/products
+```
+
+---
+
+## 5. Request a Token
 
 ```cmd
 curl http://localhost:2000
@@ -139,7 +147,7 @@ The token includes `scp: "inventory"`, which satisfies the `GET /products` scope
 
 ---
 
-## 5. Access the Protected API
+## 6. Access the Protected API
 
 ```bash
 curl -H "Authorization: Bearer <your-token>" http://localhost:2001/shop/v2/products
