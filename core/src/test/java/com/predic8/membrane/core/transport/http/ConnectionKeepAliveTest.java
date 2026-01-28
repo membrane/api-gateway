@@ -11,6 +11,11 @@ import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +43,22 @@ public class ConnectionKeepAliveTest {
     }
 
     @Test
-    void foo() throws Exception{
+    void foo() throws Exception {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpGet req1 = new HttpGet("http://localhost:2000/health");
+
+            try (CloseableHttpResponse res = client.execute(req1)) {
+                EntityUtils.consume(res.getEntity());
+            }
+
+            try (CloseableHttpResponse res = client.execute(req1)) {
+                EntityUtils.consume(res.getEntity());
+            }
+        }
+    }
+
+    @Test
+    void bar() throws Exception {
         HttpClient client = new HttpClient();
         Exchange exc = Request.get("http://localhost:2000/health").buildExchange();
         Exchange exc2 = Request.get("http://localhost:2000/health").buildExchange();
@@ -46,7 +66,7 @@ public class ConnectionKeepAliveTest {
         client.call(exc);
     }
 
-    private @NotNull Router getGateway() throws Exception{
+    private @NotNull Router getGateway() throws Exception {
         HttpRouter router = new HttpRouter();
         router.getRuleManager().addProxyAndOpenPortIfNew(getOpenApiProxy());
         router.setBaseLocation("src/test/resources/");
