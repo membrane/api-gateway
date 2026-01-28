@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.examples.withoutinternet.test;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.examples.util.*;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.*;
 import static org.hamcrest.CoreMatchers.containsString;
 
 public class CallAuthenticationExampleTest extends AbstractSampleMembraneStartStopTestcase {
@@ -28,18 +28,7 @@ public class CallAuthenticationExampleTest extends AbstractSampleMembraneStartSt
     }
 
     @Test
-    void testCall() {
-        // @formatter:off
-        given().when()
-            .get("http://localhost:2000")
-        .then()
-            .body(containsString("Success"))
-            .statusCode(200);
-        // @formatter:on
-    }
-
-    @Test
-    void testAuthService() {
+    void authService() {
         // @formatter:off
         given().when()
             .get("http://localhost:3000/login")
@@ -50,12 +39,23 @@ public class CallAuthenticationExampleTest extends AbstractSampleMembraneStartSt
     }
 
     @Test
-    void testSecuredBackend() {
+    void securedBackend() {
         // @formatter:off
         given().when()
             .get("http://localhost:3001")
         .then()
             .statusCode(401);
+        // @formatter:on
+    }
+
+    @Test
+    void call() {
+        // @formatter:off
+        given().when()
+            .get("http://localhost:2000")
+        .then()
+            .body(containsString("Success"))
+            .statusCode(200);
         // @formatter:on
     }
 }
