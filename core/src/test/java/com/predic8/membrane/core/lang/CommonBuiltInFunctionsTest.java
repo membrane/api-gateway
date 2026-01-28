@@ -14,26 +14,25 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.security.ApiKeySecurityScheme;
-import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.security.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URISyntaxException;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.CommonBuiltInFunctions.*;
-import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.HEADER;
-import static java.util.List.of;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
+import static java.util.List.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CommonBuiltInFunctionsTest {
+
+    private static final ObjectMapper om = new ObjectMapper();
 
     static Exchange exc;
 
@@ -121,5 +120,44 @@ class CommonBuiltInFunctionsTest {
             }
         }
         return ((double) executedCount / 1_000_000);
+    }
+
+    @Nested
+    class toJSON {
+
+        @Test
+        void map() throws Exception {
+            var str = toJSON(Map.of("foo", 1, "bar", 2));
+            var obj = om.readValue(str, Map.class);
+            assertEquals(2, obj.size());
+            assertEquals(1, obj.get("foo"));
+            assertEquals(2, obj.get("bar"));
+        }
+
+        @Test
+        void list() throws Exception {
+            var str = toJSON(List.of("foo", 1, "bar"));
+            var obj = om.readValue(str, List.class);
+            assertEquals(3, obj.size());
+            assertEquals("foo", obj.get(0));
+            assertEquals(1, obj.get(1));
+            assertEquals("bar", obj.get(2));
+        }
+
+        @Test
+        void string() throws Exception {
+            assertEquals("\"foo\"", toJSON("foo"));
+        }
+
+        @Test
+        void integer() throws Exception {
+            assertEquals("1", toJSON(1));
+        }
+
+                @Test
+        void bool() throws Exception {
+            assertEquals("true", toJSON(true));
+        }
+
     }
 }
