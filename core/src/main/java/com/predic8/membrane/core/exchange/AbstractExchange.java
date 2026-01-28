@@ -108,6 +108,9 @@ public abstract class AbstractExchange {
 	}
 
 	public void setRequest(Request request) {
+
+		if (this.request != null) request.discardBody(); // prevent old bodies to remain unread
+
 		this.request = request;
 		if (this.request != null) {
 			this.request.setErrorMessage(errMessage);
@@ -123,6 +126,9 @@ public abstract class AbstractExchange {
 	}
 
 	public void setResponse(Response res) {
+
+		if (response != null) response.discardBody(); // prevent old bodies to remain unread
+
 		response = res;
 		if (response != null) {
 			response.setErrorMessage(errMessage);
