@@ -1,0 +1,37 @@
+openapi: 3.0.3
+info:
+  title: HCC
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/
+tags:
+  - name: HEALTH
+
+paths:
+  /foo:
+    get:
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: Ok
+
+  /health:
+    get:
+      tags:
+        - HEALTH
+      summary: API health check
+      description: Checks availability of provided API
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContentResponse'
+        '4XX':
+          description: Bad Request
+        5XX:
+          description: Server Error
+components:
+  responses:
+    NoContentResponse:
+      description: No Content
