@@ -54,7 +54,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     /**
      * Shortcut for exchange.getProperty("it"). Makes it easier to write scripts with for loops.
      */
-    private Object it;
+    private final Object it;
 
     private SpELLablePropertyAware params;
 

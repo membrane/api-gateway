@@ -145,19 +145,18 @@ class CommonBuiltInFunctionsTest {
         }
 
         @Test
-        void string() throws Exception {
+        void string() {
             assertEquals("\"foo\"", toJSON("foo"));
         }
 
         @Test
-        void integer() throws Exception {
+        void integer() {
             assertEquals("1", toJSON(1));
         }
 
                 @Test
-        void bool() throws Exception {
+        void bool() {
             assertEquals("true", toJSON(true));
         }
-
     }
 }
