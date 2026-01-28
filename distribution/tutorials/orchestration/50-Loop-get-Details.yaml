@@ -27,14 +27,14 @@ api:
             language: jsonpath
             flow:
               - log:
-                  message: 'Getting details for product: ${it["name"]}'
+                  message: 'Fetching price for: ${it["name"]}'
               - call:
-                  url: https://api.predic8.de/shop/v2/products/${it['id']}
+                  url: https://api.predic8.de${it['self_link']}
               # Collect name and price in a result list
               - groovy:
                   src: |
-                    property.result = property.result ?: []
-                    property.result.add(
+                    property.res = property.res ?: []
+                    property.res.add(
                       [ "name": it['name'],
                         "price": fn.jsonPath('$.price')
                       ])
@@ -45,11 +45,11 @@ api:
             src: |
               {
                   "products": [
-                    <% property.result.eachWithIndex { p, idx -> %>
+                    <% property.res.eachWithIndex { p, idx -> %>
                       {
                           "name": "${p.name}",
                           "price": ${p.price}
-                      }${idx < property.result.size() - 1 ? ',' : ''}
+                      }${idx < property.res.size() - 1 ? ',' : ''}
                     <% } %>
                   ]
               }

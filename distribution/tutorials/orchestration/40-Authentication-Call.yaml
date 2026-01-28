@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Authentication Call
+#
+# Problem: A backend API (port 3001) requires authentication, but the client
+#          does not support it.
+#
+# Solution: The gateway authenticates against a login endpoint and forwards the
+#          session cookie to the backend.
+#
+# Try:
+#     curl -i http://localhost:3001
+#       No session => 401 Unauthorized
+#     curl http://localhost:3000/login -i
+#       Returns SESSION cookie
+#     curl -H "Cookie: SESSION=akj34" http://localhost:3001
+#       Valid session => Success!
+#     curl http://localhost:2000
+#       Gateway performs login and forwards cookie to backend (see logs)
+#
+# Variations:
+#     - Protect the API (port 2000) with other auth methods apis.yaml(Basic, API key, OAuth2, ...)
+#     - Protect the login API (port 3000)
+
+api:
+  port: 2000
+  name: Gateway
+  flow:
+    - request:
+        - log:
+            message: Authenticating via login API
+        - call:
+            url: http://localhost:3000/login
+        - log:
+            message: "Got Cookie: ${header['Set-Cookie']}"
+        # Forward session to backend
+        - setHeader:
+            name: Cookie
+            value: ${header['Set-Cookie']}
+        # Do not forward Set-Cookie
+        - headerFilter:
+            - exclude: Set-Cookie
+        - log:
+            message: "Forwarding Cookie: ${header['Cookie']}"
+  target:
+    url: http://localhost:3001
+
+---
+# Login API
+api:
+  port: 3000
+  name: Login API
+  path:
+    uri: /login
+  flow:
+    # Place authentication here: Basic, API key, OAuth2, ...
+    - response:
+      - setCookies:
+          cookies:
+            - cookie:
+                name: SESSION
+                value: akj34
+      - log:
+          message: Login successful. Issue SESSION cookie.
+    - return:
+        status: 200
+---
+# Backend API protected by session cookie
+api:
+  port: 3001
+  name: Target API
+  flow:
+    - request:
+      - log:
+          message: "Session: ${cookie.SESSION}"
+      - if:
+          test: cookie.SESSION != 'akj34'
+          flow:
+            - return:
+                status: 401
+    - response:
+      - static:
+          src: Success!
+    - return:
+        status: 200
