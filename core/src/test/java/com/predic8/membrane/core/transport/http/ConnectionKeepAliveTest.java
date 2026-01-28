@@ -12,6 +12,7 @@ import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,12 +31,19 @@ public class ConnectionKeepAliveTest {
         backend = getBackend();
     }
 
+    @AfterEach
+    public void tearDown() throws Exception {
+        gateway.shutdown();
+        backend.shutdown();
+    }
+
     @Test
     void foo() throws Exception{
         HttpClient client = new HttpClient();
         Exchange exc = Request.get("http://localhost:2000/health").buildExchange();
+        Exchange exc2 = Request.get("http://localhost:2000/health").buildExchange();
         client.call(exc);
-        client.call(exc);
+        client.call(exc2);
     }
 
     private @NotNull Router getGateway() throws Exception{
