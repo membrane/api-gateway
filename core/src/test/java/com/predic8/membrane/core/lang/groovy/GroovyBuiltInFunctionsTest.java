@@ -22,7 +22,6 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.lang.CommonBuiltInFunctions.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GroovyBuiltInFunctionsTest {
@@ -44,7 +43,7 @@ class GroovyBuiltInFunctionsTest {
 
     @Test
     void map() throws Exception {
-        var str = toJSON(Map.of("foo", 1, "bar", 2));
+        var str = functions.toJSON(Map.of("foo", 1, "bar", 2));
         var obj = om.readValue(str, Map.class);
         assertEquals(2, obj.size());
         assertEquals(1, obj.get("foo"));

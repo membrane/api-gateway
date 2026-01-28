@@ -51,11 +51,6 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     // Avoid the common plural error
     private final SpELLablePropertyAware properties;
 
-    /**
-     * Shortcut for exchange.getProperty("it"). Makes it easier to write scripts with for loops.
-     */
-    private final Object it;
-
     private SpELLablePropertyAware params;
 
     private final SpELLablePropertyAware gateway;
@@ -83,7 +78,6 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
         pathParam = new SpELPathParameters(exchange);
         properties = new SpELProperties(exchange.getProperties());
-        it = exchange.getProperty("it");
         headers = new SpELMap<>(new HeaderMap(message.getHeader()));
         cookies = new SpELCookie(message.getHeader());
         gateway = new SpELMap<>(Map.of("version", VERSION));
@@ -146,7 +140,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     }
 
     public Object getIt() {
-        return it;
+        return exchange.getProperty("it");
     }
 
     public SpELLablePropertyAware getHeaders() {

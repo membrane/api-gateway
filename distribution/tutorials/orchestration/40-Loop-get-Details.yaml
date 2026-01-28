@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+#
+# Tutorial: For Loop
+#
+# Fetches a list of products from:
+#   https://api.predic8.de/shop/v2/products
+# The list contains ids and names, but no prices. The gateway then loops over
+# the list and fetches the price for each product via:
+#   https://api.predic8.de/shop/v2/products/{id}
+#
+# Try:
+#    curl localhost:2000
+
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+
+api:
+  port: 2000
+  flow:
+    - request:
+        # Fetch a list of products without price information
+        - call:
+            url: https://api.predic8.de/shop/v2/products?limit=7
+        # Iterate over the products array in the response
+        - for:
+            in: $.products
+            language: jsonpath
+            flow:
+              - log:
+                  message: 'Getting details for product: ${it["name"]}'
+              - call:
+                  url: https://api.predic8.de/shop/v2/products/${it['id']}
+              # Collect name and price in a result list
+              - groovy:
+                  src: |
+                    property.result = property.result ?: []
+                    property.result.add(
+                      [ "name": it['name'],
+                        "price": fn.jsonPath('$.price')
+                      ])
+        # Render the aggregated result as JSON
+        - template:
+            contentType: application/json
+            pretty: true
+            src: |
+              {
+                  "products": [
+                    <% property.result.eachWithIndex { p, idx -> %>
+                      {
+                          "name": "${p.name}",
+                          "price": ${p.price}
+                      }${idx < property.result.size() - 1 ? ',' : ''}
+                    <% } %>
+                  ]
+              }
+    - return:
+        status: 200
