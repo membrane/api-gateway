@@ -43,7 +43,7 @@ public class ConnectionKeepAliveTest {
         Exchange exc = Request.get("http://localhost:2000/health").buildExchange();
         Exchange exc2 = Request.get("http://localhost:2000/health").buildExchange();
         client.call(exc);
-        client.call(exc2);
+        client.call(exc);
     }
 
     private @NotNull Router getGateway() throws Exception{
