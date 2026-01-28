@@ -139,6 +139,10 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         return properties;
     }
 
+    public Object getIt() {
+        return exchange.getProperty("it");
+    }
+
     public SpELLablePropertyAware getHeaders() {
         return headers;
     }

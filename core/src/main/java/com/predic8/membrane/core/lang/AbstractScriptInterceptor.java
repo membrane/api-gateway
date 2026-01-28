@@ -22,6 +22,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import groovy.lang.*;
 import org.graalvm.polyglot.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -171,15 +172,22 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     protected void handleScriptExecutionException(Exchange exc, Exception e) {
-        log.warn("Error executing {} script: {}", name, e.getMessage());
-        log.warn("Script: {}", src);
+        log.warn("Error executing {} script: {}\n{}", name, e.getMessage(),src);
+        log.debug("", e);
 
-        exc.setResponse(internal(router.getConfiguration().isProduction(),getDisplayName())
+        var pd = internal(router.getConfiguration().isProduction(),getDisplayName())
                 .addSubSee("script-execution")
                 .title("Error executing script.")
-                .addSubType("scripting")
-                .exception(e)
-                .internal("source", trim(src)).build());
+                .addSubType("scripting");
+
+        if(e instanceof MissingPropertyException mpe) {
+            pd.internal("missingProperty", mpe.getProperty());
+            pd.stacktrace(false);
+        }
+
+        pd.exception(e)
+            .internal("source", trim(src))
+            .buildAndSetResponse(exc);
     }
 
     private HashMap<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {

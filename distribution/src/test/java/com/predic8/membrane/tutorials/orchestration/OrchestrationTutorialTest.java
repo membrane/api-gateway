@@ -9,7 +9,7 @@ public class OrchestrationTutorialTest extends AbstractOrchestrationTutorialTest
 
     @Override
     protected String getTutorialYaml() {
-        return "10-Orchestration.yaml";
+        return "30-Orchestration.yaml";
     }
 
     @Test

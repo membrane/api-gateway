@@ -14,27 +14,39 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.fasterxml.jackson.databind.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.post;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GroovyBuiltInFunctionsTest {
 
-    GroovyBuiltInFunctions functions;
+    private static final ObjectMapper om = new ObjectMapper();
+
+    private GroovyBuiltInFunctions functions;
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        functions = new GroovyBuiltInFunctions(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST );
+        functions = new GroovyBuiltInFunctions(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST);
     }
 
     @Test
     void xpath() {
         assertEquals("Fritz", functions.xpath("/person/@name"));
+    }
+
+
+    @Test
+    void map() throws Exception {
+        var str = functions.toJSON(Map.of("foo", 1, "bar", 2));
+        var obj = om.readValue(str, Map.class);
+        assertEquals(2, obj.size());
+        assertEquals(1, obj.get("foo"));
+        assertEquals(2, obj.get("bar"));
     }
 }
