@@ -48,7 +48,7 @@ import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REAS
 /**
  * Proxies SSL connections to a target server without decrypting the traffic.
  */
-@MCElement(name="sslProxy")
+@MCElement(name="sslProxy", topLevel=true, component = false)
 public class SSLProxy implements Proxy {
     private static final Logger log = LoggerFactory.getLogger(SSLProxy.class.getName());
 
@@ -57,30 +57,6 @@ public class SSLProxy implements Proxy {
     private final RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
     private boolean useAsDefault = true;
     private List<SSLInterceptor> sslInterceptors = new ArrayList<>();
-
-    @MCElement(id = "sslProxy-target", name="target", component = false)
-    public static class Target {
-        private int port = -1;
-        private String host;
-
-        public int getPort() {
-            return port;
-        }
-
-        @MCAttribute
-        public void setPort(int port) {
-            this.port = port;
-        }
-
-        public String getHost() {
-            return host;
-        }
-
-        @MCAttribute
-        public void setHost(String host) {
-            this.host = host;
-        }
-    }
 
     public ConnectionConfiguration getConnectionConfiguration() {
         return connectionConfiguration;
@@ -174,7 +150,7 @@ public class SSLProxy implements Proxy {
 
     @Override
     public String getName() {
-        return "SSL " + getHost() + ":" + getPort();
+        return "SSL %s:%d".formatted(getHost(), getPort());
     }
 
     @Override

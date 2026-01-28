@@ -50,7 +50,7 @@ public class RewriteInterceptorIntegrationTest {
 		interceptor.getMappings().add(new Mapping("/city\\?wsdl", "/city-service?wsdl", null));
 
 		ServiceProxy proxy = new APIProxy();
-		AbstractServiceProxy.Target target = new AbstractServiceProxy.Target();
+		Target target = new Target();
 		target.setUrl("https://www.predic8.de");
 		proxy.setTarget(target);
 		proxy.setKey(new ServiceProxyKey("localhost", "*", ".*", 3006));
