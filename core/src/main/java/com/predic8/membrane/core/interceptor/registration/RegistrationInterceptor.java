@@ -19,6 +19,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.authentication.SecurityUtils;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.registration.entity.*;
 import org.slf4j.*;
@@ -28,6 +29,7 @@ import java.sql.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 
 /**
  * @description Allows account registration (!Experimental!)
@@ -65,8 +67,8 @@ public class RegistrationInterceptor extends AbstractInterceptor {
                 if (rs.next() && rs.getInt(1) != 0) return ErrorMessages.returnErrorUserAlreadyExists(exc);
             }
 
-//            if (!SecurityUtils.isHashedPassword(user.getPassword()))
-//                user.setPassword(SecurityUtils.createPasswdCompatibleHash(user.getPassword())); TODO fix and refactor
+            requirePlaintextPasswordInput(user.getPassword());
+            user.setPassword(hashPasswordBcrypt("2y", 12, user.getPassword()));
 
             connection.createStatement().executeUpdate(getInsertAccountIntoDatabaseSQL(user));
         } catch (SQLException e) {
