@@ -1,0 +1,16 @@
+{
+  "fruits": [
+    {
+      "name": "Apricot",
+      "price": 3.80
+    },
+    {
+      "name": "Date",
+      "price": 2.30
+    },
+    {
+      "name": "Papaya",
+      "price": 4.80
+    }
+  ]
+}
