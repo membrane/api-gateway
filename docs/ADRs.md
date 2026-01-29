@@ -2,6 +2,9 @@
 
 ## ADR-004 Logging
 
+Status: PROPOSED
+Date: 2026-01-29
+
 ## Context
 
 ## Idea

@@ -41,7 +41,7 @@ public class AccessControl {
 
     private PeerAddressResolver peerAddressResolver;
 
-    record AccessDecision(boolean permitted, IpAddress address) {}
+    public record AccessDecision(boolean permitted, IpAddress address) {}
 
     public void init(DNSCache dnsCache) {
         peerAddressResolver = new PeerAddressResolver(hasHostnameRule(), dnsCache);
@@ -55,7 +55,7 @@ public class AccessControl {
      * access is denied.</p>
      *
      * @param remoteIp remote peer IP as string (expected to be a valid IPv4/IPv6 literal)
-     * @return true if permitted by the first matching rule, otherwise false
+     * @return AccessDecision Field permitted is true if one rule matches
      */
     public AccessDecision isPermitted(String remoteIp) {
         return peerAddressResolver.resolve(remoteIp)

@@ -86,7 +86,7 @@ public final class IpAddress {
     public String toString() {
         var s = "ip: " + address;
         if (hostname != null && !hostname.isEmpty())
-            return  " hostname: " + hostname;
+            return "%s hostname: %s".formatted(s, hostname);
         return s;
     }
 }
