@@ -187,7 +187,7 @@ class DispatchingInterceptorTest {
 		void validPathWithUnderscore() throws Exception {
 			// An API must be set on the exchange, otherwise in the interceptor a URL is not parsed
 			var api = new APIProxy();
-			api.setTarget(new AbstractServiceProxy.Target() {{
+			api.setTarget(new Target() {{
 				setUrl("http://dummy/_tb/?test=21");
 			}});
 			var exc = get("/_tb/?test=21").buildExchange();
@@ -207,7 +207,7 @@ class DispatchingInterceptorTest {
 
 		private @NotNull APIProxy getApiProxy() {
 			var api = new APIProxy();
-			api.setTarget(new AbstractServiceProxy.Target() {{
+			api.setTarget(new Target() {{
 				setHost("localhost");
 			}});
 			return api;
