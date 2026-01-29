@@ -16,7 +16,7 @@ package com.predic8.xml.beautifier;
 
 import java.io.*;
 
-public class HtmlBeautifierFormatter extends AbstractXMLBeautyfierFormatter {
+public class HtmlBeautifierFormatter extends AbstractXMLBeautifierFormatter {
 
 	public HtmlBeautifierFormatter(Writer writer, int indent) { 
 		super(writer, indent);

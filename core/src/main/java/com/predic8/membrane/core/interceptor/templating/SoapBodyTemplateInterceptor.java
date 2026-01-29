@@ -15,8 +15,10 @@ package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.soap.*;
 
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.util.soap.SoapVersion.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -68,5 +70,10 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
     @MCAttribute
     public void setVersion(String version) {
         this.version = SoapVersion.parse(version);
+    }
+
+    @Override
+    protected String getDefaultContentType() {
+        return TEXT_XML;
     }
 }

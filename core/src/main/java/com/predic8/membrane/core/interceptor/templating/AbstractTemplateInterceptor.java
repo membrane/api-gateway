@@ -14,10 +14,10 @@
 package com.predic8.membrane.core.interceptor.templating;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.prettifier.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.prettifier.*;
 import com.predic8.membrane.core.util.*;
 import groovy.text.*;
 import org.apache.commons.io.*;
@@ -28,10 +28,11 @@ import java.nio.charset.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
 import static com.predic8.membrane.core.util.text.StringUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.unifyIndent;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
@@ -42,7 +43,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
     protected String location;
     protected String src;
 
-    protected String contentType = TEXT_PLAIN;
+    protected String contentType = getDefaultContentType();
 
     protected boolean pretty = false;
     protected Prettifier prettifier = NullPrettifier.INSTANCE;
@@ -100,7 +101,10 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
      */
     protected final void process(Exchange exchange, Flow flow) throws TemplateExecutionException {
         Message msg = exchange.getMessage(flow);
-        msg.setBodyContent(prettify(getContent(exchange,flow)));
+
+        // Unifying is to remove spaces from YAML
+        // Unifying indentation has almost no impact with small 1K messages
+        msg.setBodyContent(unifyIndent(prettify(getContent(exchange, flow)), UTF_8)); // Template comes from YAML. YAML is always unicode
         msg.getHeader().setContentType(contentType);
     }
 
@@ -213,5 +217,9 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
 
     protected String formatAsHtml(String plaintext) {
         return String.join("<br/>", escapeHtml4(plaintext).split("\n"));
+    }
+
+    protected String getDefaultContentType() {
+        return TEXT_PLAIN;
     }
 }

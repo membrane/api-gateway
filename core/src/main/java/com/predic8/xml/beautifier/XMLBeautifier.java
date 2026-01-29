@@ -20,7 +20,7 @@ import org.slf4j.*;
 import javax.xml.stream.*;
 import java.io.*;
 
-import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.*;
 import static javax.xml.stream.XMLInputFactory.*;
 import static javax.xml.stream.XMLStreamConstants.*;
 
@@ -125,15 +125,36 @@ public class XMLBeautifier {
                 charContent = false;
             }
             case CHARACTERS -> {
+                String text = reader.getText();
+
+                // whitespace-only chunk
+                if (!containsNonWhitespaceCharacters(text)) {
+                    // If we have not seen real text in this element, treat as formatting whitespace
+                    // (indentation/newlines between child elements) and skip it.
+                    if (!charContent) {
+                        break;
+                    }
+
+                    // Otherwise we're inside text content: whitespace is significant, keep it.
+                    empty = false;
+                    if (!startTagClosed) {
+                        formatter.closeTag();
+                        startTagClosed = true;
+                    }
+                    formatter.writeText(text);
+                    // keep charContent = true
+                    break;
+                }
+
+                // non-whitespace text chunk
                 empty = false;
                 if (!startTagClosed) {
                     formatter.closeTag();
                     startTagClosed = true;
                 }
 
-                charContent = containsNonWhitespaceCharacters(reader.getText());
-
-                formatter.writeText(reader.getText()); // TODO check format with <foo> \t\n<bar>
+                charContent = true;
+                formatter.writeText(text);
             }
             case COMMENT -> {
                 if (!startTagClosed) {
@@ -153,6 +174,7 @@ public class XMLBeautifier {
                     formatter.closeTag();
                     startTagClosed = true;
                 }
+                charContent = true;
                 formatter.writeText(reader.getText());
             }
             case START_DOCUMENT -> {

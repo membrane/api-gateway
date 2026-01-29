@@ -21,7 +21,6 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
@@ -171,32 +170,7 @@ public class TextUtil {
     public static String capitalizeFirstCharacter(String s) {
         if (s.isEmpty())
             return "";
-        return (s.charAt(0)+"").toUpperCase() + s.substring(1);
-    }
-
-    /**
-     * Checks whether s is a valid (well-formed and balanced) XML snippet.
-     */
-    public static boolean isValidXMLSnippet(String s) {
-        try {
-            XMLEventReader parser = XMLInputFactoryFactory.inputFactory()
-                    .createXMLEventReader(new StringReader("<a>" + s + "</a>"));
-            XMLEvent event = null;
-            try {
-                while (parser.hasNext()) {
-                    event = parser.nextEvent();
-                }
-                return event != null && event.isEndDocument();
-            } finally {
-                try {
-                    parser.close();
-                } catch (Exception ignore) {
-                }
-            }
-        } catch (Exception e) {
-            log.debug("Invalid XML snippet.", e);
-            return false;
-        }
+        return (s.charAt(0) + "").toUpperCase() + s.substring(1);
     }
 
     public static String linkURL(String url) {
@@ -240,6 +214,10 @@ public class TextUtil {
     public static String unifyIndent(String multilineString) {
         String[] lines = multilineString.split("\r?\n");
         return trimLines(lines, getMinIndent(lines)).toString().replaceFirst("\\s*$", "");
+    }
+
+    public static byte[] unifyIndent(byte[] data, Charset charset) {
+        return unifyIndent(new String(data, charset)).getBytes(charset);
     }
 
     private static boolean isBlank(String s) {
