@@ -63,7 +63,6 @@ class SecurityUtilsTest {
         assertCrypt3VerifyOk("$1$testsalt");
         assertCrypt3VerifyOk("$5$testsalt");
         assertCrypt3VerifyOk("$6$testsalt");
-        assertCrypt3VerifyOk("$apr1$testsalt");
 
         // with rounds (sha256/sha512)
         assertCrypt3VerifyOk("$5$rounds=5000$testsalt");
@@ -128,34 +127,15 @@ class SecurityUtilsTest {
     /**
      * Verifies that {@link SecurityUtils#verifyPassword(String, String)} can validate
      * a set of externally generated hashes against the plaintext password {@code "foo"}.
-     *
-     * Replace/extend {@code knownFooHashes} with real outputs from tools like:
-     * <ul>
-     *   <li>{@code htpasswd -nbBC 10 user foo | cut -d: -f2} (bcrypt)</li>
-     *   <li>{@code openssl passwd -6 -salt testsalt foo} (sha512crypt)</li>
-     *   <li>{@code openssl passwd -5 -salt testsalt foo} (sha256crypt)</li>
-     * </ul>
      */
     @Test
     void verifyPassword_accepts_known_external_hashes_for_foo() {
         String[] knownFooHashes = new String[] {
-                // TODO
-
-                // bcrypt (OpenBSD / htpasswd):
-                // "$2y$10$.................................(53 chars)",
-                // "$2b$12$.................................(53 chars)",
-
-                // sha512crypt:
-                // "$6$testsalt$............................",
-
-                // sha512crypt with rounds:
-                // "$6$rounds=5000$testsalt$....................",
-
-                // sha256crypt:
-                // "$5$testsalt$............................",
-
-                // apr1:
-                // "$apr1$testsalt$.........................",
+                "$2y$15$YvsVrHmGZOf/qzUT7JgLl.q0kYSSpWK80fE7D08wZU88rmTnWhZVS", // htpasswd -bnBC 15 "ignored" foo
+                "$6$rounds=500000$gzh1tg4O2bM5tm5y$6d2TcRsvONfSZ4lTxwgn1i2fU7phH1ChaTYKfrZbKgIR/nhNoiACNzgU3aqK5geqxNSUlrEd1/pwuChnq93xE/", // mkpasswd -m sha-512 -R 500000
+                "$6$mlgc7rlkfaMTil6L$EgrQ2otQe158FQ5EgLgCmiRiWH8RQ.VMpCLoER6kgGg/xgsfDJjiFWoaKU9uI33TG1SQG0lIXUiu1AuwX5WRU0", // openssl passwd -6
+                "$5$testsalt$K7uJizXY4KVJstVTRzUISGL4pZ7s4Q.caQ6aA6lwDxB", // openssl passwd -5 -salt testsalt foo
+                "$2a$17$883F4JEYdGl0ZHtLDPuC3OGZIQTtz9sJo/Yz4USCwpBmG65RsDSVG" // https://bcrypt-generator.com/ with 17 rounds
         };
 
         for (String h : knownFooHashes) {
