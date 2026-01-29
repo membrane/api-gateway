@@ -2,11 +2,13 @@ package com.predic8.membrane.core.interceptor.authentication;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.PASSWORD;
@@ -124,24 +126,32 @@ class SecurityUtilsTest {
         assertFalse(verifyPassword("bar", h2));
     }
 
+    @Test
+    void matchesHashPattern_crypt3_rounds_variants() {
+        assertTrue(matchesHashPattern(crypt(DEMO_PASSWORD, "$6$rounds=1$testsalt")));
+        assertTrue(matchesHashPattern(crypt(DEMO_PASSWORD, "$6$rounds=999999$testsalt")));
+        assertFalse(matchesHashPattern("$6$rounds=abc$testsalt$" + "x".repeat(30)));
+    }
+
     /**
      * Verifies that {@link SecurityUtils#verifyPassword(String, String)} can validate
      * a set of externally generated hashes against the plaintext password {@code "foo"}.
      */
-    @Test
-    void verifyPassword_accepts_known_external_hashes_for_foo() {
-        String[] knownFooHashes = new String[] {
+    @ParameterizedTest(name = "external hash verifies foo: {0}")
+    @MethodSource("externalFooHashes")
+    void external_hashes_verify_foo(String h) {
+        assertTrue(matchesHashPattern(h));
+        assertTrue(verifyPassword("foo", h));
+        assertFalse(verifyPassword("bar", h));
+    }
+
+    static Stream<String> externalFooHashes() {
+        return Stream.of(
                 "$2y$15$YvsVrHmGZOf/qzUT7JgLl.q0kYSSpWK80fE7D08wZU88rmTnWhZVS", // htpasswd -bnBC 15 "ignored" foo
                 "$6$rounds=500000$gzh1tg4O2bM5tm5y$6d2TcRsvONfSZ4lTxwgn1i2fU7phH1ChaTYKfrZbKgIR/nhNoiACNzgU3aqK5geqxNSUlrEd1/pwuChnq93xE/", // mkpasswd -m sha-512 -R 500000
                 "$6$mlgc7rlkfaMTil6L$EgrQ2otQe158FQ5EgLgCmiRiWH8RQ.VMpCLoER6kgGg/xgsfDJjiFWoaKU9uI33TG1SQG0lIXUiu1AuwX5WRU0", // openssl passwd -6
                 "$5$testsalt$K7uJizXY4KVJstVTRzUISGL4pZ7s4Q.caQ6aA6lwDxB", // openssl passwd -5 -salt testsalt foo
                 "$2a$08$GxGhXE6fSCxNRCXYyZcRKe8ucFIhZaRE5YwB32pKeloWMf9ibnBBO" // https://bcrypt-generator.com/ with 8 rounds
-        };
-
-        for (String h : knownFooHashes) {
-            assertTrue(matchesHashPattern(h), "Expected hash pattern for: " + h);
-            assertTrue(verifyPassword("foo", h), "Expected to verify 'foo' for: " + h);
-            assertFalse(verifyPassword("bar", h), "Expected 'bar' to fail for: " + h);
-        }
+        );
     }
 }
