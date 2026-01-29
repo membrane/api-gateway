@@ -46,6 +46,10 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
         return CommonBuiltInFunctions.jsonPath(jsonPath, exchange.getMessage(flow));
     }
 
+    public String toJSON(Object obj) {
+        return CommonBuiltInFunctions.toJSON(obj);
+    }
+
     public String xpath(String xpath) {
         return CommonBuiltInFunctions.xpath(xpath, exchange.getMessage(flow));
     }
