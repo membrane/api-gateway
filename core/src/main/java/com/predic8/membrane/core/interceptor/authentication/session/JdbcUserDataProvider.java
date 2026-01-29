@@ -15,10 +15,11 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.interceptor.registration.SecurityUtils;
+import com.predic8.membrane.core.router.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -26,8 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.*;
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.isHashedPassword;
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.verifyPassword;
 
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {
@@ -91,12 +91,12 @@ public class JdbcUserDataProvider implements UserDataProvider {
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
         String username = postData.get("username");
-        if (username == null)
-            throw new NoSuchElementException();
+        if (username == null) throw new NoSuchElementException();
 
         String password = postData.get("password");
-        if (password == null)
-            throw new NoSuchElementException();
+        if (password == null) throw new NoSuchElementException();
+
+        SecurityUtils.requirePlaintextPasswordInput(password);
 
         Connection con = null;
         PreparedStatement preparedStatement = null;
@@ -122,12 +122,11 @@ public class JdbcUserDataProvider implements UserDataProvider {
             log.error(e.getMessage());
         }
 
+
         if (result != null && !result.isEmpty()) {
-            String passwordFromDB = result.get(getPasswordColumnName().toLowerCase());
-            if (!isHashedPassword(password) && isHashedPassword(passwordFromDB))
-                password = createPasswdCompatibleHash(getCryptAlgorithmId(passwordFromDB), password, getCryptSalt(passwordFromDB));
-            if (username.equals(result.get(getUserColumnName().toLowerCase())) && password.equals(passwordFromDB))
+            if (username.equals(result.get(getUserColumnName().toLowerCase())) && verifyPassword(password, result.get(getPasswordColumnName().toLowerCase()))) {
                 return result;
+            }
         }
 
         throw new NoSuchElementException();

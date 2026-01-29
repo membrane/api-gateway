@@ -15,13 +15,20 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.interceptor.registration.SecurityUtils;
+import com.predic8.membrane.core.router.Router;
 
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.createPasswdCompatibleHash;
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.*;
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.requirePlaintextPasswordInput;
+import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.verifyPassword;
 
 /**
  * @description A <i>user data provider</i> utilizing htpasswd formatted files.
@@ -51,23 +58,12 @@ public class FileUserDataProvider implements UserDataProvider {
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
         String username = postData.get("username");
-        if (username == null)
-            throw new NoSuchElementException();
-        User userAttributes;
-        userAttributes = getUsersByName().get(username);
-        if (userAttributes == null)
-            throw new NoSuchElementException();
-        String pw;
-        String postDataPassword = postData.get("password");
-        String userHash = userAttributes.getPassword();
-        String[] userHashSplit = userHash.split("\\$");
-        String salt = userHashSplit[2];
-        String algo = userHashSplit[1];
-        pw = createPasswdCompatibleHash(algo, postDataPassword, salt);
-        String pw2;
-        pw2 = userAttributes.getPassword();
-        if (pw2 == null || !pw2.equals(pw))
-            throw new NoSuchElementException();
+        if (username == null) throw new NoSuchElementException();
+
+        User userAttributes = getUsersByName().get(username);
+        if (userAttributes == null) throw new NoSuchElementException();
+
+        verifyLoginOrThrow(postData, userAttributes.getPassword());
         return userAttributes.getAttributes();
     }
 

@@ -65,8 +65,8 @@ public class RegistrationInterceptor extends AbstractInterceptor {
                 if (rs.next() && rs.getInt(1) != 0) return ErrorMessages.returnErrorUserAlreadyExists(exc);
             }
 
-            if (!SecurityUtils.isHashedPassword(user.getPassword()))
-                user.setPassword(SecurityUtils.createPasswdCompatibleHash(user.getPassword()));
+//            if (!SecurityUtils.isHashedPassword(user.getPassword()))
+//                user.setPassword(SecurityUtils.createPasswdCompatibleHash(user.getPassword()));
 
             connection.createStatement().executeUpdate(getInsertAccountIntoDatabaseSQL(user));
         } catch (SQLException e) {
