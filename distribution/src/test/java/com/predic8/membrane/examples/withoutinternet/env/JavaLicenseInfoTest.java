@@ -95,8 +95,7 @@ public class JavaLicenseInfoTest {
 			return content.contains("Apache License")
 					|| content.contains("Copyright (c) 2013, Oracle and/or its affiliates")
 					|| content.contains("MIT license")
-					|| content.contains("Copyright 2015 Google Inc. All Rights Reserved.")
-					|| content.contains("Copyright (c) 2006 Damien Miller");
+					|| content.contains("Copyright 2015 Google Inc. All Rights Reserved.");
 		} catch (Exception e) {
 			return false;
 		}
