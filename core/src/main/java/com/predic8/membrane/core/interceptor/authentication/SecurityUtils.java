@@ -3,13 +3,12 @@ package com.predic8.membrane.core.interceptor.authentication;
 import org.apache.commons.codec.digest.Crypt;
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 
-import static java.security.MessageDigest.*;
+import static java.security.MessageDigest.isEqual;
 import static java.util.regex.Pattern.compile;
 import static org.bouncycastle.crypto.generators.OpenBSDBCrypt.checkPassword;
 

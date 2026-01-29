@@ -29,7 +29,6 @@ import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils
 
 /**
  * @description A <i>user data provider</i> utilizing <code>htpasswd</code>-style files.
- * @explanation
  * <p>
  *   The <i>fileUserDataProvider</i> loads users from a file in the format
  *   <code>username:hash</code> (one entry per line).
