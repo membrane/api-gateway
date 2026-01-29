@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.registration;
 
 import com.google.common.io.BaseEncoding;
 import org.apache.commons.codec.digest.Crypt;
+import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 
 import java.security.SecureRandom;
 import java.util.regex.Pattern;
@@ -24,6 +25,9 @@ public class SecurityUtils {
 
     private static final SecureRandom secureRandom = new SecureRandom();
     public static final Pattern HEX_PASSWORD_PATTERN = Pattern.compile("\\$([^$]+)\\$([^$]+)\\$.+");
+    private static final Pattern BCRYPT_ID_PATTERN = Pattern.compile("^2[aby]$");
+    private static final int DEFAULT_BCRYPT_COST = 12;
+
     public static final String $ = Pattern.quote("$");
 
     public static boolean isHashedPassword(String postDataPassword) {
@@ -48,23 +52,61 @@ public class SecurityUtils {
         return createPasswdCompatibleHash(password, saltString);
     }
 
-    public static String extractSalt(String password) {
-        return password.split($)[2];
-    }
-
     public static String createPasswdCompatibleHash(String algo, String password, String salt) {
-        return Crypt.crypt(password, "$" + algo + "$" + salt);
+        if (algo != null && !BCRYPT_ID_PATTERN.matcher(algo).matches())
+            return Crypt.crypt(password, "$" + algo + "$" + salt);
+
+        int cost = parseBcryptCostOrDefault(salt, DEFAULT_BCRYPT_COST);
+
+        byte[] bcryptSalt = new byte[16]; // BCrypt salt is always 128-bit
+        secureRandom.nextBytes(bcryptSalt);
+
+        return OpenBSDBCrypt.generate(algo, password.toCharArray(), bcryptSalt, cost);
+
     }
 
     public static String createPasswdCompatibleHash(String password, String saltString) {
         return createPasswdCompatibleHash("6", password, saltString);
     }
 
-    public static String extractMagicString(String password) {
+    private static int parseBcryptCostOrDefault(String saltOrCost, int defaultCost) {
+        if (saltOrCost == null) return defaultCost;
+
+        if (saltOrCost.matches("\\d{1,2}")) return Integer.parseInt(saltOrCost);
+
+        try {
+            String[] p = saltOrCost.split("\\$");
+            if (p.length >= 4 && p[0].isEmpty() && p[1].matches("2[aby]")) {
+                return Integer.parseInt(p[2]);
+            }
+        } catch (Exception ignored) {
+        }
+
+        return defaultCost;
+    }
+
+    /**
+     * Returns the hash "magic" / algorithm identifier (e.g. "6" for SHA-512) from a crypt(3) formatted hash: $<id>$<salt>$...
+     * @throws IllegalArgumentException if the input is not in crypt(3) hash notation
+     */
+    public static String getCryptAlgorithmId(String password) {
         try{
-            return password.split(Pattern.quote("$"))[1];
+            return password.split($)[1];
         } catch (Exception e) {
-            throw new RuntimeException("Password must be in hash notation", e);
+            throw new IllegalArgumentException("Hash must be in crypt(3) notation: $<id>$<salt>$<hash>", e);
         }
     }
+
+    /**
+     * Returns the salt from a crypt(3) formatted hash: $<id>$<salt>$...
+     * @throws IllegalArgumentException if the input is not in crypt(3) hash notation
+     */
+    public static String getCryptSalt(String cryptHash) {
+        try {
+            return cryptHash.split($)[2];
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Hash must be in crypt(3) notation: $<id>$<salt>$<hash>", e);
+        }
+    }
+
 }
