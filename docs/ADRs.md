@@ -1,10 +1,10 @@
 # Architecture Decision Log
 
 
-## ADR-003 Access to beans with DI or Router 
+## ADR-003 Access to beans with Router 
 
-Status: IN DISCUSSION
-Date: 2026-01-23
+Status: ACCEPTED
+Date: 2026-01-29
 
 ### Context
 
@@ -18,6 +18,11 @@ Date: 2026-01-23
 - Interceptors like request, response, for and manage a list of other interceptors.
 - The ProxyAware interface signals that an interceptor is aware of the proxy it belongs to.
   - Somebody has to call setProxy on the interceptor.
+
+### Decision
+
+- We do not use DI to inject beans into interceptors.
+- Interceptors get a reference to the router via init(Router router) and ask the router for beans.
 
 ## ADR-002 Flow Guarantees
 
