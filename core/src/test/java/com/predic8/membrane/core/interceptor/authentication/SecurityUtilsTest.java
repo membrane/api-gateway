@@ -135,7 +135,7 @@ class SecurityUtilsTest {
                 "$6$rounds=500000$gzh1tg4O2bM5tm5y$6d2TcRsvONfSZ4lTxwgn1i2fU7phH1ChaTYKfrZbKgIR/nhNoiACNzgU3aqK5geqxNSUlrEd1/pwuChnq93xE/", // mkpasswd -m sha-512 -R 500000
                 "$6$mlgc7rlkfaMTil6L$EgrQ2otQe158FQ5EgLgCmiRiWH8RQ.VMpCLoER6kgGg/xgsfDJjiFWoaKU9uI33TG1SQG0lIXUiu1AuwX5WRU0", // openssl passwd -6
                 "$5$testsalt$K7uJizXY4KVJstVTRzUISGL4pZ7s4Q.caQ6aA6lwDxB", // openssl passwd -5 -salt testsalt foo
-                "$2a$17$883F4JEYdGl0ZHtLDPuC3OGZIQTtz9sJo/Yz4USCwpBmG65RsDSVG" // https://bcrypt-generator.com/ with 17 rounds
+                "$2a$08$GxGhXE6fSCxNRCXYyZcRKe8ucFIhZaRE5YwB32pKeloWMf9ibnBBO" // https://bcrypt-generator.com/ with 8 rounds
         };
 
         for (String h : knownFooHashes) {
