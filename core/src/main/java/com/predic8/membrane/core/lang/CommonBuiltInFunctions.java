@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.security.*;
+import com.predic8.membrane.core.util.json.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
 import org.slf4j.*;
@@ -54,6 +55,15 @@ public class CommonBuiltInFunctions {
         try {
             return JsonPath.read(objectMapper.readValue(msg.getBodyAsStringDecoded(), Map.class), jsonPath);
         } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    public static String toJSON(Object o) {
+        try {
+            return objectMapper.writeValueAsString(o);
+        } catch (Exception e) {
+            log.info("Failed to convert object to JSON", e);
             return null;
         }
     }
