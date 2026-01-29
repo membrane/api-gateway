@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.registration.SecurityUtils;
 import com.predic8.membrane.core.router.Router;
 
 import java.io.IOException;
@@ -26,9 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.*;
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.requirePlaintextPasswordInput;
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.verifyPassword;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 
 /**
  * @description A <i>user data provider</i> utilizing htpasswd formatted files.

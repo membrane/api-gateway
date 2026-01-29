@@ -17,14 +17,11 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCOtherAttributes;
-import com.predic8.membrane.core.interceptor.registration.SecurityUtils;
 import com.predic8.membrane.core.router.Router;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.*;
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.requirePlaintextPasswordInput;
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.verifyPassword;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.

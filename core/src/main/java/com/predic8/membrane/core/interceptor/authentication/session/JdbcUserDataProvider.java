@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.interceptor.registration.SecurityUtils;
+import com.predic8.membrane.core.interceptor.authentication.SecurityUtils;
 import com.predic8.membrane.core.router.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.verifyPassword;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.verifyPassword;
 
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {

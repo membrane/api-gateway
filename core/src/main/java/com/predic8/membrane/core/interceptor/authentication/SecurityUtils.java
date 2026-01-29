@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.interceptor.registration;
+package com.predic8.membrane.core.interceptor.authentication;
 
 import org.apache.commons.codec.digest.Crypt;
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;

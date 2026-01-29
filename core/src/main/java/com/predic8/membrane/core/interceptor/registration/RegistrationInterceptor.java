@@ -66,7 +66,7 @@ public class RegistrationInterceptor extends AbstractInterceptor {
             }
 
 //            if (!SecurityUtils.isHashedPassword(user.getPassword()))
-//                user.setPassword(SecurityUtils.createPasswdCompatibleHash(user.getPassword()));
+//                user.setPassword(SecurityUtils.createPasswdCompatibleHash(user.getPassword())); TODO fix and refactor
 
             connection.createStatement().executeUpdate(getInsertAccountIntoDatabaseSQL(user));
         } catch (SQLException e) {
