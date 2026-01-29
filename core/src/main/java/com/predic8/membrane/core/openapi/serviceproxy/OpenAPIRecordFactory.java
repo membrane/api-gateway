@@ -59,6 +59,9 @@ public class OpenAPIRecordFactory {
             addOpenApisFromLocation(apiRecords, spec);
             addOpenApisFromDirectory(apiRecords, spec);
         }
+        if (apiRecords.isEmpty()) {
+            log.warn("No OpenAPI specification found. Please check your configuration.");
+        }
         return apiRecords;
     }
 
