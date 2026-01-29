@@ -77,7 +77,12 @@ public class OpenAPIRecordFactory {
             OpenAPISpec fileSpec = spec.clone();
             fileSpec.setLocation(spec.dir + "/" + file.getName());
             OpenAPIRecord rec = create(fileSpec, file);
-            apiRecords.put(getUniqueId(apiRecords, rec), rec);
+            try {
+                apiRecords.put(getUniqueId(apiRecords, rec), rec);
+            } catch (NullPointerException e) {
+                log.info("Skipping API spec candidate file '{}': not a valid OpenAPI document.", file);
+            }
+
         }
     }
 
