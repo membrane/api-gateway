@@ -4,7 +4,7 @@
 #
 # Try:
 #     curl localhost:2000/locals
-#     curl localhost:2000/straingers
+#     curl localhost:2000/strangers
 
 global:
   # ACL for all APIs
@@ -31,7 +31,7 @@ api:
 api:
   port: 2000
   path:
-    uri: /straingers
+    uri: /strangers
   flow:
     - accessControl:
         - deny: 127.0.0.1/24

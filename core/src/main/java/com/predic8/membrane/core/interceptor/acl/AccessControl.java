@@ -65,7 +65,7 @@ public class AccessControl {
 
     /**
      * Applies the configured rules in order and returns the first decision.
-     * If no rule decides, returns false (default deny).
+     * If no rule decides, returns a denied AccessDecision (default deny).
      */
     private AccessDecision evaluatePermission(IpAddress address) {
         for (AccessRule rule : rules) {
