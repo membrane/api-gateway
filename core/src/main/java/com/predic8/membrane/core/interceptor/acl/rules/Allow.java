@@ -20,7 +20,7 @@ import com.predic8.membrane.annot.MCElement;
  * @description
  * <p>Permits requests from peers matching the configured target.</p>
  */
-@MCElement(name = "allow", collapsed = true)
+@MCElement(name = "allow", collapsed = true, component = false)
 public class Allow extends AccessRule {
 
     @Override

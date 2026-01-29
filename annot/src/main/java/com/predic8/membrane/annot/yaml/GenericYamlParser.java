@@ -341,7 +341,7 @@ public class GenericYamlParser {
 
         Object value;
         try {
-            value = SCALAR_MAPPER.convertValue(node, paramType);
+            value = convertScalarOrSpel(node, paramType);
         } catch (IllegalArgumentException e) {
             throw new ParsingException("Cannot convert inline value to %s.".formatted(paramType.getSimpleName()), node);
         }
@@ -356,6 +356,8 @@ public class GenericYamlParser {
         }
     }
 
-
-
+    static Object convertScalarOrSpel(JsonNode node, Class<?> targetType) {
+        if (node == null || !node.isTextual()) return SCALAR_MAPPER.convertValue(node, targetType);
+        return resolveSpelValue(node.asText(), targetType, node);
+    }
 }

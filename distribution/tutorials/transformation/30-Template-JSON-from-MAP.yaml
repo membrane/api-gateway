@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Transform MAP to JSON
+#
+# This sample renders the HTTP headers as JSON.
+#
+# Try:
+#    curl http://localhost:2000
+
+api:
+  port: 2000
+  flow:
+    - request:
+      - template:
+          contentType: application/json
+          pretty: true
+          src: |
+            {
+              <% header.eachWithIndex { e, i -> %>
+                <% if (i > 0) { %>,<% } %>
+                "<%= e.key %>": "<%= e.value %>"
+              <% } %>
+            }
+      - return:
+          status: 200

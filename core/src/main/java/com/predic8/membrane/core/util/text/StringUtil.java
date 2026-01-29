@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.util;
+package com.predic8.membrane.core.util.text;
 
 import java.util.*;
 
@@ -20,8 +20,26 @@ import static java.lang.Math.min;
 
 public class StringUtil {
 
+    /**
+     * Truncates a string after a given length.
+     * @param s string to truncate
+     * @param maxLength maximal length of the string
+     * @return truncated string
+     */
     public static String truncateAfter(String s, int maxLength) {
         return s.substring(0, min(s.length(), maxLength));
+    }
+
+    /**
+     * Returns the last `maxLength` characters of the input string.
+     * If the input string's length is less than `maxLength`, the entire string is returned.
+     *
+     * @param s the input string, must not be null
+     * @param maxLength the maximum number of characters to extract from the end of the string
+     * @return a substring containing the last `maxLength` characters of the input string
+     */
+    public static String tail(String s, int maxLength) {
+        return s.substring(Math.max(s.length() - maxLength,0));
     }
 
     /**

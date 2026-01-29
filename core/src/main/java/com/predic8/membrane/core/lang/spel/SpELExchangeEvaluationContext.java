@@ -30,6 +30,7 @@ import org.springframework.expression.spel.support.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.Constants.VERSION;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
 public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
@@ -51,6 +52,8 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     private final SpELLablePropertyAware properties;
 
     private SpELLablePropertyAware params;
+
+    private final SpELLablePropertyAware gateway;
 
     private final SpELPathParameters pathParam;
 
@@ -77,6 +80,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         properties = new SpELProperties(exchange.getProperties());
         headers = new SpELMap<>(new HeaderMap(message.getHeader()));
         cookies = new SpELCookie(message.getHeader());
+        gateway = new SpELMap<>(Map.of("version", VERSION));
 
         extractFromRequest(exchange);
         extractFromResponse(exchange);
@@ -91,7 +95,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
     }
 
     private void addTypeConverters() {
-        GenericConversionService cs = new DefaultConversionService();
+        var cs = new DefaultConversionService();
         cs.addConverter(new SpELMapToStringTypeConverter());
         cs.addConverter(new SpELBodyToStringTypeConverter());
         cs.addConverter(new ListToStringTypeConverter());
@@ -157,6 +161,12 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         return cookies;
     }
 
+    /**
+     * Get gateway information with e.g. gateway.version
+     */
+    public SpELLablePropertyAware getGateway() {
+        return gateway;
+    }
 
     public SpELLablePropertyAware getParam() {
         return params;

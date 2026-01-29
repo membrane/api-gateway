@@ -38,7 +38,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
-import static com.predic8.membrane.core.util.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
@@ -86,6 +86,9 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     @Override
     public void init() {
         super.init();
+        if (xmlConfig == null && router != null && router.getRegistry() != null) {
+            xmlConfig = router.getRegistry().getBean(XmlConfig.class).orElse(null);
+        }
         if (test != null && !test.isEmpty()) {
             exchangeExpression = expression(new InterceptorAdapter(router, xmlConfig), language, test);
         }

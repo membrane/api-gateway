@@ -1,5 +1,18 @@
 # Architecture Decision Log
 
+## ADR-002 Flow Guarantees
+
+Status: PROPOSED
+Date: 2026-01-20
+
+### Decision:
+
+- Guarantees for flows:
+  - that in a Response-flow there is a response 
+  - that in a Request-flow there is a request  
+  - No null checks needed in those cases
+
+
 ## ADR-001 ProblemDetails
 
 Status: ACCEPTED

@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
 #
-# Tutorial: XSLT Transformation
+# Tutorial: XSLT Transformation Grouping
 #
-# Use an XSLT stylesheet to transform XML.
+# Complex XSLT transformation that regroups input
 #
 # Try:
-#   curl -d @books.xml localhost:2000
+#   curl -d @books.xml -H "Content-Type: text/xml" localhost:2000
 
 api:
   port: 2000

@@ -21,7 +21,12 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.text.TextUtil;
 
 import java.io.IOException;
@@ -57,18 +62,22 @@ public class Jwks {
         return this;
     }
 
-    public void init(ResolverMap resolverMap, String baseLocation) {
+    public void init(Router router) {
         if(jwksUris == null || jwksUris.isEmpty())
             return;
 
         ObjectMapper mapper = new ObjectMapper();
         for (String uri : jwksUris.split(" ")) {
             try {
-                for (Object jwkRaw : parseJwksUriIntoList(resolverMap, baseLocation, mapper, uri)) {
+                for (Object jwkRaw : parseJwksUriIntoList(router.getResolverMap(), router.getConfiguration().getBaseLocation(), mapper, uri)) {
                     Jwk jwk = new Jwk();
                     jwk.setContent(mapper.writeValueAsString(jwkRaw));
                     this.jwks.add(jwk);
                 }
+            } catch (JsonProcessingException e) {
+                throw new ConfigurationException("Could not parse JWK keys retrieved from %s.".formatted(uri), e);
+            } catch (ResourceRetrievalException e) {
+                throw new ConfigurationException("Could not retrieve JWK keys from %s.".formatted(uri), e);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -96,6 +105,8 @@ public class Jwks {
 
         String kid;
 
+        private HttpClientConfiguration httpClientConfig;
+
         public String getKid() {
             return kid;
         }
@@ -106,8 +117,32 @@ public class Jwks {
             return this;
         }
 
-        public String getJwk(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper) throws IOException {
-            String maybeJwk = get(resolverMap, baseLocation);
+        /**
+         * @description Sets the HTTP client configuration.
+         *
+         * @param httpClientConfig the configuration to set for the HTTP client
+         */
+        @MCAttribute
+        public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+            this.httpClientConfig = httpClientConfig;
+        }
+
+        public HttpClientConfiguration getHttpClientConfig() {
+            return httpClientConfig;
+        }
+
+        public String getJwk(Router router, ObjectMapper mapper) throws IOException {
+            ResolverMap rm = router.getResolverMap();
+
+            if (httpClientConfig != null) {
+                HTTPSchemaResolver httpSR = new HTTPSchemaResolver(router.getHttpClientFactory());
+                httpSR.setHttpClientConfig(httpClientConfig);
+
+                rm = rm.clone();
+                rm.addSchemaResolver(httpSR);
+            }
+
+            String maybeJwk = get(rm, router.getConfiguration().getBaseLocation());
 
             Map<String,Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
 

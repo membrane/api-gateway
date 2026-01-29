@@ -20,7 +20,7 @@ import com.predic8.membrane.annot.MCElement;
  * @description
  * <p>Denies requests from peers matching the configured target.</p>
  */
-@MCElement(name = "deny", collapsed = true)
+@MCElement(name = "deny", collapsed = true, component = false)
 public class Deny extends AccessRule {
 
     @Override

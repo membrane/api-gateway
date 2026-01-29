@@ -34,6 +34,7 @@ import static com.predic8.membrane.core.util.HttpUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.*;
 import static java.util.Collections.*;
+import static java.util.Locale.ROOT;
 import static java.util.regex.Pattern.*;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.codec.binary.Base64.*;
@@ -43,168 +44,185 @@ import static org.apache.commons.codec.binary.Base64.*;
  */
 public class Header {
 
-	private static final Logger log = LoggerFactory.getLogger(Header.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(Header.class.getName());
 
-	// Header field names
+    public static final String TRANSFER_ENCODING = "Transfer-Encoding";
 
-	public static final String TRANSFER_ENCODING = "Transfer-Encoding";
-	public static final String CONTENT_ENCODING = "Content-Encoding";
-	public static final String CONTENT_LENGTH = "Content-Length";
-	public static final String CONTENT_TYPE = "Content-Type";
-	public static final String CONNECTION = "Connection";
-	public static final String PROXY_CONNECTION = "Proxy-Connection";
-	public static final String HOST = "Host";
-	public static final String EXPECT = "Expect";
-	public static final String X_FORWARDED_FOR = "X-Forwarded-For";
-	public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
-	public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
-	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
-	public static final String SOAP_ACTION = "SOAPAction";
-	public static final String ACCEPT = "Accept";
-	public static final String LOCATION = "Location";
-	public static final String AUTHORIZATION = "Authorization";
-	public static final String SET_COOKIE = "Set-Cookie";
-	public static final String COOKIE = "Cookie";
-	public static final String DESTINATION = "Destination";
-	public static final String VALIDATION_ERROR_SOURCE = "X-Validation-Error-Source";
-	public static final String USER_AGENT = "User-Agent";
-	public static final String X_REQUESTED_WITH = "X-Requested-With";
-	public static final String EXPIRES = "Expires";
-	public static final String KEEP_ALIVE = "Keep-Alive";
+    /**
+     * <p>
+     * The Content-Encoding header indicates what compression or transfer encoding
+     * has been applied to the message body. This is NOT the same as character
+     * encoding (charset).
+     * <p>
+     * Common Values:
+     * - gzip: GNU zip compression
+     * - deflate: zlib compression
+     * <p>
+     * Important Distinction:
+     * - Content-Encoding: How the content is compressed (e.g., "gzip")
+     * - Charset: How characters are encoded (e.g., "UTF-8")
+     * <p>
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9110#name-content-encoding">RFC 9110 Section 8.4</a>
+     */
+    public static final String CONTENT_ENCODING = "Content-Encoding";
 
-	public static final String SERVER = "Server";
+    public static final String CONTENT_LENGTH = "Content-Length";
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String CONNECTION = "Connection";
+    public static final String PROXY_CONNECTION = "Proxy-Connection";
+    public static final String HOST = "Host";
+    public static final String EXPECT = "Expect";
+    public static final String X_FORWARDED_FOR = "X-Forwarded-For";
+    public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
+    public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
+    public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
+    public static final String SOAP_ACTION = "SOAPAction";
+    public static final String ACCEPT = "Accept";
+    public static final String LOCATION = "Location";
+    public static final String AUTHORIZATION = "Authorization";
+    public static final String SET_COOKIE = "Set-Cookie";
+    public static final String COOKIE = "Cookie";
+    public static final String DESTINATION = "Destination";
+    public static final String VALIDATION_ERROR_SOURCE = "X-Validation-Error-Source";
+    public static final String USER_AGENT = "User-Agent";
+    public static final String X_REQUESTED_WITH = "X-Requested-With";
+    public static final String EXPIRES = "Expires";
+    public static final String KEEP_ALIVE = "Keep-Alive";
 
-	public static final String PRAGMA = "Pragma";
+    public static final String SERVER = "Server";
 
-	public static final String CACHE_CONTROL = "Cache-Control";
+    public static final String PRAGMA = "Pragma";
 
-	public static final String UPGRADE = "Upgrade";
+    public static final String CACHE_CONTROL = "Cache-Control";
 
-	public static final String LAST_MODIFIED = "Last-Modified";
+    public static final String UPGRADE = "Upgrade";
 
-	public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
+    public static final String LAST_MODIFIED = "Last-Modified";
 
-	public static final String VARY = "Vary";
+    public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
 
-	public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
+    public static final String VARY = "Vary";
 
-	public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+    public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
 
-	public static final String ORIGIN = "Origin";
+    public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
 
-	public static final String X_HTTP_METHOD_OVERRIDE = "X-HTTP-Method-Override";
+    public static final String ORIGIN = "Origin";
 
-	public static final String SEC_WEBSOCKET_ACCEPT = "Sec-WebSocket-Accept";
+    public static final String X_HTTP_METHOD_OVERRIDE = "X-HTTP-Method-Override";
 
-	public static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
+    public static final String SEC_WEBSOCKET_ACCEPT = "Sec-WebSocket-Accept";
 
-	/**
-	 * Please note that this is a relic from RFC7540 and has been removed in RFC9113. It is present for backward
-	 * compatibility (i.e. for Java's internal HTTP client).
-	 */
-	public static final String HTTP2_SETTINGS = "HTTP2-Settings";
+    public static final String SEC_WEBSOCKET_KEY = "Sec-WebSocket-Key";
 
-	// Header field values
-	public static final String CHUNKED = "chunked";
+    /**
+     * Please note that this is a relic from RFC7540 and has been removed in RFC9113. It is present for backward
+     * compatibility (i.e. for Java's internal HTTP client).
+     */
+    public static final String HTTP2_SETTINGS = "HTTP2-Settings";
 
-	public static final String TIMEOUT = "timeout";
-	public static final String MAX = "max";
+    // Header field values
+    public static final String CHUNKED = "chunked";
 
-	public static final String CLOSE = "close";
+    public static final String TIMEOUT = "timeout";
+    public static final String MAX = "max";
 
-	private static final Pattern timeoutPattern = compile("timeout\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
-	private static final Pattern maxPattern = compile("max\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
+    public static final String CLOSE = "close";
 
-	private final List<HeaderField> fields = new ArrayList<>();
+    private static final Pattern timeoutPattern = compile("timeout\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
+    private static final Pattern maxPattern = compile("max\\s*=\\s*(\\d+)", CASE_INSENSITIVE);
 
-	public Header() {
-	}
+    private final List<HeaderField> fields = new ArrayList<>();
 
-	/**
-	 * Constructs a Header by reading and parsing HTTP header lines from the provided input stream.
-	 *
-	 * <p>This constructor reads the input stream line by line until an empty line is encountered,
-	 * creating and adding a HeaderField for each non-empty line. If a header line is malformed, resulting
-	 * in a StringIndexOutOfBoundsException, the error is logged and the line is skipped.</p>
-	 *
-	 * @param in the input stream containing HTTP header lines
-	 * @throws IOException if an I/O error occurs while reading the stream
-	 * @throws EndOfStreamException if the stream ends unexpectedly before a complete header is read
-	 */
-	public Header(InputStream in) throws IOException, EndOfStreamException {
-		String line;
-		while (!(line = readLine(in)).isEmpty()) {
-			try {
-				add(new HeaderField(line));
-			} catch (StringIndexOutOfBoundsException sie) {
-				log.error("Header read line that caused problems: {}", line);
-			}
-		}
-	}
+    public Header() {
+    }
 
-	public Header(String header) throws IOException, EndOfStreamException {
-		this(
-				stream(header.split("\r?\n"))
-						.filter(s -> !s.isEmpty())
-						.map(HeaderField::new)
-						.toList()
-		);
-	}
+    /**
+     * Constructs a Header by reading and parsing HTTP header lines from the provided input stream.
+     *
+     * <p>This constructor reads the input stream line by line until an empty line is encountered,
+     * creating and adding a HeaderField for each non-empty line. If a header line is malformed, resulting
+     * in a StringIndexOutOfBoundsException, the error is logged and the line is skipped.</p>
+     *
+     * @param in the input stream containing HTTP header lines
+     * @throws IOException          if an I/O error occurs while reading the stream
+     * @throws EndOfStreamException if the stream ends unexpectedly before a complete header is read
+     */
+    public Header(InputStream in) throws IOException, EndOfStreamException {
+        String line;
+        while (!(line = readLine(in)).isEmpty()) {
+            try {
+                add(new HeaderField(line));
+            } catch (StringIndexOutOfBoundsException sie) {
+                log.error("Header read line that caused problems: {}", line);
+            }
+        }
+    }
 
-	public Header(Header header) {
-		this(header.fields.stream().map(HeaderField::new).toList());
-	}
+    public Header(String header) {
+        this(
+                stream(header.split("\r?\n"))
+                        .filter(s -> !s.isEmpty())
+                        .map(HeaderField::new)
+                        .toList()
+        );
+    }
 
-	public Header(List<HeaderField> fields) {
-		this.fields.addAll(fields);
-	}
+    public Header(Header header) {
+        this(header.fields.stream().map(HeaderField::new).toList());
+    }
 
-	public void add(String key, String val) {
-		fields.add(new HeaderField(key, val));
-	}
+    public Header(List<HeaderField> fields) {
+        this.fields.addAll(fields);
+    }
 
-	/**
-	 * Adds the specified header field to this Header.
-	 *
-	 * @param field the header field to add
-	 */
-	public void add(HeaderField field) {
-		fields.add(field);
-	}
+    public void add(String key, String val) {
+        fields.add(new HeaderField(key, val));
+    }
 
-	/**
-	 * Adds all header fields from the given list to this header in a thread-safe manner.
-	 *
-	 * @param fields the list of header fields to add
-	 */
-	public void addAll(List<HeaderField> fields) {
-		this.fields.addAll(fields);
-	}
+    /**
+     * Adds the specified header field to this Header.
+     *
+     * @param field the header field to add
+     */
+    public void add(HeaderField field) {
+        fields.add(field);
+    }
 
-	/**
-	 * Removes the specified header field from this header.
-	 *
-	 * @param field the header field to remove
-	 */
-	public void remove(HeaderField field) {
-		fields.remove(field);
-	}
+    /**
+     * Adds all header fields from the given list to this header.
+     *
+     * @param fields the list of header fields to add
+     */
+    public void addAll(List<HeaderField> fields) {
+        this.fields.addAll(fields);
+    }
 
-	public void removeFields(String name) {
+    /**
+     * Removes the specified header field from this header.
+     *
+     * @param field the header field to remove
+     */
+    public void remove(HeaderField field) {
+        fields.remove(field);
+    }
+
+    public void removeFields(String name) {
         fields.removeAll(filterByHeaderName(name).toList());
-	}
+    }
 
-	/**
-	 * Retrieves all header fields whose name matches the specified header name.
-	 *
-	 * @param headerName the header name used to filter header fields
-	 * @return a list of header fields that match the provided header name; returns an empty list if none are found
-	 */
-	public List<HeaderField> getValues(HeaderName headerName) {
-		return fields.stream()
-				.filter(field -> field.getHeaderName().equals(headerName))
-				.toList();
-	}
+    /**
+     * Retrieves all header fields whose name matches the specified header name.
+     *
+     * @param headerName the header name used to filter header fields
+     * @return a list of header fields that match the provided header name; returns an empty list if none are found
+     */
+    public List<HeaderField> getValues(HeaderName headerName) {
+        return fields.stream()
+                .filter(field -> field.getHeaderName().equals(headerName))
+                .toList();
+    }
 
     public String getValuesAsString(String name) {
         var list = filterByHeaderName(name).map(HeaderField::getValue).toList();
@@ -217,393 +235,394 @@ public class Header {
     }
 
     /**
-	 * Retrieves the first header value corresponding to the specified header name.
-	 *
-	 * Iterates through the header fields and returns the value of the first field that matches the given name.
-	 * If no matching header is found, returns {@code null}.
-	 *
-	 * @param name the header name to search for
-	 * @return the value of the matching header field, or {@code null} if not present
-	 */
-	public String getFirstValue(String name) {
-		return filterByHeaderName(name)
-				.findFirst()
-				.map(HeaderField::getValue)
-				.orElse(null);
-	}
+     * Retrieves the first header value corresponding to the specified header name.
+     * <p>
+     * Iterates through the header fields and returns the value of the first field that matches the given name.
+     * If no matching header is found, returns {@code null}.
+     *
+     * @param name the header name to search for
+     * @return the value of the matching header field, or {@code null} if not present
+     */
+    public String getFirstValue(String name) {
+        return filterByHeaderName(name)
+                .findFirst()
+                .map(HeaderField::getValue)
+                .orElse(null);
+    }
 
-	public String getFirstValue(HeaderName name) {
-		return getFirstValue(name.toString());
-	}
+    public String getFirstValue(HeaderName name) {
+        return getFirstValue(name.toString());
+    }
 
-	public HeaderField[] getAllHeaderFields() {
-		return fields.toArray(new HeaderField[0]);
-	}
+    public HeaderField[] getAllHeaderFields() {
+        return fields.toArray(new HeaderField[0]);
+    }
 
-	public boolean contains(String header) {
+    public boolean contains(String header) {
         return filterByHeaderName(header).findAny().isPresent();
-	}
+    }
 
-	public boolean contains(HeaderName header) {
-		return contains(header.toString());
-	}
+    public boolean contains(HeaderName header) {
+        return contains(header.toString());
+    }
 
-	/**
-	 * Since {@link HttpUtil#readLine(InputStream)} assembles the String byte-by-byte
-	 * converting it to char-by-char, we use ISO-8859-1 for output here.
-	 */
-	public void write(OutputStream out) throws IOException {
-		byte[] bytes = fields.stream()
-				.map(f -> "%s: %s%s".formatted(f.getHeaderName(), f.getValue(), Constants.CRLF))
-				.collect(joining()).getBytes(ISO_8859_1);
-		out.write(bytes);
-	}
+    /**
+     * Since {@link HttpUtil#readLine(InputStream)} assembles the String byte-by-byte
+     * converting it to char-by-char, we use ISO-8859-1 for output here.
+     */
+    public void write(OutputStream out) throws IOException {
+        byte[] bytes = fields.stream()
+                .map(f -> "%s: %s%s".formatted(f.getHeaderName(), f.getValue(), Constants.CRLF))
+                .collect(joining()).getBytes(ISO_8859_1);
+        out.write(bytes);
+    }
 
-	/**
-	 * Sets the value of the header field, ensuring a single occurrence.
-	 *
-	 * <p>If one or more header fields with the specified name exist, the first match is updated with the new value
-	 * and any additional occurrences are removed. If no matching field is found, a new header field is added.</p>
-	 *
-	 * @param name  the header field name
-	 * @param value the new value to set for the header field
-	 */
-	public void setValue(String name, String value) {
-		boolean found = false;
-		for (int i = 0; i < fields.size(); i++) {
-			if (fields.get(i).getHeaderName().hasName(name)) {
-				if (found) {
-					fields.set(i, fields.getLast());
-					fields.removeLast();
-					i--;
-				} else {
-					fields.get(i).setValue(value);
-					found = true;
-				}
-			}
-		}
-		if (found)
-			return;
-		fields.add(new HeaderField(name, value));
-	}
+    /**
+     * Sets the value of the header field, ensuring a single occurrence.
+     *
+     * <p>If one or more header fields with the specified name exist, the first match is updated with the new value
+     * and any additional occurrences are removed. If no matching field is found, a new header field is added.</p>
+     *
+     * @param name  the header field name
+     * @param value the new value to set for the header field
+     */
+    public void setValue(String name, String value) {
+        boolean found = false;
+        for (int i = 0; i < fields.size(); i++) {
+            if (fields.get(i).getHeaderName().hasName(name)) {
+                if (found) {
+                    fields.set(i, fields.getLast());
+                    fields.removeLast();
+                    i--;
+                } else {
+                    fields.get(i).setValue(value);
+                    found = true;
+                }
+            }
+        }
+        if (found)
+            return;
+        fields.add(new HeaderField(name, value));
+    }
 
-	public void setHost(String value) {
-		setValue(HOST, value);
-	}
+    public void setHost(String value) {
+        setValue(HOST, value);
+    }
 
-	public void setContentLength(long length) {
-		setValue(CONTENT_LENGTH, "" + length);
-	}
+    public void setContentLength(long length) {
+        setValue(CONTENT_LENGTH, "" + length);
+    }
 
-	public void setProxyAuthorization(String value) {
-		setValue(PROXY_AUTHORIZATION, value);
-	}
+    public void setProxyAuthorization(String value) {
+        setValue(PROXY_AUTHORIZATION, value);
+    }
 
-	public boolean isChunked() {
-		return CHUNKED.equals(getFirstValue(TRANSFER_ENCODING));
-	}
+    public boolean isChunked() {
+        return CHUNKED.equals(getFirstValue(TRANSFER_ENCODING));
+    }
 
-	public long getContentLength() {
-		if (!hasContentLength())
-			return -1;
-		return Long.parseLong(getFirstValue(CONTENT_LENGTH));
-	}
+    public long getContentLength() {
+        if (!hasContentLength())
+            return -1;
+        return Long.parseLong(getFirstValue(CONTENT_LENGTH));
+    }
 
-	public String getContentType() {
-		return getFirstValue(CONTENT_TYPE);
-	}
+    public String getContentType() {
+        return getFirstValue(CONTENT_TYPE);
+    }
 
-	public String getUserAgent() {
-		return getFirstValue(USER_AGENT);
-	}
+    public String getUserAgent() {
+        return getFirstValue(USER_AGENT);
+    }
 
-	/**
-	 * @return An object describing the value of the "Content-Type" HTTP header.
-	 * 	Null, if the header is not present.
-	 * @throws ParseException if the value of the header could not be parsed.
-	 */
-	public ContentType getContentTypeObject() throws ParseException {
-		String contentType = getContentType();
-		return contentType == null ? null : new ContentType(contentType);
-	}
+    /**
+     * @return An object describing the value of the "Content-Type" HTTP header.
+     * Null, if the header is not present.
+     * @throws ParseException if the value of the header could not be parsed.
+     */
+    public ContentType getContentTypeObject() throws ParseException {
+        String contentType = getContentType();
+        return contentType == null ? null : new ContentType(contentType);
+    }
 
-	public void setContentType(String type) {
-		setValue(CONTENT_TYPE, type);
-	}
+    public void setContentType(String type) {
+        setValue(CONTENT_TYPE, type);
+    }
 
-	public void setLocation(String location) {
-		setValue(LOCATION, location);
-	}
+    public void setLocation(String location) {
+        setValue(LOCATION, location);
+    }
 
-	public String getLocation() {
-		return getFirstValue(LOCATION);
-	}
+    public String getLocation() {
+        return getFirstValue(LOCATION);
+    }
 
-	public void setSOAPAction(String value) {
-		setValue(SOAP_ACTION, value);
-	}
+    public void setSOAPAction(String value) {
+        setValue(SOAP_ACTION, value);
+    }
 
-	public String getAccept() {
-		return getFirstValue(ACCEPT);
-	}
+    public String getAccept() {
+        return getFirstValue(ACCEPT);
+    }
 
-	public void setAccept(String value) {
-		add(ACCEPT, value);
-	}
+    public void setAccept(String value) {
+        add(ACCEPT, value);
+    }
 
-	public String getConnection() {
-		return getFirstValue(CONNECTION);
-	}
+    public String getConnection() {
+        return getFirstValue(CONNECTION);
+    }
 
-	public void setConnection(String connection) {
-		setValue(CONNECTION, connection);
-	}
+    public void setConnection(String connection) {
+        setValue(CONNECTION, connection);
+    }
 
-	public String getProxyConnection() {
-		return getFirstValue(PROXY_CONNECTION);
-	}
+    public String getProxyConnection() {
+        return getFirstValue(PROXY_CONNECTION);
+    }
 
-	public boolean isProxyConnectionClose() {
-		if (getProxyConnection() == null)
-			return false;
+    public boolean isProxyConnectionClose() {
+        if (getProxyConnection() == null)
+            return false;
 
-		return CLOSE.equalsIgnoreCase(getProxyConnection());
-	}
+        return CLOSE.equalsIgnoreCase(getProxyConnection());
+    }
 
-	public boolean isConnectionClose() {
-		if (getConnection() == null)
-			return false;
+    public boolean isConnectionClose() {
+        if (getConnection() == null)
+            return false;
 
-		return CLOSE.equalsIgnoreCase(getConnection());
-	}
+        return CLOSE.equalsIgnoreCase(getConnection());
+    }
 
-	public boolean hasContentLength() {
-		return getFirstValue(CONTENT_LENGTH) != null;
-	}
+    public boolean hasContentLength() {
+        return getFirstValue(CONTENT_LENGTH) != null;
+    }
 
-	public String getHost() {
-		return getFirstValue(HOST);
-	}
+    public String getHost() {
+        return getFirstValue(HOST);
+    }
 
-	public boolean is100ContinueExpected() {
-		return "100-continue".equalsIgnoreCase(getFirstValue(EXPECT));
-	}
+    public boolean is100ContinueExpected() {
+        return "100-continue".equalsIgnoreCase(getFirstValue(EXPECT));
+    }
 
-	@Override
-	public String toString() {
-		return fields.stream()
-				.map(HeaderField::toString)
-				.collect(joining());
-	}
+    @Override
+    public String toString() {
+        return fields.stream()
+                .map(HeaderField::toString)
+                .collect(joining());
+    }
 
-	/**
-	 * Sets the HTTP "Authorization" header using Basic Authentication.
-	 *
-	 * <p>This method concatenates the given username and password with a colon, encodes the resulting
-	 * string in Base64 using UTF-8, and prepends "Basic " to form the header value.</p>
-	 *
-	 * @param user the username for authentication
-	 * @param password the password for authentication
-	 */
-	public void setAuthorization(String user, String password) {
-		setValue("Authorization", "Basic "
-				+ new String(encodeBase64((user + ":" + password)
-				.getBytes(UTF_8)), UTF_8));
-	}
+    /**
+     * Sets the HTTP "Authorization" header using Basic Authentication.
+     *
+     * <p>This method concatenates the given username and password with a colon, encodes the resulting
+     * string in Base64 using UTF-8, and prepends "Basic " to form the header value.</p>
+     *
+     * @param user     the username for authentication
+     * @param password the password for authentication
+     */
+    public void setAuthorization(String user, String password) {
+        setValue("Authorization", "Basic "
+                                  + new String(encodeBase64((user + ":" + password)
+                .getBytes(UTF_8)), UTF_8));
+    }
 
-	/**
-	 * Sets the X-Forwarded-For header field to the specified value, replacing any existing value.
-	 *
-	 * @param value the new header value, typically representing the originating client IP address.
-	 */
-	public void setXForwardedFor(String value) {
-		setValue(X_FORWARDED_FOR, value);
-	}
+    /**
+     * Sets the X-Forwarded-For header field to the specified value, replacing any existing value.
+     *
+     * @param value the new header value, typically representing the originating client IP address.
+     */
+    public void setXForwardedFor(String value) {
+        setValue(X_FORWARDED_FOR, value);
+    }
 
-	public String getXForwardedFor() {
-		return getFirstValue(X_FORWARDED_FOR);
-	}
+    public String getXForwardedFor() {
+        return getFirstValue(X_FORWARDED_FOR);
+    }
 
-	public void setXForwardedProto(String value) {
-		setValue(X_FORWARDED_PROTO, value);
-	}
+    public void setXForwardedProto(String value) {
+        setValue(X_FORWARDED_PROTO, value);
+    }
 
-	public String getXForwardedProto() {
-		return getFirstValue(X_FORWARDED_PROTO);
-	}
+    public String getXForwardedProto() {
+        return getFirstValue(X_FORWARDED_PROTO);
+    }
 
-	public String getContentEncoding() {
-		return getFirstValue(CONTENT_ENCODING);
-	}
+    public String getContentEncoding() {
+        return getFirstValue(CONTENT_ENCODING);
+    }
 
-	public String getCharset() {
-		if (getContentType() == null)
-			return null;
+    public String getCharset() {
+        if (getContentType() == null)
+            return null;
 
-		try {
-			return new ContentType(getContentType()).getParameter("charset").toUpperCase();
-		} catch (Exception e) {
-			log.debug("Failed to parse Content-Type: {}", getContentType());
-			return null;
-		}
-	}
+        try {
+            return new ContentType(getContentType()).getParameter("charset").toUpperCase(ROOT);
+        } catch (Exception e) {
+            log.debug("Failed to parse Content-Type: {}", getContentType());
+            return null;
+        }
+    }
 
-	public void addCookieSession(String cookieName, String value) {
-		addRawCookieSession(cookieName + "=" + value);
-	}
+    public void addCookieSession(String cookieName, String value) {
+        addRawCookieSession(cookieName + "=" + value);
+    }
 
-	public void addRawCookieSession(String cookie){
-		add(SET_COOKIE, cookie);
-	}
+    public void addRawCookieSession(String cookie) {
+        add(SET_COOKIE, cookie);
+    }
 
-	public String getFirstCookie(String cookieName) {
-		Cookies c = new Cookies(new MimeHeaders(this));
-		for (int i = 0; i < c.getCookieCount(); i++) {
-			ServerCookie sc = c.getCookie(i);
-			if (sc.getName().toString().equals(cookieName))
-				return sc.getValue().toString();
-		}
-		return null;
-	}
+    public String getFirstCookie(String cookieName) {
+        Cookies c = new Cookies(new MimeHeaders(this));
+        for (int i = 0; i < c.getCookieCount(); i++) {
+            ServerCookie sc = c.getCookie(i);
+            if (sc.getName().toString().equals(cookieName))
+                return sc.getValue().toString();
+        }
+        return null;
+    }
 
-	public int estimateHeapSize() {
-		return 10 + fields.stream()
-				.map(f -> 4 + f.estimateHeapSize())
-				.reduce(0, Integer::sum);
-	}
+    public int estimateHeapSize() {
+        return 10 + fields.stream()
+                .map(f -> 4 + f.estimateHeapSize())
+                .reduce(0, Integer::sum);
+    }
 
-	public int getNumberOf(String headerName) {
-		return (int) filterByHeaderName(headerName).count();
-	}
+    public int getNumberOf(String headerName) {
+        return (int) filterByHeaderName(headerName).count();
+    }
 
-	/**
-	 * @param keepAliveHeaderValue the value of the <a href="http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Keep-Alive">Keep-Alive</a> header
-	 * @param paramName either {@link #TIMEOUT} or {@link #MAX}.
-	 * @return the extracted parameter value of the "Keep-Alive" header
-	 */
-	public static long parseKeepAliveHeader(String keepAliveHeaderValue, String paramName) {
-		Pattern p = choosePattern(paramName);
-		Matcher m = p.matcher(keepAliveHeaderValue);
-		if (!m.find())
-			return -1;
-		return Long.parseLong(m.group(1));
-	}
+    /**
+     * @param keepAliveHeaderValue the value of the <a href="http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Keep-Alive">Keep-Alive</a> header
+     * @param paramName            either {@link #TIMEOUT} or {@link #MAX}.
+     * @return the extracted parameter value of the "Keep-Alive" header
+     */
+    public static long parseKeepAliveHeader(String keepAliveHeaderValue, String paramName) {
+        Pattern p = choosePattern(paramName);
+        Matcher m = p.matcher(keepAliveHeaderValue);
+        if (!m.find())
+            return -1;
+        return Long.parseLong(m.group(1));
+    }
 
-	private static @NotNull Pattern choosePattern(String paramName) {
-		if (paramName.equals(TIMEOUT)) {
-			return timeoutPattern;
-		} else if (paramName.equals(MAX)) {
-			return maxPattern;
-		} else {
-			throw new InvalidParameterException("paramName must be one of Header.TIMEOUT and .MAX .");
-		}
-	}
+    private static @NotNull Pattern choosePattern(String paramName) {
+        if (paramName.equals(TIMEOUT)) {
+            return timeoutPattern;
+        } else if (paramName.equals(MAX)) {
+            return maxPattern;
+        } else {
+            throw new InvalidParameterException("paramName must be one of Header.TIMEOUT and .MAX .");
+        }
+    }
 
-	public void clear() {
-		fields.clear();
-	}
+    public void clear() {
+        fields.clear();
+    }
 
-	public void setNoCacheResponseHeaders() {
-		setValue(EXPIRES, "Tue, 03 Jul 2001 06:00:00 GMT");
-		setValue(CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
-		add(CACHE_CONTROL, "post-check=0, pre-check=0");
-		add(PRAGMA, "no-cache");
-	}
+    public void setNoCacheResponseHeaders() {
+        setValue(EXPIRES, "Tue, 03 Jul 2001 06:00:00 GMT");
+        setValue(CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
+        add(CACHE_CONTROL, "post-check=0, pre-check=0");
+        add(PRAGMA, "no-cache");
+    }
 
-	public String getAuthorization() {
-		return getFirstValue(AUTHORIZATION);
-	}
+    public String getAuthorization() {
+        return getFirstValue(AUTHORIZATION);
+    }
 
-	public String getWwwAuthenticate(){
-		return getFirstValue(WWW_AUTHENTICATE);
-	}
+    public String getWwwAuthenticate() {
+        return getFirstValue(WWW_AUTHENTICATE);
+    }
 
-	public String getNormalizedValue(String headerName) {
-		var s = filterByHeaderName(headerName)
-				.map(HeaderField::getValue)
-				.collect(joining(","));
-		return s.isEmpty() ? null : s;
-	}
+    public String getNormalizedValue(String headerName) {
+        var s = filterByHeaderName(headerName)
+                .map(HeaderField::getValue)
+                .collect(joining(","));
+        return s.isEmpty() ? null : s;
+    }
 
-	public boolean isBinaryContentType() {
-		return isBinary(getContentType());
-	}
+    public boolean isBinaryContentType() {
+        return isBinary(getContentType());
+    }
 
-	public String getXForwardedHost() {
-		return getFirstValue(X_FORWARDED_HOST);
-	}
+    public String getXForwardedHost() {
+        return getFirstValue(X_FORWARDED_HOST);
+    }
 
-	public void setXForwardedHost(String xForwardedHostHeaderValue) {
-		setValue(X_FORWARDED_HOST,xForwardedHostHeaderValue);
-	}
+    public void setXForwardedHost(String xForwardedHostHeaderValue) {
+        setValue(X_FORWARDED_HOST, xForwardedHostHeaderValue);
+    }
 
-	/**
-	 * Method can be used from Groovy or Javascripts
-	 */
-	@SuppressWarnings("unused")
-	public boolean isUserAgentSupportsSNI() {
-		// a mostly conservative approximation of http://en.wikipedia.org/wiki/Server_Name_Indication#Support
-		String ua = getUserAgent();
-		if (ua == null)
-			return false;
-		if (getBrowserVersion(ua, "Firefox") >= 2)
-			return true;
-		if (getBrowserVersion(ua, "Opera") >= 8)
-			return true;
-		if (getBrowserVersion(ua, "Safari") >= 522)
-			return getBrowserVersion(ua, "Windows NT") >= 6 || getBrowserVersion(ua, "Mac OS X 10") >= 6;
-		if (getBrowserVersion(ua, "MSIE") >= 7 || getBrowserVersion(ua, "Trident") >= 5)
-			return getBrowserVersion(ua, "Windows NT") >= 6;
-		if (getBrowserVersion(ua, "Chrome") > 0) {
-			int windows = getBrowserVersion(ua, "Windows NT");
-			return windows >= 6 || windows == -1;
-		}
-		return false;
-	}
+    /**
+     * Method can be used from Groovy or Javascripts
+     */
+    @SuppressWarnings("unused")
+    public boolean isUserAgentSupportsSNI() {
+        // a mostly conservative approximation of http://en.wikipedia.org/wiki/Server_Name_Indication#Support
+        String ua = getUserAgent();
+        if (ua == null)
+            return false;
+        if (getBrowserVersion(ua, "Firefox") >= 2)
+            return true;
+        if (getBrowserVersion(ua, "Opera") >= 8)
+            return true;
+        if (getBrowserVersion(ua, "Safari") >= 522)
+            return getBrowserVersion(ua, "Windows NT") >= 6 || getBrowserVersion(ua, "Mac OS X 10") >= 6;
+        if (getBrowserVersion(ua, "MSIE") >= 7 || getBrowserVersion(ua, "Trident") >= 5)
+            return getBrowserVersion(ua, "Windows NT") >= 6;
+        if (getBrowserVersion(ua, "Chrome") > 0) {
+            int windows = getBrowserVersion(ua, "Windows NT");
+            return windows >= 6 || windows == -1;
+        }
+        return false;
+    }
 
 
-    /** Extracts the major version for the given browser token from a User-Agent.
+    /**
+     * Extracts the major version for the given browser token from a User-Agent.
      * Returns:
      * -1 if the token is absent or not followed by ' ', '/' or '_' and digits,
-     *  0 if the token is present but no digits follow the separator (e.g. "Chrome Safari"),
+     * 0 if the token is present but no digits follow the separator (e.g. "Chrome Safari"),
      * >=1 for the parsed major version (e.g. "Chrome/90.0" -> 90).
      */
-	int getBrowserVersion(String userAgent, String browserID) {
+    int getBrowserVersion(String userAgent, String browserID) {
         int p = userAgent.indexOf(browserID);
         if (p < 0) return -1;
-		p += browserID.length();
-		if (p >= userAgent.length())
-			return -1;
-		char c = userAgent.charAt(p++);
-		if (c != ' ' && c != '/' && c != '_')
-			return -1;
-		int version = 0;
-		while (p < userAgent.length()) {
-			c = userAgent.charAt(p++);
-			if (c < '0' || c > '9')
-				break;
-			version = version * 10 + (c - '0');
-		}
-		return version;
-	}
+        p += browserID.length();
+        if (p >= userAgent.length())
+            return -1;
+        char c = userAgent.charAt(p++);
+        if (c != ' ' && c != '/' && c != '_')
+            return -1;
+        int version = 0;
+        while (p < userAgent.length()) {
+            c = userAgent.charAt(p++);
+            if (c < '0' || c > '9')
+                break;
+            version = version * 10 + (c - '0');
+        }
+        return version;
+    }
 
-	public Stream<String> getSingleValues(String headerName) {
-		return getValues(new HeaderName(headerName)).stream()
-				.flatMap(v -> stream(v.getValue().split(",")))
-				.map(String::trim);
-	}
+    public Stream<String> getSingleValues(String headerName) {
+        return getValues(new HeaderName(headerName)).stream()
+                .flatMap(v -> stream(v.getValue().split(",")))
+                .map(String::trim);
+    }
 
-	public void keepOnly(String headerName, Predicate<String> valueFilter) {
-		List<String> valuesToKeep = getSingleValues(headerName).filter(valueFilter).toList();
-		removeFields(headerName);
-		valuesToKeep.forEach(value -> add(headerName, value));
-	}
+    public void keepOnly(String headerName, Predicate<String> valueFilter) {
+        List<String> valuesToKeep = getSingleValues(headerName).filter(valueFilter).toList();
+        removeFields(headerName);
+        valuesToKeep.forEach(value -> add(headerName, value));
+    }
 
-	public String getUpgradeProtocol() {
-		if (getSingleValues(CONNECTION).noneMatch(v -> v.equalsIgnoreCase(UPGRADE)))
-			return null;
-		return getFirstValue(UPGRADE);
-	}
+    public String getUpgradeProtocol() {
+        if (getSingleValues(CONNECTION).noneMatch(v -> v.equalsIgnoreCase(UPGRADE)))
+            return null;
+        return getFirstValue(UPGRADE);
+    }
 
     public int size() {
         return fields.size();
