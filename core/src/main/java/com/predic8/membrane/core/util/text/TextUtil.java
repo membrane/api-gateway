@@ -109,17 +109,6 @@ public class TextUtil {
         }
     }
 
-    public static String formatXML(InputStream inputStream, boolean asHTML) throws Exception {
-        try {
-            StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
-            new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(inputStream);
-            return out.toString();
-        } catch (IOException e) {
-            log.info("Error parsing XML: {}", e.getMessage());
-            throw e;
-        }
-    }
-
     private static @NotNull XMLBeautifierFormatter getXmlBeautifierFormatter(boolean asHTML, StringWriter out) {
         return asHTML ? new HtmlBeautifierFormatter(out, 0) : new StandardXMLBeautifierFormatter(out, 4);
     }
