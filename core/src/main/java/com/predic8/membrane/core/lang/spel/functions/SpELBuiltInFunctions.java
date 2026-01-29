@@ -38,6 +38,10 @@ public class SpELBuiltInFunctions {
         return CommonBuiltInFunctions.jsonPath(jsonPath, ctx.getMessage());
     }
 
+    public static Object toJSON(Object obj, SpELExchangeEvaluationContext ignored) {
+        return CommonBuiltInFunctions.toJSON(obj);
+    }
+
     public static String xpath(String xpath, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.xpath(xpath, ctx.getMessage());
     }
