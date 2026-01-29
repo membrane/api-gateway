@@ -15,8 +15,8 @@ public final class SecurityUtils {
 
     private static final SecureRandom secureRandom = new SecureRandom();
 
-    // crypt(3): $<id>$<salt>$<hash...>  (für sha256/sha512/md5 etc.)
-    private static final Pattern CRYPT3_PATTERN = compile("^\\$([^$]{1,8})\\$([^$]{1,64})\\$([^$]{20,})$");
+    // Supports: $<id>$<salt>$<hash> and $<id>$rounds=<n>$<salt>$<hash>
+    private static final Pattern CRYPT3_PATTERN = compile("^\\$([^$]{1,8})\\$(?:rounds=\\d+\\$)?([^$]{1,64})\\$([^$]{20,})$");
 
     // bcrypt: $2a$10$<53 chars>
     private static final Pattern BCRYPT_PATTERN = compile("^\\$2[aby]\\$\\d{2}\\$[./A-Za-z0-9]{53}$");
