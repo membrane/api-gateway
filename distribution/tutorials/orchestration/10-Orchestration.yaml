@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Orchestration
+#
+# Shows how to create an API that combines two backend calls into one API.
+# 1) Fetch a book by id.
+# 2) Use the author key from the book payload to fetch the author.
+#
+# Try:
+#    curl localhost:2000/books/OL29474405M
+#    curl localhost:2000/books/OL26333978M
+
+api:
+  port: 2000
+  path:
+    uri: /books/{id}
+  flow:
+    - request:
+        - call:
+            url: https://openlibrary.org/books/${pathParam.id}.json
+        - setProperty:
+            name: title
+            value: ${$.title}
+            language: jsonpath
+        - call:
+            url: https://openlibrary.org${$.authors[0].key}.json
+            language: jsonpath
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "title": "${property.title}",
+                "author": "${fn.jsonPath('$.name')}"
+              }
+    - return:
+        status: 200
