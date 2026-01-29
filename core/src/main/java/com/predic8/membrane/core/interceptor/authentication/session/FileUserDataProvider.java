@@ -28,13 +28,18 @@ import java.util.NoSuchElementException;
 import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 
 /**
- * @description A <i>user data provider</i> utilizing htpasswd formatted files.
- * @explanation <p>
- *              the <i>fileuserdataprovider</i> can be used to source authentication data from htpasswd files.
- *              </p>
- *              <p>
- *              The files can only utilize algorithm magic strings supported by <i>crypt(3)</i>.
- *              </p>
+ * @description A <i>user data provider</i> utilizing <code>htpasswd</code>-style files.
+ * @explanation
+ * <p>
+ *   The <i>fileUserDataProvider</i> loads users from a file in the format
+ *   <code>username:hash</code> (one entry per line).
+ * </p>
+ * <p>
+ *   Supported hash formats are <i>crypt(3)</i>-style hashes
+ *   (<code>$&lt;id&gt;$&lt;salt&gt;$&lt;hash&gt;</code>, optionally including <code>rounds=&lt;n&gt;</code>)
+ *   and bcrypt hashes (<code>$2a$</code>, <code>$2b$</code>, <code>$2y$</code>).
+ *   The Apache <code>$apr1$...</code> format is not supported.
+ * </p>
  */
 @MCElement(name="fileUserDataProvider")
 public class FileUserDataProvider implements UserDataProvider {
