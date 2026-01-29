@@ -25,6 +25,9 @@ import static com.predic8.membrane.core.interceptor.acl.IpAddress.ipVersion.IPV6
 import static com.predic8.membrane.core.util.NetworkUtil.removeBracketsIfPresent;
 import static java.net.InetAddress.getByName;
 
+/**
+ * IP address of the request to test against ACLs.
+ */
 public final class IpAddress {
 
     private final InetAddress address;
@@ -77,5 +80,13 @@ public final class IpAddress {
 
     public enum ipVersion {
         IPV4, IPV6
+    }
+
+    @Override
+    public String toString() {
+        var s = "ip: " + address;
+        if (hostname != null && !hostname.isEmpty())
+            return  " hostname: " + hostname;
+        return s;
     }
 }
