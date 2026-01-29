@@ -11,6 +11,21 @@ import java.util.regex.Pattern;
 import static java.util.regex.Pattern.compile;
 import static org.bouncycastle.crypto.generators.OpenBSDBCrypt.checkPassword;
 
+/**
+ * Password hashing/verification helper.
+ * <p>
+ * Supported hash formats:
+ * - bcrypt (MCF): $2a$, $2b$, $2y$ e.g. "$2y$12$..."
+ * - crypt(3) (MCF): $<id>$<salt>$<hash> where <id> is typically:
+ *     - 1 = md5-crypt
+ *     - 5 = sha256-crypt
+ *     - 6 = sha512-crypt
+ * - crypt(3) with rounds: $<id>$rounds=<n>$<salt>$<hash> (sha256/sha512)
+ * <p>
+ * Notes:
+ * - Client input must be plaintext; hash-looking password inputs are rejected.
+ * - Apache htpasswd MD5 format "$apr1$..." is not supported.
+ */
 public final class SecurityUtils {
 
     private static final SecureRandom secureRandom = new SecureRandom();
