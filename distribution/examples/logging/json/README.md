@@ -15,7 +15,7 @@ To run the example execute the following steps:
    **Linux/macOS**
    ```sh
    export JAVA_OPTS="-Dlog4j.configurationFile=examples/logging/json/log4j2_json.xml -Dlog4j.debug=true"
-    ````
+   ```
     
     **Windows (PowerShell)**
     
