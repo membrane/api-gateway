@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.7.json
+#
+# Tutorial: REST GET To SOAP
+#
+# Exposes a SOAP web service as a REST style GET endpoint.
+#
+# The path parameter `{city}` is inserted into a SOAP request.
+# The SOAP response is mapped to JSON and returned to the client.
+#
+# Try:
+#     curl localhost:2000/cities/Bielefeld
+
+api:
+  port: 2000
+  method: GET
+  path:
+    uri: /cities/{city}
+  flow:
+    - request:
+        - soapBody:
+            src: |
+              <getCity xmlns="https://predic8.de/cities">
+                  <name>${pathParam.city}</name>
+              </getCity>
+        - setHeader:
+            name: SOAPAction
+            value: https://predic8.de/cities/get
+    - response:
+        - setBody:
+            language: xpath
+            value: |
+              {
+                "country": "${//country}",
+                "population": ${//population}
+              }
+  target:
+    # Change method to POST
+    method: POST
+    url: https://www.predic8.de/city-service
+
+
