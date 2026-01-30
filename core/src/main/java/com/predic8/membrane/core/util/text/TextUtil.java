@@ -82,15 +82,6 @@ public class TextUtil {
     }
 
     /**
-     * @param reader
-     * @return
-     * @throws Exception
-     */
-    public static String formatXML(Reader reader) throws Exception {
-        return formatXML(reader, false);
-    }
-
-    /**
      * As HTML is needed for the AdminConsole
      *
      * @param reader XML
