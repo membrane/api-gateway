@@ -17,7 +17,6 @@ package com.predic8.membrane.annot;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.annot.beanregistry.SpringContextAdapter;
 import com.predic8.membrane.annot.util.CompilerHelper;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -28,9 +27,9 @@ import static com.predic8.membrane.annot.util.CompilerHelper.*;
 import static com.predic8.membrane.annot.util.StructureAssertionUtil.*;
 import static com.predic8.membrane.annot.util.StructureAssertionUtil.clazz;
 
-public class ParsingTest {
+public class SpringParsingTest {
 
-    private String wrapSpring(String content) {
+    public static String wrapSpring(String content) {
         return """
                 <spring:beans xmlns="http://membrane-soa.org/demo/1/"
                               xmlns:spring="http://www.springframework.org/schema/beans"

@@ -45,7 +45,7 @@ public class CompilerHelper {
     public static final String ANNOTATION_PROCESSOR_CLASSNAME = "com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessor";
     public static final String APPLICATION_CONTEXT_CLASSNAME = "org.springframework.context.support.ClassPathXmlApplicationContext";
     private static final Pattern PACKAGE_PATTERN = Pattern.compile("package\\s+([^;]+)\\s*;");
-    private static final Pattern CLASS_PATTERN = Pattern.compile("class\\s+([^\\s]+)\\s");
+    private static final Pattern CLASS_PATTERN = Pattern.compile("(class|enum|interface)\\s+([^\\s]+)\\s");
 
     /**
      * Compile the given source files.
@@ -199,7 +199,7 @@ public class CompilerHelper {
         Matcher m = CLASS_PATTERN.matcher(source);
         if (!m.find())
             throw new RuntimeException("No class name found in source:\n" + source);
-        return m.group(1);
+        return m.group(2);
     }
 
     private static String extractPackage(String source) {

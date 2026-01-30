@@ -83,6 +83,14 @@ public class StructureAssertionUtil {
         return bean -> Assertions.assertEquals(value, bean);
     }
 
+    public static Asserter isNull() {
+        return bean -> Assertions.assertNull(bean);
+    }
+
+    public static Asserter convertedToString(String value) {
+        return bean -> Assertions.assertEquals(value, bean.toString());
+    }
+
     public static Asserter list(Asserter... asserters) {
         return bean -> {
             assertInstanceOf(List.class, bean);

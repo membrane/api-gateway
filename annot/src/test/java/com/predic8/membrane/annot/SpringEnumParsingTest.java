@@ -1,0 +1,53 @@
+package com.predic8.membrane.annot;
+
+import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.util.CompilerHelper;
+import com.predic8.membrane.annot.util.CompilerResult;
+import org.junit.jupiter.api.Test;
+
+import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
+import static com.predic8.membrane.annot.util.CompilerHelper.*;
+import static com.predic8.membrane.annot.util.StructureAssertionUtil.*;
+
+public class SpringEnumParsingTest {
+
+    private static final String TRIVIAL_ENUM_EXAMPLE = """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        import java.util.List;
+        @MCElement(name="root")
+        public class DemoElement {
+            MyEnum value;
+        
+            public MyEnum getValue() { return value; }
+            @MCAttribute
+            public void setValue(MyEnum value) { this.value = value; }
+        }
+        ---
+        package com.predic8.membrane.demo;
+        public enum MyEnum {
+            VALUE1, VALUE2;
+        }
+        """;
+
+    @Test
+    public void checkEnumParsing() {
+        var sources = splitSources(MC_MAIN_DEMO + TRIVIAL_ENUM_EXAMPLE);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        assertThatXMLValueWasTranslatedTo(result, "VALUE1", "VALUE1");
+        assertThatXMLValueWasTranslatedTo(result, "value1", "VALUE1");
+    }
+
+    private static void assertThatXMLValueWasTranslatedTo(CompilerResult result, String xmlValue, String expectedToStringValue) {
+        BeanRegistry br = parseXML(result, SpringParsingTest.wrapSpring("""
+                <root value="%s" />""".formatted(xmlValue)));
+
+        assertStructure(
+                br,
+                clazz("DemoElement",
+                        property("value", convertedToString(expectedToStringValue))));
+    }
+
+}
