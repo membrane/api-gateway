@@ -201,8 +201,17 @@ public class TextUtil {
      * @return A string with adjusted indentation.
      */
     public static String unifyIndent(String multilineString) {
-        String[] lines = multilineString.split("\r?\n");
+        String[] lines = getLines(multilineString);
         return trimLines(lines, getMinIndent(lines)).toString().replaceFirst("\\s*$", "");
+    }
+
+    /**
+     * Splits a multiline string into an array of strings
+     * @param multilineString to split
+     * @return array of strings
+     */
+    public static String @NotNull [] getLines(String multilineString) {
+        return multilineString.split("\r?\n");
     }
 
     public static byte[] unifyIndent(byte[] data, Charset charset) {

@@ -14,16 +14,17 @@
 
 package com.predic8.xml.beautifier;
 
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.xml.stream.*;
 import java.io.*;
 
-import static java.lang.Boolean.*;
-import static javax.xml.stream.XMLInputFactory.*;
+import static com.predic8.xml.beautifier.XMLInputFactoryFactory.*;
 import static javax.xml.stream.XMLStreamConstants.*;
 
+/**
+ * Do not reuse! It preserves state
+ */
 public class XMLBeautifier {
 
     private static final Logger log = LoggerFactory.getLogger(XMLBeautifier.class);
@@ -47,20 +48,14 @@ public class XMLBeautifier {
 
     public void parse(InputStream inputStream) throws IOException {
         try {
-            parse(getXmlInputFactory().createXMLStreamReader(inputStream));
+            parse(inputFactory().createXMLStreamReader(inputStream));
         } catch (Exception e) {
             throw new IOException(e);
         }
     }
 
     public void parse(Reader reader) throws Exception {
-        parse(getXmlInputFactory().createXMLStreamReader(reader));
-    }
-
-    private static @NotNull XMLInputFactory getXmlInputFactory() {
-        XMLInputFactory factory = XMLInputFactoryFactory.inputFactory();
-        factory.setProperty(SUPPORT_DTD, FALSE);
-        return factory;
+        parse(inputFactory().createXMLStreamReader(reader));
     }
 
     private void parse(XMLStreamReader reader) throws Exception {
@@ -193,10 +188,7 @@ public class XMLBeautifier {
 
     private boolean containsNonWhitespaceCharacters(String s) {
         for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c != 10 && c != 13 && c != 32 && c != 9) {
-                return true;
-            }
+            if (!Character.isWhitespace(s.charAt(i))) return true;
         }
         return false;
     }

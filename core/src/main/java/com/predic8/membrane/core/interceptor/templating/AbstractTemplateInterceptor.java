@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.prettifier.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.text.*;
 import groovy.text.*;
 import org.apache.commons.io.*;
 import org.slf4j.*;
@@ -104,13 +105,15 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
 
         // Unifying is to remove spaces from YAML
         // Unifying indentation has almost no impact with small 1K messages
-        msg.setBodyContent(unifyIndent(prettify(getContent(exchange, flow)), UTF_8)); // Template comes from YAML. YAML is always unicode
+        msg.setBodyContent(prettify(getContent(exchange, flow))); // Template comes from YAML. YAML is always unicode
         msg.getHeader().setContentType(contentType);
     }
 
     protected byte[] prettify(byte[] bytes) {
+        if (!pretty)
+            return bytes;
         try {
-            return prettifier.prettify(bytes, charset);
+            return prettifier.prettify(unifyIndent(bytes, charset), charset);
         } catch (Exception e) {
             log.debug("Error beautifying {}. Error: {}",contentType, e.getMessage());
             log.trace("Content: {}", truncateAfter(new String(bytes,charset), 100), e);
