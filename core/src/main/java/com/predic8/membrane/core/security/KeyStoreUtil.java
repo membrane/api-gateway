@@ -56,17 +56,16 @@ public class KeyStoreUtil {
     }
 
     /**
-     * Generates an SHA-256 digest of the certificate associated with the given alias in the KeyStore.
+     * Generates an SHA-256 digest of the certificate.
      *
-     * @param ks    The KeyStore containing the certificate.
-     * @param alias The alias of the certificate in the KeyStore.
+     * @param cert The certificate.
      * @return A String representation of the SHA-256 digest, with bytes separated by colons.
      * @throws CertificateEncodingException If there's an error encoding the certificate.
      * @throws KeyStoreException           If there's an error accessing the KeyStore.
      * @throws NoSuchAlgorithmException    If the SHA-256 algorithm is not available.
      */
-    public static @org.jetbrains.annotations.NotNull String getDigest(KeyStore ks, String alias) throws CertificateEncodingException, KeyStoreException, NoSuchAlgorithmException {
-        byte[] pkeEnc = ks.getCertificate(alias).getEncoded();
+    public static @org.jetbrains.annotations.NotNull String getDigest(Certificate cert) throws CertificateEncodingException, KeyStoreException, NoSuchAlgorithmException {
+        byte[] pkeEnc = cert.getEncoded();
         MessageDigest md = MessageDigest.getInstance("SHA-256");
         md.update(pkeEnc);
         byte[] mdbytes = md.digest();

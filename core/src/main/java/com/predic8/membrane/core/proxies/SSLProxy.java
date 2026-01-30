@@ -15,50 +15,49 @@ limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.sslinterceptor.SSLInterceptor;
-import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import com.predic8.membrane.core.sslinterceptor.*;
+import com.predic8.membrane.core.stats.*;
 import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
+import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.streampump.*;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLExchange;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import com.predic8.membrane.core.util.DNSCache;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.FlowController.ABORTION_REASON;
+import static com.predic8.membrane.core.interceptor.FlowController.*;
 
 /**
  * Proxies SSL connections to a target server without decrypting the traffic.
  */
-@MCElement(name="sslProxy")
+@MCElement(name = "sslProxy", topLevel = true, component = false)
 public class SSLProxy implements Proxy {
     private static final Logger log = LoggerFactory.getLogger(SSLProxy.class.getName());
 
-    private Target target;
+    private SSLProxy.Target target;
     private ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
     private final RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
     private boolean useAsDefault = true;
     private List<SSLInterceptor> sslInterceptors = new ArrayList<>();
 
-    @MCElement(id = "sslProxy-target", name="target", component = false)
+    public ConnectionConfiguration getConnectionConfiguration() {
+        return connectionConfiguration;
+    }
+
+    @MCChildElement(order = 0)
+    public void setConnectionConfiguration(ConnectionConfiguration connectionConfiguration) {
+        this.connectionConfiguration = connectionConfiguration;
+    }
+
+    @MCElement(id = "sslProxy-target", name = "target", component = false)
     public static class Target {
         private int port = -1;
         private String host;
@@ -82,22 +81,13 @@ public class SSLProxy implements Proxy {
         }
     }
 
-    public ConnectionConfiguration getConnectionConfiguration() {
-        return connectionConfiguration;
-    }
-
-    @MCChildElement(order = 0)
-    public void setConnectionConfiguration(ConnectionConfiguration connectionConfiguration) {
-        this.connectionConfiguration = connectionConfiguration;
-    }
-
-    public Target getTarget() {
+    public SSLProxy.Target getTarget() {
         return target;
     }
 
     @Required
     @MCChildElement(order = 100)
-    public void setTarget(Target target) {
+    public void setTarget(SSLProxy.Target target) {
         this.target = target;
     }
 
@@ -115,7 +105,7 @@ public class SSLProxy implements Proxy {
         return sslInterceptors;
     }
 
-    @MCChildElement(allowForeign=true, order=50)
+    @MCChildElement(allowForeign = true, order = 50)
     public void setSslInterceptors(List<SSLInterceptor> sslInterceptors) {
         this.sslInterceptors = sslInterceptors;
     }
@@ -174,7 +164,7 @@ public class SSLProxy implements Proxy {
 
     @Override
     public String getName() {
-        return "SSL " + getHost() + ":" + getPort();
+        return "SSL %s:%d".formatted(getHost(), getPort());
     }
 
     @Override
@@ -361,8 +351,8 @@ public class SSLProxy implements Proxy {
                     log.error("", (Throwable) exc.getProperty(ABORTION_REASON));
                 byte error = exc.getError().getCode();
 
-                byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-                        2 /* fatal */, error };
+                byte[] alert_unrecognized_name = {21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+                        2 /* fatal */, error};
 
                 try (socket) {
                     socket.getOutputStream().write(alert_unrecognized_name);
