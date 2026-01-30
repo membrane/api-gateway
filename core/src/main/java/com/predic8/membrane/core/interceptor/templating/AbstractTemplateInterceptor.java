@@ -102,11 +102,8 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
      */
     protected final void process(Exchange exchange, Flow flow) throws TemplateExecutionException {
         Message msg = exchange.getMessage(flow);
-
-        // Unifying is to remove spaces from YAML
-        // Unifying indentation has almost no impact with small 1K messages
         msg.setBodyContent(prettify(getContent(exchange, flow))); // Template comes from YAML. YAML is always unicode
-        msg.getHeader().setContentType(contentType);
+        msg.getHeader().setContentType(getContentType());
     }
 
     protected byte[] prettify(byte[] bytes) {
