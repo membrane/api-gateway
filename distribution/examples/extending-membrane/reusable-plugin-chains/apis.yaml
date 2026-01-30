@@ -2,13 +2,13 @@
 
 components:
   log:
-    chainDef:
+    chain:
       flow:
         - request:
           - log:
               message: "Path: ${path}"
   cors:
-    chainDef:
+    chain:
       flow:
         - response:
             - setHeader:
@@ -24,8 +24,7 @@ api:
   path:
     uri: /foo
   flow:
-    - chain:
-        ref: '#/components/log'
+    - $ref: '#/components/log'
     - return:
         status: 200
 ---
@@ -35,11 +34,7 @@ api:
   path:
     uri: /bar
   flow:
-    - chain:
-        # Chains can be applied to more than one API
-        ref: '#/components/log'
-    - chain:
-        # Referencing long chains can keep API definitions small and comprehensible
-        ref: '#/components/cors'
+    - $ref: '#/components/log' # Chains can be applied to more than one API
+    - $ref: '#/components/cors' # Referencing long chains can keep API definitions small and comprehensible
     - return:
         status: 200

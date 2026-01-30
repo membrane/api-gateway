@@ -29,40 +29,6 @@ import java.util.*;
 @MCElement(name = "chain")
 public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
 
-    private String ref;
-
-    @Override
-    public void init() {
-        interceptors = getInterceptorChainForRef(ref);
-
-        super.init();
-    }
-
-    private List<Interceptor> getInterceptorChainForRef(String ref) {
-        return getBean(ref, ChainDef.class)
-                .orElseThrow(() -> new ConfigurationException("No chain found for reference: " + ref))
-                .getFlow();
-    }
-
-    /**
-     * TODO: Temporary fix till we have a central configuration independant lookup
-     */
-    private <T> Optional<T> getBean(String name, Class<T> clazz) {
-        if (router.getRegistry() != null) {
-            var bean = router.getRegistry().getBean(name, clazz);
-            if (bean.isPresent())
-                return bean;
-        }
-        // From XML
-        if (router.getBeanFactory() != null) {
-            try {
-                return Optional.of(router.getBeanFactory().getBean(name, clazz));
-            } catch (NoSuchBeanDefinitionException ignored) {
-            }
-        }
-        return Optional.empty();
-    }
-
     @Override
     public Outcome handleRequest(Exchange exc) {
         return router.getFlowController().invokeRequestHandlers(exc, interceptors);
@@ -71,19 +37,6 @@ public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
     @Override
     public Outcome handleResponse(Exchange exc) {
         return router.getFlowController().invokeResponseHandlers(exc, interceptors);
-    }
-
-    /**
-     * @description The id of the referenced chain.
-     */
-    @Required
-    @MCAttribute
-    public void setRef(String ref) {
-        this.ref = ref;
-    }
-
-    public String getRef() {
-        return ref;
     }
 
 }
