@@ -1,7 +1,6 @@
 ### JSON LOGGING
 
-If desired membrane can log in json format using `JsonTemplateLayout` 
-from `log4j2`
+If desired membrane can log in json format using `JsonTemplateLayout` from `log4j2`
 
 #### RUNNING THE EXAMPLE
 
@@ -11,26 +10,35 @@ To run the example execute the following steps:
 
 1. Go to the `examples/logging/json` directory.
 
-2. Execute `membrane.sh`
+2. Set the Log4j config via `JAVA_OPTS`:
 
-3. Notice the file `membrane_json.log` that is created in the `logging-json` directory.
+   **Linux/macOS**
+   ```sh
+   export JAVA_OPTS="-Dlog4j.configurationFile=examples/logging/json/log4j2_json.xml -Dlog4j.debug=true"
+    ````
+    
+    **Windows (PowerShell)**
+    
+    ```powershell
+    $env:JAVA_OPTS='-Dlog4j.configurationFile=examples/logging/json/log4j2_json.xml -Dlog4j.debug=true'
+    ```
+    
+    Note: relative paths are resolved against `$MEMBRANE_HOME`. Absolute paths and URIs are left unchanged.
 
-4. Open the URL http://localhost:2000/ in your browser.
+3. Execute `membrane.sh`
 
-5. Open the file `membrane_json.log` and take a look at the logged data.
+4. Notice the file `membrane_json.log` that is created in the `logging-json` directory.
+
+5. Open the URL http://localhost:2000/ in your browser.
+
+6. Open the file `membrane_json.log` and take a look at the logged data.
 
 
 #### HOW IT IS DONE
 
 The following part describes the example in detail.
 
-Let's take a look at the `membrane.sh` file.
-
-```
- java -Dlog4j.configurationFile=$(pwd)/log4j2_json.xml  -Dlog4j.debug=true -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies.xml
-```
-
-In the above line we pass absolute path of our log4j configuration file with `-Dlog4j.configurationFile` VM option.
+The Log4j2 configuration is selected via the JVM system property `-Dlog4j.configurationFile` (provided through `JAVA_OPTS`).
 
 In the `log4j2_json.xml` file you can see `<JsonTemplateLayout eventTemplateUri="classpath:com/predic8/membrane/core/interceptor/log/logTemplate.json"/>`
 Membrane comes with a `JSON` template that attaches the proxy name to log output for easier tracing and log handling.
