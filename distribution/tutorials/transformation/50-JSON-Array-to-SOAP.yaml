@@ -19,11 +19,11 @@
 #            <fruits>
 #                <name>Apricot</name>
 #                <price>3.8</price>
-#            </fruit>
+#            </fruits>
 #            <fruits>
 #                <name>Date</name>
 #                <price>2.3</price>
-#            </fruit>
+#            </fruits>
 #        </f:getFruitsResponse>
 #    </s11:Body>
 # </s11:Envelope>
