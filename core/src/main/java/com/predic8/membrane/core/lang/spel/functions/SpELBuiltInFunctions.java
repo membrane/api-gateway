@@ -34,13 +34,11 @@ import static java.lang.reflect.Modifier.*;
 public class SpELBuiltInFunctions {
 
     private final Router router;
-    private XmlConfig xmlConfig;
+    private final XmlConfig xmlConfig;
 
     public SpELBuiltInFunctions(Router router) {
         this.router = router;
-        if (router != null && router.getRegistry() != null) {
-            this.xmlConfig = router.getRegistry().getBean(XmlConfig.class).orElse(null);
-        }
+        xmlConfig = getXmlConfig(router);
     }
 
     public Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
@@ -128,5 +126,11 @@ public class SpELBuiltInFunctions {
     private static boolean lastParamIsSpELExchangeEvaluationContext(Method m) {
         Class<?>[] params = m.getParameterTypes();
         return params.length > 0 && params[params.length - 1] == SpELExchangeEvaluationContext.class;
+    }
+
+    private XmlConfig getXmlConfig(Router router) {
+         if (router == null || router.getRegistry() == null)
+             return null;
+         return router.getRegistry().getBean(XmlConfig.class).orElse(null);
     }
 }
