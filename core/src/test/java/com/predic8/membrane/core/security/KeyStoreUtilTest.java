@@ -70,7 +70,7 @@ class KeyStoreUtilTest {
 
     @Test
     void testGetDigest() throws CertificateEncodingException, KeyStoreException, NoSuchAlgorithmException {
-        String digest = KeyStoreUtil.getDigest(keyStore, ALIAS);
+        String digest = KeyStoreUtil.getDigest(keyStore.getCertificate(ALIAS));
         assertEquals(EXPECTED_DIGEST, digest);
     }
 

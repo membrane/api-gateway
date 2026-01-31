@@ -50,11 +50,10 @@ public class SSLContextCollection implements SSLProvider {
 	public static class Builder {
 		private final List<String> dnsNames = new ArrayList<>();
 		private final List<SSLContext> sslContexts = new ArrayList<>();
+		private boolean useCollection = false;
 
 		public SSLProvider build() {
-			if (sslContexts.isEmpty())
-				throw new IllegalStateException("No SSLContext's were added to this Builder before invoking build().");
-			if (sslContexts.size() > 1) {
+			if (sslContexts.size() > 1 || useCollection) {
 				return new SSLContextCollection(sslContexts, dnsNames);
 			} else
 				return sslContexts.getFirst();
@@ -65,6 +64,10 @@ public class SSLContextCollection implements SSLProvider {
 				sslContexts.add(sslContext);
 				dnsNames.add(sslContext.constructHostNamePattern());
 			}
+		}
+
+		public void useCollection() {
+			useCollection = true;
 		}
 	}
 

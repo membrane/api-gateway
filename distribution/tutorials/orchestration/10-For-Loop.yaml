@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Loop over JSON Array
+#
+# Iterates over the `fruits` array in the request body and logs
+# the name of each fruit.
+#
+# Expected input (example):
+#    {
+#      "fruits": [
+#        { "name": "Apple" },
+#        { "name": "Banana" }
+#      ]
+#    }
+#
+# Try:
+#    curl -d @fruits.json -H "Content-Type: application/json" localhost:2000
+
+api:
+  port: 2000
+  flow:
+    - for:
+        # Evaluates to a list
+        in: $.fruits
+        language: jsonpath
+        flow:
+          - log:
+              # `it` refers to the current list element
+              message: 'Fruit: ${it["name"]}'
+    - return:
+        status: 200
