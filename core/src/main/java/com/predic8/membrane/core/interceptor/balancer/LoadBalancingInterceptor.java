@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -23,8 +22,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serial;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
@@ -35,8 +32,27 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description Performs load-balancing between several nodes. Nodes sharing session state may be bundled into a cluster.
- * @explanation May only be used as interceptor in a serviceProxy or api.
+ * May only be used as interceptor in a serviceProxy or api.
  * @topic 2. Enterprise Integration Patterns
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - balancer:
+ *         name: DemoBalancer
+ *         priorityStrategy: {}
+ *         clusters:
+ *           - cluster:
+ *               name: PROD
+ *               nodes:
+ *                 - node:
+ *                     host: node1.predic8.com
+ *                     port: 8080
+ *                 - node:
+ *                     host: node2.predic8.com
+ *                     port: 8090
+ * </code></pre>
  */
 @MCElement(name = "balancer")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
@@ -256,30 +272,12 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
      * @description Specifies a list of clusters.
      */
     @MCChildElement(order = 2)
-    public void setClustersFromSpring(List<Balancer> balancers) {
-        List<Cluster> clusters = new ArrayList<>();
-        for (Balancer balancer : balancers)
-            clusters.addAll(balancer.getClusters());
+    public void setClusters(List<Cluster> clusters) {
         this.balancer.setClusters(clusters);
     }
 
-    public List<Balancer> getClustersFromSpring() {
-        return new ArrayList<>(Lists.newArrayList(balancer)) {
-            @Serial
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public boolean add(Balancer e) {
-                balancer.setClusters(e.getClusters());
-                return super.add(e);
-            }
-
-            @Override
-            public Balancer set(int index, Balancer element) {
-                balancer.setClusters(element.getClusters());
-                return super.set(index, element);
-            }
-        };
+    public List<Cluster> getClusters() {
+        return balancer.getClusters();
     }
 
     public long getSessionTimeout() {

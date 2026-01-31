@@ -7,20 +7,19 @@ api:
         sessionIdExtractor: # TODO fix
           sessionSource: $.id
           language: jsonpath
-        clustersFromSpring:
-          - clusters:
-              - cluster:
-                  name: Production
-                  nodes: # Replace these with your backend nodes.
-                    - node:
-                        host: localhost
-                        port: 4000
-                    - node:
-                        host: localhost
-                        port: 4001
-                    - node:
-                        host: localhost
-                        port: 4002
+        clusters:
+          - cluster:
+              name: Production
+              nodes: # Replace these with your backend nodes.
+                - node:
+                    host: localhost
+                    port: 4000
+                - node:
+                    host: localhost
+                    port: 4001
+                - node:
+                    host: localhost
+                    port: 4002
 
 ---
 # Mock nodes for testing. Remove them in production.

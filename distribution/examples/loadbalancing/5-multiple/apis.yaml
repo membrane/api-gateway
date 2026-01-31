@@ -7,17 +7,16 @@ api:
   flow:
     - balancer:
         name: balancer1
-        clustersFromSpring:
-          - clusters:
-              - cluster:
-                  name: Default
-                  nodes: # target 1 and 2 that are balanced by balancer 1
-                    - node:
-                        host: localhost
-                        port: 4000
-                    - node:
-                        host: localhost
-                        port: 4001
+        clusters:
+          - cluster:
+              name: Default
+              nodes: # target 1 and 2 that are balanced by balancer 1
+                - node:
+                    host: localhost
+                    port: 4000
+                - node:
+                    host: localhost
+                    port: 4001
 
 ---
 
@@ -29,17 +28,16 @@ api:
   flow:
     - balancer:
         name: balancer2
-        clustersFromSpring:
-          - clusters:
-              - cluster:
-                  name: Default
-                  nodes: # target 3 and 4 that are balanced by balancer 2
-                    - node:
-                        host: localhost
-                        port: 4002
-                    - node:
-                        host: localhost
-                        port: 4003
+        clusters:
+          - cluster:
+              name: Default
+              nodes: # target 3 and 4 that are balanced by balancer 2
+                - node:
+                    host: localhost
+                    port: 4002
+                - node:
+                    host: localhost
+                    port: 4003
 
 ---
 
