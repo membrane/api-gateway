@@ -33,11 +33,9 @@ import static java.lang.reflect.Modifier.*;
 @SuppressWarnings("unused")
 public class SpELBuiltInFunctions {
 
-    private final Router router;
     private final XmlConfig xmlConfig;
 
     public SpELBuiltInFunctions(Router router) {
-        this.router = router;
         xmlConfig = getXmlConfig(router);
     }
 
@@ -54,7 +52,7 @@ public class SpELBuiltInFunctions {
     }
 
     public Object xpath(String expression, Object context, SpELExchangeEvaluationContext ctx) {
-        return CommonBuiltInFunctions.xpath(expression,  context, xmlConfig);
+        return CommonBuiltInFunctions.xpath(expression, context, xmlConfig);
     }
 
     public boolean weight(double weightInPercent, SpELExchangeEvaluationContext ignored) {

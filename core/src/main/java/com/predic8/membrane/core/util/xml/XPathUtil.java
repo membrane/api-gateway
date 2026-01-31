@@ -23,7 +23,7 @@ import javax.xml.xpath.XPathFactory;
 public final class XPathUtil {
 
     /**
-     * XPathFactory is not thread-safe!1
+     * XPathFactory is not thread-safe!
      */
     private static final ThreadLocal<XPathFactory> FACTORY = ThreadLocal.withInitial(XPathFactory::newInstance);
 
