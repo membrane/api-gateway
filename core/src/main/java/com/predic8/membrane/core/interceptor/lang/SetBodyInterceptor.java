@@ -109,7 +109,6 @@ public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
 
     /**
      * @description Content-Type of the generated body content.
-     * @default text/plain
      * @example application/json
      */
     @MCAttribute

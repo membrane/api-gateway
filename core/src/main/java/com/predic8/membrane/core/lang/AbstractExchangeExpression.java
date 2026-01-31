@@ -21,7 +21,7 @@ public abstract class AbstractExchangeExpression implements ExchangeExpression {
      * String from which the expression was created
      */
     protected final String expression;
-    protected Router router;
+    protected final Router router;
 
     /**
      * Should only called from subclasses cause ExchangeExpression offers a getInstance method

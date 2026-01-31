@@ -51,7 +51,6 @@ public class CommonBuiltInFunctions {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final XPathFactory xPathFactory = XPathFactory.newInstance();
     private static final XmlParser parser = HardenedXmlParser.getInstance();
 
     public static Object jsonPath(String jsonPath, Message msg) {
@@ -93,12 +92,11 @@ public class CommonBuiltInFunctions {
      */
     public static Object xpath(String expression, Message message, XmlConfig cfg) {
         try {
-            var xPath = xPathFactory.newXPath();
-            if (cfg != null && cfg.getNamespaces() != null) {
-                xPath.setNamespaceContext(cfg.getNamespaces().getNamespaceContext());
-            }
-            var evaluate = xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(message)), guessReturnType(expression));
-            return evaluate;
+            return XPathUtil.newXPath(cfg).evaluate(
+                    expression,
+                    parser.parse(XMLUtil.getInputSource(message)),
+                    guessReturnType(expression)
+            );
         } catch (XPathExpressionException ignored) {
             return null;
         }
@@ -129,13 +127,7 @@ public class CommonBuiltInFunctions {
      */
     public static Object xpath(String expression, Object ctx, XmlConfig cfg) {
         try {
-            var xPath = xPathFactory.newXPath();
-
-            if (cfg != null && cfg.getNamespaces() != null) {
-                xPath.setNamespaceContext(cfg.getNamespaces().getNamespaceContext());
-            }
-
-            return xPath.evaluate(expression, ctx, guessReturnType(expression));
+            return XPathUtil.newXPath(cfg).evaluate(expression, ctx, guessReturnType(expression));
 
         } catch (XPathExpressionException ignored) {
             return null;

@@ -20,7 +20,9 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.TemplateExchangeExpression.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,11 +34,9 @@ class TemplateExchangeExpressionTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        exc = Request.get("/foo")
-                .header("bar", "42")
-                .buildExchange();
+        exc = get("/foo").header("bar", "42").buildExchange();
         exc.setProperty("prop1", "Mars");
-        language = Language.SPEL;
+        language = SPEL;
         router = new DefaultRouter();
     }
 
@@ -66,6 +66,6 @@ class TemplateExchangeExpressionTest {
     }
 
     private String eval(String expr) {
-        return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr, new DummyTestRouter()).evaluate(exc, REQUEST,String.class);
+        return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr, router).evaluate(exc, REQUEST,String.class);
     }
 }

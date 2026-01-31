@@ -31,8 +31,9 @@ class SpELBuiltInFunctionsTest {
 
     @BeforeEach
     void setup() throws URISyntaxException {
-        ctx = new SpELExchangeEvaluationContext(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, new DummyTestRouter());
-        functions = new SpELBuiltInFunctions(new DummyTestRouter());
+        var router = new DummyTestRouter();
+        ctx = new SpELExchangeEvaluationContext(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, router);
+        functions = new SpELBuiltInFunctions(router);
     }
 
     @Test

@@ -64,15 +64,15 @@ public class ReflectiveMethodHandler {
     }
 
     private static ArrayList<TypeDescriptor> getParameterTypeDescriptors(List<TypeDescriptor> types) {
-        return new ArrayList<>(types) {{
-            add(getTypeDescriptor(SpELExchangeEvaluationContext.class));
-        }};
+        var result = new ArrayList<>(types);
+        result.add(getTypeDescriptor(SpELExchangeEvaluationContext.class));
+        return result;
     }
 
     private static Object[] getParameters(EvaluationContext ctx, Object[] args) {
-        return new ArrayList<>(of(args)) {{
-            add(ctx);
-        }}.toArray();
+        var result = new ArrayList<>(of(args));
+        result.add(ctx);
+        return result.toArray();
     }
 
     Method getFunction(String func, List<TypeDescriptor> t) throws NoSuchMethodException {

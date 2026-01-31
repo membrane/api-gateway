@@ -33,11 +33,9 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
     private static final Logger log = LoggerFactory.getLogger(GroovyExchangeExpression.class);
 
     private final Function<Map<String, Object>, Object> script;
-    private final Router router;
 
-    public GroovyExchangeExpression(Interceptor interceptor, String source, Router router) {
+    public GroovyExchangeExpression(String source, Router router) {
         super(source, router);
-        this.router = interceptor.getRouter();
         try {
             script = new GroovyLanguageSupport().compileScript( null, source);
         } catch (MultipleCompilationErrorsException e) {

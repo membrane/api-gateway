@@ -42,9 +42,6 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
 
     private XmlConfig xmlConfig;
 
-    // Let all expressions share the same XPathFactory.
-    private static final XPathFactory factory = XPathFactory.newInstance();
-
     public XPathExchangeExpression(Interceptor interceptor, String xpath, Router router) {
         super(xpath,router);
 
@@ -100,12 +97,8 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
         }
 
-        // XPath is not thread safe! Therefore, every time the factory is called!
-        XPath xPath = factory.newXPath();
-
-        if (xmlConfig != null && xmlConfig.getNamespaces() != null) {
-            xPath.setNamespaceContext(xmlConfig.getNamespaces().getNamespaceContext());
-        }
+        // XPath is not thread safe!
+        XPath xPath = XPathUtil.newXPath(xmlConfig);
 
         try {
             return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);

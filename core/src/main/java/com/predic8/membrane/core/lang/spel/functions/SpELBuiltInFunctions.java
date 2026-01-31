@@ -26,9 +26,8 @@ import static java.lang.reflect.Modifier.*;
 /**
  * This class's public methods are automatically registered in the SpEL context by the BuiltInFunctionResolver.
  * These methods must adhere to the following constraints:
- * 1. They must be static.
- * 2. They should operate in a non-destructive manner on their parameters.
- * 3. An ExchangeEvaluationContext object must be included as the last parameter in every method, even if it's the sole parameter.
+ * 1. They should operate in a non-destructive manner on their parameters.
+ * 2. An ExchangeEvaluationContext object must be included as the last parameter in every method, even if it's the sole parameter.
  * The ExchangeEvaluationContext provides a specialized Membrane SpEL context, enabling access to the Exchange and other relevant data.
  */
 @SuppressWarnings("unused")
