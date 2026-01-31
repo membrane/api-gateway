@@ -14,22 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.acl.rules.AccessRule;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.router.Router;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.acl.rules.*;
+import org.slf4j.*;
 
-import java.util.List;
+import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @topic 3. Security
@@ -57,17 +51,18 @@ public class AccessControlInterceptor extends AbstractInterceptor {
     private final AccessControl accessControl = new AccessControl();
 
     @Override
-    public void init(Router router, Proxy proxy) {
-        super.init(router, proxy);
+    public void init() {
+        super.init();
         accessControl.init(router.getDnsCache());
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
         String remoteIp = exc.getRemoteAddrIp();
-        if (!accessControl.isPermitted(remoteIp)) {
+        var decision = accessControl.isPermitted(remoteIp);
+        if (!decision.permitted()) {
             setResponseToAccessDenied(exc);
-            log.debug("Access denied. remoteIp={} method={} uri={}", remoteIp, exc.getRequest().getMethod(), exc.getOriginalRelativeURI());
+            log.info("Access denied from {}", decision.address());
             return ABORT;
         }
         return CONTINUE;

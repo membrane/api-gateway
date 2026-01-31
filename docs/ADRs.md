@@ -1,5 +1,22 @@
 # Architecture Decision Log
 
+## ADR-004 Logging
+
+Status: PROPOSED
+Date: 2026-01-29
+
+## Context
+
+## Idea
+
+- Log at level INFO interesting events like:
+  - OpenAPI validation failed
+  - ACL failed
+  - ...
+- Make it easier to explore Membrane and make it work
+- Set root level to WARN for production
+
+
 ## ADR-002 Flow Guarantees
 
 Status: PROPOSED

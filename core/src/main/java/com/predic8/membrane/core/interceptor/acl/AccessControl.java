@@ -41,6 +41,8 @@ public class AccessControl {
 
     private PeerAddressResolver peerAddressResolver;
 
+    public record AccessDecision(boolean permitted, IpAddress address) {}
+
     public void init(DNSCache dnsCache) {
         peerAddressResolver = new PeerAddressResolver(hasHostnameRule(), dnsCache);
         if (rules.isEmpty()) throw new ConfigurationException("No access rules defined.");
@@ -53,24 +55,24 @@ public class AccessControl {
      * access is denied.</p>
      *
      * @param remoteIp remote peer IP as string (expected to be a valid IPv4/IPv6 literal)
-     * @return true if permitted by the first matching rule, otherwise false
+     * @return AccessDecision Field permitted is true if one rule matches
      */
-    public boolean isPermitted(String remoteIp) {
+    public AccessDecision isPermitted(String remoteIp) {
         return peerAddressResolver.resolve(remoteIp)
                 .map(this::evaluatePermission)
-                .orElse(false);
+                .orElse(new AccessDecision(false, null));
     }
 
     /**
      * Applies the configured rules in order and returns the first decision.
-     * If no rule decides, returns false (default deny).
+     * If no rule decides, returns a denied AccessDecision (default deny).
      */
-    private boolean evaluatePermission(IpAddress address) {
+    private AccessDecision evaluatePermission(IpAddress address) {
         for (AccessRule rule : rules) {
             Optional<Boolean> res = rule.apply(address);
-            if (res.isPresent()) return res.get();
+            if (res.isPresent()) return new AccessDecision( res.get(),address);
         }
-        return false;
+        return new AccessDecision(false, address);
     }
 
     public boolean hasHostnameRule() {
