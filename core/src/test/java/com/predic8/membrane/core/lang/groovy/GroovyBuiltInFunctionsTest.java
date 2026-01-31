@@ -15,7 +15,9 @@
 package com.predic8.membrane.core.lang.groovy;
 
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
+import org.w3c.dom.*;
 
 import java.net.*;
 import java.util.*;
@@ -32,12 +34,28 @@ class GroovyBuiltInFunctionsTest {
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        functions = new GroovyBuiltInFunctions(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST);
+        functions = new GroovyBuiltInFunctions(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, new DummyTestRouter());
     }
 
     @Test
     void xpath() {
-        assertEquals("Fritz", functions.xpath("/person/@name"));
+        var obj = functions.xpath("/person/@name");
+        if (obj instanceof NodeList nl) {
+            assertEquals(1, nl.getLength());
+            assertEquals("Fritz", nl.item(0).getTextContent());
+        } else {
+            fail();
+        }
+    }
+
+        @Test
+    void xpath_string() {
+        var obj = functions.xpath("  string(/person/@name)");
+        if (obj instanceof String s) {
+            assertEquals("Fritz", s);
+        } else {
+            fail();
+        }
     }
 
 

@@ -16,17 +16,19 @@ package com.predic8.membrane.core.lang;
 
 import com.fasterxml.jackson.databind.*;
 import com.jayway.jsonpath.*;
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.security.*;
-import com.predic8.membrane.core.util.json.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import org.slf4j.Logger;
 
+import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -34,10 +36,11 @@ import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static java.lang.System.getenv;
+import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
 import static java.util.Objects.*;
+import static javax.xml.xpath.XPathConstants.*;
 
 /**
  * Place to share built-in functions between SpEL and Groovy.
@@ -68,20 +71,90 @@ public class CommonBuiltInFunctions {
         }
     }
 
-    public static String xpath(String xpath, Message message) {
-        XPath xPath = xPathFactory.newXPath();
-
-        // TODO: Leave the comment in till the XML namespace support is realized!
-        // - When there is the new registry use it to obtain the XMLConfig.
-        //        if (xmlConfig != null && xmlConfig.getNamespaces() != null) {
-        //            xPath.setNamespaceContext(xmlConfig.getNamespaces().getNamespaceContext());
-        //        }
-
+    /**
+     * <p>
+     * The message body is parsed into a DOM {@link org.w3c.dom.Document} and the
+     * XPath expression is evaluated against that document as the root context.
+     * </p>
+     * <p>
+     * This variant is intended for full-document XPath expressions such as
+     * {@code //fruit}, {@code string(//name)}, or {@code count(//item)}.
+     * </p>
+     * <p>
+     * Namespace support is currently not configured. The commented code below is
+     * intentionally kept as a reminder to re-enable namespace handling once the
+     * XML configuration can be obtained from the new registry.
+     * </p>
+     *
+     * @param expression the XPath expression to evaluate
+     * @param message    the {@link Message} containing the XML body used as XPath context
+     * @return the string value of the XPath evaluation result, or {@code null}
+     * if the expression is invalid or cannot be evaluated
+     */
+    public static Object xpath(String expression, Message message, XmlConfig cfg) {
         try {
-            return xPath.evaluate(xpath, parser.parse(XMLUtil.getInputSource(message)), XPathConstants.STRING).toString();
+            var xPath = xPathFactory.newXPath();
+            if (cfg != null && cfg.getNamespaces() != null) {
+                xPath.setNamespaceContext(cfg.getNamespaces().getNamespaceContext());
+            }
+            var evaluate = xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(message)), guessReturnType(expression));
+            return evaluate;
         } catch (XPathExpressionException ignored) {
             return null;
         }
+    }
+
+    /**
+     * Evaluates an XPath expression against a given XPath context object.
+     * <p>
+     * The context object may be any type supported by JAXP XPath evaluation,
+     * including:
+     * </p>
+     * <ul>
+     *   <li>{@link org.w3c.dom.Document}</li>
+     *   <li>{@link org.w3c.dom.Node}</li>
+     *   <li>{@link org.w3c.dom.NodeList}</li>
+     *   <li>{@link javax.xml.transform.Source}</li>
+     * </ul>
+     * <p>
+     * This method enables relative XPath expressions such as {@code ./name}
+     * when the context is a {@link org.w3c.dom.Node}, and absolute expressions
+     * such as {@code //fruit} when the context is a document or node list.
+     * </p>
+     *
+     * @param expression the XPath expression to evaluate
+     * @param ctx        the XPath context object used as the evaluation root
+     * @return the string value of the XPath evaluation result, or {@code null}
+     * if the expression is invalid or cannot be evaluated
+     */
+    public static Object xpath(String expression, Object ctx, XmlConfig cfg) {
+        try {
+            var xPath = xPathFactory.newXPath();
+
+            if (cfg != null && cfg.getNamespaces() != null) {
+                xPath.setNamespaceContext(cfg.getNamespaces().getNamespaceContext());
+            }
+
+            return xPath.evaluate(expression, ctx, guessReturnType(expression));
+
+        } catch (XPathExpressionException ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Not perfect but for most applications good enough
+     *
+     * @param expr
+     * @return
+     */
+    static @NotNull QName guessReturnType(String expr) {
+        expr = expr.trim();
+        return expr.startsWith("string(") || expr.startsWith("normalize-space(") ? STRING
+                : expr.startsWith("count(") || expr.startsWith("number(") ? NUMBER
+                : expr.startsWith("boolean(") ? BOOLEAN
+                : expr.startsWith(".") && !expr.contains("//") ? NODE
+                : NODESET;
     }
 
     public static String user(Exchange exchange) {

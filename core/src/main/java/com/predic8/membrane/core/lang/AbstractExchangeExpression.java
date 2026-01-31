@@ -13,19 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang;
 
+import com.predic8.membrane.core.router.*;
+
 public abstract class AbstractExchangeExpression implements ExchangeExpression {
 
     /**
      * String from which the expression was created
      */
     protected final String expression;
+    protected Router router;
 
     /**
      * Should only called from subclasses cause ExchangeExpression offers a getInstance method
      * @param expression String with expression like "foo ${property.baz} bar"
      */
-    protected AbstractExchangeExpression(String expression) {
+    protected AbstractExchangeExpression(String expression, Router router) {
         this.expression = expression;
+        this.router = router;
     }
 
     @Override

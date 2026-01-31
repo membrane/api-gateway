@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.lang.spel.functions;
 
 import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -26,14 +27,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class SpELBuiltInFunctionsTest {
 
     SpELExchangeEvaluationContext ctx;
+    SpELBuiltInFunctions functions;
 
     @BeforeEach
     void setup() throws URISyntaxException {
-        ctx = new SpELExchangeEvaluationContext(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST);
+        ctx = new SpELExchangeEvaluationContext(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, new DummyTestRouter());
+        functions = new SpELBuiltInFunctions(new DummyTestRouter());
     }
 
     @Test
-    void xpath() {
-        assertEquals("Fritz", SpELBuiltInFunctions.xpath("/person/@name", ctx));
+    void xpath_string() {
+        assertEquals("Fritz", functions.xpath("string(/person/@name)", ctx));
     }
 }

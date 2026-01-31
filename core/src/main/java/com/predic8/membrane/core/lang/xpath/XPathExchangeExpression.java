@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.text.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
@@ -44,8 +45,8 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     // Let all expressions share the same XPathFactory.
     private static final XPathFactory factory = XPathFactory.newInstance();
 
-    public XPathExchangeExpression(Interceptor interceptor, String xpath) {
-        super(xpath);
+    public XPathExchangeExpression(Interceptor interceptor, String xpath, Router router) {
+        super(xpath,router);
 
         if (interceptor instanceof XMLSupport xns) {
             xmlConfig = xns.getXmlConfig();

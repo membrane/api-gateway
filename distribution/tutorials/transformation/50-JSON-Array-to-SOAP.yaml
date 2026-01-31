@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.7.json
 #
-# Tutorial: SOAP Array from JSON
+# Tutorial: JSON Array to SOAP Array
 #
 # Transforms a JSON list like:
 #
@@ -28,7 +28,7 @@
 #    </s11:Body>
 # </s11:Envelope>
 #
-# This example focuses on the transformation only.
+# This example focuses on the transformation.
 #
 # Try:
 #     curl -d @fruits.json localhost:2000
@@ -36,7 +36,7 @@
 api:
   port: 2000
   flow:
-    - response:
+    - request:
         - soapBody:
             pretty: true
             src: |
@@ -48,6 +48,7 @@ api:
                   </fruit>
                 <% } %>
               </f:getFruitsResponse>
-    - echo: {} # Return request body as response
+        - return:
+            status: 200
 
 

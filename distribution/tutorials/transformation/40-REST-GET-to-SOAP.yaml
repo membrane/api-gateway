@@ -28,6 +28,7 @@ api:
     - response:
         - setBody:
             language: xpath
+            contentType: application/json
             value: |
               {
                 "country": "${//country}",

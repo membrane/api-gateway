@@ -66,6 +66,6 @@ class TemplateExchangeExpressionTest {
     }
 
     private String eval(String expr) {
-        return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr).evaluate(exc, REQUEST,String.class);
+        return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr, new DummyTestRouter()).evaluate(exc, REQUEST,String.class);
     }
 }

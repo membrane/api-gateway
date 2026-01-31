@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.spel.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.router.*;
 
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.function.*;
 
 import static java.lang.reflect.Modifier.*;
 
@@ -34,78 +34,91 @@ import static java.lang.reflect.Modifier.*;
 @SuppressWarnings("unused")
 public class SpELBuiltInFunctions {
 
-    public static Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
+    private final Router router;
+    private XmlConfig xmlConfig;
+
+    public SpELBuiltInFunctions(Router router) {
+        this.router = router;
+        if (router != null && router.getRegistry() != null) {
+            this.xmlConfig = router.getRegistry().getBean(XmlConfig.class).orElse(null);
+        }
+    }
+
+    public Object jsonPath(String jsonPath, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.jsonPath(jsonPath, ctx.getMessage());
     }
 
-    public static Object toJSON(Object obj, SpELExchangeEvaluationContext ignored) {
+    public Object toJSON(Object obj, SpELExchangeEvaluationContext ignored) {
         return CommonBuiltInFunctions.toJSON(obj);
     }
 
-    public static String xpath(String xpath, SpELExchangeEvaluationContext ctx) {
-        return CommonBuiltInFunctions.xpath(xpath, ctx.getMessage());
+    public Object xpath(String expression, SpELExchangeEvaluationContext ctx) {
+        return CommonBuiltInFunctions.xpath(expression, ctx.getMessage(), xmlConfig);
     }
 
-    public static boolean weight(double weightInPercent, SpELExchangeEvaluationContext ignored) {
+    public Object xpath(String expression, Object context, SpELExchangeEvaluationContext ctx) {
+        return CommonBuiltInFunctions.xpath(expression,  context, xmlConfig);
+    }
+
+    public boolean weight(double weightInPercent, SpELExchangeEvaluationContext ignored) {
         return CommonBuiltInFunctions.weight(weightInPercent);
     }
 
-    public static boolean isLoggedIn(String beanName, SpELExchangeEvaluationContext ctx) {
+    public boolean isLoggedIn(String beanName, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.isLoggedIn(beanName, ctx.getExchange());
     }
 
-    public static long getDefaultSessionLifetime(String beanName, SpELExchangeEvaluationContext ctx) {
+    public long getDefaultSessionLifetime(String beanName, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.getDefaultSessionLifetime(beanName, ctx.getExchange());
     }
 
-    public static boolean isBearerAuthorization(SpELExchangeEvaluationContext ctx) {
+    public boolean isBearerAuthorization(SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.isBearerAuthorization(ctx.getExchange());
     }
 
-    public static List<String> scopes(SpELExchangeEvaluationContext ctx) {
+    public List<String> scopes(SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.scopes(ctx.getExchange());
     }
 
-    public static List<String> scopes(String securityScheme, SpELExchangeEvaluationContext ctx) {
+    public List<String> scopes(String securityScheme, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.scopes(securityScheme, ctx.getExchange());
     }
 
-    public static boolean hasScope(String scope, SpELExchangeEvaluationContext ctx) {
+    public boolean hasScope(String scope, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.hasScope(scope, ctx.getExchange());
     }
 
-    public static boolean hasScope(SpELExchangeEvaluationContext ctx) {
+    public boolean hasScope(SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.hasScope(ctx.getExchange());
     }
 
-    public static boolean hasScope(List<String> scopes, SpELExchangeEvaluationContext ctx) {
+    public boolean hasScope(List<String> scopes, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.hasScope(scopes, ctx.getExchange());
     }
 
-    public static String user(SpELExchangeEvaluationContext ctx) {
+    public String user(SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.user(ctx.getExchange());
     }
 
-    public static boolean isXML(SpELExchangeEvaluationContext ctx) {
+    public boolean isXML(SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.isXML(ctx.getExchange(), ctx.getFlow());
     }
 
-    public static boolean isJSON(SpELExchangeEvaluationContext ctx) {
+    public boolean isJSON(SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.isJSON(ctx.getExchange(), ctx.getFlow());
     }
 
-    public static String base64Encode(String s, SpELExchangeEvaluationContext ignored) {
+    public String base64Encode(String s, SpELExchangeEvaluationContext ignored) {
         return CommonBuiltInFunctions.base64Encode(s);
     }
 
-    public static String env(String s, SpELExchangeEvaluationContext ignored) {
+    public String env(String s, SpELExchangeEvaluationContext ignored) {
         return CommonBuiltInFunctions.env(s);
     }
 
     public static List<String> getBuiltInFunctionNames() {
         return Arrays.stream(SpELBuiltInFunctions.class.getDeclaredMethods())
                 .filter(m -> isPublic(m.getModifiers()))
-                .filter(m -> isStatic(m.getModifiers()))
                 .filter(SpELBuiltInFunctions::lastParamIsSpELExchangeEvaluationContext)
                 .map(Method::getName)
                 .distinct()
