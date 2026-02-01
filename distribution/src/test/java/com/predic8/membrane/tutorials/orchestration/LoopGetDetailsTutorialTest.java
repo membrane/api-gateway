@@ -44,10 +44,10 @@ public class LoopGetDetailsTutorialTest extends AbstractOrchestrationTutorialTes
             .body("products[0].price", notNullValue());
         // @formatter:on
 
-        waitForOrFail(fetchingPrice, 8000);
+        waitForOrFail(fetchingPrice);
     }
 
-    private void waitForOrFail(SubstringWaitableConsoleEvent event, long timeoutMs) throws TimeoutException {
-        event.waitFor(timeoutMs);
+    private void waitForOrFail(SubstringWaitableConsoleEvent event) throws TimeoutException {
+        event.waitFor((long) 8000);
     }
 }

@@ -44,11 +44,11 @@ public class ForLoopTutorialTest extends AbstractOrchestrationTutorialTest {
             .statusCode(200);
         // @formatter:on
 
-        waitForOrFail(apricot, 5000);
-        waitForOrFail(papaya, 5000);
+        waitForOrFail(apricot);
+        waitForOrFail(papaya);
     }
 
-    private void waitForOrFail(SubstringWaitableConsoleEvent event, long timeoutMs) throws TimeoutException {
-        event.waitFor(timeoutMs);
+    private void waitForOrFail(SubstringWaitableConsoleEvent event) throws TimeoutException {
+        event.waitFor((long) 5000);
     }
 }

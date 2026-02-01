@@ -44,12 +44,12 @@ public class AuthenticationCallTutorialTest extends AbstractOrchestrationTutoria
             .body(containsString("Success!"));
         // @formatter:on
 
-        waitForOrFail(authenticating, 5000);
-        waitForOrFail(loginOk, 5000);
-        waitForOrFail(forwardingCookie, 5000);
+        waitForOrFail(authenticating);
+        waitForOrFail(loginOk);
+        waitForOrFail(forwardingCookie);
     }
 
-    private void waitForOrFail(SubstringWaitableConsoleEvent event, long timeoutMs) throws TimeoutException {
-        event.waitFor(timeoutMs);
+    private void waitForOrFail(SubstringWaitableConsoleEvent event) throws TimeoutException {
+        event.waitFor((long) 5000);
     }
 }
