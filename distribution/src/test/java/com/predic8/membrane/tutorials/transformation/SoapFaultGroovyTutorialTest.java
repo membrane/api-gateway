@@ -36,6 +36,7 @@ public class SoapFaultGroovyTutorialTest extends AbstractTransformationTutorialT
         .when()
             .post("http://localhost:2000/products")
         .then()
+            .log().ifError()
             .statusCode(200)
             .body("success.id", equalTo("EF-0082"))
             .body("success.category", equalTo("Exotic fruits"));
@@ -52,6 +53,7 @@ public class SoapFaultGroovyTutorialTest extends AbstractTransformationTutorialT
         .when()
             .post("http://localhost:2000/products")
         .then()
+            .log().ifError()
             .statusCode(200)
             .body("error.code", equalTo("s11:Server"))
             .body("error.message", equalTo("Error creating product"));
