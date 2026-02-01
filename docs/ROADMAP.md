@@ -60,11 +60,10 @@ PRIO 3:
   - Language is case sensitive: e.g. language: SPEL is not valid according to the Schema and produces: TB
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
- 
-# Release Notes 7.0.6
 
 ## Breaking Changes
 
+- `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually. 
 - headerFilter YAML format has changed.
 
 ## Bug Fixes
