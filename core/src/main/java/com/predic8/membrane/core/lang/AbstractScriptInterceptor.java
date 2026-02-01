@@ -190,8 +190,8 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
             .buildAndSetResponse(exc);
     }
 
-    private HashMap<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
-        HashMap<String, Object> binding = createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON());
+    private Map<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
+        var binding = createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON());
         addOutcomeObjects(binding);
         return binding;
     }
@@ -205,7 +205,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         }
     }
 
-    private void addOutcomeObjects(HashMap<String, Object> parameters) {
+    private void addOutcomeObjects(Map<String, Object> parameters) {
         parameters.put("Outcome", Outcome.class);
         parameters.put("RETURN", RETURN);
         parameters.put("CONTINUE", CONTINUE);
