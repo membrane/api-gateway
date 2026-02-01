@@ -17,6 +17,7 @@ package com.predic8.membrane.tutorials.soap;
 import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
 import static org.hamcrest.Matchers.*;
 
 public class SoapBodyTemplateTutorialTest extends AbstractSOAPTutorialTest {
@@ -34,7 +35,7 @@ public class SoapBodyTemplateTutorialTest extends AbstractSOAPTutorialTest {
             .get("http://localhost:2000/service-mock")
         .then()
             .statusCode(200)
-            .contentType("text/xml")
+            .contentType(XML)
             .body("Envelope.Body.getCityResponse.country", equalTo("England"))
             .body("Envelope.Body.getCityResponse.population", equalTo("8980000"));
         // @formatter:on
