@@ -42,11 +42,11 @@ public class ScriptingUtils {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    public static HashMap<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject) {
+    public static Map<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject) {
 
-        Message msg = exc.getMessage(flow);
+        var msg = exc.getMessage(flow);
 
-        HashMap<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
 
         params.put("spring", router.getBeanFactory());
         params.put("registry", router.getRegistry());
@@ -62,16 +62,18 @@ public class ScriptingUtils {
             params.put("path", exc.getRequest().getUri());
         }
 
+        params.put("request", exc.getRequest());
+
         if (flow == REQUEST) {
             try {
-                Map<String, String> qParams = getParams(router.getConfiguration().getUriFactory(), exc, MERGE_USING_COMMA);
+                var qParams = getParams(router.getConfiguration().getUriFactory(), exc, MERGE_USING_COMMA);
                 params.put("params", qParams);
                 params.put("param", qParams);
             } catch (Exception e) {
                 log.info("Cannot parse query parameter from {}", exc.getRequest().getUri());
             }
         } else if (flow == RESPONSE) {
-            Response response = exc.getResponse();
+            var response = exc.getResponse();
             params.put("response", response);
             params.put("statusCode", response.getStatusCode());
         }
