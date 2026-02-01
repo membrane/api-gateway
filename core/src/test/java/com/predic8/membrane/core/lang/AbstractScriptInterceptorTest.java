@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AbstractScriptInterceptorTest {
 
     @Test
-    void getScriptSrcResolvesLocationViaResolver() throws Exception {
+    void getScriptSrcResolvesLocationViaResolver() {
 
         var interceptor = new TestScriptInterceptor();
         interceptor.setRouterForTest(new DefaultRouter());

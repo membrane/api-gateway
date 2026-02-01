@@ -228,7 +228,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         parameters.put("ABORT", ABORT);
     }
 
-    private String getScriptSrc() {
+    String getScriptSrc() {
         if (src != null)
             return src;
         if (location != null) {
