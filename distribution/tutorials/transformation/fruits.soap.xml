@@ -1,0 +1,18 @@
+<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+    <s11:Body>
+        <f:getFruitsResponse xmlns:f="https://predic8.de/fruits">
+            <f:fruit>
+                <f:name>Apricot</f:name>
+                <f:price>3.8</f:price>
+            </f:fruit>
+            <f:fruit>
+                <f:name>Date</f:name>
+                <f:price>2.3</f:price>
+            </f:fruit>
+            <f:fruit>
+                <f:name>Papaya</f:name>
+                <f:price>4.8</f:price>
+            </f:fruit>
+        </f:getFruitsResponse>
+    </s11:Body>
+</s11:Envelope>

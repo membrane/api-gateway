@@ -16,7 +16,7 @@ package com.predic8.xml.beautifier;
 
 import java.io.*;
 
-public class StandardXMLBeautifierFormatter extends AbstractXMLBeautyfierFormatter {
+public class StandardXMLBeautifierFormatter extends AbstractXMLBeautifierFormatter {
 
 	public static final char DOUBLE_QUOTE = '"';
 

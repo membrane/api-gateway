@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.spel.functions.*;
 import com.predic8.membrane.core.lang.spel.spelable.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -45,8 +46,8 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
      * @param expression SpEL expression
      * @param parserContext null or one with configuration of prefix and suffix e.g. ${ and }
      */
-    public SpELExchangeExpression(String expression, TemplateParserContext parserContext) {
-        super(expression);
+    public SpELExchangeExpression(String expression, TemplateParserContext parserContext, Router router) {
+        super(expression, router);
         Exception exception;
         String posLine = "";
         try {
@@ -71,7 +72,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
     @Override
     public <T> T evaluate(Exchange exchange, Flow flow, Class<T> type) {
         try {
-            Object o = evaluate(exchange, flow);
+            var o = evaluate(exchange, flow);
             if (Boolean.class.isAssignableFrom(type)) {
                 return type.cast(toBoolean(o));
             }
@@ -105,7 +106,7 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
 
     private @Nullable Object evaluate(Exchange exchange, Flow flow) {
         try {
-            return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow), Object.class);
+            return spelExpression.getValue(new SpELExchangeEvaluationContext(exchange, flow, router), Object.class);
         } catch (BuiltInFunctionException e) {
             throw new ExchangeExpressionException(expression, e,e.getMessage()).extension("function", e.getFunction());
         }

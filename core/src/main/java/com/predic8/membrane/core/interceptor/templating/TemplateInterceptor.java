@@ -80,6 +80,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
             ProblemDetails pd = internal(router.getConfiguration().isProduction(), getDisplayName())
                     .topLevel("line",tee.getLineNumber())
                     .topLevel("message", tee.getMessage())
+                    .stacktrace(false)
                     .addSubSee("template");
             Throwable root = ExceptionUtil.getRootCause(tee);
             if (root instanceof MissingPropertyException mpe) {
@@ -96,14 +97,14 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
-            log.warn(tee.getMessage());
+            log.warn("Root cause: {}\n{}",root.getMessage(),tee.getMessage());
             pd.exception(tee)
+                    .detail(root.getMessage())
                     .addSubSee("template")
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
-            log.warn("Error executing template.", e);
-
+            log.warn("Error executing template"  , e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("template")
                     .exception(e)

@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.7.json
+#
+# Tutorial: soapBody Template
+#
+# Returns a static SOAP response for client testing.
+#
+# Try:
+#     curl localhost:2000/service-mock
+
+api:
+  port: 2000
+  path:
+    uri: /service-mock
+  flow:
+    - response:
+        - soapBody:
+            version: 1.1
+            pretty: true
+            src: |
+              <getCityResponse xmlns="https://predic8.de/cities">
+                <country>England</country>
+                <population>8980000</population>
+              </getCityResponse>
+    - return:
+        status: 200
+

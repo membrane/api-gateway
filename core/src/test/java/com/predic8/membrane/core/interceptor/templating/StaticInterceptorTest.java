@@ -23,13 +23,17 @@ import java.net.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
-import static java.lang.Boolean.TRUE;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static java.lang.Boolean.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StaticInterceptorTest {
 
     StaticInterceptor i;
     Exchange exc;
+    DummyTestRouter router = new DummyTestRouter();
+
+    String unify = "        a\n  b\n            c\n";
 
     @BeforeEach
     void beforeAll() throws URISyntaxException {
@@ -41,7 +45,7 @@ class StaticInterceptorTest {
 
     @Test
     void readContentFromLocationPath() {
-        i.init(new DummyTestRouter());
+        i.init(router);
         i.handleRequest(exc);
         assertEquals(27, exc.getRequest().getBodyAsStringDecoded().length());
     }
@@ -50,12 +54,33 @@ class StaticInterceptorTest {
     void pretty() {
         i.setPretty(TRUE);
         i.setContentType(APPLICATION_JSON);
-        i.init(new DummyTestRouter());
+        i.init(router);
 
         i.handleRequest(exc);
 
         // Formatted with spaces and newlines it should be at least greater than 30
         assertTrue(exc.getRequest().getBodyAsStringDecoded().length() > 30);
+    }
+
+    @Test
+    void unification() {
+        assertEquals(2, getMinIndent(getLines(unify)));
+
+        i.setPretty(false);
+        i.init(router);
+        i.setLocation(null);
+        i.setSrc(unify);
+        i.handleRequest(exc);
+
+        var body = exc.getRequest().getBodyAsStringDecoded();
+        assertEquals(2, getMinIndent(getLines(body)));
+
+        i.setPretty(true);
+        i.init();
+        i.handleRequest(exc);
+
+        body = exc.getRequest().getBodyAsStringDecoded();
+        assertEquals(0, getMinIndent(getLines(body)));
     }
 
     @Nested

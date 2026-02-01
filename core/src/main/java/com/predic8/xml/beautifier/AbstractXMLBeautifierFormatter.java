@@ -16,13 +16,13 @@ package com.predic8.xml.beautifier;
 
 import java.io.*;
 
-public abstract class AbstractXMLBeautyfierFormatter implements XMLBeautifierFormatter {
+public abstract class AbstractXMLBeautifierFormatter implements XMLBeautifierFormatter {
 
 	protected Writer writer;
 
 	protected int indent;
 
-	public AbstractXMLBeautyfierFormatter(Writer writer, int indent) {
+	public AbstractXMLBeautifierFormatter(Writer writer, int indent) {
 		setWriter(writer);
 		setIndent(indent);
 	}

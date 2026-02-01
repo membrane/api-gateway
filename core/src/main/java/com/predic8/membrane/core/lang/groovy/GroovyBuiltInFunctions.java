@@ -14,9 +14,11 @@
 
 package com.predic8.membrane.core.lang.groovy;
 
+import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.CommonBuiltInFunctions;
+import com.predic8.membrane.core.router.*;
 import groovy.lang.GroovyObjectSupport;
 
 import java.util.List;
@@ -30,12 +32,17 @@ import java.util.List;
 public class GroovyBuiltInFunctions extends GroovyObjectSupport {
 
     private final Exchange exchange;
-
     private final Flow flow;
+    private final Router router;
+    private XmlConfig xmlConfig;
 
-    public GroovyBuiltInFunctions(Exchange exchange, Flow flow) {
+    public GroovyBuiltInFunctions(Exchange exchange, Flow flow, Router router) {
         this.exchange = exchange;
         this.flow = flow;
+        this.router = router;
+        if (router != null && router.getRegistry() != null) {
+            this.xmlConfig = router.getRegistry().getBean(XmlConfig.class).orElse(null);
+        }
     }
 
     public String user() {
@@ -50,8 +57,12 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
         return CommonBuiltInFunctions.toJSON(obj);
     }
 
-    public String xpath(String xpath) {
-        return CommonBuiltInFunctions.xpath(xpath, exchange.getMessage(flow));
+    public Object xpath(String expression) {
+        return CommonBuiltInFunctions.xpath(expression, exchange.getMessage(flow), xmlConfig);
+    }
+
+    public Object xpath(String expression, Object context) {
+        return CommonBuiltInFunctions.xpath(expression, context, xmlConfig);
     }
 
     public List<String> scopes() {

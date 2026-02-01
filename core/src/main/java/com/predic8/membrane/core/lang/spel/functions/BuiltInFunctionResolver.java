@@ -13,21 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
+import com.predic8.membrane.core.router.*;
 import org.springframework.core.convert.*;
 import org.springframework.expression.*;
 
 import java.lang.reflect.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandler.invokeFunction;
-
 public class BuiltInFunctionResolver implements MethodResolver {
 
     private final ReflectiveMethodHandler functions;
 
-    public BuiltInFunctionResolver() {
+    public BuiltInFunctionResolver(Router router) {
         super();
-        functions = new ReflectiveMethodHandler(SpELBuiltInFunctions.class);
+        functions = new ReflectiveMethodHandler(new SpELBuiltInFunctions(router));
     }
 
     /**
@@ -39,7 +38,7 @@ public class BuiltInFunctionResolver implements MethodResolver {
             Method m = functions.retrieveFunction(name, argumentTypes);
             return (ctx, target, arguments) -> {
                 try {
-                    return invokeFunction(m, ctx, arguments);
+                    return functions.invokeFunction(m, ctx, arguments);
                 } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
                     throw new BuiltInFunctionException("Cannot invoke built-in function " + name, name, e);
                 }

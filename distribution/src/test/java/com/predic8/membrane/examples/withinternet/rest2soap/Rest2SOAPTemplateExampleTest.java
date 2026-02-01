@@ -39,7 +39,7 @@ public class Rest2SOAPTemplateExampleTest extends DistributionExtractingTestcase
                 .log().ifValidationFails(ALL)
                 .statusCode(200)
                 .contentType(APPLICATION_JSON)
-                .body("population", equalTo(333000));
+                .body("population", equalTo(333000F));
             // @formatter:on
         }
     }

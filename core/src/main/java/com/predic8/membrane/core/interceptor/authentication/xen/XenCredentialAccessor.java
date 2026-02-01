@@ -18,6 +18,8 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 
 import javax.xml.xpath.*;
 
+import com.predic8.membrane.core.util.xml.XPathUtil;
+
 public class XenCredentialAccessor implements CredentialAccessor<XenCredentialAccessor.XenLoginData>  {
 
     public static class XenLoginData {
@@ -25,17 +27,12 @@ public class XenCredentialAccessor implements CredentialAccessor<XenCredentialAc
         String password;
     }
 
-    private final XPathFactory xPathFactory = XPathFactory.newInstance();
-
     @Override
     public XenLoginData getLogin(Exchange exchange) {
         try {
             XenMessageContext xmc = XenMessageContext.get(exchange, Interceptor.Flow.REQUEST);
 
-            XPath xp;
-            synchronized (xPathFactory) {
-                xp = xPathFactory.newXPath();
-            }
+            XPath xp = XPathUtil.newXPath();
             XPathExpression xp1 = xp.compile("/methodCall/methodName/text()");
             String methodName = (String) xp1.evaluate(xmc.getDocument(), XPathConstants.STRING);
 
@@ -62,10 +59,7 @@ public class XenCredentialAccessor implements CredentialAccessor<XenCredentialAc
         try {
             XenMessageContext xmc = XenMessageContext.get(exchange, Interceptor.Flow.REQUEST);
 
-            XPath xp;
-            synchronized (xPathFactory) {
-                xp = xPathFactory.newXPath();
-            }
+            XPath xp = XPathUtil.newXPath();
 
             xmc.setX(xp, "/methodCall/params/param[1]/value/string/text()", newLoginData.username);
 

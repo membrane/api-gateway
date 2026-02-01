@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.7.json
+#
+# Tutorial: JSON Array to SOAP Array
+#
+# Transforms a JSON list like:
+#
+# {
+#   "fruits": [
+#     { "name": "Apricot", "price": 3.80 },
+#     { "name": "Date",    "price": 2.30 }
+#   ]
+# }
+#
+# into a SOAP response envelope containing a repeated XML element per item:
+#
+# <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+#    <s11:Body>
+#        <f:getFruitsResponse xmlns="https://predic8.de/fruits">
+#            <fruits>
+#                <name>Apricot</name>
+#                <price>3.8</price>
+#            </fruits>
+#            <fruits>
+#                <name>Date</name>
+#                <price>2.3</price>
+#            </fruits>
+#        </f:getFruitsResponse>
+#    </s11:Body>
+# </s11:Envelope>
+#
+# This example focuses on the transformation.
+#
+# Try:
+#     curl -d @fruits.json localhost:2000
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - soapBody:
+            pretty: true
+            src: |
+              <f:getFruitsResponse xmlns:f="https://predic8.de/fruits">
+                <% fn.jsonPath('$.fruits').each { it -> %>
+                  <fruit>
+                    <name>${it.name}</name>
+                    <price>${it.price}</price>
+                  </fruit>
+                <% } %>
+              </f:getFruitsResponse>
+        - return:
+            status: 200
+
+

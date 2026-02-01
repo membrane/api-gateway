@@ -21,7 +21,6 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
@@ -83,15 +82,6 @@ public class TextUtil {
     }
 
     /**
-     * @param reader
-     * @return
-     * @throws Exception
-     */
-    public static String formatXML(Reader reader) throws Exception {
-        return formatXML(reader, false);
-    }
-
-    /**
      * As HTML is needed for the AdminConsole
      *
      * @param reader XML
@@ -105,17 +95,6 @@ public class TextUtil {
             new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(reader);
             return out.toString();
         } catch (XMLStreamException e) {
-            log.info("Error parsing XML: {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public static String formatXML(InputStream inputStream, boolean asHTML) throws Exception {
-        try {
-            StringWriter out = new StringWriter(STRING_BUFFER_INITIAL_CAPACITY_FOR_XML);
-            new XMLBeautifier(getXmlBeautifierFormatter(asHTML, out)).parse(inputStream);
-            return out.toString();
-        } catch (IOException e) {
             log.info("Error parsing XML: {}", e.getMessage());
             throw e;
         }
@@ -171,32 +150,7 @@ public class TextUtil {
     public static String capitalizeFirstCharacter(String s) {
         if (s.isEmpty())
             return "";
-        return (s.charAt(0)+"").toUpperCase() + s.substring(1);
-    }
-
-    /**
-     * Checks whether s is a valid (well-formed and balanced) XML snippet.
-     */
-    public static boolean isValidXMLSnippet(String s) {
-        try {
-            XMLEventReader parser = XMLInputFactoryFactory.inputFactory()
-                    .createXMLEventReader(new StringReader("<a>" + s + "</a>"));
-            XMLEvent event = null;
-            try {
-                while (parser.hasNext()) {
-                    event = parser.nextEvent();
-                }
-                return event != null && event.isEndDocument();
-            } finally {
-                try {
-                    parser.close();
-                } catch (Exception ignore) {
-                }
-            }
-        } catch (Exception e) {
-            log.debug("Invalid XML snippet.", e);
-            return false;
-        }
+        return (s.charAt(0) + "").toUpperCase() + s.substring(1);
     }
 
     public static String linkURL(String url) {
@@ -238,8 +192,21 @@ public class TextUtil {
      * @return A string with adjusted indentation.
      */
     public static String unifyIndent(String multilineString) {
-        String[] lines = multilineString.split("\r?\n");
+        String[] lines = getLines(multilineString);
         return trimLines(lines, getMinIndent(lines)).toString().replaceFirst("\\s*$", "");
+    }
+
+    /**
+     * Splits a multiline string into an array of strings
+     * @param multilineString to split
+     * @return array of strings
+     */
+    public static String @NotNull [] getLines(String multilineString) {
+        return multilineString.split("\r?\n");
+    }
+
+    public static byte[] unifyIndent(byte[] data, Charset charset) {
+        return unifyIndent(new String(data, charset)).getBytes(charset);
     }
 
     private static boolean isBlank(String s) {
