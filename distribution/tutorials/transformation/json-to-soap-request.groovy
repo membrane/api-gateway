@@ -12,7 +12,7 @@ xml.'s11:Envelope'('xmlns:s11': S11_NS, 'xmlns:ns': NS) {
   's11:Body' {
     "ns:createProduct" {
       'ns:name'(json.name)
-       'ns:price'(json.price)
+      'ns:price'(json.price)
     }
   }
 }

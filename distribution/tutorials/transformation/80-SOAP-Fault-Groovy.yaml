@@ -8,8 +8,8 @@
 #   - SOAP Fault to JSON error
 #
 # Try:
-#    curl -v -H "Content-Type: text/xml" -d @plum.json http://localhost:2000/products
-#    curl -v -H "Content-Type: text/xml" -d @plum.json http://localhost:2000/products -H "X-Mock-Mode: fault"
+#    curl -v -H "Content-Type: application/json" -d @plum.json http://localhost:2000/products
+#    curl -v -H "Content-Type: application/json" -d @plum.json http://localhost:2000/products -H "X-Mock-Mode: fault"
 
 api:
   name: Products API

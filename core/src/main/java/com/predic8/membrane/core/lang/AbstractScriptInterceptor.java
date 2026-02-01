@@ -70,7 +70,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         if (router == null)
             throw new RuntimeException("ScriptInterceptors need router instance!");
 
-        if (getLocation() != null) {
+        if (getLocation() != null && !getLocation().isBlank()) {
             if (getSrc() != null && !getSrc().isBlank()) {
                 throw new ConfigurationException("On %s, src and location cannot be set at the same time.".formatted(getDisplayName()));
             }
@@ -229,9 +229,9 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     String getScriptSrc() {
-        if (src != null)
+        if (src != null && !src.isBlank())
             return src;
-        if (location != null) {
+        if (location != null && !location.isBlank()) {
             try (InputStream is = router.getResolverMap().resolve(combine(router.getConfiguration().getBaseLocation(), location))) {
                 return IOUtils.toString(is, UTF_8);
             } catch (Exception e) {
