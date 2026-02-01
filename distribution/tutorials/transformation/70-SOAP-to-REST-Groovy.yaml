@@ -6,7 +6,7 @@
 # Output: { "fruits": [ { "name": "...", "price": 3.8 }, ... ] }
 #
 # Try:
-#    curl -H "Content-Type: text/xml" -d @fruit.soap.xml http://localhost:2000
+#    curl -H "Content-Type: text/xml" -d @fruits.soap.xml http://localhost:2000
 
 api:
   port: 2000
