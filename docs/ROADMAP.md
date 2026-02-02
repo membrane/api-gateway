@@ -60,12 +60,13 @@ PRIO 3:
   - Language is case sensitive: e.g. language: SPEL is not valid according to the Schema and produces: TB
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
- 
-# Release Notes 7.0.6
+
 
 ## Breaking Changes
 
 - headerFilter YAML format has changed.
+- Choose Interceptor configuration
+- Chain (ChainDef) configuration
 
 ## Bug Fixes
 - `xml2json`: Ensuring content type alignment and better exception handling.  
@@ -78,6 +79,3 @@ PRIO 3:
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
-
-Breaking Changes:
-- Choose Interceptor configuration
