@@ -66,7 +66,7 @@ public class LoadTester {
 
         var api = new APIProxy();
         api.setKey(new APIProxyKey(2000));
-        api.setTarget(new AbstractServiceProxy.Target("localhost", 2010));
+        api.setTarget(new Target("localhost", 2010));
         r.add(api);
 
         r.start();

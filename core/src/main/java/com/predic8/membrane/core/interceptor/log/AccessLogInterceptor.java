@@ -57,7 +57,8 @@ public class AccessLogInterceptor extends AbstractInterceptor {
                 dateTimePattern,
                 defaultValue,
                 additionalVariables,
-                excludePayloadSize
+                excludePayloadSize,
+                router
         );
     }
 

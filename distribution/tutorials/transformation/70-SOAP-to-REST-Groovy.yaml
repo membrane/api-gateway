@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.7.json
+#
+# Tutorial: SOAP (XML) -> REST (JSON) using Groovy
+#
+# Input:  SOAP 1.1 getFruitsResponse
+# Output: { "fruits": [ { "name": "...", "price": 3.8 }, ... ] }
+#
+# Try:
+#    curl -H "Content-Type: text/xml" -d @fruits.soap.xml http://localhost:2000
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - groovy:
+            src: |
+              import groovy.xml.XmlSlurper
+              import groovy.json.JsonOutput
+
+              def xml = body.toString()
+
+              def root = new XmlSlurper(false, true).parseText(xml)
+              root.declareNamespace(
+                s11: "http://schemas.xmlsoap.org/soap/envelope/",
+                f:   "https://predic8.de/fruits"
+              )
+
+              def fruits = root.'s11:Body'.'f:getFruitsResponse'.'f:fruit'.collect { n ->
+                [
+                  name : n.'f:name'.text(),
+                  price: new BigDecimal(n.'f:price'.text())
+                ]
+              }
+
+              def payload = [fruits: fruits]
+              message.setBodyContent(JsonOutput.toJson(payload).getBytes())
+        - setHeader:
+            name: Content-Type
+            value: application/json
+        - return:
+            status: 200

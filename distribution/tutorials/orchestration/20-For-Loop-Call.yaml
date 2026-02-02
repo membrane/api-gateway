@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Loop and Call
+#
+# Iterates over the `fruits` array in the request body.
+# Each element is sent as JSON to the fruitshop API.
+#
+# Expected input:
+#    {
+#      "fruits": [
+#        { "name": "Mango", "price": 1.23 },
+#        { "name": "Papaya", "price": 2.10 }
+#      ]
+#    }
+#
+# Try:
+#    curl -d @fruits.json -H "Content-Type: application/json" localhost:2000
+#
+# Verify results:
+#   https://api.predic8.de/shop/v2/products?limit=1000
+#   Search for: apricot, date, papaya
+
+api:
+  port: 2000
+  flow:
+    - for:
+        # Evaluates to a list of Maps like [{ "name": "Mango", "price": 1.23 },..]
+        in: $.fruits
+        language: jsonpath
+        flow:
+          - setBody:
+              # Serialize the current item to a JSON string
+              value: ${toJSON(it)}
+          - call:
+              method: POST
+              url: https://api.predic8.de/shop/v2/products
+          - log:
+              message: "Created product: ${it['name']}"
+    - return:
+        status: 200

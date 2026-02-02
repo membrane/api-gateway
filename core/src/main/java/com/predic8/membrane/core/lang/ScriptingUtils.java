@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.groovy.*;
+import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.router.*;
@@ -41,11 +42,11 @@ public class ScriptingUtils {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    public static HashMap<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject) {
+    public static Map<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject) {
 
-        Message msg = exc.getMessage(flow);
+        var msg = exc.getMessage(flow);
 
-        HashMap<String, Object> params = new HashMap<>();
+        Map<String, Object> params = new HashMap<>();
 
         params.put("spring", router.getBeanFactory());
         params.put("registry", router.getRegistry());
@@ -61,16 +62,18 @@ public class ScriptingUtils {
             params.put("path", exc.getRequest().getUri());
         }
 
+        params.put("request", exc.getRequest());
+
         if (flow == REQUEST) {
             try {
-                Map<String, String> qParams = getParams(router.getConfiguration().getUriFactory(), exc, MERGE_USING_COMMA);
+                var qParams = getParams(router.getConfiguration().getUriFactory(), exc, MERGE_USING_COMMA);
                 params.put("params", qParams);
                 params.put("param", qParams);
             } catch (Exception e) {
                 log.info("Cannot parse query parameter from {}", exc.getRequest().getUri());
             }
         } else if (flow == RESPONSE) {
-            Response response = exc.getResponse();
+            var response = exc.getResponse();
             params.put("response", response);
             params.put("statusCode", response.getStatusCode());
         }
@@ -83,7 +86,7 @@ public class ScriptingUtils {
             params.put("headers", headerMap);
             if (includeJsonObject) {
                 try {
-                    log.info("Parsing body as JSON for scripting plugins");
+                    log.debug("Parsing body as JSON for scripting plugins");
                     params.put("json", om.readValue(readInputStream(msg.getBodyAsStreamDecoded()), Map.class));
                 } catch (Exception e) {
                     log.warn("Can't parse body as JSON", e);
@@ -104,10 +107,13 @@ public class ScriptingUtils {
         params.put("props", exc.getProperties());
         params.put("property", exc.getProperties());
 
+        // Shortcut for 'for' loops
+        params.put("it", exc.getProperty("it"));
+
         params.put("pathParam", new PathParametersMap(exc));
 
-        // Allow to invoke functions in groovy with ${fn.functionname()}
-        params.put("fn", new GroovyBuiltInFunctions(exc, flow));
+        // Allow invoking functions in Groovy with ${fn.functionname()}
+        params.put("fn", new GroovyBuiltInFunctions(exc, flow, router));
 
         return params;
     }

@@ -14,26 +14,31 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.security.ApiKeySecurityScheme;
-import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.config.xml.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.security.*;
+import org.junit.jupiter.api.*;
+import org.w3c.dom.*;
+import org.xml.sax.InputSource;
 
-import java.net.URISyntaxException;
-import java.util.List;
+import javax.xml.parsers.*;
+import java.net.*;
+import java.io.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.CommonBuiltInFunctions.*;
-import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.HEADER;
-import static java.util.List.of;
+import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
+import static javax.xml.xpath.XPathConstants.*;
+import static java.util.List.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CommonBuiltInFunctionsTest {
+
+    private static final ObjectMapper om = new ObjectMapper();
 
     static Exchange exc;
 
@@ -55,9 +60,80 @@ class CommonBuiltInFunctionsTest {
     }
 
     @Test
-    void XPath() throws URISyntaxException {
-        assertEquals("Fritz", CommonBuiltInFunctions.xpath("/person/@name",
-                post("/foo").xml("<person name='Fritz'/>").build()));
+    void xpath_string() throws URISyntaxException {
+        assertEquals("Fritz", CommonBuiltInFunctions.xpath("string(/person/@name)",
+                post("/foo").xml("<person name='Fritz'/>").build(), null));
+    }
+
+    @Test
+    void xpath_nodelist() throws URISyntaxException {
+        var obj = CommonBuiltInFunctions.xpath("/person/@name",
+                post("/foo").xml("<person name='Fritz'/>").build(), null);
+        if (obj instanceof NodeList nl) {
+            assertEquals(1, nl.getLength());
+            assertEquals("Fritz", nl.item(0).getTextContent());
+        } else {
+            fail();
+        }
+    }
+
+    @Test
+    void guessReturnTypeRecognizesCommonXPathPrefixes() {
+        assertSame(STRING, guessReturnType("string(//name)"));
+        assertSame(STRING, guessReturnType("normalize-space(//name)"));
+        assertSame(NUMBER, guessReturnType("count(//item)"));
+        assertSame(NUMBER, guessReturnType("number(//price)"));
+        assertSame(BOOLEAN, guessReturnType("boolean(//item)"));
+        assertSame(NODE, guessReturnType("./name"));
+        assertSame(NODESET, guessReturnType("//fruit"));
+    }
+
+    @Test
+    void xpathEvaluatesAgainstContextWithReturnTypeInference() throws Exception {
+        Document document = parseXml("""
+                <root>
+                  <fruit><name>Apricot</name></fruit>
+                  <fruit><name>Date</name></fruit>
+                </root>
+                """);
+
+        Object nodes = xpath("//fruit", document, null);
+        assertTrue(nodes instanceof NodeList);
+        assertEquals(2, ((NodeList) nodes).getLength());
+
+        Node firstFruit = ((NodeList) nodes).item(0);
+        Object nameNode = xpath("./name", firstFruit, null);
+        assertTrue(nameNode instanceof Node);
+        assertEquals("name", ((Node) nameNode).getNodeName());
+
+        assertEquals("Apricot", xpath("string(./name)", firstFruit, null));
+        assertEquals(2.0, xpath("count(//fruit)", document, null));
+        assertEquals(true, xpath("boolean(//fruit)", document, null));
+    }
+
+    @Test
+    void xpathResolvesNamespacesFromXmlConfig() throws Exception {
+        Document document = parseXml("""
+                <f:root xmlns:f="https://predic8.de/fruits">
+                  <f:fruit><f:name>Apricot</f:name></f:fruit>
+                </f:root>
+                """);
+
+        XmlConfig cfg = new XmlConfig();
+        Namespaces namespaces = new Namespaces();
+        Namespaces.Namespace ns = new Namespaces.Namespace();
+        ns.setPrefix("f");
+        ns.setUri("https://predic8.de/fruits");
+        namespaces.setNamespaces(List.of(ns));
+        cfg.setNamespaces(namespaces);
+
+        assertEquals("Apricot", xpath("string(//f:fruit/f:name)", document, cfg));
+    }
+
+    private static Document parseXml(String xml) throws Exception {
+        var factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        return factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
     }
 
     @Test
@@ -121,5 +197,43 @@ class CommonBuiltInFunctionsTest {
             }
         }
         return ((double) executedCount / 1_000_000);
+    }
+
+    @Nested
+    class toJSON {
+
+        @Test
+        void map() throws Exception {
+            var str = toJSON(Map.of("foo", 1, "bar", 2));
+            var obj = om.readValue(str, Map.class);
+            assertEquals(2, obj.size());
+            assertEquals(1, obj.get("foo"));
+            assertEquals(2, obj.get("bar"));
+        }
+
+        @Test
+        void list() throws Exception {
+            var str = toJSON(List.of("foo", 1, "bar"));
+            var obj = om.readValue(str, List.class);
+            assertEquals(3, obj.size());
+            assertEquals("foo", obj.get(0));
+            assertEquals(1, obj.get(1));
+            assertEquals("bar", obj.get(2));
+        }
+
+        @Test
+        void string() {
+            assertEquals("\"foo\"", toJSON("foo"));
+        }
+
+        @Test
+        void integer() {
+            assertEquals("1", toJSON(1));
+        }
+
+                @Test
+        void bool() {
+            assertEquals("true", toJSON(true));
+        }
     }
 }

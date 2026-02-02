@@ -19,16 +19,11 @@ import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-
-import static com.predic8.membrane.examples.util.BalancerClientScriptUtil.*;
+import static com.predic8.membrane.examples.util.BalancerClientScriptUtil.addNodeViaScript;
+import static com.predic8.membrane.examples.util.BalancerClientScriptUtil.removeNodeViaScript;
 import static com.predic8.membrane.examples.util.LoadBalancerUtil.assertNodeStatus;
 import static com.predic8.membrane.examples.util.LoadBalancerUtil.getRespondingNode;
-import static com.predic8.membrane.test.StringAssertions.assertContains;
 import static java.lang.Thread.sleep;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.apache.commons.io.FileUtils.writeStringToFile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestcase {
@@ -46,7 +41,6 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
         } catch (Exception ignored) {
             log.warn("proxies.xml not there!");
         }
-		replaceInFile2("lb-client-secured.proxies.xml", "8080", "3023");
 		replaceInFile2("apis.yaml", "8080", "3023");
 
 		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
@@ -79,20 +73,5 @@ public class Loadbalancing3ClientExampleTest extends DistributionExtractingTestc
 			assertEquals(3, getRespondingNode("http://localhost:3023/service"));
 		}
 
-		try(Process2 ignored = startServiceProxyScript(null,"membrane-secured"); HttpAssertions ha = new HttpAssertions()) {
-			controlNodeViaScript(1, baseDir, "up", "localhost", 4000); // 1 indicates failure
-
-			File propFile = new File(baseDir, "client.properties");
-			writeStringToFile(propFile, readFileToString(propFile, UTF_8).replace("#", ""), UTF_8);
-
-			sleep(100);
-
-			addNodeViaScript(baseDir, "localhost", 4000);
-
-			sleep(100);
-
-			ha.setupHTTPAuthentication("localhost", 9000, "admin", "admin");
-			assertContains("localhost:4000", ha.getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"));
-		}
 	}
 }

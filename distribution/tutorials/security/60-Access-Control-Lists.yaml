@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.7.json
+#
+# Tutorial: Access Control
+#
+# Try:
+#     curl localhost:2000/locals
+#     curl localhost:2000/strangers
+
+global:
+  # ACL for all APIs
+  - accessControl:
+    - deny: 192.168.7.1         # Single IP address
+    - deny: '.*\.predic8.de'    # Regex hostname pattern
+    - allow: '.*'               # @TODO Why not default?
+
+---
+api:
+  port: 2000
+  path:
+    uri: /locals
+  flow:
+    - accessControl:
+        - allow: 127.0.0.1/24 # CIDR notation
+        - allow: localhost
+    - static:
+        src: Allowed
+    - return:
+        status: 200
+
+---
+api:
+  port: 2000
+  path:
+    uri: /strangers
+  flow:
+    - accessControl:
+        - deny: 127.0.0.1/24
+        - deny: localhost
+    - static:
+        src: Allowed
+    - return:
+        status: 200

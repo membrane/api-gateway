@@ -14,6 +14,7 @@
 package com.predic8.membrane.annot.generator.kubernetes.model;
 
 import com.fasterxml.jackson.databind.node.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
@@ -148,8 +149,19 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
     private static ObjectNode createPropertyNode(AbstractSchema<?> property) {
         ObjectNode propertyNode = property.json(jnf.objectNode());
         if (property.getEnumValues() != null && !property.getEnumValues().isEmpty()) {
-            propertyNode.set("enum", getEnumNode(property));
+            propertyNode = createEnumNode(property, propertyNode);
         }
+        return propertyNode;
+    }
+
+    private static @NotNull ObjectNode createEnumNode(AbstractSchema<?> property, ObjectNode propertyNode) {
+        ObjectNode unlimitedNode = propertyNode.deepCopy(); // a string (unrestricted)
+        ObjectNode limitedNode = propertyNode; // a string restricted by 'enum'
+        limitedNode.set("enum", getEnumNode(property));
+        propertyNode = jnf.objectNode();
+        // The 'anyOf' construction will suggest the pre-defined enum values (lowercase enum values) but allow other
+        // spellings.
+        propertyNode.set("anyOf", jnf.arrayNode().add(limitedNode).add(unlimitedNode));
         return propertyNode;
     }
 
