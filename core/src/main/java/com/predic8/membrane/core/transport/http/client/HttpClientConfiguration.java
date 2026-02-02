@@ -27,8 +27,8 @@ import java.util.*;
  * Allows defining proxy, connection, authentication, TLS, and retry behavior.
  * Can be used as a reusable bean and referenced via &lt;spring:bean&gt;.
  * Most of its sub-elements are optional.
- * <p>YAML:</p>
- * <pre><code>httpClientConfig:
+ * @yaml <pre><code>
+ * httpClientConfig:
  *   adjustHostHeader: true
  *   connection:
  *     timeout: 10000
