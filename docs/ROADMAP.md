@@ -65,6 +65,8 @@ PRIO 3:
 
 - `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually. 
 - headerFilter YAML format has changed.
+- Choose Interceptor configuration
+- Chain (ChainDef) configuration
 
 ## Bug Fixes
 - `xml2json`: Ensuring content type alignment and better exception handling.  
@@ -77,6 +79,3 @@ PRIO 3:
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
-
-Breaking Changes:
-- Choose Interceptor configuration
