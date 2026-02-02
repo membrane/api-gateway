@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.interceptor.registration;
+package com.predic8.membrane.core.util;
 
 import com.google.common.io.BaseEncoding;
 import org.apache.commons.codec.digest.Crypt;
@@ -36,16 +36,6 @@ public class SecurityUtils {
             return false;
         // Check if the second part is a valid hex
         return HEX_PASSWORD_PATTERN.matcher(postDataPassword).matches();
-    }
-
-    static String createPasswdCompatibleHash(String password) {
-        byte[] salt = new byte[128];
-        secureRandom.nextBytes(salt);
-
-        String saltString = BaseEncoding.base64().encode(salt);
-        if (saltString.length() > 16) saltString = saltString.substring(0, 16);
-
-        return createPasswdCompatibleHash(password, saltString);
     }
 
     public static String extractSalt(String password) {
