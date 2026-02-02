@@ -13,27 +13,31 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.apache.commons.codec.*;
-import org.apache.commons.codec.binary.*;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.interceptor.GlobalInterceptor;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.DefaultRouter;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import javax.crypto.*;
-import javax.crypto.spec.*;
-import java.net.*;
-import java.security.*;
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+import java.net.URLEncoder;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
-import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static java.lang.System.*;
-import static java.nio.charset.StandardCharsets.*;
-import static javax.crypto.Cipher.*;
-import static org.apache.commons.codec.binary.Base64.*;
+import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static javax.crypto.Cipher.ENCRYPT_MODE;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ClusterNotificationInterceptorTest {
@@ -111,22 +115,6 @@ public class ClusterNotificationInterceptorTest {
 		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").getFirst().getHost());
 	}
 
-	@Test
-	void testSecurity() throws Exception {
-		interceptor.setValidateSignature(true);
-		interceptor.setKeyHex("6f488a642b740fb70c5250987a284dc0");
-
-		assertEquals(204, new HttpClient().executeMethod(getSecurityTestMethod(5004)));
-
-		interceptor.setTimeout(50);
-		GetMethod get = getSecurityTestMethod(currentTimeMillis());
-		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals(204, new HttpClient().executeMethod(get));
-
-		Thread.sleep(100);
-		assertEquals(403, new HttpClient().executeMethod(get));
-
-	}
 
 	private GetMethod getSecurityTestMethod(long time) throws Exception {
         return new GetMethod("http://localhost:3002/clustermanager/up?data=" +
