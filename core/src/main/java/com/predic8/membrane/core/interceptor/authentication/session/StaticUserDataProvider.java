@@ -15,13 +15,12 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.router.*;
-import org.apache.commons.codec.digest.*;
 
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.createPasswdCompatibleHash;
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.isHashedPassword;
+import static com.predic8.membrane.core.util.SecurityUtils.createPasswdCompatibleHash;
+import static com.predic8.membrane.core.util.SecurityUtils.isHashedPassword;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.

@@ -21,7 +21,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.createPasswdCompatibleHash;
+import static com.predic8.membrane.core.util.SecurityUtils.createPasswdCompatibleHash;
 
 /**
  * @description A <i>user data provider</i> utilizing htpasswd formatted files.
