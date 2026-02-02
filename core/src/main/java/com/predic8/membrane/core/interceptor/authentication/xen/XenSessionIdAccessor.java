@@ -18,18 +18,15 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 
 import javax.xml.xpath.*;
 
-public class XenSessionIdAccessor implements SessionIdAccessor {
-    private final XPathFactory xPathFactory = XPathFactory.newInstance();
+import com.predic8.membrane.core.util.xml.XPathUtil;
 
+public class XenSessionIdAccessor implements SessionIdAccessor {
     @Override
     public String getSessionId(Exchange exchange, Interceptor.Flow flow) {
         try {
             XenMessageContext xmc = XenMessageContext.get(exchange, flow);
 
-            XPath xp;
-            synchronized (xPathFactory) {
-                xp = xPathFactory.newXPath();
-            }
+            XPath xp = XPathUtil.newXPath();
             XPathExpression xp1 = xp.compile(getPath(flow));
             String sessionId = (String) xp1.evaluate(xmc.getDocument(), XPathConstants.STRING);
 
@@ -44,10 +41,7 @@ public class XenSessionIdAccessor implements SessionIdAccessor {
         try {
             XenMessageContext xmc = XenMessageContext.get(exchange, flow);
 
-            XPath xp;
-            synchronized (xPathFactory) {
-                xp = xPathFactory.newXPath();
-            }
+            XPath xp = XPathUtil.newXPath();
             XPathExpression xp1 = xp.compile(getPath(flow));
             String sessionId = (String) xp1.evaluate(xmc.getDocument(), XPathConstants.STRING);
 

@@ -13,32 +13,34 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
-import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
-import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.TypedValue;
+import com.predic8.membrane.core.lang.spel.*;
+import org.springframework.core.convert.*;
+import org.springframework.expression.*;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
+import java.util.*;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
+import java.util.stream.*;
 
-import static java.lang.reflect.Modifier.isPublic;
-import static java.util.Arrays.stream;
-import static java.util.List.of;
-import static org.springframework.core.ResolvableType.forClass;
+import static java.lang.reflect.Modifier.*;
+import static java.util.Arrays.*;
+import static java.util.List.*;
+import static org.springframework.core.ResolvableType.*;
 
 public class ReflectiveMethodHandler {
 
+    private final Object target;
     private final List<Method> storedMethods;
 
     /**
-     * Initializes the ReflectiveMethodHandler with all public methods from the given class.
+     * Initializes the ReflectiveMethodHandler with all public instance methods
+     * from the given target object.
      */
-    public ReflectiveMethodHandler(Class<?> clazz) {
-        storedMethods = stream(clazz.getMethods())
-                .filter(mth -> isPublic(mth.getModifiers()))
+    public ReflectiveMethodHandler(Object target) {
+        this.target = target;
+        this.storedMethods = stream(target.getClass().getMethods())
+                .filter(m -> isPublic(m.getModifiers()))
+                .filter(m -> !isStatic(m.getModifiers()))
                 .toList();
     }
 
@@ -54,29 +56,30 @@ public class ReflectiveMethodHandler {
     }
 
     /**
-     * Calls a method.
+     * Calls a method on the configured target instance.
      */
-    public static TypedValue invokeFunction(Method method, EvaluationContext ctx, Object... args) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-        return new TypedValue(method.invoke(null, (getParameters(ctx, args))));
+    public TypedValue invokeFunction(Method method, EvaluationContext ctx, Object... args)
+            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        return new TypedValue(method.invoke(target, getParameters(ctx, args)));
     }
 
     private static ArrayList<TypeDescriptor> getParameterTypeDescriptors(List<TypeDescriptor> types) {
-        return new ArrayList<>(types) {{
-            add(getTypeDescriptor(SpELExchangeEvaluationContext.class));
-        }};
+        var result = new ArrayList<>(types);
+        result.add(getTypeDescriptor(SpELExchangeEvaluationContext.class));
+        return result;
     }
 
     private static Object[] getParameters(EvaluationContext ctx, Object[] args) {
-        return new ArrayList<>(of(args)) {{
-            add(ctx);
-        }}.toArray();
+        var result = new ArrayList<>(of(args));
+        result.add(ctx);
+        return result.toArray();
     }
 
     Method getFunction(String func, List<TypeDescriptor> t) throws NoSuchMethodException {
         return storedMethods.stream()
                 .filter(m ->
                         m.getName().equals(func) &&
-                                validateTypeSignature(getTypeDescriptors(m), t)
+                        validateTypeSignature(getTypeDescriptors(m), t)
                 ).findFirst().orElseThrow(NoSuchMethodException::new);
     }
 
@@ -92,7 +95,7 @@ public class ReflectiveMethodHandler {
      */
     boolean validateTypeSignature(List<TypeDescriptor> template, List<TypeDescriptor> provided) {
         return template.size() == provided.size() &&
-                IntStream.range(0, template.size())
-                        .allMatch(i -> provided.get(i).isAssignableTo(template.get(i)));
+               IntStream.range(0, template.size())
+                       .allMatch(i -> provided.get(i).isAssignableTo(template.get(i)));
     }
 }

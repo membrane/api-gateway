@@ -14,16 +14,17 @@
 
 package com.predic8.xml.beautifier;
 
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.xml.stream.*;
 import java.io.*;
 
-import static java.lang.Boolean.FALSE;
-import static javax.xml.stream.XMLInputFactory.*;
+import static com.predic8.xml.beautifier.XMLInputFactoryFactory.*;
 import static javax.xml.stream.XMLStreamConstants.*;
 
+/**
+ * Do not reuse! It preserves state
+ */
 public class XMLBeautifier {
 
     private static final Logger log = LoggerFactory.getLogger(XMLBeautifier.class);
@@ -47,20 +48,14 @@ public class XMLBeautifier {
 
     public void parse(InputStream inputStream) throws IOException {
         try {
-            parse(getXmlInputFactory().createXMLStreamReader(inputStream));
+            parse(inputFactory().createXMLStreamReader(inputStream));
         } catch (Exception e) {
             throw new IOException(e);
         }
     }
 
     public void parse(Reader reader) throws Exception {
-        parse(getXmlInputFactory().createXMLStreamReader(reader));
-    }
-
-    private static @NotNull XMLInputFactory getXmlInputFactory() {
-        XMLInputFactory factory = XMLInputFactoryFactory.inputFactory();
-        factory.setProperty(SUPPORT_DTD, FALSE);
-        return factory;
+        parse(inputFactory().createXMLStreamReader(reader));
     }
 
     private void parse(XMLStreamReader reader) throws Exception {
@@ -125,15 +120,36 @@ public class XMLBeautifier {
                 charContent = false;
             }
             case CHARACTERS -> {
+                String text = reader.getText();
+
+                // whitespace-only chunk
+                if (!containsNonWhitespaceCharacters(text)) {
+                    // If we have not seen real text in this element, treat as formatting whitespace
+                    // (indentation/newlines between child elements) and skip it.
+                    if (!charContent) {
+                        break;
+                    }
+
+                    // Otherwise we're inside text content: whitespace is significant, keep it.
+                    empty = false;
+                    if (!startTagClosed) {
+                        formatter.closeTag();
+                        startTagClosed = true;
+                    }
+                    formatter.writeText(text);
+                    // keep charContent = true
+                    break;
+                }
+
+                // non-whitespace text chunk
                 empty = false;
                 if (!startTagClosed) {
                     formatter.closeTag();
                     startTagClosed = true;
                 }
 
-                charContent = containsNonWhitespaceCharacters(reader.getText());
-
-                formatter.writeText(reader.getText()); // TODO check format with <foo> \t\n<bar>
+                charContent = true;
+                formatter.writeText(text);
             }
             case COMMENT -> {
                 if (!startTagClosed) {
@@ -153,6 +169,7 @@ public class XMLBeautifier {
                     formatter.closeTag();
                     startTagClosed = true;
                 }
+                charContent = true;
                 formatter.writeText(reader.getText());
             }
             case START_DOCUMENT -> {
@@ -171,10 +188,7 @@ public class XMLBeautifier {
 
     private boolean containsNonWhitespaceCharacters(String s) {
         for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            if (c != 10 && c != 13 && c != 32 && c != 9) {
-                return true;
-            }
+            if (!Character.isWhitespace(s.charAt(i))) return true;
         }
         return false;
     }

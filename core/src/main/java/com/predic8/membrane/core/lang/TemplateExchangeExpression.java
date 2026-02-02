@@ -17,6 +17,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -30,6 +31,8 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateExchangeExpression.class);
 
+    private Router router;
+
     /**
      * For parsing strings with expressions inside ${} e.g. "foo ${property.bar} baz"
      */
@@ -37,16 +40,16 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private final List<Token> tokens;
 
-    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression) {
+    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router) {
         // SpEL comes with its own templating
         if (language == SPEL) {
-            return new SpELExchangeExpression(expression, DOLLAR_TEMPLATE_PARSER_CONTEXT);
+            return new SpELExchangeExpression(expression, DOLLAR_TEMPLATE_PARSER_CONTEXT, router);
         }
-        return new TemplateExchangeExpression(interceptor, language, expression);
+        return new TemplateExchangeExpression(interceptor, language, expression, router);
     }
 
-    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression) {
-        super(expression);
+    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression, Router router) {
+        super(expression, router);
         tokens = parseTokens(interceptor,language, expression);
     }
 

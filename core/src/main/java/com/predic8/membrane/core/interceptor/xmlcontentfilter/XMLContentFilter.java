@@ -36,7 +36,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
 import jakarta.mail.internet.*;
 import org.slf4j.Logger;
@@ -51,6 +50,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.xml.XPathUtil;
 
 /**
  * Takes action on XML documents based on an XPath expression. The only action
@@ -125,8 +125,7 @@ public class XMLContentFilter {
 		XPathExpression res = xpe.get();
 		if (res != null)
 			return res;
-		XPathFactory xpf = XPathFactory.newInstance();
-		XPath xp = xpf.newXPath();
+		XPath xp = XPathUtil.newXPath();
 		res = xp.compile(xPath);
 		xpe.set(res);
 		return res;
