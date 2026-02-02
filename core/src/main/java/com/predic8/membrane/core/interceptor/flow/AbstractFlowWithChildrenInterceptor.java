@@ -21,6 +21,9 @@ import java.util.List;
 
 public abstract class AbstractFlowWithChildrenInterceptor extends AbstractFlowInterceptor {
 
+    /**
+     * @description Sets the flow of plugins that will be executed.
+     */
     @MCChildElement(allowForeign = true)
     public void setFlow(List<Interceptor> flow) {
         super.setFlow(flow);

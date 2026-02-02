@@ -21,9 +21,6 @@ import com.predic8.membrane.core.router.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-
 abstract class InterceptorContainer {
 
     private List<Interceptor> interceptors;
@@ -34,13 +31,6 @@ abstract class InterceptorContainer {
             case RESPONSE -> router.getFlowController().invokeResponseHandlers(exc, interceptors);
             default -> throw new RuntimeException("Should never happen");
         };
-    }
-
-    private void handleInvocationProblemDetails(Exchange exc, Exception e, Router router) {
-        internal(router.getConfiguration().isProduction(), "interceptor-container")
-                .detail("Error invoking plugin.")
-                .exception(e)
-                .buildAndSetResponse(exc);
     }
 
     public List<Interceptor> getFlow() {

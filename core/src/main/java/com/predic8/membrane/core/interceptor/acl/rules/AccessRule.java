@@ -35,6 +35,12 @@ public abstract class AccessRule {
 
     abstract boolean permitPeer();
 
+
+    /**
+     * @description The IPv4, IPv6 or hostname regex pattern
+     * @example "127.0.0.1/24" or "^local.*$"
+     */
+    @Required
     @MCAttribute
     public void setTarget(String target) {
         if (target == null || target.trim().isEmpty()) throw new ConfigurationException("target cannot be empty");

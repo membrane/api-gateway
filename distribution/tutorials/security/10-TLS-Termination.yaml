@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: Terminating TLS
+#
+# The client connects to Membrane via HTTPS. Membrane terminates TLS, decrypts
+# the traffic, and can inspect or modify the request before forwarding it to
+# the upstream service.
+#
+# Notes:
+#   - The example uses a self-signed certificate. Browsers and curl will not
+#     trust it unless you add it to your trust store.
+#
+# Try:
+#     curl https://localhost:8443
+#         => fails because curl does not trust the self-signed certificate
+#     curl https://localhost:8443 -k
+#         => works (skips certificate verification; use only for testing)
+
+api:
+  # Default port for HTTPS
+  port: 8443
+  ssl:
+    key:
+      private:
+        location: membrane-key.pem
+      certificates:
+        - certificate:
+            location: membrane.pem
+  flow:
+    - request:
+      # Traffic is decrypted and can be logged or transformed
+      - log: {}
+  target:
+    # Traffic is encrypted again and forwarded
+    url: https://api.predic8.de

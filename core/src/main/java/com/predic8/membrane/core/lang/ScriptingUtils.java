@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.groovy.*;
+import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.router.*;
@@ -104,9 +105,12 @@ public class ScriptingUtils {
         params.put("props", exc.getProperties());
         params.put("property", exc.getProperties());
 
+        // Shortcut for 'for' loops
+        params.put("it", exc.getProperty("it"));
+
         params.put("pathParam", new PathParametersMap(exc));
 
-        // Allow to invoke functions in groovy with ${fn.functionname()}
+        // Allow invoking functions in Groovy with ${fn.functionname()}
         params.put("fn", new GroovyBuiltInFunctions(exc, flow));
 
         return params;

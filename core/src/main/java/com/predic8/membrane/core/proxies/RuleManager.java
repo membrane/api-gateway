@@ -121,25 +121,32 @@ public class RuleManager {
     }
 
     private @NotNull HashMap<IpPort, SSLContextCollection.Builder> getSSLContexts() throws UnknownHostException {
-        HashMap<IpPort, SSLContextCollection.Builder> sslContexts = new HashMap<>();
+        HashMap<IpPort, SSLContextCollection.Builder> sslContextBuilders = new HashMap<>();
         for (Proxy proxy : proxies) {
-            if (!(proxy instanceof SSLableProxy sp))
-                continue;
-
-            SSLContext sslContext = sp.getSslInboundContext();
-            if (sslContext == null)
-                continue;
-
-            IpPort ipPort = getIpPort(sp);
-            SSLContextCollection.Builder builder = sslContexts.get(ipPort);
-            if (builder == null) {
-                builder = new SSLContextCollection.Builder();
-                sslContexts.put(ipPort, builder);
+            switch (proxy) {
+                case SSLProxy sslp:
+                    getOrCreateBuilder(sslp, sslContextBuilders).useCollection();
+                    break;
+                case SSLableProxy sslap:
+                    SSLContext sslContext = sslap.getSslInboundContext();
+                    if (sslContext == null)
+                        continue;
+                    getOrCreateBuilder(sslap, sslContextBuilders).add(sslContext);
+                    break;
+                default: break;
             }
-            builder.add(sslContext);
-
         }
-        return sslContexts;
+        return sslContextBuilders;
+    }
+
+    private static SSLContextCollection.@NotNull Builder getOrCreateBuilder(Proxy proxy, HashMap<IpPort, SSLContextCollection.Builder> sslContexts) throws UnknownHostException {
+        IpPort ipPort = getIpPort(proxy);
+        SSLContextCollection.Builder builder = sslContexts.get(ipPort);
+        if (builder == null) {
+            builder = new SSLContextCollection.Builder();
+            sslContexts.put(ipPort, builder);
+        }
+        return builder;
     }
 
 

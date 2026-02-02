@@ -57,10 +57,10 @@ class AccessControlTest {
         acl.setRules(List.of(allow));
         acl.init(router.getDnsCache());
 
-        assertFalse(acl.isPermitted(null));
-        assertFalse(acl.isPermitted(""));
-        assertFalse(acl.isPermitted("   "));
-        assertFalse(acl.isPermitted("not-an-ip"));
+        assertFalse(acl.isPermitted(null).permitted());
+        assertFalse(acl.isPermitted("").permitted());
+        assertFalse(acl.isPermitted("   ").permitted());
+        assertFalse(acl.isPermitted("not-an-ip").permitted());
     }
 
     @Test
@@ -71,8 +71,8 @@ class AccessControlTest {
         acl.setRules(List.of(allow));
         acl.init(router.getDnsCache());
 
-        assertTrue(acl.isPermitted("10.123.45.67"));
-        assertFalse(acl.isPermitted("11.0.0.1"));
+        assertTrue(acl.isPermitted("10.123.45.67").permitted());
+        assertFalse(acl.isPermitted("11.0.0.1").permitted());
     }
 
     @Test
@@ -83,8 +83,8 @@ class AccessControlTest {
         acl.setRules(List.of(deny));
         acl.init(router.getDnsCache());
 
-        assertFalse(acl.isPermitted("10.123.45.67"));
-        assertFalse(acl.isPermitted("11.0.0.1"));
+        assertFalse(acl.isPermitted("10.123.45.67").permitted());
+        assertFalse(acl.isPermitted("11.0.0.1").permitted());
     }
 
     @Test
@@ -98,7 +98,7 @@ class AccessControlTest {
         acl.setRules(List.of(deny, allow));
         acl.init(router.getDnsCache());
 
-        assertFalse(acl.isPermitted("10.1.2.3"));
+        assertFalse(acl.isPermitted("10.1.2.3").permitted());
     }
 
     @Test
@@ -109,7 +109,7 @@ class AccessControlTest {
         acl.setRules(List.of(allow));
         acl.init(router.getDnsCache());
 
-        assertFalse(acl.isPermitted("192.168.0.1"));
+        assertFalse(acl.isPermitted("192.168.0.1").permitted());
     }
 
     @Test
@@ -122,7 +122,7 @@ class AccessControlTest {
 
         acl.init(router.getDnsCache());
 
-        assertTrue(acl.isPermitted("1.2.3.4"));
+        assertTrue(acl.isPermitted("1.2.3.4").permitted());
         verify(dnsCache, times(1)).getCanonicalHostName(any(InetAddress.class));
     }
 
@@ -136,7 +136,7 @@ class AccessControlTest {
 
         acl.init(router.getDnsCache());
 
-        assertFalse(acl.isPermitted("1.2.3.4"));
+        assertFalse(acl.isPermitted("1.2.3.4").permitted());
         verify(dnsCache, times(1)).getCanonicalHostName(any(InetAddress.class));
     }
 
@@ -176,7 +176,7 @@ class AccessControlTest {
         acl.setRules(List.of(allow));
         acl.init(router.getDnsCache());
 
-        assertTrue(acl.isPermitted("1.2.3.4"));
+        assertTrue(acl.isPermitted("1.2.3.4").permitted());
         verify(dnsCache, never()).getCanonicalHostName(any(InetAddress.class));
     }
 
@@ -193,7 +193,7 @@ class AccessControlTest {
 
         acl.init(router.getDnsCache());
 
-        assertTrue(acl.isPermitted("10.1.2.3"));
+        assertTrue(acl.isPermitted("10.1.2.3").permitted());
         verify(dnsCache, times(1)).getCanonicalHostName(any(InetAddress.class));
     }
 
@@ -205,8 +205,8 @@ class AccessControlTest {
         acl.setRules(List.of(allow));
         acl.init(router.getDnsCache());
 
-        assertTrue(acl.isPermitted(" 10.123.45.67 "));
-        assertFalse(acl.isPermitted(" 11.0.0.1 "));
+        assertTrue(acl.isPermitted(" 10.123.45.67 ").permitted());
+        assertFalse(acl.isPermitted(" 11.0.0.1 ").permitted());
     }
 
     @Test
@@ -237,12 +237,12 @@ class AccessControlTest {
 
         acl.init(router.getDnsCache());
 
-        assertFalse(acl.isPermitted("10.1.2.3"));
-        assertTrue(acl.isPermitted("10.1.5.6"));
-        assertTrue(acl.isPermitted("10.1.2.99"));
-        assertTrue(acl.isPermitted("203.0.113.7"));
-        assertFalse(acl.isPermitted("198.51.100.10"));
-        assertFalse(acl.isPermitted("8.8.8.8"));
+        assertFalse(acl.isPermitted("10.1.2.3").permitted());
+        assertTrue(acl.isPermitted("10.1.5.6").permitted());
+        assertTrue(acl.isPermitted("10.1.2.99").permitted());
+        assertTrue(acl.isPermitted("203.0.113.7").permitted());
+        assertFalse(acl.isPermitted("198.51.100.10").permitted());
+        assertFalse(acl.isPermitted("8.8.8.8").permitted());
         verify(dnsCache, atLeast(6)).getCanonicalHostName(any(InetAddress.class));
     }
 
@@ -254,8 +254,8 @@ class AccessControlTest {
         acl.setRules(List.of(allowLocalhost));
         acl.init(router.getDnsCache());
 
-        assertTrue(acl.isPermitted("127.0.0.1"));
-        assertFalse(acl.isPermitted("127.0.0.2"));
+        assertTrue(acl.isPermitted("127.0.0.1").permitted());
+        assertFalse(acl.isPermitted("127.0.0.2").permitted());
     }
 
 }
