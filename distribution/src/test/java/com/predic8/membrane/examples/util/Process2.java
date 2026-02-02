@@ -38,6 +38,7 @@ import static java.lang.Thread.*;
 public class Process2 implements AutoCloseable {
 
 	private static final Logger log = LoggerFactory.getLogger(Process2.class.getName());
+	public static final int TIMEOUT = 10_000;
 
 	@Override
 	public void close() {
@@ -173,7 +174,7 @@ public class Process2 implements AutoCloseable {
 
 		if (afterStartWaiter != null) {
 			try {
-				afterStartWaiter.waitFor(10000);
+				afterStartWaiter.waitFor(TIMEOUT);
 			} catch (TimeoutException e) {
 				killScript();
 				throw new RuntimeException(e);

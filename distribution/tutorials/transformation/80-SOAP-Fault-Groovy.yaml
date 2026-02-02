@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.7.json
+#
+# Tutorial: JSON -> SOAP -> JSON (With Fault Handling)
+#
+# Demonstrates external Groovy scripts for:
+#   - JSON request to SOAP 1.1 request
+#   - SOAP success response to JSON
+#   - SOAP Fault to JSON error
+#
+# Try:
+#    curl -v -H "Content-Type: application/json" -d @plum.json http://localhost:2000/products
+#    curl -v -H "Content-Type: application/json" -d @plum.json http://localhost:2000/products -H "X-Mock-Mode: fault"
+
+api:
+  name: Products API
+  port: 2000
+  path:
+    uri: /products
+  flow:
+    - request:
+      - groovy:
+          location: json-to-soap-request.groovy
+    - response:
+        - if:
+            test: //*[local-name()='Fault']
+            language: XPath
+            flow:
+              - groovy:
+                  location: soap-fault-to-json.groovy
+            else:
+              - groovy:
+                  location: soap-response-to-json.groovy
+  target:
+    url: http://localhost:2000/product-service
+
+---
+api:
+  name: Product Service Mock
+  port: 2000
+  path:
+    uri: /product-service
+  flow:
+    - log: {}
+    - request:
+      - if:
+          test: "header['X-Mock-Mode'] == 'fault'"
+          flow:
+            - static:
+                src: |
+                  <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                    <s11:Body>
+                      <s11:Fault>
+                        <faultcode>s11:Server</faultcode>
+                        <faultstring>Error creating product</faultstring>
+                      </s11:Fault>
+                    </s11:Body>
+                  </s11:Envelope>
+          else:
+            - static:
+                src: |
+                  <s11:Envelope xmlns:s11='http://schemas.xmlsoap.org/soap/envelope/' xmlns:ns='https://predic8.de/shop-service'>
+                    <s11:Body>
+                      <ns:createProductResponse>
+                        <ns:id>EF-0082</ns:id>
+                        <ns:category>Exotic fruits</ns:category>
+                      </ns:createProductResponse>
+                    </s11:Body>
+                  </s11:Envelope>
+      - return:
+          # SOAP often returns 200 OK even on faults
+          status: 200
