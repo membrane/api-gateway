@@ -59,11 +59,12 @@ public interface ExchangeExpression {
      * @return
      */
     static ExchangeExpression expression(Interceptor interceptor, Language language, String expression) {
+        var router = interceptor != null ? interceptor.getRouter() : null;
         return switch (language) {
-            case GROOVY -> new GroovyExchangeExpression(interceptor, expression);
-            case SPEL -> new SpELExchangeExpression(expression,null); // parserContext is null on purpose ${} or #{} are not needed here
-            case XPATH -> new XPathExchangeExpression(interceptor,expression);
-            case JSONPATH -> new JsonpathExchangeExpression(expression);
+            case GROOVY -> new GroovyExchangeExpression(expression, router);
+            case SPEL -> new SpELExchangeExpression(expression,null, router); // parserContext is null on purpose ${} or #{} are not needed here
+            case XPATH -> new XPathExchangeExpression(interceptor,expression, router);
+            case JSONPATH -> new JsonpathExchangeExpression(expression, router);
         };
     }
 

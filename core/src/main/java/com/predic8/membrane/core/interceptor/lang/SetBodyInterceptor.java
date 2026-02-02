@@ -32,13 +32,15 @@ import static java.nio.charset.StandardCharsets.*;
  * Different languages such as SpEL, Groovy, XMLPath or JsonPath are supported.
  * setBody does not support conditional processing or loops. When you need these features,
  * resort to the template plugin instead.
- *
+ * <p>
  * The content of the message body is set as UTF-8 encoded bytes. Set a corresponding content type header if necessary.
  */
 @MCElement(name = "setBody")
 public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(SetBodyInterceptor.class);
+
+    protected String contentType;
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -51,13 +53,19 @@ public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private Outcome handleInternal(Exchange exchange, Flow flow) {
+        var msg = exchange.getMessage(flow);
         try {
             // The value is typically set from YAML there we can assume UTF-8
             var result = exchangeExpression.evaluate(exchange, flow, String.class);
             if (result == null) {
                 result = "null";
             }
-            exchange.getMessage(flow).setBodyContent(result.getBytes(UTF_8));
+            msg.setBodyContent(result.getBytes(UTF_8));
+
+            if (contentType!=null) {
+                msg.getHeader().setContentType(contentType);
+            }
+
             return CONTINUE;
         } catch (Exception e) {
             var root = ExceptionUtil.getRootCause(e);
@@ -97,5 +105,18 @@ public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
     @Override
     public String getShortDescription() {
         return "Sets the content of the HTTP message body to the expression: %s.".formatted(expression);
+    }
+
+    /**
+     * @description Content-Type of the generated body content.
+     * @example application/json
+     */
+    @MCAttribute
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
+    public String getContentType() {
+        return contentType;
     }
 }

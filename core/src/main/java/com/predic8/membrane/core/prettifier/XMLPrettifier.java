@@ -56,35 +56,34 @@ public class XMLPrettifier implements Prettifier {
     }
 
     @Override
-    public byte[] prettify(InputStream is, Charset charset) throws IOException {
-            StringWriter sw = new StringWriter(250);
-            XMLBeautifier xb = new XMLBeautifier(new StandardXMLBeautifierFormatter(sw, 4));
-            xb.parse(is);
-            return sw.toString().getBytes(getCharset( xb.getDetectedEncoding()) /* Charset from parse */);
+    public byte[] prettify(InputStream is, Charset requested) throws IOException {
+        var sw = new StringWriter(500);
+        var xb = new XMLBeautifier(new StandardXMLBeautifierFormatter(sw, 0));
+        xb.parse(is);
+        return sw.toString().getBytes(getOutputCharset(getCharset(requested, xb)));
     }
 
     @Override
-    public byte[] prettify(byte[] c, Charset charset) {
+    public byte[] prettify(byte[] c, Charset requested) {
         try {
-            StringWriter sw = new StringWriter(250);
-            XMLBeautifier xb = new XMLBeautifier(new StandardXMLBeautifierFormatter(sw, 4));
-
-            // Important: give it the raw bytes
-            xb.parse(new ByteArrayInputStream(c));
-
-            if (xb.getDetectedEncoding() != null) {
-                try {
-                    charset = Charset.forName(xb.getDetectedEncoding());
-                } catch (IllegalArgumentException iae) {
-                    log.debug("Unknown detected XML encoding '{}'. Falling back to requested charset {}.",
-                            xb.getDetectedEncoding(), charset);
-                }
-            }
-
-            return sw.toString().getBytes(getOutputCharset(charset));
+            return prettify(new ByteArrayInputStream(c), requested);
         } catch (Exception e) {
             log.debug("Failed to prettify XML. Returning input unmodified.", e);
             return c;
+        }
+    }
+
+    private static Charset getCharset(Charset requested, XMLBeautifier xb) {
+        String detected = xb.getDetectedEncoding();
+        if (detected == null)
+            return requested;
+
+        try {
+            return Charset.forName(detected);
+        } catch (IllegalArgumentException iae) {
+            log.debug("Unknown detected XML encoding '{}'. Falling back to requested charset {}.",
+                    detected, requested);
+            return requested;
         }
     }
 }

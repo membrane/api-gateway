@@ -26,6 +26,6 @@ import org.junit.platform.suite.api.Suite;
 	ReleaseConfigurationTest.class,
 	ResolverTestTriggerTest.class
 })
-public class IntegrationTests {
+public class ServletIntegrationTests {
 
 }

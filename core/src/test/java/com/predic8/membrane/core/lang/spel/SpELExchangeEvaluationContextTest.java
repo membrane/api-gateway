@@ -17,6 +17,7 @@ import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
@@ -63,7 +64,7 @@ public class SpELExchangeEvaluationContextTest {
     }
 
     String keyExpression(String spel) {
-        return new SpelExpressionParser().parseExpression(spel).getValue(new SpELExchangeEvaluationContext(exc, REQUEST), String.class);
+        return new SpelExpressionParser().parseExpression(spel).getValue(new SpELExchangeEvaluationContext(exc, REQUEST, new DummyTestRouter()), String.class);
     }
 
     @Test
