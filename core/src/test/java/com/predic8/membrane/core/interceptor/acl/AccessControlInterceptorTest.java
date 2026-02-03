@@ -14,26 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.acl.rules.AccessRule;
-import com.predic8.membrane.core.interceptor.acl.rules.Allow;
-import com.predic8.membrane.core.interceptor.acl.rules.Deny;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.acl.rules.*;
 import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.router.DummyTestRouter;
-import com.predic8.membrane.core.router.TestRouter;
-import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.DNSCache;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
 
-import java.net.InetAddress;
-import java.net.URISyntaxException;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.acl.rules.AccessRule.allow;
+import static com.predic8.membrane.core.interceptor.acl.rules.AccessRule.deny;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class AccessControlInterceptorTest {
@@ -44,20 +41,8 @@ class AccessControlInterceptorTest {
         return r;
     }
 
-    private static Allow allow(String target) {
-        Allow a = new Allow();
-        a.setTarget(target);
-        return a;
-    }
-
-    private static Deny deny(String target) {
-        Deny d = new Deny();
-        d.setTarget(target);
-        return d;
-    }
-
     private static Exchange exc(String remoteIp) throws URISyntaxException {
-        Exchange exc = new Request.Builder().get("/foo").buildExchange();
+        var exc = get("/foo").buildExchange();
         exc.setRemoteAddr("client");
         exc.setRemoteAddrIp(remoteIp);
         return exc;

@@ -15,25 +15,40 @@
 package com.predic8.membrane.core.interceptor.acl.rules;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.acl.IpAddress;
+import com.predic8.membrane.core.interceptor.acl.*;
+import com.predic8.membrane.core.interceptor.acl.AccessControl.*;
 import com.predic8.membrane.core.interceptor.acl.targets.*;
 import com.predic8.membrane.core.util.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.acl.targets.Target.byMatch;
+import static com.predic8.membrane.core.interceptor.acl.targets.Target.*;
 
 public abstract class AccessRule {
 
     protected Target target;
 
-    public Optional<Boolean> apply(IpAddress address) {
-        if (target.peerMatches(address)) return Optional.of(permitPeer());
+    public Optional<AccessDecision> apply(IpAddress address) {
+        if (target.peerMatches(address)) {
+            return Optional.of(new AccessDecision(permitPeer(), address));
+        }
 
         return Optional.empty();
     }
 
     abstract boolean permitPeer();
+
+    public static Allow allow(String target) {
+        var allow = new Allow();
+        allow.setTarget(target);
+        return allow;
+    }
+
+    public static Deny deny(String target) {
+        var deny = new Deny();
+        deny.setTarget(target);
+        return deny;
+    }
 
 
     /**
