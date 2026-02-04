@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import com.predic8.membrane.core.router.*;
 
 import java.io.*;
@@ -63,7 +64,7 @@ public class FileUserDataProvider implements UserDataProvider {
         String[] userHashSplit = userHash.split("\\$");
         String salt = userHashSplit[2];
         String algo = userHashSplit[1];
-        pw = createPasswdCompatibleHash(algo, postDataPassword, salt);
+        pw = createPasswdCompatibleHash(new AlgoSalt(algo,salt), postDataPassword);
         String pw2;
         pw2 = userAttributes.getPassword();
         if (pw2 == null || !pw2.equals(pw))

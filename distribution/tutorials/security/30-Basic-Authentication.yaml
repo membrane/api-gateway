@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: HTTP Basic Authentication
+#
+# Try:
+#   1) Without credentials
+#      curl localhost:2000
+#
+#   2) Valid credentials (plain text password)
+#      curl -u alice:qwertz localhost:2000
+#
+#   3) Valid credentials (hashed password)
+#      curl -u carol:abc123 localhost:2000
+
+api:
+  port: 2000
+  flow:
+    - basicAuthentication:
+        # Static in-memory user configuration.
+        # Alternatives: JDBC-, LDAP-, or FileUserDataProvider.
+        users:
+          - user:
+              username: alice
+              password: "qwertz"
+          - user:
+              username: carol
+              # Hashed password for "abc123" (SHA-512)
+              #
+              # Generate hashes with:
+              #   openssl passwd -6 -salt k3jia "yourPassword"
+              #   mkpasswd -m sha-512 -S k3jia "yourPassword"
+              password: "$6$k3jia$NlCL.JTXitlwZ4i67ELwWpqK4Co3a8xEsp5UBxlR2In7nJgKJFNywV4Bx6jB9Py5g69eNKyxveLIG3OMcyc8M1"
+    - static:
+        src: You're in!
+    - return:
+        status: 200
+
+

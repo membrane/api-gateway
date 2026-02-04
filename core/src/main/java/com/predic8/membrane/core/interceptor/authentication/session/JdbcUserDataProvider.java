@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import com.predic8.membrane.core.router.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,7 +126,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
         if (result != null && !result.isEmpty()) {
             String passwordFromDB = result.get(getPasswordColumnName().toLowerCase());
             if (!isHashedPassword(password) && isHashedPassword(passwordFromDB))
-                password = createPasswdCompatibleHash(extractMagicString(passwordFromDB), password, extractSalt(passwordFromDB));
+                password = createPasswdCompatibleHash(new AlgoSalt(extractMagicString(passwordFromDB),extractSalt(passwordFromDB)) , password);
             if (username.equals(result.get(getUserColumnName().toLowerCase())) && password.equals(passwordFromDB))
                 return result;
         }

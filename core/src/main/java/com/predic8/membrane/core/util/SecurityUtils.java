@@ -14,15 +14,15 @@
 
 package com.predic8.membrane.core.util;
 
-import com.google.common.io.BaseEncoding;
-import org.apache.commons.codec.digest.Crypt;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
+import org.apache.commons.codec.digest.*;
 
-import java.security.SecureRandom;
-import java.util.regex.Pattern;
+import java.security.*;
+import java.util.regex.*;
 
 public class SecurityUtils {
 
-    private static final SecureRandom secureRandom = new SecureRandom();
     public static final Pattern HEX_PASSWORD_PATTERN = Pattern.compile("\\$([^$]+)\\$([^$]+)\\$.+");
     public static final String $ = Pattern.quote("$");
 
@@ -42,12 +42,12 @@ public class SecurityUtils {
         return password.split($)[2];
     }
 
-    public static String createPasswdCompatibleHash(String algo, String password, String salt) {
-        return Crypt.crypt(password, "$" + algo + "$" + salt);
+    public static String createPasswdCompatibleHash(AlgoSalt as, String password) {
+        return Crypt.crypt(password, "$%s$%s".formatted(as.algo(), as.salt()));
     }
 
     public static String createPasswdCompatibleHash(String password, String saltString) {
-        return createPasswdCompatibleHash("6", password, saltString);
+        return createPasswdCompatibleHash(new AlgoSalt("6", saltString), password);
     }
 
     public static String extractMagicString(String password) {

@@ -19,160 +19,166 @@ import com.predic8.membrane.core.router.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.util.SecurityUtils.createPasswdCompatibleHash;
-import static com.predic8.membrane.core.util.SecurityUtils.isHashedPassword;
+import static com.predic8.membrane.core.util.SecurityUtils.*;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
  * @explanation <p>
- *              the <i>staticuserdataprovider</i> can be used to statically list user data within the config file.
- *              </p>
- *              <p>
- *              each user must have a unique <i>username</i> attribute as well as a <i>password</i> attribute.
- *              </p>
- *              <p>
- *              arbitrary attributes can be set on a user element. other sub-components of the <i>login</i> interceptor
- *              might use those: for example, the <i>telekomsmstokenprovider</i> uses the <i>sms</i> property as the
- *              user's cell phone number. for example, the <i>totptokenprovider</i> uses the <i>secret</i> property to
- *              initialize the token sequence.
- *              </p>
+ * the <i>staticuserdataprovider</i> can be used to statically list user data within the config file.
+ * </p>
+ * <p>
+ * each user must have a unique <i>username</i> attribute as well as a <i>password</i> attribute.
+ * </p>
+ * <p>
+ * arbitrary attributes can be set on a user element. other sub-components of the <i>login</i> interceptor
+ * might use those: for example, the <i>telekomsmstokenprovider</i> uses the <i>sms</i> property as the
+ * user's cell phone number. for example, the <i>totptokenprovider</i> uses the <i>secret</i> property to
+ * initialize the token sequence.
+ * </p>
  */
-@MCElement(name="staticUserDataProvider")
+@MCElement(name = "staticUserDataProvider")
 public class StaticUserDataProvider implements UserDataProvider {
 
-	private List<User> users = new ArrayList<>();
-	private Map<String, User> usersByName = new HashMap<>();
+    private List<User> users = new ArrayList<>();
+    private Map<String, User> usersByName = new HashMap<>();
 
-	@Override
-	public Map<String, String> verify(Map<String, String> postData) {
-		String username = postData.get("username");
-		if (username == null)
-			throw new NoSuchElementException();
-		if (username.equals("error"))
-			throw new RuntimeException();
-		User userAttributes;
-		userAttributes = getUsersByName().get(username);
-		if (userAttributes == null)
-			throw new NoSuchElementException();
-		String pw = null;
-		String postDataPassword = postData.get("password");
-		if(userAttributes.getPassword() != null && isHashedPassword(userAttributes.getPassword())) {
-			String userHash = userAttributes.getPassword();
-			String[] userHashSplit = userHash.split(Pattern.quote("$"));
-			String algo = userHashSplit[1];
-			String salt = userHashSplit[2];
-			try {
-				pw = createPasswdCompatibleHash(algo, postDataPassword, salt);
-			} catch (Exception e) {
-				throw new RuntimeException(e.getMessage());
-			}
-		} else {
-			pw = postDataPassword;
-		}
-		String pw2;
-		pw2 = userAttributes.getPassword();
-		if (pw2 == null || !pw2.equals(pw))
-			throw new NoSuchElementException();
-		return userAttributes.getAttributes();
-	}
+    @Override
+    public Map<String, String> verify(Map<String, String> postData) {
+        String username = postData.get("username");
+        if (username == null)
+            throw new NoSuchElementException();
 
-	@MCElement(name="user", component =false, id="staticUserDataProvider-user")
-	public static class User {
-		final Map<String, String> attributes = new HashMap<>();
+        if (username.equals("error"))
+            throw new RuntimeException();
 
-		public User() {}
+        User userAttributes = getUsersByName().get(username);
+        if (userAttributes == null)
+            throw new NoSuchElementException();
 
-		public User(String username, String password){
-			setUsername(username);
-			setPassword(password);
-		}
+        String pw = getPassword(postData, userAttributes);
+        String pw2 = userAttributes.getPassword();
+        if (pw2 == null || !pw2.equals(pw))
+            throw new NoSuchElementException();
+        return userAttributes.getAttributes();
+    }
 
-		public String getUsername() {
-			return attributes.get("username");
-		}
+    private static String getPassword(Map<String, String> postData, User userAttributes) {
+        String postDataPassword = postData.get("password");
+        if (userAttributes.getPassword() != null && isHashedPassword(userAttributes.getPassword())) {
+            try {
+                return createPasswdCompatibleHash(AlgoSalt.from(userAttributes.getPassword()), postDataPassword);
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        }
+        return postDataPassword;
+    }
 
-		/**
-		 * @description The user's login.
-		 */
-		@MCAttribute
-		public void setUsername(String value) {
-			attributes.put("username", value);
-		}
+    public record AlgoSalt(String algo, String salt) {
+        public static AlgoSalt from(String userHash) {
+            String[] userHashSplit = userHash.split(Pattern.quote("$"));
+            return new AlgoSalt(userHashSplit[1], userHashSplit[2]);
+        }
+    }
 
-		public String getPassword() {
-			return attributes.get("password");
-		}
+    @MCElement(name = "user", component = false, id = "staticUserDataProvider-user")
+    public static class User {
+        final Map<String, String> attributes = new HashMap<>();
 
-		/**
-		 * @description The user's password.
-		 */
-		@MCAttribute
-		public void setPassword(String value) {
-			attributes.put("password", value);
-		}
+        public User() {
+        }
 
-		public String getSms() {
-			return attributes.get("sms");
-		}
+        public User(String username, String password) {
+            setUsername(username);
+            setPassword(password);
+        }
 
-		/**
-		 * @description The user's phone number
-		 */
-		@MCAttribute
-		public void setSms(String value) {
-			attributes.put("sms", value);
-		}
+        public String getUsername() {
+            return attributes.get("username");
+        }
 
-		public String getSecret() {
-			return attributes.get("secret");
-		}
+        /**
+         * @description The user's login.
+         */
+        @MCAttribute
+        public void setUsername(String value) {
+            attributes.put("username", value);
+        }
 
-		/**
-		 * @description The user's shared TOTP secret (if used in combination with the {@link TOTPTokenProvider}).
-		 */
-		@MCAttribute
-		public void setSecret(String value) {
-			attributes.put("secret", value);
-		}
+        public String getPassword() {
+            return attributes.get("password");
+        }
 
-		public Map<String, String> getAttributes() {
-			return attributes;
-		}
+        /**
+         * @description The user's password.
+         */
+        @MCAttribute
+        public void setPassword(String value) {
+            attributes.put("password", value);
+        }
 
-		/**
-		 * @description Other user attributes. For example any attribute starting with "<i>header</i>" will be added
-		 *              when HTTP requests are forwarded when authorized by this user.
-		 */
-		@MCOtherAttributes
-		public void setAttributes(Map<String, String> attributes) {
-			this.attributes.putAll(attributes);
-		}
-	}
+        public String getSms() {
+            return attributes.get("sms");
+        }
 
-	public List<User> getUsers() {
-		return users;
-	}
+        /**
+         * @description The user's phone number
+         */
+        @MCAttribute
+        public void setSms(String value) {
+            attributes.put("sms", value);
+        }
 
-	@MCChildElement
-	public void setUsers(List<User> users) {
-		getUsersByName().clear();
-		for(User user : users){
-			getUsersByName().put(user.getUsername(), user);
-		}
-		this.users = users;
-	}
+        public String getSecret() {
+            return attributes.get("secret");
+        }
 
-	public Map<String, User> getUsersByName() {
-		return usersByName;
-	}
+        /**
+         * @description The user's shared TOTP secret (if used in combination with the {@link TOTPTokenProvider}).
+         */
+        @MCAttribute
+        public void setSecret(String value) {
+            attributes.put("secret", value);
+        }
 
-	public void setUsersByName(Map<String, User> usersByName) {
-		this.usersByName = usersByName;
-	}
+        public Map<String, String> getAttributes() {
+            return attributes;
+        }
 
-	@Override
-	public void init(Router router) {
-		for (User user : users)
-			getUsersByName().put(user.getUsername(), user);
-	}
+        /**
+         * @description Other user attributes. For example any attribute starting with "<i>header</i>" will be added
+         * when HTTP requests are forwarded when authorized by this user.
+         */
+        @MCOtherAttributes
+        public void setAttributes(Map<String, String> attributes) {
+            this.attributes.putAll(attributes);
+        }
+    }
+
+    public List<User> getUsers() {
+        return users;
+    }
+
+    @MCChildElement
+    public void setUsers(List<User> users) {
+        getUsersByName().clear();
+        for (User user : users) {
+            getUsersByName().put(user.getUsername(), user);
+        }
+        this.users = users;
+    }
+
+    public Map<String, User> getUsersByName() {
+        return usersByName;
+    }
+
+    public void setUsersByName(Map<String, User> usersByName) {
+        this.usersByName = usersByName;
+    }
+
+    @Override
+    public void init(Router router) {
+        for (User user : users)
+            getUsersByName().put(user.getUsername(), user);
+    }
 }
