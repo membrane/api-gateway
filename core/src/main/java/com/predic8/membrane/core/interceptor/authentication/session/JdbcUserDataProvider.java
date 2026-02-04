@@ -99,12 +99,10 @@ public class JdbcUserDataProvider implements UserDataProvider {
         if (password == null)
             throw new NoSuchElementException();
 
-        Connection con = null;
-        PreparedStatement preparedStatement = null;
-        HashMap<String, String> result = null;
+        Map<String, String> result = null;
         try {
-            con = datasource.getConnection();
-            preparedStatement = con.prepareStatement(createGetUsersSql());
+            var con = datasource.getConnection();
+            var preparedStatement = con.prepareStatement(createGetUsersSql());
             preparedStatement.setString(1, username);
 
             ResultSet rs = preparedStatement.executeQuery();
@@ -119,8 +117,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
             con.close();
 
         } catch (SQLException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
+            log.error(e.getMessage(),e);
         }
 
         if (result != null && !result.isEmpty()) {
@@ -135,8 +132,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
     }
 
     private String createGetUsersSql() {
-        return "SELECT * FROM " + getTableName() +
-                " WHERE " + getUserColumnName() + "=?";
+        return "SELECT * FROM %s WHERE %s=?".formatted(getTableName(), getUserColumnName());
     }
 
     public DataSource getDatasource() {
