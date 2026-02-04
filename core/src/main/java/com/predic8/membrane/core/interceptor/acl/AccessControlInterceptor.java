@@ -38,9 +38,9 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  *
  * @yaml
  * <pre><code>
- * accessControl:
- *   - allow: "10.0.0.0/8"
- *   - deny: "0.0.0.0/0"
+ * - accessControl:
+ *     - allow: "10.0.0.0/8"
+ *     - deny: "0.0.0.0/0"
  * </code></pre>
  */
 @MCElement(name = "accessControl", noEnvelope = true)

@@ -22,7 +22,9 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import org.checkerframework.common.returnsreceiver.qual.*;
 import org.slf4j.*;
+import org.springframework.beans.factory.parsing.*;
 
 import java.io.*;
 import java.util.*;
@@ -36,7 +38,29 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.EnumSet.*;
 
 /**
- * Enforces JSON restrictions in requests.
+ * @description <p>Enforces restrictions on JSON request bodies to protect against JSON-based attacks and resource exhaustion.
+ * Validates against configurable limits to prevent attacks such as:</p>
+ * <ul>
+ *   <li>Deeply nested JSON structures (billion laughs attack)</li>
+ *   <li>Memory exhaustion from oversized payloads</li>
+ *   <li>Prototype pollution via __proto__ keys in JavaScript backends</li>
+ *   <li>Duplicate key attacks</li>
+ * </ul>
+ *
+ * @yaml
+ * <pre><code>
+ * - jsonProtection:
+ *     maxDepth: 20
+ *     maxKeyLength: 50
+ *     maxObjectSize: 100
+ *     maxTokens: 1000
+ *     maxStringLength: 1000
+ *     maxArraySize: 100
+ *     maxSize: 10000
+ *     blockProto: true
+ *     reportError: true
+ * </code></pre>
+ *
  * @topic 3. Security and Validation
  */
 @SuppressWarnings("unused")
@@ -242,8 +266,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     /**
      * @description Overwrites default error reporting behaviour. If set to true, errors will provide ProblemDetails body,
-     * if set to false, errors will throw standard exceptions.
-     * @default null
+     * if set to false, errors will throw exceptions resulting in 400 Bad Request responses without any details.
+     * @default true
      * @param reportError
      */
     @MCAttribute
