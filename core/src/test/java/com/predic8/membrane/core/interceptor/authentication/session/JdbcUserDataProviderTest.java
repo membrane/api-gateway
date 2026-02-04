@@ -33,7 +33,7 @@ class JdbcUserDataProviderTest {
     private static final String TEST_USER = "alice";
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() {
         dataSource = new JdbcDataSource();
         dataSource.setURL("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1");
         dataSource.setUser("sa");
@@ -178,7 +178,7 @@ class JdbcUserDataProviderTest {
     }
 
     @Test
-    void verifyWithNonExistentUser() throws SQLException {
+    void verifyWithNonExistentUser() {
         provider.init(router);
 
         Map<String, String> postData = new HashMap<>();
@@ -189,7 +189,7 @@ class JdbcUserDataProviderTest {
     }
 
     @Test
-    void verifyWithNullUsername() throws SQLException {
+    void verifyWithNullUsername() {
         provider.init(router);
 
         Map<String, String> postData = new HashMap<>();
@@ -200,7 +200,7 @@ class JdbcUserDataProviderTest {
     }
 
     @Test
-    void verifyWithMissingUsername() throws SQLException {
+    void verifyWithMissingUsername() {
         provider.init(router);
 
         Map<String, String> postData = new HashMap<>();
@@ -383,7 +383,7 @@ class JdbcUserDataProviderTest {
     private void insertUser(String username, String password) throws SQLException {
         try (var con = dataSource.getConnection();
              var ps = con.prepareStatement(
-                     "INSERT INTO " + TABLE_NAME + " (" + USER_COLUMN + ", " + PASSWORD_COLUMN + ", verified) VALUES (?, ?, ?)")) {
+                     "INSERT INTO %s (%s, %s, verified) VALUES (?, ?, ?)".formatted(TABLE_NAME, USER_COLUMN, PASSWORD_COLUMN))) {
             ps.setString(1, username);
             ps.setString(2, password);
             ps.setBoolean(3, false);
