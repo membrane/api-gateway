@@ -382,8 +382,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Maximum size of JSON objects. For example, <code>{"a": {"b":"c", "d": "e"}, "f": "g"}</code> has a
-     * maximum object size of 2. (In this example, both objects effectively have a size of 2.)
+     * @description Maximum size of JSON arrays. For example, <code>[[1,2],[3,4,5]]</code> has a
+     * array size of 2. The nested arrays have sizes of 2 and 3.
      * @default 1000
      * @param maxArraySize
      */
