@@ -81,10 +81,7 @@ public class GroovyInterceptor extends AbstractScriptInterceptor implements Prox
 
     @Override
     public String getLongDescription() {
-        return removeFinalChar(getShortDescription()) +
-               ":<br/><pre style=\"overflow-x:auto\">" +
-               escapeHtml4(src.stripIndent()) +
-               "</pre>";
+        return "%s:<br/><pre style=\"overflow-x:auto\">%s</pre>".formatted(removeFinalChar(getShortDescription()), escapeHtml4(src.stripIndent()));
     }
 
     @Override

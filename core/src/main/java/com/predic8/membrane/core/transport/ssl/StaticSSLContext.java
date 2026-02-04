@@ -227,11 +227,14 @@ public class StaticSSLContext extends SSLContext {
         return kmf;
     }
 
-    private static @org.jetbrains.annotations.NotNull List<Certificate> getCertificates(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) throws IOException {
+    private static @org.jetbrains.annotations.NotNull List<Certificate> getCertificates(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) throws IOException, CertificateEncodingException, KeyStoreException, NoSuchAlgorithmException {
         List<Certificate> certs = new ArrayList<>();
 
-        for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKey().getCertificates())
-            certs.add(PEMSupport.getInstance().parseCertificate(cert.get(resourceResolver, baseLocation)));
+        for (com.predic8.membrane.core.config.security.Certificate c : sslParser.getKey().getCertificates()) {
+            X509Certificate cert = PEMSupport.getInstance().parseCertificate(c.get(resourceResolver, baseLocation));
+            warnOfOldCertificate(cert);
+            certs.add(cert);
+        }
         if (certs.isEmpty())
             throw new RuntimeException("At least one //ssl/key/certificate is required.");
         return certs;
@@ -308,15 +311,21 @@ public class StaticSSLContext extends SSLContext {
 
     public static KeyStore openKeyStore(Store store, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException {
         KeyStore ks = getAndLoadKeyStore(store, resourceResolver, baseLocation, getStoreTypeOrDefault(store), getPassword(store, keyPass));
-        if (!defaultCertificateWarned && ks.getCertificate("membrane") != null) {
-            if (getDigest(ks, "membrane").equals(DEFAULT_CERTIFICATE_SHA256_OLD) ||
-                getDigest(ks, "membrane").equals(DEFAULT_CERTIFICATE_SHA256)) {
+        if (ks.getCertificate("membrane") != null)
+            warnOfOldCertificate(ks.getCertificate("membrane"));
+        return ks;
+    }
+
+    private static void warnOfOldCertificate(Certificate cert) throws CertificateEncodingException, KeyStoreException, NoSuchAlgorithmException {
+        if (!defaultCertificateWarned) {
+            String digest = getDigest(cert);
+            if (digest.equals(DEFAULT_CERTIFICATE_SHA256_OLD) ||
+                    digest.equals(DEFAULT_CERTIFICATE_SHA256)) {
                 log.warn("Using Membrane with the default certificate. This is highly discouraged! "
                         + "Please run the generate-ssl-keys script in the conf directory.");
                 defaultCertificateWarned = true;
             }
         }
-        return ks;
     }
 
     private static char @org.jetbrains.annotations.NotNull [] getPassword(Store store, char[] keyPass) {

@@ -2,7 +2,7 @@
 #
 # Tutorial: setHeader
 #
-# 1.) Try:
+# Try:
 #     curl -v http://localhost:2000
 #     curl -v -d "Hugo" http://localhost:2000
 #

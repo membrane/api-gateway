@@ -17,12 +17,10 @@
         <!-- Public LB endpoint -->
         <api port="8000">
             <balancer>
-                <clusters>
-                    <cluster name="Production">
-                        <node host="localhost" port="8001" healthUrl="http://localhost:8001/health"/>
-                        <node host="localhost" port="8002" healthUrl="http://localhost:8002/health"/>
-                    </cluster>
-                </clusters>
+                <cluster name="Production">
+                    <node host="localhost" port="8001" healthUrl="http://localhost:8001/health"/>
+                    <node host="localhost" port="8002" healthUrl="http://localhost:8002/health"/>
+                </cluster>
             </balancer>
         </api>
 

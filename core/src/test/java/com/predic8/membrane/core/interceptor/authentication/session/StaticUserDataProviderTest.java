@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.interceptor.registration.SecurityUtils.isHashedPassword;
+import static com.predic8.membrane.core.util.SecurityUtils.isHashedPassword;
 
 public class StaticUserDataProviderTest {
     @Test

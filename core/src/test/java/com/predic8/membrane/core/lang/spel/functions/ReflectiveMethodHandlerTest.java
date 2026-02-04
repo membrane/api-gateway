@@ -15,6 +15,7 @@ package com.predic8.membrane.core.lang.spel.functions;
 
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 import org.springframework.core.convert.*;
@@ -24,6 +25,7 @@ import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.spel.functions.ReflectiveMethodHandler.*;
 import static java.util.List.*;
@@ -39,8 +41,8 @@ public class ReflectiveMethodHandlerTest {
 
     @BeforeAll
     static void init() throws URISyntaxException {
-        rmh = new ReflectiveMethodHandler(TestFunctions.class);
-        ctx = new SpELExchangeEvaluationContext(Request.get("foo").buildExchange(), REQUEST);
+        rmh = new ReflectiveMethodHandler(new TestFunctions());
+        ctx = new SpELExchangeEvaluationContext(get("foo").buildExchange(), REQUEST, null);
     }
 
     @Test
@@ -48,7 +50,7 @@ public class ReflectiveMethodHandlerTest {
         var m = rmh.retrieveFunction( "test", of());
         assertEquals(
                 new TypedValue("Hello World!"),
-                invokeFunction(m, ctx)
+                rmh.invokeFunction(m, ctx)
         );
     }
 
@@ -57,7 +59,7 @@ public class ReflectiveMethodHandlerTest {
         var m = rmh.retrieveFunction("hello", of(getTypeDescriptor(String.class)));
         assertEquals(
                 new TypedValue("Hello World!"),
-                invokeFunction(m, ctx, "World!")
+                rmh.invokeFunction(m, ctx, "World!")
         );
     }
 
@@ -66,7 +68,7 @@ public class ReflectiveMethodHandlerTest {
         var m = rmh.retrieveFunction( "add", of(INT_TYPE_DESC, INT_TYPE_DESC));
         assertEquals(
                 new TypedValue(3),
-                invokeFunction(m, ctx, 1, 2)
+                rmh.invokeFunction(m, ctx, 1, 2)
         );
     }
 
@@ -75,7 +77,7 @@ public class ReflectiveMethodHandlerTest {
         var m = rmh.retrieveFunction( "add", of(FLOAT_TYPE_DESC, FLOAT_TYPE_DESC));
         assertEquals(
                 new TypedValue(1),
-                invokeFunction(m, ctx, 0.5f, 0.5f)
+                rmh.invokeFunction(m, ctx, 0.5f, 0.5f)
         );
     }
 
@@ -84,7 +86,7 @@ public class ReflectiveMethodHandlerTest {
         var m = rmh.retrieveFunction( "getRequestUri", of());
         assertEquals(
                 new TypedValue("foo"),
-                invokeFunction(m, ctx)
+                rmh.invokeFunction(m, ctx)
         );
     }
 
@@ -123,28 +125,28 @@ public class ReflectiveMethodHandlerTest {
         assertTrue(rmh.validateTypeSignature(of(getTypeDescriptor(Map.class)), of(getTypeDescriptor(HashMap.class))));
     }
 
-    private static class TestFunctions{
+    @SuppressWarnings("unused")
+    private static class TestFunctions {
 
-        public static String test(SpELExchangeEvaluationContext ignored) {
+        public String test(SpELExchangeEvaluationContext ignored) {
             return "Hello World!";
         }
 
-        public static String hello(String name, SpELExchangeEvaluationContext ignored) {
+        public String hello(String name, SpELExchangeEvaluationContext ignored) {
             return "Hello " + name;
         }
 
-        public static Integer add(Integer a, Integer b, SpELExchangeEvaluationContext ignored) {
+        public Integer add(Integer a, Integer b, SpELExchangeEvaluationContext ignored) {
             return a + b;
         }
 
-        public static Integer add(Float a, Float b, SpELExchangeEvaluationContext ignored) {
+        public Integer add(Float a, Float b, SpELExchangeEvaluationContext ignored) {
             return (int) (a + b);
         }
 
-        public static String getRequestUri(SpELExchangeEvaluationContext ctx) {
+        public String getRequestUri(SpELExchangeEvaluationContext ctx) {
             return ctx.getExchange().getRequest().getUri();
         }
-
     }
 
     @NotNull

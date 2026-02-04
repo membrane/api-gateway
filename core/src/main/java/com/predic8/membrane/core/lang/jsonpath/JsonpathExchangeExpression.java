@@ -20,6 +20,7 @@ import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.jose4j.json.internal.json_simple.*;
@@ -37,8 +38,8 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
 
     private final ObjectMapper om = new ObjectMapper();
 
-    public JsonpathExchangeExpression(String source) {
-        super(source);
+    public JsonpathExchangeExpression(String source, Router router) {
+        super(source, router);
         syntaxCheckJsonpath(source);
     }
 
