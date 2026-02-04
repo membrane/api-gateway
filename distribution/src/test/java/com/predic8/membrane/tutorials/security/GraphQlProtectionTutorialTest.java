@@ -28,7 +28,7 @@ public class GraphQlProtectionTutorialTest extends AbstractSecurityTutorialTest 
     }
 
     @Test
-    void allowsValidQueryAndRejectsExcessiveRecursion() {
+    void allowsValidQuery() {
         // @formatter:off
         given()
             .contentType(JSON)
@@ -38,15 +38,37 @@ public class GraphQlProtectionTutorialTest extends AbstractSecurityTutorialTest 
         .then()
             .statusCode(200)
             .body(containsString("products"));
+        // @formatter:on
+    }
 
+    @Test
+    void rejectsMaxDepthExceeded() {
+        // Max recursion exceeded (depth > 2)
+        // @formatter:off
         given()
             .contentType(JSON)
-            .body("{\"query\":\"{products{vendor{products{vendor{products{id}}}}}}\"}")
+            .body("{\"query\":\"query{categories{products{vendors{id}}}}\"}")
         .when()
             .post("http://localhost:2000")
         .then()
             .statusCode(400)
-            .body("title", equalTo("GraphQL protection violation"));
+            .body("title", equalTo("GraphQL protection violation"))
+            .body("detail", containsString("depth"));
+        // @formatter:on
+    }
+
+    @Test
+    void rejectsExcessiveRecursion() {
+        // @formatter:off
+        given()
+            .contentType(JSON)
+            .body("{\"query\":\"{products{vendor{products{id}}}}\"}")
+        .when()
+            .post("http://localhost:2000")
+        .then()
+            .statusCode(400)
+            .body("title", equalTo("GraphQL protection violation"))
+            .body("detail", containsString("recursion"));
         // @formatter:on
     }
 
@@ -61,7 +83,8 @@ public class GraphQlProtectionTutorialTest extends AbstractSecurityTutorialTest 
             .post("http://localhost:2000")
         .then()
             .statusCode(400)
-            .body("title", equalTo("GraphQL protection violation"));
+            .body("title", equalTo("GraphQL protection violation"))
+            .body("detail", containsString("updateCategory"));
         // @formatter:on
     }
 
@@ -76,7 +99,8 @@ public class GraphQlProtectionTutorialTest extends AbstractSecurityTutorialTest 
             .post("http://localhost:2000")
         .then()
             .statusCode(400)
-            .body("title", equalTo("GraphQL protection violation"));
+            .body("title", equalTo("GraphQL protection violation"))
+            .body("detail", containsString("ntrospection")); // Without i on purpose!
         // @formatter:on
     }
 }

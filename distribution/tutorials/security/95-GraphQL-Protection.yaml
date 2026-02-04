@@ -8,16 +8,19 @@
 #
 # Try:
 #
-# 1.) Valid request (recursion depth <= 2)
+# 1.) Valid request => 200
 #    curl -d '{"query":"{products{id}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 2.) Max recursion exceeded (recursion depth > 2)
-#    curl -d '{"query":"{products{vendor{products{vendor{products{id}}}}}}"}' -H "Content-Type: application/json" http://localhost:2000
+# 2.) Max depth exceeded => 400
+#    curl -d '{ "query": "query{categories{products{vendors{id}}}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 3.) Disallowed mutation 'updateCategory'
+# 3.) Max recursion exceeded => 400
+#    curl -d '{"query":"{products{vendor{products{id}}}}"}' -H "Content-Type: application/json" http://localhost:2000
+#
+# 4.) Disallowed mutation 'updateCategory' => 400
 #    curl -d '{"query":"mutation { updateCategory(id:6,name: \"Dry Fruits\"){id}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 4.) Disallowed introspection
+# 5.) Disallowed introspection => 400
 #    curl -d '{"query":"{ __schema{mutationType {fields{name}}}}"}' -H "Content-Type: application/json" http://localhost:2000
 #
 # For more examples see: examples/graphql/graphql-validation
@@ -29,11 +32,13 @@ api:
   flow:
     - request:
         - graphQLProtection:
-            maxRecursion: 2
+            maxRecursion: 1
             maxMutations: 5
+            maxDepth: 3
             disallow:
               - mutation:
                   name: updateCategory
               - introspection: {}
   target:
     url: https://www.predic8.de/fruit-shop-graphql
+
