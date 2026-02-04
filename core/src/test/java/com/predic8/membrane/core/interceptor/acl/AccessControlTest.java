@@ -24,8 +24,6 @@ import org.junit.jupiter.params.provider.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.acl.rules.AccessRule.allow;
-import static com.predic8.membrane.core.interceptor.acl.rules.AccessRule.deny;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -210,5 +208,17 @@ class AccessControlTest {
         var ad = allow(cidr).apply(IpAddress.parse(ipAddress));
         assertTrue(ad.isPresent());
         assertTrue(ad.get().permitted());
+    }
+
+    private static Allow allow(String target) {
+        var allow = new Allow();
+        allow.setTarget(target);
+        return allow;
+    }
+
+    private static Deny deny(String target) {
+        var deny = new Deny();
+        deny.setTarget(target);
+        return deny;
     }
 }

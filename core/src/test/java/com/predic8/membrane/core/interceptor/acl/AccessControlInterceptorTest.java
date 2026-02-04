@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.interceptor.acl;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.acl.rules.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.*;
@@ -25,10 +24,8 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.acl.rules.AccessRule.allow;
-import static com.predic8.membrane.core.interceptor.acl.rules.AccessRule.deny;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -173,5 +170,17 @@ class AccessControlInterceptorTest {
 
         assertEquals(ABORT, i.handleRequest(exc("1.2.3.4")));
         verify(dns, times(1)).getCanonicalHostName(any(InetAddress.class));
+    }
+
+    private static Allow allow(String target) {
+        var allow = new Allow();
+        allow.setTarget(target);
+        return allow;
+    }
+
+    private static Deny deny(String target) {
+        var deny = new Deny();
+        deny.setTarget(target);
+        return deny;
     }
 }

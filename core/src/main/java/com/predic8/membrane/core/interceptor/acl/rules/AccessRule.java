@@ -38,19 +38,6 @@ public abstract class AccessRule {
 
     abstract boolean permitPeer();
 
-    public static Allow allow(String target) {
-        var allow = new Allow();
-        allow.setTarget(target);
-        return allow;
-    }
-
-    public static Deny deny(String target) {
-        var deny = new Deny();
-        deny.setTarget(target);
-        return deny;
-    }
-
-
     /**
      * @description The IPv4, IPv6 or hostname regex pattern
      * @example "127.0.0.1/24" or "^local.*$"
