@@ -18,7 +18,6 @@ import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
 
 import java.util.*;
-import java.util.regex.*;
 
 import static com.predic8.membrane.core.util.SecurityUtils.*;
 
@@ -68,7 +67,7 @@ public class StaticUserDataProvider implements UserDataProvider {
             try {
                 return createPasswdCompatibleHash(AlgoSalt.from(userAttributes.getPassword()), postDataPassword);
             } catch (Exception e) {
-                log.debug("",e);
+                log.debug("", e);
                 throw new RuntimeException(e);
             }
         }
@@ -170,13 +169,11 @@ public class StaticUserDataProvider implements UserDataProvider {
         this.usersByName = usersByName;
     }
 
-    /**
-     * TODO Both methods setUsers and init populate usersByName from the users list. If setUsers() is called before init(), the map will be populated twice with the same entries.
-     * @param router
-     */
     @Override
     public void init(Router router) {
-        for (User user : users)
-            getUsersByName().put(user.getUsername(), user);
+        if (usersByName.isEmpty()) {
+            for (User user : users)
+                getUsersByName().put(user.getUsername(), user);
+        }
     }
 }

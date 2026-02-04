@@ -58,8 +58,10 @@ public class SecurityUtils {
     public record AlgoSalt(String algo, String salt) {
         public static AlgoSalt from(String userHash) {
             String[] userHashSplit = userHash.split(Pattern.quote("$"));
-            if (userHashSplit.length < 3) {
-                throw new IllegalArgumentException("Invalid hash format: %s at least 3 dollar separated parts required, got: %d".formatted(userHash, userHashSplit.length));
+            if (userHashSplit.length != 4 || !userHashSplit[0].isEmpty() || userHashSplit[3].isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Invalid hash format: %s (expected $<algo>$<salt>$<hash>)".formatted(userHash)
+                );
             }
             return new AlgoSalt(userHashSplit[1], userHashSplit[2]);
         }

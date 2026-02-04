@@ -14,13 +14,13 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
 
 import javax.sql.*;
 import java.sql.*;
 import java.util.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.util.SecurityUtils.*;
 
@@ -49,11 +49,19 @@ public class JdbcUserDataProvider implements UserDataProvider {
         }
     }
 
+    /**
+     * As we can't use prepared statement parameters for table- and columnnames so we have to sanitize the user input here.
+     */
     private void sanitizeUserInputs() {
-        // As we can't use prepared statement parameters for table- and columnnames so we have to sanitize the user input here.
-        // After this method it is assumed that user input is save to use
+        if (tableName == null || userColumnName == null || passwordColumnName == null)
+            throw new IllegalArgumentException("Table and column names must be set.");
 
-        // TODO sanitize inputs here
+        String identifierPattern = "^[A-Za-z0-9_]+$";
+        if (!tableName.matches(identifierPattern)
+            || !userColumnName.matches(identifierPattern)
+            || !passwordColumnName.matches(identifierPattern)) {
+            throw new IllegalArgumentException("Table/column names must be alphanumeric/underscore.");
+        }
     }
 
     private void createTableIfNeeded() throws SQLException {
@@ -76,8 +84,15 @@ public class JdbcUserDataProvider implements UserDataProvider {
         if (datasource != null)
             return;
 
-        Map<String, DataSource> beans = router.getBeanFactory().getBeansOfType(DataSource.class);
+        if (router.getRegistry() != null) {
+            var ds = router.getRegistry().getBean(DataSource.class).get();
+            if (ds == null)
+                throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
+            datasource = ds;
+            return;
+        }
 
+        Map<String, DataSource> beans = router.getBeanFactory().getBeansOfType(DataSource.class);
         DataSource[] datasources = beans.values().toArray(new DataSource[0]);
         if (datasources.length > 0)
             datasource = datasources[0];
@@ -98,6 +113,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
         Map<String, String> result = new HashMap<>();
         try (var con = datasource.getConnection();
              var preparedStatement = con.prepareStatement(createGetUsersSql())) {
+            preparedStatement.setString(1, username);
             try (var rs = preparedStatement.executeQuery()) {
                 var rsmd = rs.getMetaData();
                 while (rs.next()) {

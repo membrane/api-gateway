@@ -130,6 +130,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
     public void setUsers(List<User> users) {
         if (userDataProvider instanceof StaticUserDataProvider sud) {
              sud.setUsers(users);
+             return;
         }
         throw new UnsupportedOperationException("setUsers is not implemented for this userDataProvider.");
     }

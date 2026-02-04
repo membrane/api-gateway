@@ -289,7 +289,7 @@ class FileUserDataProviderTest {
     }
 
     @Test
-    void testPasswordWithColons() throws IOException {
+    void passwordWithColons() throws IOException {
         // Manually create entry with colon in hash (tests current split behavior)
         Path htpasswdFile = tempDir.resolve("colon.htpasswd");
         Files.writeString(htpasswdFile, "user:$6$salt$hash:with:colons\n");
@@ -299,8 +299,8 @@ class FileUserDataProviderTest {
 
         FileUserDataProvider.User user = provider.getUsersByName().get("user");
         assertNotNull(user);
-        // Current implementation uses split(":") which will break on colons in hash
-        // This documents the bug
+        // Verifies that the split limit preserves colons in the hash.
+        assertEquals("$6$salt$hash:with:colons", user.getPassword());
     }
 
     @Test
