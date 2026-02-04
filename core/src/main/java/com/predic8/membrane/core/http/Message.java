@@ -38,7 +38,10 @@ public abstract class Message {
 
 	protected Header header;
 
-	protected AbstractBody body;
+	/**
+	 * The body should never be null.
+	 */
+	protected AbstractBody body = new EmptyBody();
 
 	protected String version = "1.1";
 
@@ -48,7 +51,6 @@ public abstract class Message {
 
 	public Message() {
 		header = new Header();
-		body = new EmptyBody();
 	}
 
 	/**
