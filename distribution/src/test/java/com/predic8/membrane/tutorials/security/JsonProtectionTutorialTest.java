@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.tutorials.security;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.JSON;
-import static org.hamcrest.Matchers.equalTo;
+import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
+import static org.hamcrest.Matchers.*;
 
 public class JsonProtectionTutorialTest extends AbstractSecurityTutorialTest {
 
@@ -48,7 +48,21 @@ public class JsonProtectionTutorialTest extends AbstractSecurityTutorialTest {
             .post("http://localhost:2000")
         .then()
             .statusCode(400)
-            .body("title", equalTo("JSON protection"));
+            .body("title", equalTo("JSON Protection Violation"));
         // @formatter:on
+    }
+
+
+    @Test
+    void acceptsValidPayload() {
+        // `@formatter`:off
+        given()
+            .contentType(JSON)
+            .body("{\"a\":1}")
+        .when()
+            .post("http://localhost:2000")
+        .then()
+            .statusCode(200);
+        // `@formatter`:on
     }
 }

@@ -22,9 +22,7 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import org.checkerframework.common.returnsreceiver.qual.*;
 import org.slf4j.*;
-import org.springframework.beans.factory.parsing.*;
 
 import java.io.*;
 import java.util.*;
@@ -212,8 +210,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                     break;
                 case ID_START_ARRAY:
                     depth++;
-                    if (depth > maxArraySize)
-                        throw new JsonProtectionException("Exceeded maxArraySize.",
+                    if (depth > maxDepth)
+                        throw new JsonProtectionException("Exceeded maxDepth.",
                                                             parser.currentLocation().getLineNr(),
                                                             parser.currentLocation().getColumnNr());
                     contexts.add(currentContext = new ArrContext());
@@ -267,7 +265,7 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     /**
      * @description Overwrites default error reporting behaviour. If set to true, errors will provide ProblemDetails body,
      * if set to false, errors will throw exceptions resulting in 400 Bad Request responses without any details.
-     * @default true
+     * @default Depends on production configuration. In production mode default is false otherwise true.
      * @param reportError
      */
     @MCAttribute

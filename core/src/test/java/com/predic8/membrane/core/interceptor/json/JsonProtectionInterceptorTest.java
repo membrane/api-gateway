@@ -49,8 +49,8 @@ public class JsonProtectionInterceptorTest {
         return jpi;
     }
 
-    @BeforeAll
-    public static void init() {
+    @BeforeEach
+    public void setup() {
         jpiProd = buildJPI(true);
         jpiDev = buildJPI(false);
     }
@@ -115,6 +115,19 @@ public class JsonProtectionInterceptorTest {
                 RETURN,
                 1,
                 52,
+                "Exceeded maxDepth.");
+    }
+
+    @Test
+    void tooDeepArray() throws Exception {
+        // Prevent from kicking in
+        jpiDev.setMaxArraySize(1000);
+        jpiProd.setMaxArraySize(1000);
+
+        send(repeat("[", 11) + "1" + repeat("]", 11),
+                RETURN,
+                1,
+                12,
                 "Exceeded maxDepth.");
     }
 
@@ -240,8 +253,8 @@ public class JsonProtectionInterceptorTest {
                 "__proto__ found as key.");
     }
 
-    private void send(String body, Outcome expectOut, Object ...parameters) throws Exception {
-        Exchange exc = new Request.Builder()
+    private void send(String body, Outcome expectOut, Object... parameters) throws Exception {
+        var exc = Request
                 .post("/")
                 .contentType(APPLICATION_JSON)
                 .body(body)
@@ -259,15 +272,10 @@ public class JsonProtectionInterceptorTest {
 
             assertEquals(expectOut, jpiDev.handleRequest(exc));
 
-            System.out.println("exc.getResponse() = " + exc.getResponse());
-
-            ProblemDetails pd = parse(exc.getResponse());
-
-            System.out.println("pd = " + pd);
-
+            var pd = parse(exc.getResponse());
             assertTrue(pd.getDetail().contains(parameters[2].toString()));
             assertEquals("JSON Protection Violation", pd.getTitle());
-            assertEquals(parameters[0],pd.getInternal().get("line"));
+            assertEquals(parameters[0], pd.getInternal().get("line"));
             assertEquals(parameters[1], pd.getInternal().get("column"));
         }
     }
