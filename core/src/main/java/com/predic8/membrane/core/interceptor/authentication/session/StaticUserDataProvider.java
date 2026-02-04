@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.router.*;
+import org.slf4j.*;
 
 import java.util.*;
 import java.util.regex.*;
@@ -39,6 +40,8 @@ import static com.predic8.membrane.core.util.SecurityUtils.*;
 @MCElement(name = "staticUserDataProvider")
 public class StaticUserDataProvider implements UserDataProvider {
 
+    private static final Logger log = LoggerFactory.getLogger(StaticUserDataProvider.class.getName());
+
     private List<User> users = new ArrayList<>();
     private Map<String, User> usersByName = new HashMap<>();
 
@@ -47,9 +50,6 @@ public class StaticUserDataProvider implements UserDataProvider {
         String username = postData.get("username");
         if (username == null)
             throw new NoSuchElementException();
-
-        if (username.equals("error"))
-            throw new RuntimeException();
 
         User userAttributes = getUsersByName().get(username);
         if (userAttributes == null)
@@ -68,17 +68,11 @@ public class StaticUserDataProvider implements UserDataProvider {
             try {
                 return createPasswdCompatibleHash(AlgoSalt.from(userAttributes.getPassword()), postDataPassword);
             } catch (Exception e) {
-                throw new RuntimeException(e.getMessage());
+                log.debug("",e);
+                throw new RuntimeException(e);
             }
         }
         return postDataPassword;
-    }
-
-    public record AlgoSalt(String algo, String salt) {
-        public static AlgoSalt from(String userHash) {
-            String[] userHashSplit = userHash.split(Pattern.quote("$"));
-            return new AlgoSalt(userHashSplit[1], userHashSplit[2]);
-        }
     }
 
     @MCElement(name = "user", component = false, id = "staticUserDataProvider-user")
@@ -176,6 +170,10 @@ public class StaticUserDataProvider implements UserDataProvider {
         this.usersByName = usersByName;
     }
 
+    /**
+     * TODO Both methods setUsers and init populate usersByName from the users list. If setUsers() is called before init(), the map will be populated twice with the same entries.
+     * @param router
+     */
     @Override
     public void init(Router router) {
         for (User user : users)

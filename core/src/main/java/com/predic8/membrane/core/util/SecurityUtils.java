@@ -14,11 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.interceptor.authentication.session.*;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import org.apache.commons.codec.digest.*;
 
-import java.security.*;
 import java.util.regex.*;
 
 public class SecurityUtils {
@@ -51,10 +48,20 @@ public class SecurityUtils {
     }
 
     public static String extractMagicString(String password) {
-        try{
+        try {
             return password.split(Pattern.quote("$"))[1];
         } catch (Exception e) {
             throw new RuntimeException("Password must be in hash notation", e);
+        }
+    }
+
+    public record AlgoSalt(String algo, String salt) {
+        public static AlgoSalt from(String userHash) {
+            String[] userHashSplit = userHash.split(Pattern.quote("$"));
+            if (userHashSplit.length < 3) {
+                throw new IllegalArgumentException("Invalid hash format: %s at least 3 dollar separated parts required, got: %d".formatted(userHash, userHashSplit.length));
+            }
+            return new AlgoSalt(userHashSplit[1], userHashSplit[2]);
         }
     }
 }

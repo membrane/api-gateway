@@ -60,6 +60,7 @@ PRIO 3:
   - Language is case sensitive: e.g. language: SPEL is not valid according to the Schema and produces: TB
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
+- Refactor: File-, JDBC-, LDAP- and StaticUserProvider
 
 ## Breaking Changes
 

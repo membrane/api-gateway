@@ -91,33 +91,18 @@ public class StaticUserDataProviderTest {
     }
 
     @Test
-    void verifyWithErrorUsername() {
-        // Given
-        User user = new User("error", "secret");
-        provider.setUsers(List.of(user));
-
-        Map<String, String> postData = Map.of(
-                "username", "error",
-                "password", "secret"
-        );
-
-        // When & Then
-        assertThrows(RuntimeException.class, () -> provider.verify(postData));
-    }
-
-    @Test
     void verifyWithHashedPassword() {
         // Given - SHA-512 hash format: $6$salt$hash
-        provider.setUsers(List.of(new User("alice", "$6$somesalt$hashedvalue")));
+        provider.setUsers(List.of(new User("alice", "$6$somesalt$12345678901234567890abcdef")));
+
 
         Map<String, String> postData = Map.of(
                 "username", "alice",
                 "password", "plaintext"
         );
 
-        // When & Then
-        // This will throw RuntimeException because createPasswdCompatibleHash needs valid hash
-        assertThrows(RuntimeException.class, () -> provider.verify(postData));
+        // When & Then - Should fail because plaintext doesn't match the hash
+        assertThrows(NoSuchElementException.class, () -> provider.verify(postData));
     }
 
     @Test

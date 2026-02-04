@@ -7,10 +7,13 @@
 #      curl localhost:2000
 #
 #   2) Valid credentials (plain text password)
-#      curl -u alice:qwertz localhost:2000
+#      curl -u alice localhost:2000    # enter password: qwertz
 #
 #   3) Valid credentials (hashed password)
-#      curl -u carol:abc123 localhost:2000
+#      curl -u carol localhost:2000    # enter password: abc123
+#
+# NOTE: Plaintext passwords are for tutorial/demo use only.
+# In production, prefer hashed passwords for all users.
 
 api:
   port: 2000

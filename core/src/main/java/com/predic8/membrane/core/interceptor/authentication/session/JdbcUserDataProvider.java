@@ -13,26 +13,22 @@
 
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import com.predic8.membrane.core.router.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
+import org.slf4j.*;
 
-import javax.sql.DataSource;
+import javax.sql.*;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 import static com.predic8.membrane.core.util.SecurityUtils.*;
-import static com.predic8.membrane.core.util.SecurityUtils.isHashedPassword;
 
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {
-    private static final Logger log = LoggerFactory.getLogger(JdbcUserDataProvider.class.getName());
+
+    private static final Logger log = LoggerFactory.getLogger(JdbcUserDataProvider.class);
+
     private DataSource datasource;
     private String tableName;
     private String userColumnName;
@@ -49,7 +45,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
         try {
             createTableIfNeeded(); // @todo: works with postgres but prints stacktrace and warning
         } catch (SQLException e) {
-            log.warn("Error creating table.",e);
+            log.warn("Error creating table.", e);
         }
     }
 
@@ -69,11 +65,11 @@ public class JdbcUserDataProvider implements UserDataProvider {
 
     private String getCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS " + getTableName() + "(" +
-                "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
-                getUserColumnName() + " varchar NOT NULL, " +
-                getPasswordColumnName() + " varchar NOT NULL, " +
-                "verified boolean NOT NULL DEFAULT false" +
-                ");";
+               "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
+               getUserColumnName() + " varchar NOT NULL, " +
+               getPasswordColumnName() + " varchar NOT NULL, " +
+               "verified boolean NOT NULL DEFAULT false" +
+               ");";
     }
 
     private void getDatasourceIfNull() {
@@ -99,31 +95,28 @@ public class JdbcUserDataProvider implements UserDataProvider {
         if (password == null)
             throw new NoSuchElementException();
 
-        Map<String, String> result = null;
-        try {
-            var con = datasource.getConnection();
-            var preparedStatement = con.prepareStatement(createGetUsersSql());
-            preparedStatement.setString(1, username);
-
-            ResultSet rs = preparedStatement.executeQuery();
-            ResultSetMetaData rsmd = rs.getMetaData();
-
-            result = new HashMap<>();
-            while (rs.next()) for (int i = 1; i <= rsmd.getColumnCount(); i++)
-                result.put(rsmd.getColumnName(i).toLowerCase(), rs.getObject(i).toString());
-
-            rs.close();
-            preparedStatement.close();
-            con.close();
-
+        Map<String, String> result = new HashMap<>();
+        try (var con = datasource.getConnection();
+             var preparedStatement = con.prepareStatement(createGetUsersSql())) {
+            try (var rs = preparedStatement.executeQuery()) {
+                var rsmd = rs.getMetaData();
+                while (rs.next()) {
+                    for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                        var value = rs.getObject(i);
+                        if (value != null) {
+                            result.put(rsmd.getColumnName(i).toLowerCase(), value.toString());
+                        }
+                    }
+                }
+            }
         } catch (SQLException e) {
-            log.error(e.getMessage(),e);
+            log.error(e.getMessage(), e);
         }
 
-        if (result != null && !result.isEmpty()) {
+        if (!result.isEmpty()) {
             String passwordFromDB = result.get(getPasswordColumnName().toLowerCase());
             if (!isHashedPassword(password) && isHashedPassword(passwordFromDB))
-                password = createPasswdCompatibleHash(new AlgoSalt(extractMagicString(passwordFromDB),extractSalt(passwordFromDB)) , password);
+                password = createPasswdCompatibleHash(new AlgoSalt(extractMagicString(passwordFromDB), extractSalt(passwordFromDB)), password);
             if (username.equals(result.get(getUserColumnName().toLowerCase())) && password.equals(passwordFromDB))
                 return result;
         }

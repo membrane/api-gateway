@@ -120,7 +120,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
         if (userDataProvider instanceof StaticUserDataProvider sud) {
             return sud.getUsers();
         }
-        throw new UnsupportedOperationException("getUsers not implemented for this userDataProvider.");
+        throw new UnsupportedOperationException("getUsers is not implemented for this userDataProvider.");
     }
 
     /**
@@ -128,7 +128,10 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
      */
     @MCChildElement(order = 20)
     public void setUsers(List<User> users) {
-        ((StaticUserDataProvider) userDataProvider).setUsers(users);
+        if (userDataProvider instanceof StaticUserDataProvider sud) {
+             sud.setUsers(users);
+        }
+        throw new UnsupportedOperationException("setUsers is not implemented for this userDataProvider.");
     }
 
     public UserDataProvider getUserDataProvider() {

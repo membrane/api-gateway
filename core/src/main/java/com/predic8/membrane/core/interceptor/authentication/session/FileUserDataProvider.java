@@ -13,27 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.router.*;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.util.SecurityUtils.createPasswdCompatibleHash;
+import static com.predic8.membrane.core.util.SecurityUtils.*;
 
 /**
  * @description A <i>user data provider</i> utilizing htpasswd formatted files.
  * @explanation <p>
- *              the <i>fileuserdataprovider</i> can be used to source authentication data from htpasswd files.
- *              </p>
- *              <p>
- *              The files can only utilize algorithm magic strings supported by <i>crypt(3)</i>.
- *              </p>
+ * the <i>fileuserdataprovider</i> can be used to source authentication data from htpasswd files.
+ * </p>
+ * <p>
+ * The files can only utilize algorithm magic strings supported by <i>crypt(3)</i>.
+ * </p>
  */
-@MCElement(name="fileUserDataProvider")
+@MCElement(name = "fileUserDataProvider")
 public class FileUserDataProvider implements UserDataProvider {
     private final Map<String, User> usersByName = new HashMap<>();
 
@@ -47,7 +45,9 @@ public class FileUserDataProvider implements UserDataProvider {
         this.htpasswdPath = path;
     }
 
-    public String getHtpasswdPath() { return this.htpasswdPath; }
+    public String getHtpasswdPath() {
+        return this.htpasswdPath;
+    }
 
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
@@ -60,11 +60,7 @@ public class FileUserDataProvider implements UserDataProvider {
             throw new NoSuchElementException();
         String pw;
         String postDataPassword = postData.get("password");
-        String userHash = userAttributes.getPassword();
-        String[] userHashSplit = userHash.split("\\$");
-        String salt = userHashSplit[2];
-        String algo = userHashSplit[1];
-        pw = createPasswdCompatibleHash(new AlgoSalt(algo,salt), postDataPassword);
+        pw = createPasswdCompatibleHash(AlgoSalt.from(userAttributes.getPassword()), postDataPassword);
         String pw2;
         pw2 = userAttributes.getPassword();
         if (pw2 == null || !pw2.equals(pw))
@@ -75,7 +71,7 @@ public class FileUserDataProvider implements UserDataProvider {
     public static class User {
         final Map<String, String> attributes = new HashMap<>();
 
-        public User(String username, String password){
+        public User(String username, String password) {
             setUsername(username);
             setPassword(password);
         }
@@ -118,7 +114,7 @@ public class FileUserDataProvider implements UserDataProvider {
             throw new RuntimeException(e);
         }
         for (String line : lines) {
-            String[] parts = line.split(":");
+            String[] parts = line.split(":", 2);  // FIX: limit to 2 parts
             if (parts.length == 2) {
                 User user = new User(parts[0], parts[1]);
                 getUsersByName().put(user.getUsername(), user);
