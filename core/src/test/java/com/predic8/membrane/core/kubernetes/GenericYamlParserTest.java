@@ -182,11 +182,10 @@ public class GenericYamlParserTest {
                         """
                         flow:
                           - setCookies:
-                              cookies:
-                                - cookie:
-                                    name: foo
-                                    value: bar
-                                    secure: false
+                            - cookie:
+                                name: foo
+                                value: bar
+                                secure: false
                         """,
                         a -> {
                             SetCookiesInterceptor.CookieDef c = ((SetCookiesInterceptor) a.getFlow().getFirst()).getCookies().getFirst();

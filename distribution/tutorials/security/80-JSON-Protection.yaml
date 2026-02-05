@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: JSON Protection
+#
+# Rejects JSON payloads that look suspicious or are too expensive to parse.
+# This helps against denial of service attempts (deep nesting, huge arrays, many tokens)
+# and blocks prototype pollution keys like "__proto__".
+#
+# Try it (each request should be rejected):
+#
+# 1.) Depth
+#     curl -H 'Content-Type: application/json' -d '{"a":{"b":{"c":{"d":1}}}}' localhost:2000
+#
+# 2.) Key Length
+#     curl -H 'Content-Type: application/json' -d '{"abcdefghijk": 0 }' localhost:2000
+#
+# 3.) Object Size
+#     curl -H 'Content-Type: application/json' -d '{"a":1,"b":2,"c":3,"d":4}' localhost:2000
+#
+# 4.) Number of Tokens
+#     curl -H 'Content-Type: application/json' -d '{"a":[1,2],"b":[1,2],"c":[1,2]}' localhost:2000
+#
+# 5.) String Length
+#     curl -H 'Content-Type: application/json' -d '{"a": "12345678901" }' localhost:2000
+#
+# 6.) Array Size
+#     curl -H 'Content-Type: application/json' -d '{"a":[1,2,3,4,5,6,7,8,9,10]}' localhost:2000
+#
+# 7.) Prototype Pollution
+#     curl -H 'Content-Type: application/json' -d '{"__proto__":{"a":1}}' localhost:2000
+#
+# 8.) Duplicated Keys
+#     curl -H 'Content-Type: application/json' -d '{"a":1,"a":2}' localhost:2000
+#
+# Reference: https://www.membrane-api.io/docs/current/jsonProtection.html
+
+api:
+  port: 2000
+  flow:
+    - jsonProtection:
+        maxDepth: 3         # Max. depth of a nested JSON structure
+        maxKeyLength: 5     # Max. length of a key, e.g. {"abcdefghijk": 0 }
+        maxObjectSize: 3    # Max. number of attributes in an object
+        maxTokens: 10       # Rough complexity limit ({"a":"b"} counts as 3)
+        maxStringLength: 10 # Max. length of a string
+        maxArraySize: 2     # Max. number of elements in an array
+        reportError: true   # Return a detailed error response
+    - return:
+        status: 200

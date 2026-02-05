@@ -34,7 +34,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  *              Useful for enriching responses with configurable cookies directly at gateway level without backend involvement.
  * @topic 6. Misc
  */
-@MCElement(name = "setCookies")
+@MCElement(name = "setCookies", noEnvelope = true)
 public class SetCookiesInterceptor extends AbstractInterceptor {
 
     /**
@@ -67,7 +67,7 @@ public class SetCookiesInterceptor extends AbstractInterceptor {
      * @description Holder for a single cookie's attributes.
      */
     @SuppressWarnings("unused")
-    @MCElement(name = "cookie")
+    @MCElement(name = "cookie", component = false)
     public static class CookieDef {
         private String domain;
         private String path = "/";
