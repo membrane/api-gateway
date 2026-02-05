@@ -13,25 +13,37 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.router.*;
 
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 import static com.predic8.membrane.core.util.SecurityUtils.*;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 
 /**
- * @description A <i>user data provider</i> utilizing htpasswd formatted files.
- * @explanation <p>
- * the <i>fileuserdataprovider</i> can be used to source authentication data from htpasswd files.
+ * @description A <i>user data provider</i> utilizing <code>htpasswd</code>-style files.
+ * <p>
+ *   The <i>fileUserDataProvider</i> loads users from a file in the format
+ *   <code>username:hash</code> (one entry per line).
  * </p>
  * <p>
- * The files can only utilize algorithm magic strings supported by <i>crypt(3)</i>.
+ *   Supported hash formats are <i>crypt(3)</i>-style hashes
+ *   (<code>$&lt;id&gt;$&lt;salt&gt;$&lt;hash&gt;</code>, optionally including <code>rounds=&lt;n&gt;</code>)
+ *   and bcrypt hashes (<code>$2a$</code>, <code>$2b$</code>, <code>$2y$</code>).
+ *   The Apache <code>$apr1$...</code> format is not supported.
  * </p>
  */
-@MCElement(name = "fileUserDataProvider")
+@MCElement(name="fileUserDataProvider")
 public class FileUserDataProvider implements UserDataProvider {
     private final Map<String, User> usersByName = new HashMap<>();
 
@@ -45,33 +57,24 @@ public class FileUserDataProvider implements UserDataProvider {
         this.htpasswdPath = path;
     }
 
-    public String getHtpasswdPath() {
-        return this.htpasswdPath;
-    }
+    public String getHtpasswdPath() { return this.htpasswdPath; }
 
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
         String username = postData.get("username");
-        if (username == null)
-            throw new NoSuchElementException();
-        User userAttributes;
-        userAttributes = getUsersByName().get(username);
-        if (userAttributes == null)
-            throw new NoSuchElementException();
-        String pw;
-        String postDataPassword = postData.get("password");
-        pw = createPasswdCompatibleHash(AlgoSalt.from(userAttributes.getPassword()), postDataPassword);
-        String pw2;
-        pw2 = userAttributes.getPassword();
-        if (pw2 == null || !pw2.equals(pw))
-            throw new NoSuchElementException();
+        if (username == null) throw new NoSuchElementException();
+
+        User userAttributes = getUsersByName().get(username);
+        if (userAttributes == null) throw new NoSuchElementException();
+
+        verifyLoginOrThrow(postData, userAttributes.getPassword());
         return userAttributes.getAttributes();
     }
 
     public static class User {
         final Map<String, String> attributes = new HashMap<>();
 
-        public User(String username, String password) {
+        public User(String username, String password){
             setUsername(username);
             setPassword(password);
         }

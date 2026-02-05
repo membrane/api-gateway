@@ -16,12 +16,20 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.interceptor.authentication.SecurityUtils;
+import com.predic8.membrane.core.router.Router;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.*;
 import java.sql.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.SecurityUtils.*;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.verifyPassword;
 
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {
@@ -44,7 +52,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
         try {
             createTableIfNeeded(); // @todo: works with postgres but prints stacktrace and warning
         } catch (SQLException e) {
-            log.warn("Error creating table.", e);
+            log.warn("Error creating table.",e);
         }
     }
 
@@ -72,11 +80,11 @@ public class JdbcUserDataProvider implements UserDataProvider {
 
     private String getCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS " + getTableName() + "(" +
-               "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
-               getUserColumnName() + " varchar NOT NULL, " +
-               getPasswordColumnName() + " varchar NOT NULL, " +
-               "verified boolean NOT NULL DEFAULT false" +
-               ");";
+                "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
+                getUserColumnName() + " varchar NOT NULL, " +
+                getPasswordColumnName() + " varchar NOT NULL, " +
+                "verified boolean NOT NULL DEFAULT false" +
+                ");";
     }
 
     private void getDatasourceIfNull() {
@@ -107,8 +115,9 @@ public class JdbcUserDataProvider implements UserDataProvider {
             throw new NoSuchElementException();
 
         String password = postData.get("password");
-        if (password == null)
-            throw new NoSuchElementException();
+        if (password == null) throw new NoSuchElementException();
+
+        SecurityUtils.requirePlaintextPasswordInput(password);
 
         Map<String, String> result = new HashMap<>();
         try (var con = datasource.getConnection();
@@ -129,12 +138,11 @@ public class JdbcUserDataProvider implements UserDataProvider {
             log.error(e.getMessage(), e);
         }
 
-        if (!result.isEmpty()) {
-            String passwordFromDB = result.get(getPasswordColumnName().toLowerCase());
-            if (!isHashedPassword(password) && isHashedPassword(passwordFromDB))
-                password = createPasswdCompatibleHash(new AlgoSalt(extractMagicString(passwordFromDB), extractSalt(passwordFromDB)), password);
-            if (username.equals(result.get(getUserColumnName().toLowerCase())) && password.equals(passwordFromDB))
+
+        if (result != null && !result.isEmpty()) {
+            if (username.equals(result.get(getUserColumnName().toLowerCase())) && verifyPassword(password, result.get(getPasswordColumnName().toLowerCase()))) {
                 return result;
+            }
         }
 
         throw new NoSuchElementException();
