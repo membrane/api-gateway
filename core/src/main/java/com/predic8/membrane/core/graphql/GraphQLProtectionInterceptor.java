@@ -17,18 +17,15 @@ package com.predic8.membrane.core.graphql;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.graphql.blocklist.FeatureBlocklist;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.graphql.blocklist.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.text.*;
 import org.slf4j.*;
 
 import java.security.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.http.Request.METHOD_GET;
-import static com.predic8.membrane.core.http.Request.METHOD_POST;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.text.TextUtil.*;
 
@@ -53,7 +50,7 @@ import static com.predic8.membrane.core.util.text.TextUtil.*;
 @MCElement(name = "graphQLProtection")
 public class GraphQLProtectionInterceptor extends AbstractInterceptor {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GraphQLProtectionInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(GraphQLProtectionInterceptor.class);
 
     private boolean allowExtensions = false;
     private List<String> allowedMethods = Lists.newArrayList("GET", "POST");
@@ -85,8 +82,12 @@ public class GraphQLProtectionInterceptor extends AbstractInterceptor {
     }
 
     private Outcome error(Exchange exc, GraphQLOverHttpValidationException e) {
-        LOG.warn(e.getMessage());
-        exc.setResponse(Response.badRequest().status(e.getStatusCode()).build());
+        log.info(e.getMessage());
+        user(router.getConfiguration().isProduction(), "graphql-protection")
+                .status(e.getStatusCode())
+                .title("GraphQL protection violation")
+                .detail(e.getMessage())
+                .buildAndSetResponse(exc);
         return RETURN;
     }
 
