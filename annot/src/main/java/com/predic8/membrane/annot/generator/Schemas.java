@@ -164,20 +164,16 @@ public class Schemas {
 
 	private void assembleDocumentation(Writer w, AbstractJavadocedInfo aji) throws IOException {
 		Doc doc = aji.getDoc(processingEnv);
-
-		String id = null;
-		if (aji instanceof ElementInfo ei) {
-			id = ei.getId();
-		}
-		if (id != null) {
-			w.append("<xsd:appinfo><id>")
-                .append(xmlEscape(id))
-                .append("</id></xsd:appinfo>\r\n");
-		}
-
-		if (doc == null) return;
-
+		if (doc == null)
+			return;
 		w.append("<xsd:annotation>\r\n");
+		if(aji instanceof ElementInfo ei && ei.getId() != null) {
+			w.append("<xsd:appinfo>\r\n");
+			w.append("<xsd:id>\r\n");
+			w.append(xmlEscape(ei.getId()));
+			w.append("</xsd:id>\r\n");
+			w.append("</xsd:appinfo>\r\n");
+		}
 		w.append("<xsd:documentation>");
 		for (Entry e : doc.getEntries()) {
 			w.append(xmlEscape("<h3><b>"));
