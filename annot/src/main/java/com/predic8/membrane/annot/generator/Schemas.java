@@ -167,6 +167,13 @@ public class Schemas {
 		if (doc == null)
 			return;
 		w.append("<xsd:annotation>\r\n");
+		if(aji instanceof ElementInfo ei && ei.getId() != null) {
+			w.append("<xsd:appinfo>\r\n");
+			w.append("<xsd:id>\r\n");
+			w.append(xmlEscape(ei.getId()));
+			w.append("</xsd:id>\r\n");
+			w.append("</xsd:appinfo>\r\n");
+		}
 		w.append("<xsd:documentation>");
 		for (Entry e : doc.getEntries()) {
 			w.append(xmlEscape("<h3><b>"));
