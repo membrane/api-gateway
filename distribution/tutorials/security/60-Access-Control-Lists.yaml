@@ -49,8 +49,9 @@ api:
         - deny: 127.0.0.0/24
         - deny: ::1
         - deny: localhost
-        - allow: 0.0.0.0/0   # Any IPv4
-        - allow: ::/0        # Any IPv6
+        - deny: '.*\.predic8\.de' # Hostname regex pattern
+        - allow: 0.0.0.0/0        # Any IPv4
+        - allow: ::/0             # Any IPv6
     - static:
         src: Allowed (no locals)
     - return:
