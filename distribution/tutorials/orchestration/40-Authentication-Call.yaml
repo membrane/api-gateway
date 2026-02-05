@@ -55,13 +55,12 @@ api:
   flow:
     # Place authentication here: Basic, API key, OAuth2, ...
     - response:
-      - setCookies:
-          cookies:
+        - setCookies:
             - cookie:
                 name: SESSION
                 value: akj34
-      - log:
-          message: Login successful. Issue SESSION cookie.
+        - log:
+            message: Login successful. Issue SESSION cookie.
     - return:
         status: 200
 ---
@@ -71,15 +70,15 @@ api:
   name: Target API
   flow:
     - request:
-      - log:
-          message: "Session: ${cookie.SESSION}"
-      - if:
-          test: cookie.SESSION != 'akj34'
-          flow:
-            - return:
-                status: 401
+        - log:
+            message: "Session: ${cookie.SESSION}"
+        - if:
+            test: cookie.SESSION != 'akj34'
+            flow:
+              - return:
+                  status: 401
     - response:
-      - static:
-          src: Success!
+        - static:
+            src: Success!
     - return:
         status: 200
