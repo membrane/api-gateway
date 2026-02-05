@@ -36,7 +36,29 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.EnumSet.*;
 
 /**
- * Enforces JSON restrictions in requests.
+ * @description <p>Enforces restrictions on JSON request bodies to protect against JSON-based attacks and resource exhaustion.
+ * Validates against configurable limits to prevent attacks such as:</p>
+ * <ul>
+ *   <li>Deeply nested JSON structures (billion laughs attack)</li>
+ *   <li>Memory exhaustion from oversized payloads</li>
+ *   <li>Prototype pollution via __proto__ keys in JavaScript backends</li>
+ *   <li>Duplicate key attacks</li>
+ * </ul>
+ *
+ * @yaml
+ * <pre><code>
+ * - jsonProtection:
+ *     maxDepth: 20
+ *     maxKeyLength: 50
+ *     maxObjectSize: 100
+ *     maxTokens: 1000
+ *     maxStringLength: 1000
+ *     maxArraySize: 100
+ *     maxSize: 10000
+ *     blockProto: true
+ *     reportError: true
+ * </code></pre>
+ *
  * @topic 3. Security and Validation
  */
 @SuppressWarnings("unused")
@@ -188,8 +210,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
                     break;
                 case ID_START_ARRAY:
                     depth++;
-                    if (depth > maxArraySize)
-                        throw new JsonProtectionException("Exceeded maxArraySize.",
+                    if (depth > maxDepth)
+                        throw new JsonProtectionException("Exceeded maxDepth.",
                                                             parser.currentLocation().getLineNr(),
                                                             parser.currentLocation().getColumnNr());
                     contexts.add(currentContext = new ArrContext());
@@ -242,8 +264,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
 
     /**
      * @description Overwrites default error reporting behaviour. If set to true, errors will provide ProblemDetails body,
-     * if set to false, errors will throw standard exceptions.
-     * @default null
+     * if set to false, errors will throw exceptions resulting in 400 Bad Request responses without any details.
+     * @default Depends on production configuration. In production mode default is false otherwise true.
      * @param reportError
      */
     @MCAttribute
@@ -360,8 +382,8 @@ public class JsonProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Maximum size of JSON objects. For example, <code>{"a": {"b":"c", "d": "e"}, "f": "g"}</code> has a
-     * maximum object size of 2. (In this example, both objects effectively have a size of 2.)
+     * @description Maximum size of JSON arrays. For example, <code>[[1,2],[3,4,5]]</code> has a
+     * array size of 2. The nested arrays have sizes of 2 and 3.
      * @default 1000
      * @param maxArraySize
      */
