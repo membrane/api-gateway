@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-@MCElement(name = "disallow")
+@MCElement(name = "disallow",noEnvelope = true)
 public class FeatureBlocklist {
 
     private List<GraphQLFeatureFilter> filters;
