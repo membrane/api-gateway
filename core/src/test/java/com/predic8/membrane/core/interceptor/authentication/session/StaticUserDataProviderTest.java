@@ -36,8 +36,7 @@ public class StaticUserDataProviderTest {
     @Test
     void verifyWithValidCredentials() {
         // Given
-        var user = new User("alice", "secret123");
-        provider.setUsers(List.of(user));
+        provider.setUsers(List.of(new User("alice", "secret123")));
 
         var postData = Map.of(
                 "username", "alice",
@@ -50,7 +49,7 @@ public class StaticUserDataProviderTest {
         // Then
         assertNotNull(result);
         assertEquals("alice", result.get("username"));
-        assertEquals("secret123", result.get("password"));
+        assertNull( result.get("password"));
     }
 
     @Test
@@ -124,7 +123,7 @@ public class StaticUserDataProviderTest {
 
         // Then
         assertEquals("alice", result.get("username"));
-        assertEquals("secret", result.get("password"));
+        assertNull(result.get("password"));
         assertEquals("+49123456789", result.get("sms"));
         assertEquals("TOTPSECRET", result.get("secret"));
         assertEquals("admin", result.get("headerRole"));

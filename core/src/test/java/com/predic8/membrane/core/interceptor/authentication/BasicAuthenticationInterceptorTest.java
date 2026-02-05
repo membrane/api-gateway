@@ -21,7 +21,10 @@ import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.net.*;
+
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.util.Base64.getEncoder;
@@ -56,11 +59,10 @@ public class BasicAuthenticationInterceptorTest {
 	}
 
 	@Test
-	void testHashedPassword() {
-		Exchange exc = new Request.Builder().header(AUTHORIZATION, getAuthString("admin", "admin")).buildExchange();
+	void testHashedPassword() throws Exception {
+		var exc = get("/foo").header(AUTHORIZATION, getAuthString("admin", "admin")).buildExchange();
 		StaticUserDataProvider p = (StaticUserDataProvider) bai.getUserDataProvider();
 		assertEquals(CONTINUE, bai.handleRequest(exc));
-		p.verify(new User("admin","admin").getAttributes());
 	}
 
 	private String getAuthString(String user, String password) {

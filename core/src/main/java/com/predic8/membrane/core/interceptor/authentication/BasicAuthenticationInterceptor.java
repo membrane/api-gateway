@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.security.*;
 
 import java.util.*;
 
@@ -31,8 +31,6 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.security.HttpSecurityScheme.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.apache.commons.codec.binary.Base64.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
@@ -75,24 +73,13 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
     private boolean validUser(Exchange exc) {
         try {
-            String username = getUsername(exc);
-            userDataProvider.verify(ImmutableMap.of(
-                    "username", username,
-                    "password", getPassword(exc)
-            ));
-            exc.setProperty(SECURITY_SCHEMES, List.of(BASIC().username(username)));
+            var credentials = BasicAuthenticationUtil.getCredentials(exc);
+            userDataProvider.verify(credentials.toMap());
+            exc.setProperty(SECURITY_SCHEMES, List.of(BASIC().username(credentials.username())));
             return true;
         } catch (NoSuchElementException e) {
             return false;
         }
-    }
-
-    private String getUsername(Exchange exc) {
-        return getAuthorizationHeaderDecoded(exc).split(":", 2)[0];
-    }
-
-    private String getPassword(Exchange exc) {
-        return getAuthorizationHeaderDecoded(exc).split(":", 2)[1];
     }
 
     private Outcome deny(Exchange exc) {
@@ -106,14 +93,6 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
     private boolean hasNoAuthorizationHeader(Exchange exc) {
         return exc.getRequest().getHeader().getFirstValue(AUTHORIZATION) == null;
-    }
-
-    /**
-     * The "Basic" authentication scheme defined in RFC 2617 does not properly define how to treat non-ASCII characters.
-     */
-    private String getAuthorizationHeaderDecoded(Exchange exc) {
-        String value = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
-        return new String(decodeBase64(value.substring(6).getBytes(UTF_8)), UTF_8);
     }
 
     public List<User> getUsers() {
@@ -168,5 +147,4 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
         }
         return sb.toString();
     }
-
 }

@@ -37,7 +37,7 @@ import static com.predic8.membrane.core.util.SecurityUtils.*;
  * </p>
  */
 @MCElement(name = "staticUserDataProvider")
-public class StaticUserDataProvider implements UserDataProvider {
+public class StaticUserDataProvider extends AbstractUserDataProvider {
 
     private static final Logger log = LoggerFactory.getLogger(StaticUserDataProvider.class.getName());
 
@@ -58,11 +58,13 @@ public class StaticUserDataProvider implements UserDataProvider {
         String pw2 = userAttributes.getPassword();
         if (pw2 == null || !pw2.equals(pw))
             throw new NoSuchElementException();
-        return userAttributes.getAttributes();
+        return filterPassword( userAttributes.getAttributes());
     }
 
     private static String getPassword(Map<String, String> postData, User userAttributes) {
         String postDataPassword = postData.get("password");
+        if (postDataPassword == null)
+            throw new NoSuchElementException();
         if (userAttributes.getPassword() != null && isHashedPassword(userAttributes.getPassword())) {
             try {
                 return createPasswdCompatibleHash(AlgoSalt.from(userAttributes.getPassword()), postDataPassword);

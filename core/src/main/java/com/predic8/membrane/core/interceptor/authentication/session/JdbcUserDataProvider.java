@@ -20,7 +20,6 @@ import org.slf4j.*;
 import javax.sql.*;
 import java.sql.*;
 import java.util.*;
-import java.util.regex.*;
 
 import static com.predic8.membrane.core.util.SecurityUtils.*;
 
@@ -83,21 +82,22 @@ public class JdbcUserDataProvider implements UserDataProvider {
     private void getDatasourceIfNull() {
         if (datasource != null)
             return;
-
         if (router.getRegistry() != null) {
-            var ds = router.getRegistry().getBean(DataSource.class).get();
-            if (ds == null)
-                throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
-            datasource = ds;
-            return;
+            var ds = router.getRegistry().getBean(DataSource.class);
+            if (ds.isPresent()) {
+                datasource = ds.get();
+                return;
+            }
         }
-
-        Map<String, DataSource> beans = router.getBeanFactory().getBeansOfType(DataSource.class);
-        DataSource[] datasources = beans.values().toArray(new DataSource[0]);
-        if (datasources.length > 0)
-            datasource = datasources[0];
-        else
-            throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
+        if (router.getBeanFactory() != null) {
+            Map<String, DataSource> beans = router.getBeanFactory().getBeansOfType(DataSource.class);
+            DataSource[] datasources = beans.values().toArray(new DataSource[0]);
+            if (datasources.length > 0) {
+                datasource = datasources[0];
+                return;
+            }
+        }
+        throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
     }
 
     @Override

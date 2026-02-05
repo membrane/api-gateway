@@ -1,3 +1,17 @@
+/* Copyright 2026 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.core.router.*;
@@ -13,15 +27,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class FileUserDataProviderTest {
 
-    @TempDir
-    Path tempDir;
-
-    private FileUserDataProvider provider;
-    private Router router;
-
     // Test constants
     private static final String TEST_PASSWORD_ALICE = "secret123";
     private static final String TEST_PASSWORD_BOB = "password456";
+    @TempDir
+    Path tempDir;
+    private FileUserDataProvider provider;
+    private Router router;
 
     @BeforeEach
     void setUp() {
@@ -101,10 +113,9 @@ class FileUserDataProviderTest {
 
         // Append malformed lines
         Files.writeString(htpasswdFile,
-            Files.readString(htpasswdFile) +
-            "malformed_line_without_colon\n" +
-            ":nousername\n",
-            StandardOpenOption.APPEND
+                "malformed_line_without_colon\n" +
+                ":nousername\n",
+                StandardOpenOption.APPEND
         );
 
         provider.setHtpasswdPath(htpasswdFile.toString());
@@ -117,7 +128,8 @@ class FileUserDataProviderTest {
 
     @Test
     void testInitWithNonExistentFile() {
-        provider.setHtpasswdPath("/non/existent/path.htpasswd");
+        Path missing = tempDir.resolve("missing.htpasswd");
+        provider.setHtpasswdPath(missing.toString());
         assertThrows(RuntimeException.class, () -> provider.init(router));
     }
 
@@ -239,6 +251,44 @@ class FileUserDataProviderTest {
         assertEquals(testPath, provider.getHtpasswdPath());
     }
 
+    @Test
+    void passwordWithColons() throws IOException {
+        // Manually create entry with colon in hash (tests current split behavior)
+        Path htpasswdFile = tempDir.resolve("colon.htpasswd");
+        Files.writeString(htpasswdFile, "user:$6$salt$hash:with:colons\n");
+
+        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.init(router);
+
+        FileUserDataProvider.User user = provider.getUsersByName().get("user");
+        assertNotNull(user);
+        // Verifies that the split limit preserves colons in the hash.
+        assertEquals("$6$salt$hash:with:colons", user.getPassword());
+    }
+
+    @Test
+    void testEmptyUsername() throws IOException {
+        Path htpasswdFile = tempDir.resolve("empty.htpasswd");
+        Files.writeString(htpasswdFile, ":$6$saltsalt$somehash\n");
+
+        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.init(router);
+
+        assertTrue(provider.getUsersByName().containsKey(""));
+    }
+
+    @Test
+    void testWhitespaceInUsernameNotTrimmed() throws IOException {
+        Path htpasswdFile = tempDir.resolve("whitespace.htpasswd");
+        Files.writeString(htpasswdFile, " alice :$6$saltsalt$somehash\n");
+
+        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.init(router);
+
+        assertTrue(provider.getUsersByName().containsKey(" alice "));
+        assertFalse(provider.getUsersByName().containsKey("alice"));
+    }
+
     @Nested
     class UserTest {
 
@@ -286,43 +336,5 @@ class FileUserDataProviderTest {
             user.setPassword("newhash");
             assertEquals("newhash", user.getPassword());
         }
-    }
-
-    @Test
-    void passwordWithColons() throws IOException {
-        // Manually create entry with colon in hash (tests current split behavior)
-        Path htpasswdFile = tempDir.resolve("colon.htpasswd");
-        Files.writeString(htpasswdFile, "user:$6$salt$hash:with:colons\n");
-
-        provider.setHtpasswdPath(htpasswdFile.toString());
-        provider.init(router);
-
-        FileUserDataProvider.User user = provider.getUsersByName().get("user");
-        assertNotNull(user);
-        // Verifies that the split limit preserves colons in the hash.
-        assertEquals("$6$salt$hash:with:colons", user.getPassword());
-    }
-
-    @Test
-    void testEmptyUsername() throws IOException {
-        Path htpasswdFile = tempDir.resolve("empty.htpasswd");
-        Files.writeString(htpasswdFile, ":$6$saltsalt$somehash\n");
-
-        provider.setHtpasswdPath(htpasswdFile.toString());
-        provider.init(router);
-
-        assertTrue(provider.getUsersByName().containsKey(""));
-    }
-
-    @Test
-    void testWhitespaceInUsernameNotTrimmed() throws IOException {
-        Path htpasswdFile = tempDir.resolve("whitespace.htpasswd");
-        Files.writeString(htpasswdFile, " alice :$6$saltsalt$somehash\n");
-
-        provider.setHtpasswdPath(htpasswdFile.toString());
-        provider.init(router);
-
-        assertTrue(provider.getUsersByName().containsKey(" alice "));
-        assertFalse(provider.getUsersByName().containsKey("alice"));
     }
 }
