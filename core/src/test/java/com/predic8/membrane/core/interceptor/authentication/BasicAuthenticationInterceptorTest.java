@@ -34,7 +34,7 @@ public class BasicAuthenticationInterceptorTest {
 		bai = new BasicAuthenticationInterceptor();
 		bai.setUsers(of(
 				new UserConfig("admin", "secret"),
-				new UserConfig("admin", "$6$jd3$AHVA4BVU0wTtVmF6ocQLSvxds455z0RKeNG/3Y0kF8C9AmAqyo8WBhEDpZ3JjO3k3lX/t5MB0NQrqGDpQyQf.1")
+				new UserConfig("klara", "$6$jd3$AHVA4BVU0wTtVmF6ocQLSvxds455z0RKeNG/3Y0kF8C9AmAqyo8WBhEDpZ3JjO3k3lX/t5MB0NQrqGDpQyQf.1")
 		));
 		bai.init(new DefaultRouter());
 	}
@@ -48,13 +48,13 @@ public class BasicAuthenticationInterceptorTest {
 
 	@Test
 	void accept() throws Exception {
-		var exc = get("/foo").header(AUTHORIZATION, getAuthString("admin", "admin")).buildExchange();
+		var exc = get("/foo").header(AUTHORIZATION, getAuthString("admin", "secret")).buildExchange();
 		assertEquals(CONTINUE, bai.handleRequest(exc));
 	}
 
 	@Test
 	void hashedPassword() throws Exception {
-		var exc = get("/foo").header(AUTHORIZATION, getAuthString("admin", "admin")).buildExchange();
+		var exc = get("/foo").header(AUTHORIZATION, getAuthString("klara", "admin")).buildExchange();
 		assertEquals(CONTINUE, bai.handleRequest(exc));
 	}
 

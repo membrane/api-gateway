@@ -14,22 +14,15 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.authentication.*;
 import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.interceptor.authentication.SecurityUtils;
-import com.predic8.membrane.core.router.Router;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.*;
 import java.sql.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.util.SecurityUtils.*;
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.verifyPassword;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {
@@ -52,7 +45,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
         try {
             createTableIfNeeded(); // @todo: works with postgres but prints stacktrace and warning
         } catch (SQLException e) {
-            log.warn("Error creating table.",e);
+            log.warn("Error creating table.", e);
         }
     }
 
@@ -80,11 +73,11 @@ public class JdbcUserDataProvider implements UserDataProvider {
 
     private String getCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS " + getTableName() + "(" +
-                "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
-                getUserColumnName() + " varchar NOT NULL, " +
-                getPasswordColumnName() + " varchar NOT NULL, " +
-                "verified boolean NOT NULL DEFAULT false" +
-                ");";
+               "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
+               getUserColumnName() + " varchar NOT NULL, " +
+               getPasswordColumnName() + " varchar NOT NULL, " +
+               "verified boolean NOT NULL DEFAULT false" +
+               ");";
     }
 
     private void getDatasourceIfNull() {
@@ -105,7 +98,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
                 return;
             }
         }
-        throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
+        throw new RuntimeException("No datasource found - specify a DataSource bean in your Membrane configuration");
     }
 
     @Override
@@ -126,25 +119,23 @@ public class JdbcUserDataProvider implements UserDataProvider {
             try (var rs = preparedStatement.executeQuery()) {
                 var rsmd = rs.getMetaData();
                 while (rs.next()) {
+                    result.clear();
                     for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                         var value = rs.getObject(i);
                         if (value != null) {
                             result.put(rsmd.getColumnName(i).toLowerCase(), value.toString());
                         }
                     }
+                    // Exit with first matching user. There might the two users with the same name.
+                    if (username.equals(result.get(getUserColumnName().toLowerCase()))
+                        && verifyPassword(password, result.get(getPasswordColumnName().toLowerCase()))) {
+                        return result;
+                    }
                 }
             }
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
         }
-
-
-        if (result != null && !result.isEmpty()) {
-            if (username.equals(result.get(getUserColumnName().toLowerCase())) && verifyPassword(password, result.get(getPasswordColumnName().toLowerCase()))) {
-                return result;
-            }
-        }
-
         throw new NoSuchElementException();
     }
 

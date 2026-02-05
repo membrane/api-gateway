@@ -9,7 +9,6 @@ import static java.nio.charset.StandardCharsets.*;
 public class BasicAuthenticationUtil {
 
     private static final String BASIC_PREFIX = "Basic ";
-    private static final int BASIC_PREFIX_LENGTH = 6;
 
     /**
      * Basic authentication credentials extracted from Authorization header.
@@ -31,6 +30,10 @@ public class BasicAuthenticationUtil {
             map.put("username", username);
             map.put("password", password);
             return map;
+        }
+
+        public String toString() {
+            return "BasicCredentials{username='" + username + "', password='*******'}";
         }
     }
 
@@ -66,16 +69,16 @@ public class BasicAuthenticationUtil {
         }
 
         // Check for Basic authentication scheme (case-insensitive per RFC 7617)
-        if (!header.regionMatches(true, 0, BASIC_PREFIX, 0, BASIC_PREFIX_LENGTH)) {
+        if (!header.regionMatches(true, 0, BASIC_PREFIX, 0, BASIC_PREFIX.length())) {
             throw new IllegalArgumentException("Not a Basic authentication header");
         }
 
         // Check if there's actually content after "Basic "
-        if (header.length() <= BASIC_PREFIX_LENGTH) {
+        if (header.length() <= BASIC_PREFIX.length()) {
             throw new IllegalArgumentException("Missing credentials in Basic authentication header");
         }
 
-        String base64Credentials = header.substring(BASIC_PREFIX_LENGTH).trim();
+        String base64Credentials = header.substring(BASIC_PREFIX.length()).trim();
 
         if (base64Credentials.isEmpty()) {
             throw new IllegalArgumentException("Empty credentials in Basic authentication header");

@@ -37,8 +37,6 @@ import java.util.*;
 @MCElement(name = "staticUserDataProvider")
 public class StaticUserDataProvider extends AbstractUserDataProvider {
 
-    private static final Logger log = LoggerFactory.getLogger(StaticUserDataProvider.class.getName());
-
 	private List<User> users = new ArrayList<>();
 
 	@MCElement(name="user", component =false, id="staticUserDataProvider-user")
@@ -51,20 +49,12 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
 			setPassword(password);
 		}
 
-		public String getUsername() {
-			return attributes.get("username");
-		}
-
 		/**
 		 * @description The user's login.
 		 */
 		@MCAttribute
 		public void setUsername(String value) {
 			attributes.put("username", value);
-		}
-
-		public String getPassword() {
-			return attributes.get("password");
 		}
 
 		/**
@@ -75,25 +65,8 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
 			attributes.put("password", value);
 		}
 
-		public String getSms() {
-			return attributes.get("sms");
-		}
-
-		/**
-		 * @description The user's phone number
-		 */
-		@MCAttribute
-		public void setSms(String value) {
-			attributes.put("sms", value);
-		}
-
 		public String getSecret() {
 			return attributes.get("secret");
-		}
-
-
-		public Map<String, String> getAttributes() {
-			return attributes;
 		}
 
 		/**
