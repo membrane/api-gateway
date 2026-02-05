@@ -16,16 +16,8 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCOtherAttributes;
-import com.predic8.membrane.core.router.Router;
 
 import java.util.*;
-import java.util.regex.*;
-
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
@@ -48,28 +40,13 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
     private static final Logger log = LoggerFactory.getLogger(StaticUserDataProvider.class.getName());
 
 	private List<User> users = new ArrayList<>();
-	private Map<String, User> usersByName = new HashMap<>();
-
-	@Override
-	public Map<String, String> verify(Map<String, String> postData) {
-		String username = postData.get("username");
-		if (username == null) throw new NoSuchElementException();
-		if (username.equals("error")) throw new RuntimeException();
-
-		User userAttributes = getUsersByName().get(username);
-		if (userAttributes == null) throw new NoSuchElementException();
-
-		verifyLoginOrThrow(postData, userAttributes.getPassword());
-		return userAttributes.getAttributes();
-	}
 
 	@MCElement(name="user", component =false, id="staticUserDataProvider-user")
-	public static class User {
-		final Map<String, String> attributes = new HashMap<>();
+	public static class UserConfig extends User {
 
-		public User() {}
+		public UserConfig() {}
 
-		public User(String username, String password){
+		public UserConfig(String username, String password){
 			setUsername(username);
 			setPassword(password);
 		}
@@ -114,13 +91,6 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
 			return attributes.get("secret");
 		}
 
-		/**
-		 * @description The user's shared TOTP secret (if used in combination with the {@link TOTPTokenProvider}).
-		 */
-		@MCAttribute
-		public void setSecret(String value) {
-			attributes.put("secret", value);
-		}
 
 		public Map<String, String> getAttributes() {
 			return attributes;
@@ -143,24 +113,16 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
 	@MCChildElement
 	public void setUsers(List<User> users) {
 		getUsersByName().clear();
-		for(User user : users){
+		for(var user : users){
 			getUsersByName().put(user.getUsername(), user);
 		}
 		this.users = users;
 	}
 
-	public Map<String, User> getUsersByName() {
-		return usersByName;
-	}
-
-	public void setUsersByName(Map<String, User> usersByName) {
-		this.usersByName = usersByName;
-	}
-
     @Override
     public void init(Router router) {
         if (usersByName.isEmpty()) {
-            for (User user : users)
+            for (var user : users)
                 getUsersByName().put(user.getUsername(), user);
         }
     }

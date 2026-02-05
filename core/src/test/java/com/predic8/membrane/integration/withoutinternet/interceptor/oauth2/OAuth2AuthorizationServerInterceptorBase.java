@@ -43,7 +43,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     static Exchange exc;
     static OAuth2AuthorizationServerInterceptor oasi;
     static MembraneAuthorizationService mas;
-    static StaticUserDataProvider.User johnsUserData;
+    static StaticUserDataProvider.UserConfig johnsUserData;
     static Map<String,String> afterLoginMockParams;
     static String afterCodeGenerationCode;
     static String afterTokenGenerationToken;
@@ -334,8 +334,8 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
 
     private void setOasiUserDataProvider() {
         StaticUserDataProvider udp = new StaticUserDataProvider();
-        ArrayList<StaticUserDataProvider.User> users = new ArrayList<>();
-        johnsUserData = new StaticUserDataProvider.User("john", "password");
+        ArrayList<User> users = new ArrayList<>();
+        johnsUserData = new StaticUserDataProvider.UserConfig("john", "password");
         johnsUserData.getAttributes().put("email","e@mail.com");
         users.add(johnsUserData);
         udp.setUsers(users);

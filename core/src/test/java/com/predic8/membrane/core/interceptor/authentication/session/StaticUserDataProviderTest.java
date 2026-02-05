@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
@@ -108,8 +107,6 @@ public class StaticUserDataProviderTest {
     void verifyReturnsAllUserAttributes() {
         // Given
         var user = new User("alice", "secret");
-        user.setSms("+49123456789");
-        user.setSecret("TOTPSECRET");
         user.setAttributes(Map.of("headerRole", "admin", "email", "alice@example.com"));
         provider.setUsers(List.of(user));
 
@@ -124,8 +121,6 @@ public class StaticUserDataProviderTest {
         // Then
         assertEquals("alice", result.get("username"));
         assertNull(result.get("password"));
-        assertEquals("+49123456789", result.get("sms"));
-        assertEquals("TOTPSECRET", result.get("secret"));
         assertEquals("admin", result.get("headerRole"));
         assertEquals("alice@example.com", result.get("email"));
     }

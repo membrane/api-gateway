@@ -141,7 +141,7 @@ class OAuth2Test {
         }});
 
         oAuth2AuthSI.setUserDataProvider(new StaticUserDataProvider() {{
-            User u = new User("john", "password");
+            UserConfig u = new UserConfig("john", "password");
             u.getAttributes().put("aud", "demo1");
             setUsers(List.of(u));
         }});

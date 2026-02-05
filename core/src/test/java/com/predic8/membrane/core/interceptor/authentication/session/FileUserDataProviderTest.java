@@ -74,7 +74,7 @@ class FileUserDataProviderTest {
         provider.setHtpasswdPath(htpasswdFile.toString());
         provider.init(router);
 
-        Map<String, FileUserDataProvider.User> users = provider.getUsersByName();
+        Map<String, User> users = provider.getUsersByName();
         assertEquals(2, users.size());
         assertTrue(users.containsKey("alice"));
         assertTrue(users.containsKey("bob"));
@@ -89,7 +89,7 @@ class FileUserDataProviderTest {
         provider.setHtpasswdPath(htpasswdFile.toString());
         provider.init(router);
 
-        Map<String, FileUserDataProvider.User> users = provider.getUsersByName();
+        Map<String, User> users = provider.getUsersByName();
         assertEquals(1, users.size());
         assertEquals("testuser", users.get("testuser").getUsername());
     }
@@ -121,7 +121,7 @@ class FileUserDataProviderTest {
         provider.setHtpasswdPath(htpasswdFile.toString());
         provider.init(router);
 
-        Map<String, FileUserDataProvider.User> users = provider.getUsersByName();
+        Map<String, User> users = provider.getUsersByName();
         assertTrue(users.containsKey("validuser"));
         assertFalse(users.containsKey("malformed_line_without_colon"));
     }
@@ -223,7 +223,7 @@ class FileUserDataProviderTest {
 
         Map<String, String> attributes = provider.verify(postData);
         assertTrue(attributes.containsKey("username"));
-        assertTrue(attributes.containsKey("password"));
+        assertFalse(attributes.containsKey("password"));
     }
 
     @Test
@@ -260,7 +260,7 @@ class FileUserDataProviderTest {
         provider.setHtpasswdPath(htpasswdFile.toString());
         provider.init(router);
 
-        FileUserDataProvider.User user = provider.getUsersByName().get("user");
+        var user = provider.getUsersByName().get("user");
         assertNotNull(user);
         // Verifies that the split limit preserves colons in the hash.
         assertEquals("$6$salt$hash:with:colons", user.getPassword());
@@ -294,14 +294,14 @@ class FileUserDataProviderTest {
 
         @Test
         void testUserCreation() {
-            FileUserDataProvider.User user = new FileUserDataProvider.User("testuser", "testhash");
+            var user = new User("testuser", "testhash");
             assertEquals("testuser", user.getUsername());
             assertEquals("testhash", user.getPassword());
         }
 
         @Test
         void testUserAttributes() {
-            FileUserDataProvider.User user = new FileUserDataProvider.User("testuser", "testhash");
+            var user = new User("testuser", "testhash");
 
             Map<String, String> attrs = user.getAttributes();
             assertEquals("testuser", attrs.get("username"));
@@ -310,7 +310,7 @@ class FileUserDataProviderTest {
 
         @Test
         void testSetAdditionalAttributes() {
-            FileUserDataProvider.User user = new FileUserDataProvider.User("testuser", "testhash");
+            var user = new User("testuser", "testhash");
 
             Map<String, String> additionalAttrs = new HashMap<>();
             additionalAttrs.put("email", "test@example.com");
@@ -325,14 +325,14 @@ class FileUserDataProviderTest {
 
         @Test
         void testSetUsername() {
-            FileUserDataProvider.User user = new FileUserDataProvider.User("original", "hash");
+            var user = new User("original", "hash");
             user.setUsername("newusername");
             assertEquals("newusername", user.getUsername());
         }
 
         @Test
         void testSetPassword() {
-            FileUserDataProvider.User user = new FileUserDataProvider.User("user", "originalhash");
+            var user = new User("user", "originalhash");
             user.setPassword("newhash");
             assertEquals("newhash", user.getPassword());
         }

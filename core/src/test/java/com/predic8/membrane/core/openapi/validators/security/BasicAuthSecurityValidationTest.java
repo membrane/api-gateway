@@ -51,8 +51,8 @@ public class BasicAuthSecurityValidationTest {
         oasInterceptor.init(router);
 
         baInterceptor = new BasicAuthenticationInterceptor();
-        ArrayList<StaticUserDataProvider.User> users = new ArrayList<>();
-        StaticUserDataProvider.User user = new StaticUserDataProvider.User();
+        ArrayList<User> users = new ArrayList<>();
+        StaticUserDataProvider.UserConfig user = new StaticUserDataProvider.UserConfig();
         user.setUsername("alice");
         user.setPassword("secret");
         users.add(user);
