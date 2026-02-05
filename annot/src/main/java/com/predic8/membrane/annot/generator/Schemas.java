@@ -101,6 +101,7 @@ public class Schemas {
 					""";
 		} else {
 			w.append("<xsd:complexType name=\"").append(i.getXSDTypeName(m)).append("\">\r\n");
+			assembleDocumentation(w, i);
 			footer = "</xsd:complexType>\r\n";
 		}
 
@@ -166,27 +167,31 @@ public class Schemas {
 		Doc doc = aji.getDoc(processingEnv);
 
 		String id = null;
-		if (aji instanceof ElementInfo ei) {
-			id = ei.getId();
-		}
-		if (id != null) {
-			w.append("<xsd:appinfo><id>")
-                .append(xmlEscape(id))
-                .append("</id></xsd:appinfo>\r\n");
-		}
 
-		if (doc == null) return;
+		if (aji instanceof ElementInfo ei) id = ei.getId();
 
+		if (doc == null && id == null) return;
 		w.append("<xsd:annotation>\r\n");
-		w.append("<xsd:documentation>");
-		for (Entry e : doc.getEntries()) {
-			w.append(xmlEscape("<h3><b>"));
-			w.append(xmlEscape(capitalize(e.getKey()) + ":"));
-			w.append(xmlEscape("</b></h3> "));
-			w.append(xmlEscape(e.getValueAsXMLSnippet(false)));
-			w.append(xmlEscape("<br/>"));
+
+		if (id != null) {
+			w.append("<xsd:appinfo>\r\n");
+			w.append("<xsd:id>\r\n");
+			w.append(xmlEscape(id));
+			w.append("</xsd:id>\r\n");
+			w.append("</xsd:appinfo>\r\n");
 		}
-		w.append("</xsd:documentation>\r\n");
+
+		if (doc != null) {
+			w.append("<xsd:documentation>");
+			for (Entry e : doc.getEntries()) {
+				w.append(xmlEscape("<h3><b>"));
+				w.append(xmlEscape(capitalize(e.getKey()) + ":"));
+				w.append(xmlEscape("</b></h3> "));
+				w.append(xmlEscape(e.getValueAsXMLSnippet(false)));
+				w.append(xmlEscape("<br/>"));
+			}
+			w.append("</xsd:documentation>\r\n");
+		}
 		w.append("</xsd:annotation>\r\n");
 	}
 
