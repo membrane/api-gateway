@@ -50,12 +50,15 @@ public class BasicAuthenticationInterceptorTest {
 	void accept() throws Exception {
 		var exc = get("/foo").header(AUTHORIZATION, getAuthString("admin", "secret")).buildExchange();
 		assertEquals(CONTINUE, bai.handleRequest(exc));
+		assertNull(exc.getRequest().getHeader().getAuthorization());
 	}
 
 	@Test
 	void hashedPassword() throws Exception {
 		var exc = get("/foo").header(AUTHORIZATION, getAuthString("klara", "admin")).buildExchange();
+		bai.setRemoveAuthorizationHeader(false);
 		assertEquals(CONTINUE, bai.handleRequest(exc));
+		assertNotNull(exc.getRequest().getHeader().getAuthorization());
 	}
 
 	private String getAuthString(String user, String password) {

@@ -68,6 +68,7 @@ PRIO 3:
 - headerFilter YAML format has changed.
 - Choose Interceptor configuration
 - Chain (ChainDef) configuration
+- BasicAuthentication interceptor remove the Authentication header from the request. 
 
 ## Bug Fixes
 - `xml2json`: Ensuring content type alignment and better exception handling.  

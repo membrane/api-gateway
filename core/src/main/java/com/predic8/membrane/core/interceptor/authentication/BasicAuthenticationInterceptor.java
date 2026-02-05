@@ -18,7 +18,6 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
-import com.predic8.membrane.core.interceptor.authentication.session.User;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.security.*;
 
@@ -41,6 +40,8 @@ import static org.apache.commons.text.StringEscapeUtils.*;
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
     private UserDataProvider userDataProvider = new StaticUserDataProvider();
+
+    private boolean removeAuthorizationHeader = true;
 
     public BasicAuthenticationInterceptor() {
         name = "basic authenticator";
@@ -66,9 +67,17 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         if (hasNoAuthorizationHeader(exc) || !validUser(exc)) {
+            removeAuthenticationHeader(exc);
             return deny(exc);
         }
+        removeAuthenticationHeader(exc);
         return CONTINUE;
+    }
+
+    private void removeAuthenticationHeader(Exchange exchange) {
+        if (!removeAuthorizationHeader)
+            return;
+        exchange.getRequest().getHeader().removeFields(AUTHORIZATION);
     }
 
     private boolean validUser(Exchange exc) {
@@ -108,8 +117,8 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 20)
     public void setUsers(List<User> users) {
         if (userDataProvider instanceof StaticUserDataProvider sud) {
-             sud.setUsers(users);
-             return;
+            sud.setUsers(users);
+            return;
         }
         throw new UnsupportedOperationException("setUsers is not implemented for this userDataProvider.");
     }
@@ -146,5 +155,23 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
             sb.append("<br/>Passwords are not shown.");
         }
         return sb.toString();
+    }
+
+    public boolean isRemoveAuthorizationHeader() {
+        return removeAuthorizationHeader;
+    }
+
+    /**
+     * @description Removes the Authorization header after successful authentication.
+     * <p>
+     * Default is {@code true} to prevent credentials from being forwarded to backends.
+     * Set to {@code false} if both gateway and backend need to validate credentials.
+     *
+     * @param removeAuthorizationHeader {@code true} to remove (default), {@code false} to forward
+     * @default true
+     */
+    @MCAttribute()
+    public void setRemoveAuthorizationHeader(boolean removeAuthorizationHeader) {
+        this.removeAuthorizationHeader = removeAuthorizationHeader;
     }
 }
