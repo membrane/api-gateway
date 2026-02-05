@@ -35,7 +35,8 @@ public class IntrospectionFilter implements GraphQLFeatureFilter {
                 if (f.getName().startsWith("__")) {
                     throw new GraphQLOverHttpValidationException("Introspection is not permitted.");
                 }
-                checkSelections(f.getSelections());
+                if (f.getSelections() != null)
+                    checkSelections(f.getSelections());
             } else if (selection instanceof InlineFragment) {
                 checkSelections(((InlineFragment) selection).getSelections());
             }
