@@ -19,7 +19,7 @@ import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
-import static com.predic8.membrane.annot.yaml.spel.HashTemplateParserContext.DOLLAR_TEMPLATE_PARSER_CONTEXT;
+import static com.predic8.membrane.annot.yaml.spel.HashTemplateParserContext.HASH_TEMPLATE_PARSER_CONTEXT;
 
 public final class SpELEngine {
 
@@ -30,7 +30,7 @@ public final class SpELEngine {
     public static Object eval(String template, StandardEvaluationContext ctx) {
         try {
             return PARSER
-                    .parseExpression(template, DOLLAR_TEMPLATE_PARSER_CONTEXT)
+                    .parseExpression(template, HASH_TEMPLATE_PARSER_CONTEXT)
                     .getValue(ctx);
         } catch (RuntimeException e) {
             throw new EvaluationException("Invalid SpEL template: " + e.getMessage(), e);

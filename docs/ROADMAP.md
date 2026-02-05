@@ -61,9 +61,9 @@ PRIO 3:
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
 
-
 ## Breaking Changes
 
+- `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually. 
 - headerFilter YAML format has changed.
 - Choose Interceptor configuration
 - Chain (ChainDef) configuration

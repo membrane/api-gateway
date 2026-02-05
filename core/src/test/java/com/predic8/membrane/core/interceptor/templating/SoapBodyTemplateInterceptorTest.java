@@ -43,6 +43,21 @@ class SoapBodyTemplateInterceptorTest {
         assertThrows(ConfigurationException.class, () -> setSoapVersion("1.3"));
     }
 
+    @Test
+    void contentType_defaultsToSoap11TextXml() {
+        SoapBodyTemplateInterceptor i = new SoapBodyTemplateInterceptor();
+        assertEquals("1.1", i.getVersion());
+        assertEquals("text/xml", i.getContentType());
+    }
+
+    @Test
+    void contentType_updatesWithVersion() {
+        SoapBodyTemplateInterceptor i = new SoapBodyTemplateInterceptor();
+        i.setVersion("1.2");
+        assertEquals("1.2", i.getVersion());
+        assertEquals("application/soap+xml", i.getContentType());
+    }
+
     private static void setSoapVersion(String version) {
         SoapBodyTemplateInterceptor i = new SoapBodyTemplateInterceptor();
         i.setVersion(version);

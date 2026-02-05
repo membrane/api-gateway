@@ -99,13 +99,13 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             updateThreadName(true);
             setup();
             while (true) {
-                RequestProcessingResult result = processSingleRequest(boundConnection);
+                var result = processSingleRequest(boundConnection);
+
+                boundConnection = result.boundConnection;
 
                 if (result.shouldTerminate()) {
                     break;
                 }
-
-                boundConnection = result.boundConnection;
             }
         } catch (SocketTimeoutException e) {
             log.debug("Socket of thread {} timed out", counter);
@@ -178,7 +178,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
         // Needed to mark the connection as IDLE for reloads
         if (isSrcInEndOfFileAndSetIdleStatus()) {
-            return terminate();
+            return terminateWithConnection(con);
         }
 
         if (Http2TlsSupport.isHttp2(sourceSocket)) {
@@ -211,12 +211,11 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         srcReq = new Request();
         if (con != null) {
             exchange.setTargetConnection(con);
-            con = null;
         }
 
         readAndParseRequest();
         process();
-        return determineConnectionContinuation(con);
+        return determineConnectionContinuation();
     }
 
     private void readAndParseRequest() throws IOException, EndOfStreamException {
@@ -232,12 +231,13 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
     }
 
-    private @NotNull RequestProcessingResult determineConnectionContinuation(Connection con) {
+    private @NotNull RequestProcessingResult determineConnectionContinuation() {
+
         if (srcReq.isCONNECTRequest()) {
             log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
-            return RequestProcessingResult.terminateWithConnection(con);
+            return RequestProcessingResult.terminate();
         }
-        con = exchange.getTargetConnection();
+        Connection con = exchange.getTargetConnection();
         exchange.setTargetConnection(null);
         if (!exchange.canKeepConnectionAlive())
             return terminateWithConnection(con);
@@ -316,8 +316,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
      * over the body transmission.)
      */
     private void removeBodyFromBuffer() throws IOException {
-        if (!exchange.getRequest().getHeader().is100ContinueExpected() || srcIn.available() > 0) {
-            exchange.getRequest().discardBody();
+        if (!srcReq.getHeader().is100ContinueExpected() || srcIn.available() > 0) {
+            srcReq.discardBody();
         }
     }
 

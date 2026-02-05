@@ -15,30 +15,25 @@
 
 package com.predic8.membrane.core.interceptor.log.access;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.log.AdditionalVariable;
-import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.log.*;
+import com.predic8.membrane.core.lang.spel.*;
+import com.predic8.membrane.core.router.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.time.format.DateTimeFormatter;
-import java.util.AbstractMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.io.*;
+import java.time.format.*;
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.util.text.TextUtil.escapeQuotes;
-import static java.lang.Long.parseLong;
-import static java.time.Instant.ofEpochMilli;
-import static java.time.ZoneId.systemDefault;
-import static java.time.format.DateTimeFormatter.ofPattern;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static java.lang.Long.*;
+import static java.time.Instant.*;
+import static java.time.ZoneId.*;
+import static java.time.format.DateTimeFormatter.*;
 
 public class AccessLogInterceptorService {
 
@@ -49,17 +44,20 @@ public class AccessLogInterceptorService {
     private final String defaultValue;
     private final List<AdditionalVariable> additionalVariables;
     private final boolean excludePayloadSize;
+    private final Router router;
 
     public AccessLogInterceptorService(
             String dateTimePattern,
             String defaultValue,
             List<AdditionalVariable> additionalVariables,
-            boolean excludePayloadSize
+            boolean excludePayloadSize,
+            Router router
     ) {
         this.dateTimeFormat = ofPattern(dateTimePattern).withZone(systemDefault());
         this.defaultValue = defaultValue;
         this.additionalVariables = additionalVariables;
         this.excludePayloadSize = excludePayloadSize;
+        this.router = router;
     }
 
     /**
@@ -162,7 +160,7 @@ public class AccessLogInterceptorService {
     private Function<AdditionalVariable, AbstractMap.SimpleEntry<String, String>> additionalPatternToMapEntry(Exchange exc) {
         return additionalPattern -> new AbstractMap.SimpleEntry<>(
                 additionalPattern.getName(),
-                safe(() ->  additionalPattern.getExpression().getValue(new SpELExchangeEvaluationContext(exc, REQUEST)),
+                safe(() ->  additionalPattern.getExpression().getValue(new SpELExchangeEvaluationContext(exc, REQUEST, router)),
                     additionalPattern.getDefaultValue()
                 )
         );

@@ -16,13 +16,35 @@ Date: 2026-01-29
 - Make it easier to explore Membrane and make it work
 - Set root level to WARN for production
 
+## ADR-003 Access to beans with Router 
+
+Status: ACCEPTED
+Date: 2026-01-29
+
+### Context
+
+- Interceptors and other components need access to infrastructure singletons and other beans.
+  - Examples:
+    - ExchangeStore
+    - URIFactory
+    - The Proxy the interceptor belongs to
+    - ...
+- Currently the router is passed to the interceptors as a parameter.
+- Interceptors like request, response, for and manage a list of other interceptors.
+- The ProxyAware interface signals that an interceptor is aware of the proxy it belongs to.
+  - Somebody has to call setProxy on the interceptor.
+
+### Decision
+
+- We do not use DI to inject beans into interceptors.
+- Interceptors get a reference to the router via init(Router router) and ask the router for beans.
 
 ## ADR-002 Flow Guarantees
 
 Status: PROPOSED
 Date: 2026-01-20
 
-### Decision:
+### Decision
 
 - Guarantees for flows:
   - that in a Response-flow there is a response 
@@ -34,7 +56,7 @@ Date: 2026-01-20
 
 Status: ACCEPTED
 
-### Decision:
+### Decision
 
 - Use ProblemDetails to return error messages to the API caller
 - Fields:
