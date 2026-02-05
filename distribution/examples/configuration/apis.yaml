@@ -33,11 +33,21 @@ global:
 
 # Define reusable plugins and custom beans that can be referenced elsewhere in the config.
 components:
+
   demoComponent: # id for the component
-    beautifier: {} # referencable plugin
+    log: {} # referencable plugin
+
   jmx: # id for the bean
     bean:
       class: com.predic8.membrane.core.jmx.JmxExporter # Exposes runtime metrics and management operations via JMX
+
+  # When only one exchangeStore is defined as a component, it is automatically used for the whole configuration
+  # If you have more than one configured, you have to reference them manually
+  exchangeStore:
+    limitedMemoryExchangeStore:
+      maxSize: 100000
+      maxBodySize: 1000
+      bodyExceedingMaxSizeStrategy: truncate
 ---
 
 # Internal proxy that can only be invoked by other proxies within the gateway
