@@ -85,9 +85,9 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
 
 	@MCChildElement
 	public void setUsers(List<User> users) {
-		getUsersByName().clear();
+		usersByName.clear();
 		for(var user : users){
-			getUsersByName().put(user.getUsername(), user);
+			usersByName.put(user.getUsername(), user);
 		}
 		this.users = users;
 	}
@@ -96,7 +96,7 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
     public void init(Router router) {
         if (usersByName.isEmpty()) {
             for (var user : users)
-                getUsersByName().put(user.getUsername(), user);
+                usersByName.put(user.getUsername(), user);
         }
     }
 }
