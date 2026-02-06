@@ -14,10 +14,9 @@ api:
       - log:
           message: Requested ${path}
       - rewriter:
-          - map:
-              # Put values in quotes when using special characters
-              from: "/fruits/(.*)"
-              to: "/shop/v2/products/$1"
+        # Put values in quotes when using special characters
+        - from: "/fruits/(.*)"
+          to: "/shop/v2/products/$1"
       - log:
           message: Rewritten ${path}
   target:

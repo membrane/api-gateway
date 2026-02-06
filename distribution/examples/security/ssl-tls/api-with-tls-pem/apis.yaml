@@ -8,8 +8,7 @@ api:
       private:
         location: membrane-key.pem
       certificates:
-        - certificate:
-            location: membrane.pem
+        - location: membrane.pem
   # Route here to your target
   target:
     host: localhost

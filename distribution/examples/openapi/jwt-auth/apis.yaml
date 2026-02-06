@@ -22,14 +22,12 @@ api:
   name: Protected API
   port: 2001
   specs:
-    - openapi:
-        location: secure-shop-api.yml
-        validateSecurity: true
+    - location: secure-shop-api.yml
+      validateSecurity: true
   flow:
     - jwtAuth:
         expectedAud: shop
         jwks:
           jwks:
-            - jwk:
-                location: jwk.json
+            - location: jwk.json
     - openapiValidator: {}

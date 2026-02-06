@@ -18,7 +18,5 @@
 api:
   port: 2000
   specs:
-    - openapi:
-        location: https://api.predic8.de/api-docs/dlp-field-information-api-v1-0-0
-    - openapi:
-        location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
+    - location: https://api.predic8.de/api-docs/dlp-field-information-api-v1-0-0
+    - location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
