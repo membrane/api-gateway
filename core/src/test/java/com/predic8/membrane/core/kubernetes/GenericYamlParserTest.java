@@ -258,7 +258,7 @@ public class GenericYamlParserTest {
                 ok(
                         "openapi_spec_single",
                         """
-                        specs:
+                        openApis:
                           - openapi:
                               location: fruitshop-api.yml
                               validateRequests: "yes"
@@ -272,7 +272,7 @@ public class GenericYamlParserTest {
                 ok(
                         "openapi_spec_multiple",
                         """
-                        specs:
+                        openApis:
                           - openapi:
                               location: a.yml
                               validateRequests: "no"

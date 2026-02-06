@@ -2,7 +2,7 @@
 # Configures Membrane as an API Gateway for the specified OpenAPI specifications
 api:
   port: 2000
-  specs:
+  openApis:
     - location: contacts-api-v1.yml
       validateRequests: yes
 

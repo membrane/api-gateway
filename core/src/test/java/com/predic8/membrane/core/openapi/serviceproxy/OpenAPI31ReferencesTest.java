@@ -49,7 +49,7 @@ public class OpenAPI31ReferencesTest {
 
         api = new APIProxy();
         api.setPort(2000);
-        api.setSpecs(List.of(spec));
+        api.setOpenApis(List.of(spec));
         router.add(api);
 
         APIProxy backend = new APIProxy();

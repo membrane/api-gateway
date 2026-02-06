@@ -25,7 +25,7 @@ api:
 # Try: curl http://localhost:2000/shop/v2/
 api:
   port: 2000
-  specs:
+  openApis:
     - location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
       rewrite:
         port: 3000

@@ -43,7 +43,7 @@ public class Swagger20Test {
 
     private @NotNull APIProxy getApiProxy() {
         APIProxy ap = new APIProxy();
-        ap.setSpecs(singletonList(getOpenAPISpec()));
+        ap.setOpenApis(singletonList(getOpenAPISpec()));
         ap.setKey(new APIProxyKey(2000));
         ap.setTarget(new Target("localhost", 2001));
         return ap;
