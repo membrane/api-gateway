@@ -38,7 +38,7 @@ The resulting JWT is stored in the body and returned via `<return>`.
    {
      "sub": "user@example.com", 
      "aud": "order", 
-     "scope": "${property.scopes}"
+     "scope": ${fn.toJSON(property.scopes)}
    }
   </template>
   <jwtSign>

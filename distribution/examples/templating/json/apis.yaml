@@ -38,7 +38,7 @@ api:
             contentType: application/json
             src: |
               {
-                "city": "${property.city}"
+                "city": ${fn.toJSON(property.city.toString())}
               }
         # Is executed on the way back
         - setProperty:
