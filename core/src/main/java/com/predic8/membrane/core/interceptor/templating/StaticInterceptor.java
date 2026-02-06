@@ -19,6 +19,20 @@ import org.slf4j.*;
 
 import static java.nio.charset.StandardCharsets.*;
 
+/**
+ * @description
+ * Sets the message body to static content. The body is either provided inline as text content or loaded from a file/URL.
+ * If pretty is enabled, the formatted result is cached and reused until the interceptor is (re)initialized.
+ * @yaml
+ * <pre><code>
+ *  api:
+ *    flow:
+ *      - static:
+ *          contentType: application/json
+ *          pretty: true
+ *          src: { "status": "ok" }
+ * </code></pre>
+ */
 @MCElement(name = "static", mixed = true)
 public class StaticInterceptor extends AbstractTemplateInterceptor {
 

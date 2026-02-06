@@ -31,6 +31,16 @@ import java.util.concurrent.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.concurrent.Executors.*;
 
+/**
+ * @description Clones incoming requests and sends them asynchronously to one or more shadow targets (main exchange continues unchanged).
+ * @yaml
+ * <pre><code>
+ *  shadowing:
+ *    targets:
+ *      - host: shadow.example.com
+ *        port: 8080
+ * </code></pre>
+ */
 @MCElement(name="shadowing")
 public class ShadowingInterceptor extends AbstractInterceptor {
 

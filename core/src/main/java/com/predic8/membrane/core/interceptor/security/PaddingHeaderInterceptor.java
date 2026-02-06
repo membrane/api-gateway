@@ -30,9 +30,17 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.util.EnumSet.of;
 
 
-// TODO JAVADOC!
 /**
- * Uses secure random function for the random length according to FIPS 140-2 standard.
+ * @description Adds an X-Padding header with random characters to pad message size (request/response).
+ * @yaml
+ * <pre><code>
+ *  api:
+ *    flow:
+ *      - paddingHeader:
+ *          roundUp: 20
+ *          constant: 5
+ *          random: 10
+ * </code></pre>
  */
 @MCElement(name = "paddingHeader")
 public class PaddingHeaderInterceptor extends AbstractInterceptor {
@@ -110,6 +118,11 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
         return LOOKUP_TABLE.charAt(secRdm.nextInt(LOOKUP_TABLE.length()));
     }
 
+    /**
+     * @description Rounds message size up to the next multiple of this value.
+     * @default 20
+     * @example 32
+     */
     @MCAttribute
     public void setRoundUp(int roundUp) {
         this.roundUp = roundUp;
@@ -119,6 +132,11 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
         return roundUp;
     }
 
+    /**
+     * @description Constant padding added after rounding.
+     * @default 5
+     * @example 0
+     */
     @MCAttribute
     public void setConstant(int constant) {
         this.constant = constant;
@@ -128,6 +146,11 @@ public class PaddingHeaderInterceptor extends AbstractInterceptor {
         return constant;
     }
 
+    /**
+     * @description Upper bound (exclusive) for random extra padding length.
+     * @default 10
+     * @example 50
+     */
     @MCAttribute
     public void setRandom(int random) {
         this.random = random;

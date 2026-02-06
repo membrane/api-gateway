@@ -32,6 +32,14 @@ import java.sql.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
+/**
+ * @description Serves request statistics as JSON from a JDBC-backed store. Supports paging (offset/max) and sorting (sort/order) via query parameters.
+ * @yaml
+ * <pre><code>
+ *  statisticsProvider:
+ *    dataSourceBeanId: myDataSource
+ * </code></pre>
+ */
 @MCElement(name="statisticsProvider")
 public class StatisticsProvider extends AbstractInterceptor implements ApplicationContextAware {
 	private static final Logger log = LoggerFactory.getLogger(StatisticsProvider.class

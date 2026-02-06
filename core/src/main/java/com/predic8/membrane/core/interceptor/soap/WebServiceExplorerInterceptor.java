@@ -41,6 +41,9 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.regex.Pattern.*;
 
+/**
+ * @description Serves an HTML “web service explorer”.
+ */
 @MCElement(name="webServiceExplorer")
 public class WebServiceExplorerInterceptor extends RESTInterceptor implements ProxyAware {
 
