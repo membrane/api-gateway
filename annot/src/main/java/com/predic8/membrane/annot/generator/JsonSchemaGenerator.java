@@ -277,16 +277,49 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private void processMCChilds(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
-            AbstractSchema<?> parent2 = so;
-            if (cei.isList()) {
-                if (shouldGenerateFlowParserType(cei)) {
-                    processList(i, so, cei, getSchemaObjects(m, main, cei));
-                    continue;
-                }
-                parent2 = processList(i, so, cei, null);
+
+            if (!cei.isList()) {
+                addChildsAsProperties(m, main, cei, (SchemaObject) so, isComponentsList(i, cei), false);
+                continue;
             }
-            addChildsAsProperties(m, main, cei, (SchemaObject) parent2, isComponentsList(i, cei), cei.isList());
+
+            if (shouldGenerateFlowParserType(cei)) {
+                processList(i, so, cei, getSchemaObjects(m, main, cei));
+                continue;
+            }
+
+            if (shouldInlineListItems(main, cei)) {
+                processInlineList(m, main, i, so, cei);
+                continue;
+            }
+
+            AbstractSchema<?> parent2 = processList(i, so, cei, null);
+            addChildsAsProperties(m, main, cei, (SchemaObject) parent2, isComponentsList(i, cei), true);
         }
+    }
+
+    private void processInlineList(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei) {
+        var decl = getChildElementDeclarationInfo(main, cei);
+
+        ElementInfo itemEi = decl.getElementInfo().stream()
+                .filter(ei -> !ei.getAnnotation().topLevel())
+                .findFirst()
+                .orElseThrow(); // should never happen due to shouldInlineListItems
+
+        AbstractSchema<?> itemsSchema = ref(itemEi.getAnnotation().name()).ref("#/$defs/" + itemEi.getXSDTypeName(m));
+
+        // keep "- $ref: ..." alternative for component items
+        if (!isComponentsList(i, cei) && itemEi.getAnnotation().component()) {
+            var variants = new ArrayList<AbstractSchema<?>>();
+            variants.add(itemsSchema);
+            variants.add(object()
+                    .title("componentRef")
+                    .additionalProperties(false)
+                    .property(string("$ref").required(false)));
+            itemsSchema = anyOf(variants);
+        }
+
+        attachArrayItems(i, so, cei, itemsSchema);
     }
 
     private static @NotNull ArrayList<AbstractSchema<?>> getSchemaObjects(Model m, MainInfo main, ChildElementInfo cei) {
@@ -448,6 +481,46 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 return true;
         }
         return false;
+    }
+
+    private boolean shouldInlineListItems(MainInfo main, ChildElementInfo cei) {
+        if (!cei.isList()) return false;
+
+        if (cei.getAnnotation().allowForeign()) return false;
+
+        var cedi = getChildElementDeclarationInfo(main, cei);
+        if (cedi == null) return false;
+
+        // Only inline if there is exactly ONE possible list-item element type
+        var eis = cedi.getElementInfo().stream().filter(ei -> !ei.getAnnotation().topLevel()).toList();
+        if (eis.size() != 1) return false;
+
+        // Only inline if the item has >1 explicit attributes (excluding 'id')
+        // TODO keep this?
+        // TODO could removing this lead to errors with @collapsed elements?
+        return countRelevantAttributes(eis.getFirst()) > 1;
+    }
+
+    private int countRelevantAttributes(ElementInfo ei) {
+        return (int) ei.getAis().stream()
+                .filter(ai -> !ai.excludedFromJsonSchema())
+                .filter(ai -> !"id".equals(ai.getXMLName()))
+                .count();
+    }
+
+    private void attachArrayItems(ElementInfo parentEi, AbstractSchema<?> parentSchema, ChildElementInfo cei, AbstractSchema<?> itemsSchema) {
+        // noEnvelope list: parent is an array already
+        if (parentEi.getAnnotation().noEnvelope() && parentSchema instanceof SchemaArray sa) {
+            sa.items(itemsSchema);
+            return;
+        }
+
+        if (parentSchema instanceof SchemaObject so) {
+            so.property(array(cei.getPropertyName())
+                    .items(itemsSchema)
+                    .required(cei.isRequired())
+                    .description(getDescriptionContent(cei)));
+        }
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
