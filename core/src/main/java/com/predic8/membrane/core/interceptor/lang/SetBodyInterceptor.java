@@ -35,6 +35,7 @@ import static java.nio.charset.StandardCharsets.*;
  * resort to the template plugin instead.
  * <p>
  * The content of the message body is set as UTF-8 encoded bytes. Set a corresponding content type header if necessary.
+ * </p>
  */
 @MCElement(name = "setBody")
 public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
