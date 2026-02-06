@@ -29,6 +29,13 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.*;
 import static java.lang.String.valueOf;
 
+/**
+ * @description Publishes an overview of all OpenAPI-enabled proxies and serves Swagger UI under /api-docs/ui/*.
+ * @yaml
+ * <pre><code>
+ *  apiDocs: {}
+ * </code></pre>
+ */
 @MCElement(name = "apiDocs")
 public class ApiDocsInterceptor extends AbstractInterceptor {
 

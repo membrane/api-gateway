@@ -29,6 +29,19 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
+/**
+ * @description OAuth2/OIDC authorization server endpoints (auth/token/userinfo/revocation/.well-known) with session + consent/login UI.
+ * @yaml
+ * <pre><code>
+ *  oauth2authserver:
+ *    issuer: https://auth.example.com
+ *    location: logindialog
+ *    consentFile: conf/consent.html
+ *    userDataProvider: {}
+ *    clientList: {}
+ *    claimList: {}
+ * </code></pre>
+ */
 @SuppressWarnings("LoggingSimilarMessage")
 @MCElement(name = "oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor implements ProxyAware {

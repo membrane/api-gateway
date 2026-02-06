@@ -27,4 +27,9 @@ public class Deny extends AccessRule {
     boolean permitPeer() {
         return false;
     }
+
+    @Override
+    public String toString() {
+        return "Deny{target=%s}".formatted(target);
+    }
 }
