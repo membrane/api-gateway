@@ -14,26 +14,23 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.annot.MCChildElement;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.*;
+import org.jetbrains.annotations.*;
 
-import javax.lang.model.util.Types;
+import javax.lang.model.util.*;
+import java.lang.annotation.*;
 import java.lang.reflect.*;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static com.predic8.membrane.annot.yaml.GenericYamlParser.createAndPopulateNode;
-import static com.predic8.membrane.annot.yaml.GenericYamlParser.parseListIncludingStartEvent;
+import static com.predic8.membrane.annot.yaml.GenericYamlParser.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static com.predic8.membrane.annot.yaml.YamlParsingUtils.resolveSpelValue;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.Long.parseLong;
-import static java.util.Locale.ROOT;
+import static com.predic8.membrane.annot.yaml.YamlParsingUtils.*;
+import static java.lang.Boolean.*;
+import static java.lang.Double.*;
+import static java.lang.Integer.*;
+import static java.lang.Long.*;
+import static java.util.Locale.*;
 
 public class MethodSetter {
 
@@ -73,14 +70,31 @@ public class MethodSetter {
                 if (beanClass != null)
                     setter = getChildSetter(clazz, beanClass);
             } catch (Exception e) {
-                throw new RuntimeException("Can't find method or bean for key '%s' in %s".formatted(key, clazz.getName()), e);
+                throw new RuntimeException("Can't find method or bean for key '%s' in %s".formatted(key, getConfigElementName(clazz)), e);
             }
             if (setter == null)
                 setter = getAnySetter(clazz);
-            if (beanClass == null && setter == null)
-                throw new RuntimeException("Can't find method or bean for key '%s' in %s".formatted(key, clazz.getName()));
+            if (beanClass == null && setter == null) {
+                var yamlParsingException = new YamlParsingException("Can't find method or bean for key '%s' in %s".formatted(key, getConfigElementName(clazz)), null, key, ctx.context());
+                yamlParsingException.setParsingContext(ctx);
+                throw yamlParsingException;
+            }
         }
         return new MethodSetter(setter, beanClass);
+    }
+
+    private static String getConfigElementName(Class clazz) {
+        Annotation childAnnotation = clazz.getAnnotation(MCChildElement.class);
+        if (childAnnotation != null) {
+            return ((MCChildElement) childAnnotation).toString();
+        }
+
+        Annotation mcAnnotation = clazz.getAnnotation(MCElement.class);
+        if (mcAnnotation != null) {
+            return ((MCElement) mcAnnotation).name();
+        }
+
+        return clazz.getSimpleName();
     }
 
     public Class<?> getParameterType() {
@@ -88,10 +102,10 @@ public class MethodSetter {
     }
 
     public <T> void setSetter(T instance, ParsingContext ctx, JsonNode node, String key) throws InvocationTargetException, IllegalAccessException, WrongEnumConstantException {
-        setter.invoke(instance, resolveSetterValue(ctx, node.get(key), key));
+        setter.invoke(instance, resolveSetterValue(ctx.addPath("."+key), node.get(key), key));
     }
 
-    private Object resolveSetterValue(ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, ParsingException {
+    private Object resolveSetterValue(ParsingContext ctx, JsonNode node, String key) throws WrongEnumConstantException, YamlParsingException {
         Class<?> wanted = getParameterType();
 
         // Collections / repeated elements
@@ -111,13 +125,13 @@ public class MethodSetter {
      * Attempts to coerce a given JSON node into the desired scalar, enum, reference, or map type,
      * as specified by the provided target class.
      *
-     * @param ctx The parsing context, providing access to type resolution and bean lookup mechanisms.
-     * @param node The JSON node to be coerced into the desired type.
-     * @param key The key corresponding to the JSON node, often used for error messages or map assignments.
+     * @param ctx    The parsing context, providing access to type resolution and bean lookup mechanisms.
+     * @param node   The JSON node to be coerced into the desired type.
+     * @param key    The key corresponding to the JSON node, often used for error messages or map assignments.
      * @param wanted The target class specifying the type into which the node should be converted.
      * @return The coerced object, matching the desired type, derived from the input node.
      * @throws WrongEnumConstantException If the node value does not match any of the constants in the enum type.
-     * @throws ParsingException If the provided type is unsupported for coercion or other unexpected issues arise.
+     * @throws YamlParsingException           If the provided type is unsupported for coercion or other unexpected issues arise.
      */
     Object coerceScalarOrReference(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
         assert node != null;
@@ -138,12 +152,12 @@ public class MethodSetter {
     private Object coerceTextual(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
         final String evaluated = evaluateSpelForString(node, key, node.asText());
         if (evaluated == null) {
-            throw new ParsingException("SpEL for '%s' evaluated to null, but '%s' expects %s.".formatted(key, key, wanted.getSimpleName(), key.toUpperCase()), node);
+            throw new YamlParsingException("SpEL for '%s' evaluated to null, but '%s' expects %s.".formatted(key, key, wanted.getSimpleName(), key.toUpperCase()), node);
         }
         final String value = evaluated.trim();
 
         if (isBoolean(wanted)) return parseBoolean(value);
-        if (isNumber(wanted))  return parseNumericOrThrow(key, wanted, evaluated, node);
+        if (isNumber(wanted)) return parseNumericOrThrow(key, wanted, evaluated, node);
         if (wanted == Map.class && hasOtherAttributes(setter)) return Map.of(key, evaluated);
         if (isBeanReference(wanted)) return resolveReference(ctx, node, key, wanted);
         if (isReferenceAttribute(setter)) return ctx.registry().resolve(evaluated);
@@ -157,8 +171,8 @@ public class MethodSetter {
     private static String evaluateSpelForString(JsonNode node, String key, String value) {
         try {
             return (String) resolveSpelValue(value, String.class, node);
-        } catch (ParsingException pe) {
-            throw new ParsingException("Invalid SpEL in '%s': %s".formatted(key, pe.getMessage()), node);
+        } catch (YamlParsingException pe) {
+            throw new YamlParsingException("Invalid SpEL in '%s': %s".formatted(key, pe.getMessage()), node);
         }
     }
 
@@ -172,7 +186,7 @@ public class MethodSetter {
             if (isLong(wanted)) return parseLong(value);
             if (isDouble(wanted)) return parseDouble(value);
         } catch (NumberFormatException nfe) {
-            throw new ParsingException("Invalid value for '%s': expected %s, but got '%s'. If you meant SpEL, use \"#{...}\" (e.g. \"#{env('PORT')}\")." .formatted(key, wanted.getSimpleName(), value), node);
+            throw new YamlParsingException("Invalid value for '%s': expected %s, but got '%s'. If you meant SpEL, use \"#{...}\" (e.g. \"#{env('PORT')}\").".formatted(key, wanted.getSimpleName(), value), node);
         }
         throw unsupported(wanted, key, node);
     }
@@ -196,7 +210,7 @@ public class MethodSetter {
                 for (Object o : list) {
                     if (o == null) continue;
                     if (!elemType.isAssignableFrom(o.getClass())) {
-                        throw new ParsingException("Value of type '%s' is not allowed in list '%s'. Expected '%s'."
+                        throw new YamlParsingException("Value of type '%s' is not allowed in list '%s'. Expected '%s'."
                                 .formatted(McYamlIntrospector.getElementName(o.getClass()), key, elemType.getSimpleName()), node);
                     }
                 }
@@ -212,10 +226,10 @@ public class MethodSetter {
         try {
             resolved = ctx.registry().resolve(ref);
         } catch (RuntimeException e) {
-            throw new ParsingException(e, node);
+            throw new YamlParsingException(e, node);
         }
         if (!wanted.isAssignableFrom(resolved.getClass())) {
-            throw new ParsingException(
+            throw new YamlParsingException(
                     "Referenced bean '%s' has type '%s' but '%s' expects '%s'."
                             .formatted(ref, resolved.getClass().getName(), key, wanted.getName()),
                     node
@@ -283,8 +297,8 @@ public class MethodSetter {
         return isInteger(wanted) || isLong(wanted) || isDouble(wanted);
     }
 
-    private static ParsingException unsupported(Class<?> wanted, String key, JsonNode node) {
-        return new ParsingException("Unsupported setter type: %s for key '%s' with node type %s".formatted(wanted.getName(), key, node.getNodeType()), node);
+    private static YamlParsingException unsupported(Class<?> wanted, String key, JsonNode node) {
+        return new YamlParsingException("Unsupported setter type: %s for key '%s' with node type %s".formatted(wanted.getName(), key, node.getNodeType()), node);
     }
 
 }

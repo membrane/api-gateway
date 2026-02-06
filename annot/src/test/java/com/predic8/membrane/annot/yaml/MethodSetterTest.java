@@ -51,7 +51,7 @@ class MethodSetterTest {
     @Test
     void dontUseMethodsWithoutChildElementAnnotation() {
         MethodSetter ms = getMethodSetter(new ParsingContext("foo", null,
-                        new GrammarMock().withGlobalElement("b", B.class)),
+                        new GrammarMock().withGlobalElement("b", B.class),null, null),
                 A.class, "b");
         assertEquals("setA3", ms.getSetter().getName());
     }
@@ -59,14 +59,14 @@ class MethodSetterTest {
     @Test
     void multiplePotentialSettersFound() {
         assertThrowsExactly(RuntimeException.class, () -> getMethodSetter(new ParsingContext("foo", null,
-                        new GrammarMock().withGlobalElement("b", B.class)),
+                        new GrammarMock().withGlobalElement("b", B.class),null, null),
                 A2.class, "b"));
     }
 
     @Test
     void noPotentialSetterFound() {
         assertThrowsExactly(RuntimeException.class, () -> getMethodSetter(new ParsingContext("foo", null,
-                        new GrammarMock().withGlobalElement("c", C.class)),
+                        new GrammarMock().withGlobalElement("c", C.class),null, null),
                 A2.class, "c"));
     }
 

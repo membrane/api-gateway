@@ -16,7 +16,7 @@ package com.predic8.membrane.annot.beanregistry;
 
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.bean.BeanFactory;
-import com.predic8.membrane.annot.yaml.GenericYamlParser;
+import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +88,11 @@ public class BeanContainer {
                     grammar,
                     definition.getNode(),
                     registry);
-        } catch (Exception e) {
+        } catch (YamlParsingException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            log.error("Could not instantiate bean: {}", definition.getNode(), e);
             throw new RuntimeException(e);
         }
     }
@@ -100,7 +104,6 @@ public class BeanContainer {
         if (prototype) {
             return define(registry, grammar);
         }
-
 
         // Singleton: ensure define() runs at most once per BeanContainer.
         synchronized (this) {

@@ -14,10 +14,12 @@
 
 package com.predic8.membrane.annot.yaml;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
+import com.predic8.membrane.annot.beanregistry.*;
+
+import javax.annotation.concurrent.*;
+import java.util.*;
 
 /**
  * Immutable parsing state passed down while traversing YAML.
@@ -25,18 +27,72 @@ import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
  * - registry: access to already materialized beans (e.g., for $ref/reference attributes).
  * - grammar: resolves element names to Java classes via local/global lookups.
  */
-public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(String context, T registry, Grammar grammar) {
+public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
+    private final String context;
+    private final T registry;
+    private final Grammar grammar;
+    private final String path;
+    private final JsonNode topLevel;
 
-    ParsingContext updateContext(String context) {
-        return new ParsingContext(context, registry, grammar);
+     public ParsingContext(String context, T registry, Grammar grammar, JsonNode topLevel) {
+        this.context = context;
+        this.registry = registry;
+        this.grammar = grammar;
+        this.topLevel = topLevel;
+        this.path = "";
+    }
+
+    public ParsingContext(String context, T registry, Grammar grammar, JsonNode topLevel,  String path) {
+        this.context = context;
+        this.registry = registry;
+        this.grammar = grammar;
+        this.path = path;
+        this.topLevel = topLevel;
+    }
+
+    public String context() {
+        return context;
+    }
+
+    public T registry() {
+        return registry;
+    }
+
+    public Grammar grammar() {
+        return grammar;
+    }
+
+    public String path() {
+        return path;
+    }
+
+    public ParsingContext addPath(String path) {
+        return new ParsingContext(context, registry, grammar,topLevel, this.path + path);
+    }
+
+    public ParsingContext<T> updateContext(String context) {
+        String newPath;
+        if (path == null) {
+            newPath = context;
+        } else {
+            newPath = path + "." + context;
+        }
+        return new ParsingContext<>(context, registry, grammar,topLevel, newPath);
     }
 
     public Class<?> resolveClass(String key) {
         Class<?> clazz = grammar.getLocal(context, key);
         if (clazz == null)
             clazz = grammar.getElement(key);
-        if (clazz == null)
-            throw new RuntimeException("Did not find java class for key '%s'.".formatted(key));
+        if (clazz == null) {
+            var e = new YamlParsingException("Did not find java class for key '%s'.".formatted(key), null, key, context);
+            throw e;
+//            throw new RuntimeException("Did not find java class for key '%s'.".formatted(key));
+        }
         return clazz;
+    }
+
+    public JsonNode getToplevel() {
+         return topLevel;
     }
 }

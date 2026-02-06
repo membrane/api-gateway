@@ -14,7 +14,6 @@
 package com.predic8.membrane.annot.beanregistry;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.bean.*;
 import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
@@ -126,7 +125,10 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
                     bcs.remove(bc.getDefinition().getUid());
                 }
                 uidsToRemove.add(uidAction);
-            } catch (Exception e) {
+            } catch (YamlParsingException e) {
+                throw e;
+            }
+            catch (Exception e) {
                 log.error("Could not handle {} {}/{}", uidAction.action,
                         bc.getDefinition().getNamespace(), bc.getDefinition().getName(), e);
                 throw new RuntimeException(e);
