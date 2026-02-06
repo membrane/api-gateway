@@ -34,7 +34,6 @@ import static java.nio.charset.StandardCharsets.*;
  *          jsonPath: $.person.name
  *          with: Alice
  * </code></pre>
- * @example
  */
 @SuppressWarnings("unused")
 @MCElement(name="replace")
