@@ -89,7 +89,7 @@ PRIO 3:
         - name: url
           value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
   ```
-
+- removed `MethodOverrideInterceptor`
 
 ## Bug Fixes
 - `xml2json`: Ensuring content type alignment and better exception handling.  
