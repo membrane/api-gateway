@@ -56,9 +56,8 @@ api:
     # Place authentication here: Basic, API key, OAuth2, ...
     - response:
         - setCookies:
-            - cookie:
-                name: SESSION
-                value: akj34
+            - name: SESSION
+              value: akj34
         - log:
             message: Login successful. Issue SESSION cookie.
     - return:

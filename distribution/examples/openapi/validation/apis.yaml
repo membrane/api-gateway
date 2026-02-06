@@ -3,11 +3,10 @@
 api:
   port: 2000
   specs:
-    - openapi:
-        location: contacts-xxl-api-v1.yml
-        validateRequests: yes
-        validateResponses: no
-        validationDetails: yes
+    - location: contacts-xxl-api-v1.yml
+      validateRequests: yes
+      validateResponses: no
+      validationDetails: yes
 
 ---
 # These proxies provides mock backend implementations for the API in this demo.

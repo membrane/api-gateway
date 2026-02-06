@@ -21,7 +21,6 @@ api:
       - log:
           message: Requested ${path}
       - rewriter:
-          - map:
-              from: "/fruits/(.*)"
-              to: "https://api.predic8.de/shop/v2/products/$1"
-              do: redirect_permanent
+          - from: "/fruits/(.*)"
+            to: "https://api.predic8.de/shop/v2/products/$1"
+            do: redirect_permanent
