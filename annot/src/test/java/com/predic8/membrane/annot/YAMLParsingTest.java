@@ -710,6 +710,82 @@ public class YAMLParsingTest {
 
     }
 
+    @Test
+    public void noEnvelopeListItemWithNonListChild() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+    package com.predic8.membrane.demo;
+    import com.predic8.membrane.annot.*;
+    import java.util.List;
+
+    @MCElement(name="demo", noEnvelope=true, topLevel=true, component=false)
+    public class DemoElement {
+        List<Child1Element> children;
+
+        public List<Child1Element> getChildren() { return children; }
+
+        @MCChildElement
+        public void setChildren(List<Child1Element> children) { this.children = children; }
+    }
+    ---
+    package com.predic8.membrane.demo;
+    import com.predic8.membrane.annot.*;
+
+    @MCElement(name="child1", component=false)
+    public class Child1Element {
+        String attr;
+        ValidatorElement validator;
+
+        public String getAttr() { return attr; }
+        public ValidatorElement getValidator() { return validator; }
+
+        @MCAttribute
+        public void setAttr(String attr) { this.attr = attr; }
+
+        @MCChildElement
+        public void setValidator(ValidatorElement validator) { this.validator = validator; }
+    }
+    ---
+    package com.predic8.membrane.demo;
+    import com.predic8.membrane.annot.*;
+
+    @MCElement(name="validator", component=false)
+    public class ValidatorElement {
+        String type;
+
+        public String getType() { return type; }
+
+        @MCAttribute
+        public void setType(String type) { this.type = type; }
+    }
+    """);
+
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        assertStructure(
+                parseYAML(result, """
+            demo:
+              - attr: here
+                validator:
+                  type: regex
+              - attr: here2
+                validator:
+                  type: notNull
+            """),
+                clazz("DemoElement",
+                        property("children", list(
+                                clazz("Child1Element",
+                                        property("attr", value("here")),
+                                        property("validator", clazz("ValidatorElement",
+                                                property("type", value("regex"))))),
+                                clazz("Child1Element",
+                                        property("attr", value("here2")),
+                                        property("validator", clazz("ValidatorElement",
+                                                property("type", value("notNull")))))
+                        )))
+        );
+    }
+
     private Throwable getCause(Throwable e) {
         if (e.getCause() != null)
             return getCause(e.getCause());
