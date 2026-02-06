@@ -226,11 +226,15 @@ The `Doc` parser accepts **only** these tags:
 Ignored standard tags: `@author`, `@param`, `@see` (silently dropped).
 Any other tag: **warning** (“Unknown javadoc tag”).
 
-Rules:
-
-* Each tag may appear **at most once** per element (duplicate → warning; later one ignored).
-* `{@code ...}` inside any tag value → **error** (“@code not allowed!”).
-* Any XML/HTML entities like `&nbsp;` → **error** (“Entity … not allowed.”). Use only `&lt; &gt; &amp; &quot; &apos;`.
+> #### Rules
+> * **Uniqueness:** Each custom tag may appear **at most once per element**.
+> * **Markup:** Use HTML for Markup. 
+>   * Must be **properly nested** and **fully closed**
+>   * Do **not** start your description with an HTML tag (like `<p>`). The first plain-text paragraph is used as a short description.
+> * **Entities:** Do **not** use named XML/HTML entities (e.g. `&nbsp;`) inside tag values. Only the XML built-ins are allowed: `&lt;` `&gt;` `&amp;` `&quot;` `&apos;`
+> * **Code blocks:** Use `<pre><code>...</code></pre>` (do **not** use `{@code ...}`).
+> * **Links:** `{@link ...}` is allowed, but remains **plain text** (no hyperlink conversion).
+> * **Do not use `{@code ...}`**
 
 
 ### 2) Class-level docs (for `@MCElement` classes)
@@ -311,12 +315,3 @@ Use **`@description`** to describe:
 @MCOtherAttributes
 public void setOtherAttributes(Map<QName, String> attrs) { ... }
 ```
-
-### 4) Content format rules (inside tag values)
-
-Inside each custom tag value you may use **well-formed XML/HTML fragments**.
-
-* Must be **well-formed** (closed tags, properly nested), otherwise compiler error and the value becomes empty.
-* No HTML entities except the XML built-ins: `&lt; &gt; &amp; &quot; &apos;`
-* `{@link ...}` is allowed but stays **plain text** (not converted to hyperlinks).
-* For code: use `<pre><code>...</code></pre>` (do **not** use `{@code ...}`).
