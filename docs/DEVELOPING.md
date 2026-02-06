@@ -230,7 +230,7 @@ Any other tag: **warning** (“Unknown javadoc tag”).
 > * **Uniqueness:** Each custom tag may appear **at most once per element**.
 > * **Markup:** Use HTML for Markup. 
 >   * Must be **properly nested** and **fully closed**
->   * Do **not** start your description with an HTML tag (like `<p>`). The first plain-text paragraph is used as a short description.
+>   * Do **not** start your description with an empty HTML tag (like `<p/>`). The first plain-text paragraph is used as a short description.
 > * **Entities:** Do **not** use named XML/HTML entities (e.g. `&nbsp;`) inside tag values. Only the XML built-ins are allowed: `&lt;` `&gt;` `&amp;` `&quot;` `&apos;`
 > * **Code blocks:** Use `<pre><code>...</code></pre>` (do **not** use `{@code ...}`).
 > * **Links:** `{@link ...}` is allowed, but remains **plain text** (no hyperlink conversion).
