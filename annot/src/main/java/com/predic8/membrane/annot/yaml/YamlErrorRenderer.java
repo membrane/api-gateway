@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.annot.yaml;
 
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.*;
 import com.fasterxml.jackson.dataformat.yaml.*;
@@ -47,77 +48,81 @@ public class YamlErrorRenderer {
     /**
      * Renders a YAML representation of the JSON node with an error marker at the specified location.
      *
-     * @param node     the root JSON node
-     * @param jsonPath the JSONPath to the parent object or array (e.g., "$.api.flow[0].request[0].request")
-     * @param key      the field name (for objects) or index (for arrays, e.g., "1") to mark
      * @return YAML string with "^^^ ERROR" marker at the target location
      */
-    public static String renderErrorReport(JsonNode node, String jsonPath, String key) {
-        try {
-            // Create a working copy
-            JsonNode workingCopy = node.deepCopy();
+    public static String renderErrorReport(ParsingContext pc) throws JsonProcessingException {
 
-            // Use JSONPath to navigate to the parent
-            DocumentContext ctx = JsonPath.using(JSON_PATH_CONFIG).parse(workingCopy);
+        JsonNode node = pc.getNode();
+        String jsonPath = pc.path();
+        String key = pc.getKey();
 
-            // Read the parent object or array
-            Object parent = ctx.read(jsonPath);
+        System.out.println("node = " + node + ", jsonPath = " + jsonPath + ", key = " + key);
 
-            if (parent == null) {
-                throw new IllegalArgumentException("Parent path not found: " + jsonPath);
-            }
+        // Create a working copy
+        JsonNode workingCopy = node.deepCopy();
 
-            JsonNode targetNode;
+        // Use JSONPath to navigate to the parent
+        DocumentContext ctx = JsonPath.using(JSON_PATH_CONFIG).parse(workingCopy);
 
-            if (parent instanceof ObjectNode parentNode) {
-                // Handle object: key is a field name
-                targetNode = parentNode.get(key);
-                if (targetNode == null) {
-                    throw new IllegalArgumentException("Key '" + key + "' not found in parent at: " + jsonPath);
-                }
+        // Read the parent object or array
+        Object parent = ctx.read(jsonPath);
 
-                // Wrap the target field in a marker structure
-                ObjectNode wrapper = JSON_MAPPER.createObjectNode();
-                wrapper.set(MARKER_KEY, targetNode.deepCopy());
-
-                // Replace the original field with the wrapped version
-                parentNode.set(key, wrapper);
-
-            } else if (parent instanceof ArrayNode parentArray) {
-                // Handle array: key is an index
-                int index;
-                try {
-                    index = Integer.parseInt(key);
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Key '" + key + "' is not a valid array index for array at: " + jsonPath);
-                }
-
-                if (index < 0 || index >= parentArray.size()) {
-                    throw new IllegalArgumentException("Index " + index + " out of bounds for array at: " + jsonPath);
-                }
-
-                targetNode = parentArray.get(index);
-
-                // Wrap the target element in a marker structure
-                ObjectNode wrapper = JSON_MAPPER.createObjectNode();
-                wrapper.set(MARKER_KEY, targetNode.deepCopy());
-
-                // Replace the original element with the wrapped version
-                parentArray.set(index, wrapper);
-
-            } else {
-                throw new IllegalArgumentException("Parent is neither an object nor an array: " + jsonPath);
-            }
-
-            // Convert to YAML
-            String yaml = YAML_MAPPER.writeValueAsString(workingCopy);
-
-            // Replace marker with error indicator
-            return replaceMarkerWithError(yaml, key);
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to render error report: " + e.getMessage(), e);
+        if (parent == null) {
+            throw new IllegalArgumentException("Parent path not found: " + jsonPath);
         }
+
+        if (parent instanceof ObjectNode parentNode) {
+            // Handle object: key is a field name
+            JsonNode targetNode = parentNode.get(key);
+            if (targetNode == null) {
+                //throw new IllegalArgumentException("Key '" + key + "' not found in parent at: " + jsonPath);
+                targetNode = node; // ?
+            }
+
+            // Create wrapper that contains the field
+            ObjectNode wrapper = JSON_MAPPER.createObjectNode();
+            ObjectNode innerObject = JSON_MAPPER.createObjectNode();
+            innerObject.set(key, targetNode.deepCopy());
+            wrapper.set(MARKER_KEY, innerObject);
+
+            // Remove the original field
+            parentNode.remove(key);
+
+            // Add the wrapper
+            parentNode.setAll(wrapper);
+
+        } else if (parent instanceof ArrayNode parentArray) {
+            // Handle array: key is an index
+            int index;
+            try {
+                index = Integer.parseInt(key);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Key '" + key + "' is not a valid array index for array at: " + jsonPath);
+            }
+
+            if (index < 0 || index >= parentArray.size()) {
+                throw new IllegalArgumentException("Index " + index + " out of bounds for array at: " + jsonPath);
+            }
+
+            JsonNode targetNode = parentArray.get(index);
+
+            // Wrap the entire element
+            ObjectNode wrapper = JSON_MAPPER.createObjectNode();
+            wrapper.set(MARKER_KEY, targetNode.deepCopy());
+
+            // Replace the original element with the wrapped version
+            parentArray.set(index, wrapper);
+
+        } else {
+            throw new IllegalArgumentException("Parent is neither an object nor an array: " + jsonPath);
+        }
+
+        // Convert to YAML
+        String yaml = YAML_MAPPER.writeValueAsString(workingCopy);
+
+        // Replace marker with error indicator
+        return replaceMarkerWithError(yaml, key);
+
     }
 
     /**
@@ -127,69 +132,72 @@ public class YamlErrorRenderer {
         String[] lines = yaml.split("\n");
         StringBuilder result = new StringBuilder();
 
-        result.append("Configuration:\n");
+        result.append("Config:\n");
         result.append(CYAN());
 
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
+            String trimmed = line.trim();
 
-            // Look for the error key
-            if (line.trim().startsWith(errorKey + ":")) {
-                int keyIndent = getIndentation(line);
+            // Look for __ERROR_MARKER__: line (with or without array dash)
+            if (trimmed.equals(MARKER_KEY + ":") || trimmed.equals("- " + MARKER_KEY + ":")) {
+                int markerIndent = getIndentation(line);
+                boolean isArrayElement = trimmed.startsWith("- ");
 
-                // Check if next line contains the marker
-                if (i + 1 < lines.length) {
-                    String nextLine = lines[i + 1];
-                    String trimmedNext = nextLine.trim();
+                i++; // Move to the first content line inside the marker
 
-                    if (trimmedNext.startsWith(MARKER_KEY + ":")) {
-                        // Found the marker - extract the value
-                        String markerLine = trimmedNext.substring(MARKER_KEY.length() + 1).trim();
-
-                        if (!markerLine.isEmpty()) {
-                            // Inline value: __ERROR_MARKER__: "Df"
-                            result.append(" ".repeat(keyIndent))
-                                    .append(errorKey)
-                                    .append(": ")
-                                    .append(markerLine)
-                                    .append("\n");
-                            result.append(" ".repeat(keyIndent))
-                                    .append(ERROR_POINTER);
-                            i++; // Skip the marker line
-                        } else {
-                            // Multi-line value: __ERROR_MARKER__: followed by nested content
-                            result.append(" ".repeat(keyIndent))
-                                    .append(errorKey)
-                                    .append(":\n");
-
-                            int markerIndent = getIndentation(nextLine);
-                            i += 2; // Skip errorKey line and marker line
-
-                            // Copy all nested content
-                            while (i < lines.length && getIndentation(lines[i]) > markerIndent) {
-                                String contentLine = lines[i];
-                                int contentIndent = getIndentation(contentLine);
-                                // Adjust indentation: remove marker's extra indent
-                                int newIndent = keyIndent + (contentIndent - markerIndent);
-                                result.append(" ".repeat(newIndent))
-                                        .append(contentLine.trim())
-                                        .append("\n");
-                                i++;
-                            }
-
-                            result.append(" ".repeat(keyIndent))
-                                    .append(ERROR_POINTER);
-                            i--; // Back up one since loop will increment
-                        }
-                        continue;
-                    }
+                if (i >= lines.length) {
+                    continue;
                 }
 
-                // No marker found, copy line as-is
-                result.append(line).append("\n");
-            } else {
-                result.append(line).append("\n");
+                String firstContentLine = lines[i];
+                int contentIndent = getIndentation(firstContentLine);
+
+                // Determine if the content is a single field or complex object
+                String firstContentTrimmed = firstContentLine.trim();
+
+                // Output the first line
+                if (isArrayElement) {
+                    // This is an array element, so add the dash
+                    result.append(" ".repeat(markerIndent))
+                            .append("- ")
+                            .append(firstContentTrimmed)
+                            .append("\n");
+                } else {
+                    // Regular object field
+                    result.append(" ".repeat(markerIndent))
+                            .append(firstContentTrimmed)
+                            .append("\n");
+                }
+
+                i++; // Move to next line
+
+                // Copy remaining nested content (if any) with adjusted indentation
+                while (i < lines.length && getIndentation(lines[i]) > contentIndent) {
+                    String nestedLine = lines[i];
+                    int nestedIndent = getIndentation(nestedLine);
+
+                    // Calculate relative indentation from the content
+                    int relativeIndent = nestedIndent - contentIndent;
+                    int newIndent = markerIndent + (isArrayElement ? 2 : 0) + relativeIndent;
+
+                    result.append(" ".repeat(newIndent))
+                            .append(nestedLine.trim())
+                            .append("\n");
+                    i++;
+                }
+
+                // Add error marker - align with content (add 2 spaces for array dash)
+                int errorIndent = markerIndent + (isArrayElement ? 2 : 0);
+                result.append(" ".repeat(errorIndent))
+                        .append(ERROR_POINTER);
+                result.append(CYAN());
+                i--; // Back up one since loop will increment
+                continue;
             }
+
+            // No marker found, copy line as-is
+            result.append(line).append("\n");
         }
 
         result.append(RESET());

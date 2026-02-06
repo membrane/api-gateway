@@ -30,7 +30,7 @@ public class BeanContainer {
     /**
      * The class of the bean.
      */
-    private final Class clazz;
+    private final Class<?> clazz;
     /**
      * Constructed bean after initialization.
      */
@@ -88,7 +88,7 @@ public class BeanContainer {
                     grammar,
                     definition.getNode(),
                     registry);
-        } catch (YamlParsingException e) {
+        } catch (ConfigurationParsingException e) {
             throw e;
         }
         catch (Exception e) {

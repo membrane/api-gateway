@@ -18,9 +18,6 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
 
-import javax.annotation.concurrent.*;
-import java.util.*;
-
 /**
  * Immutable parsing state passed down while traversing YAML.
  * - context: current element scope used for local type resolution in {@link Grammar}.
@@ -33,14 +30,7 @@ public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
     private final Grammar grammar;
     private final String path;
     private final JsonNode topLevel;
-
-     public ParsingContext(String context, T registry, Grammar grammar, JsonNode topLevel) {
-        this.context = context;
-        this.registry = registry;
-        this.grammar = grammar;
-        this.topLevel = topLevel;
-        this.path = "";
-    }
+    private String key;
 
     public ParsingContext(String context, T registry, Grammar grammar, JsonNode topLevel,  String path) {
         this.context = context;
@@ -66,18 +56,14 @@ public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
         return path;
     }
 
-    public ParsingContext addPath(String path) {
+    public ParsingContext<?> addPath(String path) {
         return new ParsingContext(context, registry, grammar,topLevel, this.path + path);
     }
 
-    public ParsingContext<T> updateContext(String context) {
-        String newPath;
-        if (path == null) {
-            newPath = context;
-        } else {
-            newPath = path + "." + context;
-        }
-        return new ParsingContext<>(context, registry, grammar,topLevel, newPath);
+    public ParsingContext<?> key(String key) {
+        var pc = new ParsingContext(context, registry, grammar, topLevel, path);
+        pc.key = key;
+        return pc;
     }
 
     public Class<?> resolveClass(String key) {
@@ -85,7 +71,8 @@ public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
         if (clazz == null)
             clazz = grammar.getElement(key);
         if (clazz == null) {
-            var e = new YamlParsingException("Did not find java class for key '%s'.".formatted(key), null, key, context);
+            var e = new ConfigurationParsingException("Did not find java class for key '%s'.".formatted(key));
+            e.setParsingContext(this);
             throw e;
 //            throw new RuntimeException("Did not find java class for key '%s'.".formatted(key));
         }
@@ -94,5 +81,13 @@ public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
 
     public JsonNode getToplevel() {
          return topLevel;
+    }
+
+    public JsonNode getNode() {
+        return topLevel;
+    }
+
+    public String getKey() {
+        return key;
     }
 }

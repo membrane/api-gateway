@@ -18,24 +18,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public final class NodeValidationUtils {
 
-    public static void ensureMappingStart(JsonNode node) throws YamlParsingException {
-        if (!(node.isObject())) throw new YamlParsingException("Expected object", node);
+    public static void ensureMappingStart(JsonNode node) throws ConfigurationParsingException {
+        if (!(node.isObject())) throw new ConfigurationParsingException("Expected object");
     }
 
-    public static void ensureSingleKey(JsonNode node) {
+    public static void ensureSingleKey(ParsingContext<?> ctx, JsonNode node) {
         ensureMappingStart(node);
-        if (node.size() != 1) throw new YamlParsingException("Expected exactly one key.", node);
+        if (node.size() != 1) {
+            var e = new ConfigurationParsingException("Expected exactly one key.");
+            e.setParsingContext(ctx);
+            throw e;
+        }
     }
 
-    public static void ensureTextual(JsonNode node, String message) throws YamlParsingException {
-        if (!node.isTextual()) throw new YamlParsingException(message, node);
+    public static void ensureTextual(JsonNode node, String message) throws ConfigurationParsingException {
+        if (!node.isTextual()) throw new ConfigurationParsingException(message);
     }
 
-    public static void ensureArray(JsonNode node, String message) throws YamlParsingException {
-        if (!node.isArray()) throw new YamlParsingException(message, node);
+    public static void ensureArray(JsonNode node, String message) throws ConfigurationParsingException {
+        if (!node.isArray()) throw new ConfigurationParsingException(message);
     }
 
-    public static void ensureArray(JsonNode node) throws YamlParsingException {
+    public static void ensureArray(JsonNode node) throws ConfigurationParsingException {
         ensureArray(node, "Expected list.");
     }
 

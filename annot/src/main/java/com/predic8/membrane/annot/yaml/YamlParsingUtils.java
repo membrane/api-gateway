@@ -118,7 +118,7 @@ public final class YamlParsingUtils {
         try {
             value = eval(expression, SPEL_CTX);
         } catch (RuntimeException e) {
-            throw new YamlParsingException("Invalid SpEL expression: %s".formatted(e.getMessage()), node);
+            throw new ConfigurationParsingException("Invalid SpEL expression: %s".formatted(e.getMessage()));
         }
 
         if (value == null) return null;

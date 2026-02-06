@@ -125,7 +125,7 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
                     bcs.remove(bc.getDefinition().getUid());
                 }
                 uidsToRemove.add(uidAction);
-            } catch (YamlParsingException e) {
+            } catch (ConfigurationParsingException e) {
                 throw e;
             }
             catch (Exception e) {
@@ -158,7 +158,6 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
     public List<Object> getBeans() {
         return bcs.values().stream().filter(bd -> !bd.getDefinition().isComponent())
                 .map(bc -> bc.getOrCreate(this, grammar))
-                .filter(Objects::nonNull)
                 .toList();
     }
 
@@ -172,7 +171,6 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
         return bcs.values().stream()
                 .filter(bd -> bd.produces(clazz))
                 .map(bc -> bc.getOrCreate(this, grammar))
-                .filter(Objects::nonNull)
                 .filter(clazz::isInstance)
                 .map(clazz::cast)
                 .toList();
