@@ -53,6 +53,13 @@ import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2
 import static java.net.URLDecoder.decode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * @description Provides a JSON-based Admin API (health, apis, calls, exchange details, suggestions, ws) backed by the ExchangeStore.
+ * @yaml
+ * <pre><code>
+ *  adminApi: {}
+ * </code></pre>
+ */
 @MCElement(name = "adminApi", excludeFromFlow = true)
 public class AdminApiInterceptor extends AbstractInterceptor {
 

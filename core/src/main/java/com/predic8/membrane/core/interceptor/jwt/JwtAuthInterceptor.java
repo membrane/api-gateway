@@ -32,6 +32,16 @@ import static com.predic8.membrane.core.interceptor.jwt.JwtSignInterceptor.DEFAU
 import static java.util.EnumSet.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
+/**
+ * @description Validates a JWT on requests (signature via JWKS, required exp/sub) and exposes claims in exchange properties ("jwt").
+ * @yaml
+ * <pre><code>
+ *  jwtAuth:
+ *    expectedAud: my-audience
+ *    expectedTid: 67c859d3-0cd4-4a99-86db-088bed1a9601
+ *    jwks: {}
+ * </code></pre>
+ */
 @MCElement(name = "jwtAuth")
 public class JwtAuthInterceptor extends AbstractInterceptor {
 

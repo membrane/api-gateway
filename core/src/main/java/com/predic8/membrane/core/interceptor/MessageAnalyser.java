@@ -26,6 +26,15 @@ import java.io.*;
 
 import static com.predic8.membrane.core.Constants.*;
 
+/**
+ * @description Analyses XML bodies and stores extracted root element + SOAP operation metadata in Exchange properties (request/response).
+ * @yaml
+ * <pre><code>
+ *  api:
+ *    flow:
+ *      - analyser: {}
+ * </code></pre>
+ */
 @MCElement(name="analyser")
 public class MessageAnalyser extends AbstractInterceptor {
 

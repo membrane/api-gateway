@@ -29,6 +29,10 @@ import static com.predic8.membrane.core.http.Header.LOCATION;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * @description Initiates an OAuth2 login flow by redirecting to oauth2 (FlowContext).
+
+ */
 @MCElement(name = "flowInitiator", excludeFromFlow = true)
 public class FlowInitiator extends AbstractInterceptor {
 
