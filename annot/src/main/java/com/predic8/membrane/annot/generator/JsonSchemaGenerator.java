@@ -198,7 +198,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private SchemaObject getParserSchemaObject(ElementInfo elementInfo, String parserName) {
         return object(parserName)
-                .additionalProperties( elementInfo.isString())
+                .additionalProperties(elementInfo.isString())
                 .description(getDescriptionContent(elementInfo));
     }
 
@@ -341,14 +341,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         sos.add(object()
                 .title("componentRef")
                 .additionalProperties(false)
-                .property( string("$ref")));
+                .property(string("$ref")));
         return sos;
     }
 
     private boolean isComponentsList(ElementInfo parent, ChildElementInfo cei) {
         return COMPONENTS.equals(parent.getAnnotation().name())
-               && parent.getAnnotation().noEnvelope()
-               && COMPONENTS.equals(cei.getPropertyName());
+                && parent.getAnnotation().noEnvelope()
+                && COMPONENTS.equals(cei.getPropertyName());
     }
 
     private boolean shouldGenerateFlowParserType(ChildElementInfo cei) {
@@ -499,7 +499,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         if (ei.getAnnotation().collapsed()) return false;
         if (ei.getAnnotation().noEnvelope()) return false;
-        return !ei.isString();
+        if (ei.isString()) return false;
+
+        return hasAnyConfigurableProperty(ei, main);
     }
 
     private void attachArrayItems(ElementInfo parentEi, AbstractSchema<?> parentSchema, ChildElementInfo cei, AbstractSchema<?> itemsSchema) {
@@ -515,6 +517,15 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                     .required(cei.isRequired())
                     .description(getDescriptionContent(cei)));
         }
+    }
+
+    private boolean hasAnyConfigurableProperty(ElementInfo ei, MainInfo main) {
+        return ei.getAis().stream()
+                .filter(ai -> !ai.excludedFromJsonSchema())
+                .anyMatch(ai -> !"id".equals(ai.getXMLName()))
+                || ei.getTci() != null
+                || !ei.getChildElementSpecs().isEmpty()
+                || hasComponentChild(ei, main);
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
