@@ -101,7 +101,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     protected void setSpecRewrites(Proxy proxy) {
         var key = proxy.getKey();
         //noinspection OptionalGetWithoutIsPresent
-        getOpenAPIInterceptor(proxy).get().getApiProxy().getSpecs().forEach(spec -> {
+        getOpenAPIInterceptor(proxy).get().getApiProxy().getOpenapi().forEach(spec -> {
             if (spec.getRewrite() != null) {
                 setIfNull(spec.getRewrite(), Rewrite::getPort, Rewrite::setPort, key.getPort());
                 setIfNull(spec.getRewrite(), Rewrite::getHost, Rewrite::setHost, key.getHost());

@@ -71,7 +71,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     protected List<OpenAPISpec> specs = new ArrayList<>();
 
-    public List<OpenAPISpec> getSpecs() {
+    public List<OpenAPISpec> getOpenapi() {
         return specs;
     }
 
