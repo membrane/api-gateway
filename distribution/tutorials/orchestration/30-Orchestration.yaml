@@ -29,8 +29,8 @@ api:
             contentType: application/json
             src: |
               {
-                "title": "${property.title}",
-                "author": "${fn.jsonPath('$.name')}"
+                "title": ${fn.toJSON(property.title)},
+                "author": ${fn.toJSON(fn.jsonPath('$.name'))}
               }
     - return:
         status: 200

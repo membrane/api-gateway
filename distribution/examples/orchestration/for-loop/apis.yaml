@@ -30,7 +30,7 @@ api:
                   "products": [
                     <% property.result.eachWithIndex { p, idx -> %>
                       {
-                          "name": "${p.name}",
+                          "name": ${fn.toJSON(p.name)},
                           "price": ${p.price}
                       }${idx < property.result.size() - 1 ? ',' : ''}
                     <% } %>

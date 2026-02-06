@@ -58,7 +58,7 @@ api:
         - template:
             src: |
               {
-                "sub": "${fn.user()}"
+                "sub": ${fn.toJSON(fn.user())}
               }
         - jwtSign:
             jwk:
@@ -716,7 +716,7 @@ api:
             contentType: application/json
             src: |
               {
-                "destination": "${json.city}"
+                "destination": ${fn.toJSON(json.city)}
               }
     - return:
         status: 200

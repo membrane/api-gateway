@@ -20,8 +20,8 @@
 			<response>
 				<template contentType="application/json">
 					{
-						"country": "${property.country}",
-						"population": ${property.population}
+						"country": ${fn.toJSON(property.country)},
+						"population": ${fn.toJSON(property.population)}
 					}
 				</template>
 				<setProperty name="country" value="${//country}" language="xpath"/>

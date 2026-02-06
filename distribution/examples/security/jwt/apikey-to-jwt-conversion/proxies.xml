@@ -18,7 +18,7 @@
                     {
                     "sub": "user@example.com",
                     "aud": "order",
-                    "scope": "${property.scopes}"
+                    "scope": ${fn.toJSON(property.scopes)}
                     }
                 </template>
                 <jwtSign>
