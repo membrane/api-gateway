@@ -81,7 +81,7 @@ public class YAMLParsingReportTest {
                 package com.predic8.membrane.demo;
                 import com.predic8.membrane.annot.*;
                 @MCElement(name="demo", topLevel=true, component=false)
-                public class DemoElement {                                
+                public class DemoElement {
                     @MCAttribute
                     public void setAttr(int attr) {
                     }
@@ -125,7 +125,7 @@ public class YAMLParsingReportTest {
                 import com.predic8.membrane.annot.*;
                 import java.util.List;
                 @MCElement(name="demo", noEnvelope=true, topLevel=true, component=false)
-                public class DemoElement {   
+                public class DemoElement {
                     @MCChildElement
                     public void setChildren(List<Child1Element> children) {
                 

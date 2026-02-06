@@ -113,7 +113,7 @@ public final class YamlParsingUtils {
     }
 
 
-    static Object resolveSpelValue(String expression, Class<?> targetType, JsonNode node) {
+    static Object resolveSpelValue(String expression, Class<?> targetType) {
         final Object value;
         try {
             value = eval(expression, SPEL_CTX);

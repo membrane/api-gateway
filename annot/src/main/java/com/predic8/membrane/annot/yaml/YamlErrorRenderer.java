@@ -121,14 +121,14 @@ public class YamlErrorRenderer {
         String yaml = YAML_MAPPER.writeValueAsString(workingCopy);
 
         // Replace marker with error indicator
-        return replaceMarkerWithError(yaml, key);
+        return replaceMarkerWithError(yaml);
 
     }
 
     /**
      * Replaces the marker structure in YAML with an error indicator.
      */
-    private static String replaceMarkerWithError(String yaml, String errorKey) {
+    private static String replaceMarkerWithError(String yaml) {
         String[] lines = yaml.split("\n");
         StringBuilder result = new StringBuilder();
 

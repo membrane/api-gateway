@@ -159,9 +159,7 @@ public class GenericYamlParser {
         ensureSingleKey(new ParsingContext("",null,grammar,node,"$"),node);
         Class<?> clazz = grammar.getElement(kind);
         if (clazz == null) {
-            var e = new ConfigurationParsingException("Did not find java class for kind '%s'.".formatted(kind));
-
-            throw e;
+            throw new ConfigurationParsingException("Did not find java class for kind '%s'.".formatted(kind));
         }
         return clazz;
     }
@@ -387,7 +385,7 @@ public class GenericYamlParser {
 
     static Object convertScalarOrSpel(JsonNode node, Class<?> targetType) {
         if (node == null || !node.isTextual()) return SCALAR_MAPPER.convertValue(node, targetType);
-        return resolveSpelValue(node.asText(), targetType, node);
+        return resolveSpelValue(node.asText(), targetType);
     }
 
     private static Object parseListItem(ParsingContext<?> ctx, JsonNode item, Class<?> elemType) throws ConfigurationParsingException {
@@ -407,7 +405,7 @@ public class GenericYamlParser {
 
         // Single-key object: treat as inline if it matches a setter of the element type, otherwise wrapper form.
         if (item.size() == 1) {
-            if (elemType != null && findSetterForKey(elemType, item.fieldNames().next()) != null) {
+            if (elemType != null && findSetterForKey(elemType, item.fieldNames().next()) != null) { // TODO always true indSetterForKey(elemType, item.fieldNames().next()) != null
                 return parseInlineListItem(ctx, item, elemType);
             }
             return parseMapToObj(ctx, item);

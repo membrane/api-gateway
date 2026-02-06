@@ -50,7 +50,7 @@ public class MethodSetter {
         Method setter = findSetterForKey(clazz, key);
         // MCChildElements which are not lists are directly declared as beans,
         // their name should be interpreted as an element name
-        if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
+        if (setter != null && setter.getAnnotation(MCChildElement.class) != null) { // TODO setter != null  is always true
             if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
                 setter = null;
         }
@@ -73,7 +73,7 @@ public class MethodSetter {
             }
             if (setter == null)
                 setter = getAnySetter(clazz);
-            if (beanClass == null && setter == null) {
+            if (beanClass == null && setter == null) { // TODO Always false
                 var e = new ConfigurationParsingException("Can't find method or bean for key '%s' in %s".formatted(key, getConfigElementName(clazz)));
                 e.setParsingContext(ctx.key(key));
                 throw e;
@@ -136,7 +136,7 @@ public class MethodSetter {
         assert node != null;
 
         if (wanted.equals(String.class)) {
-            return node.isTextual() ? resolveSpelValue(node.asText(), String.class, node) : node.asText();
+            return node.isTextual() ? resolveSpelValue(node.asText(), String.class) : node.asText();
         }
 
         if (wanted.isEnum()) return parseEnum(wanted, node);
@@ -151,7 +151,7 @@ public class MethodSetter {
     private Object coerceTextual(ParsingContext<?> pc, JsonNode node, String key, Class<?> wanted) {
         final String evaluated = evaluateSpelForString(node, key, node.asText());
         if (evaluated == null) {
-            var e = new ConfigurationParsingException("SpEL for '%s' evaluated to null, but '%s' expects %s.".formatted(key, key, wanted.getSimpleName(), key.toUpperCase()));
+            var e = new ConfigurationParsingException("SpEL for '%s' evaluated to null, but '%s' expects %s.".formatted(key, key, wanted.getSimpleName()));
             e.setParsingContext(pc);
             throw e;
         }
@@ -171,7 +171,7 @@ public class MethodSetter {
      */
     private static String evaluateSpelForString(JsonNode node, String key, String value) {
         try {
-            return (String) resolveSpelValue(value, String.class, node);
+            return (String) resolveSpelValue(value, String.class);
         } catch (ConfigurationParsingException pe) {
             throw new ConfigurationParsingException("Invalid SpEL in '%s': %s".formatted(key, pe.getMessage()));
         }
