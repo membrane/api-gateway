@@ -4,18 +4,14 @@ api:
   flow:
     - balancer:
         clusters:
-          - cluster:
-              name: Production
-              nodes: # Replace these with your backend nodes.
-                - node:
-                    host: localhost
-                    port: 4000
-                - node:
-                    host: localhost
-                    port: 4001
-                - node:
-                    host: localhost
-                    port: 4002
+          - name: Production
+            nodes: # Replace these with your backend nodes.
+              - host: localhost
+                port: 4000
+              - host: localhost
+                port: 4001
+              - host: localhost
+                port: 4002
 
 ---
 # Mock nodes for testing. Remove them in production.

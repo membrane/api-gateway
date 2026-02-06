@@ -2,8 +2,7 @@
 api:
   port: 2000
   specs:
-    - openapi:
-        location: fruitshop-api.yml
-        validateRequests: yes
-        validateResponses: yes
-        validationDetails: yes
+    - location: fruitshop-api.yml
+      validateRequests: yes
+      validateResponses: yes
+      validationDetails: yes

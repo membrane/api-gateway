@@ -36,8 +36,7 @@ api:
         expectedAud: order
         jwks:
           jwks:
-            - jwk:
-                location: jwk.json
+            - location: jwk.json
     - template:
         src: |
           You accessed protected content!

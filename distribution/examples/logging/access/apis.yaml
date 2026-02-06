@@ -4,12 +4,10 @@ api:
   flow:
     - accessLog:
         additionalPatternList:
-          - additionalVariable:
-              name: res.contentType
-              expression: response?.header['Content-Type']
-          - additionalVariable:
-              name: forwarded
-              expression: headers['x-forwarded-for']
+          - name: res.contentType
+            expression: response?.header['Content-Type']
+          - name: forwarded
+            expression: headers['x-forwarded-for']
     - return:
         status: 200
         contentType: application/json

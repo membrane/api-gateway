@@ -20,12 +20,10 @@ api:
             jsonSchema: schemas/schema2001.json
             schemaMappings:
               schemas:
-                - schema:
-                    id: urn:app:base_def
-                    location: schemas/base.json
-                - schema:
-                    id: urn:app:meta_def
-                    location: schemas/meta.json
+                - id: urn:app:base_def
+                  location: schemas/base.json
+                - id: urn:app:meta_def
+                  location: schemas/meta.json
   target:
     host: localhost
     port: 2002
