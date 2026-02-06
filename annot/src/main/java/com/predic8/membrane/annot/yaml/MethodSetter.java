@@ -189,9 +189,8 @@ public class MethodSetter {
 
     private @Nullable List<Object> getObjectList(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
         if (Collection.class.isAssignableFrom(wanted)) {
-            List<Object> list = parseListIncludingStartEvent(ctx, node);
-
             Class<?> elemType = getCollectionElementType(setter);
+            List<Object> list = parseListIncludingStartEvent(ctx, node, elemType);
             if (elemType != null) {
                 for (Object o : list) {
                     if (o == null) continue;
@@ -250,7 +249,7 @@ public class MethodSetter {
         }
     }
 
-    private static Class<?> getCollectionElementType(Method setter) {
+    static Class<?> getCollectionElementType(Method setter) {
         Type t = setter.getGenericParameterTypes()[0];
         if (!(t instanceof ParameterizedType pt)) return null;
         Type arg = pt.getActualTypeArguments()[0];
