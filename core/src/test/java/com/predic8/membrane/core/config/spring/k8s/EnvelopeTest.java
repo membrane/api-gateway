@@ -46,10 +46,9 @@ class EnvelopeTest {
         String yaml = """
         api:
           port: 2000
-          openApis:
-            - openapi:
-                location: fruitshop-api.yml
-                validateRequests: "yes"
+          openapi:
+            - location: fruitshop-api.yml
+              validateRequests: "yes"
         ---
         api:
           port: 2000

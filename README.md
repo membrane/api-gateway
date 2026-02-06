@@ -36,7 +36,7 @@ api:
 ```yaml
 api:
   port: 2000
-  openApis:
+  openapi:
     - location: "fruitshop-api.yml"
       validateRequests: yes
 ```
@@ -287,7 +287,7 @@ The snippet below shows how to deploy an API using an OpenAPI (`openapi/fruitsho
 ```yaml
 api:
   port: 2000
-  openApis:
+  openapi:
     - location: openapi/fruitshop-v2-2-0.oas.yml
       validateRequests: true
 ```  

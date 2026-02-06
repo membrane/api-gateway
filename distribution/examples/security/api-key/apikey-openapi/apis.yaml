@@ -8,7 +8,7 @@ components:
 
 api:
   port: 2000
-  openApis:
+  openapi:
     - location: fruitshop-api-v2-openapi-3-security.yml
       validateSecurity: true
   flow:

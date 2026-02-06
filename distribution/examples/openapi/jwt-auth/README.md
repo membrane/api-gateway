@@ -15,7 +15,7 @@ This example demonstrates how to secure an (Open)API using JWT authentication wi
 In `apis.yaml`, reference the OpenAPI file:
 
 ```yaml
-  openApis:
+  openapi:
     - location: secure-shop-api.yml
       validateSecurity: true
 ```
@@ -86,7 +86,7 @@ api:
 api:
   name: Protected API
   port: 2001
-  openApis:
+  openapi:
     - location: secure-shop-api.yml
       validateSecurity: true
   flow:

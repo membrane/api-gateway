@@ -258,10 +258,9 @@ public class GenericYamlParserTest {
                 ok(
                         "openapi_spec_single",
                         """
-                        openApis:
-                          - openapi:
-                              location: fruitshop-api.yml
-                              validateRequests: "yes"
+                        openapi:
+                          - location: fruitshop-api.yml
+                            validateRequests: "yes"
                         """,
                         a -> {
                             assertEquals(1, a.getSpecs().size());
@@ -272,13 +271,11 @@ public class GenericYamlParserTest {
                 ok(
                         "openapi_spec_multiple",
                         """
-                        openApis:
-                          - openapi:
-                              location: a.yml
-                              validateRequests: "no"
-                          - openapi:
-                              location: b.yml
-                              validateRequests: "yes"
+                        openapi:
+                          - location: a.yml
+                            validateRequests: "no"
+                          - location: b.yml
+                            validateRequests: "yes"
                         """,
                         a -> {
                             assertEquals(2, a.getSpecs().size());

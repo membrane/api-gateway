@@ -1,9 +1,8 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
 api:
   port: 2000
-  openApis:
-    - openapi:
-        location: "https://api.predic8.de/shop/v2/api-docs"
+  openapi:
+    - location: "https://api.predic8.de/shop/v2/api-docs"
 
 ---
 

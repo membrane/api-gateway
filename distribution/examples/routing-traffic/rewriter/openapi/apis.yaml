@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
 api:
   port: 2000
-  openApis:
+  openapi:
     - location: demo-api-v1.yml
       validateRequests: yes
       rewrite:

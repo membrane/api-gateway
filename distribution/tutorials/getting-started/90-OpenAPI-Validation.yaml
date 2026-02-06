@@ -9,7 +9,7 @@
 
 api:
   port: 2000
-  openApis:
+  openapi:
     - location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
       validateRequests: true
       validateResponses: true

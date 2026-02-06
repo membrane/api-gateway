@@ -167,7 +167,7 @@ public class APIProxyOpenAPITest {
         APIProxy api = new APIProxy();
         api.setName("TestAPI");
         api.init(router);
-        api.setOpenApis(List.of(extracted("src/test/resources/openapi/specs/paths/api-a-path-foo.yml"),
+        api.setOpenapi(List.of(extracted("src/test/resources/openapi/specs/paths/api-a-path-foo.yml"),
                 extracted("src/test/resources/openapi/specs/paths/api-b-path-foo.yml")));
 
         assertThrows(ConfigurationException.class, api::init);
@@ -179,14 +179,14 @@ public class APIProxyOpenAPITest {
         APIProxy api = new APIProxy();
         api.setName("TestAPI");
         api.init(router);
-        api.setOpenApis(List.of(extracted("api-c-multiple-server-urls.yml")));
+        api.setOpenapi(List.of(extracted("api-c-multiple-server-urls.yml")));
     }
 
     @Test
     void wrongLocationPath() {
         APIProxy api = new APIProxy();
         api.setName("TestAPI");
-        api.setOpenApis(List.of(new OpenAPISpec() {{
+        api.setOpenapi(List.of(new OpenAPISpec() {{
             location = "file:afdasfdasfsaf";
         }}));
         assertThrows(ConfigurationException.class, () -> api.init(router));

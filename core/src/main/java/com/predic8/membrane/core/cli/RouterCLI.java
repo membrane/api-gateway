@@ -189,7 +189,7 @@ public class RouterCLI {
         APIProxy api = new APIProxy();
         api.setPort(commandLine.getCommand().isOptionSet("p") ?
                 parseInt(commandLine.getCommand().getOptionValue("p")) : 2000);
-        api.setOpenApis(List.of(getOpenAPISpec(commandLine)));
+        api.setOpenapi(List.of(getOpenAPISpec(commandLine)));
         return api;
     }
 
