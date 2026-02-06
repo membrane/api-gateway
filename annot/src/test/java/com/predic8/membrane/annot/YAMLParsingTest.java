@@ -262,8 +262,7 @@ public class YAMLParsingTest {
                 demo:
                     child1:
                         child:
-                        - child2:
-                            attr: here
+                        - attr: here
                 """),
                 clazz("DemoElement",
                         property("child", clazz("Child1Element",
@@ -314,10 +313,8 @@ public class YAMLParsingTest {
         assertStructure(
                 parseYAML(result, """
                 demo:
-                  - child1:
-                        attr: here
-                  - child1:
-                        attr: here2
+                  - attr: here
+                  - attr: here2
                 """),
                 clazz("DemoElement",
                         property("children", list(
@@ -414,9 +411,8 @@ public class YAMLParsingTest {
                   - demo:
                       child:
                         child:
-                        - child2:
-                            attr: here
-                            content: here2
+                        - attr: here
+                          content: here2
                 """),
                 clazz("OuterElement",
                         property("flow", list(
