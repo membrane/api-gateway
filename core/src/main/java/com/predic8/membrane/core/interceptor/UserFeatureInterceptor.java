@@ -20,7 +20,7 @@ import org.slf4j.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 
 /**
- * Handles features that are user-configured in proxies.xml .
+ * @description Handles features that are user-configured in proxies.xml .
  */
 @MCElement(name="userFeature", excludeFromFlow = true)
 public class UserFeatureInterceptor extends AbstractInterceptor {

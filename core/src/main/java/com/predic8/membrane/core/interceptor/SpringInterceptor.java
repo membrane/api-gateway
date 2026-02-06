@@ -19,6 +19,9 @@ import com.predic8.membrane.core.exchange.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;
 
+/**
+ * @description Wraps an interceptor provided as Spring bean (refid) or as nested interceptor (child element) and delegates all calls.
+ */
 @MCElement(name="interceptor")
 public class SpringInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 

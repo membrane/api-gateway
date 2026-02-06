@@ -24,6 +24,17 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
+/**
+ * @description Replaces a JSON value at the configured JSONPath with a static string.
+ * @yaml
+ * <pre><code>
+ *  api:
+ *    flow:
+ *      - replace:
+ *          jsonPath: $.person.name
+ *          with: Alice
+ * </code></pre>
+ */
 @SuppressWarnings("unused")
 @MCElement(name="replace")
 public class ReplaceInterceptor extends AbstractInterceptor {

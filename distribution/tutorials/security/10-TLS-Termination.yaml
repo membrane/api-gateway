@@ -24,8 +24,7 @@ api:
       private:
         location: membrane-key.pem
       certificates:
-        - certificate:
-            location: membrane.pem
+        - location: membrane.pem
   flow:
     - request:
       # Traffic is decrypted and can be logged or transformed

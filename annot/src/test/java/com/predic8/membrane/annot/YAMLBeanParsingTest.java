@@ -39,12 +39,12 @@ public class YAMLBeanParsingTest {
                   class: com.predic8.membrane.demo.MyBean
                   scope: singleton
                   constructorArgs:
-                    - constructorArg: { value: "8080" }
-                    - constructorArg: { ref: "#/components/dep" }
+                    - { value: "8080" }
+                    - { ref: "#/components/dep" }
                   properties:
-                    - property: { name: "name", value: "abc" }
-                    - property: { name: "l", value: "7" }
-                    - property: { name: "d", value: "1.5" }
+                    - { name: "name", value: "abc" }
+                    - { name: "l", value: "7" }
+                    - { name: "d", value: "1.5" }
             ---
             holder:
               items:

@@ -31,9 +31,8 @@ components:
   ns:
     xmlConfig:
       namespaces:
-        - namespace:
-            prefix: f
-            uri: https://predic8.de/fruits
+        - prefix: f
+          uri: https://predic8.de/fruits
 ---
 
 api:
