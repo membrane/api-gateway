@@ -485,27 +485,21 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private boolean shouldInlineListItems(MainInfo main, ChildElementInfo cei) {
         if (!cei.isList()) return false;
-
         if (cei.getAnnotation().allowForeign()) return false;
 
-        var cedi = getChildElementDeclarationInfo(main, cei);
-        if (cedi == null) return false;
+        var decl = getChildElementDeclarationInfo(main, cei);
+        if (decl == null) return false;
 
-        // Only inline if there is exactly ONE possible list-item element type
-        var eis = cedi.getElementInfo().stream().filter(ei -> !ei.getAnnotation().topLevel()).toList();
+        var eis = decl.getElementInfo().stream().filter(ei -> !ei.getAnnotation().topLevel()).toList();
+
+        // Only inline if there is exactly ONE possible list-item element type (no inheritance etc.)
         if (eis.size() != 1) return false;
 
-        // Only inline if the item has >1 explicit attributes (excluding 'id')
-        // TODO keep this?
-        // TODO could removing this lead to errors with @collapsed elements?
-        return countRelevantAttributes(eis.getFirst()) > 1;
-    }
+        var ei = eis.getFirst();
 
-    private int countRelevantAttributes(ElementInfo ei) {
-        return (int) ei.getAis().stream()
-                .filter(ai -> !ai.excludedFromJsonSchema())
-                .filter(ai -> !"id".equals(ai.getXMLName()))
-                .count();
+        if (ei.getAnnotation().collapsed()) return false;
+        if (ei.getAnnotation().noEnvelope()) return false;
+        return !ei.isString();
     }
 
     private void attachArrayItems(ElementInfo parentEi, AbstractSchema<?> parentSchema, ChildElementInfo cei, AbstractSchema<?> itemsSchema) {
