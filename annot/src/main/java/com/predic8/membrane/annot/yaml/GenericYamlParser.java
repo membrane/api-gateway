@@ -351,7 +351,7 @@ public class GenericYamlParser {
         if ("$ref".equals(key))
             return ctx.registry().resolve(node.asText());
         var c = ctx.addPath("." + key); // Check!
-        return createAndPopulateNode(c, c.resolveClass(key), node);
+        return createAndPopulateNode(c.updateContext(key), c.resolveClass(key), node);
     }
 
     private static <T> void applyCollapsedScalar(Class<T> clazz, JsonNode node, T target) {

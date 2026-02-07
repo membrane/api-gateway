@@ -56,7 +56,10 @@ public class YamlErrorRenderer {
         String jsonPath = pc.path();
         String key = pc.getKey();
 
-        System.out.println("node = " + node + ", jsonPath = " + jsonPath + ", key = " + key);
+        System.out.println("node = " + node + "\n, jsonPath = " + jsonPath + "\n, key = " + key);
+
+        if (true)
+            return "";
 
         // Create a working copy
         JsonNode workingCopy = node.deepCopy();

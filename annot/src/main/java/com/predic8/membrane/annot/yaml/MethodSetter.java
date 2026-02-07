@@ -45,12 +45,14 @@ public class MethodSetter {
      * Resolves which setter on {@code clazz} should handle the given YAML field {@code key} and,
      * if needed, which bean class that field represents.
      * Throws a {@link RuntimeException} if neither a matching setter nor a resolvable bean class can be found.
+     * @param clazz Searches for a setter on this class.
+     * @param key Searches for a setter with this name.
      */
     public static <T> @NotNull MethodSetter getMethodSetter(ParsingContext<?> ctx, Class<T> clazz, String key) {
         Method setter = findSetterForKey(clazz, key);
         // MCChildElements which are not lists are directly declared as beans,
         // their name should be interpreted as an element name
-        if (setter != null && setter.getAnnotation(MCChildElement.class) != null) { // TODO setter != null  is always true
+        if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
             if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
                 setter = null;
         }
@@ -73,7 +75,7 @@ public class MethodSetter {
             }
             if (setter == null)
                 setter = getAnySetter(clazz);
-            if (beanClass == null && setter == null) { // TODO Always false
+            if (beanClass == null && setter == null) {
                 var e = new ConfigurationParsingException("Can't find method or bean for key '%s' in %s".formatted(key, getConfigElementName(clazz)));
                 e.setParsingContext(ctx.key(key));
                 throw e;
@@ -113,8 +115,8 @@ public class MethodSetter {
 
         // Structured objects
         if (McYamlIntrospector.isStructured(setter)) {
-            if (beanClass != null) return createAndPopulateNode(ctx.addPath("." + key), beanClass, node);
-            return createAndPopulateNode(ctx.addPath("." + key), wanted, node);
+            if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key).addPath("." + key), beanClass, node);
+            return createAndPopulateNode(ctx.updateContext(key).addPath("." + key), wanted, node);
         }
 
         return coerceScalarOrReference(ctx, node, key, wanted);

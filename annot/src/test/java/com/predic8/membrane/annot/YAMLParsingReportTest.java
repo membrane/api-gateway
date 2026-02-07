@@ -16,8 +16,10 @@ package com.predic8.membrane.annot;
 
 import com.predic8.membrane.annot.util.*;
 import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.common.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
+import org.junit.platform.commons.util.*;
 
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.*;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
@@ -397,6 +399,6 @@ public class YAMLParsingReportTest {
     }
 
     private static @NotNull ConfigurationParsingException getCause(RuntimeException e) {
-        return (ConfigurationParsingException) YAMLParsingTest.getCause(e);
+        return (ConfigurationParsingException) ExceptionUtil.getRootCause(e);
     }
 }

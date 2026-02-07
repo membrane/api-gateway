@@ -40,6 +40,12 @@ public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
         this.topLevel = topLevel;
     }
 
+    public ParsingContext<T> updateContext(String context) {
+        ParsingContext<T> pc = new ParsingContext<>(context, registry, grammar, topLevel, path);
+        pc.key = key;
+        return pc;
+    }
+
     public String context() {
         return context;
     }
