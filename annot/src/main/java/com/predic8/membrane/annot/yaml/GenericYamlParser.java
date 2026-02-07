@@ -416,8 +416,9 @@ public class GenericYamlParser {
 
     private static Object parseInlineListItem(ParsingContext<?> ctx, JsonNode node, Class<?> elemType) {
         if (elemType == null) throw new ConfigurationParsingException("Inline list item form requires a typed list element.");
-        if (elemType.isInterface() || isAbstract(elemType.getModifiers())) throw new ConfigurationParsingException("Inline list item form requires a concrete element type, but found: %s.".formatted(elemType.getName()));
-        return createAndPopulateNode(ctx, elemType, node);
+        if (elemType.isInterface() || isAbstract(elemType.getModifiers()))
+            throw new ConfigurationParsingException("Inline list item form requires a concrete element type, but found: %s.".formatted(elemType.getName()));
+        return createAndPopulateNode(ctx.updateContext(getElementName(elemType)), elemType, node);
     }
 
 }

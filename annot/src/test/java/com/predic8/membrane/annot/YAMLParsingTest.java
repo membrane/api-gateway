@@ -14,18 +14,17 @@
 
 package com.predic8.membrane.annot;
 
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.util.CompilerHelper;
-import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.annot.beanregistry.*;
+import com.predic8.membrane.annot.util.*;
+import org.junit.jupiter.api.*;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
+import java.lang.reflect.*;
+import java.util.*;
 
-import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
+import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.*;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
 import static com.predic8.membrane.annot.util.StructureAssertionUtil.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class YAMLParsingTest {
     @Test
@@ -467,10 +466,9 @@ public class YAMLParsingTest {
                     """);
             throw new AssertionError("Parsing did not throw a nested YamlSchemaValidationException.");
         } catch (RuntimeException e) {
-            YamlSchemaValidationException e2 = (YamlSchemaValidationException) getCause(e);
-            assertEquals(1, e2.getErrors().size());
+            var c = getCause(e);
             assertEquals("/demo: property 'errorHere' is not defined in the schema and the schema does not allow additional properties",
-                    e2.getErrors().getFirst().toString());
+                    c.getMessage());
         }
     }
 
@@ -583,10 +581,9 @@ public class YAMLParsingTest {
                     """);
             throw new AssertionError("Parsing did not throw a nested YamlSchemaValidationException.");
         } catch (RuntimeException e) {
-            YamlSchemaValidationException e2 = (YamlSchemaValidationException) getCause(e);
-            assertEquals(1, e2.getErrors().size());
+            var c = getCause(e);
             assertEquals(": property 'demo' is not defined in the schema and the schema does not allow additional properties",
-                    e2.getErrors().getFirst().toString());
+                    c.getMessage());
         }
     }
 

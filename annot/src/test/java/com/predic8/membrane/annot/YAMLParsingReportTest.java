@@ -156,7 +156,6 @@ public class YAMLParsingReportTest {
             fail();
         } catch (RuntimeException e) {
             var c = getCause(e);
-            System.out.println(c.getMessage());
             var pc = c.getParsingContext();
             assertEquals("$.demo[0]", pc.path());
             assertEquals("attr", pc.getKey());
@@ -170,7 +169,6 @@ public class YAMLParsingReportTest {
             fail();
         } catch (RuntimeException e) {
             var c = getCause(e);
-            System.out.println(c.getMessage());
             var pc = c.getParsingContext();
             assertEquals("$.demo", c.getParsingContext().path());
             assertNull(pc.getKey());
@@ -232,7 +230,6 @@ public class YAMLParsingReportTest {
             fail();
         } catch (RuntimeException e) {
             var c = getCause(e);
-            System.out.println(c.getMessage());
             var pc = c.getParsingContext();
             assertEquals("$.demo", pc.path());
             assertEquals("c", pc.getKey());
@@ -289,17 +286,9 @@ public class YAMLParsingReportTest {
             fail();
         } catch (RuntimeException e) {
             var c = getCause(e);
-            System.out.println(c.getMessage());
             var pc = c.getParsingContext();
             assertEquals("$.demo.children[2].c", pc.path());
             assertEquals(null, pc.getKey());
-//            String r = null;
-//            try {
-//                r = c.getFormattedReport();
-//            } catch (JsonProcessingException ex) {
-//                throw new RuntimeException(ex);
-//            }
-//            System.out.println(r);
         }
     }
 
@@ -364,38 +353,15 @@ public class YAMLParsingReportTest {
                       - attr: here2
                         validator:
                           type: notNull
+                          wrong: 1
                     """);
             fail();
         } catch (RuntimeException e) {
             var c = getCause(e);
-            System.out.println(c.getMessage());
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
-            assertEquals("c", pc.getKey());
+            assertEquals("$.demo[1].validator", pc.path());
+            assertEquals("wrong", pc.getKey());
         }
-
-//        assertStructure(
-//                parseYAML(result, """
-//                        demo:
-//                          - attr: here
-//                            validator:
-//                              type: regex
-//                          - attr: here2
-//                            validator:
-//                              type: notNull
-//                        """),
-//                clazz("DemoElement",
-//                        property("children", list(
-//                                clazz("Child1Element",
-//                                        property("attr", value("here")),
-//                                        property("validator", clazz("ValidatorElement",
-//                                                property("type", value("regex"))))),
-//                                clazz("Child1Element",
-//                                        property("attr", value("here2")),
-//                                        property("validator", clazz("ValidatorElement",
-//                                                property("type", value("notNull")))))
-//                        )))
-//        );
     }
 
     private static @NotNull ConfigurationParsingException getCause(RuntimeException e) {
