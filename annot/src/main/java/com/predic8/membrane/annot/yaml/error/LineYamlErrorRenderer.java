@@ -46,7 +46,6 @@ public class LineYamlErrorRenderer {
             .build();
 
     private static final String MARKER_KEY = "__ERROR_MARKER__";
-    private static final int BASE_INDENT = 2; // All lines indented 2 spaces from left
 
     /**
      * Renders a YAML representation of the JSON node with line-based error markers.

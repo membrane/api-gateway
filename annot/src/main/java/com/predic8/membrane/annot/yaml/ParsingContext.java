@@ -104,11 +104,13 @@ public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
 
     @Override
     public String toString() {
-        return "ParsingContext{\n" +
-               "  context='" + context + "\'\n" +
-               "  path='" + path + "\'\n" +
-               "  topLevel=" + topLevel + "\n" +
-               "  key='" + key + "\'\n" +
-               '}';
+        return """
+                ParsingContext{
+                    context='%s'
+                    path='%s'
+                    topLevel=%s
+                    key='%s'
+                }
+                """.formatted(context, path, topLevel, key);
     }
 }

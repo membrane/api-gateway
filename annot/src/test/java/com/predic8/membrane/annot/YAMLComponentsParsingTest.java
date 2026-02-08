@@ -209,7 +209,7 @@ public class YAMLComponentsParsingTest {
         if (c instanceof ConfigurationParsingException cpe) {
             var pc = cpe.getParsingContext();
             assertEquals("$.components.x", pc.path());
-            assertEquals(null, pc.getKey());
+            assertNull(pc.getKey());
             assertTrue(cpe.getMessage().contains("Expected exactly one key"));
             assertTrue(cpe.getMessage().contains("0"));
         } else {
@@ -227,7 +227,7 @@ public class YAMLComponentsParsingTest {
         if (c instanceof ConfigurationParsingException cpe) {
             var pc = cpe.getParsingContext();
             assertEquals("$.components.x", pc.path());
-            assertEquals(null, pc.getKey());
+            assertNull(pc.getKey());
             assertTrue(cpe.getMessage().contains("Expected exactly one key"));
             assertTrue(cpe.getMessage().contains("0"));
         } else {
@@ -249,7 +249,7 @@ public class YAMLComponentsParsingTest {
         if (c instanceof ConfigurationParsingException cpe) {
             var pc = cpe.getParsingContext();
             assertEquals("$.components.x", pc.path());
-            assertEquals(null, pc.getKey());
+            assertNull(pc.getKey());
             assertTrue(cpe.getMessage().contains("Expected exactly one key"));
             assertTrue(cpe.getMessage().contains("2"));
 

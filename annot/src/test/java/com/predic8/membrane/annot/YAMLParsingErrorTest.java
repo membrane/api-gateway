@@ -299,10 +299,9 @@ public class YAMLParsingErrorTest {
             fail();
         } catch (RuntimeException e) {
             var c = getCause(e);
-            System.out.println(c);
             var pc = c.getParsingContext();
             assertEquals("$.demo.children", pc.path());
-            assertEquals(null, pc.getKey());
+            assertNull(pc.getKey());
         }
     }
 
@@ -403,7 +402,7 @@ public class YAMLParsingErrorTest {
             var c = getCause(e);
             var pc = c.getParsingContext();
             assertEquals("$.demo", pc.path());
-            assertEquals(null, pc.getKey());
+            assertNull(pc.getKey());
         }
     }
 
