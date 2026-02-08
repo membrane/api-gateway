@@ -82,17 +82,17 @@ public final class McYamlIntrospector {
      *   <li>Exactly one child setter must exist and it must accept a {@link java.util.Collection}.</li>
      * </ul>
      */
-    public static <T> Method getSingleChildSetter(Class<T> clazz) {
+    public static <T> Method getSingleChildSetter(ParsingContext pc, Class<T> clazz) {
         MCElement annotation = clazz.getAnnotation(MCElement.class);
         if (annotation == null || !annotation.noEnvelope()) {
-            throw new RuntimeException("Class " + clazz.getName() + " has properties, and is not a list.");
+            throw new ConfigurationParsingException("Class " + clazz.getName() + " has properties, and is not a list.",null,pc);
         }
         guardHasMCAttributeSetters(clazz);
-        Method setter = getChildSetters(clazz).getFirst();
+        var setter = getChildSetters(clazz).getFirst();
         Class<?> paramType = setter.getParameterTypes()[0];
         if (!java.util.Collection.class.isAssignableFrom(paramType)) {
-            throw new RuntimeException("The single @MCChildElement setter in " + clazz.getName() +
-                                       " must accept a Collection/List when noEnvelope=true, but found: " + paramType.getName());
+            throw new ConfigurationParsingException("The single @MCChildElement setter in " + clazz.getName() +
+                                       " must accept a Collection/List when noEnvelope=true, but found: " + paramType.getName(),null,pc);
         }
         return setter;
     }

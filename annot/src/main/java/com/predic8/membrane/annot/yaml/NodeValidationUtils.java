@@ -25,7 +25,7 @@ public final class NodeValidationUtils {
     public static void ensureSingleKey(ParsingContext<?> ctx, JsonNode node) {
         ensureMappingStart(node);
         if (node.size() != 1) {
-            var e = new ConfigurationParsingException("Expected exactly one key.");
+            var e = new ConfigurationParsingException("Expected exactly one key but there are %d.".formatted(node.size()));
             e.setParsingContext(ctx);
             throw e;
         }
@@ -35,12 +35,17 @@ public final class NodeValidationUtils {
         if (!node.isTextual()) throw new ConfigurationParsingException(message);
     }
 
-    public static void ensureArray(JsonNode node, String message) throws ConfigurationParsingException {
-        if (!node.isArray()) throw new ConfigurationParsingException(message);
+    public static void ensureArray(ParsingContext pc, JsonNode node, String message) throws ConfigurationParsingException {
+        if (node.isArray())
+            return;
+
+        var e = new ConfigurationParsingException(message, null, pc);
+        e.setWrong(node);
+        throw e;
     }
 
-    public static void ensureArray(JsonNode node) throws ConfigurationParsingException {
-        ensureArray(node, "Expected list.");
+    public static void ensureArray(ParsingContext pc, JsonNode node) throws ConfigurationParsingException {
+        ensureArray(pc, node, "Expected list.");
     }
 
 }

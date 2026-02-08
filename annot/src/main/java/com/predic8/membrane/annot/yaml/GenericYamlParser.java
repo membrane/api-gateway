@@ -83,7 +83,7 @@ public class GenericYamlParser {
             var pc = new ParsingContext<>("",null,grammar, jsonNode, "$");
 
             if ("components".equals(getBeanType(pc, jsonNode))) {
-                beanDefs.addAll(extractComponentBeanDefinitions(pc,jsonNode.get("components")));
+                beanDefs.addAll(extractComponentBeanDefinitions(pc.addPath(".components"),jsonNode.get("components")));
             }
 
             beanDefs.add(new BeanDefinition(
@@ -159,7 +159,8 @@ public class GenericYamlParser {
         ensureSingleKey(new ParsingContext("",null,grammar,node,"$"),node);
         Class<?> clazz = grammar.getElement(kind);
         if (clazz == null) {
-            throw new ConfigurationParsingException("Did not find java class for kind '%s'.".formatted(kind));
+            var pc = new ParsingContext("",null,grammar,node,"$").key(kind);
+            throw new ConfigurationParsingException("Did not find java class for kind '%s'.".formatted(kind),null,pc);
         }
         return clazz;
     }
@@ -171,33 +172,36 @@ public class GenericYamlParser {
      *   values are produced by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)}. A top-level {@code "$ref"} injects a previously defined bean.
      * All failures are wrapped in a {@link ConfigurationParsingException} with location information.
      */
-    public static <T> T createAndPopulateNode(ParsingContext<?> ctx, Class<T> clazz, JsonNode node) throws ConfigurationParsingException {
+    public static <T> T createAndPopulateNode(ParsingContext<?> pc, Class<T> clazz, JsonNode node) throws ConfigurationParsingException {
         try {
             T configObj = clazz.getConstructor().newInstance();
 
             // when this is a list, we are on a @MCElement(..., noEnvelope=true)
             if (node.isArray()) {
-                return handlePostConstructAndPreDestroy(ctx, handleNoEnvelopeList(ctx, clazz, node, configObj));
+                return handlePostConstructAndPreDestroy(pc, handleNoEnvelopeList(pc, clazz, node, configObj));
             }
 
             // scalar inline form for @MCElement(collapsed=true)
             if (isCollapsed(clazz)) {
-                return handleCollapsed(ctx, clazz, node, configObj);
+                return handleCollapsed(pc, clazz, node, configObj);
             }
             ensureMappingStart(node);
-            if (isNoEnvelope(clazz)) throw new ConfigurationParsingException("Class %s is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.".formatted(clazz.getName()));
+            if (isNoEnvelope(clazz)) {
+                log.error("Class {} is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.", clazz.getName());
+                throw new ConfigurationParsingException("Class %s is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.",null,pc);
+            }
 
             JsonNode refNode = node.get("$ref");
             if (refNode != null) {
-                applyObjectLevelRef(ctx, clazz, node, refNode, configObj);
+                applyObjectLevelRef(pc, clazz, node, refNode, configObj);
             }
 
             List<Method> required = findRequiredSetters(clazz);
-            populateObjectFields(ctx, clazz, node, required, configObj);
+            populateObjectFields(pc, clazz, node, required, configObj);
 
             if (!required.isEmpty())
                 throw new ConfigurationParsingException("Missing required fields: " + required.stream().map(McYamlIntrospector::getSetterName).toList());
-            return handlePostConstructAndPreDestroy(ctx, configObj);
+            return handlePostConstructAndPreDestroy(pc, configObj);
         } catch (NoClassDefFoundError e) {
             if (e.getCause() != null) {
                 var missingClass = e.getCause().getMessage(); // TODO: Better use ExceptionUtil.getRootCause() but it isn't visible in annot.
@@ -208,7 +212,7 @@ public class GenericYamlParser {
             throw new ConfigurationParsingException(e);
         } catch (ConfigurationParsingException e) {
             if (e.getParsingContext() == null)
-                e.setParsingContext(ctx);
+                e.setParsingContext(pc);
             throw e;
         }
         catch (Throwable cause) {
@@ -227,8 +231,6 @@ public class GenericYamlParser {
                 required.remove(setter.getSetter());
                 setter.setSetter(configObj, ctx, node, key);
             } catch (ConfigurationParsingException e) {
-//                if (e.getParsingContext() != null)
-//                    e.setParsingContext(e.getParsingContext().key(key));
                 throw e;
             }
             catch (Throwable cause) {
@@ -246,9 +248,9 @@ public class GenericYamlParser {
         return handlePostConstructAndPreDestroy(ctx, configObj);
     }
 
-    private static <T> T handleNoEnvelopeList(ParsingContext<?> ctx, Class<T> clazz, JsonNode node, T configObj) throws IllegalAccessException, InvocationTargetException {
-        Method childSetter = getSingleChildSetter(clazz);
-        childSetter.invoke(configObj, parseListExcludingStartEvent(ctx, node, getCollectionElementType(childSetter)));
+    private static <T> T handleNoEnvelopeList(ParsingContext<?> pc, Class<T> clazz, JsonNode node, T configObj) throws IllegalAccessException, InvocationTargetException {
+        var childSetter = getSingleChildSetter(pc, clazz);
+        childSetter.invoke(configObj, parseListExcludingStartEvent(pc, node, getCollectionElementType(childSetter)));
         return configObj;
     }
 
@@ -267,7 +269,7 @@ public class GenericYamlParser {
             JsonNode def = componentsNode.get(id);
 
             // Each component definition must have exactly one key (the component type)
-            ensureSingleKey(pc,def);
+            ensureSingleKey(pc.addPath("."+id),def);
             String componentKind = def.fieldNames().next();
 
             // Wrap it into a normal top-level node: { <kind>: <body> }
@@ -324,9 +326,9 @@ public class GenericYamlParser {
         return parseListIncludingStartEvent(context, node, null);
     }
 
-    public static List<Object> parseListIncludingStartEvent(ParsingContext<?> context, JsonNode node, Class<?> elemType) throws ConfigurationParsingException {
-        ensureArray(node);
-        return parseListExcludingStartEvent(context, node, elemType);
+    public static List<Object> parseListIncludingStartEvent(ParsingContext<?> pc, JsonNode node, Class<?> elemType) throws ConfigurationParsingException {
+        ensureArray(pc,node);
+        return parseListExcludingStartEvent(pc, node, elemType);
     }
 
     private static @NotNull List<Object> parseListExcludingStartEvent(ParsingContext<?> pc, JsonNode node, Class<?> elemType) throws ConfigurationParsingException {

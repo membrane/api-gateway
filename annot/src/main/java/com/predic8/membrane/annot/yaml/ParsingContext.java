@@ -26,7 +26,12 @@ import com.predic8.membrane.annot.beanregistry.*;
  */
 public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
     private final String context;
+
+    /**
+     * TODO Do we need the registry here?
+     */
     private final T registry;
+
     private final Grammar grammar;
     private final String path;
     private final JsonNode topLevel;
@@ -95,5 +100,15 @@ public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
 
     public String getKey() {
         return key;
+    }
+
+    @Override
+    public String toString() {
+        return "ParsingContext{\n" +
+               "  context='" + context + "\'\n" +
+               "  path='" + path + "\'\n" +
+               "  topLevel=" + topLevel + "\n" +
+               "  key='" + key + "\'\n" +
+               '}';
     }
 }

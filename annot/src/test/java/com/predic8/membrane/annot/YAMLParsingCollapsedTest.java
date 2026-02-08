@@ -200,7 +200,7 @@ public class YAMLParsingCollapsedTest {
         var result = CompilerHelper.compile(sources, false);
         assertCompilerResult(true, result);
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+        var ex = assertThrows(RuntimeException.class, () ->
                 parseYAML(result, """
                 demo:
                   child:

@@ -45,8 +45,9 @@ public class MethodSetter {
      * Resolves which setter on {@code clazz} should handle the given YAML field {@code key} and,
      * if needed, which bean class that field represents.
      * Throws a {@link RuntimeException} if neither a matching setter nor a resolvable bean class can be found.
+     *
      * @param clazz Searches for a setter on this class.
-     * @param key Searches for a setter with this name.
+     * @param key   Searches for a setter with this name.
      */
     public static <T> @NotNull MethodSetter getMethodSetter(ParsingContext<?> ctx, Class<T> clazz, String key) {
         Method setter = findSetterForKey(clazz, key);
@@ -71,17 +72,21 @@ public class MethodSetter {
                 if (beanClass != null)
                     setter = getChildSetter(clazz, beanClass);
             } catch (Exception e) {
-                throw new RuntimeException("Can't find method or bean for key '%s' in %s".formatted(key, getConfigElementName(clazz)), e);
+                throwCantFindException(ctx, clazz, key);
             }
             if (setter == null)
                 setter = getAnySetter(clazz);
             if (beanClass == null && setter == null) {
-                var e = new ConfigurationParsingException("Can't find method or bean for key '%s' in %s".formatted(key, getConfigElementName(clazz)));
-                e.setParsingContext(ctx.key(key));
-                throw e;
+                throwCantFindException(ctx, clazz, key);
             }
         }
         return new MethodSetter(setter, beanClass);
+    }
+
+    private static <T> void throwCantFindException(ParsingContext<?> ctx, Class<T> clazz, String key) {
+        var e = new ConfigurationParsingException("Can't find method or bean for key '%s' in %s".formatted(key, getConfigElementName(clazz)));
+        e.setParsingContext(ctx.key(key));
+        throw e;
     }
 
     private static String getConfigElementName(Class<?> clazz) {
@@ -115,7 +120,8 @@ public class MethodSetter {
 
         // Structured objects
         if (McYamlIntrospector.isStructured(setter)) {
-            if (beanClass != null) return createAndPopulateNode(ctx.updateContext(key).addPath("." + key), beanClass, node);
+            if (beanClass != null)
+                return createAndPopulateNode(ctx.updateContext(key).addPath("." + key), beanClass, node);
             return createAndPopulateNode(ctx.updateContext(key).addPath("." + key), wanted, node);
         }
 
@@ -160,7 +166,7 @@ public class MethodSetter {
         final String value = evaluated.trim();
 
         if (isBoolean(wanted)) return parseBoolean(value);
-        if (isNumber(wanted)) return parseNumericOrThrow(pc,key, wanted, evaluated, node);
+        if (isNumber(wanted)) return parseNumericOrThrow(pc, key, wanted, evaluated, node);
         if (wanted == Map.class && hasOtherAttributes(setter)) return Map.of(key, evaluated);
         if (isBeanReference(wanted)) return resolveReference(pc, node, key, wanted);
         if (isReferenceAttribute(setter)) return pc.registry().resolve(evaluated);
@@ -211,7 +217,7 @@ public class MethodSetter {
             return null;
 
         Class<?> elemType = getCollectionElementType(setter);
-        List<Object> list = parseListIncludingStartEvent(ctx.addPath("."+key), node, elemType);
+        List<Object> list = parseListIncludingStartEvent(ctx.addPath("." + key), node, elemType);
         if (elemType != null) {
             for (Object o : list) {
                 if (o == null) continue;

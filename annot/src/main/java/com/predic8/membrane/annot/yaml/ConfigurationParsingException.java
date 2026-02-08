@@ -15,10 +15,12 @@
 package com.predic8.membrane.annot.yaml;
 
 import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
 
 public class ConfigurationParsingException extends RuntimeException {
 
     private ParsingContext<?> parsingContext;
+    private JsonNode wrong;
 
     public ConfigurationParsingException(String message) {
         super(message);
@@ -26,6 +28,11 @@ public class ConfigurationParsingException extends RuntimeException {
 
     public ConfigurationParsingException(Throwable cause) {
         super(cause);
+    }
+
+    public ConfigurationParsingException(String message, Throwable cause, ParsingContext<?> pc) {
+        super(message, cause);
+        this.parsingContext = pc;
     }
 
     public ParsingContext<?> getParsingContext() {
@@ -40,9 +47,15 @@ public class ConfigurationParsingException extends RuntimeException {
      * Returns a complete formatted error report including highlighted YAML.
      */
     public String getFormattedReport() throws JsonProcessingException {
-        YamlErrorRenderer.renderErrorReport(parsingContext);
-        printStackTrace();
-        System.out.println(getCause());
-        return "";
+        System.out.println(parsingContext);
+        return com.predic8.membrane.annot.yaml.error.LineYamlErrorRenderer.renderErrorReport(this.parsingContext);
+    }
+
+    public JsonNode getWrong() {
+        return wrong;
+    }
+
+    public void setWrong(JsonNode wrong) {
+        this.wrong = wrong;
     }
 }
