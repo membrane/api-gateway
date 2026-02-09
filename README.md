@@ -321,7 +321,7 @@ api:
         - static:
             src: POST is blocked!
     - return:
-        statusCode: 405
+        status: 405
 ---
 # Regex path matching
 api:
@@ -341,7 +341,7 @@ api:
         - static:
             src: "<html>Homepage</html>"
     - return:
-        statusCode: 200
+        status: 200
 ---
 # Requests with a query parameter city and value Paris
 api:
@@ -352,7 +352,7 @@ api:
         - static:
             src: Oui!
     - return:
-        statusCode: 200
+        status: 200
 ```
 
 ### Configuration Options
@@ -381,10 +381,10 @@ api:
     uri: /health
   flow:
     - response:
-      - static:
-          src: I'm good.
+        - static:
+            src: I'm good.
     - return:
-        statusCode: 200
+        status: 200
 ```
 
 #### Example: Blocking Specific Paths
@@ -402,7 +402,7 @@ api:
         - static:
             src: "Nothing to see here!"
     - return:
-        statusCode: 404
+        status: 404
 ---
 api:
   port: 2000
@@ -410,7 +410,7 @@ api:
     - static:
         src: Other calls
     - return:
-        statusCode: 200
+        status: 200
 ```
 
 ### URL Rewriting
@@ -425,8 +425,7 @@ api:
   port: 2000
   flow:
     - rewriter:
-       - map:
-          from: ^/fruitshop/(.*)
+        - from: ^/fruitshop/(.*)
           to: /shop/v2/$1
   target:
     url: https://api.predic8.de
@@ -653,12 +652,9 @@ api:
   port: 2000
   flow:
     - response:
-      - headerFilter:
-          rules:
-            - include:
-                pattern: "X-XSS-Protection"
-            - exclude:
-                pattern: "X-.*"
+        - headerFilter:
+            - include: "X-XSS-Protection"
+            - exclude: "X-.*"
   target:
     url: https://www.predic8.de
 ```  
@@ -861,8 +857,8 @@ api:
             flow:
               - static:
                   src: Failure!
-    - target:
-        url: https://httpbin.org/status/500
+  target:
+    url: https://httpbin.org/status/500
 ```
 
 # Security
@@ -888,7 +884,7 @@ global:
                 value: 08f121fa-3cda-49c6-90db-1f189ff80756
       extractors:
         - headerExtractor:
-            headerName: X-Api-Key
+            name: X-Api-Key
 ```
 
 ### Advanced Use Cases
@@ -968,20 +964,17 @@ api:
                 email: john@predic8.de
         staticClientList:
           clients:
-            - client:
-                clientId: abc
-                clientSecret: def
-                callbackUrl: http://localhost:2000/oauth2callback
+            - clientId: abc
+              clientSecret: def
+              callbackUrl: http://localhost:2000/oauth2callback
         bearerToken: {}
         claims:
           value: aud email iss sub username
           scopes:
-            - scope:
-                id: username
-                claims: username
-            - scope:
-                id: profile
-                claims: username email
+            - id: username
+              claims: username
+            - id: profile
+              claims: username email
 ```
 
 User accounts can be stored directly in the configuration, loaded from a file, or backed by a database.
@@ -1105,32 +1098,37 @@ global:
 
 Distribute workload to multiple backend nodes. [See the example](distribution/examples/loadbalancing)
 
-```xml
-<api port="8080">
-    <balancer name="balancer">
-        <clusters>
-            <cluster name="Default">
-                <node host="my.backend-1" port="4000"/>
-                <node host="my.backend-2" port="4000"/>
-                <node host="my.backend-3" port="4000"/>
-            </cluster>
-        </clusters>
-    </balancer>
-</api>
+```yaml
+api:
+  port: 8080
+  flow:
+    - balancer:
+        clusters:
+          - name: Default
+            nodes:
+              - host: my.backend-1
+                port: 4000
+              - host: my.backend-2
+                port: 4000
+              - host: my.backend-3
+                port: 4000
 ```
 
 # Websockets
 
 Route and intercept WebSocket traffic:
 
-```xml
-
-<api port="2000">
-    <webSocket url="http://my.websocket.server:1234">
-        <wsLog/>
-    </webSocket>
-    <target port="8080" host="localhost"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - webSocket:
+        url: http://my.websocket.server:1234
+        flow:
+          - wsLog: {}
+  target:
+    host: localhost
+    port: 8080
 ```
 
 See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.html)
@@ -1174,13 +1172,15 @@ soapProxy:
 Log data about requests and responses to a file or [database](distribution/examples/logging/jdbc-database) as [CSV](distribution/examples/logging/csv)
 or [JSON](distribution/examples/logging/json) file.
 
-```xml
-
-<api port="2000">
-    <log/> <!-- Logs to the console -->
-    <statisticsCSV file="./log.csv"/> <!-- Logs fine-grained CSV -->
-    <target url="https://api.predic8.de"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - log: {} # Logs to the console
+    - statisticsCSV:
+        file: ./log.csv # Logs fine-grained CSV
+  target:
+    url: https://api.predic8.de
 ```
 
 ## Instrumentation
@@ -1189,11 +1189,13 @@ or [JSON](distribution/examples/logging/json) file.
 
 This API will expose metrics for Prometheus at [http://localhost:2000/metrics](http://localhost:2000/metrics):
 
-```xml
-<api port="2000">
-  <path>/metrics</path>
-  <prometheus />
-</api>
+```yaml
+api:
+  port: 2000
+  path:
+    uri: /metrics
+  flow:
+    - prometheus: {}
 ```
 
 ![Grafana Dashborad for Membrane API Gateway](/docs/images/membrane-grafana-dashboard.png)
@@ -1210,13 +1212,18 @@ This diagram illustrates Membrane in a tracing setup with a backend service and 
 #### Example Setup
 The configuration below shows Membrane forwarding requests to a backend, while exporting OpenTelemetry data to a collector:
 
-```xml
-<api port="2000">
-    <openTelemetry sampleRate="1.0">
-        <otlpExporter host="localhost" port="4317"/>
-    </openTelemetry>
-    <target host="localhost" port="3000"/>
-</api>
+```yaml
+api:
+  port: 2000
+  flow:
+    - openTelemetry:
+        sampleRate: 1.0
+        otlpExporter:
+          host: localhost
+          port: 4317
+  target:
+    host: localhost
+    port: 3000
 ```  
 
 For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/monitoring-tracing/opentelemetry).
