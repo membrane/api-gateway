@@ -118,14 +118,14 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     }
 
     private static AbstractExchangeSnapshot convertMongoJSONToAbstractExchange(Document doc) {
-        AbstractExchangeSnapshot result;
         try {
-            result = objectMapper.readValue(doc.toJson(), AbstractExchangeSnapshot.class);
-        } catch (Exception e) {
+            Document copy = new Document(doc);
+            copy.remove("_id");
+            return objectMapper.convertValue(copy, AbstractExchangeSnapshot.class);
+        } catch (IllegalArgumentException e) {
             log.error("Error converting MongoDB document to AbstractExchangeSnapshot", e);
             throw new RuntimeException(e);
         }
-        return Objects.requireNonNull(result);
     }
 
     @Override
