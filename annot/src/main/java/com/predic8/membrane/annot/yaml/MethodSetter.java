@@ -216,7 +216,7 @@ public class MethodSetter {
         throw unsupported(wanted, key, node);
     }
 
-    private @Nullable List<Object> getObjectList(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
+    private @Nullable List<Object> getObjectList(ParsingContext<?> ctx, JsonNode node, String key, Class<?> wanted) {
         if (!Collection.class.isAssignableFrom(wanted))
             return null;
 

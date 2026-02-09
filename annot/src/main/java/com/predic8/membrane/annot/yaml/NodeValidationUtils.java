@@ -37,7 +37,7 @@ public final class NodeValidationUtils {
         if (!node.isTextual()) throw new ConfigurationParsingException(message);
     }
 
-    public static void ensureArray(ParsingContext pc, JsonNode node, String message) throws ConfigurationParsingException {
+    public static void ensureArray(ParsingContext<?> pc, JsonNode node, String message) throws ConfigurationParsingException {
         if (node.isArray())
             return;
 
@@ -46,7 +46,7 @@ public final class NodeValidationUtils {
         throw e;
     }
 
-    public static void ensureArray(ParsingContext pc, JsonNode node) throws ConfigurationParsingException {
+    public static void ensureArray(ParsingContext<?> pc, JsonNode node) throws ConfigurationParsingException {
         ensureArray(pc, node, "Expected list.");
     }
 

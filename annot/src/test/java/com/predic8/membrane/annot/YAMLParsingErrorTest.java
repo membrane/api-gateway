@@ -170,7 +170,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", c.getParsingContext().path());
+            assertEquals("$.demo", pc.path());
             assertNull(pc.getKey());
         }
     }

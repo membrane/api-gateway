@@ -78,7 +78,7 @@ public class GenericYamlParser {
             }
 
             // Deactivated temporarily to get better error messages
-            //validateAgaistSchema(grammar, jsonNode, jsonLocationMap);
+            //validateAgainstSchema(grammar, jsonNode, jsonLocationMap);
 
             var pc = new ParsingContext<>("",null,grammar, jsonNode, "$");
 
@@ -95,7 +95,7 @@ public class GenericYamlParser {
         }
     }
 
-    private static void validateAgaistSchema(Grammar grammar, JsonNode jsonNode, JsonLocationMap jsonLocationMap) throws IOException {
+    private static void validateAgainstSchema(Grammar grammar, JsonNode jsonNode, JsonLocationMap jsonLocationMap) throws IOException {
         // Validate YAML against JSON schema
         try {
             validate(grammar, jsonNode);
@@ -188,7 +188,7 @@ public class GenericYamlParser {
             ensureMappingStart(node);
             if (isNoEnvelope(clazz)) {
                 log.error("Class {} is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.", clazz.getName());
-                throw new ConfigurationParsingException("Class %s is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.",null,pc);
+                throw new ConfigurationParsingException("Class %s is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.".formatted(clazz.getName()),null,pc);
             }
 
             JsonNode refNode = node.get("$ref");
@@ -216,6 +216,7 @@ public class GenericYamlParser {
             throw e;
         }
         catch (Throwable cause) {
+            log.debug("",cause);
             throw new ConfigurationParsingException(cause);
         }
     }
@@ -234,6 +235,7 @@ public class GenericYamlParser {
                 throw e;
             }
             catch (Throwable cause) {
+                log.debug("",cause);
                 var e = new ConfigurationParsingException(cause.getMessage());
                 e.setParsingContext(ctx.key(key));
                 throw e;
