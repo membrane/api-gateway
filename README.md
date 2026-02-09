@@ -36,10 +36,9 @@ api:
 ```yaml
 api:
   port: 2000
-  specs:
-    - openapi:
-        location: "fruitshop-api.yml"
-        validateRequests: yes
+  openapi:
+    - location: "fruitshop-api.yml"
+      validateRequests: yes
 ```
 
 **Issue JSON Web Tokens:**
@@ -288,10 +287,9 @@ The snippet below shows how to deploy an API using an OpenAPI (`openapi/fruitsho
 ```yaml
 api:
   port: 2000
-  specs:
-    - openapi:
-        location: openapi/fruitshop-v2-2-0.oas.yml
-        validateRequests: true
+  openapi:
+    - location: openapi/fruitshop-v2-2-0.oas.yml
+      validateRequests: true
 ```  
 
 #### Viewing Deployed APIs

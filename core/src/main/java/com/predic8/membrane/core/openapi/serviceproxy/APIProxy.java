@@ -71,7 +71,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
     protected List<OpenAPISpec> specs = new ArrayList<>();
 
-    public List<OpenAPISpec> getSpecs() {
+    public List<OpenAPISpec> getOpenapi() {
         return specs;
     }
 
@@ -79,7 +79,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
      * @description Deploys an API from an OpenAPI document.
      */
     @MCChildElement(order = 25)
-    public void setSpecs(List<OpenAPISpec> specs) {
+    public void setOpenapi(List<OpenAPISpec> specs) {
         this.specs = specs;
     }
 
