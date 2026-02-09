@@ -18,9 +18,13 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
 import org.slf4j.*;
 
+import static com.jayway.jsonpath.Configuration.defaultConfiguration;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -37,45 +41,52 @@ import static java.nio.charset.StandardCharsets.*;
  */
 @SuppressWarnings("unused")
 @MCElement(name="replace")
-public class ReplaceInterceptor extends AbstractInterceptor {
+public class ReplaceInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(ReplaceInterceptor.class);
-
-    private String jsonPath;
 
     private String with;
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        return handleInternal(exc.getRequestContentType(), exc.getRequest());
+        return handleInternal(exc, REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        return handleInternal(exc.getResponseContentType(), exc.getResponse());
+        return handleInternal(exc, RESPONSE);
     }
 
-    private Outcome handleInternal(String contentType, Message msg) {
-        if(contentType != null && contentType.equals(APPLICATION_JSON)) {
-            msg.setBodyContent(replaceWithJsonPath(msg, jsonPath, with).getBytes(UTF_8));
+    private Outcome handleInternal(Exchange exc, Flow flow) {
+        Message msg = exc.getMessage(flow);
+        String expr = exchangeExpression.evaluate(exc, flow, String.class);
+
+        switch (language) {
+            case JSONPATH -> handleJsonPath(msg, expr);
+            case XPATH -> handleXPath(msg, expr);
         }
         return CONTINUE;
     }
 
-     String replaceWithJsonPath(Message msg, String jsonPath, String replacement) {
-         Object document = Configuration.defaultConfiguration().jsonProvider().parse(msg.getBodyAsStringDecoded());
-         document = JsonPath.parse(document).set(jsonPath, replacement).json();
-         return Configuration.defaultConfiguration().jsonProvider().toJson(document);
+    private void handleXPath(Message message, String expr) {
+
+    }
+
+    private void handleJsonPath(Message msg, String jsonPath) {
+        if (!isJson(msg.getHeader().getContentType())) return;
+        Object document = defaultConfiguration().jsonProvider().parse(msg.getBodyAsStringDecoded());
+        document = JsonPath.parse(document).set(jsonPath, with).json();
+        msg.setBodyContent(defaultConfiguration().jsonProvider().toJson(document).getBytes(UTF_8));
     }
 
     /**
      * Sets the JSONPath expression to identify the target node in the JSON structure.
      *
-     * @param jsonPath the JSONPath expression (e.g., "$.person.name").
+     * @param expr the JSONPath expression (e.g., "$.person.name").
      */
     @MCAttribute
-    public void setJsonPath(String jsonPath) {
-        this.jsonPath = jsonPath;
+    public void setExpression(String expr) {
+        expression = expr;
     }
 
     /**
@@ -88,7 +99,7 @@ public class ReplaceInterceptor extends AbstractInterceptor {
         this.with = with;
     }
 
-    public String getJsonPath() {return jsonPath;}
+    public String getExpression() {return expression;}
 
     public String getWith() {return with;}
 

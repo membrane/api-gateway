@@ -15,6 +15,8 @@ package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.core.lang.*;
 
+import static com.predic8.membrane.core.lang.TemplateExchangeExpression.newInstance;
+
 public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInterceptor {
 
     protected ExchangeExpression exchangeExpression;
@@ -27,6 +29,6 @@ public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInter
     }
 
     protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression, router);
+        return newInstance(this, language, expression, router);
     }
 }
