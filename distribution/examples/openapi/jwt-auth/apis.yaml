@@ -21,7 +21,7 @@ api:
 api:
   name: Protected API
   port: 2001
-  specs:
+  openapi:
     - location: secure-shop-api.yml
       validateSecurity: true
   flow:
