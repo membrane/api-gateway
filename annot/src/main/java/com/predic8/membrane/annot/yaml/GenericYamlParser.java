@@ -234,7 +234,7 @@ public class GenericYamlParser {
                 throw e;
             }
             catch (Throwable cause) {
-                var e = new ConfigurationParsingException(cause);
+                var e = new ConfigurationParsingException(cause.getMessage());
                 e.setParsingContext(ctx.key(key));
                 throw e;
             }

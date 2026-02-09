@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.*;
+
+import java.util.*;
 
 public final class NodeValidationUtils {
 

@@ -85,7 +85,7 @@ public final class McYamlIntrospector {
     public static <T> Method getSingleChildSetter(ParsingContext pc, Class<T> clazz) {
         MCElement annotation = clazz.getAnnotation(MCElement.class);
         if (annotation == null || !annotation.noEnvelope()) {
-            throw new ConfigurationParsingException("Class " + clazz.getName() + " has properties, and is not a list.",null,pc);
+            throw new ConfigurationParsingException("'%s' is an object and not a list. Do not specify list items with '-'.".formatted(pc.context()),null,pc);
         }
         guardHasMCAttributeSetters(clazz);
         var setter = getChildSetters(clazz).getFirst();

@@ -17,6 +17,7 @@ package com.predic8.membrane.annot.yaml;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 import javax.lang.model.util.*;
 import java.lang.reflect.*;
@@ -32,6 +33,8 @@ import static java.lang.Long.*;
 import static java.util.Locale.*;
 
 public class MethodSetter {
+
+    private static final Logger log = LoggerFactory.getLogger(MethodSetter.class);
 
     private final Method setter;
     private final Class<?> beanClass;
@@ -84,7 +87,8 @@ public class MethodSetter {
     }
 
     private static <T> void throwCantFindException(ParsingContext<?> ctx, Class<T> clazz, String key) {
-        var e = new ConfigurationParsingException("Can't find method or bean for key '%s' in %s".formatted(key, getConfigElementName(clazz)));
+        log.debug("Can't find method or bean for key '{}' in {}",key, getConfigElementName(clazz));
+        var e = new ConfigurationParsingException("Invalid field '%s' in %s".formatted(key, getConfigElementName(clazz)));
         e.setParsingContext(ctx.key(key));
         throw e;
     }
