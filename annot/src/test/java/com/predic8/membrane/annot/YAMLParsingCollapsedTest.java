@@ -218,16 +218,4 @@ public class YAMLParsingCollapsedTest {
         assertTrue(c.getMessage().contains("expected an inline"));
 
     }
-
-    private static Throwable rootCause(Throwable e) {
-        Throwable cur = e;
-        while (true) {
-            if (cur instanceof java.lang.reflect.InvocationTargetException ite) {
-                cur = ite.getTargetException();
-                continue;
-            }
-            if (cur.getCause() == null) return cur;
-            cur = cur.getCause();
-        }
-    }
 }

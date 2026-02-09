@@ -102,7 +102,7 @@ public class YAMLBeanParsingTest {
     @Test
     void missingClassFailsFastOnResolve() {
         var ex = assertThrows(RuntimeException.class, () -> {
-            BeanRegistry r = parse("""
+            parse("""
             components:
               x:
                 bean:

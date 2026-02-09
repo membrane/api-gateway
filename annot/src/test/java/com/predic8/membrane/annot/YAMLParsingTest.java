@@ -525,7 +525,7 @@ public class YAMLParsingTest {
                     demo: {}
                     """);
             throw new AssertionError("Parsing did not throw an Exception.");
-        } catch (RuntimeException e) {
+        } catch (RuntimeException ignored) {
         }
     }
 
@@ -587,7 +587,7 @@ public class YAMLParsingTest {
             var c = (ConfigurationParsingException) getCause(e);
             var pc = c.getParsingContext();
             assertEquals("$.demo", pc.path());
-            assertEquals(null, pc.getKey());
+            assertNull(pc.getKey());
         }
     }
 
@@ -670,7 +670,7 @@ public class YAMLParsingTest {
                 public class ChildElement {
                     int value = 0;
                     public int getValue() {
-                        return value; 
+                        return value;
                     }
                 
                     @PostConstruct
