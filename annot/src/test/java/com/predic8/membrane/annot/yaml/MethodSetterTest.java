@@ -58,14 +58,14 @@ class MethodSetterTest {
 
     @Test
     void multiplePotentialSettersFound() {
-        assertThrowsExactly(RuntimeException.class, () -> getMethodSetter(new ParsingContext("foo", null,
+        assertThrowsExactly(ConfigurationParsingException.class, () -> getMethodSetter(new ParsingContext("foo", null,
                         new GrammarMock().withGlobalElement("b", B.class),null, null),
                 A2.class, "b"));
     }
 
     @Test
     void noPotentialSetterFound() {
-        assertThrowsExactly(RuntimeException.class, () -> getMethodSetter(new ParsingContext("foo", null,
+        assertThrowsExactly(ConfigurationParsingException.class, () -> getMethodSetter(new ParsingContext("foo", null,
                         new GrammarMock().withGlobalElement("c", C.class),null, null),
                 A2.class, "c"));
     }
