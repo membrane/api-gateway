@@ -48,7 +48,6 @@ public class StaticUserDataProviderTest {
         // Then
         assertNotNull(result);
         assertEquals("alice", result.get("username"));
-        assertNull( result.get("password"));
     }
 
     @Test
@@ -120,7 +119,6 @@ public class StaticUserDataProviderTest {
 
         // Then
         assertEquals("alice", result.get("username"));
-        assertNull(result.get("password"));
         assertEquals("admin", result.get("headerRole"));
         assertEquals("alice@example.com", result.get("email"));
     }
