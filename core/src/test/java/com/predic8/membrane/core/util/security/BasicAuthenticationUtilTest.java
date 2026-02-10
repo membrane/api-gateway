@@ -315,7 +315,8 @@ class BasicAuthenticationUtilTest {
             var toString = credentials.toString();
 
             assertTrue(toString.contains("alice"));
-            assertTrue(toString.contains("secret"));
+            assertTrue(toString.contains("*******"));
+            assertFalse(toString.contains("secret"));
         }
 
         @Test
