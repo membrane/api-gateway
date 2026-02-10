@@ -30,6 +30,7 @@ import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
 import io.swagger.v3.oas.models.servers.Server;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,7 @@ import java.util.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
@@ -214,6 +216,13 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
             }
         }));
         return paths;
+    }
+
+    @Override
+    public String getName() {
+        String name = defaultIfEmpty(this.name, getKey() != null ? getKey().toString() : "");
+        if (test != null && !test.isEmpty()) return "%s %s".formatted(name, test);
+        return name;
     }
 
     public ValidationStatisticsCollector getValidationStatisticCollector() {
