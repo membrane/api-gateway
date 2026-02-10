@@ -166,7 +166,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
      * <p>
      * Default is {@code true} to prevent credentials from being forwarded to backends.
      * Set to {@code false} if both gateway and backend need to validate credentials.
-     *
+     * </p>
      * @param removeAuthorizationHeader {@code true} to remove (default), {@code false} to forward
      * @default true
      */
