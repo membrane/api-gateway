@@ -28,7 +28,7 @@ for p in {2000..2005}; do
   PORT_ARGS+=(-p "${p}:${p}")
 done
 
-exec sudo docker run --rm -it \
+exec docker run --rm -it \
   "${PORT_ARGS[@]}" \
   -v "${CFG_ABS}:/opt/membrane/conf/apis.yaml:ro" \
   predic8/membrane
