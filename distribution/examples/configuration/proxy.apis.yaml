@@ -1,0 +1,17 @@
+components:
+  http:
+    httpClientConfig:
+      retries:
+        retries: 2
+        delay: 10
+      connection:
+        timeout: 10000
+        keepAliveTimeout: 1000
+
+---
+
+api:
+  name: Forward Proxy
+  port: 2000
+  target:
+    url: https://api.predic8.de
