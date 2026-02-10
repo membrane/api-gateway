@@ -31,4 +31,4 @@ done
 exec docker run --rm -it \
   "${PORT_ARGS[@]}" \
   -v "${CFG_ABS}:/opt/membrane/conf/apis.yaml:ro" \
-  predic8/membrane
+  predic8/membrane:7.0
