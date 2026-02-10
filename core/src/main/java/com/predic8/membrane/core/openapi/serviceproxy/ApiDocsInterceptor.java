@@ -29,6 +29,13 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisher.*;
 import static java.lang.String.valueOf;
 
+/**
+ * @description Publishes an overview of all OpenAPI-enabled proxies and serves Swagger UI under /api-docs/ui/*.
+ * @yaml
+ * <pre><code>
+ *  apiDocs: {}
+ * </code></pre>
+ */
 @MCElement(name = "apiDocs")
 public class ApiDocsInterceptor extends AbstractInterceptor {
 
@@ -94,7 +101,7 @@ public class ApiDocsInterceptor extends AbstractInterceptor {
     protected void setSpecRewrites(Proxy proxy) {
         var key = proxy.getKey();
         //noinspection OptionalGetWithoutIsPresent
-        getOpenAPIInterceptor(proxy).get().getApiProxy().getSpecs().forEach(spec -> {
+        getOpenAPIInterceptor(proxy).get().getApiProxy().getOpenapi().forEach(spec -> {
             if (spec.getRewrite() != null) {
                 setIfNull(spec.getRewrite(), Rewrite::getPort, Rewrite::setPort, key.getPort());
                 setIfNull(spec.getRewrite(), Rewrite::getHost, Rewrite::setHost, key.getHost());

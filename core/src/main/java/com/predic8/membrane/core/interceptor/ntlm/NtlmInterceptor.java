@@ -30,6 +30,17 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
+/**
+ * @description Performs NTLM authentication when the upstream responds with WWW-Authenticate: NTLM by replaying the request with NTLM headers.
+ * @yaml
+ * <pre><code>
+ *  ntlm:
+ *    user: X-NTLM-User
+ *    pass: X-NTLM-Pass
+ *    domain: X-NTLM-Domain
+ *    workstation: X-NTLM-Workstation
+ * </code></pre>
+ */
 @MCElement(name = "ntlm")
 public class NtlmInterceptor extends AbstractInterceptor {
 

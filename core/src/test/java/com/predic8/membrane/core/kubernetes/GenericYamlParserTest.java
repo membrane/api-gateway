@@ -258,34 +258,31 @@ public class GenericYamlParserTest {
                 ok(
                         "openapi_spec_single",
                         """
-                        specs:
-                          - openapi:
-                              location: fruitshop-api.yml
-                              validateRequests: "yes"
+                        openapi:
+                          - location: fruitshop-api.yml
+                            validateRequests: "yes"
                         """,
                         a -> {
-                            assertEquals(1, a.getSpecs().size());
-                            assertEquals("fruitshop-api.yml", a.getSpecs().getFirst().getLocation());
-                            assertEquals(YES, a.getSpecs().getFirst().getValidateRequests());
+                            assertEquals(1, a.getOpenapi().size());
+                            assertEquals("fruitshop-api.yml", a.getOpenapi().getFirst().getLocation());
+                            assertEquals(YES, a.getOpenapi().getFirst().getValidateRequests());
                         }
                 ),
                 ok(
                         "openapi_spec_multiple",
                         """
-                        specs:
-                          - openapi:
-                              location: a.yml
-                              validateRequests: "no"
-                          - openapi:
-                              location: b.yml
-                              validateRequests: "yes"
+                        openapi:
+                          - location: a.yml
+                            validateRequests: "no"
+                          - location: b.yml
+                            validateRequests: "yes"
                         """,
                         a -> {
-                            assertEquals(2, a.getSpecs().size());
-                            assertEquals("a.yml", a.getSpecs().getFirst().getLocation());
-                            assertEquals("b.yml", a.getSpecs().get(1).getLocation());
-                            assertEquals(NO, a.getSpecs().get(0).getValidateRequests());
-                            assertEquals(YES, a.getSpecs().get(1).getValidateRequests());
+                            assertEquals(2, a.getOpenapi().size());
+                            assertEquals("a.yml", a.getOpenapi().getFirst().getLocation());
+                            assertEquals("b.yml", a.getOpenapi().get(1).getLocation());
+                            assertEquals(NO, a.getOpenapi().get(0).getValidateRequests());
+                            assertEquals(YES, a.getOpenapi().get(1).getValidateRequests());
                         }
                 )
         );

@@ -27,6 +27,9 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.lang.Double.parseDouble;
 import static java.util.EnumSet.*;
 
+/**
+ * @description Randomly applies greasing strategies to request/response messages (rate 0..1) to stress-test parsers (e.g., JSON/XML).
+ */
 @MCElement(name = "greaser")
 public class GreaseInterceptor extends AbstractInterceptor {
 

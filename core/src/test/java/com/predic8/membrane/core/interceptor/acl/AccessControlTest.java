@@ -14,19 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.interceptor.acl.rules.Allow;
-import com.predic8.membrane.core.interceptor.acl.rules.Deny;
-import com.predic8.membrane.core.router.Router;
-import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.DNSCache;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.interceptor.acl.rules.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.net.InetAddress;
-import java.util.List;
+import java.net.*;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class AccessControlTest {
@@ -52,9 +51,7 @@ class AccessControlTest {
 
     @Test
     void isPermitted_returns_false_for_null_blank_or_invalid_ip() {
-        Allow allow = new Allow();
-        allow.setTarget("0.0.0.0/0");
-        acl.setRules(List.of(allow));
+        acl.setRules(List.of(allow("0.0.0.0/0")));
         acl.init(router.getDnsCache());
 
         assertFalse(acl.isPermitted(null).permitted());
@@ -65,10 +62,7 @@ class AccessControlTest {
 
     @Test
     void isPermitted_allows_when_matching_allow_rule() {
-        Allow allow = new Allow();
-        allow.setTarget("10.0.0.0/8");
-
-        acl.setRules(List.of(allow));
+        acl.setRules(List.of(allow("10.0.0.0/8")));
         acl.init(router.getDnsCache());
 
         assertTrue(acl.isPermitted("10.123.45.67").permitted());
@@ -77,47 +71,29 @@ class AccessControlTest {
 
     @Test
     void isPermitted_denies_when_matching_deny_rule() {
-        Deny deny = new Deny();
-        deny.setTarget("10.0.0.0/8");
-
-        acl.setRules(List.of(deny));
+        acl.setRules(List.of(deny("10.0.0.0/8")));
         acl.init(router.getDnsCache());
-
         assertFalse(acl.isPermitted("10.123.45.67").permitted());
         assertFalse(acl.isPermitted("11.0.0.1").permitted());
     }
 
     @Test
     void isPermitted_first_decision_wins() {
-        Deny deny = new Deny();
-        deny.setTarget("10.0.0.0/8");
-
-        Allow allow = new Allow();
-        allow.setTarget("10.0.0.0/8");
-
-        acl.setRules(List.of(deny, allow));
+        acl.setRules(List.of(deny("10.0.0.0/8"), allow("10.0.0.0/8")));
         acl.init(router.getDnsCache());
-
         assertFalse(acl.isPermitted("10.1.2.3").permitted());
     }
 
     @Test
     void isPermitted_no_rule_matches_defaults_to_deny() {
-        Allow allow = new Allow();
-        allow.setTarget("10.0.0.0/8");
-
-        acl.setRules(List.of(allow));
+        acl.setRules(List.of(allow("10.0.0.0/8")));
         acl.init(router.getDnsCache());
-
         assertFalse(acl.isPermitted("192.168.0.1").permitted());
     }
 
     @Test
     void hostname_rule_triggers_dns_and_can_allow() {
-        Allow allow = new Allow();
-        allow.setTarget("^example\\.com$");
-
-        acl.setRules(List.of(allow));
+        acl.setRules(List.of(allow("^example\\.com$")));
         when(dnsCache.getCanonicalHostName(any(InetAddress.class))).thenReturn("example.com");
 
         acl.init(router.getDnsCache());
@@ -128,10 +104,7 @@ class AccessControlTest {
 
     @Test
     void hostname_rule_triggers_dns_and_can_deny_when_mismatch() {
-        Allow allow = new Allow();
-        allow.setTarget("^example\\.com$");
-
-        acl.setRules(List.of(allow));
+        acl.setRules(List.of(allow("^example\\.com$")));
         when(dnsCache.getCanonicalHostName(any(InetAddress.class))).thenReturn("nope.example.org");
 
         acl.init(router.getDnsCache());
@@ -142,38 +115,30 @@ class AccessControlTest {
 
     @Test
     void accessRule_setTarget_rejects_null_or_empty() {
-        Allow allow = new Allow();
-        assertThrows(ConfigurationException.class, () -> allow.setTarget(null));
-        assertThrows(ConfigurationException.class, () -> allow.setTarget(""));
+        assertThrows(ConfigurationException.class, () -> allow("0.0.0.0/0").setTarget(null));
+        assertThrows(ConfigurationException.class, () -> allow("0.0.0.0/0").setTarget(""));
     }
 
     @Test
     void accessRule_setTarget_rejects_blank_only_spaces() {
-        Allow allow = new Allow();
-        assertThrows(ConfigurationException.class, () -> allow.setTarget("   "));
+        assertThrows(ConfigurationException.class, () -> allow("0.0.0.0/0").setTarget("   "));
     }
 
     @Test
     void accessRule_setTarget_trims_value() {
-        Allow allow = new Allow();
-        allow.setTarget(" 10.0.0.0/8 ");
-        assertEquals("10.0.0.0/8", allow.getTarget());
+        assertEquals("10.0.0.0/8", allow("10.0.0.0/8").getTarget());
     }
 
     @Test
     void accessRule_setTarget_rejects_invalid_targets() {
-        Allow allow = new Allow();
-        assertThrows(ConfigurationException.class, () -> allow.setTarget(" 999.1.1.1/33 "));
-        assertThrows(ConfigurationException.class, () -> allow.setTarget(" 2001:db8::1/129 "));
-        assertThrows(ConfigurationException.class, () -> allow.setTarget(" [ "));
+        assertThrows(ConfigurationException.class, () -> allow(" 999.1.1.1/33 "));
+        assertThrows(ConfigurationException.class, () -> allow(" 2001:db8::1/129 "));
+        assertThrows(ConfigurationException.class, () -> allow(" [ "));
     }
 
     @Test
     void init_does_not_trigger_dns_when_no_hostname_rule_present() {
-        Allow allow = new Allow();
-        allow.setTarget("0.0.0.0/0");
-
-        acl.setRules(List.of(allow));
+        acl.setRules(List.of(allow("0.0.0.0/0")));
         acl.init(router.getDnsCache());
 
         assertTrue(acl.isPermitted("1.2.3.4").permitted());
@@ -182,13 +147,7 @@ class AccessControlTest {
 
     @Test
     void init_triggers_dns_when_hostname_rule_present_even_if_other_rules_exist() {
-        Allow allowIp = new Allow();
-        allowIp.setTarget("10.0.0.0/8");
-
-        Allow allowHost = new Allow();
-        allowHost.setTarget("^example\\.com$");
-
-        acl.setRules(List.of(allowIp, allowHost));
+        acl.setRules(List.of(allow("10.0.0.0/8"), allow("^example\\.com$")));
         when(dnsCache.getCanonicalHostName(any(InetAddress.class))).thenReturn("example.com");
 
         acl.init(router.getDnsCache());
@@ -199,10 +158,7 @@ class AccessControlTest {
 
     @Test
     void isPermitted_with_leading_trailing_spaces_in_remoteIp_is_handled() {
-        Allow allow = new Allow();
-        allow.setTarget("10.0.0.0/8");
-
-        acl.setRules(List.of(allow));
+        acl.setRules(List.of(allow("10.0.0.0/8")));
         acl.init(router.getDnsCache());
 
         assertTrue(acl.isPermitted(" 10.123.45.67 ").permitted());
@@ -211,19 +167,7 @@ class AccessControlTest {
 
     @Test
     void complex_ruleset_multiple_requests_first_decision_wins() {
-        Deny denyBadHost = new Deny();
-        denyBadHost.setTarget("^bad\\.example\\.com$");
-
-        Allow allowInternal = new Allow();
-        allowInternal.setTarget("10.1.0.0/16");
-
-        Deny denyInternalSubnet = new Deny();
-        denyInternalSubnet.setTarget("10.1.2.0/24");
-
-        Allow allowSingle = new Allow();
-        allowSingle.setTarget("203.0.113.7/32");
-
-        acl.setRules(List.of(denyBadHost, allowInternal, denyInternalSubnet, allowSingle));
+        acl.setRules(List.of(deny("^bad\\.example\\.com$"), allow("10.1.0.0/16"), deny("10.1.2.0/24"), allow("203.0.113.7/32")));
 
         when(dnsCache.getCanonicalHostName(any(InetAddress.class))).thenAnswer(inv -> {
             InetAddress ia = inv.getArgument(0);
@@ -248,14 +192,33 @@ class AccessControlTest {
 
     @Test
     void localhost() {
-        Allow allowLocalhost = new Allow();
-        allowLocalhost.setTarget("127.0.0.1/32");
-
-        acl.setRules(List.of(allowLocalhost));
+        acl.setRules(List.of(allow("127.0.0.1/32")));
         acl.init(router.getDnsCache());
 
         assertTrue(acl.isPermitted("127.0.0.1").permitted());
         assertFalse(acl.isPermitted("127.0.0.2").permitted());
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "0.0.0.0/0, 192.168.2.1",
+            "::/0, 2001:0DB8:0:CD30::1"
+    })
+    void any_cidr_matches_all_addresses(String cidr, String ipAddress) {
+        var ad = allow(cidr).apply(IpAddress.parse(ipAddress));
+        assertTrue(ad.isPresent());
+        assertTrue(ad.get().permitted());
+    }
+
+    private static Allow allow(String target) {
+        var allow = new Allow();
+        allow.setTarget(target);
+        return allow;
+    }
+
+    private static Deny deny(String target) {
+        var deny = new Deny();
+        deny.setTarget(target);
+        return deny;
+    }
 }

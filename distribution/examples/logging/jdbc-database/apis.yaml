@@ -5,18 +5,14 @@ components:
     bean:
       class: org.apache.commons.dbcp2.BasicDataSource
       properties:
-        - property:
-            name: driverClassName
-            value: org.h2.Driver
-        - property:
-            name: url
-            value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-        - property:
-            name: username
-            value: membrane
-        - property:
-            name: password
-            value: secret
+        - name: driverClassName
+          value: org.h2.Driver
+        - name: url
+          value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+        - name: username
+          value: membrane
+        - name: password
+          value: secret
 
 ---
 

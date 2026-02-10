@@ -21,10 +21,9 @@ api:
   flow:
     # The wsdlRewriter must be the first of the following interceptors.
     - rewriter:
-      - map:
-          # Put values in quotes when using special characters
-          from: "/my-service/(.*)"
-          to: "/city-service/$1"
+      # Put values in quotes when using special characters
+      - from: "/my-service/(.*)"
+        to: "/city-service/$1"
     - wsdlRewriter:
         host: my.host.example.com
         protocol: https

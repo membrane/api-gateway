@@ -8,10 +8,9 @@ components:
 
 api:
   port: 2000
-  specs:
-    - openapi:
-        location: fruitshop-api-v2-openapi-3-security.yml
-        validateSecurity: true
+  openapi:
+    - location: fruitshop-api-v2-openapi-3-security.yml
+      validateSecurity: true
   flow:
     - apiKey:
         # API keys are validated in the OpenAPI validator with validateSecurity: true. See the OpenAPI document for details.

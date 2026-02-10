@@ -68,7 +68,31 @@ PRIO 3:
 - headerFilter YAML format has changed.
 - Choose Interceptor configuration
 - Chain (ChainDef) configuration
-- BasicAuthentication interceptor remove the Authentication header from the request. 
+- BasicAuthentication interceptor removes the Authentication header from the request. 
+- OpenApi: rename `specs` to `openapi`
+- **YAML configuration in list elements**:
+    * List items can now be written in *inline form* if the list accepts exactly one concrete element type (no polymorphic candidates) and the element is not `collapsed`, not `noEnvelope`, and not string-like.
+    * Old wrapper form remains supported: `- <kind>: { ... }` (Only when schema validation is deactivated). 
+  
+    Old: 
+     ```yaml
+      properties:
+        - property:
+            name: driverClassName
+            value: org.h2.Driver
+        - property:
+            name: url
+            value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+  ```
+    New:
+    ```yaml
+      properties:
+        - name: driverClassName
+          value: org.h2.Driver
+        - name: url
+          value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+  ```
+- removed `MethodOverrideInterceptor`
 
 ## Bug Fixes
 - `xml2json`: Ensuring content type alignment and better exception handling.  

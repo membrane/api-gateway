@@ -31,17 +31,18 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
+import static com.predic8.membrane.annot.yaml.MethodSetter.getCollectionElementType;
 import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
 import static com.predic8.membrane.annot.yaml.YamlParsingUtils.*;
+import static java.lang.reflect.Modifier.isAbstract;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.List.of;
 import static java.util.UUID.randomUUID;
@@ -226,7 +227,8 @@ public class GenericYamlParser {
     }
 
     private static <T> T handleNoEnvelopeList(ParsingContext<?> ctx, Class<T> clazz, JsonNode node, T configObj) throws IllegalAccessException, InvocationTargetException {
-        getSingleChildSetter(clazz).invoke(configObj, parseListExcludingStartEvent(ctx, node));
+        Method childSetter = getSingleChildSetter(clazz);
+        childSetter.invoke(configObj, parseListExcludingStartEvent(ctx, node, getCollectionElementType(childSetter)));
         return configObj;
     }
 
@@ -299,14 +301,18 @@ public class GenericYamlParser {
     }
 
     public static List<Object> parseListIncludingStartEvent(ParsingContext<?> context, JsonNode node) throws ParsingException {
-        ensureArray(node);
-        return parseListExcludingStartEvent(context, node);
+        return parseListIncludingStartEvent(context, node, null);
     }
 
-    private static @NotNull List<Object> parseListExcludingStartEvent(ParsingContext<?> context, JsonNode node) throws ParsingException {
+    public static List<Object> parseListIncludingStartEvent(ParsingContext<?> context, JsonNode node, Class<?> elemType) throws ParsingException {
+        ensureArray(node);
+        return parseListExcludingStartEvent(context, node, elemType);
+    }
+
+    private static @NotNull List<Object> parseListExcludingStartEvent(ParsingContext<?> context, JsonNode node, Class<?> elemType) throws ParsingException {
         List<Object> res = new ArrayList<>();
         for (int i = 0; i < node.size(); i++) {
-            res.add(parseMapToObj(context, node.get(i)));
+            res.add(parseListItem(context, node.get(i), elemType));
         }
         return res;
     }
@@ -360,4 +366,37 @@ public class GenericYamlParser {
         if (node == null || !node.isTextual()) return SCALAR_MAPPER.convertValue(node, targetType);
         return resolveSpelValue(node.asText(), targetType, node);
     }
+
+    private static Object parseListItem(ParsingContext<?> ctx, JsonNode item, Class<?> elemType) throws ParsingException {
+        if (item == null || item.isNull()) throw new ParsingException("List items must not be null.", item);
+
+        // Non-object items (scalar/array): only supported for typed element lists (e.g. collapsed items).
+        if (!item.isObject()) {
+            return parseInlineListItem(ctx, item, elemType);
+        }
+
+        // $ref-only object is allowed, but mixing $ref with other fields is not.
+        JsonNode ref = item.get("$ref");
+        if (ref != null) {
+            if (item.size() == 1) return parseMapToObj(ctx, item);
+            throw new ParsingException("Cannot mix '$ref' with other fields in a list item.", ref);
+        }
+
+        // Single-key object: treat as inline if it matches a setter of the element type, otherwise wrapper form.
+        if (item.size() == 1) {
+            if (elemType != null && findSetterForKey(elemType, item.fieldNames().next()) != null) {
+                return parseInlineListItem(ctx, item, elemType);
+            }
+            return parseMapToObj(ctx, item);
+        }
+
+        return parseInlineListItem(ctx, item, elemType);
+    }
+
+    private static Object parseInlineListItem(ParsingContext<?> ctx, JsonNode node, Class<?> elemType) {
+        if (elemType == null) throw new ParsingException("Inline list item form requires a typed list element.", node);
+        if (elemType.isInterface() || isAbstract(elemType.getModifiers())) throw new ParsingException("Inline list item form requires a concrete element type, but found: %s.".formatted(elemType.getName()), node);
+        return createAndPopulateNode(ctx.updateContext(getElementName(elemType)), elemType, node);
+    }
+
 }

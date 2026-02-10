@@ -25,7 +25,6 @@ import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -46,10 +45,9 @@ class EnvelopeTest {
         String yaml = """
         api:
           port: 2000
-          specs:
-            - openapi:
-                location: fruitshop-api.yml
-                validateRequests: "yes"
+          openapi:
+            - location: fruitshop-api.yml
+              validateRequests: "yes"
         ---
         api:
           port: 2000
@@ -109,9 +107,9 @@ class EnvelopeTest {
         assertInstanceOf(APIProxy.class, e0.getSpec());
         APIProxy a0 = (APIProxy) e0.getSpec();
         assertEquals(2000, a0.getPort());
-        assertEquals(1, a0.getSpecs().size());
-        assertEquals("fruitshop-api.yml", a0.getSpecs().getFirst().getLocation());
-        assertEquals(YES, a0.getSpecs().getFirst().getValidateRequests());
+        assertEquals(1, a0.getOpenapi().size());
+        assertEquals("fruitshop-api.yml", a0.getOpenapi().getFirst().getLocation());
+        assertEquals(YES, a0.getOpenapi().getFirst().getValidateRequests());
 
         // api-rewrite
         Envelope e1 = docs.get(1);

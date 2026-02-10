@@ -60,7 +60,7 @@ public class OpenApiRewriteIntegrationTest {
         rw.setBasePath("/bar");
         spec.setRewrite(rw);
         spec.setValidateRequests(OpenAPISpec.YesNoOpenAPIOption.YES);
-        proxy.setSpecs(singletonList(spec));
+        proxy.setOpenapi(singletonList(spec));
         proxy.setKey(new APIProxyKey(null, "*", 2000, null, "*", null,false));
         proxy.getFlow().add(new LogInterceptor());
       //  proxy.init(r);

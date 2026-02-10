@@ -8,15 +8,12 @@ api:
     - balancer:
         name: balancer1
         clusters:
-          - cluster:
-              name: Default
-              nodes: # target 1 and 2 that are balanced by balancer 1
-                - node:
-                    host: localhost
-                    port: 4000
-                - node:
-                    host: localhost
-                    port: 4001
+          - name: Default
+            nodes: # target 1 and 2 that are balanced by balancer 1
+              - host: localhost
+                port: 4000
+              - host: localhost
+                port: 4001
 
 ---
 
@@ -29,15 +26,12 @@ api:
     - balancer:
         name: balancer2
         clusters:
-          - cluster:
-              name: Default
-              nodes: # target 3 and 4 that are balanced by balancer 2
-                - node:
-                    host: localhost
-                    port: 4002
-                - node:
-                    host: localhost
-                    port: 4003
+          - name: Default
+            nodes: # target 3 and 4 that are balanced by balancer 2
+              - host: localhost
+                port: 4002
+              - host: localhost
+                port: 4003
 
 ---
 

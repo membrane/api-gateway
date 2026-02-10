@@ -128,7 +128,7 @@ class ApiDocsInterceptorTest {
 
     @Test
     void rewriterSetSpecRewritesTest() {
-        getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().getFirst().setRewrite(new Rewrite() {{
+        getOpenAPIInterceptor(rule).get().getApiProxy().getOpenapi().getFirst().setRewrite(new Rewrite() {{
             setPort(3000);
             setHost("localhost");
             setBasePath("/foo");
@@ -141,7 +141,7 @@ class ApiDocsInterceptorTest {
     }
 
     private Rewrite getRewrite() {
-        return getOpenAPIInterceptor(rule).get().getApiProxy().getSpecs().getFirst().getRewrite();
+        return getOpenAPIInterceptor(rule).get().getApiProxy().getOpenapi().getFirst().getRewrite();
     }
 
     private void checkHasValidProblemJSON(Exchange exc) throws IOException {
