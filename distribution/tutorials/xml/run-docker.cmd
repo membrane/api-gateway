@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 set "DIR=%~dp0"
 set "IMAGE=predic8/membrane:7.0"
 
-for /f "delims=" %%i in ('docker create -p 2000-2005:2000-2005 %IMAGE% %*') do set "CID=%%i"
+for /f "delims=" %%i in ('docker create -p 2000-2010:2000-2010 %IMAGE% %*') do set "CID=%%i"
 
 set "CLEANUP_CMD=docker rm -f %CID% >nul 2>nul"
 
