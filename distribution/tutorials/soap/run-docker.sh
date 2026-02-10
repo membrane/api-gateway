@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+cid="$(docker create -p 2000-2005:2000-2005 predic8/membrane:7.0 "$@")"
+
+cleanup() {
+  docker rm -f "$cid" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT INT TERM
+
+docker cp "${DIR}/." "${cid}:/opt/membrane/"
+docker start -a "$cid"

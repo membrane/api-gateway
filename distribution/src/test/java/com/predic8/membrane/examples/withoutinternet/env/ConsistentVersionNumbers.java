@@ -343,7 +343,7 @@ public class ConsistentVersionNumbers {
 	private static void handleDockerScripts(File baseDirectory, VersionTransformer versionTransformer) throws Exception {
 		try (Stream<Path> s = Files.walk(baseDirectory.toPath())) {
 			s.filter(Files::isRegularFile)
-					.filter(p -> p.getFileName().toString().equals("docker.sh"))
+					.filter(p -> p.getFileName().toString().equals("run-docker.sh"))
 					.filter(p -> !p.toString().contains(File.separator + "target" + File.separator))
 					.forEach(p -> {
 						try {

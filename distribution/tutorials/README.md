@@ -33,7 +33,8 @@ If you need to integrate legacy SOAP Web Services, this tutorial provides exampl
 
 ## Start Membrane using Docker
 
-If you want to start membrane using Docker use the `docker.sh` script instead of the `membrane.sh`.
+If you want to start membrane using Docker use the `docker.sh` script instead of the `membrane.sh`. Make sure to always
+use the script next to the yamls.  
 
 ## Questions and Feedback
 
