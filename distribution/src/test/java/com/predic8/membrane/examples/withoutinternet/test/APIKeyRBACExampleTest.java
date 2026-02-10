@@ -34,7 +34,7 @@ public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestca
             .get("http://localhost:2000")
         .then().assertThat()
             .statusCode(200)
-            .body(containsString("Caller scopes"))
+            .body(containsString("Only finance or accounting!"))
             .body(containsString("accounting"))
             .body(containsString("finance"));
     }
@@ -47,8 +47,7 @@ public class APIKeyRBACExampleTest extends AbstractSampleMembraneStartStopTestca
             .get("http://localhost:2000")
         .then().assertThat()
             .statusCode(200)
-            .body(containsString("Caller scopes"))
-            .body(not(containsString("accounting")))
-            .body(containsString("admin"));
+            .body(containsString("Only admins!"))
+            .body(containsString("[admin]"));
     }
 }
