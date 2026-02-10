@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.annot.yaml;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.util.*;
@@ -50,23 +49,23 @@ class MethodSetterTest {
 
     @Test
     void dontUseMethodsWithoutChildElementAnnotation() {
-        MethodSetter ms = getMethodSetter(new ParsingContext("foo", null,
-                        new GrammarMock().withGlobalElement("b", B.class),null, null),
+        MethodSetter ms = getMethodSetter(new ParsingContext("foo",null,
+                        new GrammarMock().withGlobalElement("b", B.class),null, null,null),
                 A.class, "b");
         assertEquals("setA3", ms.getSetter().getName());
     }
 
     @Test
     void multiplePotentialSettersFound() {
-        assertThrowsExactly(ConfigurationParsingException.class, () -> getMethodSetter(new ParsingContext("foo", null,
-                        new GrammarMock().withGlobalElement("b", B.class),null, null),
+        assertThrowsExactly(ConfigurationParsingException.class, () -> getMethodSetter(new ParsingContext("foo",
+                        null,new GrammarMock().withGlobalElement("b", B.class),null, null,null),
                 A2.class, "b"));
     }
 
     @Test
     void noPotentialSetterFound() {
-        assertThrowsExactly(ConfigurationParsingException.class, () -> getMethodSetter(new ParsingContext("foo", null,
-                        new GrammarMock().withGlobalElement("c", C.class),null, null),
+        assertThrowsExactly(ConfigurationParsingException.class, () -> getMethodSetter(new ParsingContext("foo",
+                        null,new GrammarMock().withGlobalElement("c", C.class),null, null,null),
                 A2.class, "c"));
     }
 

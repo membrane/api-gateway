@@ -74,13 +74,13 @@ public final class YamlParsingUtils {
      */
     static <T> T handlePostConstructAndPreDestroy(ParsingContext<?> ctx, T bean) {
         if (bean instanceof BeanRegistryAware beanRegistryAware) {
-            beanRegistryAware.setRegistry(ctx.registry());
+            beanRegistryAware.setRegistry(ctx.getRegistry());
         }
         doWithMethods(bean.getClass(), method -> {
             if (method.isAnnotationPresent(PostConstruct.class)) invokeNoArg(bean, method);
             if (method.isAnnotationPresent(PreDestroy.class)) {
                 method.setAccessible(true);
-                ctx.registry().addPreDestroyCallback(bean, method);
+                ctx.getRegistry().addPreDestroyCallback(bean, method);
             }
         });
         return bean;

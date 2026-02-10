@@ -469,7 +469,7 @@ public class YAMLParsingTest {
         } catch (RuntimeException e) {
             var c = (ConfigurationParsingException) getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
+            assertEquals("$.demo", pc.getPath());
             assertNull(null);
             assertEquals("Invalid field 'errorHere' in demo", c.getMessage());
         }
@@ -586,7 +586,7 @@ public class YAMLParsingTest {
         } catch (RuntimeException e) {
             var c = (ConfigurationParsingException) getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
+            assertEquals("$.demo", pc.getPath());
             assertNull(pc.getKey());
         }
     }

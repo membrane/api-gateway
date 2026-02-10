@@ -55,7 +55,7 @@ public class LineYamlErrorRenderer {
     public static String renderErrorReport(ParsingContext pc) throws JsonProcessingException {
 
         JsonNode node = pc.getNode();
-        String jsonPath = pc.path();
+        String jsonPath = pc.getPath();
         String key = pc.getKey();
 
         // Create a working copy

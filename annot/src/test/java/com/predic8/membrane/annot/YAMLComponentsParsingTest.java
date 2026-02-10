@@ -17,7 +17,6 @@ package com.predic8.membrane.annot;
 import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.annot.util.*;
 import com.predic8.membrane.annot.yaml.*;
-import com.predic8.membrane.common.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
@@ -208,7 +207,7 @@ public class YAMLComponentsParsingTest {
         var c = getRootCause(ex);
         if (c instanceof ConfigurationParsingException cpe) {
             var pc = cpe.getParsingContext();
-            assertEquals("$", pc.path());  // '$.components.x' would be better in the future
+            assertEquals("$", pc.getPath());  // '$.components.x' would be better in the future
             assertEquals("doesNotExist", pc.getKey());
         } else {
             fail("Expected ConfigurationParsingException but got: " + c);
@@ -224,7 +223,7 @@ public class YAMLComponentsParsingTest {
         var c = getRootCause(ex);
         if (c instanceof ConfigurationParsingException cpe) {
             var pc = cpe.getParsingContext();
-            assertEquals("$.components.x", pc.path());
+            assertEquals("$.components.x", pc.getPath());
             assertNull(pc.getKey());
             assertTrue(cpe.getMessage().contains("Expected exactly one key"));
             assertTrue(cpe.getMessage().contains("0"));
@@ -246,7 +245,7 @@ public class YAMLComponentsParsingTest {
         var c = getRootCause(ex);
         if (c instanceof ConfigurationParsingException cpe) {
             var pc = cpe.getParsingContext();
-            assertEquals("$.components.x", pc.path());
+            assertEquals("$.components.x", pc.getPath());
             assertNull(pc.getKey());
             assertTrue(cpe.getMessage().contains("Expected exactly one key"));
             assertTrue(cpe.getMessage().contains("2"));

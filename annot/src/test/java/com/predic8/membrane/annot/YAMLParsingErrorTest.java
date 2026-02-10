@@ -46,7 +46,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$", pc.path());
+            assertEquals("$", pc.getPath());
             assertEquals("wrong", pc.getKey());
         }
     }
@@ -72,7 +72,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
+            assertEquals("$.demo", pc.getPath());
             assertEquals("wrong", pc.getKey());
         }
     }
@@ -101,7 +101,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
+            assertEquals("$.demo", pc.getPath());
             assertEquals("attr", pc.getKey());
         }
 
@@ -115,7 +115,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
+            assertEquals("$.demo", pc.getPath());
             assertEquals("wrong", pc.getKey());
         }
     }
@@ -157,7 +157,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo[0]", pc.path());
+            assertEquals("$.demo[0]", pc.getPath());
             assertEquals("attr", pc.getKey());
         }
 
@@ -170,7 +170,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
+            assertEquals("$.demo", pc.getPath());
             assertNull(pc.getKey());
         }
     }
@@ -215,7 +215,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
+            assertEquals("$.demo", pc.getPath());
             assertNull(pc.getKey());
         }
 
@@ -230,7 +230,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
+            assertEquals("$.demo", pc.getPath());
             assertEquals("c", pc.getKey());
         }
     }
@@ -300,7 +300,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo.children", pc.path());
+            assertEquals("$.demo.children", pc.getPath());
             assertNull(pc.getKey());
         }
     }
@@ -372,7 +372,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo[1].validator", pc.path());
+            assertEquals("$.demo[1].validator", pc.getPath());
             assertEquals("wrong", pc.getKey());
         }
 
@@ -388,7 +388,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo[0]", pc.path());
+            assertEquals("$.demo[0]", pc.getPath());
             assertEquals("wrong", pc.getKey());
         }
 
@@ -401,7 +401,7 @@ public class YAMLParsingErrorTest {
         } catch (RuntimeException e) {
             var c = getCause(e);
             var pc = c.getParsingContext();
-            assertEquals("$.demo", pc.path());
+            assertEquals("$.demo", pc.getPath());
             assertNull(pc.getKey());
         }
     }

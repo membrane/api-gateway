@@ -80,7 +80,7 @@ public class GenericYamlParser {
             // Deactivated temporarily to get better error messages
             //validateAgainstSchema(grammar, jsonNode, jsonLocationMap);
 
-            var pc = new ParsingContext<>("",null,grammar, jsonNode, "$");
+            var pc = new ParsingContext<>("",null,grammar, jsonNode, "$",null);
 
             if ("components".equals(getBeanType(pc, jsonNode))) {
                 beanDefs.addAll(extractComponentBeanDefinitions(pc.addPath(".components"),jsonNode.get("components")));
@@ -149,17 +149,17 @@ public class GenericYamlParser {
      * grammar and delegates to {@link #createAndPopulateNode(ParsingContext, Class, JsonNode)}.</p>
      */
     public static <R extends BeanRegistry & BeanLifecycleManager> Object readMembraneObject(String kind, Grammar grammar, JsonNode node, R registry) throws ConfigurationParsingException {
-        return createAndPopulateNode(new ParsingContext<>(kind, registry, grammar,node,"$."+kind), decideClazz(kind, grammar, node), node.get(kind));
+        return createAndPopulateNode(new ParsingContext<>(kind, registry, grammar,node, "$." + kind,null), decideClazz(kind, grammar, node), node.get(kind));
     }
 
     /**
      * Detects the class that will be selected to represent the node in Java.
      */
     public static Class<?> decideClazz(String kind, Grammar grammar, JsonNode node) {
-        ensureSingleKey(new ParsingContext("",null,grammar,node,"$"),node);
+        ensureSingleKey(new ParsingContext("",null, grammar,node,"$",null),node);
         Class<?> clazz = grammar.getElement(kind);
         if (clazz == null) {
-            var pc = new ParsingContext("",null,grammar,node,"$").key(kind);
+            var pc = new ParsingContext("", null,grammar,node,"$",null).key(kind);
             throw new ConfigurationParsingException("Did not find java class for kind '%s'.".formatted(kind),null,pc);
         }
         return clazz;
@@ -302,7 +302,7 @@ public class GenericYamlParser {
         // Forbid inline + $ref for the same child
         if (parentNode.has(refKey)) {
             throw new ConfigurationParsingException("Cannot use '$ref' together with inline '%s' in '%s'."
-                    .formatted(refKey, ctx.context()));
+                    .formatted(refKey, ctx.getContext()));
         }
 
         try {
@@ -310,7 +310,7 @@ public class GenericYamlParser {
         } catch (RuntimeException e) {
             throw new ConfigurationParsingException(
                     "Referenced component '%s' (type '%s') is not allowed in '%s'."
-                            .formatted(refNode.asText(), refKey, ctx.context()));
+                            .formatted(refNode.asText(), refKey, ctx.getContext()));
         } catch (Throwable t) {
             throw new ConfigurationParsingException(t);
         }
@@ -318,7 +318,7 @@ public class GenericYamlParser {
 
     private static Object getReferenced(ParsingContext<?> ctx, JsonNode refNode) {
         try {
-            return ctx.registry().resolve(refNode.asText());
+            return ctx.getRegistry().resolve(refNode.asText());
         } catch (RuntimeException e) {
             throw new ConfigurationParsingException(e);
         }
@@ -353,7 +353,7 @@ public class GenericYamlParser {
 
     private static Object parseMapToObj(ParsingContext<?> ctx, JsonNode node, String key) throws ConfigurationParsingException {
         if ("$ref".equals(key))
-            return ctx.registry().resolve(node.asText());
+            return ctx.getRegistry().resolve(node.asText());
         var c = ctx.addPath("." + key); // Check!
         return createAndPopulateNode(c.updateContext(key), c.resolveClass(key), node);
     }

@@ -69,9 +69,9 @@ public class MethodSetter {
             }
 
             try {
-                beanClass = ctx.grammar().getLocal(ctx.context(), key);
+                beanClass = ctx.getGrammar().getLocal(ctx.getContext(), key);
                 if (beanClass == null)
-                    beanClass = ctx.grammar().getElement(key);
+                    beanClass = ctx.getGrammar().getElement(key);
                 if (beanClass != null)
                     setter = getChildSetter(clazz, beanClass);
             } catch (Exception e) {
@@ -173,7 +173,7 @@ public class MethodSetter {
         if (isNumber(wanted)) return parseNumericOrThrow(pc, key, wanted, evaluated, node);
         if (wanted == Map.class && hasOtherAttributes(setter)) return Map.of(key, evaluated);
         if (isBeanReference(wanted)) return resolveReference(pc, node, key, wanted);
-        if (isReferenceAttribute(setter)) return pc.registry().resolve(evaluated);
+        if (isReferenceAttribute(setter)) return pc.getRegistry().resolve(evaluated);
 
         throw unsupported(wanted, key, node);
     }
@@ -212,7 +212,7 @@ public class MethodSetter {
         if (isDouble(wanted)) return node.isNumber() ? node.doubleValue() : parseDouble(node.asText());
         if (isBoolean(wanted)) return node.isBoolean() ? node.booleanValue() : parseBoolean(node.asText());
         if (wanted.equals(Map.class) && hasOtherAttributes(setter)) return Map.of(key, node.asText());
-        if (isReferenceAttribute(setter)) return ctx.registry().resolve(node.asText());
+        if (isReferenceAttribute(setter)) return ctx.getRegistry().resolve(node.asText());
         throw unsupported(wanted, key, node);
     }
 
@@ -238,7 +238,7 @@ public class MethodSetter {
         String ref = node.asText();
         final Object resolved;
         try {
-            resolved = ctx.registry().resolve(ref);
+            resolved = ctx.getRegistry().resolve(ref);
         } catch (RuntimeException e) {
             throw new ConfigurationParsingException(e);
         }

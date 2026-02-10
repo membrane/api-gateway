@@ -27,54 +27,31 @@ import com.predic8.membrane.annot.beanregistry.*;
 public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
     private final String context;
 
-    /**
-     * TODO Do we need the registry here?
-     */
     private final T registry;
-
     private final Grammar grammar;
     private final String path;
     private final JsonNode topLevel;
     private String key;
 
-    public ParsingContext(String context, T registry, Grammar grammar, JsonNode topLevel,  String path) {
+    public ParsingContext(String context, T registry, Grammar grammar, JsonNode topLevel, String path, String key) {
         this.context = context;
         this.registry = registry;
         this.grammar = grammar;
         this.path = path;
         this.topLevel = topLevel;
+        this.key = key;
     }
 
     public ParsingContext<T> updateContext(String context) {
-        ParsingContext<T> pc = new ParsingContext<>(context, registry, grammar, topLevel, path);
-        pc.key = key;
-        return pc;
-    }
-
-    public String context() {
-        return context;
-    }
-
-    public T registry() {
-        return registry;
-    }
-
-    public Grammar grammar() {
-        return grammar;
-    }
-
-    public String path() {
-        return path;
+        return new ParsingContext<>(context, registry, grammar, topLevel, path,key);
     }
 
     public ParsingContext<?> addPath(String path) {
-        return new ParsingContext(context, registry, grammar,topLevel, this.path + path);
+        return new ParsingContext(context, registry,grammar,topLevel, this.path + path,key);
     }
 
     public ParsingContext<?> key(String key) {
-        var pc = new ParsingContext(context, registry, grammar, topLevel, path);
-        pc.key = key;
-        return pc;
+        return new ParsingContext(context, registry,grammar, topLevel, path,key);
     }
 
     public Class<?> resolveClass(String key) {
@@ -85,13 +62,8 @@ public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
             var e = new ConfigurationParsingException("Did not find java class for key '%s'.".formatted(key));
             e.setParsingContext(this);
             throw e;
-//            throw new RuntimeException("Did not find java class for key '%s'.".formatted(key));
         }
         return clazz;
-    }
-
-    public JsonNode getToplevel() {
-         return topLevel;
     }
 
     public JsonNode getNode() {
@@ -100,6 +72,22 @@ public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
 
     public String getKey() {
         return key;
+    }
+
+    public String getContext() {
+        return context;
+    }
+
+    public T getRegistry() {
+        return registry;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public Grammar getGrammar() {
+        return grammar;
     }
 
     @Override

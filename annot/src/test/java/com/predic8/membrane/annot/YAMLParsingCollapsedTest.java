@@ -14,10 +14,8 @@
 
 package com.predic8.membrane.annot;
 
-import com.ethlo.time.internal.util.*;
 import com.predic8.membrane.annot.util.*;
 import com.predic8.membrane.annot.yaml.*;
-import com.predic8.membrane.common.*;
 import org.junit.jupiter.api.*;
 
 import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.*;
@@ -212,7 +210,7 @@ public class YAMLParsingCollapsedTest {
         );
         var c = (ConfigurationParsingException)getRootCause(ex);
         var pc = c.getParsingContext();
-        assertEquals("$.demo.child", pc.path());
+        assertEquals("$.demo.child", pc.getPath());
         assertNull(pc.getKey());
         assertTrue(c.getMessage().contains("is collapsed"));
         assertTrue(c.getMessage().contains("expected an inline"));
