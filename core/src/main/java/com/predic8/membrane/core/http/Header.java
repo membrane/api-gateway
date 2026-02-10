@@ -377,6 +377,10 @@ public class Header {
         setValue(CONNECTION, connection);
     }
 
+    public void setWwwAuthenticate(String realm) {
+        setValue(WWW_AUTHENTICATE, "Basic realm=\""+realm +"\"");
+    }
+
     public String getProxyConnection() {
         return getFirstValue(PROXY_CONNECTION);
     }

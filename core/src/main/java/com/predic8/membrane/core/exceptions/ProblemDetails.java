@@ -35,7 +35,7 @@ import static java.util.UUID.*;
  */
 public class ProblemDetails {
 
-    private static final Logger log = LoggerFactory.getLogger(ProblemDetails.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ProblemDetails.class);
 
     private static final ObjectMapper om = new ObjectMapper();
     private static final ObjectWriter ow = om.writerWithDefaultPrettyPrinter();

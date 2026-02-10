@@ -15,22 +15,21 @@
 package com.predic8.membrane.core.interceptor.authentication;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
-import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.security.*;
+import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.security.HttpSecurityScheme.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
@@ -38,6 +37,8 @@ import static org.apache.commons.text.StringEscapeUtils.*;
  */
 @MCElement(name = "basicAuthentication")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(BasicAuthenticationInterceptor.class);
 
     private UserDataProvider userDataProvider = new StaticUserDataProvider();
 
@@ -88,15 +89,20 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
             return true;
         } catch (NoSuchElementException e) {
             return false;
+        } catch (Exception e) {
+            log.warn("", e);
+            return false;
         }
     }
 
-    private Outcome deny(Exchange exc) {
+    Outcome deny(Exchange exc) {
         security(router.getConfiguration().isProduction(), getDisplayName())
                 .status(401)
                 .title("Unauthorized")
                 .buildAndSetResponse(exc);
-        exc.getResponse().setHeader(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"%s Authentication\"".formatted(PRODUCT_NAME)));
+        var header = exc.getResponse().getHeader();
+        header.setConnection(CLOSE); // Stay compliant with old implementations.
+        header.setWwwAuthenticate("membrane");
         return ABORT;
     }
 
@@ -145,15 +151,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
         StringBuilder sb = new StringBuilder();
         sb.append(getShortDescription());
         sb.append("<br/>");
-        if (userDataProvider instanceof StaticUserDataProvider) {
-            sb.append("Users: ");
-            for (User user : ((StaticUserDataProvider) userDataProvider).getUsers()) {
-                sb.append(escapeHtml4(user.getUsername()));
-                sb.append(", ");
-            }
-            sb.delete(sb.length() - 2, sb.length());
-            sb.append("<br/>Passwords are not shown.");
-        }
+        sb.append("Number of users: ").append(getUsers().size()).append("");
         return sb.toString();
     }
 
@@ -162,12 +160,12 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
     }
 
     /**
+     * @param removeAuthorizationHeader {@code true} to remove (default), {@code false} to forward
      * @description Removes the Authorization header after successful authentication.
      * <p>
-     * Default is {@code true} to prevent credentials from being forwarded to backends.
-     * Set to {@code false} if both gateway and backend need to validate credentials.
+     * Default is true to prevent credentials from being forwarded to backends.
+     * Set to false if both gateway and backend need to validate credentials.
      * </p>
-     * @param removeAuthorizationHeader {@code true} to remove (default), {@code false} to forward
      * @default true
      */
     @MCAttribute()

@@ -13,10 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
+
+import java.net.*;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
@@ -43,7 +47,11 @@ public class BasicAuthenticationInterceptorTest {
 	void deny() throws Exception {
 		var exc = get("/foo").buildExchange();
 		assertEquals(ABORT, bai.handleRequest(exc));
-		assertEquals(401, exc.getResponse().getStatusCode());
+		var response = exc.getResponse();
+		var header = exc.getResponse().getHeader();
+		assertEquals(401, response.getStatusCode());
+		assertEquals(CLOSE, header.getConnection());
+		assertEquals("Basic realm=\"membrane\"", header.getWwwAuthenticate());
 	}
 
 	@Test
@@ -52,6 +60,8 @@ public class BasicAuthenticationInterceptorTest {
 		assertEquals(CONTINUE, bai.handleRequest(exc));
 		assertNull(exc.getRequest().getHeader().getAuthorization());
 	}
+
+
 
 	@Test
 	void hashedPassword() throws Exception {
