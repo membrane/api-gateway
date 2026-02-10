@@ -29,6 +29,14 @@ Learn how to use Membrane in more advanced scenarios. Topics include path rewrit
 
 If you need to integrate legacy SOAP Web Services, this tutorial provides examples and practical guidance.
 
+---
+
+## Start Membrane using Docker
+
+If you want to start membrane using Docker use the `docker.sh` script instead of the `membrane.sh`.
+
+Be aware that errors may occur due to version mismatches between your membrane version and the docker image.
+
 
 ## Questions and Feedback
 
