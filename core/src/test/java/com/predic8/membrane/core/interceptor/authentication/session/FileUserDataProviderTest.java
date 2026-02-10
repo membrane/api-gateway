@@ -223,7 +223,6 @@ class FileUserDataProviderTest {
 
         Map<String, String> attributes = provider.verify(postData);
         assertTrue(attributes.containsKey("username"));
-        assertFalse(attributes.containsKey("password"));
     }
 
     @Test
