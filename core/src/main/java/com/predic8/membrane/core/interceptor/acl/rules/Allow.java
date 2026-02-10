@@ -27,4 +27,9 @@ public class Allow extends AccessRule {
     boolean permitPeer() {
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "Allow{target=%s}".formatted(target);
+    }
 }

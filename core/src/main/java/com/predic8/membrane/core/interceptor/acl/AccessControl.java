@@ -69,8 +69,8 @@ public class AccessControl {
      */
     private AccessDecision evaluatePermission(IpAddress address) {
         for (AccessRule rule : rules) {
-            Optional<Boolean> res = rule.apply(address);
-            if (res.isPresent()) return new AccessDecision( res.get(),address);
+            Optional<AccessDecision> res = rule.apply(address);
+            if (res.isPresent()) return res.get();
         }
         return new AccessDecision(false, address);
     }

@@ -27,6 +27,9 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
+/**
+ * @description Selects and assigns the matching proxy rule for incoming requests; optionally adds/extends X-Forwarded-* headers.
+ */
 @SuppressWarnings("unused")
 @MCElement(name="ruleMatching", excludeFromFlow = true)
 public class RuleMatchingInterceptor extends AbstractInterceptor {

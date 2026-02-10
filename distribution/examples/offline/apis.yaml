@@ -25,12 +25,11 @@ api:
 # Try: curl http://localhost:2000/shop/v2/
 api:
   port: 2000
-  specs:
-    - openapi:
-        location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
-        rewrite:
-          port: 3000
-          host: localhost
+  openapi:
+    - location: ../../conf/openapi/fruitshop-v2-2-0.oas.yml
+      rewrite:
+        port: 3000
+        host: localhost
   # Use this target instead of any server URL in the OpenAPI spec
   target:
     url: http://localhost:3000

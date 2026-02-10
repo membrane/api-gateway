@@ -17,6 +17,7 @@ package com.predic8.membrane.core.exchangestore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.ReplaceOptions;
@@ -33,10 +34,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.in;
 
 
 @MCElement(name = "mongoDBExchangeStore")
@@ -46,6 +49,7 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     private String connection;
     private String database;
     private String collectionName;
+    private MongoClient client;
     private MongoCollection<Document> collection;
     private static final ObjectMapper objectMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -53,22 +57,21 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
     @Override
     public void init(Router router) {
         super.init(router);
-        if (this.collection == null) {
-            this.collection = MongoClients.create(connection)
-                    .getDatabase(database)
-                    .getCollection(collectionName);
+        if (client == null) {
+            client = MongoClients.create(connection);
+        }
+        if (collection == null) {
+            collection = client.getDatabase(database).getCollection(collectionName);
         }
     }
 
     @Override
     protected void writeToStore(List<AbstractExchangeSnapshot> exchanges) {
-        collection = MongoClients.create(connection).getDatabase(database).getCollection(collectionName);
         List<Document> documents = new ArrayList<>();
         for (AbstractExchangeSnapshot exchange : exchanges) {
             try {
                 Document doc = exchangeDoc(exchange);
-                if (doc!=null)
-                    documents.add(doc);
+                if (doc != null) documents.add(doc);
             } catch (Exception e) {
                 log.error("Error converting exchange to MongoDB document", e);
             }
@@ -99,33 +102,39 @@ public class MongoDBExchangeStore extends AbstractPersistentExchangeStore {
 
     @Override
     public void removeAllExchanges(AbstractExchange[] exchanges) {
-        List<Bson> filters = new ArrayList<>();
-        for (AbstractExchange exchange : exchanges) {
-            filters.add(eq("id", exchange.getId()));
-        }
-        collection.deleteMany(eq("id", filters));
+        collection.deleteMany(in("id", Arrays.stream(exchanges)
+                .mapToLong(AbstractExchange::getId)
+                .boxed()
+                .toList()));
     }
 
     @Override
     public AbstractExchange[] getExchanges(RuleKey ruleKey) {
-        return new ArrayList<>(collection.find().into(new ArrayList<>())).stream().map(doc -> convertMongoJSONToAbstractExchange(doc).toAbstractExchange()).toArray(AbstractExchange[]::new);
+        List<AbstractExchange> res = new ArrayList<>();
+        for (Document doc : collection.find()) {
+            res.add(convertMongoJSONToAbstractExchange(doc).toAbstractExchange());
+        }
+        return res.toArray(AbstractExchange[]::new);
     }
-
 
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
-       return new ArrayList<>(collection.find().into(new ArrayList<>())).stream().map(doc -> convertMongoJSONToAbstractExchange(doc).toAbstractExchange()).toList();
+        List<AbstractExchange> res = new ArrayList<>();
+        for (Document doc : collection.find()) {
+            res.add(convertMongoJSONToAbstractExchange(doc).toAbstractExchange());
+        }
+        return res;
     }
 
     private static AbstractExchangeSnapshot convertMongoJSONToAbstractExchange(Document doc) {
-        AbstractExchangeSnapshot result;
         try {
-            result = objectMapper.readValue(doc.toJson(), AbstractExchangeSnapshot.class);
-        } catch (Exception e) {
+            Document copy = new Document(doc);
+            copy.remove("_id");
+            return objectMapper.convertValue(copy, AbstractExchangeSnapshot.class);
+        } catch (IllegalArgumentException e) {
             log.error("Error converting MongoDB document to AbstractExchangeSnapshot", e);
             throw new RuntimeException(e);
         }
-        return Objects.requireNonNull(result);
     }
 
     @Override

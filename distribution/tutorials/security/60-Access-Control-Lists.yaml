@@ -2,28 +2,40 @@
 #
 # Tutorial: Access Control
 #
+# Limit access to APIs by IP address and hostname.
+#
+# Notes:
+#
+# - Rules are evaluated top-down.
+# - The first matching rule wins.
+# - If no rule matches, the request is denied by default.
+#
+# Typical patterns:
+# - Allowlist: only `allow` rules, everything else is denied.
+# - Denylist: `deny` rules first, then a final `allow 0.0.0.0/0` and `allow ::/0`.
+#
+# In this tutorial:
+# - /locals     uses an allowlist (only local access is permitted)
+# - /strangers  uses a denylist (local access is blocked, everyone else allowed)
+#
 # Try:
 #     curl localhost:2000/locals
 #     curl localhost:2000/strangers
+#     curl <your-ip>:2000/locals
+#     curl <your-ip>:2000/strangers
 
-global:
-  # ACL for all APIs
-  - accessControl:
-    - deny: 192.168.7.1         # Single IP address
-    - deny: '.*\.predic8.de'    # Regex hostname pattern
-    - allow: '.*'               # @TODO Why not default?
-
----
 api:
   port: 2000
   path:
     uri: /locals
   flow:
     - accessControl:
-        - allow: 127.0.0.1/24 # CIDR notation
-        - allow: localhost
+        - allow: 127.0.0.0/24 # IPv4 loopback network
+        - allow: ::1          # IPv6 loopback
+        - allow: localhost    # Hostname
+        # everything else is implicitly denied
     - static:
-        src: Allowed
+        src: Allowed (locals only)
     - return:
         status: 200
 
@@ -34,9 +46,13 @@ api:
     uri: /strangers
   flow:
     - accessControl:
-        - deny: 127.0.0.1/24
+        - deny: 127.0.0.0/24
+        - deny: ::1
         - deny: localhost
+        - deny: '.*\.predic8\.de' # Hostname regex pattern
+        - allow: 0.0.0.0/0        # Any IPv4
+        - allow: ::/0             # Any IPv6
     - static:
-        src: Allowed
+        src: Allowed (no locals)
     - return:
         status: 200

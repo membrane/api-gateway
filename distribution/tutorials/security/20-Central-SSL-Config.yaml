@@ -13,8 +13,7 @@ components:
         private:
           location: membrane-key.pem
         certificates:
-          - certificate:
-              location: membrane.pem
+          - location: membrane.pem
 
 ---
 api:

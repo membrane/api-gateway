@@ -198,7 +198,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private SchemaObject getParserSchemaObject(ElementInfo elementInfo, String parserName) {
         return object(parserName)
-                .additionalProperties( elementInfo.isString())
+                .additionalProperties(elementInfo.isString())
                 .description(getDescriptionContent(elementInfo));
     }
 
@@ -277,16 +277,49 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private void processMCChilds(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so) {
         for (ChildElementInfo cei : i.getChildElementSpecs()) {
-            AbstractSchema<?> parent2 = so;
-            if (cei.isList()) {
-                if (shouldGenerateFlowParserType(cei)) {
-                    processList(i, so, cei, getSchemaObjects(m, main, cei));
-                    continue;
-                }
-                parent2 = processList(i, so, cei, null);
+
+            if (!cei.isList()) {
+                addChildsAsProperties(m, main, cei, (SchemaObject) so, isComponentsList(i, cei), false);
+                continue;
             }
-            addChildsAsProperties(m, main, cei, (SchemaObject) parent2, isComponentsList(i, cei), cei.isList());
+
+            if (shouldGenerateFlowParserType(cei)) {
+                processList(i, so, cei, getSchemaObjects(m, main, cei));
+                continue;
+            }
+
+            if (shouldInlineListItems(main, cei)) {
+                processInlineList(m, main, i, so, cei);
+                continue;
+            }
+
+            AbstractSchema<?> parent2 = processList(i, so, cei, null);
+            addChildsAsProperties(m, main, cei, (SchemaObject) parent2, isComponentsList(i, cei), true);
         }
+    }
+
+    private void processInlineList(Model m, MainInfo main, ElementInfo i, AbstractSchema<?> so, ChildElementInfo cei) {
+        var decl = getChildElementDeclarationInfo(main, cei);
+
+        ElementInfo itemEi = decl.getElementInfo().stream()
+                .filter(ei -> !ei.getAnnotation().topLevel())
+                .findFirst()
+                .orElseThrow(); // should never happen due to shouldInlineListItems
+
+        AbstractSchema<?> itemsSchema = ref(itemEi.getAnnotation().name()).ref("#/$defs/" + itemEi.getXSDTypeName(m));
+
+        // keep "- $ref: ..." alternative for component items
+        if (!isComponentsList(i, cei) && itemEi.getAnnotation().component()) {
+            var variants = new ArrayList<AbstractSchema<?>>();
+            variants.add(itemsSchema);
+            variants.add(object()
+                    .title("componentRef")
+                    .additionalProperties(false)
+                    .property(string("$ref").required(false)));
+            itemsSchema = anyOf(variants);
+        }
+
+        attachArrayItems(i, so, cei, itemsSchema);
     }
 
     private static @NotNull ArrayList<AbstractSchema<?>> getSchemaObjects(Model m, MainInfo main, ChildElementInfo cei) {
@@ -308,14 +341,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         sos.add(object()
                 .title("componentRef")
                 .additionalProperties(false)
-                .property( string("$ref")));
+                .property(string("$ref")));
         return sos;
     }
 
     private boolean isComponentsList(ElementInfo parent, ChildElementInfo cei) {
         return COMPONENTS.equals(parent.getAnnotation().name())
-               && parent.getAnnotation().noEnvelope()
-               && COMPONENTS.equals(cei.getPropertyName());
+                && parent.getAnnotation().noEnvelope()
+                && COMPONENTS.equals(cei.getPropertyName());
     }
 
     private boolean shouldGenerateFlowParserType(ChildElementInfo cei) {
@@ -448,6 +481,51 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 return true;
         }
         return false;
+    }
+
+    private boolean shouldInlineListItems(MainInfo main, ChildElementInfo cei) {
+        if (!cei.isList()) return false;
+        if (cei.getAnnotation().allowForeign()) return false;
+
+        var decl = getChildElementDeclarationInfo(main, cei);
+        if (decl == null) return false;
+
+        var eis = decl.getElementInfo().stream().filter(ei -> !ei.getAnnotation().topLevel()).toList();
+
+        // Only inline if there is exactly ONE possible list-item element type (no inheritance etc.)
+        if (eis.size() != 1) return false;
+
+        var ei = eis.getFirst();
+
+        if (ei.getAnnotation().collapsed()) return false;
+        if (ei.getAnnotation().noEnvelope()) return false;
+        if (ei.isString()) return false;
+
+        return hasAnyConfigurableProperty(ei, main);
+    }
+
+    private void attachArrayItems(ElementInfo parentEi, AbstractSchema<?> parentSchema, ChildElementInfo cei, AbstractSchema<?> itemsSchema) {
+        // noEnvelope list: parent is an array already
+        if (parentEi.getAnnotation().noEnvelope() && parentSchema instanceof SchemaArray sa) {
+            sa.items(itemsSchema);
+            return;
+        }
+
+        if (parentSchema instanceof SchemaObject so) {
+            so.property(array(cei.getPropertyName())
+                    .items(itemsSchema)
+                    .required(cei.isRequired())
+                    .description(getDescriptionContent(cei)));
+        }
+    }
+
+    private boolean hasAnyConfigurableProperty(ElementInfo ei, MainInfo main) {
+        return ei.getAis().stream()
+                .filter(ai -> !ai.excludedFromJsonSchema())
+                .anyMatch(ai -> !"id".equals(ai.getXMLName()))
+                || ei.getTci() != null
+                || !ei.getChildElementSpecs().isEmpty()
+                || hasComponentChild(ei, main);
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)

@@ -15,10 +15,9 @@ This example demonstrates how to secure an (Open)API using JWT authentication wi
 In `apis.yaml`, reference the OpenAPI file:
 
 ```yaml
-  specs:
-    - openapi:
-        location: secure-shop-api.yml
-        validateSecurity: true
+  openapi:
+    - location: secure-shop-api.yml
+      validateSecurity: true
 ```
 
 This makes Membrane automatically enforce the security rules defined in the spec.
@@ -87,10 +86,9 @@ api:
 api:
   name: Protected API
   port: 2001
-  specs:
-    - openapi:
-        location: secure-shop-api.yml
-        validateSecurity: true
+  openapi:
+    - location: secure-shop-api.yml
+      validateSecurity: true
   flow:
     - jwtAuth:
         expectedAud: shop

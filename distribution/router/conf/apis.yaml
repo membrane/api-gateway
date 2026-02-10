@@ -30,10 +30,9 @@ api:
 # Try: curl http://localhost:2000/shop/v2/products
 api:
   port: 2000
-  specs:
-    - openapi:
-        location: openapi/fruitshop-v2-2-0.oas.yml
-        validateRequests: true
+  openapi:
+    - location: openapi/fruitshop-v2-2-0.oas.yml
+      validateRequests: true
 
 ---
 # Admin Web Console
