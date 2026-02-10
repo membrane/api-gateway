@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.xslt;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -24,12 +25,15 @@ import org.slf4j.*;
 
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
+import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static com.predic8.membrane.core.util.text.TextUtil.*;
 
@@ -70,31 +74,42 @@ public class XSLTInterceptor extends AbstractInterceptor {
             transformMsg(msg, exc.getStringProperties());
         } catch (TransformerException e) {
             log.debug("", e);
-            if (e.getMessage() != null && e.getMessage().contains("not allowed in prolog")) {
+            var cause = getRootCause(e);
+            if (cause.getMessage() != null && cause.getMessage().contains("not allowed in prolog")) {
                 user(router.getConfiguration().isProduction(), getDisplayName())
                         .title("Content not allowed in prolog of XML input.")
                         .detail("Check for extra characters before the XML declaration <?xml ... ?>")
                         .internal("offendingInput", truncateAfter(msg.getBodyAsStringDecoded() + "...", 50))
+                        .stacktrace(false)
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
-            if (e.getMessage() != null && e.getMessage().contains("is not allowed in trailing section")) {
+            if (cause.getMessage() != null && cause.getMessage().contains("is not allowed in trailing section")) {
                 user(router.getConfiguration().isProduction(), getDisplayName())
                         .title("Content not allowed in trailing section of XML input.")
                         .detail("Check for extra characters after the XML root element (after the final closing tag like </root>).")
                         .internal("offendingInput", tail(msg.getBodyAsStringDecoded(), 50))
+                        .stacktrace(false)
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
-            return createErrorResponse(exc,e,flow);
+            if (cause.getMessage() != null && cause.getMessage().contains("No such file")) {
+                  internal(router.getConfiguration().isProduction(), getDisplayName())
+                        .title("XSLT transformation failed")
+                        .detail(cause.getMessage())
+                        .stacktrace(false)
+                        .buildAndSetResponse(exc);
+                return ABORT;
+            }
+            return createErrorResponse(exc, cause, flow);
         } catch (Exception e) {
             log.info("", e);
-            return createErrorResponse(exc,e,flow);
+            return createErrorResponse(exc, e, flow);
         }
         return CONTINUE;
     }
 
-    private @NotNull Outcome createErrorResponse(Exchange exc, Exception e, Flow flow) {
+    private @NotNull Outcome createErrorResponse(Exchange exc, Throwable e, Flow flow) {
         user(router.getConfiguration().isProduction(), getDisplayName())
                 .detail("Error transforming message!")
                 .exception(e)
@@ -116,8 +131,8 @@ public class XSLTInterceptor extends AbstractInterceptor {
         try {
             xsltTransformer = new XSLTTransformer(xslt, router, getConcurrency());
         } catch (Exception e) {
-			      log.debug("",e);
-            throw new ConfigurationException("Could not create XSLT transformer",e);
+            log.debug("", e);
+            throw new ConfigurationException("Could not create XSLT transformer", e);
 
         }
     }
