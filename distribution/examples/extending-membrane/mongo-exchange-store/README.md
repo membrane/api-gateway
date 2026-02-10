@@ -17,29 +17,30 @@ View live data in the Admin Console from the MongoDB store. Great for debugging,
 
 1. **Download MongoDB Driver:**
 
-  - Choose from:
-    [https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/](https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/)
-    a recent version. 5.X is recommended.
-  - Place it in the `lib` directory of your Membrane installation.
+    * Download these three JARs (all **the same version**):
+        * [`org.mongodb:mongodb-driver-sync`](https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-sync)
+        * [`org.mongodb:mongodb-driver-core`](https://mvnrepository.com/artifact/org.mongodb/mongodb-driver-core)
+        * [`org.mongodb:bson`](https://mvnrepository.com/artifact/org.mongodb/bson)
+    * Place **all three** JARs in the `lib` directory of your Membrane installation.
 
-2. **Configure:** edit `apis.yaml`
-
-3. **run service.proxy.sh script:**
+2. Run membrane:
 
 ```shell
 ./membrane.sh
 ```
 
-4. **You can test it using curl:**
+3. **You can test it using curl:**
 
 ```shell
 curl -X POST http://localhost:2000 -H "Content-Type: application/json" -d '{"message": "Hallo"}'
 ```
 
-5. **Verify Exchange Storage via Admin Console:**
+4. **Verify Exchange Storage via Admin Console:**
 
 - Open the Admin Console by navigating to ```http://localhost:9000``` in your browser.
 - Under the ```Call``` section, you will see a list of exchanges. These are the same entries stored in the MongoDB
   collection.
 - Even if you stop Membrane and restart it, the exchanges will still appear in the Admin Console. This is because
   Membrane pulls the exchange data from MongoDB on startup.
+
+5. Take a look at the [`apis.yaml`](apis.yaml) to see how it is configured.
