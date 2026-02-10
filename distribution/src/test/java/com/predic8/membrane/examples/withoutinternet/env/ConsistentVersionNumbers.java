@@ -73,6 +73,7 @@ public class ConsistentVersionNumbers {
 	private static final Pattern RPM_SPEC_VERSION_PATTERN = Pattern.compile("(Version:\\s+)(\\S+)(.*)");
 	private static final Pattern HELP_REFERENCE_VERSION_PATTERN = Pattern.compile("(path.replace\\(\"%VERSION%\", \")([^\"]*)(\"\\))");
 	private static final Pattern YAML_SCHEMA_VERSION_PATTERN = Pattern.compile("(\\s*#\\s*yaml-language-server:\\s*\\$schema=https://www\\.membrane-api\\.io/v)(\\d+\\.\\d+(?:\\.\\d+)?)(\\.json\\b.*)");
+	private static final Pattern DOCKER_IMAGE_TAG_PATTERN = Pattern.compile("(\\bpredic8/membrane:)(\\d+\\.\\d+(?:\\.\\d+)?)(\\b)");
 
 	@Test
 	public void doit() throws Exception {
@@ -148,6 +149,7 @@ public class ConsistentVersionNumbers {
 		handleConstants(new File(baseDirectory.getAbsolutePath(), "core/src/main/java/com/predic8/membrane/core/Constants.java"), versionTransformer);
 
 		handleYamlSchemas(baseDirectory, versionTransformer);
+		handleDockerScripts(baseDirectory, versionTransformer);
 	}
 
 	private static void handleConstants(File file, VersionTransformer versionTransformer) throws Exception {
@@ -337,5 +339,49 @@ public class ConsistentVersionNumbers {
 		}
 		return "%d.%d.%d".formatted(v.getMajor(), v.getMinor() == null ? 0 : v.getMinor(), v.getPatch());
 	}
+
+	private static void handleDockerScripts(File baseDirectory, VersionTransformer versionTransformer) throws Exception {
+		try (Stream<Path> s = Files.walk(baseDirectory.toPath())) {
+			s.filter(Files::isRegularFile)
+					.filter(p -> p.getFileName().toString().equals("docker.sh"))
+					.filter(p -> !p.toString().contains(File.separator + "target" + File.separator))
+					.forEach(p -> {
+						try {
+							handleDockerScriptFile(p.toFile(), versionTransformer);
+						} catch (Exception e) {
+							throw new RuntimeException("in file " + p.toAbsolutePath(), e);
+						}
+					});
+		}
+	}
+
+	private static void handleDockerScriptFile(File file, VersionTransformer versionTransformer) throws Exception {
+		List<String> content = getFileContentAsLines(file);
+
+		boolean touched = false;
+		for (int i = 0; i < content.size(); i++) {
+			Matcher m = DOCKER_IMAGE_TAG_PATTERN.matcher(content.get(i));
+			if (!m.find())
+				continue;
+
+			touched = true;
+
+			Semver mapped = versionTransformer.map(file, new MembraneVersion(m.group(2)));
+
+			if (!isFullRelease(mapped))
+				continue;
+
+			content.set(i, m.replaceFirst(Matcher.quoteReplacement(m.group(1) + formatDockerImageTagVersion(mapped) + m.group(3))));
+		}
+
+		if (touched) {
+			writeLinesToFile(file, content);
+		}
+	}
+
+	private static String formatDockerImageTagVersion(Semver v) {
+		return formatYamlSchemaVersion(v);
+	}
+
 
 }
