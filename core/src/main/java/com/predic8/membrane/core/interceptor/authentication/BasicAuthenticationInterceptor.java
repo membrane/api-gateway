@@ -148,11 +148,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
     @Override
     public String getLongDescription() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getShortDescription());
-        sb.append("<br/>");
-        sb.append("Number of users: ").append(getUsers().size()).append("");
-        return sb.toString();
+        return "%s<br/>Number of users: %d".formatted(getShortDescription(), getUsers().size());
     }
 
     public boolean isRemoveAuthorizationHeader() {
