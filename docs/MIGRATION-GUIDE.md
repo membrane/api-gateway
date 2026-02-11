@@ -27,9 +27,9 @@ Example:
 <!-- before -->
 <router production="true" />
 
-<!-- now -->
+        <!-- now -->
 <router>
-    <configuration production="true" />
+<configuration production="true" />
 </router>
 ```
 
@@ -74,7 +74,7 @@ api:
         - deny: 127.0.0.1
         - allow: ::1
 ```
-    
+
 
 ## 5. Internal Routing
 
@@ -205,5 +205,139 @@ Default naming scheme for `<serviceProxys>` has changed. This might affect exist
 - `ConditionalInterceptor` is renamed in `IfInterceptor`
 
 ## `jwtSign`
-- `expiryTime` has been renamed to `expirySeconds`. 
+- `expiryTime` has been renamed to `expirySeconds`.
 - HTTP response in case of JWT validation failure was changed to Problem JSON.
+
+# Migrate to Membrane 7.1
+
+- removed `MethodOverrideInterceptor`
+
+- `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually.
+
+
+## New Yaml Syntax
+
+### YAML configuration in list elements
+
+* List items can now be written in *inline form* if the list accepts exactly one concrete element type (no polymorphic candidates) and the element is not `collapsed`, not `noEnvelope`, and not string-like.
+* Old wrapper form remains supported: `- <kind>: { ... }` (Only when schema validation is deactivated).
+
+Old:
+```yaml
+properties:
+  - property:
+      name: driverClassName
+      value: org.h2.Driver
+  - property:
+      name: url
+      value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+ ```
+New:
+  ```yaml
+properties:
+  - name: driverClassName
+    value: org.h2.Driver
+  - name: url
+    value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+  ```
+
+### `headerFilter`
+Instead of
+```yaml
+headerFilter:
+  rules:
+    - include:
+        pattern: "X-XSS-Protection"
+    - exclude:
+        pattern: "X-.*"
+```
+use
+```yaml
+headerFilter:
+  rules:
+    - include: "X-XSS-Protection"
+    - exclude: "X-.*"
+```
+
+### `chain`
+
+The `chainDef` no longer exists. Use `chain` to define a chain of plugins and simply reference them as all other components.
+
+instead of
+```yaml
+components:
+  log:
+    chainDef:
+      flow:
+         - log:
+             message: "Path: ${path}"
+---
+api:
+  port: 2000
+  flow:
+    - chain:
+        ref: '#/components/log'
+```
+use
+```yaml
+components:
+  log:
+    chain:
+      - log:
+          message: "Path: ${path}"
+---
+api:
+  port: 2000
+  flow:
+    - $ref: '#/components/log'
+```
+
+### `choose`
+The `otherwise` is now an item of the `case` list. Only one `otherwise` is allowed and must be the last item of the `case` list.
+```yaml
+api:
+  port: 2000
+  flow:
+    - choose:
+       cases:
+         - case:
+             test: foo
+             flow:
+               - log: {}
+       otherwise:
+         - return: {}
+```
+use
+```yaml
+api:
+  port: 2000
+  flow:
+    - choose:
+        - case:
+            test: foo
+            flow:
+              - log: {}
+        - otherwise:
+            - return: {}
+```
+
+### OpenApi
+
+Renamed `specs` to `openapi`
+instead of:
+```yaml
+api:
+    port: 2000
+    specs:
+      - openapi:
+          location: fruitshop-api.yml
+          validateRequests: "yes"
+```
+use
+```yaml
+api:
+    port: 2000
+    openapi:
+      - location: fruitshop-api.yml
+        validateRequests: "yes"
+```
