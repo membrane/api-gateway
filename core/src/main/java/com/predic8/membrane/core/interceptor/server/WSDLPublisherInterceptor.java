@@ -37,6 +37,19 @@ import static com.predic8.membrane.core.resolver.ResolverMap.*;
  * The <i>wsdlPublisher</i> serves WSDL files (and attached XML Schema Documents), if your
  * backend service does not already do so.
  * </p>
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   path:
+ *     uri: /material/*
+ *   flow:
+ *     - wsdlPublisher:
+ *         wsdl: /WEB-INF/wsdl/ArticleService.wsdl
+ *     - validator:
+ *         wsdl: /WEB-INF/wsdl/ArticleService.wsdl
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  * @topic 5. Web Services with SOAP and WSDL
  */
 @MCElement(name = "wsdlPublisher")
