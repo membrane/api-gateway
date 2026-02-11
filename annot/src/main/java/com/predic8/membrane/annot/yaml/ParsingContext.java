@@ -24,23 +24,7 @@ import com.predic8.membrane.annot.beanregistry.*;
  * - registry: access to already materialized beans (e.g., for $ref/reference attributes).
  * - grammar: resolves element names to Java classes via local/global lookups.
  */
-public class ParsingContext<T extends BeanRegistry & BeanLifecycleManager> {
-    private final String context;
-
-    private final T registry;
-    private final Grammar grammar;
-    private final String path;
-    private final JsonNode topLevel;
-    private String key;
-
-    public ParsingContext(String context, T registry, Grammar grammar, JsonNode topLevel, String path, String key) {
-        this.context = context;
-        this.registry = registry;
-        this.grammar = grammar;
-        this.path = path;
-        this.topLevel = topLevel;
-        this.key = key;
-    }
+public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(String context, T registry, Grammar grammar, JsonNode topLevel, String path, String key) {
 
     public ParsingContext<T> updateContext(String context) {
         return new ParsingContext<>(context, registry, grammar, topLevel, path,key);

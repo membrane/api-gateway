@@ -204,14 +204,9 @@ public class YAMLComponentsParsingTest {
                   x:
                     doesNotExist: {}
                 """));
-        var c = getRootCause(ex);
-        if (c instanceof ConfigurationParsingException cpe) {
-            var pc = cpe.getParsingContext();
-            assertEquals("$", pc.getPath());  // '$.components.x' would be better in the future
-            assertEquals("doesNotExist", pc.getKey());
-        } else {
-            fail("Expected ConfigurationParsingException but got: " + c);
-        }
+        var pc = getRootCause(ex, ConfigurationParsingException.class).getParsingContext();
+        assertEquals("$", pc.getPath());  // '$.components.x' would be better in the future
+        assertEquals("doesNotExist", pc.getKey());
     }
 
     @Test
@@ -220,16 +215,12 @@ public class YAMLComponentsParsingTest {
                 components:
                   x: {}
                 """));
-        var c = getRootCause(ex);
-        if (c instanceof ConfigurationParsingException cpe) {
-            var pc = cpe.getParsingContext();
-            assertEquals("$.components.x", pc.getPath());
-            assertNull(pc.getKey());
-            assertTrue(cpe.getMessage().contains("Expected exactly one key"));
-            assertTrue(cpe.getMessage().contains("0"));
-        } else {
-            fail("Expected ConfigurationParsingException but got: " + c);
-        }
+        var c = getRootCause(ex, ConfigurationParsingException.class);
+        var pc = c.getParsingContext();
+        assertEquals("$.components.x", pc.getPath());
+        assertNull(pc.getKey());
+        assertTrue(c.getMessage().contains("Expected exactly one key"));
+        assertTrue(c.getMessage().contains("0"));
     }
 
     @Test
@@ -242,17 +233,12 @@ public class YAMLComponentsParsingTest {
                       fileUserDataProvider:
                         htpasswdPath: /etc/htpasswd
                 """));
-        var c = getRootCause(ex);
-        if (c instanceof ConfigurationParsingException cpe) {
-            var pc = cpe.getParsingContext();
-            assertEquals("$.components.x", pc.getPath());
-            assertNull(pc.getKey());
-            assertTrue(cpe.getMessage().contains("Expected exactly one key"));
-            assertTrue(cpe.getMessage().contains("2"));
-
-        } else {
-            fail("Expected ConfigurationParsingException but got: " + c);
-        }
+        var c = getRootCause(ex, ConfigurationParsingException.class);
+        var pc = c.getParsingContext();
+        assertEquals("$.components.x", pc.getPath());
+        assertNull(pc.getKey());
+        assertTrue(c.getMessage().contains("Expected exactly one key"));
+        assertTrue(c.getMessage().contains("2"));
     }
 
     @Test
@@ -396,18 +382,6 @@ public class YAMLComponentsParsingTest {
         );
     }
 
-    @Disabled // Parser does not detect that
-    @Test
-    public void topLevelElementNotAllowedAsNestedChild() {
-        // Not covered by GenericYamlParser
-        var ex = assertThrows(RuntimeException.class, () -> parseWithTopLevelOnlySources("""
-            outer:
-              items:
-                - topThing: {}
-            """));
-        assertSchemaErrorContains(ex, "property 'topThing' is not defined in the schema and the schema does not allow additional properties");
-    }
-
     @Test
     public void topLevelElementStillAllowedAtRoot() {
         assertStructure(
@@ -504,10 +478,7 @@ public class YAMLComponentsParsingTest {
     }
 
     private void assertSchemaErrorContains(RuntimeException ex, String... needles) {
-        var root = getCause(ex);
-        if (!(root instanceof YamlSchemaValidationException yse))
-            throw new AssertionError("Expected YamlSchemaValidationException but got: " + root, root);
-
+        var yse = getRootCause(ex,YamlSchemaValidationException.class);
         assertFalse(yse.getErrors().isEmpty(), "Expected schema errors.");
         var msg = yse.getErrors().getFirst().toString();
         for (var n : needles)

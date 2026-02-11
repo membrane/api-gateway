@@ -44,8 +44,7 @@ public class YAMLParsingErrorTest {
                     """);
             fail();
         } catch (RuntimeException e) {
-            var c = getCause(e);
-            var pc = c.getParsingContext();
+            var pc = getCause(e).getParsingContext();
             assertEquals("$", pc.getPath());
             assertEquals("wrong", pc.getKey());
         }
@@ -274,21 +273,21 @@ public class YAMLParsingErrorTest {
         var result = CompilerHelper.compile(sources, false);
         assertCompilerResult(true, result);
 
-//        try {
-//            parseYAML(result, """
-//                    demo:
-//                        children:
-//                           - a: {}
-//                           - b: {}
-//                           - c: {}
-//                    """);
-//            fail();
-//        } catch (RuntimeException e) {
-//            var c = getCause(e);
-//            var pc = c.getParsingContext();
-//            assertEquals("$.demo.children[2].c", pc.path());
-//            assertEquals(null, pc.getKey());
-//        }
+        try {
+            parseYAML(result, """
+                    demo:
+                        children:
+                           - a: {}
+                           - b: {}
+                           - c: {}
+                    """);
+            fail();
+        } catch (RuntimeException e) {
+            var c = getCause(e);
+            var pc = c.getParsingContext();
+            assertEquals("$.demo.children[2].c", pc.getPath());
+            assertEquals(null, pc.getKey());
+        }
 
         try {
             parseYAML(result, """
