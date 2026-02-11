@@ -20,7 +20,7 @@
 			<response>
 				<template contentType="application/json">
 					{
-						"country": "${property.country}",
+						"country": ${property.country},
 						"population": ${property.population}
 					}
 				</template>

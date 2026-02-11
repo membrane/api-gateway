@@ -14,22 +14,23 @@
 
 package com.predic8.membrane.annot;
 
-import com.predic8.membrane.annot.util.CompilerHelper;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.annot.beanregistry.*;
+import com.predic8.membrane.annot.util.*;
+import com.predic8.membrane.annot.yaml.*;
+import org.junit.jupiter.api.*;
 
-import java.util.List;
+import java.util.*;
 
-import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.MC_MAIN_DEMO;
+import static com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessorTest.*;
 import static com.predic8.membrane.annot.util.CompilerHelper.*;
 import static com.predic8.membrane.annot.util.StructureAssertionUtil.*;
+import static com.predic8.membrane.common.ExceptionUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class YAMLComponentsParsingTest {
 
     @Test
-    public void componentsEmpty() {
+    void componentsEmpty() {
         assertStructure(
                 parse("""
                         components: {}
@@ -39,13 +40,13 @@ public class YAMLComponentsParsingTest {
     }
 
     @Test
-    public void componentsAndApiEmptySameDocument() {
+    void componentsAndApiEmptySameDocument() {
         assertStructure(
                 parseDocs("""
-                    components: {}
-                    ---
-                    api: {}
-                    """),
+                        components: {}
+                        ---
+                        api: {}
+                        """),
                 clazz("Components"),
                 clazz("ApiElement")
         );
@@ -53,7 +54,7 @@ public class YAMLComponentsParsingTest {
 
 
     @Test
-    public void componentsSingleDefinition() {
+    void componentsSingleDefinition() {
         assertStructure(
                 parse("""
                         components:
@@ -197,25 +198,33 @@ public class YAMLComponentsParsingTest {
     }
 
     @Test
-    public void componentDefinitionWithUnknownComponentKeyError() {
-        assertSchemaErrorContains(assertThrows(RuntimeException.class, () -> parse("""
+    void componentDefinitionWithUnknownComponentKeyError() {
+        var ex = assertThrows(RuntimeException.class, () -> parse("""
                 components:
                   x:
                     doesNotExist: {}
-                """)), "doesNotExist");
+                """));
+        var pc = getRootCause(ex, ConfigurationParsingException.class).getParsingContext();
+        assertEquals("$", pc.getPath());  // '$.components.x' would be better in the future
+        assertEquals("doesNotExist", pc.getKey());
     }
 
     @Test
-    public void componentDefinitionWithNoComponentKeyError() {
+    void componentDefinitionWithNoComponentKeyError() {
         var ex = assertThrows(RuntimeException.class, () -> parse("""
                 components:
                   x: {}
                 """));
-        assertSchemaErrorContains(ex, "must have at least 1 properties");
+        var c = getRootCause(ex, ConfigurationParsingException.class);
+        var pc = c.getParsingContext();
+        assertEquals("$.components.x", pc.getPath());
+        assertNull(pc.getKey());
+        assertTrue(c.getMessage().contains("Expected exactly one key"));
+        assertTrue(c.getMessage().contains("0"));
     }
 
     @Test
-    public void componentDefinitionWithMultipleComponentKeysError() {
+    void componentDefinitionWithMultipleComponentKeysError() {
         var ex = assertThrows(RuntimeException.class, () -> parse("""
                 components:
                   x:
@@ -224,11 +233,16 @@ public class YAMLComponentsParsingTest {
                       fileUserDataProvider:
                         htpasswdPath: /etc/htpasswd
                 """));
-        assertSchemaErrorContains(ex, "is not defined in the schema and the schema does not allow additional properties");
+        var c = getRootCause(ex, ConfigurationParsingException.class);
+        var pc = c.getParsingContext();
+        assertEquals("$.components.x", pc.getPath());
+        assertNull(pc.getKey());
+        assertTrue(c.getMessage().contains("Expected exactly one key"));
+        assertTrue(c.getMessage().contains("2"));
     }
 
     @Test
-    public void refInsideObjectLevel() {
+    void refInsideObjectLevel() {
         assertStructure(
                 parse("""
                         components:
@@ -312,20 +326,20 @@ public class YAMLComponentsParsingTest {
     public void componentRefersToAnotherComponent() {
         assertStructure(
                 parse("""
-                    components:
-                      manager:
-                        bearerToken:
-                          header: Authorization
-                      oauth1:
-                        oauth2authserver:
-                          issuer: https://issuer
-                          otherFields: abc
-                          $ref: "#/components/manager"
-                    ---
-                    api:
-                      flow:
-                        - $ref: "#/components/oauth1"
-                    """),
+                        components:
+                          manager:
+                            bearerToken:
+                              header: Authorization
+                          oauth1:
+                            oauth2authserver:
+                              issuer: https://issuer
+                              otherFields: abc
+                              $ref: "#/components/manager"
+                        ---
+                        api:
+                          flow:
+                            - $ref: "#/components/oauth1"
+                        """),
                 clazz("Components"),
                 clazz("ApiElement",
                         property("flow", list(
@@ -369,21 +383,11 @@ public class YAMLComponentsParsingTest {
     }
 
     @Test
-    public void topLevelElementNotAllowedAsNestedChild() {
-        var ex = assertThrows(RuntimeException.class, () -> parseWithTopLevelOnlySources("""
-            outer:
-              items:
-                - topThing: {}
-            """));
-        assertSchemaErrorContains(ex, "property 'topThing' is not defined in the schema and the schema does not allow additional properties");
-    }
-
-    @Test
     public void topLevelElementStillAllowedAtRoot() {
         assertStructure(
                 parseWithTopLevelOnlySources("""
-                    topThing: {}
-                    """),
+                        topThing: {}
+                        """),
                 clazz("TopThingElement")
         );
     }
@@ -392,10 +396,10 @@ public class YAMLComponentsParsingTest {
     public void nonTopLevelElementAllowedAsNestedChild() {
         assertStructure(
                 parseWithTopLevelOnlySources("""
-                    outer:
-                      items:
-                        - inner: {}
-                    """),
+                        outer:
+                          items:
+                            - inner: {}
+                        """),
                 clazz("OuterElement",
                         property("items", list(
                                 clazz("InnerElement")
@@ -411,40 +415,40 @@ public class YAMLComponentsParsingTest {
     }
 
     private static final String TOPLEVEL_ONLY_SOURCES = """
-        ---
-        package com.predic8.membrane.demo;
-        import com.predic8.membrane.annot.*;
-        import java.util.List;
-
-        @MCElement(name="outer", topLevel=true, component=false)
-        public class OuterElement {
-            List<ItemBase> items;
-
-            public List<ItemBase> getItems() {
-                return items;
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            import java.util.List;
+            
+            @MCElement(name="outer", topLevel=true, component=false)
+            public class OuterElement {
+                List<ItemBase> items;
+            
+                public List<ItemBase> getItems() {
+                    return items;
+                }
+            
+                @MCChildElement
+                public void setItems(List<ItemBase> items) {
+                    this.items = items;
+                }
             }
-
-            @MCChildElement
-            public void setItems(List<ItemBase> items) {
-                this.items = items;
-            }
-        }
-        ---
-        package com.predic8.membrane.demo;
-        public abstract class ItemBase {}
-        ---
-        package com.predic8.membrane.demo;
-        import com.predic8.membrane.annot.*;
-
-        @MCElement(name="inner")
-        public class InnerElement extends ItemBase {}
-        ---
-        package com.predic8.membrane.demo;
-        import com.predic8.membrane.annot.*;
-
-        @MCElement(name="topThing", topLevel=true, component=false)
-        public class TopThingElement extends ItemBase {}
-        """;
+            ---
+            package com.predic8.membrane.demo;
+            public abstract class ItemBase {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            
+            @MCElement(name="inner")
+            public class InnerElement extends ItemBase {}
+            ---
+            package com.predic8.membrane.demo;
+            import com.predic8.membrane.annot.*;
+            
+            @MCElement(name="topThing", topLevel=true, component=false)
+            public class TopThingElement extends ItemBase {}
+            """;
 
 
     private List<?> parseDocs(String yamlWithDocs) {
@@ -473,17 +477,6 @@ public class YAMLComponentsParsingTest {
         return parseYAML(result, yaml);
     }
 
-    private void assertSchemaErrorContains(RuntimeException ex, String... needles) {
-        var root = getCause(ex);
-        if (!(root instanceof YamlSchemaValidationException yse))
-            throw new AssertionError("Expected YamlSchemaValidationException but got: " + root, root);
-
-        assertFalse(yse.getErrors().isEmpty(), "Expected schema errors.");
-        var msg = yse.getErrors().getFirst().toString();
-        for (var n : needles)
-            assertTrue(msg.contains(n), () -> "Expected error to contain '" + n + "' but was: " + msg);
-    }
-
     private void assertAnyErrorContains(RuntimeException ex, String... needles) {
         var root = getCause(ex);
         var msg = root.getMessage() != null ? root.getMessage() : root.toString();
@@ -501,15 +494,15 @@ public class YAMLComponentsParsingTest {
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
             import java.util.List;
-
+            
             @MCElement(name="api", topLevel=true, component=false)
             public class ApiElement {
                 List<FlowItem> flow;
-
+            
                 public List<FlowItem> getFlow() {
                     return flow;
                 }
-
+            
                 @MCChildElement
                 public void setFlow(List<FlowItem> flow) {
                     this.flow = flow;
@@ -521,15 +514,15 @@ public class YAMLComponentsParsingTest {
             ---
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
-
+            
             @MCElement(name="basicAuthentication")
             public class BasicAuthenticationElement extends FlowItem {
                 FileUserDataProviderElement fileUserDataProvider;
-
+            
                 public FileUserDataProviderElement getFileUserDataProvider() {
                     return fileUserDataProvider;
                 }
-
+            
                 @MCChildElement
                 public void setFileUserDataProvider(FileUserDataProviderElement fileUserDataProvider) {
                     this.fileUserDataProvider = fileUserDataProvider;
@@ -538,15 +531,15 @@ public class YAMLComponentsParsingTest {
             ---
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
-
+            
             @MCElement(name="fileUserDataProvider", component=false)
             public class FileUserDataProviderElement {
                 String htpasswdPath;
-
+            
                 public String getHtpasswdPath() {
                     return htpasswdPath;
                 }
-
+            
                 @MCAttribute
                 public void setHtpasswdPath(String htpasswdPath) {
                     this.htpasswdPath = htpasswdPath;
@@ -555,15 +548,15 @@ public class YAMLComponentsParsingTest {
             ---
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
-
+            
             @MCElement(name="template")
             public class TemplateElement extends FlowItem {
                 String location;
-
+            
                 public String getLocation() {
                     return location;
                 }
-
+            
                 @MCAttribute
                 public void setLocation(String location) {
                     this.location = location;
@@ -572,35 +565,35 @@ public class YAMLComponentsParsingTest {
             ---
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
-
+            
             @MCElement(name="oauth2authserver")
             public class OAuth2AuthServerElement extends FlowItem {
                 String issuer;
                 String otherFields;
                 BearerTokenElement bearerToken;
-
+            
                 public String getIssuer() {
                     return issuer;
                 }
-
+            
                 @MCAttribute
                 public void setIssuer(String issuer) {
                     this.issuer = issuer;
                 }
-
+            
                 public String getOtherFields() {
                     return otherFields;
                 }
-
+            
                 @MCAttribute
                 public void setOtherFields(String otherFields) {
                     this.otherFields = otherFields;
                 }
-
+            
                 public BearerTokenElement getBearerToken() {
                     return bearerToken;
                 }
-
+            
                 @MCChildElement
                 public void setBearerToken(BearerTokenElement bearerToken) {
                     this.bearerToken = bearerToken;
@@ -609,15 +602,15 @@ public class YAMLComponentsParsingTest {
             ---
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
-
+            
             @MCElement(name="bearerToken")
             public class BearerTokenElement {
                 String header;
-
+            
                 public String getHeader() {
                     return header;
                 }
-
+            
                 @MCAttribute
                 public void setHeader(String header) {
                     this.header = header;
@@ -626,7 +619,7 @@ public class YAMLComponentsParsingTest {
             ---
             package com.predic8.membrane.demo;
             import com.predic8.membrane.annot.*;
-
+            
             @MCElement(name="demoBean")
             public class BeanElement {
             }

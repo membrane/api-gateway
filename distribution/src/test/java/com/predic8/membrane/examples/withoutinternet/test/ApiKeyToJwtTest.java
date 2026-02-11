@@ -62,7 +62,7 @@ public class ApiKeyToJwtTest extends AbstractSampleMembraneStartStopTestcase {
         String[] parts = response.getBody().asString().trim().split("\\.");
         assertTrue(parts.length >= 2);
         assertTrue(new String(getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8)
-                .contains("scope\":\"[accounting, finance]")
+                .contains("scope\":[\"accounting\",\"finance\"]")
         );
     }
 
