@@ -15,15 +15,16 @@
 package com.predic8.membrane.annot.bean;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.annot.util.*;
+import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.annot.util.ReflectionUtil.isWrapperOfPrimitive;
+import static com.predic8.membrane.annot.util.ReflectionUtil.*;
 
 /**
  * Builds Java objects from a "bean" JSON node (YAML).
