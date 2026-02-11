@@ -477,14 +477,6 @@ public class YAMLComponentsParsingTest {
         return parseYAML(result, yaml);
     }
 
-    private void assertSchemaErrorContains(RuntimeException ex, String... needles) {
-        var yse = getRootCause(ex,YamlSchemaValidationException.class);
-        assertFalse(yse.getErrors().isEmpty(), "Expected schema errors.");
-        var msg = yse.getErrors().getFirst().toString();
-        for (var n : needles)
-            assertTrue(msg.contains(n), () -> "Expected error to contain '" + n + "' but was: " + msg);
-    }
-
     private void assertAnyErrorContains(RuntimeException ex, String... needles) {
         var root = getCause(ex);
         var msg = root.getMessage() != null ? root.getMessage() : root.toString();

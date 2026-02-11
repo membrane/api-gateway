@@ -28,7 +28,7 @@ public class ExceptionUtil {
 
     public static <T extends Throwable> T getRootCause(Throwable t, Class<T> expected) {
         var e = getRootCause(t);
-        if (e != null && expected.isInstance(e)) {
+        if (expected.isInstance(e)) {
             return expected.cast(e);
         }
         throw new AssertionError("Expected %s but was %s".formatted(expected.getName(), e));

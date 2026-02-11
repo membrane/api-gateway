@@ -17,6 +17,7 @@ package com.predic8.membrane.annot.yaml;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
+import org.jetbrains.annotations.*;
 
 /**
  * Immutable parsing state passed down while traversing YAML.
@@ -75,7 +76,7 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return """
                 ParsingContext{
                     context='%s'

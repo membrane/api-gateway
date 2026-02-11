@@ -286,7 +286,7 @@ public class YAMLParsingErrorTest {
             var c = getCause(e);
             var pc = c.getParsingContext();
             assertEquals("$.demo.children[2].c", pc.getPath());
-            assertEquals(null, pc.getKey());
+            assertNull(pc.getKey());
         }
 
         try {
