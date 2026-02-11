@@ -33,22 +33,17 @@ import static java.util.stream.Stream.*;
  * Extractors can read the keys from HTTP headers, query parameters and may other message part. When validation succeeds, the interceptor adds an
  * <code>ApiKeySecurityScheme</code> with the resolved scopes to the <code>Exchange</code>. Scopes can be checked in later plugins
  * using the SpEL function <code>hasScope("...")</code>.
- * <p>
- * Typical configuration:
- * </p>
- * <pre><code>&lt;api&gt;
- *   &lt;apiKey required="true"&gt;
- *     &lt;!-- one or more key stores --&gt;
- *     ...
- *
- *     &lt;!-- optional: customize extraction (header/query) --&gt;
- *     &lt;headerExtractor name="X-Api-Key"/&gt;
- *   &lt;/apiKey&gt;
- * &lt;/api&gt;</code></pre>
- * <p>
  * On missing or invalid keys, a Problem Details response is generated (401 for missing, 403 for invalid) unless
  * <code>required="false"</code> is set.
- * </p>
+ * @yaml <pre><code>
+ * api:
+ *  port:2000
+ *  flow:
+ *    - apiKey:
+ *       required: true
+ *       extractors:
+ *         - headerExtractor: X-Api-Key
+ * </code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "apiKey")
