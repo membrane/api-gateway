@@ -58,7 +58,7 @@ public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
      */
     @MCAttribute(attributeName = "name")
     public void setHeaderName(String headerName) {
-        if(!headerName.isEmpty()) this.headerName = new HeaderName(headerName);
+        if(!headerName.isBlank()) this.headerName = new HeaderName(headerName);
     }
 
     public String getHeaderName() {
