@@ -257,7 +257,7 @@ public class Request extends Message {
         }
 
         public Builder contentType(String value) {
-            req.getHeader().add(CONTENT_TYPE, value);
+            req.getHeader().setContentType( value);
             return this;
         }
 
