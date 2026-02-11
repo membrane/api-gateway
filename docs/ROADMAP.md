@@ -8,16 +8,10 @@
 
 PRIO 1:
 
-- Reverse:
-  - First parse
-  - Second validate YAML
-- Tutorials:
-  - Add how to run the tutorials in a Docker container
 - HotReload for YAML
-- YAML parsing:
-  - Shorten YAML error messages
-  - When the reason for a parse error is clear. Shorten error message.
-- if: Add hint in documentation: use choice otherwise for else TB
+- Support for multiple apis.yaml in one folder
+  - idea: load apis.yaml last.
+    pattern *.apis.yaml
 - Register JSON Schema for YAML at: https://www.schemastore.org TB
 - create test asserting that connection reuse via proxy works TP
 - Central description of Membrane Languages, Cheat Sheets, links to their docs. TP
