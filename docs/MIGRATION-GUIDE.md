@@ -214,6 +214,9 @@ Default naming scheme for `<serviceProxys>` has changed. This might affect exist
 
 - `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually.
 
+- ApiKey extractors: 
+  - Rename `headerExtractor` to `header`
+  - Rename `queryParamExtractor` to `query`
 
 ## New Yaml Syntax
 
