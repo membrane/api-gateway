@@ -44,6 +44,7 @@ public class RequestTest {
             Content-Type: application/x-www-form-urlencoded
             
             endpoint=http%3A%2F%2Fwww.thomas-bayer.com%3A80%2Faxis2%2Fservices%2FBLZService&xpath%3A%2FgetBank%2Fblz=38070024&id=65657&operation=getBank&portType=BLZServicePortType""";
+
     private static final String CHUNKED = """
             POST /axis2/services/BLZService HTTP/1.1
             Content-Type: application/soap+xml; charset=UTF-8; action="http://thomas-bayer.com/blz/BLZServicePortType/getBankRequest"
@@ -53,14 +54,19 @@ public class RequestTest {
             ff
             <?xml version='1.0' encoding='UTF-8'?><soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope"><soapenv:Body><ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/"><ns1:blz>66762332</ns1:blz></ns1:getBank></soapenv:Body></soapenv:Envelope>
             0""";
-    /**
-     * No body related headers
-     */
-    private static final String EMPTY_BODY = """
+
+    private static final String POST_EMPTY_BODY = """
             POST /operation/call HTTP/1.1
             Host: api.predic8.de:443
             
             """;
+
+    private static final String PATCH_EMPTY_BODY = """
+            PATCH /operation/call HTTP/1.1
+            Host: api.predic8.de:443
+            
+            """;
+
     private static final String EMPTY_BODY_CONTENT_LENGTH = """
             POST /operation/call HTTP/1.1
             Host: api.predic8.de:443
@@ -83,16 +89,32 @@ public class RequestTest {
             0
             
             """;
+
+    private static String http10NoBody = """
+            POST /operation/call HTTP/1.0
+            Host: api.predic8.de
+            
+            """;
+
+    private static String http10Body = """
+            POST /operation/call HTTP/1.0
+            Host: api.predic8.de
+            
+            Foo""";
+
     private Request request;
     private InputStream getReq;
     private InputStream inPost;
-    private InputStream inEmptyBody;
+    private InputStream inPostEmptyBody;
+    private InputStream inPatchEmptyBody;
     private InputStream inEmptyBodyContentLength;
     private InputStream inEmptyBodyContentType;
     private InputStream inNoChunks;
     private InputStream inChunked;
     private ByteArrayOutputStream tempOut;
     private InputStream tempIn;
+    private InputStream inHttp10NoBody;
+    private InputStream inHttp10Body;
 
     private static void shouldBodyBeRead(String message, boolean expect) throws IOException, EndOfStreamException {
         Request req = new Request();
@@ -101,28 +123,34 @@ public class RequestTest {
     }
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         request = new Request();
         getReq = convertMessage(GET);
         inPost = convertMessage(POST);
-        inEmptyBody = convertMessage(EMPTY_BODY);
+        inPostEmptyBody = convertMessage(POST_EMPTY_BODY);
+        inPatchEmptyBody = convertMessage(PATCH_EMPTY_BODY);
         inEmptyBodyContentLength = convertMessage(EMPTY_BODY_CONTENT_LENGTH);
         inEmptyBodyContentType = convertMessage(EMPTY_BODY_CONTENT_TYPE);
         inNoChunks = convertMessage(NO_CHUNKS);
         inChunked = convertMessage(CHUNKED);
+
+        inHttp10NoBody = convertMessage(http10NoBody);
+        inHttp10Body = convertMessage(http10Body);
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         closeQuietly(getReq);
         closeQuietly(inPost);
-        closeQuietly(inEmptyBody);
+        closeQuietly(inPostEmptyBody);
         closeQuietly(inEmptyBodyContentLength);
         closeQuietly(inEmptyBodyContentType);
         closeQuietly(inNoChunks);
         closeQuietly(inChunked);
         closeQuietly(tempIn);
         closeQuietly(tempOut);
+        closeQuietly(inHttp10Body);
+        closeQuietly(inHttp10NoBody);
     }
 
     @Test
@@ -163,7 +191,12 @@ public class RequestTest {
 
     @Test
     void emptyBody() throws Exception {
-        testForEmptyBody(inEmptyBody);
+        testForEmptyBody(inPostEmptyBody);
+    }
+
+    @Test
+    void emptyBodyPatch() throws Exception {
+        testForEmptyBody(inPatchEmptyBody);
     }
 
     @Test
@@ -176,9 +209,8 @@ public class RequestTest {
         testForEmptyBody(inEmptyBodyContentType);
     }
 
-    private void testForEmptyBody(InputStream message) throws IOException, EndOfStreamException {
-        request.read(message, true);
-        assertEquals(METHOD_POST, request.getMethod());
+    private void testForEmptyBody(InputStream is) throws IOException, EndOfStreamException {
+        request.read(is, true);
         assertInstanceOf(EmptyBody.class, request.getBody());
     }
 
@@ -330,6 +362,28 @@ public class RequestTest {
         assertTrue(post("/foo").contentType(TEXT_XML).build().isXML());
         assertTrue(post("/foo").contentType("text/xml; charset=utf-8").build().isXML());
         assertTrue(post("/foo").header("Content-Type", "text/xml; charset=utf-8").build().isXML());
+    }
+
+    @Nested
+    class Http10 {
+
+        @Test
+        void noBody() throws Exception {
+            request.read(inHttp10NoBody, true);
+
+            // We do not know if there is a body or not. Therefore prepare just in case
+            assertInstanceOf(Body.class, request.getBody());
+            assertEquals(0, request.getBody().getLength());
+        }
+
+        @Test
+        void body() throws Exception {
+            request.read(inHttp10Body,true);
+            assertInstanceOf(Body.class, request.getBody());
+            assertEquals(3, request.getBody().getLength());
+            assertEquals("Foo", request.getBodyAsStringDecoded());
+        }
+
     }
 
     private AbstractBody readMessageAndGetBody() throws IOException, EndOfStreamException {
