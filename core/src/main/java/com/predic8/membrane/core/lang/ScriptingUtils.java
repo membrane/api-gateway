@@ -42,7 +42,9 @@ public class ScriptingUtils {
 
     private static final ObjectMapper om = new ObjectMapper();
 
-    public static Map<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject) {
+    public static final String BINDING = "fn";
+
+    public static Map<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject, boolean isJSON) {
 
         var msg = exc.getMessage(flow);
 
@@ -112,8 +114,16 @@ public class ScriptingUtils {
 
         params.put("pathParam", new PathParametersMap(exc));
 
-        // Allow invoking functions in Groovy with ${fn.functionname()}
-        params.put("fn", new GroovyBuiltInFunctions(exc, flow, router));
+        // "fn" is the special key used to set the Groovy Binding.
+        // The Groovy Binding is allows function invocation in Groovy scripts with ${functionname()} .
+        params.put(BINDING, new GroovyBuiltInFunctions(exc, flow, router, params) {
+            @Override
+            public Object escape(Object o) {
+                if (isJSON)
+                    return toJSON(o);
+                return o;
+            }
+        });
 
         return params;
     }

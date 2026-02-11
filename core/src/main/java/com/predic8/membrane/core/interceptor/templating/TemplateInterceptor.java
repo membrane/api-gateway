@@ -17,7 +17,9 @@ package com.predic8.membrane.core.interceptor.templating;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.groovy.adapted.StreamingTemplateEngine;
 import com.predic8.membrane.core.util.*;
 import groovy.lang.*;
 import groovy.text.*;
@@ -40,7 +42,12 @@ import static java.nio.charset.StandardCharsets.*;
  * header, query parameters, etc. If the extension of a referenced template file is <i>.xml</i> it will use
  * <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_xmltemplateengine">XMLTemplateEngine</a>
  * otherwise <a href="https://docs.groovy-lang.org/docs/next/html/documentation/template-engines.html#_streamingtemplateengine">StreamingTemplateEngine</a>.
- * Have a look at the samples in <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples">examples/template</a>.
+ * Have a look at the samples in <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/templating">examples/templating</a>.
+ *
+ * When the <code>contentType</code> is a JSON variant (e.g., <code>application/json</code>), the engine automatically escapes all inserted values. For example, in the
+ * <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/templating/json">JSON templating example</a>, executing
+ * <code>curl "localhost:2000/?answer=20"</code> returns <code>{ "answer" : "20" }</code>. The quotes surrounding the value 20 are added by the auto-escaping mechanism
+ * to ensure the output remains a valid string. This feature significantly mitigates security risks by preventing inadvertent JSON injection attacks.
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "template", mixed = true)
@@ -121,11 +128,15 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
     }
 
     private @NotNull Map<String, Object> getVariableBinding(Exchange exc, Flow flow) {
-        return createParameterBindings(router, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow));
+        return createParameterBindings(router, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow), producesJSON());
     }
 
     private static boolean isJsonMessage(Exchange exc, Flow flow) {
         return exc.getMessage(flow).isJSON();
+    }
+
+    private boolean producesJSON() {
+        return contentType != null && MimeType.isJson(contentType);
     }
 
     private Template createTemplate() {
