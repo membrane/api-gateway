@@ -34,20 +34,11 @@ api:
             src: |
               {
                 "number": ${property.id},
-                "positions": [
-                  <%
-                    def list = property.items
-                    for (i = 0; i < list.size(); i++) {
-                      def item = list[i]
-                  %>
-                  {
-                    "product": "<%= item.article %>",
-                    "quantity": <%= item.quantity %>,
-                    "amount": <%= item.quantity * item.price %>
-                  }
-                  <%= i < list.size()-1 ? ',' : '' /* Add trailing comma if not last item */ %> 
-                  <% } %>
-                ]
+                "positions": <%= property.items.collect { item -> [
+                    "product": item.article,
+                    "quantity": item.quantity,
+                    "amount": item.quantity * item.price
+                ] } %>
               }
     - return:
         status: 200

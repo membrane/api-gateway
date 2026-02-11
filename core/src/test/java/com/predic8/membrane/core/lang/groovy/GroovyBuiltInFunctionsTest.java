@@ -34,7 +34,7 @@ class GroovyBuiltInFunctionsTest {
 
     @BeforeEach
     void setUp() throws URISyntaxException {
-        functions = new GroovyBuiltInFunctions(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, new DummyTestRouter());
+        functions = new GroovyBuiltInFunctions(post("/foo").xml("<person name='Fritz'/>").buildExchange(), REQUEST, new DummyTestRouter(), new HashMap<>());
     }
 
     @Test

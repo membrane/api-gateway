@@ -41,7 +41,7 @@ api:
             pretty: true
             src: |
               <f:getFruitsResponse xmlns:f="https://predic8.de/fruits">
-                <% fn.jsonPath('$.fruits').each { it -> %>
+                <% jsonPath('$.fruits').each { it -> %>
                   <fruit>
                     <name>${it.name}</name>
                     <price>${it.price}</price>

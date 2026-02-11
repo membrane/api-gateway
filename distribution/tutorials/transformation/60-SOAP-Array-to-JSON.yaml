@@ -44,19 +44,14 @@ api:
             contentType: application/json
             src: |
               <%
-                def fruits = fn.xpath('//f:fruit')
+                def fruits = xpath('//f:fruit')
                 def total = fruits.getLength()
               %>
-              { "fruits": [
-                <% for (int i = 0; i < total; i++) {
-                   def fruit = fruits.item(i)
-                %>
-                {
-                  "name": "<%= fn.xpath('string(./f:name)', fruit) %>",
-                  "price": <%= fn.xpath('number(./f:price)', fruit) %>
-                }<%= (i < total - 1) ? "," : "" %>
-                <% } %>
-                ]
+              { "fruits":
+                <%= fruits.collect { fruit -> [
+                  "name": xpath('string(./f:name)', fruit),
+                  "price": xpath('number(./f:price)', fruit)
+                ] } %>
               }
         - return:
             status: 200

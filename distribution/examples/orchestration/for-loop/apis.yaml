@@ -27,14 +27,7 @@ api:
             pretty: true
             src: |
               {
-                  "products": [
-                    <% property.result.eachWithIndex { p, idx -> %>
-                      {
-                          "name": ${fn.toJSON(p.name)},
-                          "price": ${p.price}
-                      }${idx < property.result.size() - 1 ? ',' : ''}
-                    <% } %>
-                  ]
+                  "products": ${property.result}
               }
     - return:
         status: 200
