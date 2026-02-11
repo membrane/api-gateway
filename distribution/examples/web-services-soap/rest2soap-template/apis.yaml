@@ -19,8 +19,8 @@ api:
             contentType: application/json
             src: |
               {
-              	"country": ${fn.toJSON(fn.xpath('string(//country)'))},
-              	"population": ${fn.toJSON(fn.xpath('number(//population)'))}
+              	"country": ${xpath('string(//country)')},
+              	"population": ${xpath('number(//population)')}
               }
   target:
     # POST is required for SOAP requests

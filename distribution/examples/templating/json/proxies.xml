@@ -38,7 +38,7 @@
 			-->
 			<response>
 				<template contentType="application/json">
-					{"city": ${fn.toJSON(property.city.toString())} }
+					{"city": ${property.city.toString()} }
 				</template>
 				<setProperty name="city" value="${/city}" language="xpath"/><!-- Is executed on the way back -->
 			</response>

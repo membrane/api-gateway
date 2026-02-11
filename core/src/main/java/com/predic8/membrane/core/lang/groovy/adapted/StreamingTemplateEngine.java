@@ -21,6 +21,7 @@
 
 package com.predic8.membrane.core.lang.groovy.adapted;
 
+import com.predic8.membrane.core.lang.ScriptingUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.*;
 import groovy.text.Template;
@@ -46,6 +47,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.predic8.membrane.core.lang.ScriptingUtils.BINDING;
+
 /**
  * Adapted from <a href="https://github.com/apache/groovy/blob/master/subprojects/groovy-templates/src/main/groovy/groovy/text/StreamingTemplateEngine.java">Apache Groovy</a> .
  *
@@ -55,7 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * methods.
  *
  * We therefore decided to copy the code of the inner class here (see first commit) and then made
- * some adjustments (the following commits).
+ * some adjustments (the following commits, see "adjustment" comments).
  */
 public class StreamingTemplateEngine extends groovy.text.StreamingTemplateEngine {
     @Override
@@ -86,7 +89,11 @@ public class StreamingTemplateEngine extends groovy.text.StreamingTemplateEngine
                 +   "return { _p, _s, _b, out -> "
                 +     "int _i = 0;"
                 +     "try {"
-                +       "delegate = new Binding(_b);";
+                // adjustment: using the GroovyBuiltInFunctions binding implementation
+                // provided from the outside (via the 'fn' map entry) allows the script
+                // to directly call Membrane functions. This enables templating syntax like
+                // ${xpath('/root/element')} .
+                +       "delegate = _b.get('" + BINDING + "');";
 
         /**
          * The 'footer' we use for the resulting groovy script source
@@ -514,7 +521,7 @@ public class StreamingTemplateEngine extends groovy.text.StreamingTemplateEngine
                                           final StringBuilder target,
                                           final Position sourcePosition,
                                           final Position targetPosition) throws IOException, FinishedReadingException {
-            append(target, targetPosition, "out<<");
+            append(target, targetPosition, "out<<escape("); // adjustment: escape the output
             append(target, targetPosition, (char) c);
 
             while (true) {
@@ -525,7 +532,7 @@ public class StreamingTemplateEngine extends groovy.text.StreamingTemplateEngine
                 append(target, targetPosition, (char) c);
             }
 
-            append(target, targetPosition, ";");
+            append(target, targetPosition, ");");
 
             return c;
         }
@@ -562,10 +569,13 @@ public class StreamingTemplateEngine extends groovy.text.StreamingTemplateEngine
                                                 final StringBuilder target,
                                                 final Position sourcePosition,
                                                 final Position targetPosition) throws IOException, FinishedReadingException {
-            append(target, targetPosition, "out<<\"\"\"${");
+            append(target, targetPosition, "out<<\"\"\"${escape("); // adjustment: escape the output
 
             while (true) {
                 int c = read(reader, sourcePosition);
+                // adjustment: escape the output
+                if (c == '}')
+                    append(target, targetPosition, ')');
                 append(target, targetPosition, (char) c);
                 if (c == '}') break;
             }
@@ -612,11 +622,11 @@ public class StreamingTemplateEngine extends groovy.text.StreamingTemplateEngine
                                      final StringBuilder target,
                                      final Position sourcePosition,
                                      final Position targetPosition) throws IOException, FinishedReadingException {
-            append(target, targetPosition, "out<<\"\"\"${");
+            append(target, targetPosition, "out<<\"\"\"${escape("); // adjustment: escape the output
 
             readAndAppend(reader, target, sourcePosition, targetPosition);
 
-            append(target, targetPosition, "}\"\"\";");
+            append(target, targetPosition, ")}\"\"\";");
         }
 
         @Override
