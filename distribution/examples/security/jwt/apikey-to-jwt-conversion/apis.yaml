@@ -10,7 +10,7 @@ api:
           - apiKeyFileStore:
               location: demo-keys.txt
         extractors:
-          - headerExtractor: {}
+          - headerExtractor:
     - request:
         - setProperty:
             name: scopes

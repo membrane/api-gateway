@@ -17,8 +17,7 @@ global:
       # But certain scopes allow for additional access rights.
       required: false
       extractors:
-        - headerExtractor:
-            name: X-Key
+        - headerExtractor: X-Key
 
 ---
 api:

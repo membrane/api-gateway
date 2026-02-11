@@ -37,7 +37,7 @@ import static java.util.stream.Stream.*;
  * <code>required="false"</code> is set.
  * @yaml <pre><code>
  * api:
- *  port:2000
+ *  port: 2000
  *  flow:
  *    - apiKey:
  *       required: true
