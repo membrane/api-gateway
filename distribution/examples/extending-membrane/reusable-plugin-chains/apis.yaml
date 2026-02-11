@@ -3,20 +3,18 @@
 components:
   log:
     chain:
-      flow:
-        - request:
+      - request:
           - log:
               message: "Path: ${path}"
   cors:
     chain:
-      flow:
-        - response:
-            - setHeader:
-                name: Access-Control-Allow-Origin
-                value: "*"
-            - setHeader:
-                name: Access-Control-Allow-Methods
-                value: POST, PUT
+      - response:
+          - setHeader:
+              name: Access-Control-Allow-Origin
+              value: "*"
+          - setHeader:
+              name: Access-Control-Allow-Methods
+              value: POST, PUT
 ---
 
 api:

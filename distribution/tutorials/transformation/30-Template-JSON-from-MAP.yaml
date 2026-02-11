@@ -18,7 +18,7 @@ api:
             {
               <% header.eachWithIndex { e, i -> %>
                 <% if (i > 0) { %>,<% } %>
-                "<%= e.key %>": "<%= e.value %>"
+                <%= e.key %>: <%= e.value %>
               <% } %>
             }
       - return:

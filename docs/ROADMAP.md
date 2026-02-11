@@ -18,10 +18,12 @@ PRIO 1:
 - Central description of MEMBRANE_* environment variables
   - Like MEMBRANE_HOME...
   - @coderabbitai look through the code base for usages of these variables and suggest documentation
-- Variable substitution in YAML files
-   - e.g. #{}
-   - Problem port is an integer
-   - JSON Schema support
+- Idea: Multiple api.yaml files
+  - Membrane reads all *.apis.yaml files in the conf folder or the current working directory
+    the apis.yaml is read last and therefore overwrites previous definitions
+    e.g. fruitshop.apis.yaml, dlp.apis.yaml, apis.yaml with global and matches all
+ 
+
 
 
 PRIO 2:

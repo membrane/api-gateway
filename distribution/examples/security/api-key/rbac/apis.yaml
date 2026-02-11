@@ -33,7 +33,7 @@ api:
             - template:
                 src: |
                   Only admins!
-                  Scopes: ${fn.scopes()}
+                  Scopes: ${scopes()}
             - return:
                 status: 200
       - if:
@@ -42,7 +42,7 @@ api:
             - template:
                 src: |
                   Only finance or accounting!
-                  Scopes: ${fn.scopes()}
+                  Scopes: ${scopes()}
             - return:
                 status: 200
       - template:

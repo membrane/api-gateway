@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.annot.yaml;
 
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
+import com.predic8.membrane.annot.beanregistry.*;
+import org.jetbrains.annotations.*;
 
 /**
  * Immutable parsing state passed down while traversing YAML.
@@ -25,18 +25,65 @@ import com.predic8.membrane.annot.beanregistry.BeanRegistryImplementation;
  * - registry: access to already materialized beans (e.g., for $ref/reference attributes).
  * - grammar: resolves element names to Java classes via local/global lookups.
  */
-public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(String context, T registry, Grammar grammar) {
+public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(String context, T registry, Grammar grammar, JsonNode topLevel, String path, String key) {
 
-    ParsingContext updateContext(String context) {
-        return new ParsingContext(context, registry, grammar);
+    public ParsingContext<T> updateContext(String context) {
+        return new ParsingContext<>(context, registry, grammar, topLevel, path,key);
+    }
+
+    public ParsingContext<?> addPath(String path) {
+        return new ParsingContext(context, registry,grammar,topLevel, this.path + path,key);
+    }
+
+    public ParsingContext<?> key(String key) {
+        return new ParsingContext(context, registry,grammar, topLevel, path,key);
     }
 
     public Class<?> resolveClass(String key) {
         Class<?> clazz = grammar.getLocal(context, key);
         if (clazz == null)
             clazz = grammar.getElement(key);
-        if (clazz == null)
-            throw new RuntimeException("Did not find java class for key '%s'.".formatted(key));
+        if (clazz == null) {
+            var e = new ConfigurationParsingException("Did not find java class for key '%s'.".formatted(key));
+            e.setParsingContext(this);
+            throw e;
+        }
         return clazz;
+    }
+
+    public JsonNode getNode() {
+        return topLevel;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getContext() {
+        return context;
+    }
+
+    public T getRegistry() {
+        return registry;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public Grammar getGrammar() {
+        return grammar;
+    }
+
+    @Override
+    public @NotNull String toString() {
+        return """
+                ParsingContext{
+                    context='%s'
+                    path='%s'
+                    topLevel=%s
+                    key='%s'
+                }
+                """.formatted(context, path, topLevel, key);
     }
 }

@@ -47,7 +47,7 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Object o = null;
         try {
-            o = script.apply(createParameterBindings(router, exchange, flow, false));
+            o = script.apply(createParameterBindings(router, exchange, flow, false, false));
         } catch (MissingPropertyException mpe) {
             log.info("Expression {} tries to access non existing property {}",expression,mpe.getMessage());
             if (type.getName().equals(Object.class.getName())) {

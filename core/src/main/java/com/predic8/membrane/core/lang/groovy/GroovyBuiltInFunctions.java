@@ -19,24 +19,24 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.lang.CommonBuiltInFunctions;
 import com.predic8.membrane.core.router.*;
-import groovy.lang.GroovyObjectSupport;
+import groovy.lang.Binding;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Helper class for built-in functions that delegates to the implementation CommonBuiltInFunctions.
- *  Difference to SpEL:
- *  The functions are called with ${fn.functionname()} instead of ${functionname()} in the template interceptor
  */
 @SuppressWarnings("unused")
-public class GroovyBuiltInFunctions extends GroovyObjectSupport {
+public class GroovyBuiltInFunctions extends Binding {
 
     private final Exchange exchange;
     private final Flow flow;
     private final Router router;
     private XmlConfig xmlConfig;
 
-    public GroovyBuiltInFunctions(Exchange exchange, Flow flow, Router router) {
+    public GroovyBuiltInFunctions(Exchange exchange, Flow flow, Router router, Map<String, Object> params) {
+        super(params);
         this.exchange = exchange;
         this.flow = flow;
         this.router = router;
@@ -117,5 +117,14 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
 
     public String env(String s) {
         return CommonBuiltInFunctions.env(s);
+    }
+
+    /**
+     * Post-Process values before they are written to the output.
+     *
+     * This gives subclasses the option to perform escaping (e.g. JSON/XML).
+     */
+    public Object escape(Object o) {
+        return o;
     }
 }

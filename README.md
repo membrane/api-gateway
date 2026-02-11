@@ -56,9 +56,10 @@ api:
           htpasswdPath: .htpasswd
     - request:
         - template:
+            contentType: application/json
             src: |
               {
-                "sub": "${fn.user()}"
+                "sub": ${user()}
               }
         - jwtSign:
             jwk:
@@ -716,7 +717,7 @@ api:
             contentType: application/json
             src: |
               {
-                "destination": "${json.city}"
+                "destination": ${json.city}
               }
     - return:
         status: 200
@@ -750,7 +751,7 @@ api:
     - request:
         - template:
             src: |
-              Buenas noches, ${fn.xpath('/person/@firstname')}
+              Buenas noches, ${xpath('/person/@firstname')}
         - return:
             status: 200
 ```
