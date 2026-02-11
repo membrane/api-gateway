@@ -43,15 +43,12 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  *         name: DemoBalancer
  *         priorityStrategy: {}
  *         clusters:
- *           - cluster:
- *               name: PROD
- *               nodes:
- *                 - node:
- *                     host: node1.predic8.com
- *                     port: 8080
- *                 - node:
- *                     host: node2.predic8.com
- *                     port: 8090
+ *           - name: PROD
+ *             nodes:
+ *               - host: node1.predic8.com
+ *                 port: 8080
+ *               - host: node2.predic8.com
+ *                 port: 8090
  * </code></pre>
  */
 @MCElement(name = "balancer")

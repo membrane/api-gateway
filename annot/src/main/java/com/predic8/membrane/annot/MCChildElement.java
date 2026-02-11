@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.annot;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
+import static java.lang.annotation.ElementType.*;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+@Target(METHOD)
+@Retention(RUNTIME)
 public @interface MCChildElement {
 
     /**

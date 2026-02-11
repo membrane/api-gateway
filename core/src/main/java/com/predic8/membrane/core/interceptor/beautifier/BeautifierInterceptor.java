@@ -29,6 +29,16 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Beautifies request and response bodies. Supported are the Formats: <b>JSON</b>, <b>JSON5</b>, <b>XML</b>, <b>TEXT</b>
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - static:
+ *         contentType: application/json
+ *         src: <foo><bar>baz</bar></foo>
+ *     - beautifier: {}
+ *     - return: {}
+ * </code></pre>
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "beautifier")
