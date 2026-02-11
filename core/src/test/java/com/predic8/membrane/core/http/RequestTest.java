@@ -393,8 +393,8 @@ public class RequestTest {
 
     public Request create(String method, String uri, String protocol, Header header, InputStream in) throws IOException {
         var r = new Request();
-        r.method = method;
-        r.uri = uri;
+        r.setMethod(method);
+        r.setUri(uri);
         if (!protocol.startsWith("HTTP/"))
             throw new RuntimeException("Unknown protocol '" + protocol + "'");
         r.version = protocol.substring(5);

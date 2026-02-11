@@ -47,8 +47,8 @@ public class Request extends Message {
 
     private static final HashSet<String> methodsWithoutBody = Sets.newHashSet(METHOD_GET, METHOD_HEAD, METHOD_CONNECT);
 
-    String method;
-    String uri;
+    private String method;
+    private String uri;
 
     @Override
     protected void parseStartLine(InputStream in) throws IOException {
@@ -306,6 +306,12 @@ public class Request extends Message {
             return method(Request.METHOD_POST).url(uriFactory, url);
         }
 
+        /**
+         * For tests and special cases where URIs do not contain weird characters.
+         * @param url
+         * @return
+         * @throws URISyntaxException
+         */
         public Builder post(String url) throws URISyntaxException {
             return post(new URIFactory(), url);
         }
