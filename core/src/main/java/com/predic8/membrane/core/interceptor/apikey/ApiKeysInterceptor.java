@@ -42,7 +42,7 @@ import static java.util.stream.Stream.*;
  *    - apiKey:
  *       required: true
  *       extractors:
- *         - headerExtractor: X-Api-Key
+ *         - header: X-Api-Key
  * </code></pre>
  * @topic 3. Security and Validation
  */
@@ -202,19 +202,19 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     /**
      * @description Configures how and where API keys are extracted from requests (e.g., HTTP header or URL query parameter).
      * Provide one or more extractor elements. If omitted, a header extractor using <code>X-Api-Key</code> is used.
-     * @default <headerExtractor /> (header name <code>X-Api-Key</code>)
+     * @default <header /> (header name <code>X-Api-Key</code>)
      * <p>
      * Examples:
      * </p>
      * <pre><code><apiKey>
      *   <!-- header: X-Api-Key (default) -->
-     *   <headerExtractor />
+     *   <header />
      *
      *   <!-- custom header -->
-     *   <headerExtractor name="Authorization" prefix="Api-Key "/>
+     *   <header name="Authorization" prefix="Api-Key "/>
      *
      *   <!-- query parameter -->
-     *   <queryParamExtractor name="api_key"/>
+     *   <query name="api_key"/>
      * </apiKey></code></pre>
      */
     @MCChildElement(allowForeign = true, order = 1)

@@ -20,13 +20,13 @@
 
                      X-Api-Key: demokey
                 -->
-                <headerExtractor />
+                <header />
 
                 <!-- Fetch key from query
 
                      GET /foo?api-key=abc123
                 -->
-                <queryParamExtractor />
+                <query />
             </apiKey>
         </global>
 

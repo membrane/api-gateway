@@ -8,7 +8,7 @@
         <api port="2000">
             <apiKey>
                 <mongoDBApiKeyStore connection="mongodb://localhost:27017/" database="apiKeyDB" collection="apikey" />
-                <headerExtractor />
+                <header />
             </apiKey>
             <target url="https://api.predic8.de"/>
         </api>

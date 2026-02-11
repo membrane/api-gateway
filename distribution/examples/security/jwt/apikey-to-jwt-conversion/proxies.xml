@@ -10,7 +10,7 @@
         <api port="2000" name="Token Server">
             <apiKey required="true">
                 <apiKeyFileStore location="demo-keys.txt" />
-                <headerExtractor />
+                <header />
             </apiKey>
             <request>
                 <setProperty name="scopes" value="${scopes()}"/>
