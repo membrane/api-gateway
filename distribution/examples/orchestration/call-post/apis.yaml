@@ -18,7 +18,7 @@ api:
             contentType: application/json
             src: |
               {
-                "name": "${property.name} Big Pack",
+                "name": ${property.name + ' Big Pack'},
                 "price": ${property.price}
               }
         - call:

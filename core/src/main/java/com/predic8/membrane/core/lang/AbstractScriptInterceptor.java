@@ -207,7 +207,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     private Map<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
-        var binding = createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON());
+        var binding = createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON(), false);
         addOutcomeObjects(binding);
         return binding;
     }
