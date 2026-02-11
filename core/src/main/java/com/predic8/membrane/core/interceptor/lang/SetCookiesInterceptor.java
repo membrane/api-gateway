@@ -32,6 +32,15 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * @description Adds one or more Set-Cookie headers to the HTTP response for session handling, user preferences, or tracking purposes.
  *              Supports computing expiry, setting standard attributes like Domain and Path, and building a compliant cookie string.
  *              Useful for enriching responses with configurable cookies directly at gateway level without backend involvement.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - response:
+ *         - setCookies:
+ *             - name: SESSION
+ *               value: akj34
+ * </code></pre>
  * @topic 6. Misc
  */
 @MCElement(name = "setCookies", noEnvelope = true)
