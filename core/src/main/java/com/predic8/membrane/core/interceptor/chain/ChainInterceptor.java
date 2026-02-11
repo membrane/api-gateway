@@ -26,7 +26,7 @@ import java.util.*;
 /**
  * @description A Chain groups multiple interceptors into reusable components, reducing redundancy in API configurations.
  */
-@MCElement(name = "chain")
+@MCElement(name = "chain", noEnvelope = true)
 public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
 
     @Override
