@@ -80,7 +80,6 @@ public class RequestTest {
             
             """;
     // Trailing line is needed for chunked parsing
-    @SuppressWarnings("TrailingWhitespacesInTextBlock")
     private static final String NO_CHUNKS = """
             POST /resource HTTP/1.1
             Host: example.com
@@ -90,13 +89,13 @@ public class RequestTest {
             
             """;
 
-    private static String http10NoBody = """
+    private static final String http10NoBody = """
             POST /operation/call HTTP/1.0
             Host: api.predic8.de
             
             """;
 
-    private static String http10Body = """
+    private static final String http10Body = """
             POST /operation/call HTTP/1.0
             Host: api.predic8.de
             
@@ -139,7 +138,7 @@ public class RequestTest {
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    void tearDown() {
         closeQuietly(getReq);
         closeQuietly(inPost);
         closeQuietly(inPostEmptyBody);
