@@ -42,7 +42,8 @@ import static java.util.stream.Stream.*;
  *    - apiKey:
  *       required: true
  *       extractors:
- *         - header: X-Api-Key
+ *         - header:
+ *             name: X-Api-Key
  * </code></pre>
  * @topic 3. Security and Validation
  */
