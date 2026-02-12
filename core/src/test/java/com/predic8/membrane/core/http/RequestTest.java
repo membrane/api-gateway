@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.StringTestUtil.*;
@@ -145,9 +146,11 @@ public class RequestTest {
 	}
 
 	@Test
-	void createFromStream() throws IOException {
-		Request req = new Request();
-		req.create("POST", "http://test", "HTTP/", new Header(), getResourceAsStream(this,"/getBank.xml"));
+	void createFromStream() throws IOException, URISyntaxException {
+		Request req = Request.post("http://test/")
+				.header(CONTENT_LENGTH, "1")
+				.body(getResourceAsStream(this,"/getBank.xml"))
+				.build();
 		assertFalse(req.isBodyEmpty());
 	}
 

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -62,12 +63,9 @@ public class LimitedMemoryExchangeStoreTest {
 		assertEquals(value, store.getAllExchangesAsList().get(pos).getProperty("id"));
 	}
 
-	private Exchange getExchange(String id) throws IOException {
-		Exchange exc = new Exchange(null);
+	private Exchange getExchange(String id) throws IOException, URISyntaxException {
+		Exchange exc = Request.get("http://test/").buildExchange();
 		exc.setProperty("id", id);
-		Request req = new Request();
-		req.create("GET", "http://test", "HTTP/", new Header(), null);
-		exc.setRequest(req);
 		exc.setResponse(Response.ok().body("<xml />").build());
 		return exc;
 	}
