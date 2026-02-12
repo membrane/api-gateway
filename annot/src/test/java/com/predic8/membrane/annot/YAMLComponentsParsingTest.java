@@ -536,12 +536,12 @@ public class YAMLComponentsParsingTest {
             public class FileUserDataProviderElement {
                 String htpasswdPath;
             
-                public String getLocation() {
+                public String getHtpasswdPath() {
                     return htpasswdPath;
                 }
             
                 @MCAttribute
-                public void setLocation(String htpasswdPath) {
+                public void setHtpasswdPath(String htpasswdPath) {
                     this.htpasswdPath = htpasswdPath;
                 }
             }
