@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
@@ -35,7 +36,7 @@ public class StaticUserDataProviderTest {
     @Test
     void verifyWithValidCredentials() {
         // Given
-        provider.setUsers(List.of(new User("alice", "secret123")));
+        provider.setUsers(List.of(new UserConfig("alice", "secret123")));
 
         var postData = Map.of(
                 "username", "alice",
@@ -53,7 +54,7 @@ public class StaticUserDataProviderTest {
     @Test
     void verifyWithInvalidPassword() {
         // Given
-        provider.setUsers(List.of(new User("bob", "correctPassword")));
+        provider.setUsers(List.of(new UserConfig("bob", "correctPassword")));
 
         var postData = Map.of(
                 "username", "bob",
@@ -67,7 +68,7 @@ public class StaticUserDataProviderTest {
     @Test
     void verifyWithNonExistentUser() {
         // Given
-        provider.setUsers(List.of(new User("alice", "secret")));
+        provider.setUsers(List.of(new UserConfig("alice", "secret")));
 
         var postData = Map.of(
                 "username", "nonexistent",
@@ -90,7 +91,7 @@ public class StaticUserDataProviderTest {
     @Test
     void verifyWithHashedPassword() {
         // Given - SHA-512 hash format: $6$salt$hash
-        provider.setUsers(List.of(new User("alice", "$6$somesalt$12345678901234567890abcdef")));
+        provider.setUsers(List.of(new UserConfig("alice", "$6$somesalt$12345678901234567890abcdef")));
 
 
         Map<String, String> postData = Map.of(
@@ -105,7 +106,7 @@ public class StaticUserDataProviderTest {
     @Test
     void verifyReturnsAllUserAttributes() {
         // Given
-        var user = new User("alice", "secret");
+        var user = new UserConfig("alice", "secret");
         user.setAttributes(Map.of("headerRole", "admin", "email", "alice@example.com"));
         provider.setUsers(List.of(user));
 
@@ -126,9 +127,9 @@ public class StaticUserDataProviderTest {
     @Test
     void setUsersPopulatesUsersByName() {
         // Given
-        User user1 = new User("alice", "pass1");
-        User user2 = new User("bob", "pass2");
-        List<User> users = List.of(user1, user2);
+        UserConfig user1 = new UserConfig("alice", "pass1");
+        UserConfig user2 = new UserConfig("bob", "pass2");
+        List<UserConfig> users = List.of(user1, user2);
 
         // When
         provider.setUsers(users);
@@ -142,10 +143,10 @@ public class StaticUserDataProviderTest {
     @Test
     void setUsersClearsExistingUsers() {
         // Given
-        User user1 = new User("alice", "pass1");
+        UserConfig user1 = new UserConfig("alice", "pass1");
         provider.setUsers(List.of(user1));
 
-        User user2 = new User("bob", "pass2");
+        UserConfig user2 = new UserConfig("bob", "pass2");
 
         // When
         provider.setUsers(List.of(user2));
@@ -159,8 +160,8 @@ public class StaticUserDataProviderTest {
     @Test
     void initPopulatesUsersByName() {
         // Given
-        User user1 = new User("alice", "pass1");
-        User user2 = new User("bob", "pass2");
+        UserConfig user1 = new UserConfig("alice", "pass1");
+        UserConfig user2 = new UserConfig("bob", "pass2");
         provider.getUsers().add(user1);
         provider.getUsers().add(user2);
 
@@ -179,7 +180,7 @@ public class StaticUserDataProviderTest {
         @Test
         void testConstructorWithParameters() {
             // When
-            User user = new User("testuser", "testpass");
+            UserConfig user = new UserConfig("testuser", "testpass");
 
             // Then
             assertEquals("testuser", user.getUsername());
@@ -232,9 +233,9 @@ public class StaticUserDataProviderTest {
     @Test
     void multipleUsersVerification() {
         // Given
-        User alice = new User("alice", "pass1");
-        User bob = new User("bob", "pass2");
-        User charlie = new User("charlie", "pass3");
+        UserConfig alice = new UserConfig("alice", "pass1");
+        UserConfig bob = new UserConfig("bob", "pass2");
+        UserConfig charlie = new UserConfig("charlie", "pass3");
         provider.setUsers(List.of(alice, bob, charlie));
 
         // When & Then - Verify Alice
@@ -256,7 +257,7 @@ public class StaticUserDataProviderTest {
     @Test
     void emptyPasswordIsRejected() {
         // Given
-        User user = new User("alice", "secret");
+        UserConfig user = new UserConfig("alice", "secret");
         provider.setUsers(List.of(user));
 
         Map<String, String> postData = Map.of(
@@ -271,7 +272,7 @@ public class StaticUserDataProviderTest {
     @Test
     void nullPasswordInUser() {
         // Given
-        User user = new User();
+        UserConfig user = new UserConfig();
         user.setUsername("alice");
         // password is null
         provider.setUsers(List.of(user));

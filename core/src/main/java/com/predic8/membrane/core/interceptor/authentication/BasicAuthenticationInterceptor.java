@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
 import com.predic8.membrane.core.util.security.*;
 import org.slf4j.*;
 
@@ -110,7 +111,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
         return exc.getRequest().getHeader().getFirstValue(AUTHORIZATION) == null;
     }
 
-    public List<User> getUsers() {
+    public List<UserConfig> getUsers() {
         if (userDataProvider instanceof StaticUserDataProvider sud) {
             return sud.getUsers();
         }
@@ -121,7 +122,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
      * @description A list of username/password combinations to accept.
      */
     @MCChildElement(order = 20)
-    public void setUsers(List<User> users) {
+    public void setUsers(List<UserConfig> users) {
         if (userDataProvider instanceof StaticUserDataProvider sud) {
             sud.setUsers(users);
             return;

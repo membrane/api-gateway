@@ -45,7 +45,7 @@ import java.util.*;
 @MCElement(name = "staticUserDataProvider")
 public class StaticUserDataProvider extends AbstractUserDataProvider {
 
-	private List<User> users = new ArrayList<>();
+	private List<UserConfig> users = new ArrayList<>();
 
 	@MCElement(name="user", component =false, id="staticUserDataProvider-user")
 	public static class UserConfig extends User {
@@ -107,12 +107,12 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
 		}
 	}
 
-	public List<User> getUsers() {
+	public List<UserConfig> getUsers() {
 		return users;
 	}
 
 	@MCChildElement
-	public void setUsers(List<User> users) {
+	public void setUsers(List<UserConfig> users) {
 		usersByName.clear();
 		for(var user : users){
 			usersByName.put(user.getUsername(), user);

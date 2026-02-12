@@ -16,6 +16,7 @@ package com.predic8.membrane.integration.withoutinternet.interceptor.oauth2;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
 import com.predic8.membrane.core.interceptor.oauth2.ClaimList;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
@@ -43,7 +44,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     static Exchange exc;
     static OAuth2AuthorizationServerInterceptor oasi;
     static MembraneAuthorizationService mas;
-    static StaticUserDataProvider.UserConfig johnsUserData;
+    static UserConfig johnsUserData;
     static Map<String,String> afterLoginMockParams;
     static String afterCodeGenerationCode;
     static String afterTokenGenerationToken;
@@ -334,8 +335,8 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
 
     private void setOasiUserDataProvider() {
         StaticUserDataProvider udp = new StaticUserDataProvider();
-        ArrayList<User> users = new ArrayList<>();
-        johnsUserData = new StaticUserDataProvider.UserConfig("john", "password");
+        ArrayList<UserConfig> users = new ArrayList<>();
+        johnsUserData = new UserConfig("john", "password");
         johnsUserData.getAttributes().put("email","e@mail.com");
         users.add(johnsUserData);
         udp.setUsers(users);
