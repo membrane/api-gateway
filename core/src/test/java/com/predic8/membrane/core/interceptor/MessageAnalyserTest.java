@@ -19,7 +19,10 @@ import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.net.URISyntaxException;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageAnalyserTest {
@@ -66,12 +69,11 @@ public class MessageAnalyserTest {
 		return exc;
 	}
 
-	private Exchange getRequest(String path) throws IOException {
-		Exchange exc = new Exchange(null);
-		Request req = new Request();
-		req.create("POST", "http://test", "HTTP/", new Header(), getClass().getClassLoader().getResourceAsStream(path));
-		exc.setRequest(req);
-		return exc;
+	private Exchange getRequest(String path) throws IOException, URISyntaxException {
+		return Request.post("http://test/")
+				.header(CONTENT_TYPE, APPLICATION_XML)
+				.body(getClass().getClassLoader().getResourceAsStream(path))
+				.buildExchange();
 	}
 
 }

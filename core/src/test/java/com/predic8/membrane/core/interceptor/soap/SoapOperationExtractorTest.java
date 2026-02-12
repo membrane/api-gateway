@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.soap;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -72,10 +73,11 @@ public class SoapOperationExtractorTest {
 
 	}
 
-	private Exchange getExchange(String path) throws IOException {
+	private Exchange getExchange(String path) throws IOException, URISyntaxException {
 		Exchange exc = new Exchange(null);
-		Request req = new Request();
-		req.create("POST", "http://test", "HTTP/", new Header(), getClass().getClassLoader().getResourceAsStream(path));
+		Request req = Request.post("http://test/")
+				.body(getClass().getClassLoader().getResourceAsStream(path))
+				.build();
 		exc.setRequest(req);
 		return exc;
 	}
