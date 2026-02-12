@@ -52,8 +52,8 @@ api:
     uri: /token
   flow:
     - basicAuthentication:
-        fileUserDataProvider:
-          htpasswdPath: .htpasswd
+        htpasswdFileProvider:
+          location: .htpasswd
     - request:
         - template:
             contentType: application/json
@@ -884,7 +884,7 @@ global:
             - secret:
                 value: 08f121fa-3cda-49c6-90db-1f189ff80756
       extractors:
-        - headerExtractor:
+        - header:
             name: X-Api-Key
 ```
 

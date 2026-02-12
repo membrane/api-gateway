@@ -33,22 +33,18 @@ import static java.util.stream.Stream.*;
  * Extractors can read the keys from HTTP headers, query parameters and may other message part. When validation succeeds, the interceptor adds an
  * <code>ApiKeySecurityScheme</code> with the resolved scopes to the <code>Exchange</code>. Scopes can be checked in later plugins
  * using the SpEL function <code>hasScope("...")</code>.
- * <p>
- * Typical configuration:
- * </p>
- * <pre><code>&lt;api&gt;
- *   &lt;apiKey required="true"&gt;
- *     &lt;!-- one or more key stores --&gt;
- *     ...
- *
- *     &lt;!-- optional: customize extraction (header/query) --&gt;
- *     &lt;headerExtractor name="X-Api-Key"/&gt;
- *   &lt;/apiKey&gt;
- * &lt;/api&gt;</code></pre>
- * <p>
  * On missing or invalid keys, a Problem Details response is generated (401 for missing, 403 for invalid) unless
  * <code>required="false"</code> is set.
- * </p>
+ * @yaml <pre><code>
+ * api:
+ *  port: 2000
+ *  flow:
+ *    - apiKey:
+ *       required: true
+ *       extractors:
+ *         - header:
+ *             name: X-Api-Key
+ * </code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "apiKey")
@@ -207,19 +203,19 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     /**
      * @description Configures how and where API keys are extracted from requests (e.g., HTTP header or URL query parameter).
      * Provide one or more extractor elements. If omitted, a header extractor using <code>X-Api-Key</code> is used.
-     * @default <headerExtractor /> (header name <code>X-Api-Key</code>)
+     * @default <header /> (header name <code>X-Api-Key</code>)
      * <p>
      * Examples:
      * </p>
      * <pre><code><apiKey>
      *   <!-- header: X-Api-Key (default) -->
-     *   <headerExtractor />
+     *   <header />
      *
      *   <!-- custom header -->
-     *   <headerExtractor name="Authorization" prefix="Api-Key "/>
+     *   <header name="Authorization" prefix="Api-Key "/>
      *
      *   <!-- query parameter -->
-     *   <queryParamExtractor name="api_key"/>
+     *   <query name="api_key"/>
      * </apiKey></code></pre>
      */
     @MCChildElement(allowForeign = true, order = 1)

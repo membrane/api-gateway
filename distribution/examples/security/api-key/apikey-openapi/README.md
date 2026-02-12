@@ -50,7 +50,7 @@ This example shows how to use API keys with role-based access control (RBAC). An
       <api port="2000">
           <openapi location="fruitshop-api-v2-openapi-3-security.yml" validateRequests="yes" validationDetails="yes"/>
           <apiKey required = "false">
-              <headerExtractor name="X-Api-Key"/>
+              <header name="X-Api-Key"/>
           </apiKey>
       </api>
   ```

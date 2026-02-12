@@ -22,7 +22,7 @@ import com.predic8.membrane.core.proxies.*;
 import javax.annotation.concurrent.*;
 import java.util.*;
 
-@MCElement(name = "publicURL")
+@MCElement(name = "publicURL", collapsed = true)
 public class PublicUrlManager {
     @GuardedBy("publicURLs")
     private final List<String> publicURLs = new ArrayList<>();

@@ -19,7 +19,7 @@ api:
   port: 3000
   flow:
     - basicAuthentication:
-        fileUserDataProvider:
-          htpasswdPath: ./.htpasswd
+        htpasswdFileProvider:
+          location: ./.htpasswd
   target:
     url: https://api.predic8.de

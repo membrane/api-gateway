@@ -17,7 +17,7 @@
                     <keyTable>key</keyTable>
                     <scopeTable>scope</scopeTable>
                 </databaseApiKeyStore>
-                <headerExtractor />
+                <header />
             </apiKey>
             <target url="https://api.predic8.de"/>
         </api>

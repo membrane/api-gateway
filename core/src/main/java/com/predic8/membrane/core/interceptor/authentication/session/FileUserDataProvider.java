@@ -30,7 +30,7 @@ import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils
 /**
  * @description A <i>user data provider</i> utilizing <code>htpasswd</code>-style files.
  * <p>
- *   The <i>fileUserDataProvider</i> loads users from a file in the format
+ *   The <i>htpasswdFileProvider</i> loads users from a file in the format
  *   <code>username:hash</code> (one entry per line).
  * </p>
  * <p>
@@ -40,21 +40,21 @@ import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils
  *   The Apache <code>$apr1$...</code> format is not supported.
  * </p>
  */
-@MCElement(name="fileUserDataProvider")
+@MCElement(name="htpasswdFileProvider")
 public class FileUserDataProvider implements UserDataProvider {
     private final Map<String, User> usersByName = new HashMap<>();
 
-    private String htpasswdPath;
+    private String location;
 
     /**
      * @description A path pointing to the htpasswd file.
      */
     @MCAttribute
-    public void setHtpasswdPath(String path) {
-        this.htpasswdPath = path;
+    public void setLocation(String path) {
+        this.location = path;
     }
 
-    public String getHtpasswdPath() { return this.htpasswdPath; }
+    public String getLocation() { return this.location; }
 
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
@@ -109,7 +109,7 @@ public class FileUserDataProvider implements UserDataProvider {
     public void init(Router router) {
         List<String> lines;
         try {
-            lines = Files.readAllLines(Paths.get(this.htpasswdPath));
+            lines = Files.readAllLines(Paths.get(this.location));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

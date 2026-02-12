@@ -30,7 +30,7 @@ The resulting JWT is stored in the body and returned via `<return>`.
 <api port="2000" name="Authorization Server">
  <apiKey required="true">
   <apiKeyFileStore location="demo-keys.txt" />
-  <headerExtractor />
+  <header />
  </apiKey>
  <request>
   <template contentType="application/json">
