@@ -1,27 +1,22 @@
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
-import com.predic8.membrane.core.interceptor.log.LogInterceptor;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.router.DefaultRouter;
-import com.predic8.membrane.core.transport.http.HttpTransport;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.log.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.http.*;
+import org.jetbrains.annotations.*;
+import org.junit.jupiter.api.*;
 
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.net.*;
+import java.util.*;
+import java.util.concurrent.atomic.*;
 
-import static io.restassured.RestAssured.given;
-import static java.nio.charset.StandardCharsets.US_ASCII;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static java.nio.charset.StandardCharsets.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class PatchWithoutBodyTest {
 
