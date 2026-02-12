@@ -34,7 +34,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  *    name: Mock Node 1
  * </code></pre>
  */
-@MCElement(name="counter")
+@MCElement(name="counter", collapsed = true)
 public class CountInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(CountInterceptor.class.getName());
