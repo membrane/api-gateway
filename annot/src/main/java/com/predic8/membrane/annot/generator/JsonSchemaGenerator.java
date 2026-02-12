@@ -499,7 +499,6 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         if (ei.getAnnotation().collapsed()) return false;
         if (ei.getAnnotation().noEnvelope()) return false;
-        if (ei.isString()) return false;
 
         return hasAnyConfigurableProperty(ei, main);
     }
@@ -525,6 +524,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .anyMatch(ai -> !"id".equals(ai.getXMLName()))
                 || ei.getTci() != null
                 || !ei.getChildElementSpecs().isEmpty()
+                || ei.getOai() != null
                 || hasComponentChild(ei, main);
     }
 
