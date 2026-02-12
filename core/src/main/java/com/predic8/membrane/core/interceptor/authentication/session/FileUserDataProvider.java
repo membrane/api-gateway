@@ -35,7 +35,7 @@ import java.util.*;
  * </p>
  */
 @MCElement(name="htpasswdFileProvider")
-public class FileUserDataProvider implements UserDataProvider {
+public class FileUserDataProvider extends AbstractUserDataProvider {
     private final Map<String, User> usersByName = new HashMap<>();
 
     private String location;
