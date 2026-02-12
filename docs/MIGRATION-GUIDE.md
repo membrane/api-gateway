@@ -229,9 +229,7 @@ Default naming scheme for `<serviceProxys>` has changed. This might affect exist
     location: .htpasswd #   htpasswdPath: .htpasswd
   ```
 
-## Updated Yaml Syntax
-
-### YAML configuration in list elements
+## YAML configuration syntax in list elements
 
 * List items can now be written in *inline form* if the list accepts **exactly one** allowed element type (no polymorphic candidates) and the element is neither `collapsed` nor `noEnvelope`.
 * The old wrapper form remains supported: `- <kind>: { ... }`.
@@ -255,6 +253,96 @@ Example:
     - name: url
       value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
     ```
+
+
+## OpenApi
+Renamed `specs` to `openapi`. 
+
+**Before:**
+```yaml
+api:
+    port: 2000
+    specs:
+      - openapi:
+          location: fruitshop-api.yml
+          validateRequests: "yes"
+```
+**After (using the inline form):**
+```yaml
+api:
+    port: 2000
+    openapi:
+      - location: fruitshop-api.yml
+        validateRequests: "yes"
+```
+
+## choose
+- `cases:` is gone (the case list is now **noEnvelope** under `choose`)
+- `otherwise` is now a **list item** inside `choose`
+- Only **one** `otherwise` is allowed, and it must be the **last** item of the list
+
+**Before:**
+
+```yaml
+api:
+  port: 2000
+  flow:
+    - choose:
+        cases:
+          - case:
+              test: foo
+              flow:
+                - log: {}
+        otherwise:
+          - return: {}
+```
+**After:**
+```yaml
+api:
+  port: 2000
+  flow:
+    - choose:
+        - case:
+            test: foo
+            flow:
+              - log: {}
+        - otherwise:
+            - return: {}
+```
+
+## chainDef and chain
+- `chainDef` was removed.
+- Define chains with `chain` and reference them like any other component via `$ref`.
+
+**Before:**
+
+```yaml
+components:
+  log:
+    chainDef:
+      flow:
+        - log: {}
+---
+api:
+  port: 2000
+  flow:
+    - chain:
+        ref: '#/components/log'
+```
+
+**After:**
+
+```yaml
+components:
+  log:
+    chain:
+      - log: {}
+---
+api:
+  port: 2000
+  flow:
+    - $ref: '#/components/log'
+```
 
 ### Yaml configuration for Elements with exactly one configurable Attribute 
 Some Elements with **exactly one** configurable Attribute can now be configured inline. This **does not** apply to all elements with exactly one configurable Attribute.
@@ -363,85 +451,3 @@ api:
 ```
 
 
-### `chain`
-
-The `chainDef` no longer exists. Use `chain` to define a chain of plugins and simply reference them as all other components.
-
-instead of
-```yaml
-components:
-  log:
-    chainDef:
-      flow:
-         - log:
-             message: "Path: ${path}"
----
-api:
-  port: 2000
-  flow:
-    - chain:
-        ref: '#/components/log'
-```
-use
-```yaml
-components:
-  log:
-    chain:
-      - log:
-          message: "Path: ${path}"
----
-api:
-  port: 2000
-  flow:
-    - $ref: '#/components/log'
-```
-
-### `choose`
-The `otherwise` is now an item of the `case` list. Only one `otherwise` is allowed and must be the last item of the `case` list.
-```yaml
-api:
-  port: 2000
-  flow:
-    - choose:
-       cases:
-         - case:
-             test: foo
-             flow:
-               - log: {}
-       otherwise:
-         - return: {}
-```
-use
-```yaml
-api:
-  port: 2000
-  flow:
-    - choose:
-        - case:
-            test: foo
-            flow:
-              - log: {}
-        - otherwise:
-            - return: {}
-```
-
-### OpenApi
-
-Renamed `specs` to `openapi`
-instead of:
-```yaml
-api:
-    port: 2000
-    specs:
-      - openapi:
-          location: fruitshop-api.yml
-          validateRequests: "yes"
-```
-use
-```yaml
-api:
-    port: 2000
-    openapi:
-      - location: fruitshop-api.yml
-        validateRequests: "yes"
-```
