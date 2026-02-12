@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.1.0.json
 
 # This is an example config demonstrating the basic structure of a Membrane API Gateway configuration.
 # It focuses on the main configuration sections where you can attach your plugins.
