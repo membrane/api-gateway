@@ -20,15 +20,15 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.text.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.*;
 
 import java.io.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.*;
+import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.INFO;
+import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static org.slf4j.LoggerFactory.*;
 
@@ -93,6 +93,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             try {
                 writeLog(exchangeExpression.evaluate(exc, flow, String.class));
             } catch (ExchangeExpressionException e) {
+                checkExceptionWhileAccessingBody(e);
                 getLogger(category).warn("Problems evaluating the expression {} . Message: {} Extensions: {}", getMessage(), e.getMessage(), e.getExtensions());
             }
             return;
@@ -132,6 +133,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         try {
             return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
         } catch (Exception e) {
+            checkExceptionWhileAccessingBody(e);
             return "Body: [error reading body: %s]".formatted(e.getMessage());
         }
     }
@@ -140,16 +142,22 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         switch (level) {
             case TRACE -> getLogger(category).trace(msg);
             case DEBUG -> getLogger(category).debug(msg);
-            case INFO -> getLogger(category).info(brightBlue( msg));
-            case WARN -> getLogger(category).warn(brightMagenta( msg));
+            case INFO -> getLogger(category).info(brightBlue(msg));
+            case WARN -> getLogger(category).warn(brightMagenta(msg));
             case ERROR, FATAL -> getLogger(category).error(brightRed(msg));
+        }
+    }
+
+    private static void checkExceptionWhileAccessingBody(Exception e) {
+        if (getRootCause(e) instanceof IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
     @Override
     public String getShortDescription() {
         return !getMessage().isEmpty() ? "Logs: '%s'".formatted(getMessage()) :
-                "Logs the " + (body ? "headers of " : "") + "requests and responses" +" using Log4J's " + level.toString() + " level.";
+                "Logs the " + (body ? "headers of " : "") + "requests and responses" + " using Log4J's " + level.toString() + " level.";
     }
 
     @Override
