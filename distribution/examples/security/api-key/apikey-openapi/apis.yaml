@@ -16,7 +16,7 @@ api:
         # API keys are validated in the OpenAPI validator with validateSecurity: true. See the OpenAPI document for details.
         required: false
         extractors:
-          - headerExtractor:
+          - header:
               name: "X-Api-Key"
       # The API key must be extracted before the OpenAPI validator is called.
       # Normally, the OpenAPI is validated before the flow is executed. By explicitly

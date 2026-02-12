@@ -24,7 +24,7 @@ import java.util.List;
 
 import static com.predic8.membrane.core.graphql.GraphQLoverHttpValidator.getMutationOperations;
 
-@MCElement(name = "mutation")
+@MCElement(name = "mutation", collapsed = true)
 public class MutationFilter implements GraphQLFeatureFilter {
 
     private String name;

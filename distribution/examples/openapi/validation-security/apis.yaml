@@ -13,8 +13,8 @@ api:
               - secret:
                   value: demo-key-foobar
         extractors:
-          - headerExtractor: {}
-          - queryParamExtractor:
+          - header: {}
+          - query:
               name: X-Api-Key
   target:
     host: localhost

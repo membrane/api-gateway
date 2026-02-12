@@ -384,7 +384,7 @@ public class GenericYamlParserTest {
     }
 
     private static APIProxy parse(String yaml, TestBeanRegistry reg) {
-        return GenericYamlParser.createAndPopulateNode(new ParsingContext<TestBeanRegistry>("api", reg, K8S_HELPER), APIProxy.class, parse(yaml));
+        return GenericYamlParser.createAndPopulateNode(new ParsingContext<>("api", reg,K8S_HELPER, null, null,null), APIProxy.class, parse(yaml));
     }
 
     public static JsonNode parse(String yaml) {

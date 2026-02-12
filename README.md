@@ -52,13 +52,14 @@ api:
     uri: /token
   flow:
     - basicAuthentication:
-        fileUserDataProvider:
-          htpasswdPath: .htpasswd
+        htpasswdFileProvider:
+          location: .htpasswd
     - request:
         - template:
+            contentType: application/json
             src: |
               {
-                "sub": "${fn.user()}"
+                "sub": ${user()}
               }
         - jwtSign:
             jwk:
@@ -716,7 +717,7 @@ api:
             contentType: application/json
             src: |
               {
-                "destination": "${json.city}"
+                "destination": ${json.city}
               }
     - return:
         status: 200
@@ -750,7 +751,7 @@ api:
     - request:
         - template:
             src: |
-              Buenas noches, ${fn.xpath('/person/@firstname')}
+              Buenas noches, ${xpath('/person/@firstname')}
         - return:
             status: 200
 ```
@@ -883,7 +884,7 @@ global:
             - secret:
                 value: 08f121fa-3cda-49c6-90db-1f189ff80756
       extractors:
-        - headerExtractor:
+        - header:
             name: X-Api-Key
 ```
 
@@ -958,10 +959,9 @@ api:
         consentFile: consentFile.json
         staticUserDataProvider:
           users:
-            - user:
-                username: john
-                password: secret
-                email: john@predic8.de
+            - username: john
+              password: secret
+              email: john@predic8.de
         staticClientList:
           clients:
             - clientId: abc
@@ -991,12 +991,10 @@ api:
   flow:
     - basicAuthentication:
         users:
-          - user:
-              username: alice
-              password: secret
-          - user:
-              username: bob
-              password: secret
+          - username: alice
+            password: secret
+          - username: bob
+            password: secret
   target:
     url: https://api.predic8.de
 ```

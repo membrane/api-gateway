@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.core.cli;
 
+import com.fasterxml.jackson.core.*;
 import com.predic8.membrane.annot.beanregistry.*;
+import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -170,7 +172,15 @@ public class RouterCLI {
             } else {
                 log.error("Fatal error: {}", errorMsg);
             }
-        } catch (Exception ex) {
+        } catch (ConfigurationParsingException e) {
+            // Keep with one param to log otherwise first color code will be ignored!
+            try {
+                log.error("{}", "%s%s%s\n%s".formatted(RED(),e.getMessage(), RESET(),e.getFormattedReport()));
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex, log);
         }
         System.exit(1);

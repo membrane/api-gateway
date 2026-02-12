@@ -30,15 +30,14 @@ The resulting JWT is stored in the body and returned via `<return>`.
 <api port="2000" name="Authorization Server">
  <apiKey required="true">
   <apiKeyFileStore location="demo-keys.txt" />
-  <headerExtractor />
+  <header />
  </apiKey>
  <request>
-  <setProperty name="scopes" value="${scopes()}"/>
-  <template>
+  <template contentType="application/json">
    {
      "sub": "user@example.com", 
      "aud": "order", 
-     "scope": "${property.scopes}"
+     "scope": ${scopes()}
    }
   </template>
   <jwtSign>

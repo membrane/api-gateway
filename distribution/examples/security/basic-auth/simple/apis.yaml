@@ -4,12 +4,10 @@ api:
   flow:
     - basicAuthentication:
         users:
-          - user:
-              username: alice
-              password: membrane
-          - user:
-              username: bob
-              password: membrane2025
+          - username: alice
+            password: membrane
+          - username: bob
+            password: membrane2025
   target:
     url: https://api.predic8.de
 
@@ -19,7 +17,7 @@ api:
   port: 3000
   flow:
     - basicAuthentication:
-        fileUserDataProvider:
-          htpasswdPath: ./.htpasswd
+        htpasswdFileProvider:
+          location: ./.htpasswd
   target:
     url: https://api.predic8.de

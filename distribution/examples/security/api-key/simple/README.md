@@ -57,8 +57,8 @@ global:
             - secret:
                 value: abc123
       extractors:
-        - headerExtractor: {}
-        - queryParamExtractor: {}
+        - header: {}
+        - query: {}
 ```
 ###  More Complex Examples
 See:

@@ -18,7 +18,7 @@
         <!--API key authorization, providing key is optional. Certain scopes allow for additional access rights.-->
         <api port="2000">
             <apiKey required="false">
-                <headerExtractor name="X-Key" />
+                <header name="X-Key" />
             </apiKey>
 
             <setProperty name="scopes" value="${scopes()}" />

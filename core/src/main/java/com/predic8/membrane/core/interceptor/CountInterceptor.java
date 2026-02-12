@@ -30,11 +30,10 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * @description Returns a simple HTML page and counts how often it was requested (increments per request).
  * @yaml
  * <pre><code>
- *  counter:
- *    name: Mock Node 1
+ *  counter: name: Mock Node 1
  * </code></pre>
  */
-@MCElement(name="counter")
+@MCElement(name="counter", collapsed = true)
 public class CountInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(CountInterceptor.class.getName());

@@ -23,8 +23,8 @@ import java.util.*;
 /**
  * @description A <i>user data provider</i> utilizing <code>htpasswd</code>-style files.
  * <p>
- * The <i>fileUserDataProvider</i> loads users from a file in the format
- * <code>username:hash</code> (one entry per line).
+ *   The <i>htpasswdFileProvider</i> loads users from a file in the format
+ *   <code>username:hash</code> (one entry per line).
  * </p>
  * <p>
  * Supported hash formats are <i>crypt(3)</i>-style hashes
@@ -34,16 +34,28 @@ import java.util.*;
  * The Apache <code>$apr1$...</code> format is not supported.
  * </p>
  */
-@MCElement(name = "fileUserDataProvider")
-public class FileUserDataProvider extends AbstractUserDataProvider {
+@MCElement(name="htpasswdFileProvider")
+public class FileUserDataProvider implements UserDataProvider {
+    private final Map<String, User> usersByName = new HashMap<>();
 
-    private String htpasswdPath;
+    private String location;
+
+    /**
+     * @description A path pointing to the htpasswd file.
+     */
+    @MCAttribute
+    public void setLocation(String path) {
+        this.location = path;
+    }
+
+    public String getLocation() { return this.location; }
+
 
     @Override
     public void init(Router router) {
         List<String> lines;
         try {
-            lines = Files.readAllLines(Paths.get(this.htpasswdPath));
+            lines = Files.readAllLines(Paths.get(this.location));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -54,17 +66,5 @@ public class FileUserDataProvider extends AbstractUserDataProvider {
                 getUsersByName().put(user.getUsername(), user);
             }
         }
-    }
-
-    /**
-     * @description A path pointing to the htpasswd file.
-     */
-    @MCAttribute
-    public void setHtpasswdPath(String path) {
-        this.htpasswdPath = path;
-    }
-
-    public String getHtpasswdPath() {
-        return this.htpasswdPath;
     }
 }

@@ -53,7 +53,7 @@ api:
       - apiKey:
            required: false
            extractors:
-              - headerExtractor:
+              - header:
                    name: X-Key
       - setProperty:
            name: scopes

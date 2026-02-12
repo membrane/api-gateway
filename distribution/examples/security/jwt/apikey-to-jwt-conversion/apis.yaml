@@ -10,17 +10,15 @@ api:
           - apiKeyFileStore:
               location: demo-keys.txt
         extractors:
-          - headerExtractor: {}
+          - header: {}
     - request:
-        - setProperty:
-            name: scopes
-            value: ${scopes()}
         - template:
+            contentType: application/json
             src: |
               {
                 "sub": "user@example.com",
                 "aud": "order",
-                "scope": "${property.scopes}"
+                "scope": ${scopes()}
               }
         - jwtSign:
             jwk:

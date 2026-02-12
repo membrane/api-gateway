@@ -16,5 +16,5 @@ package com.predic8.membrane.core.interceptor.apikey.stores;
 
 import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name = "scopeTable", mixed = true)
+@MCElement(name = "scopeTable", mixed = true, collapsed = true)
 public class ScopeTable extends TableName{ }

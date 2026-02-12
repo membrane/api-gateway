@@ -51,7 +51,7 @@ A common use case of the `if` plugin is the manipulation of responses based on t
             <template pretty="yes" contentType="application/json">
                 {
                   "type": "https://membrane-api.io/error/",
-                  "title": "${exc.response.statusMessage}"
+                  "title": ${exc.response.statusMessage}
                 }
             </template>
         </if>

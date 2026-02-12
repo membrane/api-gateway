@@ -27,15 +27,16 @@ import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
  * <p>
  * Example usage inside <code>&lt;apiKey&gt;</code>:
  * </p>
- * <pre><code><apiKey>
- *   <headerExtractor /> <!-- default: X-Api-Key -->
- *
- *   <!-- custom header name -->
- *   <headerExtractor name="Authorization"/>
- * </apiKey></code></pre>
+ * @yaml <pre><code>
+ * apiKey:
+ *  extractors:
+ *    - header: {} # default: X-Api-Key
+ *    - header:
+ *        name: Authorization # custom header name
+ * </code></pre>
  * @topic 3. Security and Validation
  */
-@MCElement(name="headerExtractor", component = false)
+@MCElement(name="header", id = "headerExtractor", component = false)
 public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
 
     private HeaderName headerName = new HeaderName("X-Api-Key");
@@ -58,7 +59,7 @@ public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
      */
     @MCAttribute(attributeName = "name")
     public void setHeaderName(String headerName) {
-        this.headerName = new HeaderName(headerName);
+        if(!headerName.isBlank()) this.headerName = new HeaderName(headerName);
     }
 
     public String getHeaderName() {
