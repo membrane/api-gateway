@@ -1,3 +1,313 @@
+# Migrate to Membrane 7.1
+
+This guide explains how to migrate existing Membrane installations to **Membrane 7.1**.
+Most breaking changes in **7.1** are **YAML-related**, so they mainly affect upgrades from **Membrane 7.x (YAML)** to **7.1**.
+
+## Recommended Migration Strategy
+
+1. **Start from your current version:**
+    * **Coming from Membrane 6.x:** follow the [Migration Guide from Membrane 6.X to 7](#migration-guide-from-membrane-6x-to-7) first, then apply the 7.1 changes from this guide.
+    * **Already on Membrane 7.x:** apply the changes from this guide.
+
+2. **Decide on your configuration format**
+    * **Staying on XML:** remove deprecated interceptors/syntax as listed and apply only the non-YAML changes.
+    * **Using / moving to YAML:** migrate your YAML to the 7.1 syntax described here. If you’re coming from 6.x, use this guide as the “target YAML syntax”, but don’t skip the additional breaking changes covered in the [Migration Guide from Membrane 6.X to 7](#migration-guide-from-membrane-6x-to-7) .
+
+## Removed Interceptors and Plugins
+
+The following legacy interceptors have been removed:
+
+| Removed                     | Replacement |
+|-----------------------------|-------------|
+| `MethodOverrideInterceptor` | -           |
+
+Remove these elements from your configuration and replace them with modern equivalents.
+
+## Groovy
+- Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually.
+
+## ApiKey extractors:
+- Rename `headerExtractor` to `header`
+- Rename `queryParamExtractor` to `query`
+```yaml
+# before
+apiKey: 
+  extractors:
+    - headerExtractor: 
+        name: X-API-KEY
+    - queryParamExtractor: 
+        name: api-key
+
+# now 
+apiKey:
+  extractors:
+    - header:
+        name: X-API-KEY
+    - query:
+        name: api-key
+```
+
+## fileUserDataProvider
+- rename `fileUserDataProvider` to `htpasswdFileProvider`
+- rename `htpasswdPath` to `location`
+```yaml
+# before
+fileUserDataProvider:
+  htpasswdPath: .htpasswd
+
+# now
+htpasswdFileProvider: 
+  location: .htpasswd 
+```
+
+## YAML configuration syntax in list elements
+
+* List items can now be written in *inline form* if the list accepts **exactly one** allowed element type (no polymorphic candidates) and the element is neither `collapsed` nor `noEnvelope`.
+* The old wrapper form remains supported: `- <kind>: { ... }`.
+
+```yaml
+# before
+properties:
+  - property:
+      name: driverClassName
+      value: org.h2.Driver
+  - property:
+      name: url
+      value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+
+# now 
+properties:
+  - name: driverClassName
+    value: org.h2.Driver
+  - name: url
+    value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+```
+
+
+## OpenApi
+Renamed `specs` to `openapi`.
+
+**Before:**
+```yaml
+# before
+api:
+    port: 2000
+    specs:
+      - openapi:
+          location: fruitshop-api.yml
+          validateRequests: "yes"
+
+# now (using the inline list item form)
+api:
+  port: 2000
+  openapi:
+    - location: fruitshop-api.yml
+      validateRequests: "yes"
+```
+
+## setCookie
+- Use `noEnvelope` for `cookies` list
+```yaml
+# before
+setCookies:
+  cookies:
+    - cookie:
+        name: foo
+        value: bar
+        secure: false
+
+# now (using the inline list item form)
+setCookies:
+  - name: foo
+    value: bar
+    secure: false
+```
+
+## balancer
+- `clustersFromSpring` was renamed to `clusters`
+- the extra `clusters` list layer was removed (you now define clusters directly)
+```yaml
+# before
+balancer:
+  clustersFromSpring:
+    - clusters:
+        - cluster:
+            nodes:
+              - node:
+                  host: localhost
+                  port: 4000
+              - node:
+                  host: localhost
+                  port: 4001
+
+# now (using the inline list item form)
+balancer:
+  clusters:
+    - nodes:
+        - host: localhost
+          port: 4000
+        - host: localhost
+          port: 4001
+```
+
+## choose
+- `cases:` is gone (the case list is now **noEnvelope** under `choose`)
+- `otherwise` is now a **list item** inside `choose`
+- Only **one** `otherwise` is allowed, and it must be the **last** item of the list
+```yaml
+# before
+choose:
+  cases:
+    - case:
+        test: foo
+        flow:
+          - log: {}
+  otherwise:
+    - return: {}
+
+# now
+choose:
+  - case:
+      test: foo
+      flow:
+        - log: {}
+  - otherwise:
+      - return: {}
+```
+
+## chainDef and chain
+- `chainDef` was removed.
+- Define chains with `chain` and reference them like any other component via `$ref`.
+```yaml
+# before
+components:
+  log:
+    chainDef:
+      flow:
+        - log: {}
+---
+api:
+  port: 2000
+  flow:
+    - chain:
+        ref: '#/components/log'
+
+```
+```yaml
+# now
+components:
+  log:
+    chain:
+      - log: {}
+---
+api:
+  port: 2000
+  flow:
+    - $ref: '#/components/log'
+```
+
+### YAML configuration for Elements with exactly one configurable Attribute
+Some Elements with **exactly one** configurable Attribute can now be configured inline. This **does not** apply to all elements with exactly one configurable Attribute.
+
+The supported elements are: `api.description`, `publicURL`, `headerFilter.include`, `headerFilter.exclude`, `keyTable`, `scopeTable`, `accessControl.allow`, `accessControl.deny`, `counter`, `mutation`
+
+#### headerFilter
+```yaml
+# before
+headerFilter:
+  rules:
+    - include:
+        pattern: "X-XSS-Protection"
+    - exclude:
+        pattern: "X-.*"
+
+# now 
+headerFilter:
+  rules:
+    - include: "X-XSS-Protection"
+    - exclude: "X-.*"
+```
+
+#### mutation
+```yaml
+# before
+graphQLProtection: 
+  disallow:
+    - mutation: 
+        name: foo
+
+# now
+graphQLProtection:
+  disallow:
+    - mutation: foo
+```
+
+#### counter
+```yaml
+# before 
+counter: 
+  name: mock1
+
+# now
+counter: mock1
+```
+
+#### keyTable
+```yaml
+# before
+apiKey: 
+  stores:
+    - databaseApiKeyStore: 
+        keyTable: 
+          name: foo
+
+# now
+apiKey:
+  stores:
+    - databaseApiKeyStore:
+        keyTable: foo
+```
+
+#### scopeTable
+```yaml
+# before
+apiKey: 
+  stores:
+    - databaseApiKeyStore: 
+        scopeTable: 
+          name: foo
+
+# now 
+apiKey:
+  stores:
+    - databaseApiKeyStore:
+        scopeTable: foo
+```
+
+#### publicURL
+```yaml
+# before
+publicURL: 
+  publicURL: /foo
+
+# now
+publicURL: /foo
+```
+
+#### api.description
+```yaml
+# before 
+api: 
+  description: 
+    content: Demo Api
+
+# now 
+api:
+  description: Demo Api
+```
+
+---
+
 # Migration Guide from Membrane 6.X to 7
 
 This guide describes how to migrate existing Membrane installations from version 6 to version 7.  
@@ -136,6 +446,8 @@ The JMX ObjectName format has changed to: `io.membrane-api:00=routers, name=`
     ```
 - `HttpClientInterceptor.setAdjustHeader(boolean)` has been removed. Header adjustment is now configured via `HttpClientConfiguration`.
 
+---
+
 # Migration from 5.X to 6
 
 ## Swagger 2
@@ -207,313 +519,3 @@ Default naming scheme for `<serviceProxys>` has changed. This might affect exist
 ## `jwtSign`
 - `expiryTime` has been renamed to `expirySeconds`.
 - HTTP response in case of JWT validation failure was changed to Problem JSON.
-
----
-
-# Migrate to Membrane 7.1
-
-This guide explains how to migrate existing Membrane installations to **Membrane 7.1**.
-Most breaking changes in **7.1** are **YAML-related**, so they mainly affect upgrades from **Membrane 7.x (YAML)** to **7.1**.
-
-## Recommended Migration Strategy
-
-1. **Start from your current version:**
-   * **Coming from Membrane 6.x:** follow the [Migration Guide from Membrane 6.X to 7](#migration-guide-from-membrane-6x-to-7) first, then apply the 7.1 changes from this guide. 
-   * **Already on Membrane 7.x:** apply the changes from this guide.
-
-2. **Decide on your configuration format**
-   * **Staying on XML:** remove deprecated interceptors/syntax as listed and apply only the non-YAML changes.
-   * **Using / moving to YAML:** migrate your YAML to the 7.1 syntax described here. If you’re coming from 6.x, use this guide as the “target YAML syntax”, but don’t skip the additional breaking changes covered in the [Migration Guide from Membrane 6.X to 7](#migration-guide-from-membrane-6x-to-7) .
-
-## 3. Removed Interceptors and Plugins
-
-The following legacy interceptors have been removed:
-
-| Removed                     | Replacement |
-|-----------------------------|-------------|
-| `MethodOverrideInterceptor` | -           |
-
-Remove these elements from your configuration and replace them with modern equivalents.
-
-## Groovy
-- Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually.
-
-## ApiKey extractors: 
-- Rename `headerExtractor` to `header`
-- Rename `queryParamExtractor` to `query`
-```yaml
-# before
-apiKey: 
-  extractors:
-    - headerExtractor: 
-        name: X-API-KEY
-    - queryParamExtractor: 
-        name: api-key
-
-# now 
-apiKey:
-  extractors:
-    - header:
-        name: X-API-KEY
-    - query:
-        name: api-key
-```
-
-## fileUserDataProvider
-- rename `fileUserDataProvider` to `htpasswdFileProvider`
-- rename `htpasswdPath` to `location`
-```yaml
-# before
-fileUserDataProvider:
-  htpasswdPath: .htpasswd
-
-# now
-htpasswdFileProvider: 
-  location: .htpasswd 
-```
-
-## YAML configuration syntax in list elements
-
-* List items can now be written in *inline form* if the list accepts **exactly one** allowed element type (no polymorphic candidates) and the element is neither `collapsed` nor `noEnvelope`.
-* The old wrapper form remains supported: `- <kind>: { ... }`.
-
-```yaml
-# before
-properties:
-  - property:
-      name: driverClassName
-      value: org.h2.Driver
-  - property:
-      name: url
-      value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-
-# now 
-properties:
-  - name: driverClassName
-    value: org.h2.Driver
-  - name: url
-    value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-```
-
-
-## OpenApi
-Renamed `specs` to `openapi`. 
-
-**Before:**
-```yaml
-# before
-api:
-    port: 2000
-    specs:
-      - openapi:
-          location: fruitshop-api.yml
-          validateRequests: "yes"
-
-# now (using the inline list item form)
-api:
-  port: 2000
-  openapi:
-    - location: fruitshop-api.yml
-      validateRequests: "yes"
-```
-
-## setCookie
-- Use `noEnvelope` for `cookies` list
-```yaml
-# before
-setCookies:
-  cookies:
-    - cookie:
-        name: foo
-        value: bar
-        secure: false
-
-# now (using the inline list item form)
-setCookies:
-  - name: foo
-    value: bar
-    secure: false
-```
-
-## balancer
-- `clustersFromSpring` was renamed to `clusters`
-- the extra `clusters` list layer was removed (you now define clusters directly)
-```yaml
-# before
-balancer:
-  clustersFromSpring:
-    - clusters:
-        - cluster:
-            nodes:
-              - node:
-                  host: localhost
-                  port: 4000
-              - node:
-                  host: localhost
-                  port: 4001
-
-# now (using the inline list item form)
-balancer:
-  clusters:
-    - nodes:
-        - host: localhost
-          port: 4000
-        - host: localhost
-          port: 4001
-```
-
-## choose
-- `cases:` is gone (the case list is now **noEnvelope** under `choose`)
-- `otherwise` is now a **list item** inside `choose`
-- Only **one** `otherwise` is allowed, and it must be the **last** item of the list
-```yaml
-# before
-choose:
-  cases:
-    - case:
-        test: foo
-        flow:
-          - log: {}
-  otherwise:
-    - return: {}
-
-# now
-choose:
-  - case:
-      test: foo
-      flow:
-        - log: {}
-  - otherwise:
-      - return: {}
-```
-
-## chainDef and chain
-- `chainDef` was removed.
-- Define chains with `chain` and reference them like any other component via `$ref`.
-```yaml
-# before
-components:
-  log:
-    chainDef:
-      flow:
-        - log: {}
----
-api:
-  port: 2000
-  flow:
-    - chain:
-        ref: '#/components/log'
-
-```
-```yaml
-# now
-components:
-  log:
-    chain:
-      - log: {}
----
-api:
-  port: 2000
-  flow:
-    - $ref: '#/components/log'
-```
-
-### YAML configuration for Elements with exactly one configurable Attribute 
-Some Elements with **exactly one** configurable Attribute can now be configured inline. This **does not** apply to all elements with exactly one configurable Attribute.
-
-The supported elements are: `api.description`, `publicURL`, `headerFilter.include`, `headerFilter.exclude`, `keyTable`, `scopeTable`, `accessControl.allow`, `accessControl.deny`, `counter`, `mutation`
-
-#### headerFilter
-```yaml
-# before
-headerFilter:
-  rules:
-    - include:
-        pattern: "X-XSS-Protection"
-    - exclude:
-        pattern: "X-.*"
-
-# now 
-headerFilter:
-  rules:
-    - include: "X-XSS-Protection"
-    - exclude: "X-.*"
-```
-
-#### mutation
-```yaml
-# before
-graphQLProtection: 
-  disallow:
-    - mutation: 
-        name: foo
-
-# now
-graphQLProtection:
-  disallow:
-    - mutation: foo
-```
-
-#### counter
-```yaml
-# before 
-counter: 
-  name: mock1
-
-# now
-counter: mock1
-```
-
-#### keyTable
-```yaml
-# before
-apiKey: 
-  stores:
-    - databaseApiKeyStore: 
-        keyTable: 
-          name: foo
-
-# now
-apiKey:
-  stores:
-    - databaseApiKeyStore:
-        keyTable: foo
-```
-
-#### scopeTable
-```yaml
-# before
-apiKey: 
-  stores:
-    - databaseApiKeyStore: 
-        scopeTable: 
-          name: foo
-
-# now 
-apiKey:
-  stores:
-    - databaseApiKeyStore:
-        scopeTable: foo
-```
-
-#### publicURL
-```yaml
-# before
-publicURL: 
-  publicURL: /foo
-
-# now
-publicURL: /foo
-```
-
-#### api.description
-```yaml
-# before 
-api: 
-  description: 
-    content: Demo Api
-
-# now 
-api:
-  description: Demo Api
-```
