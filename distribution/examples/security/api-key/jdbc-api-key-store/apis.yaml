@@ -25,7 +25,7 @@ global:
             scopeTable:
               name: scope
       extractors:
-        - headerExtractor: {}
+        - header: {}
 
 ---
 api:

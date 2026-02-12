@@ -15,8 +15,8 @@
 				<simple>
 					<secret value="demo-key-foobar" />
 				</simple>
-				<headerExtractor />
-				<queryParamExtractor name="X-Api-Key" />
+				<header />
+				<query name="X-Api-Key" />
 			</apiKey>
 			<target host="localhost" port="2001" />
 		</api>

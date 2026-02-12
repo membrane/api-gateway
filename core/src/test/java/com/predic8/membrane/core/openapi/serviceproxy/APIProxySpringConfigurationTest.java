@@ -28,7 +28,7 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
             <api port="2000" name="bool-api">
                 <openapi location="%s" validateSecurity="yes"/>
                 <apiKey required = "false">
-                    <headerExtractor name="X-Api-Key"/>
+                    <header name="X-Api-Key"/>
                 </apiKey>
                 <headerFilter>
                     <exclude>Origin</exclude>
@@ -42,7 +42,7 @@ class APIProxySpringConfigurationTest extends AbstractProxySpringConfigurationTe
             <api port="2000" name="bool-api">
                 <openapi location="%s" validateSecurity="yes"/>
                 <apiKey required = "false">
-                    <headerExtractor name="X-Api-Key"/>
+                    <header name="X-Api-Key"/>
                 </apiKey>
                 <headerFilter>
                     <exclude>Origin</exclude>

@@ -42,7 +42,7 @@ public abstract class AbstractJdbcSupport {
                              <keyTable>key</keyTable>
                              <scopeTable>scope</scopeTable>
                          </databaseApiKeyStore>
-                         <headerExtractor />
+                         <header />
                      </apiKey>
                  </api>
              </router>
