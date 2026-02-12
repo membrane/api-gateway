@@ -52,8 +52,8 @@ api:
     uri: /token
   flow:
     - basicAuthentication:
-        fileUserDataProvider:
-          htpasswdPath: .htpasswd
+        htpasswdFileProvider:
+          location: .htpasswd
     - request:
         - template:
             contentType: application/json

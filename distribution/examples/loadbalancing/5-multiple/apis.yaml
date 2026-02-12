@@ -51,8 +51,7 @@ api:
   port: 4000
   name: Mock Node 1
   flow:
-    - counter:
-        name: Mock Node 1
+    - counter: Mock Node 1
 
 ---
 
@@ -60,8 +59,7 @@ api:
   port: 4001
   name: Mock Node 2
   flow:
-    - counter:
-        name: Mock Node 2
+    - counter: Mock Node 2
 
 ---
 
@@ -69,8 +67,7 @@ api:
   port: 4002
   name: Mock Node 3
   flow:
-    - counter:
-        name: Mock Node 3
+    - counter: Mock Node 3
 
 ---
 
@@ -78,8 +75,7 @@ api:
   port: 4003
   name: Mock Node 4
   flow:
-    - counter:
-        name: Mock Node 4
+    - counter: Mock Node 4
 
 ---
 

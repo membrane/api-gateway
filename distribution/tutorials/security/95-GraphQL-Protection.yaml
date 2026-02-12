@@ -36,8 +36,7 @@ api:
             maxMutations: 5
             maxDepth: 3
             disallow:
-              - mutation:
-                  name: updateCategory
+              - mutation: updateCategory
               - introspection: {}
   target:
     url: https://www.predic8.de/fruit-shop-graphql

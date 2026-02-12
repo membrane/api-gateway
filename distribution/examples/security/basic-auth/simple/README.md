@@ -33,7 +33,7 @@ First take a look at the `proxies.xml` file.
   </api>
   <api port="3000">
 	<basicAuthentication>
-	  <fileUserDataProvider htpasswdPath="./.htpasswd" />
+	  <htpasswdFileProvider location="./.htpasswd" />
 	</basicAuthentication>
 	<target url="https://api.predic8.de"/>
   </api>
@@ -51,7 +51,7 @@ Now take a closer look at the `<basicAuthentication>` element:
 ```
 
 Users are added through `user` elements. The username and the password are given by the attributes `name` and `password` of the `user` element. The example demonstrates one user, with username `alice` and password `membrane`.   
-Alternatively, the `fileUserDataProvider` can be used to read basic authentication data from an htpasswd formatted file. The algorithm magic strings must be compatible with Unix `crypt(3)`.
+Alternatively, the `htpasswdFileProvider` can be used to read basic authentication data from an htpasswd formatted file. The algorithm magic strings must be compatible with Unix `crypt(3)`.
 
 When opening the URL `http://localhost:2000/` or the `3000` port equivalent, membrane will respond with `401 Not Authorized`.
 
