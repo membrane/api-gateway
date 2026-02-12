@@ -959,10 +959,9 @@ api:
         consentFile: consentFile.json
         staticUserDataProvider:
           users:
-            - user:
-                username: john
-                password: secret
-                email: john@predic8.de
+            - username: john
+              password: secret
+              email: john@predic8.de
         staticClientList:
           clients:
             - clientId: abc
@@ -992,12 +991,10 @@ api:
   flow:
     - basicAuthentication:
         users:
-          - user:
-              username: alice
-              password: secret
-          - user:
-              username: bob
-              password: secret
+          - username: alice
+            password: secret
+          - username: bob
+            password: secret
   target:
     url: https://api.predic8.de
 ```
