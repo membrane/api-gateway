@@ -28,7 +28,6 @@ import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
-
 public class Request extends Message {
 
 	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
@@ -46,17 +45,6 @@ public class Request extends Message {
 	public static final String METHOD_OPTIONS = "OPTIONS";
 
 	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet(METHOD_GET, METHOD_HEAD, METHOD_CONNECT);
-	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
-			METHOD_DELETE,
-			/* some WebDAV methods, see http://www.ietf.org/rfc/rfc2518.txt */
-			METHOD_OPTIONS,
-			"PROPFIND",
-			"MKCOL",
-			"COPY",
-			"MOVE",
-			"LOCK",
-			"UNLOCK");
-
 
 	String method;
 	String uri;
@@ -154,15 +142,13 @@ public class Request extends Message {
 
 	@Override
 	public boolean shouldNotContainBody() {
-		if (methodsWithoutBody.contains(method))
+		if (methodsWithoutBody.contains(method)) // GET, HEAD, CONNECT
 			return true;
-		if (methodsWithOptionalBody.contains(method)) {
-			if (header.hasContentLength())
-				return header.getContentLength() == 0;
-            return header.getFirstValue(TRANSFER_ENCODING) == null;
-        }
-    
-		return false;
+		if (isHTTP10())
+			return false;
+		if (header.hasContentLength())
+			return header.getContentLength() == 0;
+		return header.getFirstValue(TRANSFER_ENCODING) == null;
 	}
 
 	/**
