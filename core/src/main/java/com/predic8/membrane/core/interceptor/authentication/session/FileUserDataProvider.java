@@ -28,8 +28,9 @@ import java.util.*;
  * </p>
  * <p>
  * Supported hash formats are <i>crypt(3)</i>-style hashes
- * (<code>$&lt;id&gt;$&lt;salt&gt;$&lt;hash&gt;</code>, optionally including <code>rounds=&lt;n&gt;</code>)
- * and bcrypt hashes (<code>$2a$</code>, <code>$2b$</code>, <code>$2y$</code>).
+ * (<code>$&lt;id&gt;$&lt;salt&gt;$&lt;hash&gt;</code>, optionally including <code>rounds=&lt;n&gt;</code>),
+ * bcrypt hashes (<code>$2a$</code>, <code>$2b$</code>, <code>$2y$</code>) and argon2id hashes (<code>$argon2id$</code>)
+ * with the strict format (<code>$argon2id$v=19$m=65536,t=3,p=1$...$...</code>, numbers may vary).
  * The Apache <code>$apr1$...</code> format is not supported.
  * </p>
  */

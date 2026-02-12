@@ -21,18 +21,26 @@ import java.util.*;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
- * @explanation <p>
- *              the <i>staticuserdataprovider</i> can be used to statically list user data within the config file.
- *              </p>
- *              <p>
- *              each user must have a unique <i>username</i> attribute as well as a <i>password</i> attribute.
- *              </p>
- *              <p>
- *              arbitrary attributes can be set on a user element. other sub-components of the <i>login</i> interceptor
- *              might use those: for example, the <i>telekomsmstokenprovider</i> uses the <i>sms</i> property as the
- *              user's cell phone number. for example, the <i>totptokenprovider</i> uses the <i>secret</i> property to
- *              initialize the token sequence.
- *              </p>
+ * @explanation
+ * <p>
+ * the <i>staticuserdataprovider</i> can be used to statically list user data within the config file.
+ * </p>
+ * <p>
+ * Each user must have a unique <i>username</i> attribute as well as a <i>password</i> attribute.
+ * </p>
+ * <p>
+ * Arbitrary attributes can be set on a user element. other sub-components of the <i>login</i> interceptor
+ * might use those: for example, the <i>telekomsmstokenprovider</i> uses the <i>sms</i> property as the
+ * user's cell phone number. for example, the <i>totptokenprovider</i> uses the <i>secret</i> property to
+ * initialize the token sequence.
+ * </p>
+ * <p>
+ * Supported hash formats are <i>crypt(3)</i>-style hashes
+ * (<code>$&lt;id&gt;$&lt;salt&gt;$&lt;hash&gt;</code>, optionally including <code>rounds=&lt;n&gt;</code>),
+ * bcrypt hashes (<code>$2a$</code>, <code>$2b$</code>, <code>$2y$</code>) and argon2id hashes (<code>$argon2id$</code>)
+ * with the strict format (<code>$argon2id$v=19$m=65536,t=3,p=1$...$...</code>, numbers may vary).
+ * The Apache <code>$apr1$...</code> format is not supported.
+ * </p>
  */
 @MCElement(name = "staticUserDataProvider")
 public class StaticUserDataProvider extends AbstractUserDataProvider {

@@ -27,12 +27,14 @@ api:
               password: "qwertz"
           - user:
               username: carol
-              # Hashed password for "abc123" (SHA-512)
+              # Hashed password for "abc123" (Argon2id version 19, 65MB memory, 3 rounds, 1 parallelism)
               #
               # Generate hashes with:
-              #   openssl passwd -6 -salt k3jia "yourPassword"
-              #   mkpasswd -m sha-512 -S k3jia "yourPassword"
-              password: "$6$k3jia$NlCL.JTXitlwZ4i67ELwWpqK4Co3a8xEsp5UBxlR2In7nJgKJFNywV4Bx6jB9Py5g69eNKyxveLIG3OMcyc8M1"
+              #   on Windows:
+              #     membrane.cmd argon2id -pass "abc123"
+              #   on Linux:
+              #     membrane.sh argon2id -pass "abc123"
+              password: "$argon2id$v=19$m=65536,t=3,p=1$gJkRz2WT5QcamKhhhKTH0Q$RuP5LUCTiEiO4W4dwrJqgpd+Phrk77n1QcdjIcB2zas"
     - static:
         src: You're in!
     - return:

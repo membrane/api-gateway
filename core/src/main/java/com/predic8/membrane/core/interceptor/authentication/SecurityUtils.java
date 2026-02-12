@@ -15,16 +15,24 @@
 package com.predic8.membrane.core.interceptor.authentication;
 
 import org.apache.commons.codec.digest.Crypt;
+import org.bouncycastle.crypto.generators.Argon2BytesGenerator;
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
+import org.bouncycastle.crypto.params.Argon2Parameters;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.security.MessageDigest.isEqual;
 import static java.util.regex.Pattern.compile;
 import static org.bouncycastle.crypto.generators.OpenBSDBCrypt.checkPassword;
+import static org.bouncycastle.crypto.params.Argon2Parameters.ARGON2_id;
+import static org.bouncycastle.util.Arrays.constantTimeAreEqual;
 
 /**
  * Password hashing/verification helper.
@@ -50,13 +58,17 @@ public final class SecurityUtils {
 
     // bcrypt: $2a$10$<53 chars>
     private static final Pattern BCRYPT_PATTERN = compile("^\\$2[aby]\\$\\d{2}\\$[./A-Za-z0-9]{53}$");
+
+    // argon2id with strict parameter order
+    private static final Pattern ARGON2ID_PATTERN = compile("^\\$argon2id\\$v=(\\d+)\\$m=(\\d+),t=(\\d+),p=(\\d+)\\$([^$]+)\\$([^$]+)$");
+
     public static final String PASSWORD = "password";
 
     private SecurityUtils() {}
 
     public static boolean matchesHashPattern(String s) {
         if (s == null) return false;
-        return BCRYPT_PATTERN.matcher(s).matches() || CRYPT3_PATTERN.matcher(s).matches();
+        return BCRYPT_PATTERN.matcher(s).matches() || CRYPT3_PATTERN.matcher(s).matches() || s.startsWith("$argon2id$");
     }
 
     public static void requirePlaintextPasswordInput(String password) {
@@ -75,7 +87,54 @@ public final class SecurityUtils {
             return Crypt.crypt(plaintext, storedHashOrPlain).equals(storedHashOrPlain);
         }
 
+        if (storedHashOrPlain.startsWith("$argon2id$")) {
+            return verifyArgon2id(plaintext, storedHashOrPlain);
+        }
+
         return isEqual(storedHashOrPlain.getBytes(), plaintext.getBytes());
+    }
+
+    public static String buildArgon2idPCH(byte[] password, byte[] salt, int version, int iterations, int memory, int parallelism) {
+        byte[] hash = hashPasswordArgon2id(password, salt, version, iterations, memory, parallelism);
+        Base64.Encoder encoder = Base64.getEncoder().withoutPadding();
+
+        return String.format(
+                "$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
+                version,
+                memory,
+                iterations,
+                parallelism,
+                encoder.encodeToString(salt),
+                encoder.encodeToString(hash));
+    }
+
+    public static boolean verifyArgon2id(String plaintext, String storedHash) {
+        Matcher matcher = ARGON2ID_PATTERN.matcher(storedHash);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid hash format. Must follow " + ARGON2ID_PATTERN.pattern());
+        }
+
+        int version = Integer.parseInt(matcher.group(1));
+        int memory = Integer.parseInt(matcher.group(2));
+        int iterations = Integer.parseInt(matcher.group(3));
+        int parallelism = Integer.parseInt(matcher.group(4));
+        Base64.Decoder decoder = Base64.getDecoder();
+        byte[] salt = decoder.decode(matcher.group(5));
+        byte[] originalHash = decoder.decode(matcher.group(6));
+
+        return constantTimeAreEqual(hashPasswordArgon2id(plaintext.getBytes(UTF_8), salt, version, iterations, memory, parallelism), originalHash);
+    }
+
+    public static byte[] hashPasswordArgon2id(byte[] password, byte[] salt, int version, int iterations, int memory, int parallelism) {
+        Argon2Parameters params = new Argon2Parameters.Builder(ARGON2_id).withVersion(version)
+                .withIterations(iterations).withMemoryAsKB(memory).withParallelism(parallelism).withSalt(salt).build();
+
+        Argon2BytesGenerator generator = new Argon2BytesGenerator();
+        generator.init(params);
+
+        byte[] result = new byte[32];
+        generator.generateBytes(password, result);
+        return result;
     }
 
     public static String hashPasswordBcrypt(String algo, int cost, String plaintext) {
