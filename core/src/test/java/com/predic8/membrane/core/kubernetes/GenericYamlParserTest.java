@@ -209,7 +209,7 @@ public class GenericYamlParserTest {
                                       "a2": "t2"
                         """,
                         a -> {
-                            StaticUserDataProvider.User u = ((BasicAuthenticationInterceptor) a.getFlow().getFirst()).getUsers().getFirst();
+                            User u = ((BasicAuthenticationInterceptor) a.getFlow().getFirst()).getUsers().getFirst();
                             assertInstanceOf(Map.class, u.getAttributes());
                             assertEquals(Map.of("a1","t1","a2","t2","password","bar","username","foo"), u.getAttributes());
                         }

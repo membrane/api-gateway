@@ -13,25 +13,22 @@
 
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.core.interceptor.authentication.SecurityUtils;
-import com.predic8.membrane.core.router.Router;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.authentication.*;
+import com.predic8.membrane.core.router.*;
+import org.slf4j.*;
 
-import javax.sql.DataSource;
+import javax.sql.*;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.verifyPassword;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {
-    private static final Logger log = LoggerFactory.getLogger(JdbcUserDataProvider.class.getName());
+
+    private static final Logger log = LoggerFactory.getLogger(JdbcUserDataProvider.class);
+
     private DataSource datasource;
     private String tableName;
     private String userColumnName;
@@ -48,15 +45,23 @@ public class JdbcUserDataProvider implements UserDataProvider {
         try {
             createTableIfNeeded(); // @todo: works with postgres but prints stacktrace and warning
         } catch (SQLException e) {
-            log.warn("Error creating table.",e);
+            log.warn("Error creating table.", e);
         }
     }
 
+    /**
+     * As we can't use prepared statement parameters for table- and columnnames so we have to sanitize the user input here.
+     */
     private void sanitizeUserInputs() {
-        // As we can't use prepared statement parameters for table- and columnnames so we have to sanitize the user input here.
-        // After this method it is assumed that user input is save to use
+        if (tableName == null || userColumnName == null || passwordColumnName == null)
+            throw new IllegalArgumentException("Table and column names must be set.");
 
-        // TODO sanitize inputs here
+        String identifierPattern = "^[A-Za-z0-9_]+$";
+        if (!tableName.matches(identifierPattern)
+            || !userColumnName.matches(identifierPattern)
+            || !passwordColumnName.matches(identifierPattern)) {
+            throw new IllegalArgumentException("Table/column names must be alphanumeric/underscore.");
+        }
     }
 
     private void createTableIfNeeded() throws SQLException {
@@ -68,73 +73,74 @@ public class JdbcUserDataProvider implements UserDataProvider {
 
     private String getCreateTableSql() {
         return "CREATE TABLE IF NOT EXISTS " + getTableName() + "(" +
-                "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
-                getUserColumnName() + " varchar NOT NULL, " +
-                getPasswordColumnName() + " varchar NOT NULL, " +
-                "verified boolean NOT NULL DEFAULT false" +
-                ");";
+               "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
+               getUserColumnName() + " varchar NOT NULL, " +
+               getPasswordColumnName() + " varchar NOT NULL, " +
+               "verified boolean NOT NULL DEFAULT false" +
+               ");";
     }
 
     private void getDatasourceIfNull() {
         if (datasource != null)
             return;
-
-        Map<String, DataSource> beans = router.getBeanFactory().getBeansOfType(DataSource.class);
-
-        DataSource[] datasources = beans.values().toArray(new DataSource[0]);
-        if (datasources.length > 0)
-            datasource = datasources[0];
-        else
-            throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
+        if (router.getRegistry() != null) {
+            var ds = router.getRegistry().getBean(DataSource.class);
+            if (ds.isPresent()) {
+                datasource = ds.get();
+                return;
+            }
+        }
+        if (router.getBeanFactory() != null) {
+            Map<String, DataSource> beans = router.getBeanFactory().getBeansOfType(DataSource.class);
+            DataSource[] datasources = beans.values().toArray(new DataSource[0]);
+            if (datasources.length > 0) {
+                datasource = datasources[0];
+                return;
+            }
+        }
+        throw new RuntimeException("No datasource found - specify a DataSource bean in your Membrane configuration");
     }
 
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
         String username = postData.get("username");
-        if (username == null) throw new NoSuchElementException();
+        if (username == null)
+            throw new NoSuchElementException();
 
         String password = postData.get("password");
         if (password == null) throw new NoSuchElementException();
 
         SecurityUtils.requirePlaintextPasswordInput(password);
 
-        Connection con = null;
-        PreparedStatement preparedStatement = null;
-        HashMap<String, String> result = null;
-        try {
-            con = datasource.getConnection();
-            preparedStatement = con.prepareStatement(createGetUsersSql());
+        Map<String, String> result = new HashMap<>();
+        try (var con = datasource.getConnection();
+             var preparedStatement = con.prepareStatement(createGetUsersSql())) {
             preparedStatement.setString(1, username);
-
-            ResultSet rs = preparedStatement.executeQuery();
-            ResultSetMetaData rsmd = rs.getMetaData();
-
-            result = new HashMap<>();
-            while (rs.next()) for (int i = 1; i <= rsmd.getColumnCount(); i++)
-                result.put(rsmd.getColumnName(i).toLowerCase(), rs.getObject(i).toString());
-
-            rs.close();
-            preparedStatement.close();
-            con.close();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            log.error(e.getMessage());
-        }
-
-
-        if (result != null && !result.isEmpty()) {
-            if (username.equals(result.get(getUserColumnName().toLowerCase())) && verifyPassword(password, result.get(getPasswordColumnName().toLowerCase()))) {
-                return result;
+            try (var rs = preparedStatement.executeQuery()) {
+                var rsmd = rs.getMetaData();
+                while (rs.next()) {
+                    result.clear();
+                    for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                        var value = rs.getObject(i);
+                        if (value != null) {
+                            result.put(rsmd.getColumnName(i).toLowerCase(), value.toString());
+                        }
+                    }
+                    // Exit with first matching user. There might the two users with the same name.
+                    if (username.equals(result.get(getUserColumnName().toLowerCase()))
+                        && verifyPassword(password, result.get(getPasswordColumnName().toLowerCase()))) {
+                        return result;
+                    }
+                }
             }
+        } catch (SQLException e) {
+            log.error(e.getMessage(), e);
         }
-
         throw new NoSuchElementException();
     }
 
     private String createGetUsersSql() {
-        return "SELECT * FROM " + getTableName() +
-                " WHERE " + getUserColumnName() + "=?";
+        return "SELECT * FROM %s WHERE %s=?".formatted(getTableName(), getUserColumnName());
     }
 
     public DataSource getDatasource() {

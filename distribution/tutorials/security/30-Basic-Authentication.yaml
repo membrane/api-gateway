@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.0.6.json
+#
+# Tutorial: HTTP Basic Authentication
+#
+# Try:
+#   1) Without credentials
+#      curl localhost:2000
+#
+#   2) Valid credentials (plain text password)
+#      curl -u alice localhost:2000    # enter password: qwertz
+#
+#   3) Valid credentials (hashed password)
+#      curl -u carol localhost:2000    # enter password: abc123
+#
+# NOTE: Plaintext passwords are for tutorial/demo use only.
+# In production, prefer hashed passwords for all users.
+
+api:
+  port: 2000
+  flow:
+    - basicAuthentication:
+        # Static in-memory user configuration.
+        # Alternatives: JDBC-, LDAP-, or FileUserDataProvider.
+        users:
+          - user:
+              username: alice
+              password: "qwertz"
+          - user:
+              username: carol
+              # Hashed password for "abc123" (Argon2id version 19, 65MB memory, 3 rounds, 1 parallelism)
+              #
+              # Generate hashes with:
+              #   on Windows:
+              #     membrane.cmd argon2id -pass "abc123"
+              #   on Linux:
+              #     membrane.sh argon2id -pass "abc123"
+              password: "$argon2id$v=19$m=65536,t=3,p=1$gJkRz2WT5QcamKhhhKTH0Q$RuP5LUCTiEiO4W4dwrJqgpd+Phrk77n1QcdjIcB2zas"
+    - static:
+        src: You're in!
+    - return:
+        status: 200
+
+

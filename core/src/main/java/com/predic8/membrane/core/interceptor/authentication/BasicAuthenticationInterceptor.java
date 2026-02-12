@@ -14,154 +14,159 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
+import com.predic8.membrane.core.util.security.*;
+import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.security.HttpSecurityScheme.*;
-import static java.nio.charset.StandardCharsets.*;
-import static org.apache.commons.codec.binary.Base64.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
  * @topic 3. Security and Validation
  */
-@MCElement(name="basicAuthentication")
+@MCElement(name = "basicAuthentication")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
-	private UserDataProvider userDataProvider = new StaticUserDataProvider();
+    private static final Logger log = LoggerFactory.getLogger(BasicAuthenticationInterceptor.class);
 
-	public BasicAuthenticationInterceptor() {
-		name = "basic authenticator";
-		setAppliedFlow(REQUEST_FLOW);
-	}
+    private UserDataProvider userDataProvider = new StaticUserDataProvider();
 
-	@Override
-	public Outcome handleRequest(Exchange exc) {
-		if (hasNoAuthorizationHeader(exc) || !validUser(exc)) {
-			return deny(exc);
-		}
-		return CONTINUE;
-	}
+    private boolean removeAuthorizationHeader = true;
 
-	private boolean validUser(Exchange exc) {
-		try {
-			String username = getUsername(exc);
-			userDataProvider.verify(ImmutableMap.of(
-					"username", username,
-					"password", getPassword(exc)
-			));
-			exc.setProperty(SECURITY_SCHEMES, List.of(BASIC().username(username)));
-			return true;
-		} catch (NoSuchElementException e) {
-			return false;
-		}
-	}
+    public BasicAuthenticationInterceptor() {
+        name = "basic authenticator";
+        setAppliedFlow(REQUEST_FLOW);
+    }
 
-	private String getUsername(Exchange exc) {
-		return getAuthorizationHeaderDecoded(exc).split(":", 2)[0];
-	}
-	private String getPassword(Exchange exc) {
-		return getAuthorizationHeaderDecoded(exc).split(":", 2)[1];
-	}
+    @Override
+    public void init() {
+        super.init();
+        //to not alter the interface of "BasicAuthenticationInterceptor" in the config file the "name" attribute is renamed to "username" in code
+        if (userDataProvider instanceof StaticUserDataProvider)
+            for (User user : getUsers()) {
+                if (user.getAttributes().containsKey("name")) {
+                    String username = user.getAttributes().get("name");
+                    user.getAttributes().remove("name");
+                    user.getAttributes().put("username", username);
+                }
+            }
 
-	private Outcome deny(Exchange exc) {
-		security(router.getConfiguration().isProduction(),getDisplayName())
-						.status(401)
-						.title("Unauthorized")
-						.buildAndSetResponse(exc);
-		exc.getResponse().setHeader(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"%s Authentication\"".formatted(PRODUCT_NAME)));
-		return ABORT;
-	}
+        userDataProvider.init(router);
+    }
 
-	private boolean hasNoAuthorizationHeader(Exchange exc) {
-		return exc.getRequest().getHeader().getFirstValue(AUTHORIZATION) == null;
-	}
+    @Override
+    public Outcome handleRequest(Exchange exc) {
+        if (hasNoAuthorizationHeader(exc) || !validUser(exc)) {
+            removeAuthenticationHeader(exc);
+            return deny(exc);
+        }
+        removeAuthenticationHeader(exc);
+        return CONTINUE;
+    }
 
-	/**
-	 * The "Basic" authentication scheme defined in RFC 2617 does not properly define how to treat non-ASCII characters.
-	 */
-	private String getAuthorizationHeaderDecoded(Exchange exc) {
-		String value = exc.getRequest().getHeader().getFirstValue(AUTHORIZATION);
-		return new String(decodeBase64(value.substring(6).getBytes(UTF_8)), UTF_8);
-	}
+    private void removeAuthenticationHeader(Exchange exchange) {
+        if (!removeAuthorizationHeader)
+            return;
+        exchange.getRequest().getHeader().removeFields(AUTHORIZATION);
+    }
 
-	public List<User> getUsers() {
-		if (userDataProvider instanceof StaticUserDataProvider sud) {
-			return sud.getUsers();
-		}
-		throw new UnsupportedOperationException("getUsers not implemented for this userDataProvider.");
-	}
+    private boolean validUser(Exchange exc) {
+        try {
+            var credentials = BasicAuthenticationUtil.getCredentials(exc);
+            userDataProvider.verify(credentials.toMap());
+            exc.setProperty(SECURITY_SCHEMES, List.of(BASIC().username(credentials.username())));
+            return true;
+        } catch (NoSuchElementException e) {
+            return false;
+        } catch (Exception e) {
+            log.warn("", e);
+            return false;
+        }
+    }
 
-	/**
-	 * @description A list of username/password combinations to accept.
-	 */
-	@MCChildElement(order = 20)
-	public void setUsers(List<User> users) {
-		((StaticUserDataProvider)userDataProvider).setUsers(users);
-	}
+    Outcome deny(Exchange exc) {
+        security(router.getConfiguration().isProduction(), getDisplayName())
+                .status(401)
+                .title("Unauthorized")
+                .buildAndSetResponse(exc);
+        var header = exc.getResponse().getHeader();
+        header.setConnection(CLOSE); // Stay compliant with old implementations.
+        header.setWwwAuthenticate("membrane");
+        return ABORT;
+    }
 
-	public UserDataProvider getUserDataProvider() {
-		return userDataProvider;
-	}
+    private boolean hasNoAuthorizationHeader(Exchange exc) {
+        return exc.getRequest().getHeader().getFirstValue(AUTHORIZATION) == null;
+    }
 
-	/**
-	 * @description The <i>user data provider</i> verifying a combination of a username with a password.
-	 */
-	@MCChildElement(order = 10)
-	public void setUserDataProvider(UserDataProvider userDataProvider) {
-		this.userDataProvider = userDataProvider;
-	}
+    public List<UserConfig> getUsers() {
+        if (userDataProvider instanceof StaticUserDataProvider sud) {
+            return sud.getUsers();
+        }
+        throw new UnsupportedOperationException("getUsers is not implemented for this userDataProvider.");
+    }
 
-	@Override
-	public void init() {
-		super.init();
-		//to not alter the interface of "BasicAuthenticationInterceptor" in the config file the "name" attribute is renamed to "username" in code
-		if (userDataProvider instanceof StaticUserDataProvider)
-			for(User user : getUsers()){
-				if(user.getAttributes().containsKey("name")){
-					String username = user.getAttributes().get("name");
-					user.getAttributes().remove("name");
-					user.getAttributes().put("username", username);
-				}
-			}
+    /**
+     * @description A list of username/password combinations to accept.
+     */
+    @MCChildElement(order = 20)
+    public void setUsers(List<UserConfig> users) {
+        if (userDataProvider instanceof StaticUserDataProvider sud) {
+            sud.setUsers(users);
+            return;
+        }
+        throw new UnsupportedOperationException("setUsers is not implemented for this userDataProvider.");
+    }
 
-		userDataProvider.init(router);
-	}
+    public UserDataProvider getUserDataProvider() {
+        return userDataProvider;
+    }
 
-	@Override
-	public String getShortDescription() {
-		return "Authenticates incoming requests based on a fixed user list.";
-	}
+    /**
+     * @description The <i>user data provider</i> verifying a combination of a username with a password.
+     */
+    @MCChildElement(order = 10)
+    public void setUserDataProvider(UserDataProvider userDataProvider) {
+        this.userDataProvider = userDataProvider;
+    }
 
-	@Override
-	public String getLongDescription() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(getShortDescription());
-		sb.append("<br/>");
-		if (userDataProvider instanceof StaticUserDataProvider) {
-			sb.append("Users: ");
-			for (User user : ((StaticUserDataProvider)userDataProvider).getUsers()) {
-				sb.append(escapeHtml4(user.getUsername()));
-				sb.append(", ");
-			}
-			sb.delete(sb.length()-2, sb.length());
-			sb.append("<br/>Passwords are not shown.");
-		}
-		return sb.toString();
-	}
+    @Override
+    public String getShortDescription() {
+        return "Authenticates incoming requests based on a fixed user list.";
+    }
 
+    @Override
+    public String getLongDescription() {
+        return "%s<br/>Number of users: %d".formatted(getShortDescription(), getUsers().size());
+    }
+
+    public boolean isRemoveAuthorizationHeader() {
+        return removeAuthorizationHeader;
+    }
+
+    /**
+     * @param removeAuthorizationHeader {@code true} to remove (default), {@code false} to forward
+     * @description Removes the Authorization header after successful authentication.
+     * <p>
+     * Default is true to prevent credentials from being forwarded to backends.
+     * Set to false if both gateway and backend need to validate credentials.
+     * </p>
+     * @default true
+     */
+    @MCAttribute()
+    public void setRemoveAuthorizationHeader(boolean removeAuthorizationHeader) {
+        this.removeAuthorizationHeader = removeAuthorizationHeader;
+    }
 }

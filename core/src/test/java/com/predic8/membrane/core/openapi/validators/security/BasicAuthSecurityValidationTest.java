@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
@@ -51,8 +52,8 @@ public class BasicAuthSecurityValidationTest {
         oasInterceptor.init(router);
 
         baInterceptor = new BasicAuthenticationInterceptor();
-        ArrayList<StaticUserDataProvider.User> users = new ArrayList<>();
-        StaticUserDataProvider.User user = new StaticUserDataProvider.User();
+        ArrayList<UserConfig> users = new ArrayList<>();
+        UserConfig user = new UserConfig();
         user.setUsername("alice");
         user.setPassword("secret");
         users.add(user);

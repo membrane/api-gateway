@@ -23,17 +23,21 @@ import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.*;
 import org.apache.commons.cli.*;
+import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.*;
 
 import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.*;
 import static com.predic8.membrane.core.config.spring.CheckableBeanFactory.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.buildArgon2idPCH;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 import static com.predic8.membrane.core.util.ExceptionUtil.*;
@@ -41,6 +45,7 @@ import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.URIUtil.*;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.lang.Integer.*;
+import static org.apache.commons.cli.Option.builder;
 import static org.apache.commons.lang3.exception.ExceptionUtils.*;
 
 public class RouterCLI {
@@ -78,6 +83,11 @@ public class RouterCLI {
         if (commandLine.getCommand().getName().equals("private-jwk-to-public")) {
             privateJwkToPublic(commandLine);
         }
+
+        if (commandLine.getCommand().getName().equals("argon2id")) {
+            argon2id(commandLine);
+        }
+
         if (getRouter(commandLine) instanceof DefaultRouter dr)
             dr.waitFor();
     }
@@ -92,6 +102,39 @@ public class RouterCLI {
         privateJWKtoPublic(
                 input,
                 output);
+        System.exit(0);
+    }
+
+    private static void argon2id(MembraneCommandLine commandLine) {
+        try {
+            String password = commandLine.getCommand().getOptionValue("pass");
+            String version = commandLine.getCommand().getOptionValue("v");
+            String salt = commandLine.getCommand().getOptionValue("s");
+            String iterations = commandLine.getCommand().getOptionValue("i");
+            String memory = commandLine.getCommand().getOptionValue("m");
+            String parallelism = commandLine.getCommand().getOptionValue("p");
+
+            int v = version == null ? 19 : Integer.parseInt(version);
+            int i = iterations == null ? 3 : Integer.parseInt(iterations);
+            int m = memory == null ? 65536 : Integer.parseInt(memory);
+            int p = parallelism == null ? 1 : Integer.parseInt(parallelism);
+            if (password == null) {
+                System.out.println("Enter password to hash:");
+                Scanner s = new Scanner(System.in);
+                password = s.nextLine();
+            }
+            byte[] s = salt == null ? null : Hex.decodeHex(salt.toCharArray());
+            if (s == null) {
+                SecureRandom random = new SecureRandom();
+                s = new byte[16];
+                random.nextBytes(s);
+            }
+
+            System.out.println(buildArgon2idPCH(password.getBytes(StandardCharsets.UTF_8), s, v, i, m, p));
+        } catch (Exception e) {
+            System.err.println(getExceptionMessageWithCauses(e));
+            System.exit(1);
+        }
         System.exit(0);
     }
 

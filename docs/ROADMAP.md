@@ -56,6 +56,7 @@ PRIO 3:
   - Language is case sensitive: e.g. language: SPEL is not valid according to the Schema and produces: TB
        Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
+- Refactor: File-, JDBC-, LDAP- and StaticUserProvider
 
 ## Breaking Changes
 
@@ -63,6 +64,7 @@ PRIO 3:
 - headerFilter YAML format has changed.
 - Choose Interceptor configuration
 - Chain (ChainDef) configuration
+- BasicAuthentication interceptor removes the Authentication header from the request. 
 - OpenApi: rename `specs` to `openapi`
 - **YAML configuration in list elements**:
     * List items can now be written in *inline form* if the list accepts exactly one concrete element type (no polymorphic candidates) and the element is not `collapsed`, not `noEnvelope`, and not string-like.

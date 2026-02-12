@@ -48,7 +48,7 @@ public class OAuth2RedirectFormPostTest extends OAuth2RedirectTest {
                 setTokenGenerator(new BearerTokenGenerator());
                 setIssuer(AUTH_SERVER_BASE_URL.toString());
                 setUserDataProvider(new StaticUserDataProvider() {{
-                    setUsers(List.of(new User() {{
+                    setUsers(List.of(new UserConfig() {{
                         setUsername("user");
                         setPassword("password");
                     }}));

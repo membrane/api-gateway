@@ -167,6 +167,7 @@ public class Schemas {
 		Doc doc = aji.getDoc(processingEnv);
 
 		String id = null;
+
 		if (aji instanceof ElementInfo ei) id = ei.getId();
 
 		if (doc == null && id == null) return;

@@ -69,6 +69,15 @@ public class MembraneCommandLine {
                 addOption(builder("o").longOpt("output").argName("file").hasArg().desc("Output file (JWK, public).").build());
             }});
 
+            addSubcommand(new CliCommand("argon2id", "Computes an Argon2id hash value.") {{
+                addOption(builder("pass").longOpt("password").argName("password").hasArg().desc("Password to hash.").build());
+                addOption(builder("v").longOpt("version").argName("version").hasArg().desc("Version (decimal, default: 19).").build());
+                addOption(builder("s").longOpt("salt").argName("salt").hasArg().desc("Salt to hash with (hex string, default: random 16 bytes).").build());
+                addOption(builder("i").longOpt("iterations").argName("iterations").hasArg().desc("Number of iterations (default: 3).").build());
+                addOption(builder("m").longOpt("memory").argName("memory").hasArg().desc("Memory in KiB (default: 65536).").build());
+                addOption(builder("p").longOpt("parallelism").argName("parallelism").hasArg().desc("Parallelism (default: 1).").build());
+            }});
+
         }};
     }
 

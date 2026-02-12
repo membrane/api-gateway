@@ -92,7 +92,7 @@ class OAuth2Test {
     }
 
     @Test
-    void testJwtAuthentication() throws Exception {
+    void jwtAuthentication() throws Exception {
         String json = getTokenRequestResponse(createTokenRequestParameters());
         JSONObject jsonObject = new JSONObject(json);
         assertEquals("Bearer", jsonObject.getString("token_type"));
@@ -122,7 +122,7 @@ class OAuth2Test {
     }
 
     @Test
-    void testJwtAuthenticationFailingWithRefreshInsteadOfAccessToken() throws Exception {
+    void jwtAuthenticationFailingWithRefreshInsteadOfAccessToken() throws Exception {
         String json = getTokenRequestResponse(createTokenRequestParameters());
         JSONObject jsonObject = new JSONObject(json);
         assertEquals("Bearer", jsonObject.getString("token_type"));
@@ -141,7 +141,7 @@ class OAuth2Test {
         }});
 
         oAuth2AuthSI.setUserDataProvider(new StaticUserDataProvider() {{
-            User u = new User("john", "password");
+            UserConfig u = new UserConfig("john", "password");
             u.getAttributes().put("aud", "demo1");
             setUsers(List.of(u));
         }});
@@ -193,11 +193,9 @@ class OAuth2Test {
     }
 
     private static String getTokenRequestResponse(String data) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:2000/oauth2/token").openConnection();
+        var connection = (HttpURLConnection) new URL("http://localhost:2000/oauth2/token").openConnection();
         connection.setRequestMethod("POST");
-
         sendPostData(connection, data);
-
         return readResponse(connection);
     }
 

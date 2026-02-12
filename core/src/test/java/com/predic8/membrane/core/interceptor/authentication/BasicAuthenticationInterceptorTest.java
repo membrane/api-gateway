@@ -13,54 +13,62 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.authentication.session.*;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.*;
 import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static java.util.Base64.getEncoder;
-import static java.util.List.of;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.net.*;
+import java.util.*;
+
+import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static java.util.Base64.*;
+import static java.util.List.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BasicAuthenticationInterceptorTest {
 
 	static BasicAuthenticationInterceptor bai;
 
-	@BeforeAll
-	static void setup() {
+	@BeforeEach
+	void setup() {
 		bai = new BasicAuthenticationInterceptor();
 		bai.setUsers(of(
-				new User("admin", "admin"),
-				new User("admin", "$6$12345678$jwCsYagMo/KNcTDqnrWL25Dy3AfAT5U94abA5a/iPFO.Cx2zAkMpPxZBNKY/P/xiRrCfCFDxdBp7pvNEMoBcr0")
+				new UserConfig("admin", "secret"),
+				new UserConfig("klara", "$6$jd3$AHVA4BVU0wTtVmF6ocQLSvxds455z0RKeNG/3Y0kF8C9AmAqyo8WBhEDpZ3JjO3k3lX/t5MB0NQrqGDpQyQf.1")
 		));
 		bai.init(new DefaultRouter());
 	}
 
 	@Test
-	void testDeny() {
-		Exchange exc = new Request.Builder().buildExchange();
+	void deny() throws Exception {
+		var exc = get("/foo").buildExchange();
 		assertEquals(ABORT, bai.handleRequest(exc));
-		assertEquals(401, exc.getResponse().getStatusCode());
+		var response = exc.getResponse();
+		var header = exc.getResponse().getHeader();
+		assertEquals(401, response.getStatusCode());
+		assertEquals(CLOSE, header.getConnection());
+		assertEquals("Basic realm=\"membrane\"", header.getWwwAuthenticate());
 	}
 
 	@Test
-	void testAccept() {
-		Exchange exc = new Request.Builder().header(AUTHORIZATION, getAuthString("admin", "admin")).buildExchange();
+	void accept() throws Exception {
+		var exc = get("/foo").header(AUTHORIZATION, getAuthString("admin", "secret")).buildExchange();
 		assertEquals(CONTINUE, bai.handleRequest(exc));
+		assertNull(exc.getRequest().getHeader().getAuthorization());
 	}
 
+
+
 	@Test
-	void testHashedPassword() {
-		Exchange exc = new Request.Builder().header(AUTHORIZATION, getAuthString("admin", "admin")).buildExchange();
-		StaticUserDataProvider p = (StaticUserDataProvider) bai.getUserDataProvider();
+	void hashedPassword() throws Exception {
+		var exc = get("/foo").header(AUTHORIZATION, getAuthString("klara", "admin")).buildExchange();
+		bai.setRemoveAuthorizationHeader(false);
 		assertEquals(CONTINUE, bai.handleRequest(exc));
-		p.verify(new User("admin","admin").getAttributes());
+		assertNotNull(exc.getRequest().getHeader().getAuthorization());
 	}
 
 	private String getAuthString(String user, String password) {

@@ -13,63 +13,48 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCOtherAttributes;
-import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.router.*;
+import org.slf4j.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
-
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
- * @explanation <p>
- *              the <i>staticuserdataprovider</i> can be used to statically list user data within the config file.
- *              </p>
- *              <p>
- *              each user must have a unique <i>username</i> attribute as well as a <i>password</i> attribute.
- *              </p>
- *              <p>
- *              arbitrary attributes can be set on a user element. other sub-components of the <i>login</i> interceptor
- *              might use those: for example, the <i>telekomsmstokenprovider</i> uses the <i>sms</i> property as the
- *              user's cell phone number. for example, the <i>totptokenprovider</i> uses the <i>secret</i> property to
- *              initialize the token sequence.
- *              </p>
+ * @explanation
+ * <p>
+ * the <i>staticuserdataprovider</i> can be used to statically list user data within the config file.
+ * </p>
+ * <p>
+ * Each user must have a unique <i>username</i> attribute as well as a <i>password</i> attribute.
+ * </p>
+ * <p>
+ * Arbitrary attributes can be set on a user element. other sub-components of the <i>login</i> interceptor
+ * might use those: for example, the <i>telekomsmstokenprovider</i> uses the <i>sms</i> property as the
+ * user's cell phone number. for example, the <i>totptokenprovider</i> uses the <i>secret</i> property to
+ * initialize the token sequence.
+ * </p>
+ * <p>
+ * Supported hash formats are <i>crypt(3)</i>-style hashes
+ * (<code>$&lt;id&gt;$&lt;salt&gt;$&lt;hash&gt;</code>, optionally including <code>rounds=&lt;n&gt;</code>),
+ * bcrypt hashes (<code>$2a$</code>, <code>$2b$</code>, <code>$2y$</code>) and argon2id hashes (<code>$argon2id$</code>)
+ * with the strict format (<code>$argon2id$v=19$m=65536,t=3,p=1$...$...</code>, numbers may vary).
+ * The Apache <code>$apr1$...</code> format is not supported.
+ * </p>
  */
-@MCElement(name="staticUserDataProvider")
-public class StaticUserDataProvider implements UserDataProvider {
+@MCElement(name = "staticUserDataProvider")
+public class StaticUserDataProvider extends AbstractUserDataProvider {
 
-	private List<User> users = new ArrayList<>();
-	private Map<String, User> usersByName = new HashMap<>();
-
-	@Override
-	public Map<String, String> verify(Map<String, String> postData) {
-		String username = postData.get("username");
-		if (username == null) throw new NoSuchElementException();
-		if (username.equals("error")) throw new RuntimeException();
-
-		User userAttributes = getUsersByName().get(username);
-		if (userAttributes == null) throw new NoSuchElementException();
-
-		verifyLoginOrThrow(postData, userAttributes.getPassword());
-		return userAttributes.getAttributes();
-	}
+	private List<UserConfig> users = new ArrayList<>();
 
 	@MCElement(name="user", component =false, id="staticUserDataProvider-user")
-	public static class User {
-		final Map<String, String> attributes = new HashMap<>();
+	public static class UserConfig extends User {
 
-		public User() {}
+		public UserConfig() {}
 
-		public User(String username, String password){
+		public UserConfig(String username, String password){
 			setUsername(username);
 			setPassword(password);
-		}
-
-		public String getUsername() {
-			return attributes.get("username");
 		}
 
 		/**
@@ -78,10 +63,6 @@ public class StaticUserDataProvider implements UserDataProvider {
 		@MCAttribute
 		public void setUsername(String value) {
 			attributes.put("username", value);
-		}
-
-		public String getPassword() {
-			return attributes.get("password");
 		}
 
 		/**
@@ -97,7 +78,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		}
 
 		/**
-		 * @description The user's phone number
+		 * @description The user's phone number (if used in combination with the {@link SMSTokenProvider})
 		 */
 		@MCAttribute
 		public void setSms(String value) {
@@ -116,10 +97,6 @@ public class StaticUserDataProvider implements UserDataProvider {
 			attributes.put("secret", value);
 		}
 
-		public Map<String, String> getAttributes() {
-			return attributes;
-		}
-
 		/**
 		 * @description Other user attributes. For example any attribute starting with "<i>header</i>" will be added
 		 *              when HTTP requests are forwarded when authorized by this user.
@@ -130,30 +107,24 @@ public class StaticUserDataProvider implements UserDataProvider {
 		}
 	}
 
-	public List<User> getUsers() {
+	public List<UserConfig> getUsers() {
 		return users;
 	}
 
 	@MCChildElement
-	public void setUsers(List<User> users) {
-		getUsersByName().clear();
-		for(User user : users){
-			getUsersByName().put(user.getUsername(), user);
+	public void setUsers(List<UserConfig> users) {
+		usersByName.clear();
+		for(var user : users){
+			usersByName.put(user.getUsername(), user);
 		}
 		this.users = users;
 	}
 
-	public Map<String, User> getUsersByName() {
-		return usersByName;
-	}
-
-	public void setUsersByName(Map<String, User> usersByName) {
-		this.usersByName = usersByName;
-	}
-
-	@Override
-	public void init(Router router) {
-		for (User user : users)
-			getUsersByName().put(user.getUsername(), user);
-	}
+    @Override
+    public void init(Router router) {
+        if (usersByName.isEmpty()) {
+            for (var user : users)
+                usersByName.put(user.getUsername(), user);
+        }
+    }
 }
