@@ -71,7 +71,7 @@ class FileUserDataProviderTest {
 
         Path htpasswdFile = createHtpasswdFile("test.htpasswd", testUsers);
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         Map<String, User> users = provider.getUsersByName();
@@ -86,7 +86,7 @@ class FileUserDataProviderTest {
         Map<String, String> testUsers = Map.of("testuser", "test");
         Path htpasswdFile = createHtpasswdFile("sha512.htpasswd", testUsers);
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         Map<String, User> users = provider.getUsersByName();
@@ -99,7 +99,7 @@ class FileUserDataProviderTest {
         Path htpasswdFile = tempDir.resolve("empty.htpasswd");
         Files.writeString(htpasswdFile, "");
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         assertTrue(provider.getUsersByName().isEmpty());
@@ -118,7 +118,7 @@ class FileUserDataProviderTest {
                 StandardOpenOption.APPEND
         );
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         Map<String, User> users = provider.getUsersByName();
@@ -129,7 +129,7 @@ class FileUserDataProviderTest {
     @Test
     void testInitWithNonExistentFile() {
         Path missing = tempDir.resolve("missing.htpasswd");
-        provider.setHtpasswdPath(missing.toString());
+        provider.setLocation(missing.toString());
         assertThrows(RuntimeException.class, () -> provider.init(router));
     }
 
@@ -138,7 +138,7 @@ class FileUserDataProviderTest {
         Map<String, String> testUsers = Map.of("alice", TEST_PASSWORD_ALICE);
         Path htpasswdFile = createHtpasswdFile("verify.htpasswd", testUsers);
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         Map<String, String> postData = new HashMap<>();
@@ -155,7 +155,7 @@ class FileUserDataProviderTest {
         Map<String, String> testUsers = Map.of("alice", TEST_PASSWORD_ALICE);
         Path htpasswdFile = createHtpasswdFile("verify.htpasswd", testUsers);
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         Map<String, String> postData = new HashMap<>();
@@ -170,7 +170,7 @@ class FileUserDataProviderTest {
         Map<String, String> testUsers = Map.of("alice", TEST_PASSWORD_ALICE);
         Path htpasswdFile = createHtpasswdFile("verify.htpasswd", testUsers);
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         Map<String, String> postData = new HashMap<>();
@@ -184,7 +184,7 @@ class FileUserDataProviderTest {
         Map<String, String> testUsers = Map.of("alice", TEST_PASSWORD_ALICE);
         Path htpasswdFile = createHtpasswdFile("verify.htpasswd", testUsers);
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         Map<String, String> postData = new HashMap<>();
@@ -199,7 +199,7 @@ class FileUserDataProviderTest {
         Map<String, String> testUsers = Map.of("alice", TEST_PASSWORD_ALICE);
         Path htpasswdFile = createHtpasswdFile("verify.htpasswd", testUsers);
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         Map<String, String> postData = new HashMap<>();
@@ -214,7 +214,7 @@ class FileUserDataProviderTest {
         Map<String, String> testUsers = Map.of("alice", TEST_PASSWORD_ALICE);
         Path htpasswdFile = createHtpasswdFile("verify.htpasswd", testUsers);
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         var postData = new HashMap<String, String>();
@@ -234,7 +234,7 @@ class FileUserDataProviderTest {
 
         Path htpasswdFile = createHtpasswdFile("multi.htpasswd", testUsers);
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         assertEquals(3, provider.getUsersByName().size());
@@ -244,10 +244,10 @@ class FileUserDataProviderTest {
     }
 
     @Test
-    void testGetHtpasswdPath() {
+    void testgetLocation() {
         String testPath = "/test/path/htpasswd";
-        provider.setHtpasswdPath(testPath);
-        assertEquals(testPath, provider.getHtpasswdPath());
+        provider.setLocation(testPath);
+        assertEquals(testPath, provider.getLocation());
     }
 
     @Test
@@ -256,7 +256,7 @@ class FileUserDataProviderTest {
         Path htpasswdFile = tempDir.resolve("colon.htpasswd");
         Files.writeString(htpasswdFile, "user:$6$salt$hash:with:colons\n");
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         var user = provider.getUsersByName().get("user");
@@ -270,7 +270,7 @@ class FileUserDataProviderTest {
         Path htpasswdFile = tempDir.resolve("empty.htpasswd");
         Files.writeString(htpasswdFile, ":$6$saltsalt$somehash\n");
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         assertTrue(provider.getUsersByName().containsKey(""));
@@ -281,7 +281,7 @@ class FileUserDataProviderTest {
         Path htpasswdFile = tempDir.resolve("whitespace.htpasswd");
         Files.writeString(htpasswdFile, " alice :$6$saltsalt$somehash\n");
 
-        provider.setHtpasswdPath(htpasswdFile.toString());
+        provider.setLocation(htpasswdFile.toString());
         provider.init(router);
 
         assertTrue(provider.getUsersByName().containsKey(" alice "));
