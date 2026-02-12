@@ -70,7 +70,7 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
 		}
 
 		/**
-		 * @description The user's phone number
+		 * @description The user's phone number (if used in combination with the {@link SMSTokenProvider})
 		 */
 		@MCAttribute
 		public void setSms(String value) {
