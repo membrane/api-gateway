@@ -33,7 +33,7 @@ public class Http10Test {
 	private static Router router2;
 
 	@BeforeAll
-	public static void setUp() throws Exception {
+	static void setUp() throws Exception {
 		ServiceProxy proxy2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), null, 0);
 		proxy2.getFlow().add(new SampleSoapServiceInterceptor());
         router2 = new TestRouter();
@@ -48,7 +48,7 @@ public class Http10Test {
 	}
 
 	@AfterAll
-	public static void tearDown() {
+	static void tearDown() {
 		router2.stop();
 		router.stop();
 	}
@@ -82,7 +82,7 @@ public class Http10Test {
 
 
 	@Test
-	void testMultiplePost() throws Exception {
+	void multiplePost() throws Exception {
 		HttpClient client = new HttpClient();
 		client.getParams().setParameter(PROTOCOL_VERSION, HTTP_1_0);
 
