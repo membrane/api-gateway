@@ -223,11 +223,6 @@ public final class TerminalColors {
     private static boolean detectAnsiSupport() {
         // Only check the system property that was set by the shell script
         String prop = System.getProperty(MEMBRANE_DISABLE_TERM_COLORS_PROPERTY);
-        if (prop != null) {
-            // The name of the property is "disable", so we need to invert
-            return !Boolean.parseBoolean(prop);
-        }
-        // Default: disable colors if property not set
-        return false;
+        return prop != null && !Boolean.parseBoolean(prop);
     }
 }

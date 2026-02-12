@@ -108,10 +108,10 @@ public class TemplateInterceptorTest {
                 <% for(h in header.allHeaderFields) { %>
                    <%= h.headerName %> : <%= h.value %>
                 <% } %>
-                Exchange: <%= exc %>
+                Exchange: <% out<<exc %>
                 Flow: <%= flow %>
                 Message.version: <%= message.version %>
-                Body: <%= message.body %>
+                Body: <% out<<message.body %>
                 Properties: <%= property.baz %>
                 <% for(p in property) { %>
                    Key: <%= p.key %> : <%= p.value %>
@@ -128,11 +128,11 @@ public class TemplateInterceptorTest {
         
         String body = exchange.getRequest().getBodyAsStringDecoded();
         assertTrue(body.contains("/foo"));
-        assertTrue(body.contains("Flow: REQUEST"));
+        assertTrue(body.contains("Flow: \"REQUEST\""));
         assertTrue(body.contains("Body: vlinder"));
         assertTrue(body.contains("New: 7"));
-        assertTrue(body.contains("A: 1"));
-        assertTrue(body.contains("B: 2"));
+        assertTrue(body.contains("A: \"1\""));
+        assertTrue(body.contains("B: \"2\""));
     }
 
     @Test
@@ -248,7 +248,7 @@ public class TemplateInterceptorTest {
         exc.setProperty(SECURITY_SCHEMES, List.of(new BasicHttpSecurityScheme().username("alice")));
         ti.setContentType(APPLICATION_JSON);
         ti.setSrc("""
-        { "foo": "${fn.user()}" }
+        { "foo": ${user()} }
         """);
         ti.init(router);
         ti.handleRequest(exc);

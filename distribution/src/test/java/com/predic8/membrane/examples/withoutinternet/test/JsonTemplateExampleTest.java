@@ -34,7 +34,7 @@ public class JsonTemplateExampleTest extends AbstractSampleMembraneStartStopTest
         given()
             .get("http://localhost:2000/json-out?answer=42")
         .then().assertThat()
-            .body("answer",equalTo(42));
+            .body("answer",equalTo("42"));
         // @formatter:on
     }
 

@@ -33,12 +33,11 @@ The resulting JWT is stored in the body and returned via `<return>`.
   <header />
  </apiKey>
  <request>
-  <setProperty name="scopes" value="${scopes()}"/>
-  <template>
+  <template contentType="application/json">
    {
      "sub": "user@example.com", 
      "aud": "order", 
-     "scope": "${property.scopes}"
+     "scope": ${scopes()}
    }
   </template>
   <jwtSign>

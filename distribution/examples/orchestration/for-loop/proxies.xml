@@ -19,26 +19,20 @@
                 <!-- Iterate over each product to get additional details (price) -->
                 <for in="property.products">
                     <call url="https://api.predic8.de/shop/v2/products/${property.it['id']}"/>
-                    <setProperty name="price" value="${$.price}" language="jsonpath"/>
                     <groovy>
-                        property.it.price = property.price
+                        property.result = property.result ?: []
+                        property.result.add([
+                        "name": property.it.name,
+                        "price": fn.jsonPath('$.price')
+                        ])
                     </groovy>
                 </for>
 
                 <!-- Render a simplified JSON response with only product name and price -->
                 <template contentType="application/json" pretty="true">
-                    <![CDATA[
-                        {
-                            "products": [
-							    <% property.products.eachWithIndex { p, idx -> %>
-                                {
-                                    "name": "<%= p.name %>",
-                                    "price": "<%= p.price %>"
-                                }<%= idx < property.products.size() - 1 ? ',' : '' %>
-                                <% } %>
-							]
-						}
-					]]>
+                    {
+                       "products": ${property.result}
+                    }
                 </template>
             </request>
             <return/>

@@ -27,6 +27,21 @@ import static org.apache.commons.text.StringEscapeUtils.*;
 /**
  * @description Executes a Javascript. The script can access and manipulate data from the request and response.
  * Use this or the Groovy plugin to extend the functions of Membrane by scripting. See the samples in examples/javascript.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - response:
+ *         - javascript:
+ *             src: |
+ *               var body = JSON.stringify({
+ *               foo: 7,
+ *               bar: 42
+ *               });
+ *
+ *               Response.ok(body).contentType("application/json").build();
+ *     - return: {} # Do not forward, return immediately
+ * </code></pre>
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "javascript", mixed = true)

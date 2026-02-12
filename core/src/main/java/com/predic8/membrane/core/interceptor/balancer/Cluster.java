@@ -24,6 +24,18 @@ import java.util.*;
 /**
  * @description Represents a load-balancing cluster (a named group of {@link Node}s).
  * Provides status management (UP/DOWN/TAKEOUT), node lookup, and simple session tracking.
+ * @yaml <pre><code>
+ * balancer:
+ *   name: DemoBalancer
+ *   priorityStrategy: {}
+ *   clusters:
+ *     - name: PROD
+ *     	 nodes:
+ *         - host: node1.predic8.com
+ *       	 port: 8080
+ *         - host: node2.predic8.com
+ *           port: 8090
+ * </code></pre>
  */
 @MCElement(name="cluster", component =false)
 public class Cluster {
