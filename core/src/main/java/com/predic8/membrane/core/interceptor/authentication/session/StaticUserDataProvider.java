@@ -65,8 +65,28 @@ public class StaticUserDataProvider extends AbstractUserDataProvider {
 			attributes.put("password", value);
 		}
 
+		public String getSms() {
+			return attributes.get("sms");
+		}
+
+		/**
+		 * @description The user's phone number
+		 */
+		@MCAttribute
+		public void setSms(String value) {
+			attributes.put("sms", value);
+		}
+
 		public String getSecret() {
 			return attributes.get("secret");
+		}
+
+		/**
+		 * @description The user's shared TOTP secret (if used in combination with the {@link TOTPTokenProvider}).
+		 */
+		@MCAttribute
+		public void setSecret(String value) {
+			attributes.put("secret", value);
 		}
 
 		/**
