@@ -295,6 +295,51 @@ api:
       validateRequests: "yes"
 ```
 
+## setCookie
+- Use `noEnvelope` for `cookies` list
+```yaml
+# before
+setCookies:
+  cookies:
+    - cookie:
+        name: foo
+        value: bar
+        secure: false
+
+# now (using the inline list item form)
+setCookies:
+  - name: foo
+    value: bar
+    secure: false
+```
+
+## balancer
+- `clustersFromSpring` was renamed to `clusters`
+- the extra `clusters` list layer was removed (you now define clusters directly)
+```yaml
+# before
+balancer:
+  clustersFromSpring:
+    - clusters:
+        - cluster:
+            nodes:
+              - node:
+                  host: localhost
+                  port: 4000
+              - node:
+                  host: localhost
+                  port: 4001
+
+# now (using the inline list item form)
+balancer:
+  clusters:
+    - nodes:
+        - host: localhost
+          port: 4000
+        - host: localhost
+          port: 4001
+```
+
 ## choose
 - `cases:` is gone (the case list is now **noEnvelope** under `choose`)
 - `otherwise` is now a **list item** inside `choose`
