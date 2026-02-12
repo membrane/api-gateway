@@ -58,7 +58,7 @@ public class ConfigSerializationTest {
             "opentelemetry", // TODO find out why
             "basic-xml-interceptor", // has external classpath dependencies
             "database", // contains a reference to a DataSource bean (not serializable)
-            "simple", // throws error because of 'users' property which is not applicable to fileUserDataProvider
+            "simple", // throws error because of 'users' property which is not applicable to htpasswdFileProvider
             "docker", // throws error because openapi parser does not provide port information
             "openapi-proxy", // throws error because openapi parser does not provide port information
             "validation-security", // throws error because openapi parser does not provide port information

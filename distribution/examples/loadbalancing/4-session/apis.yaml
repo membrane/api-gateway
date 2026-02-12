@@ -24,8 +24,7 @@ api:
   port: 4000
   name: Node 1
   flow:
-    - counter:
-        name: Node 1
+    - counter: Node 1
 
 ---
 
@@ -33,8 +32,7 @@ api:
   port: 4001
   name: Node 2
   flow:
-    - counter:
-        name: Node 2
+    - counter: Node 2
 
 ---
 
@@ -42,8 +40,7 @@ api:
   port: 4002
   name: Node 3
   flow:
-    - counter:
-        name: Node 3
+    - counter: Node 3
 
 ---
 
