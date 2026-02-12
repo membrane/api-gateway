@@ -37,14 +37,14 @@ Example:
 
 The following legacy interceptors have been removed:
 
-| Removed | Replacement                                                                 |
-|--------|-----------------------------------------------------------------------------|
-| `gateKeeperClient` | Gatekeeper is not supported anymore                                         |
-| `wadl` | Use OpenAPI                                                                 |
-| `xmlSessionIdExtractor` | Use language based session handling. See examples/loadbalancing/4-session   |
+| Removed                   | Replacement                                                                 |
+|---------------------------|-----------------------------------------------------------------------------|
+| `gateKeeperClient`        | Gatekeeper is not supported anymore                                         |
+| `wadl`                    | Use OpenAPI                                                                 |
+| `xmlSessionIdExtractor`   | Use language based session handling. See examples/loadbalancing/4-session   |
 | `telekomSMSTokenProvider` | The SMS provider doesn't offer the needed SMS service anymore.              | 
-| `groovyTemplate` | `template` offers the same functionality including Groovy language support. |
-| `urlNormalizer` | -                                                                           |
+| `groovyTemplate`          | `template` offers the same functionality including Groovy language support. |
+| `urlNormalizer`           | -                                                                           |
 
 Remove these elements from your configuration and replace them with modern equivalents.
 
@@ -212,9 +212,31 @@ Default naming scheme for `<serviceProxys>` has changed. This might affect exist
 
 # Migrate to Membrane 7.1
 
-- removed `MethodOverrideInterceptor`
+This guide explains how to migrate existing Membrane installations to **Membrane 7.1**.
+Most breaking changes in **7.1** are **YAML-related**, so they mainly affect upgrades from **Membrane 7.x (YAML)** to **7.1**.
 
-- `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually.
+## Recommended Migration Strategy
+
+1. **Start from your current version:**
+   * **Coming from Membrane 6.x:** follow the [Migration Guide from Membrane 6.X to 7](#migration-guide-from-membrane-6x-to-7) first, then apply the 7.1 changes from this guide. 
+   * **Already on Membrane 7.x:** apply the changes from this guide.
+
+2. **Decide on your configuration format**
+   * **Staying on XML:** remove deprecated interceptors/syntax as listed and apply only the non-YAML changes.
+   * **Using / moving to YAML:** migrate your YAML to the 7.1 syntax described here. If you’re coming from 6.x, use this guide as the “target YAML syntax”, but don’t skip the additional breaking changes covered in the [Migration Guide from Membrane 6.X to 7](#migration-guide-from-membrane-6x-to-7) .
+
+## 3. Removed Interceptors and Plugins
+
+The following legacy interceptors have been removed:
+
+| Removed                     | Replacement |
+|-----------------------------|-------------|
+| `MethodOverrideInterceptor` | -           |
+
+Remove these elements from your configuration and replace them with modern equivalents.
+
+## Groovy
+- Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually.
 
 ## ApiKey extractors: 
 - Rename `headerExtractor` to `header`
@@ -396,7 +418,7 @@ api:
     - $ref: '#/components/log'
 ```
 
-### Yaml configuration for Elements with exactly one configurable Attribute 
+### YAML configuration for Elements with exactly one configurable Attribute 
 Some Elements with **exactly one** configurable Attribute can now be configured inline. This **does not** apply to all elements with exactly one configurable Attribute.
 
 The supported elements are: `api.description`, `publicURL`, `headerFilter.include`, `headerFilter.exclude`, `keyTable`, `scopeTable`, `accessControl.allow`, `accessControl.deny`, `counter`, `mutation`
