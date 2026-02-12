@@ -10,10 +10,9 @@ api:
         # UserDataProvider is exchangeable, e.g. for a database table
         staticUserDataProvider:
           users:
-            - user:
-                username: john
-                password: password
-                email: john@predic8.de
+            - username: john
+              password: password
+              email: john@predic8.de
         staticClientList:
           clients:
             - clientId: abc

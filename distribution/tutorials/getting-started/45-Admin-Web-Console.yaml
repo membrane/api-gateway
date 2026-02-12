@@ -19,9 +19,8 @@ api:
     # Protect the Admin Console using authentication (Basic, OAuth2, ACL, or none).
     - basicAuthentication:
         users:
-          - user:
-              username: admin
-              password: admin
+          - username: admin
+            password: admin
     - adminConsole:
         readOnly: true
 
