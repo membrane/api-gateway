@@ -216,43 +216,62 @@ Default naming scheme for `<serviceProxys>` has changed. This might affect exist
 
 - `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually.
 
-- ApiKey extractors: 
-  - Rename `headerExtractor` to `header`
-  - Rename `queryParamExtractor` to `query`
+## ApiKey extractors: 
+- Rename `headerExtractor` to `header`
+- Rename `queryParamExtractor` to `query`
+```yaml
+# before
+apiKey: 
+  extractors:
+    - headerExtractor: 
+        name: X-API-KEY
+    - queryParamExtractor: 
+        name: api-key
 
-- fileUserDataProvider
-  - rename `fileUserDataProvider` to `htpasswdFileProvider`
-  - rename `htpasswdPath` to `location`
-  ```yaml
-  # now                 # was 
-  htpasswdFileProvider: # fileUserDataProvider
-    location: .htpasswd #   htpasswdPath: .htpasswd
-  ```
+# now 
+apiKey:
+  extractors:
+    - header:
+        name: X-API-KEY
+    - query:
+        name: api-key
+```
+
+## fileUserDataProvider
+- rename `fileUserDataProvider` to `htpasswdFileProvider`
+- rename `htpasswdPath` to `location`
+```yaml
+# before
+fileUserDataProvider:
+  htpasswdPath: .htpasswd
+
+# now
+htpasswdFileProvider: 
+  location: .htpasswd 
+```
 
 ## YAML configuration syntax in list elements
 
 * List items can now be written in *inline form* if the list accepts **exactly one** allowed element type (no polymorphic candidates) and the element is neither `collapsed` nor `noEnvelope`.
 * The old wrapper form remains supported: `- <kind>: { ... }`.
 
-Example:
-- Before:
-  ```yaml
-  properties:
-    - property:
-        name: driverClassName
-        value: org.h2.Driver
-    - property:
-        name: url
-        value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-   ```
-- After:
-    ```yaml
-  properties:
-    - name: driverClassName
+```yaml
+# before
+properties:
+  - property:
+      name: driverClassName
       value: org.h2.Driver
-    - name: url
+  - property:
+      name: url
       value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-    ```
+
+# now 
+properties:
+  - name: driverClassName
+    value: org.h2.Driver
+  - name: url
+    value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+```
 
 
 ## OpenApi
@@ -260,63 +279,52 @@ Renamed `specs` to `openapi`.
 
 **Before:**
 ```yaml
+# before
 api:
     port: 2000
     specs:
       - openapi:
           location: fruitshop-api.yml
           validateRequests: "yes"
-```
-**After (using the inline form):**
-```yaml
+
+# now (using the inline list item form)
 api:
-    port: 2000
-    openapi:
-      - location: fruitshop-api.yml
-        validateRequests: "yes"
+  port: 2000
+  openapi:
+    - location: fruitshop-api.yml
+      validateRequests: "yes"
 ```
 
 ## choose
 - `cases:` is gone (the case list is now **noEnvelope** under `choose`)
 - `otherwise` is now a **list item** inside `choose`
 - Only **one** `otherwise` is allowed, and it must be the **last** item of the list
-
-**Before:**
-
 ```yaml
-api:
-  port: 2000
-  flow:
-    - choose:
-        cases:
-          - case:
-              test: foo
-              flow:
-                - log: {}
-        otherwise:
-          - return: {}
-```
-**After:**
-```yaml
-api:
-  port: 2000
-  flow:
-    - choose:
-        - case:
-            test: foo
-            flow:
-              - log: {}
-        - otherwise:
-            - return: {}
+# before
+choose:
+  cases:
+    - case:
+        test: foo
+        flow:
+          - log: {}
+  otherwise:
+    - return: {}
+
+# now
+choose:
+  - case:
+      test: foo
+      flow:
+        - log: {}
+  - otherwise:
+      - return: {}
 ```
 
 ## chainDef and chain
 - `chainDef` was removed.
 - Define chains with `chain` and reference them like any other component via `$ref`.
-
-**Before:**
-
 ```yaml
+# before
 components:
   log:
     chainDef:
@@ -328,11 +336,10 @@ api:
   flow:
     - chain:
         ref: '#/components/log'
+
 ```
-
-**After:**
-
 ```yaml
+# now
 components:
   log:
     chain:
@@ -349,20 +356,17 @@ Some Elements with **exactly one** configurable Attribute can now be configured 
 
 The supported elements are: `api.description`, `publicURL`, `headerFilter.include`, `headerFilter.exclude`, `keyTable`, `scopeTable`, `accessControl.allow`, `accessControl.deny`, `counter`, `mutation`
 
-Migration:
-
 #### headerFilter
-Before:
 ```yaml
+# before
 headerFilter:
   rules:
     - include:
         pattern: "X-XSS-Protection"
     - exclude:
         pattern: "X-.*"
-```
-After:
-```yaml
+
+# now 
 headerFilter:
   rules:
     - include: "X-XSS-Protection"
@@ -370,41 +374,39 @@ headerFilter:
 ```
 
 #### mutation
-Before:
 ```yaml
+# before
 graphQLProtection: 
   disallow:
     - mutation: 
         name: foo
-```
-After:
-```yaml
-graphQLProtection: 
+
+# now
+graphQLProtection:
   disallow:
     - mutation: foo
 ```
+
 #### counter
-Before:
 ```yaml
+# before 
 counter: 
   name: mock1
-```
-After:
-```yaml
+
+# now
 counter: mock1
 ```
 
 #### keyTable
-Before:
 ```yaml
+# before
 apiKey: 
   stores:
     - databaseApiKeyStore: 
         keyTable: 
           name: foo
-```
-After:
-```yaml
+
+# now
 apiKey:
   stores:
     - databaseApiKeyStore:
@@ -412,42 +414,39 @@ apiKey:
 ```
 
 #### scopeTable
-Before:
 ```yaml
+# before
 apiKey: 
   stores:
     - databaseApiKeyStore: 
         scopeTable: 
           name: foo
-```
-After:
-```yaml
-apiKey: 
+
+# now 
+apiKey:
   stores:
-    - databaseApiKeyStore: 
+    - databaseApiKeyStore:
         scopeTable: foo
 ```
+
 #### publicURL
-Before:
 ```yaml
+# before
 publicURL: 
   publicURL: /foo
-```
-After:
-```yaml
+
+# now
 publicURL: /foo
 ```
-#### description
-Before:
+
+#### api.description
 ```yaml
+# before 
 api: 
   description: 
     content: Demo Api
-```
-After:
-```yaml
-api: 
+
+# now 
+api:
   description: Demo Api
 ```
-
-
