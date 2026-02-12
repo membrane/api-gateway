@@ -34,7 +34,6 @@ api:
   flow:
     - basicAuthentication:
         users:
-          - user:
-              username: admin
-              password: membrane
+          - username: admin
+            password: membrane
     - adminConsole: {}
