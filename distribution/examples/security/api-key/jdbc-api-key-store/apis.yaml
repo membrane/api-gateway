@@ -20,10 +20,8 @@ global:
       stores:
         - databaseApiKeyStore:
             datasource: '#/components/dataSource'
-            keyTable:
-              name: key
-            scopeTable:
-              name: scope
+            keyTable: key
+            scopeTable: scope
       extractors:
         - header: {}
 
