@@ -208,6 +208,8 @@ Default naming scheme for `<serviceProxys>` has changed. This might affect exist
 - `expiryTime` has been renamed to `expirySeconds`.
 - HTTP response in case of JWT validation failure was changed to Problem JSON.
 
+---
+
 # Migrate to Membrane 7.1
 
 - removed `MethodOverrideInterceptor`
@@ -218,34 +220,51 @@ Default naming scheme for `<serviceProxys>` has changed. This might affect exist
   - Rename `headerExtractor` to `header`
   - Rename `queryParamExtractor` to `query`
 
-## New Yaml Syntax
+- fileUserDataProvider
+  - rename `fileUserDataProvider` to `htpasswdFileProvider`
+  - rename `htpasswdPath` to `location`
+  ```yaml
+  # now                 # was 
+  htpasswdFileProvider: # fileUserDataProvider
+    location: .htpasswd #   htpasswdPath: .htpasswd
+  ```
+
+## Updated Yaml Syntax
 
 ### YAML configuration in list elements
 
-* List items can now be written in *inline form* if the list accepts exactly one concrete element type (no polymorphic candidates) and the element is not `collapsed`, not `noEnvelope`, and not string-like.
-* Old wrapper form remains supported: `- <kind>: { ... }` (Only when schema validation is deactivated).
+* List items can now be written in *inline form* if the list accepts **exactly one** allowed element type (no polymorphic candidates) and the element is neither `collapsed` nor `noEnvelope`.
+* The old wrapper form remains supported: `- <kind>: { ... }`.
 
-Old:
-```yaml
-properties:
-  - property:
-      name: driverClassName
-      value: org.h2.Driver
-  - property:
-      name: url
-      value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
- ```
-New:
+Example:
+- Before:
   ```yaml
-properties:
-  - name: driverClassName
-    value: org.h2.Driver
-  - name: url
-    value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
-  ```
+  properties:
+    - property:
+        name: driverClassName
+        value: org.h2.Driver
+    - property:
+        name: url
+        value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+   ```
+- After:
+    ```yaml
+  properties:
+    - name: driverClassName
+      value: org.h2.Driver
+    - name: url
+      value: jdbc:h2:./membranedb;AUTO_SERVER=TRUE
+    ```
 
-### `headerFilter`
-Instead of
+### Yaml configuration for Elements with exactly one configurable Attribute 
+Some Elements with **exactly one** configurable Attribute can now be configured inline. This **does not** apply to all elements with exactly one configurable Attribute.
+
+The supported elements are: `api.description`, `publicURL`, `headerFilter.include`, `headerFilter.exclude`, `keyTable`, `scopeTable`, `accessControl.allow`, `accessControl.deny`, `counter`, `mutation`
+
+Migration:
+
+#### headerFilter
+Before:
 ```yaml
 headerFilter:
   rules:
@@ -254,13 +273,95 @@ headerFilter:
     - exclude:
         pattern: "X-.*"
 ```
-use
+After:
 ```yaml
 headerFilter:
   rules:
     - include: "X-XSS-Protection"
     - exclude: "X-.*"
 ```
+
+#### mutation
+Before:
+```yaml
+graphQLProtection: 
+  disallow:
+    - mutation: 
+        name: foo
+```
+After:
+```yaml
+graphQLProtection: 
+  disallow:
+    - mutation: foo
+```
+#### counter
+Before:
+```yaml
+counter: 
+  name: mock1
+```
+After:
+```yaml
+counter: mock1
+```
+
+#### keyTable
+Before:
+```yaml
+apiKey: 
+  stores:
+    - databaseApiKeyStore: 
+        keyTable: 
+          name: foo
+```
+After:
+```yaml
+apiKey:
+  stores:
+    - databaseApiKeyStore:
+        keyTable: foo
+```
+
+#### scopeTable
+Before:
+```yaml
+apiKey: 
+  stores:
+    - databaseApiKeyStore: 
+        scopeTable: 
+          name: foo
+```
+After:
+```yaml
+apiKey: 
+  stores:
+    - databaseApiKeyStore: 
+        scopeTable: foo
+```
+#### publicURL
+Before:
+```yaml
+publicURL: 
+  publicURL: /foo
+```
+After:
+```yaml
+publicURL: /foo
+```
+#### description
+Before:
+```yaml
+api: 
+  description: 
+    content: Demo Api
+```
+After:
+```yaml
+api: 
+  description: Demo Api
+```
+
 
 ### `chain`
 
