@@ -369,11 +369,6 @@ public class GenericYamlParserTest {
         }
 
         @Override
-        public Object getBean(String beanName) {
-            return null;
-        }
-
-        @Override
         public void register(String beanName, Object object) {}
 
         @Override
