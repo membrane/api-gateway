@@ -2,8 +2,8 @@
 #
 # Tutorial: setBody
 #
-# Set the body content with a simple template. setBody supports SpEL,
-# JSONPath, XPath and Groovy expressions.
+# setBody replaces the message body using a template.
+# Supported expression languages: SpEL, JSONPath, XPath, Groovy.
 #
 # Try:
 #     curl localhost:2000/spel

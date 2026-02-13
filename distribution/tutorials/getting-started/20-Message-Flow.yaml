@@ -11,9 +11,9 @@
 # 2.) Call the API:
 #     curl localhost:2000
 #
-#    Watch the console output. The message is printed twice: once during the
-#    request and once during the response flow. A valid status code appears
-#    only in the second log message after the backend has responded.
+#     Watch the console output. The message is printed twice: once during the
+#     request and once during the response flow. A valid status code appears
+#     only in the second log message after the backend has responded.
 
 api:
   port: 2000

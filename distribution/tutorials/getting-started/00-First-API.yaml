@@ -13,14 +13,10 @@
 #    Windows:
 #      membrane.cmd -c 00-First-API.yaml
 #
-#    A log message indicates that the API is running.
-#
 # 2.) Call the API:
-#    Open http://localhost:2000 in the browser or run in a separate terminal:
+#    Open http://localhost:2000 in a browser or run in a separate terminal:
 #
 #      curl http://localhost:2000
-#
-#    You should see a list of public APIs.
 #
 #  3.) Stop Membrane:
 #     Press Ctrl+C in the terminal.
@@ -29,7 +25,6 @@
 #
 # Troubleshooting:
 #    Check if your machine can reach the public API:
-#
 #      curl https://api.predic8.de
 
 api:

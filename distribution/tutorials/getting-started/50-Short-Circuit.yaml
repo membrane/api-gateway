@@ -4,7 +4,7 @@
 #
 # Normally an API forwards requests to a backend. Sometimes, however,
 # you may want to short-circuit and return a response immediately
-# without calling the backend. This is useful for testing, debugging or
+# without calling a backend. This is useful for testing, debugging or
 # security.
 #
 # 1.) Start this configuration.

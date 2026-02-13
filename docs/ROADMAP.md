@@ -8,6 +8,9 @@
 
 PRIO 1:
 
+- Tutorials:
+  - in 10-Logging.yaml hint to how to configure a proxy
+    - Maybe in examples/configuration/10-Logging-proxy.yaml
 - HotReload for YAML
 - Support for multiple apis.yaml in one folder
   - idea: load apis.yaml last.

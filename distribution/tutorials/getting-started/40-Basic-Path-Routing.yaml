@@ -3,8 +3,8 @@
 # Tutorial: Basic Path Routing
 #
 # Membrane can host multiple APIs on the same TCP port. Incoming requests are
-# matched against the declared APIs from top to bottom. The first API whose
-# path matches the request is used.
+# matched against the APIs from top to bottom. The first API whose path matches
+# the request is used.
 #
 # 1.) Start this configuration.
 #
