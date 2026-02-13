@@ -49,8 +49,6 @@ public class TemplateInterceptorTest {
     Exchange exc = new Exchange(null);
     Request req;
     Router router;
-    ResolverMap map;
-
 
     @BeforeEach
     void setUp(){

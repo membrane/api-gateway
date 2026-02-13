@@ -21,6 +21,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.MERGE_USING_COMMA;
 
 public class URI extends AbstractXmlElement {
 
@@ -82,11 +83,11 @@ public class URI extends AbstractXmlElement {
 		parseQueryFromURI(jUri);
 	}
 
-	private void parseQueryFromURI(java.net.URI jUri) throws UnsupportedEncodingException {
+	private void parseQueryFromURI(java.net.URI jUri) {
 		if (jUri.getQuery() == null) return;
 
 		Query q = new Query();
-		for (Map.Entry<String, String> e : parseQueryString(jUri.getQuery(), URLParamUtil.DuplicateKeyOrInvalidFormStrategy.MERGE_USING_COMMA).entrySet()) {
+		for (Map.Entry<String, String> e : parseQueryString(jUri.getQuery(), MERGE_USING_COMMA).entrySet()) {
 			q.getParams().add(new Param(e.getKey(),e.getValue()));
 		}
 		setQuery(q);

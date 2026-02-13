@@ -168,17 +168,4 @@ public class URLParamUtil {
 
         return sb.toString();
     }
-
-    public static class ParamBuilder {
-        final HashMap<String, String> params = new HashMap<>();
-
-        public ParamBuilder add(String key, String value) {
-            params.put(key, value);
-            return this;
-        }
-
-        public String build() {
-            return encode(params);
-        }
-    }
 }
