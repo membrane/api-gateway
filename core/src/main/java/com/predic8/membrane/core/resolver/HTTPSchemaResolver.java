@@ -30,7 +30,7 @@ import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.Builder;
 import static com.predic8.membrane.core.http.Request.*;

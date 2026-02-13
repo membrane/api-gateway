@@ -24,7 +24,7 @@ import java.net.*;
 import java.text.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.Header.X_FORWARDED_FOR;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;

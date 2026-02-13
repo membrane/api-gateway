@@ -22,7 +22,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 
-import static com.predic8.membrane.core.Constants.VERSION;
+import static com.predic8.membrane.annot.Constants.VERSION;
 import static io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator.getInstance;
 import static io.opentelemetry.context.propagation.ContextPropagators.create;
 import static io.opentelemetry.sdk.trace.export.BatchSpanProcessor.builder;

@@ -36,7 +36,7 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.regex.Pattern.*;

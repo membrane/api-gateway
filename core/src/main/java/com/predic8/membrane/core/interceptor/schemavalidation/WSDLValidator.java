@@ -31,7 +31,7 @@ import javax.xml.transform.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.SoapVersion.*;
+import static com.predic8.membrane.annot.Constants.SoapVersion.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
 import static com.predic8.membrane.core.util.SOAPUtil.*;

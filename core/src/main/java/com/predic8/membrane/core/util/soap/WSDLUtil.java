@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.util.soap;
 
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.wsdl.*;
 import org.slf4j.*;
 
@@ -22,7 +21,7 @@ import javax.xml.namespace.*;
 import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static java.util.regex.Matcher.quoteReplacement;
 
 public class WSDLUtil {

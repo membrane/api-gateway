@@ -21,7 +21,7 @@ import org.slf4j.*;
 
 import javax.xml.xpath.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;

@@ -146,7 +146,7 @@ public class ConsistentVersionNumbers {
 
 		handleHelpReference(new File(baseDirectory.getAbsolutePath(), "/annot/src/main/java/com/predic8/membrane/annot/generator/HelpReference.java"), versionTransformer);
 		handleRpmSpec(new File(baseDirectory.getAbsolutePath(), "/membrane.spec"), versionTransformer);
-		handleConstants(new File(baseDirectory.getAbsolutePath(), "core/src/main/java/com/predic8/membrane/core/Constants.java"), versionTransformer);
+		handleConstants(new File(baseDirectory.getAbsolutePath(), "annot/src/main/java/com/predic8/membrane/annot/Constants.java"), versionTransformer);
 
 		handleYamlSchemas(baseDirectory, versionTransformer);
 		handleDockerScripts(baseDirectory, versionTransformer);

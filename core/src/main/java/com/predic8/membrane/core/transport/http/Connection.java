@@ -26,7 +26,7 @@ import java.io.*;
 import java.net.*;
 import java.util.Random;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
 import static com.predic8.membrane.core.util.text.TextUtil.*;

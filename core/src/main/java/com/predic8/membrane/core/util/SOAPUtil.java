@@ -26,12 +26,11 @@ import javax.xml.stream.*;
 import javax.xml.stream.events.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.util.xml.XMLUtil.*;
 import static javax.xml.stream.XMLInputFactory.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class SOAPUtil {
 

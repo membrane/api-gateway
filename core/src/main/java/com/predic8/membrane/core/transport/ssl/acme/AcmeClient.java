@@ -22,7 +22,6 @@ import com.predic8.membrane.core.azure.api.dns.*;
 import com.predic8.membrane.core.config.security.acme.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
@@ -61,7 +60,7 @@ import java.text.*;
 import java.util.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;

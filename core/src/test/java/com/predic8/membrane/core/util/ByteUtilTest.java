@@ -19,7 +19,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.util.ByteUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 

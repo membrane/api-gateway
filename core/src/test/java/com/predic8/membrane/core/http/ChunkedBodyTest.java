@@ -38,7 +38,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
 import static com.google.common.io.Resources.*;
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.ChunkedBody.*;
 import static com.predic8.membrane.core.http.ChunksBuilder.*;
 import static com.predic8.membrane.core.http.Request.*;

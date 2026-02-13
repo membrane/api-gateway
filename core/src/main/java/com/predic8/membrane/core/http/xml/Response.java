@@ -19,7 +19,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.annot.Constants;
 
 public class Response extends Message {
 

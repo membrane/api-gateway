@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;

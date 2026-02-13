@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 
 public class ChunksBuilder {
 

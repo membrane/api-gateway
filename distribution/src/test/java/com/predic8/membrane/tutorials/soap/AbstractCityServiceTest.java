@@ -18,7 +18,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
+import static com.predic8.membrane.annot.Constants.WSDL_SOAP11_NS;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.XML;
 import static org.hamcrest.Matchers.containsString;

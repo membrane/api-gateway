@@ -20,7 +20,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.net.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.util.HttpTestUtil.*;

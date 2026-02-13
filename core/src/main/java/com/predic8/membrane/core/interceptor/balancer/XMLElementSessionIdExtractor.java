@@ -13,17 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.xml.beautifier.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.xml.beautifier.XMLInputFactoryFactory;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 /**
  * @description Extracts a session ID from an XML HTTP request body based on the qualified name of an XML element.

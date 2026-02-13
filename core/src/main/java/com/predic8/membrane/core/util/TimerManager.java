@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.*;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Timer;
 import java.util.TimerTask;

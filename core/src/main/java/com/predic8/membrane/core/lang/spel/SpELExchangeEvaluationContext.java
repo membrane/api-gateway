@@ -31,7 +31,7 @@ import org.springframework.expression.spel.support.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.VERSION;
+import static com.predic8.membrane.annot.Constants.VERSION;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
 public class SpELExchangeEvaluationContext extends StandardEvaluationContext {

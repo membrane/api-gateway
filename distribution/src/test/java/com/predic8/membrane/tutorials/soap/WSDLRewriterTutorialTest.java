@@ -18,7 +18,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static io.restassured.RestAssured.*;
 import static io.restassured.http.ContentType.*;
 import static org.hamcrest.Matchers.*;
