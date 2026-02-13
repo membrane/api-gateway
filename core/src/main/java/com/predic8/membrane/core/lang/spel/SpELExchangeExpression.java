@@ -29,9 +29,11 @@ import org.springframework.expression.common.*;
 import org.springframework.expression.spel.*;
 import org.springframework.expression.spel.standard.*;
 
+import java.util.*;
+
 import static java.lang.Boolean.*;
 import static org.springframework.expression.spel.SpelCompilerMode.*;
-import static org.springframework.expression.spel.SpelMessage.METHOD_NOT_FOUND;
+import static org.springframework.expression.spel.SpelMessage.*;
 
 public class SpELExchangeExpression extends AbstractExchangeExpression {
 
@@ -77,6 +79,10 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
                 return type.cast(toBoolean(o));
             }
             if (String.class.isAssignableFrom(type)) {
+                // If a String is wanted and the type is List, return the first element of the list
+                if (o instanceof List<?> l) {
+                    return type.cast(l.getFirst().toString());
+                }
                 return type.cast(toString(o));
             }
             if (Object.class.isAssignableFrom(type)) {

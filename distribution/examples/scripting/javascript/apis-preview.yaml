@@ -19,7 +19,7 @@ api:
             src: |
               console.log("Query parameters: " + params);
               // Return Json as Map
-              ({ id: params.get('id'), city: params.get('city') })
+              ({ id: params.get('id').get(0), city: params.get('city').get(0) })
         # Return response to Client
     - return:
         contentType: application/json

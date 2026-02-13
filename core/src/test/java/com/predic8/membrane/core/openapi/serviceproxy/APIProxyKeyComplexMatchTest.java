@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Request.Builder;
 import com.predic8.membrane.core.lang.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.test.TestUtil.assembleExchange;
@@ -68,13 +70,9 @@ class APIProxyKeyComplexMatchTest {
 
     @Test
     void complexMatchExpressionQueryParam() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, null,"*",
-                expression(null, SPEL,"param.foo == 'bar'"),false);
-        assertTrue(key.complexMatch(new Builder().get("/baz?foo=bar").buildExchange()));
-
-        key = new APIProxyKey("", "", 80, null,"*",
-                expression(null, SPEL,"param.foo == 'wrong'"),false);
-        assertFalse(key.complexMatch(new Builder().get("/baz?foo=bar").buildExchange()));
+        var key = new APIProxyKey("", "", 80, null,"*", expression(null, SPEL, "param?[foo][0] == 'bar'"),false);
+        assertTrue(key.complexMatch(get("/baz?foo=bar").buildExchange()));
+        assertFalse(key.complexMatch(get("/baz?foo=wrong").buildExchange()));
     }
 
     @DisplayName("Access old path /api-doc")

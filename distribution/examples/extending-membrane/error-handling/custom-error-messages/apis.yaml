@@ -83,7 +83,7 @@ api:
     - request:
         - if:
             # XML protection
-            test: param.case == 'a'
+            test: param?.case?.[0] == 'a'
             flow:
               - xmlProtection:
                   removeDTD: false
@@ -91,13 +91,13 @@ api:
                   maxAttributeCount: 10
         - if:
             # WSDL validation
-            test: param.case == 'b'
+            test: param?.case?.[0] == 'b'
             flow:
               - validator:
                   wsdl: cities.wsdl
                   skipFaults: true
         - if:
-            test: param.case == 'c'
+            test: param?.case?.[0] == 'c'
             flow:
               - template:
                   contentType: text/plain
@@ -105,7 +105,7 @@ api:
               - return:
                   status: 500
         - if:
-            test: param.case == 'd'
+            test: param?.case?.[0] == 'd'
             flow:
               - template:
                   contentType: application/xml
