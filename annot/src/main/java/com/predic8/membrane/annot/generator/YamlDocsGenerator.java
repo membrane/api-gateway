@@ -34,7 +34,7 @@ public class YamlDocsGenerator {
         if (byNamespace.isEmpty()) return;
 
         try {
-            FileObject o = processingEnv.getFiler().createResource(CLASS_OUTPUT, "", OUTPUT_FILE);
+            FileObject o = processingEnv.getFiler().createResource(CLASS_OUTPUT, "docs", OUTPUT_FILE);
             try (BufferedWriter w = new BufferedWriter(o.openWriter())) {
                 writeRoot(w, byNamespace);
             }
