@@ -10,14 +10,10 @@ api:
             pretty: yes
             src: |
               {
-                "answer": ${params.answer}
+                "answer": ${params.answer?[0]}
               }
-    # To forward to backend use target below instead of return
     - return:
         status: 200
-  # target:
-  #   host: YourBackendHost
-  #   port: YourBackendPort
 
 ---
 # JSON input is converted to XML and directed to logger, the response is then converted back to JSON and returned.
@@ -57,6 +53,6 @@ api:
   port: 3000
   flow:
     - request:
-        # Logs the incoming messages
         - log: {}
-    - return: {}
+    - return:
+        status: 200

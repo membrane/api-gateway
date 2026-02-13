@@ -192,6 +192,11 @@ class SpELExchangeExpressionTest extends AbstractExchangeExpressionTest {
     }
 
     @Test
+    void paramsIndex() {
+        assertEquals("Paris", evalString("param.city?.[0]"));
+    }
+
+    @Test
     void booleanConversion() {
         assertEquals(TRUE, toBoolean("true"));
         assertEquals(TRUE, toBoolean("TRUE"));

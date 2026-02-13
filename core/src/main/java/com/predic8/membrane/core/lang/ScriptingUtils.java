@@ -21,7 +21,6 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.groovy.*;
-import com.predic8.membrane.core.lang.spel.spelable.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.router.*;
@@ -32,7 +31,6 @@ import java.util.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static java.util.Collections.*;
 
@@ -68,7 +66,7 @@ public class ScriptingUtils {
 
         if (flow == REQUEST) {
             try {
-                var qParams = getParams(router.getConfiguration().getUriFactory(), exc, MERGE_USING_COMMA);
+                var qParams = getParams(router.getConfiguration().getUriFactory(), exc);
                 params.put("params", qParams);
                 params.put("param", qParams);
             } catch (Exception e) {

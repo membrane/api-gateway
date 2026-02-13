@@ -31,8 +31,7 @@ import org.springframework.expression.spel.support.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.VERSION;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static com.predic8.membrane.annot.Constants.*;
 
 public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
 
@@ -120,7 +119,7 @@ public class SpELExchangeEvaluationContext extends StandardEvaluationContext {
         path = request.getUri();
         method = request.getMethod();
         try {
-            params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exchange, ERROR));
+            params = new SpELMap<>(URLParamUtil.getParams(new URIFactory(), exchange));
         } catch (Exception e) {
             // Details are logged in URLParamUtil.getParams
             log.info("Error parsing query parameters for request '{} {}'", method, exchange.getOriginalRequestUri());

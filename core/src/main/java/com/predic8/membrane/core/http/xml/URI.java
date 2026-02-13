@@ -13,17 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.xml;
 
-import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.util.*;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
+import javax.xml.stream.*;
+import java.io.*;
+import java.util.*;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.util.URLParamUtil;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.MERGE_USING_COMMA;
 
 public class URI extends AbstractXmlElement {
 
@@ -85,11 +83,11 @@ public class URI extends AbstractXmlElement {
 		parseQueryFromURI(jUri);
 	}
 
-	private void parseQueryFromURI(java.net.URI jUri) throws UnsupportedEncodingException {
+	private void parseQueryFromURI(java.net.URI jUri) {
 		if (jUri.getQuery() == null) return;
 
 		Query q = new Query();
-		for (Map.Entry<String, String> e : parseQueryString(jUri.getQuery(), URLParamUtil.DuplicateKeyOrInvalidFormStrategy.MERGE_USING_COMMA).entrySet()) {
+		for (Map.Entry<String, String> e : parseQueryString(jUri.getQuery(), MERGE_USING_COMMA).entrySet()) {
 			q.getParams().add(new Param(e.getKey(),e.getValue()));
 		}
 		setQuery(q);

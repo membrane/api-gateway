@@ -49,8 +49,6 @@ public class TemplateInterceptorTest {
     Exchange exc = new Exchange(null);
     Request req;
     Router router;
-    ResolverMap map;
-
 
     @BeforeEach
     void setUp(){
@@ -118,8 +116,8 @@ public class TemplateInterceptorTest {
                 <% } %>
                 New: <%= property.baz %>
                 Query Params:
-                A: <%= params.a %>
-                B: <%= params.b %>
+                A: <%= params.a[0] %>
+                B: <%= params.b[0] %>
                 
                 <% for(p in params) { %>
                     <%= p.key %> : <%= p.value %>

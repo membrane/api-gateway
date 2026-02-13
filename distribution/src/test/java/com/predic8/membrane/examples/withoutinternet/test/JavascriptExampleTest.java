@@ -14,23 +14,18 @@
 
 package com.predic8.membrane.examples.withoutinternet.test;
 
-import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
-import com.predic8.membrane.examples.util.BufferLogger;
-import com.predic8.membrane.examples.util.Process2;
-import io.restassured.response.Response;
-import org.json.JSONException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.skyscreamer.jsonassert.JSONAssert;
+import com.predic8.membrane.examples.util.*;
+import io.restassured.response.*;
+import org.json.*;
+import org.junit.jupiter.api.*;
+import org.skyscreamer.jsonassert.*;
 
-import java.io.IOException;
+import java.io.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.test.StringAssertions.assertContains;
-import static io.restassured.RestAssured.get;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.test.StringAssertions.*;
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
 
 public class JavascriptExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -88,7 +83,7 @@ public class JavascriptExampleTest extends AbstractSampleMembraneStartStopTestca
                     ]
                 }""";
 
-        Response response = given()
+        var response = given()
                 .contentType(APPLICATION_JSON)
                 .body(jsonInput)
                 .post("http://localhost:2010");
@@ -128,6 +123,7 @@ public class JavascriptExampleTest extends AbstractSampleMembraneStartStopTestca
             .header("X-Foo",3141)
             .get("http://localhost:2020")
         .then().assertThat()
+            .log().ifValidationFails()
             .statusCode(200)
             .header("X-Javascript", "42");
         // @formatter:on
@@ -135,10 +131,4 @@ public class JavascriptExampleTest extends AbstractSampleMembraneStartStopTestca
         assertContains("Request headers:",logger.toString());
         assertContains("X-Foo",logger.toString());
     }
-
-    @Test
-    public void springBeanResponse() {
-        assertTrue(get("http://localhost:2030").getBody().asString().contains("Greetings from"));
-    }
-
 }

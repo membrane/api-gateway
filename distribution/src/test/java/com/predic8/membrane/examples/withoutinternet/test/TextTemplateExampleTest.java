@@ -46,8 +46,8 @@ public class TextTemplateExampleTest extends AbstractSampleMembraneStartStopTest
             .body(containsString("Header:"))
             .body(containsString("Flow: REQUEST"))
             .body(containsString("Message.version: 1.1"))
-            .body(containsString("a : 1"))
-            .body(containsString("b : foo"));
+            .body(containsString("a : [1]"))
+            .body(containsString("b : [foo]"));
         // @formatter:on
     }
 }

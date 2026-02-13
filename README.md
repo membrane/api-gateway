@@ -347,7 +347,7 @@ api:
 # Requests with a query parameter city and value Paris
 api:
   port: 2000
-  test: params.city == 'Paris'
+  test: params.city?.[0] == 'Paris'
   flow:
     - response:
         - static:
@@ -676,7 +676,7 @@ api:
             contentType: application/json
             pretty: true
             src: |
-              { "answer": ${params.answer} }
+              { "answer": ${params.answer?[0]} }
     - return:
         status: 200
 ```

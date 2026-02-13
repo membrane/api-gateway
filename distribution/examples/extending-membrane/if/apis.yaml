@@ -20,7 +20,7 @@ api:
               - log:
                   message: Request method was POST.
         - if:
-            test: params['param1'] == 'value2'
+            test: params?.param1?.[0] == 'value2'
             flow:
               - log:
                   message: Query Parameter Given!
