@@ -121,7 +121,9 @@ public class YamlDocsGenerator {
 
     private void writeRoot(BufferedWriter w, Map<String, Map<String, ElementDoc>> byNamespace) throws IOException {
         w.write("docFormatVersion: " + DOC_FORMAT_VERSION + "\n");
-        w.write("membraneVersion: " + VERSION + "\n");
+        w.write("membraneVersion: ");
+        writeScalar(w, VERSION, 0);
+        w.write("\n");
         w.write("schemas:\n");
         for (var nsEntry : byNamespace.entrySet()) {
             w.write(indent(2) + yamlKey(nsEntry.getKey()) + ":\n");
