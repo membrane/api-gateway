@@ -20,6 +20,7 @@ public class YamlDocsGenerator {
     private static final int DOC_FORMAT_VERSION = 1;
     private static final String OUTPUT_FILE = "docs.yaml";
     private static final Pattern SIMPLE_KEY = Pattern.compile("[A-Za-z0-9_]+");
+    private static final Set<String> YAML_11_RESERVED = Set.of("y", "yes", "n", "no", "true", "false", "on", "off", "null", "~");
 
     private final ProcessingEnvironment processingEnv;
 
@@ -258,8 +259,22 @@ public class YamlDocsGenerator {
 
     private String yamlKey(String k) {
         if (k == null) return "\"\"";
-        if (SIMPLE_KEY.matcher(k).matches()) return k;
-        return "'" + k.replace("'", "''") + "'";
+        String s = k.trim();
+        if (s.isEmpty()) return "\"\"";
+
+        if (!SIMPLE_KEY.matcher(s).matches()) {
+            return "'" + s.replace("'", "''") + "'";
+        }
+
+        if (YAML_11_RESERVED.contains(s.toLowerCase(Locale.ROOT))) {
+            return "'" + s.replace("'", "''") + "'";
+        }
+
+        if (s.chars().allMatch(Character::isDigit)) {
+            return "'" + s + "'";
+        }
+
+        return s;
     }
 
     private String indent(int n) {
