@@ -15,7 +15,6 @@ package com.predic8.membrane.core.lang.groovy;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import org.junit.jupiter.api.*;
@@ -24,7 +23,7 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static org.junit.jupiter.api.Assertions.*;
@@ -57,7 +56,7 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Test
     void accessNonExistingPropertyAsString() {
-        assertEquals("",evalString("property.unknown"));
+        assertEquals("", evalString("property.unknown"));
     }
 
     @Test
@@ -85,14 +84,14 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
             fail();
             return;
         }
-        assertEquals("US",m.get("country"));
-        assertEquals("Europe",m.get("continent"));
+        assertEquals("US", m.get("country"));
+        assertEquals("Europe", m.get("continent"));
     }
 
     @Test
     void pathParameter() {
-        assertEquals("314",evalString("pathParam.fid"));
-        assertEquals("new york",evalString("pathParam.gid"));
+        assertEquals("314", evalString("pathParam.fid"));
+        assertEquals("new york", evalString("pathParam.gid"));
     }
 
     @Test
@@ -102,20 +101,22 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
     }
 
     @Test
-    void multipleIdenticalQueryParams() throws Exception{
+    void multipleIdenticalQueryParams() throws Exception {
         var exc = get("/foo?a=1&a=2").buildExchange();
+
         var o = expression(new InterceptorAdapter(router), getLanguage(), "params.a").evaluate(exc, REQUEST, Object.class);
-        if (o instanceof List l) {
-            assertEquals(2, l.size());
-            assertEquals("1", l.get(0));
-            assertEquals("2", l.get(1));
-        } else fail();
+        assertInstanceOf(List.class, o);
+        List l = (List) o;
+        assertEquals(2, l.size());
+        assertEquals("1", l.get(0));
+        assertEquals("2", l.get(1));
+
         assertEquals("1", evaluateQueryParam(exc, "params.a[0]"));
         assertEquals("2", evaluateQueryParam(exc, "params.a[1]"));
     }
 
-    private String evaluateQueryParam(Exchange exc, String expr  ) {
-        return expression(new InterceptorAdapter(router), GROOVY, expr).evaluate(exc, REQUEST, String.class);
+    private String evaluateQueryParam(Exchange exc, String expr) {
+        return expression(new InterceptorAdapter(router), getLanguage(), expr).evaluate(exc, REQUEST, String.class);
     }
 
     @Test

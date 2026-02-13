@@ -24,8 +24,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class URLParamUtilTest {
@@ -42,23 +42,23 @@ public class URLParamUtilTest {
 
     @Test
     void hasNoFormParamsNoEncoding() throws URISyntaxException, IOException {
-        Exchange exc = new Request.Builder().post("/dummy").body("foo=7&bar&baz").header(CONTENT_TYPE,APPLICATION_X_WWW_FORM_URLENCODED).buildExchange();
+        Exchange exc = new Request.Builder().post("/dummy").body("foo=7&bar&baz").header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED).buildExchange();
         assertFalse(hasNoFormParams(exc));
     }
 
     @Test
     void hasNoFormParamsWithEncoding() throws URISyntaxException, IOException {
-        Exchange exc = new Request.Builder().post("/dummy").body("foo=7&bar&baz").header(CONTENT_TYPE,APPLICATION_X_WWW_FORM_URLENCODED + "; charset=ISO-8859-1").buildExchange();
+        Exchange exc = new Request.Builder().post("/dummy").body("foo=7&bar&baz").header(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED + "; charset=ISO-8859-1").buildExchange();
         assertFalse(hasNoFormParams(exc));
     }
 
     @Test
     void testGetParams() throws Exception {
         Map<String, String> params = getParams(new URIFactory(), excNormal, ERROR);
-        assertEquals(3,params.size());
-        assertEquals("1",params.get("a"));
-        assertEquals("2",params.get("b"));
-        assertEquals("abc",params.get("c"));
+        assertEquals(3, params.size());
+        assertEquals("1", params.get("a"));
+        assertEquals("2", params.get("b"));
+        assertEquals("abc", params.get("c"));
     }
 
     @Test
@@ -69,5 +69,33 @@ public class URLParamUtilTest {
     @Test
     void getParamsDuplicateMergeStrategy() throws Exception {
         assertEquals("2,3", getParams(new URIFactory(), dupExc, MERGE_USING_COMMA).get("a"));
+    }
+
+    @Test
+    void testParseQueryStringStrat() {
+        var x = parseQueryString("", ERROR);
+        assertNotNull(x);
+        assertEquals(0, x.size());
+    }
+
+    @Test
+    void testParseQueryStringWithNullStrat() {
+        var x = parseQueryString(null, ERROR);
+        assertNotNull(x);
+        assertEquals(0, x.size());
+    }
+
+    @Test
+    void testParseQueryString() {
+        var x = parseQueryString("");
+        assertNotNull(x);
+        assertEquals(0, x.size());
+    }
+
+    @Test
+    void testParseQueryStringWithNull() {
+        var x = parseQueryString(null);
+        assertNotNull(x);
+        assertEquals(0, x.size());
     }
 }

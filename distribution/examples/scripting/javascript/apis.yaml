@@ -1,16 +1,5 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.1.0.json
 
-#  this is a Java string object defined as a component. It serves as value for the X-Javascript header
-components:
-  myBean:
-    bean:
-      class: java.lang.String
-      constructorArgs:
-        - constructorArg:
-            value: Greetings from Javascript
-
----
-
 api:
   port: 2000
   flow:
@@ -19,13 +8,11 @@ api:
             src: |
               console.log("Query parameters: " + params);
               // Return Json as Map
-              ({ id: params.get('id').get(0), city: params.get('city').get(0) })
-        # Return response to Client
+              ({ id: params.get('id')?.[0], city: params.get('city')?.[0] })
     - return:
         contentType: application/json
 
 ---
-
 api:
   port: 2010
   flow:
@@ -49,7 +36,8 @@ api:
                   article: i.description
                 }))
               })
-    - return: { }
+    - return:
+        status: 200
 
 ---
 
@@ -64,24 +52,10 @@ api:
               for (var entry of header.entrySet()) {
                 console.log(entry.getKey() + ": " + entry.getValue());
               }
-    # Execute javascript-Interceptor in response flow
     - response:
         - javascript:
             src: |
               header.add("X-Javascript", "42") // Set Header
               CONTINUE
-  target:
-    host: localhost
-    port: 2030
-
----
-
-api:
-  port: 2030
-  flow:
-    - request:
-        - javascript:
-            src: |
-              // Create response and set the body to the value of the component
-              Response.ok().body(router.getRegistry().getBean('myBean')).build()
-    - return: { }
+    - return:
+        status: 200

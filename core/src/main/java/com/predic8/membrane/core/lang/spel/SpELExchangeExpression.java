@@ -80,8 +80,8 @@ public class SpELExchangeExpression extends AbstractExchangeExpression {
             }
             if (String.class.isAssignableFrom(type)) {
                 // If a String is wanted and the type is List, return the first element of the list
-                if (o instanceof List<?> l) {
-                    return type.cast(l.getFirst().toString());
+                if (o instanceof List<?> l && l.size() > 0) {
+                    return type.cast(l.getFirst());
                 }
                 return type.cast(toString(o));
             }

@@ -40,24 +40,41 @@ public class URLParamUtil {
         if (uri == null || uri.isEmpty())
             return emptyMap();
 
-        return parseQueryString(getUri(uriFactory, uri).getRawQuery());
+        return parseQueryString(getParametersString(uriFactory,exc,uri));
     }
 
     public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) throws URISyntaxException, IOException {
         var uri = exc.getRequest().getUri();
 
-        // Avoid unnecessary log entries
         if (uri == null || uri.isEmpty())
             return emptyMap();
 
-        var q = getUri(uriFactory, uri).getRawQuery();
-        if (q == null) {
-            if (hasNoFormParams(exc))
-                return emptyMap();
-            q = exc.getRequest().getBodyAsStringDecoded();
-        }
+        return parseQueryString(getParametersString(uriFactory, exc, uri), duplicateKeyOrInvalidFormStrategy);
+    }
 
-        return parseQueryString(q, duplicateKeyOrInvalidFormStrategy);
+    /**
+     * Retrieves the parameter string from the provided URI or HTTP request body.
+     *
+     * If the URI contains a query component, the raw query string is returned.
+     * Otherwise, if the request does not contain form parameters, it returns null.
+     * If form parameters exist, it retrieves and decodes the parameters from the request body.
+     *
+     * @param uriFactory the factory used to create and manipulate URIs
+     * @param exc the HTTP exchange object containing request and response information
+     * @param uri the URI string from which parameters may be extracted
+     * @return the parameter string from the URI or request body, or null if no parameters are found
+     * @throws URISyntaxException if the URI syntax is invalid
+     * @throws IOException if an I/O error occurs while reading the request body
+     */
+    private static String getParametersString(URIFactory uriFactory, Exchange exc, String uri) throws URISyntaxException, IOException {
+        var q = getUri(uriFactory, uri).getRawQuery();
+        if (q != null)
+            return q;
+
+        if (hasNoFormParams(exc))
+            return null;
+
+        return exc.getRequest().getBodyAsStringDecoded(); // WWW-Form-URLEncoded parameters are in the body
     }
 
     private static URI getUri(URIFactory uriFactory, String uri) throws URISyntaxException {
@@ -112,14 +129,18 @@ public class URLParamUtil {
      * where handling of parameters with the same key is supported.
      */
     public static Map<String, String> parseQueryString(String query, DuplicateKeyOrInvalidFormStrategy duplicateKeyOrInvalidFormStrategy) {
-        Map<String, String> params = new HashMap<>();
+        var params = new HashMap<String, String>();
+
+        if (query == null || query.isEmpty())
+            return params;
 
         for (String p : query.split("&")) {
-            Matcher m = paramsPat.matcher(p);
+            var m = paramsPat.matcher(p);
             if (m.matches()) {
-                String key = decode(m.group(1), UTF_8);
-                String value = decode(m.group(2), UTF_8);
-                String oldValue = params.get(key);
+                var key = decode(m.group(1), UTF_8);
+                var value = decode(m.group(2), UTF_8);
+                var oldValue = params.get(key);
+
                 if (oldValue == null)
                     params.put(key, value);
                 else
@@ -138,7 +159,7 @@ public class URLParamUtil {
     public static Map<String, List<String>> parseQueryString(String query) {
         var params = new HashMap<String, List<String>>();
 
-        if (query == null)
+        if (query == null || query.isEmpty())
             return params;
 
         for (String p : query.split("&")) {

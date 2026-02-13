@@ -70,9 +70,10 @@ class APIProxyKeyComplexMatchTest {
 
     @Test
     void complexMatchExpressionQueryParam() throws URISyntaxException {
-        var key = new APIProxyKey("", "", 80, null,"*", expression(null, SPEL, "param?[foo][0] == 'bar'"),false);
+        var key = new APIProxyKey("", "", 80, null,"*", expression(null, SPEL, "param[foo]?.[0] == 'bar'"),false);
         assertTrue(key.complexMatch(get("/baz?foo=bar").buildExchange()));
         assertFalse(key.complexMatch(get("/baz?foo=wrong").buildExchange()));
+        assertFalse(key.complexMatch(get("/baz").buildExchange())); // No query param
     }
 
     @DisplayName("Access old path /api-doc")

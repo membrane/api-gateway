@@ -8,7 +8,7 @@ api:
     - request:
         - template:
             contentType: text/plain
-            src: Hello ${params.name.get(0)}!
+            src: Hello ${params.name?[0]}!
     - return:
         status: 200
 
