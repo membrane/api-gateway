@@ -1,26 +1,36 @@
 package com.predic8.membrane.annot.generator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.predic8.membrane.annot.model.*;
 import com.predic8.membrane.annot.model.doc.Doc;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.processing.FilerException;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.tools.FileObject;
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
+import static com.fasterxml.jackson.annotation.JsonInclude.Value.construct;
+import static com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET;
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.LITERAL_BLOCK_STYLE;
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 import static com.predic8.membrane.annot.Constants.VERSION;
-import static java.lang.Integer.MAX_VALUE;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 public class YamlDocsGenerator {
 
     private static final int DOC_FORMAT_VERSION = 1;
     private static final String OUTPUT_FILE = "docs.yaml";
-    private static final Pattern SIMPLE_KEY = Pattern.compile("[A-Za-z0-9_]+");
-    private static final Set<String> YAML_11_RESERVED = Set.of("y", "yes", "n", "no", "true", "false", "on", "off", "null", "~");
+
+    private static final ObjectMapper YAML_MAPPER = new ObjectMapper(
+            new YAMLFactory().disable(WRITE_DOC_START_MARKER).enable(LITERAL_BLOCK_STYLE).disable(AUTO_CLOSE_TARGET)
+    ).setDefaultPropertyInclusion(construct(NON_EMPTY, NON_EMPTY));
 
     private final ProcessingEnvironment processingEnv;
 
@@ -29,15 +39,14 @@ public class YamlDocsGenerator {
     }
 
     public void write(Model m) throws IOException {
-
-        Map<String, Map<String, ElementDoc>> byNamespace = collect(m);
-
+        Map<String, Map<String, ElementDoc>> byNamespace = collectMains(m);
         if (byNamespace.isEmpty()) return;
 
         try {
             FileObject o = processingEnv.getFiler().createResource(CLASS_OUTPUT, "docs", OUTPUT_FILE);
             try (BufferedWriter w = new BufferedWriter(o.openWriter())) {
-                writeRoot(w, byNamespace);
+                YAML_MAPPER.writeValue(w, buildRoot(byNamespace));
+                w.write("\n");
             }
         } catch (FilerException e) {
             if (e.getMessage() != null && e.getMessage().contains("Source file already created")) return;
@@ -45,41 +54,99 @@ public class YamlDocsGenerator {
         }
     }
 
-    private Map<String, Map<String, ElementDoc>> collect(Model m) {
+    private Object buildRoot(Map<String, Map<String, ElementDoc>> byNamespace) {
+        LinkedHashMap<String, Object> root = new LinkedHashMap<>();
+        root.put("docFormatVersion", DOC_FORMAT_VERSION);
+        root.put("membraneVersion", VERSION);
+
+        LinkedHashMap<String, Object> schemas = new LinkedHashMap<>();
+
+        for (var nsEntry : byNamespace.entrySet()) {
+            LinkedHashMap<String, Object> ns = new LinkedHashMap<>();
+
+            LinkedHashMap<String, Object> elements = new LinkedHashMap<>();
+            for (var elEntry : nsEntry.getValue().entrySet()) {
+                ElementDoc ed = elEntry.getValue();
+
+                LinkedHashMap<String, Object> el = new LinkedHashMap<>();
+
+                if (ed.name != null && !ed.name.isBlank()) {
+                    el.put("name", ed.name);
+                }
+                if (ed.doc != null && !ed.doc.isEmpty()) {
+                    el.put("doc", ed.doc);
+                }
+                if (ed.attributes != null && !ed.attributes.isEmpty()) {
+                    el.put("attributes", wrapDocMaps(ed.attributes));
+                }
+                if (ed.children != null && !ed.children.isEmpty()) {
+                    el.put("children", wrapDocMaps(ed.children));
+                }
+                if (ed.otherAttributes != null && !ed.otherAttributes.isEmpty()) {
+                    LinkedHashMap<String, Object> oa = new LinkedHashMap<>();
+                    oa.put("doc", ed.otherAttributes);
+                    el.put("otherAttributes", oa);
+                }
+
+                elements.put(elEntry.getKey(), el);
+            }
+
+            ns.put("elements", elements);
+            schemas.put(nsEntry.getKey(), ns);
+        }
+
+        root.put("schemas", schemas);
+        return root;
+    }
+
+    private Map<String, Object> wrapDocMaps(Map<String, Map<String, String>> in) {
+        LinkedHashMap<String, Object> out = new LinkedHashMap<>();
+        for (var e : in.entrySet()) {
+            LinkedHashMap<String, Object> v = new LinkedHashMap<>();
+            v.put("doc", e.getValue());
+            out.put(e.getKey(), v);
+        }
+        return out;
+    }
+
+    private Map<String, Map<String, ElementDoc>> collectMains(Model m) {
         Map<String, Map<String, ElementDoc>> out = new TreeMap<>();
 
         for (MainInfo main : m.getMains()) {
-            Map<String, ElementDoc> elements = out.computeIfAbsent(main.getAnnotation().targetNamespace(), __ -> new TreeMap<>());
-
-            for (ElementInfo ei : main.getElements().values()) {
-                String id = ei.getId();
-
-                Map<String, String> elementDoc = docMap(ei.getDoc(processingEnv));
-                Map<String, Map<String, String>> attrs = attributeDocs(ei);
-                Map<String, Map<String, String>> children = childDocs(ei);
-                Map<String, String> otherAttrs = otherAttributesDoc(ei);
-
-                boolean hasAny =
-                        !elementDoc.isEmpty()
-                                || !attrs.isEmpty()
-                                || !children.isEmpty()
-                                || !otherAttrs.isEmpty();
-
-                if (!hasAny) continue;
-
-                ElementDoc ed = new ElementDoc();
-                ed.name = ei.getAnnotation() != null ? ei.getAnnotation().name() : null;
-                ed.doc = elementDoc;
-                ed.attributes = attrs;
-                ed.children = children;
-                ed.otherAttributes = otherAttrs;
-
-                elements.put(id, ed);
-            }
+            collect(main, out);
         }
 
         out.entrySet().removeIf(e -> e.getValue().isEmpty());
         return out;
+    }
+
+    private void collect(MainInfo main, Map<String, Map<String, ElementDoc>> out) {
+        Map<String, ElementDoc> elements = out.computeIfAbsent(main.getAnnotation().targetNamespace(), __ -> new TreeMap<>());
+
+        for (ElementInfo ei : main.getElements().values()) {
+            Map<String, String> elementDoc = docMap(ei.getDoc(processingEnv));
+            Map<String, Map<String, String>> attrs = attributeDocs(ei);
+            Map<String, Map<String, String>> children = childDocs(ei);
+            Map<String, String> otherAttrs = otherAttributesDoc(ei);
+
+            if (!isHasAnyDoc(elementDoc, attrs, children, otherAttrs)) continue;
+
+            elements.put(ei.getId(), getElementDoc(ei, elementDoc, attrs, children, otherAttrs));
+        }
+    }
+
+    private static boolean isHasAnyDoc(Map<String, String> elementDoc, Map<String, Map<String, String>> attrs, Map<String, Map<String, String>> children, Map<String, String> otherAttrs) {
+        return !elementDoc.isEmpty() || !attrs.isEmpty() || !children.isEmpty() || !otherAttrs.isEmpty();
+    }
+
+    private static @NotNull ElementDoc getElementDoc(ElementInfo ei, Map<String, String> elementDoc, Map<String, Map<String, String>> attrs, Map<String, Map<String, String>> children, Map<String, String> otherAttrs) {
+        ElementDoc ed = new ElementDoc();
+        ed.name = ei.getAnnotation() != null ? ei.getAnnotation().name() : null;
+        ed.doc = elementDoc;
+        ed.attributes = attrs;
+        ed.children = children;
+        ed.otherAttributes = otherAttrs;
+        return ed;
     }
 
     private Map<String, Map<String, String>> attributeDocs(ElementInfo ei) {
@@ -118,167 +185,6 @@ public class YamlDocsGenerator {
             out.put(k, v);
         }
         return out;
-    }
-
-    private void writeRoot(BufferedWriter w, Map<String, Map<String, ElementDoc>> byNamespace) throws IOException {
-        w.write("docFormatVersion: " + DOC_FORMAT_VERSION + "\n");
-        w.write("membraneVersion: ");
-        writeScalar(w, VERSION, 0);
-        w.write("\n");
-        w.write("schemas:\n");
-        for (var nsEntry : byNamespace.entrySet()) {
-            w.write(indent(2) + yamlKey(nsEntry.getKey()) + ":\n");
-            w.write(indent(4) + "elements:\n");
-
-            for (var elEntry : nsEntry.getValue().entrySet()) {
-                ElementDoc ed = elEntry.getValue();
-
-                w.write(indent(6) + yamlKey(elEntry.getKey()) + ":\n");
-
-                if (ed.name != null && !ed.name.isBlank()) {
-                    w.write(indent(8) + "name: ");
-                    writeScalar(w, ed.name, 8);
-                    w.write("\n");
-                }
-
-                writeDocBlock(w, "doc", ed.doc, 8);
-
-                if (!ed.attributes.isEmpty()) {
-                    w.write(indent(8) + "attributes:\n");
-                    for (var a : ed.attributes.entrySet()) {
-                        w.write(indent(10) + yamlKey(a.getKey()) + ":\n");
-                        writeDocBlock(w, "doc", a.getValue(), 12);
-                    }
-                }
-
-                if (!ed.children.isEmpty()) {
-                    w.write(indent(8) + "children:\n");
-                    for (var c : ed.children.entrySet()) {
-                        w.write(indent(10) + yamlKey(c.getKey()) + ":\n");
-                        writeDocBlock(w, "doc", c.getValue(), 12);
-                    }
-                }
-
-                if (!ed.otherAttributes.isEmpty()) {
-                    w.write(indent(8) + "otherAttributes:\n");
-                    writeDocBlock(w, "doc", ed.otherAttributes, 10);
-                }
-            }
-        }
-    }
-
-    private void writeDocBlock(BufferedWriter w, String key, Map<String, String> doc, int indent) throws IOException {
-        if (doc == null || doc.isEmpty()) return;
-
-        w.write(indent(indent) + key + ":\n");
-        for (var e : doc.entrySet()) {
-            w.write(indent(indent + 2) + yamlKey(e.getKey()) + ": ");
-            writeScalar(w, e.getValue(), indent + 2);
-            w.write("\n");
-        }
-    }
-
-    private void writeScalar(BufferedWriter w, String value, int currentIndent) throws IOException {
-        if (value == null) {
-            w.write("\"\"");
-            return;
-        }
-
-        String v = value.replace("\r\n", "\n").replace("\r", "\n");
-
-        if (v.contains("\n")) {
-            w.write("|\n");
-            int indent = currentIndent + 2;
-
-            List<String> lines = Arrays.asList(v.split("\n", -1));
-
-            int firstNonBlank = -1;
-            for (int i = 0; i < lines.size(); i++) {
-                if (!lines.get(i).isBlank()) {
-                    firstNonBlank = i;
-                    break;
-                }
-            }
-
-            int minAll = MAX_VALUE;
-            for (String line : lines) {
-                if (line.isBlank()) continue;
-                minAll = Math.min(minAll, leadingSpaces(line));
-            }
-            if (minAll == MAX_VALUE) minAll = 0;
-
-            int strip = minAll;
-            boolean skipFirst = false;
-
-            if (strip == 0 && firstNonBlank != -1 && leadingSpaces(lines.get(firstNonBlank)) == 0) {
-                int minRest = MAX_VALUE;
-                for (int i = 0; i < lines.size(); i++) {
-                    if (i == firstNonBlank) continue;
-                    String line = lines.get(i);
-                    if (line.isBlank()) continue;
-                    int lead = leadingSpaces(line);
-                    if (lead > 0) minRest = Math.min(minRest, lead);
-                }
-                if (minRest != MAX_VALUE) {
-                    strip = minRest;
-                    skipFirst = true;
-                }
-            }
-
-            for (int i = 0; i < lines.size(); i++) {
-                String out = lines.get(i);
-
-                if (!out.isBlank()) {
-                    int lead = leadingSpaces(out);
-                    boolean shouldStrip = strip > 0 && lead >= strip && !(skipFirst && i == firstNonBlank);
-                    if (shouldStrip) out = out.substring(strip);
-                }
-
-                w.write(indent(indent));
-                w.write(out);
-                w.write("\n");
-            }
-            return;
-        }
-
-        if (v.isEmpty()) {
-            w.write("\"\"");
-            return;
-        }
-
-        w.write("'");
-        w.write(v.replace("'", "''"));
-        w.write("'");
-    }
-
-    private int leadingSpaces(String s) {
-        int i = 0;
-        while (i < s.length() && s.charAt(i) == ' ') i++;
-        return i;
-    }
-
-    private String yamlKey(String k) {
-        if (k == null) return "\"\"";
-        String s = k.trim();
-        if (s.isEmpty()) return "\"\"";
-
-        if (!SIMPLE_KEY.matcher(s).matches()) {
-            return "'" + s.replace("'", "''") + "'";
-        }
-
-        if (YAML_11_RESERVED.contains(s.toLowerCase(Locale.ROOT))) {
-            return "'" + s.replace("'", "''") + "'";
-        }
-
-        if (s.chars().allMatch(Character::isDigit)) {
-            return "'" + s + "'";
-        }
-
-        return s;
-    }
-
-    private String indent(int n) {
-        return " ".repeat(Math.max(0, n));
     }
 
     private static final class ElementDoc {
