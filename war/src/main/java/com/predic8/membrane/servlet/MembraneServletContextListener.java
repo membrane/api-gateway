@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.servlet;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.servlet.config.spring.BaseLocationXmlWebApplicationContext;
 import jakarta.servlet.ServletContextEvent;
@@ -22,6 +21,8 @@ import jakarta.servlet.ServletContextListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.context.support.XmlWebApplicationContext;
+
+import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
 
 public class MembraneServletContextListener implements ServletContextListener {
 
@@ -31,7 +32,7 @@ public class MembraneServletContextListener implements ServletContextListener {
 
 	public void contextInitialized(ServletContextEvent sce) {
 		try {
-			log.info(Constants.PRODUCT_NAME + " starting...");
+			log.info(PRODUCT_NAME + " starting...");
 
 			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(sce));
 
@@ -40,7 +41,7 @@ public class MembraneServletContextListener implements ServletContextListener {
 			if (router != null)
 				throw new RuntimeException("A <router> with a <servletTransport> cannot be used with MembraneServletContextListener. Use MembraneServlet instead.");
 
-			log.info(Constants.PRODUCT_NAME + " running.");
+			log.info(PRODUCT_NAME + " running.");
 		} catch (Exception ex) {
 			log.error("Router not started!", ex);
 			throw new RuntimeException("Router not started!", ex);

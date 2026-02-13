@@ -30,7 +30,7 @@ import javax.xml.validation.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 

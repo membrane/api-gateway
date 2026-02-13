@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

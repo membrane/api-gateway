@@ -23,7 +23,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
 import static com.predic8.membrane.core.util.HttpUtil.*;

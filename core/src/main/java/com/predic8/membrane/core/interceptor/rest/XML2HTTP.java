@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.core.http.*;
 import com.predic8.xml.beautifier.*;
 import org.slf4j.*;

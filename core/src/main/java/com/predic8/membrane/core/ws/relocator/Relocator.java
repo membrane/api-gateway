@@ -25,7 +25,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 
 @NotThreadSafe
 public class Relocator {

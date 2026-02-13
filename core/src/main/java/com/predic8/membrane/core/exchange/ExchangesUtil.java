@@ -17,7 +17,7 @@ package com.predic8.membrane.core.exchange;
 import java.time.*;
 import java.time.format.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 
 public class ExchangesUtil {
 

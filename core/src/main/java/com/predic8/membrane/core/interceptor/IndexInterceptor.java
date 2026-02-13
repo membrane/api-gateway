@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor;
 
 import com.googlecode.jatl.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;

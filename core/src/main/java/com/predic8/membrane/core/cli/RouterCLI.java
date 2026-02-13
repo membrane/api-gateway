@@ -33,7 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.*;
 import static com.predic8.membrane.core.config.spring.CheckableBeanFactory.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;

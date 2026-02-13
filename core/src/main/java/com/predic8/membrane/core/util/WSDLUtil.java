@@ -13,16 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.annot.Constants;
 import com.predic8.wsdl.*;
 import org.slf4j.*;
 
 import javax.xml.namespace.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.SoapVersion.*;
-import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
-import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
+import static com.predic8.membrane.annot.Constants.SoapVersion.*;
+import static com.predic8.membrane.annot.Constants.WSDL_SOAP11_NS;
+import static com.predic8.membrane.annot.Constants.WSDL_SOAP12_NS;
 import static com.predic8.membrane.core.util.WSDLUtil.Direction.*;
 import static com.predic8.membrane.core.util.xml.XMLUtil.groovyToJavaxQName;
 

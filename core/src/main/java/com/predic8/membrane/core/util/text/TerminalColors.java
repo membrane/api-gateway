@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.util.text;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 
 /**
  * Provides ANSI terminal color codes with runtime enable/disable support.

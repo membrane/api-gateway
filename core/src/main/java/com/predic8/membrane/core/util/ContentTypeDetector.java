@@ -21,7 +21,7 @@ import org.jetbrains.annotations.*;
 import javax.xml.stream.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
 import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.UNKNOWN;

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.*;
 import javax.xml.namespace.*;
 import java.io.*;
 
-import static com.predic8.membrane.core.Constants.SoapVersion.*;
+import static com.predic8.membrane.annot.Constants.SoapVersion.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.util.SOAPUtil.*;

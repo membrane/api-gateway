@@ -20,7 +20,7 @@ import org.slf4j.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.ChunkedBodyTransferer.*;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
 import static java.lang.Long.*;

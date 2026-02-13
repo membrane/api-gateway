@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.annot.Constants;
 
 import java.io.*;
 
