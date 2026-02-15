@@ -26,7 +26,6 @@ import java.net.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-
 import static com.predic8.membrane.core.router.DummyTestRouter.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -148,6 +147,21 @@ class DispatchingInterceptorTest {
 
 	private void addRequest(String uri) throws Exception {
 		exc.setRequest(get(uri).build());
+	}
+
+	@Test
+	void getAddressFromTargetElement() throws Exception {
+		var api = new APIProxy();
+		api.setTarget(new Target() {{
+			setUrl("https://${property.host}:8080"); // Has illegal characters $ { } in base path
+		}});
+
+		var exc =  get("/foo").buildExchange();
+		exc.setProperty("host", "predic8.de");
+		exc.setProxy(api);
+
+		var url = dispatcher.getAddressFromTargetElement(exc);
+		System.out.println(url);
 	}
 
 	@Nested

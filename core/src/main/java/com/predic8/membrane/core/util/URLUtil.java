@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.*;
 
 public class URLUtil {
 
-    public static String getHost(String uri) {
+    public static String getAuthority(String uri) {
         int i = uri.indexOf(":") + 1;
         while (uri.charAt(i) == '/')
             i++;

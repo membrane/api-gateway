@@ -20,7 +20,10 @@ import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.router.*;
+
+import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -57,24 +60,22 @@ public class Target implements XMLSupport {
         setPort(port);
     }
 
-    public void applyModifications(Exchange exc, AbstractServiceProxy asp, Router router) {
-        computeDestinationExpressions(exc, asp, router);
+    public void applyModifications(Exchange exc, Router router) {
+        exc.setDestinations(computeDestinationExpressions(exc, router));
 
         // Changing the method must be the last step cause it can empty the body!
-        if (asp.getTarget().getMethod() != null) {
-            exc.getRequest().changeMethod(asp.getTarget().getMethod());
+        if (method != null && !method.isEmpty()) {
+            exc.getRequest().changeMethod(method);
         }
     }
 
-    private static void computeDestinationExpressions(Exchange exc, AbstractServiceProxy asp, Router router) {
-        var target = asp.getTarget();
+    private List<String> computeDestinationExpressions(Exchange exc, Router router) {
+        var adapter = new InterceptorAdapter(router, xmlConfig);
+        return exc.getDestinations().stream().map(url -> evaluateTemplate(exc, router, url, adapter)).toList();
+    }
 
-        var dests = exc.getDestinations().stream().map(url -> {
-            var exp = TemplateExchangeExpression.newInstance(new ExchangeExpression.InterceptorAdapter(router, target.getXmlConfig()), target.getLanguage(), url, router);
-            return exp.evaluate(exc, REQUEST, String.class);
-        }).toList();
-
-        exc.setDestinations(dests);
+    private String evaluateTemplate(Exchange exc, Router router, String url, InterceptorAdapter adapter) {
+        return TemplateExchangeExpression.newInstance(adapter, language, url, router).evaluate(exc, REQUEST, String.class);
     }
 
     public String getHost() {
