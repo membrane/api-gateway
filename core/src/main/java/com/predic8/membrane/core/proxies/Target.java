@@ -25,6 +25,7 @@ import com.predic8.membrane.core.router.*;
 
 import java.net.*;
 import java.util.*;
+import java.util.stream.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
@@ -51,14 +52,6 @@ public class Target implements XMLSupport {
 
     protected XmlConfig xmlConfig;
 
-    /**
-     * A cache mapping template strings to precomputed {@link ExchangeExpression} instances.
-     *
-     * This cache is used to optimize the evaluation of dynamic expressions by avoiding the repeated
-     * parsing and compilation of the same template.
-     */
-    private Map<String,ExchangeExpression> templateExpressionCache = new HashMap<>();
-
     public Target() {
     }
 
@@ -82,7 +75,8 @@ public class Target implements XMLSupport {
 
     private List<String> computeDestinationExpressions(Exchange exc, Router router) {
         var adapter = new InterceptorAdapter(router, xmlConfig);
-        return exc.getDestinations().stream().map(url -> evaluateTemplate(exc, router, url, adapter)).toList();
+        return exc.getDestinations().stream().map(url -> evaluateTemplate(exc, router, url, adapter))
+                .collect(Collectors.toList()); // Collectors.toList() generates mutable List .toList() => immutable
     }
 
     private String evaluateTemplate(Exchange exc, Router router, String url, InterceptorAdapter adapter) {
@@ -91,11 +85,13 @@ public class Target implements XMLSupport {
             return url;
         }
 
-        return templateExpressionCache.computeIfAbsent(url, k -> TemplateExchangeExpression.newInstance(adapter,
+        // Without caching 1_000_000 => 37s with ConcurrentHashMap as Cache => 34s
+        // Cache is probably not worth the effort and complexity
+        return TemplateExchangeExpression.newInstance(adapter,
                 language,
-                k,
+                url,
                 router,
-                s -> URLEncoder.encode(s, UTF_8))).evaluate(exc, REQUEST, String.class);
+                s -> URLEncoder.encode(s, UTF_8)).evaluate(exc, REQUEST, String.class);
     }
 
     public String getHost() {
