@@ -14,21 +14,20 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.net.*;
+import java.net.URI;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
@@ -44,7 +43,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 @MCElement(name = "dispatching", excludeFromFlow = true)
 public class DispatchingInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class);
 
     public DispatchingInterceptor() {
         name = "dispatching interceptor";
@@ -106,12 +105,14 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     }
 
     protected String getAddressFromTargetElement(Exchange exc) throws MalformedURLException, URISyntaxException {
-        AbstractServiceProxy p = (AbstractServiceProxy) exc.getProxy();
+        var proxy = (AbstractServiceProxy) exc.getProxy();
 
-        if (p.getTargetURL() != null) {
-            String targetURL = p.getTarget().compileUrl(exc, REQUEST);
+        if (proxy.getTargetURL() != null) {
+            var targetURL = proxy.getTarget().getUrl();
             if (targetURL.startsWith("http") || targetURL.startsWith("internal")) {
-                String basePath = UriUtil.getPathFromURL(router.getConfiguration().getUriFactory(), targetURL);
+                // Here illegal character as $ { } are allowed in the URI to make URL expressions possible.
+                // The URL is from the target in the configuration, that is maintained by the admin
+                var basePath = UriUtil.getPathFromURL(new URIFactory(true), targetURL);
                 if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
                     URI base = new URI(targetURL);
                     // Resolve and normalize slashes consistently with the branch below.
@@ -120,8 +121,8 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             }
             return targetURL;
         }
-        if (p.getTargetHost() != null) {
-            return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), getUri(exc)).toString();
+        if (proxy.getTargetHost() != null) {
+            return new URL(proxy.getTargetScheme(), proxy.getTargetHost(), proxy.getTargetPort(), getUri(exc)).toString();
         }
 
         // That's fine. Maybe it is a <soapProxy> without a target

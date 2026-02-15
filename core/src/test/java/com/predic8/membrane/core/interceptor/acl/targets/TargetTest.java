@@ -14,11 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.acl.targets;
 
-import com.predic8.membrane.core.interceptor.acl.IpAddress;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.acl.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
+import java.net.*;
+
+import static com.predic8.membrane.core.http.Request.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TargetTest {
@@ -71,6 +77,25 @@ class TargetTest {
         assertThrows(IllegalArgumentException.class, () -> Target.byMatch("999.1.1.1/33"));
         assertThrows(IllegalArgumentException.class, () -> Target.byMatch("2001:db8::1/129"));
         assertThrows(IllegalArgumentException.class, () -> Target.byMatch("["));
+    }
+
+    @Test
+    void targetWithExpression() throws URISyntaxException {
+        var exc = get("http://localhost:2000/").buildExchange();
+        var api = new APIProxy() {{
+            setTarget(new com.predic8.membrane.core.proxies.Target() {{
+                // { and } are illegal characters in URLs. Make sure they are accepted at that point
+                setUrl("http://localhost/${1+2}");
+            }});
+        }};
+
+        var di = new DispatchingInterceptor();
+        exc.setProxy(api);
+        di.handleRequest(exc);
+        assertEquals(1, exc.getDestinations().size());
+
+        // Expression should not be evaluated at this point.
+        assertEquals("http://localhost/${1+2}", exc.getDestinations().getFirst());
     }
 
 }

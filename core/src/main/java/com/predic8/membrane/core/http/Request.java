@@ -18,6 +18,7 @@ import com.google.common.collect.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
 import java.io.*;
 import java.net.*;
@@ -30,6 +31,8 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class Request extends Message {
+
+    private static final Logger log = LoggerFactory.getLogger(Request.class);
 
     private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
     private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
@@ -166,6 +169,19 @@ public class Request extends Message {
         return (T) result;
     }
 
+    public void changeMethod(String newMethod) {
+        if (method.equalsIgnoreCase(newMethod))
+            return;
+
+        log.debug("Changing method from {} to {}", this.method, newMethod);
+        this.method = newMethod;
+
+        if (!newMethod.equalsIgnoreCase(METHOD_GET))
+            return;
+
+        emptyBody();
+    }
+
     public final void writeSTOMP(OutputStream out, boolean retainBody) throws IOException {
         out.write(getMethod().getBytes(UTF_8));
         out.write(10);
@@ -257,7 +273,7 @@ public class Request extends Message {
         }
 
         public Builder contentType(String value) {
-            req.getHeader().setContentType( value);
+            req.getHeader().setContentType(value);
             return this;
         }
 
