@@ -23,10 +23,13 @@ import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.router.*;
 
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.util.TemplateUtil.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description <p>
@@ -75,7 +78,15 @@ public class Target implements XMLSupport {
     }
 
     private String evaluateTemplate(Exchange exc, Router router, String url, InterceptorAdapter adapter) {
-        return TemplateExchangeExpression.newInstance(adapter, language, url, router).evaluate(exc, REQUEST, String.class);
+        // If the url does not contain ${ we do not have to evaluate the expression
+        if (!containsTemplateMarker(url)) {
+            return url;
+        }
+        return TemplateExchangeExpression.newInstance(adapter,
+                language,
+                url,
+                router,
+                s -> URLEncoder.encode(s, UTF_8)).evaluate(exc, REQUEST, String.class);
     }
 
     public String getHost() {

@@ -23,6 +23,7 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest {
 
@@ -114,7 +115,9 @@ class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest 
         interceptor.init(router);
         interceptor.handleRequest(exchange);
         var tags = getHeader("tags");
-        System.out.println(tags);
+        assertEquals(3, tags.split(",").length);
+        assertTrue(tags.contains("PRIVATE"));
+        assertTrue(tags.contains("BUSINESS"));
     }
 
     @Test
@@ -124,7 +127,7 @@ class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest 
         interceptor.init(router);
         interceptor.handleRequest(exchange);
         var s = getHeader("map");
-        Assertions.assertTrue(s.contains("3141592"));
+        assertTrue(s.contains("3141592"));
         assertTrue(s.contains("Manaus"));
     }
 }

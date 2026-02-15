@@ -160,8 +160,7 @@ class DispatchingInterceptorTest {
 		exc.setProperty("host", "predic8.de");
 		exc.setProxy(api);
 
-		var url = dispatcher.getAddressFromTargetElement(exc);
-		System.out.println(url);
+        assertEquals("https://${property.host}:8080/foo", dispatcher.getAddressFromTargetElement(exc));
 	}
 
 	@Nested
