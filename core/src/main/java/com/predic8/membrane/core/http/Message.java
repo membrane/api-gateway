@@ -81,6 +81,25 @@ public abstract class Message {
         }
     }
 
+	/**
+	 * Empties the body of the message.
+	 * This method ensures the message contents accurately reflect a state where there is no body,
+	 * and updates the headers accordingly to maintain consistency.
+	 */
+	public void emptyBody() {
+        try {
+            if (isBodyEmpty())
+                return;
+        } catch (IOException e) {
+            log.warn("", e);
+        }
+        discardBody(); // Read body before we replace it. Maybe there is one but it is not read
+        body = new EmptyBody();
+        header.removeFields(CONTENT_LENGTH);
+        header.removeFields(CONTENT_TYPE);
+        header.removeFields(CONTENT_ENCODING);
+    }
+
 	public AbstractBody getBody() {
 		return body;
 	}

@@ -13,32 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.EmptyBody;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.proxies.AbstractServiceProxy;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.ProtocolUpgradeDeniedException;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.URLUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.*;
+import com.predic8.membrane.core.util.*;
+import org.slf4j.*;
 
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
+import java.net.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Request.METHOD_GET;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description The <i>httpClient</i> sends the request of an exchange to a Web
@@ -48,16 +35,15 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
  * its outgoing HTTP connection that is different from the global
  * configuration in the transport.
  */
-@MCElement(name = "httpClient", excludeFromFlow= true)
+@MCElement(name = "httpClient", excludeFromFlow = true)
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
 
-    private static final String PROXIES_HINT = " Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/proxies.xml.";
+    private static final String PROXIES_HINT = " Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/apies.xml.";
 
     // null => inherit from HttpClientConfiguration unless explicitly set here
     private Boolean failOverOn5XX;
-    private Boolean adjustHostHeader;
 
     private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 
@@ -77,24 +63,19 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);
         }
 
-        if (adjustHostHeader != null) {
-            httpClientConfig.setAdjustHostHeader(adjustHostHeader);
-        }
-
         hc = router.getHttpClientFactory().createClient(httpClientConfig);
         hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        changeMethod(exc);
-
+        applyTargetModifications(exc);
         try {
             hc.call(exc);
             return RETURN;
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
-            log.warn(msg + PROXIES_HINT);
+            log.warn("{} {}",msg,PROXIES_HINT);
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("connect")
                     .status(502)
@@ -110,7 +91,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (UnknownHostException e) {
             String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName());
-            log.warn(msg + PROXIES_HINT);
+            log.warn("{} {}",msg,PROXIES_HINT);
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("unknown-host")
                     .status(502)
@@ -118,13 +99,13 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (MalformedURLException e) {
-            log.info("Malformed URL. Requested path is: {} {}",exc.getRequest().getUri() , e.getMessage());
-            log.debug("",e);
+            log.info("Malformed URL. Requested path is: {} {}", exc.getRequest().getUri(), e.getMessage());
+            log.debug("", e);
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Request path or 'Host' header is malformed")
                     .addSubSee("malformed-url")
                     .internal("proxy", exc.getProxy().getName())
-                    .internal("url",exc.getRequest().getUri())
+                    .internal("url", exc.getRequest().getUri())
                     .internal("hostHeader", exc.getRequest().getHeader().getHost())
                     .detail(e.getMessage())
                     .buildAndSetResponse(exc);
@@ -137,7 +118,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .addSubSee("denied-protocol-upgrade")
                     .internal("hint", "Protocol upgrades are supported by Membrane for 'websocket' and 'tcp', but have to be allowed in the configuration explicitly.")
                     .internal("proxy", exc.getProxy().getName())
-                    .internal("url",exc.getRequest().getUri())
+                    .internal("url", exc.getRequest().getUri())
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {
@@ -151,36 +132,15 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Makes it possible to change the method by specifying <target method="POST"/>
+     * Manipulates the target URL according to the target (change of method, URL expression)
      *
      * @param exc
      */
-    private static void changeMethod(Exchange exc) {
+    void applyTargetModifications(Exchange exc) {
         if (!(exc.getProxy() instanceof AbstractServiceProxy asp) || asp.getTarget() == null)
             return;
 
-        String newMethod = asp.getTarget().getMethod();
-        if (newMethod == null || newMethod.equalsIgnoreCase(exc.getRequest().getMethod()))
-            return;
-
-        log.debug("Changing method from {} to {}", exc.getRequest().getMethod(), newMethod);
-        exc.getRequest().setMethod(newMethod);
-
-        if (newMethod.equalsIgnoreCase(METHOD_GET)) {
-            handleBodyContentWhenChangingToGET(exc);
-        }
-    }
-
-    private static void handleBodyContentWhenChangingToGET(Exchange exc) {
-        Request req = exc.getRequest();
-        try {
-            req.readBody();
-        } catch (IOException ignored) {
-        }
-        req.setBody(new EmptyBody());
-        req.getHeader().removeFields(CONTENT_LENGTH);
-        req.getHeader().removeFields(CONTENT_TYPE);
-        req.getHeader().removeFields(CONTENT_ENCODING);
+        asp.getTarget().applyModifications(exc, asp, getRouter());
     }
 
     private String getDestination(Exchange exc) {

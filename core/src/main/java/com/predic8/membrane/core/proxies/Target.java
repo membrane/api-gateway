@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.router.*;
 
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 
 /**
@@ -39,28 +40,10 @@ public class Target implements XMLSupport {
     protected String url;
     private boolean adjustHostHeader = true;
     private ExchangeExpression.Language language = SPEL;
-    private ExchangeExpression exchangeExpression;
 
     private SSLParser sslParser;
 
     protected XmlConfig xmlConfig;
-
-    public void init(Router router) {
-        if (url == null)
-            return;
-        exchangeExpression = TemplateExchangeExpression.newInstance(new ExchangeExpression.InterceptorAdapter(router, xmlConfig), language, url, router);
-    }
-
-    public String compileUrl(Exchange exc, Interceptor.Flow flow) {
-        /*
-         * Will always evaluate on every call. This is fine as SpEL is fast enough and performs its own optimizations.
-         * 1.000.000 calls ~10ms
-         */
-        if (exchangeExpression != null) {
-            return exchangeExpression.evaluate(exc, flow, String.class);
-        }
-        return url;
-    }
 
     public Target() {
     }
@@ -72,6 +55,26 @@ public class Target implements XMLSupport {
     public Target(String host, int port) {
         setHost(host);
         setPort(port);
+    }
+
+    public void applyModifications(Exchange exc, AbstractServiceProxy asp, Router router) {
+        computeDestinationExpressions(exc, asp, router);
+
+        // Changing the method must be the last step cause it can empty the body!
+        if (asp.getTarget().getMethod() != null) {
+            exc.getRequest().changeMethod(asp.getTarget().getMethod());
+        }
+    }
+
+    private static void computeDestinationExpressions(Exchange exc, AbstractServiceProxy asp, Router router) {
+        var target = asp.getTarget();
+
+        var dests = exc.getDestinations().stream().map(url -> {
+            var exp = TemplateExchangeExpression.newInstance(new ExchangeExpression.InterceptorAdapter(router, target.getXmlConfig()), target.getLanguage(), url, router);
+            return exp.evaluate(exc, REQUEST, String.class);
+        }).toList();
+
+        exc.setDestinations(dests);
     }
 
     public String getHost() {
@@ -148,10 +151,6 @@ public class Target implements XMLSupport {
     @MCAttribute
     public void setMethod(String method) {
         this.method = method;
-    }
-
-    public ExchangeExpression getExchangeExpression() {
-        return exchangeExpression;
     }
 
     public ExchangeExpression.Language getLanguage() {

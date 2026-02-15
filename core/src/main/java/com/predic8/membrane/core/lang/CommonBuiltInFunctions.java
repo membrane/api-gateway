@@ -22,6 +22,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.security.*;
+import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
 import org.jetbrains.annotations.*;
@@ -30,6 +31,7 @@ import org.slf4j.Logger;
 
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Predicate;
@@ -253,4 +255,20 @@ public class CommonBuiltInFunctions {
         return getenv(name);
     }
 
+    public static String urlEncode(String s) {
+        return URLEncoder.encode(s, UTF_8);
+    }
+
+    /**
+     * Encodes the given string value as a URI-safe path segment.
+     * This method performs percent-encoding according to RFC 3986, ensuring that the encoded string
+     * is safe to use as a single path segment in URIs. Characters outside the unreserved set
+     * {@code A-Z, a-z, 0-9, -, ., _, ~} are encoded as {@code %HH} sequences.
+     *
+     * @param segment the string value to encode; must not be null
+     * @return a percent-encoded string safe for use as a single URI path segment
+     */
+    public static String pathSeg(String segment) {
+        return URLUtil.pathSeg(segment);
+    }
 }

@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
@@ -28,27 +28,27 @@ import static org.junit.jupiter.api.Assertions.*;
 class HTTPClientInterceptorTest {
 
     HTTPClientInterceptor hci;
+    Router router;
 
     @BeforeEach
     void setUp() {
         hci = new HTTPClientInterceptor();
+        router = new DefaultRouter();
     }
 
     @Test
     void protocolUpgradeRejected() throws URISyntaxException {
-        DefaultRouter r = new DefaultRouter();
+        hci.init(router);
 
-        hci.init(r);
-
-        Exchange e = get("http://localhost:2000/")
+        var exc = get("http://localhost:2000/")
                 .header(CONNECTION, "upgrade")
                 .header(UPGRADE, "rejected")
                 .buildExchange();
-        e.setProxy(new NullProxy());
+        exc.setProxy(new NullProxy());
 
-        hci.handleRequest(e);
+        hci.handleRequest(exc);
 
-        assertEquals(401, e.getResponse().getStatusCode());
+        assertEquals(401, exc.getResponse().getStatusCode());
     }
 
     @Test
@@ -62,6 +62,23 @@ class HTTPClientInterceptorTest {
         hci.setFailOverOn5XX(true);
         hci.init(new DefaultRouter());
         assertTrue(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
+    }
+
+    @Test
+    void computeTargetUrl() throws Exception {
+        var target = new Target();
+        target.setUrl("http://localhost/foo/${urlEncode(header.foo)}");
+
+        var api = new APIProxy();
+        api.setTarget(target);
+
+        var exc = get("/foo").header("foo","% ${}").buildExchange();
+        exc.setProxy(api);
+        hci.init(router);
+        new DispatchingInterceptor().handleRequest(exc);
+        hci.applyTargetModifications(exc);
+        assertEquals(1, exc.getDestinations().size());
+        assertEquals("http://localhost/foo/%25+%24%7B%7D", exc.getDestinations().getFirst());
     }
 
 }
