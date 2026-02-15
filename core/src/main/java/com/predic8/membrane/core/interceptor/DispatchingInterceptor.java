@@ -22,7 +22,6 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.net.*;
-import java.net.URI;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -44,6 +43,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 public class DispatchingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class);
+    public static final URIFactory URI_FACTORY_ALLOW_ILLEGAL = new URIFactory(true);
 
     public DispatchingInterceptor() {
         name = "dispatching interceptor";
@@ -105,18 +105,17 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     }
 
     protected String getAddressFromTargetElement(Exchange exc) throws MalformedURLException, URISyntaxException {
-        var proxy = (AbstractServiceProxy) exc.getProxy();
+        if (!(exc.getProxy() instanceof AbstractServiceProxy proxy))
+            return null;
 
         if (proxy.getTargetURL() != null) {
-            var targetURL = proxy.getTarget().getUrl();
+            var targetURL = proxy.getTargetURL();
             if (targetURL.startsWith("http") || targetURL.startsWith("internal")) {
                 // Here illegal character as $ { } are allowed in the URI to make URL expressions possible.
                 // The URL is from the target in the configuration, that is maintained by the admin
-                var basePath = UriUtil.getPathFromURL(new URIFactory(true), targetURL);
+                var basePath = UriUtil.getPathFromURL(URI_FACTORY_ALLOW_ILLEGAL, targetURL);
                 if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
-                    URI base = new URI(targetURL);
-                    // Resolve and normalize slashes consistently with the branch below.
-                    return base.resolve(getUri(exc)).toString();
+                    return URI_FACTORY_ALLOW_ILLEGAL.create(targetURL).resolve(URI_FACTORY_ALLOW_ILLEGAL.create(getUri(exc))).toString();
                 }
             }
             return targetURL;

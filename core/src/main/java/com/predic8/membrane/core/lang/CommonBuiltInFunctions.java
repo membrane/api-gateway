@@ -256,6 +256,7 @@ public class CommonBuiltInFunctions {
     }
 
     public static String urlEncode(String s) {
+        if (s == null) return "";
         return URLEncoder.encode(s, UTF_8);
     }
 
@@ -265,7 +266,7 @@ public class CommonBuiltInFunctions {
      * is safe to use as a single path segment in URIs. Characters outside the unreserved set
      * {@code A-Z, a-z, 0-9, -, ., _, ~} are encoded as {@code %HH} sequences.
      *
-     * @param segment the string value to encode; must not be null
+     * @param segment the string value to encode
      * @return a percent-encoded string safe for use as a single URI path segment
      */
     public static String pathSeg(String segment) {

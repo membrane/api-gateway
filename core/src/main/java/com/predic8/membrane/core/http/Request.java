@@ -176,10 +176,8 @@ public class Request extends Message {
         log.debug("Changing method from {} to {}", this.method, newMethod);
         this.method = newMethod;
 
-        if (!newMethod.equalsIgnoreCase(METHOD_GET))
-            return;
-
-        emptyBody();
+        if (methodsWithoutBody.contains(newMethod.toUpperCase()))
+            emptyBody();
     }
 
     public final void writeSTOMP(OutputStream out, boolean retainBody) throws IOException {

@@ -30,13 +30,16 @@ import static org.junit.jupiter.api.Assertions.*;
 public class URLUtilTest {
 
     @Test
-    void host() {
-        assertEquals("a", getHost("internal:a"));
-        assertEquals("a", getHost("internal://a"));
-        assertEquals("a", getHost("a"));
-        assertEquals("a", getHost("a/b"));
-        assertEquals("a", getHost("internal:a/b"));
-        assertEquals("a", getHost("internal://a/b"));
+    void authority() {
+        assertEquals("a", getAuthority("internal:a"));
+        assertEquals("a", getAuthority("internal://a"));
+        assertEquals("a", getAuthority("a"));
+        assertEquals("a", getAuthority("a/b"));
+        assertEquals("a", getAuthority("internal:a/b"));
+        assertEquals("a", getAuthority("internal://a/b"));
+        assertEquals("localhost", getAuthority("http://localhost"));
+        assertEquals("localhost:8080", getAuthority("http://localhost:8080"));
+        assertEquals("localhost:80", getAuthority("http://localhost:80/foo"));
     }
 
     @Test

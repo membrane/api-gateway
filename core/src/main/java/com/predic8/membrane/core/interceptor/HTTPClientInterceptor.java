@@ -40,7 +40,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
 
-    private static final String PROXIES_HINT = " Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in conf/apies.xml.";
+    private static final String PROXIES_HINT = " Maybe the target is only reachable over an HTTP proxy server. Please check proxy settings in apis.yaml or proxies.xml.";
 
     // null => inherit from HttpClientConfiguration unless explicitly set here
     private Boolean failOverOn5XX;
@@ -69,8 +69,8 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        applyTargetModifications(exc);
         try {
+            applyTargetModifications(exc);
             hc.call(exc);
             return RETURN;
         } catch (ConnectException e) {
@@ -90,7 +90,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (UnknownHostException e) {
-            String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getHost(getDestination(exc)), exc.getProxy().getName());
+            String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getAuthority(getDestination(exc)), exc.getProxy().getName());
             log.warn("{} {}",msg,PROXIES_HINT);
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("unknown-host")
@@ -140,7 +140,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         if (!(exc.getProxy() instanceof AbstractServiceProxy asp) || asp.getTarget() == null)
             return;
 
-        asp.getTarget().applyModifications(exc, asp, getRouter());
+        asp.getTarget().applyModifications(exc, getRouter());
     }
 
     private String getDestination(Exchange exc) {

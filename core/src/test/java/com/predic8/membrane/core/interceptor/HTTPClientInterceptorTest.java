@@ -53,14 +53,14 @@ class HTTPClientInterceptorTest {
 
     @Test
     void passFailOverOn500Default() {
-        hci.init(new DefaultRouter());
+        hci.init(router);
         assertFalse(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
     }
 
     @Test
     void passFailOverOn500() {
         hci.setFailOverOn5XX(true);
-        hci.init(new DefaultRouter());
+        hci.init(router);
         assertTrue(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
     }
 

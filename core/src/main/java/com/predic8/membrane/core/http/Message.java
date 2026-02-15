@@ -91,13 +91,14 @@ public abstract class Message {
             if (isBodyEmpty())
                 return;
         } catch (IOException e) {
-            log.warn("", e);
+            log.debug("", e);
         }
         discardBody(); // Read body before we replace it. Maybe there is one but it is not read
         body = new EmptyBody();
         header.removeFields(CONTENT_LENGTH);
         header.removeFields(CONTENT_TYPE);
         header.removeFields(CONTENT_ENCODING);
+		header.removeFields(TRANSFER_ENCODING);
     }
 
 	public AbstractBody getBody() {

@@ -4,6 +4,14 @@
 
 - Correct YAML example on GitHub README
 
+# 7.1.1
+
+# Improvements
+- Move URL template evaluation after the request flow has been processed. Before expressions in the target were evaluated before the request flow was processed.
+
+# Features
+- urlEncode(), pathSeg() functions of SpEL and Groovy
+
 # 7.X
 
 PRIO 1:
