@@ -69,7 +69,9 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	private int maxExchanges = Integer.MAX_VALUE;
 	private int completedExchanges;
 
-	private Exchange exchange;
+	// volatile ensures cross-thread visibility of writes
+	private volatile Exchange exchange;
+
 	private boolean keepAttachedToExchange;
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws IOException {
@@ -238,9 +240,11 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		lastUse = System.currentTimeMillis();
 		completedExchanges++;
 
+		// snapshots the reference so the null-check and subsequent usage operate on the same object, eliminating the TOCTOU window
+		Exchange ex = exchange;
 		try {
-			if (exchange != null) {
-				if (exchange.canKeepConnectionAlive()) {
+			if (ex != null) {
+				if (ex.canKeepConnectionAlive()) {
 					if (keepAttachedToExchange)
 						return;
 					else
@@ -248,13 +252,12 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 				} else {
 					close();
 				}
-				exchange.setTargetConnection(null);
+				ex.setTargetConnection(null);
 				exchange = null;
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-
 	}
 
 	public final void setTimeout(long timeout) {
