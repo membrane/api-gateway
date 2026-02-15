@@ -16,22 +16,21 @@ package com.predic8.membrane.core.lang;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.router.*;
 import org.slf4j.*;
 
 import java.util.*;
+import java.util.function.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.*;
-import static com.predic8.membrane.core.lang.spel.DollarTemplateParserContext.*;
+import static java.util.function.Function.*;
 
 public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateExchangeExpression.class);
 
-    private Router router;
+    private Function<String,String> encoder;
 
     /**
      * For parsing strings with expressions inside ${} e.g. "foo ${property.bar} baz"
@@ -41,16 +40,18 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     private final List<Token> tokens;
 
     public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router) {
-        // SpEL comes with its own templating
-        if (language == SPEL) {
-            return new SpELExchangeExpression(expression, DOLLAR_TEMPLATE_PARSER_CONTEXT, router);
-        }
-        return new TemplateExchangeExpression(interceptor, language, expression, router);
+        return newInstance(interceptor,language,expression,router, identity());
     }
 
-    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression, Router router) {
+    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router, Function<String,String> encoder) {
+        // SpEL can take expressions like "a: ${..} b: ${..}" as input. We do not use that feature and tokenize the expression ourselves to enable encoding
+        return new TemplateExchangeExpression(interceptor, language, expression, router,encoder);
+    }
+
+    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression, Router router, Function<String,String> encoder) {
         super(expression, router);
-        tokens = parseTokens(interceptor,language, expression);
+        this.encoder = encoder;
+        tokens = parseTokens(interceptor,language);
     }
 
     @Override
@@ -76,10 +77,16 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     }
 
     private String evaluateToString(Exchange exchange, Flow flow) {
-        StringBuilder line = new StringBuilder();
+        var line = new StringBuilder();
         for(Token token : tokens) {
             try {
-                line.append(token.eval(exchange, flow, String.class));
+                var value = token.eval(exchange, flow, String.class);
+                if (token instanceof Expression) {
+                    line.append(encoder.apply(value));
+                } else {
+                    // For text tokens we trust the configuration
+                    line.append(value);
+                }
             } catch (Exception e) {
                 throw new ExchangeExpressionException(token.toString(),e);
             }
@@ -87,7 +94,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         return line.toString();
     }
 
-    protected static List<Token> parseTokens(Interceptor interceptor, Language language, String expression) {
+    protected List<Token> parseTokens(Interceptor interceptor, Language language) {
         log.debug("Parsing: {}",expression);
 
         List<Token> tokens = new ArrayList<>();

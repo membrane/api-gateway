@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
@@ -23,6 +25,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HTTPClientInterceptorTest {
@@ -65,20 +68,62 @@ class HTTPClientInterceptorTest {
     }
 
     @Test
-    void computeTargetUrl() throws Exception {
+    void computeTargetUrlWithEncodingGroovy() throws Exception {
+        var exc = get("/foo")
+                .header("foo", "% ${}")
+                .header("bar", "$&:/)")
+                .buildExchange();
+        extracted(GROOVY, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingSpEL() throws Exception {
+        var exc = get("/foo")
+                .header("foo", "% ${}")
+                .header("bar", "$&:/)")
+                .buildExchange();
+        extracted(SPEL, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingJsonPath() throws Exception {
+        var exc = post("/foo")
+                .json("""
+                        {
+                          "foo": "% ${}",
+                          "bar": "$&:/)"
+                        }
+                        """)
+                .buildExchange();
+        extracted(JSONPATH, exc, "http://localhost/foo/${$.foo}: {}${$.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingXPath() throws Exception {
+        var exc = post("/foo")
+                .json("""
+                        <root>
+                          <foo>% ${}</foo>
+                          <bar>$&amp;:/)</bar>
+                        </root>
+                        """)
+                .buildExchange();
+        extracted(XPATH, exc, "http://localhost/foo/${//foo}: {}${//bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+    }
+
+    private void extracted(Language language, Exchange exc, String url, String expected) {
         var target = new Target();
-        target.setUrl("http://localhost/foo/${urlEncode(header.foo)}");
+        target.setUrl(url);
+        target.setLanguage(language);
 
         var api = new APIProxy();
         api.setTarget(target);
-
-        var exc = get("/foo").header("foo","% ${}").buildExchange();
         exc.setProxy(api);
         hci.init(router);
         new DispatchingInterceptor().handleRequest(exc);
         hci.applyTargetModifications(exc);
         assertEquals(1, exc.getDestinations().size());
-        assertEquals("http://localhost/foo/%25+%24%7B%7D", exc.getDestinations().getFirst());
+        assertEquals(expected, exc.getDestinations().getFirst());
     }
 
 }
