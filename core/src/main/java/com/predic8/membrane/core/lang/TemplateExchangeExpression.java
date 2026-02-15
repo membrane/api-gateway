@@ -30,7 +30,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateExchangeExpression.class);
 
-    private Function<String,String> encoder;
+    private final Function<String,String> encoder;
 
     /**
      * For parsing strings with expressions inside ${} e.g. "foo ${property.bar} baz"
@@ -94,7 +94,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         return line.toString();
     }
 
-    protected List<Token> parseTokens(Interceptor interceptor, Language language) {
+    List<Token> parseTokens(Interceptor interceptor, Language language) {
         log.debug("Parsing: {}",expression);
 
         List<Token> tokens = new ArrayList<>();
