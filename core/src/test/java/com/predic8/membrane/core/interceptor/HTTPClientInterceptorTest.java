@@ -73,7 +73,7 @@ class HTTPClientInterceptorTest {
                 .header("foo", "% ${}")
                 .header("bar", "$&:/)")
                 .buildExchange();
-        extracted(GROOVY, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+        testExpression(GROOVY, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
     }
 
     @Test
@@ -82,7 +82,7 @@ class HTTPClientInterceptorTest {
                 .header("foo", "% ${}")
                 .header("bar", "$&:/)")
                 .buildExchange();
-        extracted(SPEL, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+        testExpression(SPEL, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
     }
 
     @Test
@@ -95,23 +95,23 @@ class HTTPClientInterceptorTest {
                         }
                         """)
                 .buildExchange();
-        extracted(JSONPATH, exc, "http://localhost/foo/${$.foo}: {}${$.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+        testExpression(JSONPATH, exc, "http://localhost/foo/${$.foo}: {}${$.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
     }
 
     @Test
     void computeTargetUrlWithEncodingXPath() throws Exception {
         var exc = post("/foo")
-                .json("""
+                .xml("""
                         <root>
                           <foo>% ${}</foo>
                           <bar>$&amp;:/)</bar>
                         </root>
                         """)
                 .buildExchange();
-        extracted(XPATH, exc, "http://localhost/foo/${//foo}: {}${//bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+        testExpression(XPATH, exc, "http://localhost/foo/${//foo}: {}${//bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
     }
 
-    private void extracted(Language language, Exchange exc, String url, String expected) {
+    private void testExpression(Language language, Exchange exc, String url, String expected) {
         var target = new Target();
         target.setUrl(url);
         target.setLanguage(language);

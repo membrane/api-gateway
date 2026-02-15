@@ -16,13 +16,16 @@ package com.predic8.membrane.core.util;
 
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.core.util.TemplateUtil.containsTemplateMarker;
+import static com.predic8.membrane.core.util.TemplateUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class TemplateUtilTest {
 
     @Test
     void test() {
+        assertFalse(containsTemplateMarker("$"));
+        assertTrue(containsTemplateMarker("${"));
+        assertFalse(containsTemplateMarker("foo$"));
         assertFalse(containsTemplateMarker(""));
         assertFalse(containsTemplateMarker("foo"));
         assertTrue(containsTemplateMarker("foo${bar"));

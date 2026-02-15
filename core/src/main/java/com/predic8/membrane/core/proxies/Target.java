@@ -51,6 +51,14 @@ public class Target implements XMLSupport {
 
     protected XmlConfig xmlConfig;
 
+    /**
+     * A cache mapping template strings to precomputed {@link ExchangeExpression} instances.
+     *
+     * This cache is used to optimize the evaluation of dynamic expressions by avoiding the repeated
+     * parsing and compilation of the same template.
+     */
+    private Map<String,ExchangeExpression> templateExpressionCache = new HashMap<>();
+
     public Target() {
     }
 
@@ -82,11 +90,12 @@ public class Target implements XMLSupport {
         if (!containsTemplateMarker(url)) {
             return url;
         }
-        return TemplateExchangeExpression.newInstance(adapter,
+
+        return templateExpressionCache.computeIfAbsent(url, k -> TemplateExchangeExpression.newInstance(adapter,
                 language,
-                url,
+                k,
                 router,
-                s -> URLEncoder.encode(s, UTF_8)).evaluate(exc, REQUEST, String.class);
+                s -> URLEncoder.encode(s, UTF_8))).evaluate(exc, REQUEST, String.class);
     }
 
     public String getHost() {

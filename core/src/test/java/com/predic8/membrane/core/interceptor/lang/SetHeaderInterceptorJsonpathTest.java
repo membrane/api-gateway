@@ -23,7 +23,6 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SetHeaderInterceptorJsonpathTest extends AbstractSetHeaderInterceptorTest {
 
