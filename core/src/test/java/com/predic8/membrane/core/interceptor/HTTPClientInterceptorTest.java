@@ -15,6 +15,8 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
@@ -23,45 +25,105 @@ import java.net.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HTTPClientInterceptorTest {
 
     HTTPClientInterceptor hci;
+    Router router;
 
     @BeforeEach
     void setUp() {
         hci = new HTTPClientInterceptor();
+        router = new DefaultRouter();
     }
 
     @Test
     void protocolUpgradeRejected() throws URISyntaxException {
-        DefaultRouter r = new DefaultRouter();
+        hci.init(router);
 
-        hci.init(r);
-
-        Exchange e = get("http://localhost:2000/")
+        var exc = get("http://localhost:2000/")
                 .header(CONNECTION, "upgrade")
                 .header(UPGRADE, "rejected")
                 .buildExchange();
-        e.setProxy(new NullProxy());
+        exc.setProxy(new NullProxy());
 
-        hci.handleRequest(e);
+        hci.handleRequest(exc);
 
-        assertEquals(401, e.getResponse().getStatusCode());
+        assertEquals(401, exc.getResponse().getStatusCode());
     }
 
     @Test
     void passFailOverOn500Default() {
-        hci.init(new DefaultRouter());
+        hci.init(router);
         assertFalse(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
     }
 
     @Test
     void passFailOverOn500() {
         hci.setFailOverOn5XX(true);
-        hci.init(new DefaultRouter());
+        hci.init(router);
         assertTrue(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingGroovy() throws Exception {
+        var exc = get("/foo")
+                .header("foo", "% ${}")
+                .header("bar", "$&:/)")
+                .buildExchange();
+        testExpression(GROOVY, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingSpEL() throws Exception {
+        var exc = get("/foo")
+                .header("foo", "% ${}")
+                .header("bar", "$&:/)")
+                .buildExchange();
+        testExpression(SPEL, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingJsonPath() throws Exception {
+        var exc = post("/foo")
+                .json("""
+                        {
+                          "foo": "% ${}",
+                          "bar": "$&:/)"
+                        }
+                        """)
+                .buildExchange();
+        testExpression(JSONPATH, exc, "http://localhost/foo/${$.foo}: {}${$.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingXPath() throws Exception {
+        var exc = post("/foo")
+                .xml("""
+                        <root>
+                          <foo>% ${}</foo>
+                          <bar>$&amp;:/)</bar>
+                        </root>
+                        """)
+                .buildExchange();
+        testExpression(XPATH, exc, "http://localhost/foo/${//foo}: {}${//bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+    }
+
+    private void testExpression(Language language, Exchange exc, String url, String expected) {
+        var target = new Target();
+        target.setUrl(url);
+        target.setLanguage(language);
+
+        var api = new APIProxy();
+        api.setTarget(target);
+        exc.setProxy(api);
+        hci.init(router);
+        new DispatchingInterceptor().handleRequest(exc);
+        hci.applyTargetModifications(exc);
+        assertEquals(1, exc.getDestinations().size());
+        assertEquals(expected, exc.getDestinations().getFirst());
     }
 
 }

@@ -546,4 +546,114 @@ class URITest {
             assertThrows(IllegalArgumentException.class, () -> new URI("http://[]/", true));
         }
     }
+
+    @Nested
+    class ResolveTests {
+
+        @Test
+        @DisplayName("Resolve relative path against standard URI base")
+        void resolveStandardBase() throws URISyntaxException {
+            URI base = new URI(false, "http://example.com");
+            URI relative = new URI(false, "/foo/bar");
+            assertEquals("http://example.com/foo/bar", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve relative path against standard URI base with trailing slash")
+        void resolveStandardBaseTrailingSlash() throws URISyntaxException {
+            URI base = new URI(false, "http://example.com/");
+            URI relative = new URI(false, "/foo/bar");
+            assertEquals("http://example.com/foo/bar", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve with query string on relative URI")
+        void resolveWithQuery() throws URISyntaxException {
+            URI base = new URI(false, "http://example.com");
+            URI relative = new URI(false, "/foo?q=1");
+            assertEquals("http://example.com/foo?q=1", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve empty relative path - standard URI returns base with trailing slash")
+        void resolveEmptyRelativeStandard() throws URISyntaxException {
+            // java.net.URI.resolve("") on "http://example.com/basepath" returns "http://example.com/"
+            URI base = new URI(false, "http://example.com/basepath");
+            URI relative = new URI(false, "");
+            assertEquals("http://example.com/", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve with port in base URI")
+        void resolveWithPort() throws URISyntaxException {
+            URI base = new URI(false, "http://example.com:8080");
+            URI relative = new URI(false, "/api/test");
+            assertEquals("http://example.com:8080/api/test", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve relative path against custom-parsed base with illegal characters (placeholder)")
+        void resolveCustomParsedPlaceholderHost() throws URISyntaxException {
+            URI base = new URI("http://${placeholder}", true);
+            URI relative = new URI("/foo/bar", true);
+            assertEquals("http://${placeholder}/foo/bar", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve with query against custom-parsed base with illegal characters")
+        void resolveCustomParsedPlaceholderWithQuery() throws URISyntaxException {
+            URI base = new URI("http://${placeholder}", true);
+            URI relative = new URI("/foo?q=1", true);
+            assertEquals("http://${placeholder}/foo?q=1", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve empty relative keeps base path in custom parsing mode")
+        void resolveCustomParsedEmptyRelative() throws URISyntaxException {
+            URI base = new URI("http://${placeholder}/basepath", true);
+            URI relative = new URI("", true);
+            assertEquals("http://${placeholder}/basepath", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve with port in custom-parsed base with illegal characters")
+        void resolveCustomParsedPlaceholderWithPort() throws URISyntaxException {
+            URI base = new URI("http://${placeholder}:8080", true);
+            URI relative = new URI("/api/test", true);
+            assertEquals("http://${placeholder}:8080/api/test", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve using URIFactory with allowIllegalCharacters")
+        void resolveViaURIFactory() throws URISyntaxException {
+            URIFactory factory = new URIFactory(true);
+            URI base = factory.create("http://${host}");
+            URI relative = factory.create("/path");
+            assertEquals("http://${host}/path", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve with curly braces in path of base")
+        void resolveCustomParsedCurlyBracesInPath() throws URISyntaxException {
+            URI base = new URI("http://example.com/${version}", true);
+            URI relative = new URI("/foo", true);
+            assertEquals("http://example.com/foo", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Resolve standard base with relative that has query and fragment is ignored")
+        void resolveStandardWithQueryOnRelative() throws URISyntaxException {
+            URI base = new URI(false, "https://api.example.com");
+            URI relative = new URI(false, "/v1/resource?key=value");
+            assertEquals("https://api.example.com/v1/resource?key=value", base.resolve(relative).toString());
+        }
+
+        @Test
+        @DisplayName("Custom-parsed resolve preserves scheme correctly for https")
+        void resolveCustomParsedHttps() throws URISyntaxException {
+            URI base = new URI("https://${host}", true);
+            URI relative = new URI("/secure/path", true);
+            assertEquals("https://${host}/secure/path", base.resolve(relative).toString());
+        }
+    }
 }

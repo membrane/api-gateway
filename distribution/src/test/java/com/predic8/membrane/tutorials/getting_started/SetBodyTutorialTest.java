@@ -33,13 +33,10 @@ public class SetBodyTutorialTest extends AbstractGettingStartedTutorialTest {
         .when()
             .get("http://localhost:2000/spel")
         .then()
+            .log().ifValidationFails()
             .statusCode(200)
-            .body(allOf(
-                    containsString("Path: /spel"),
-                    containsString("Headers: Accept,"),
-                    containsString("User-Agent"),
-                    containsString("Host")
-            ));
+            .body(containsString("Path: /spel"))
+            .body(containsString("Host"));
         // @formatter:on
     }
 

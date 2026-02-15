@@ -20,9 +20,17 @@ import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.router.*;
 
+import java.net.*;
+import java.util.*;
+import java.util.stream.*;
+
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.util.TemplateUtil.*;
+import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description <p>
@@ -39,28 +47,10 @@ public class Target implements XMLSupport {
     protected String url;
     private boolean adjustHostHeader = true;
     private ExchangeExpression.Language language = SPEL;
-    private ExchangeExpression exchangeExpression;
 
     private SSLParser sslParser;
 
     protected XmlConfig xmlConfig;
-
-    public void init(Router router) {
-        if (url == null)
-            return;
-        exchangeExpression = TemplateExchangeExpression.newInstance(new ExchangeExpression.InterceptorAdapter(router, xmlConfig), language, url, router);
-    }
-
-    public String compileUrl(Exchange exc, Interceptor.Flow flow) {
-        /*
-         * Will always evaluate on every call. This is fine as SpEL is fast enough and performs its own optimizations.
-         * 1.000.000 calls ~10ms
-         */
-        if (exchangeExpression != null) {
-            return exchangeExpression.evaluate(exc, flow, String.class);
-        }
-        return url;
-    }
 
     public Target() {
     }
@@ -72,6 +62,36 @@ public class Target implements XMLSupport {
     public Target(String host, int port) {
         setHost(host);
         setPort(port);
+    }
+
+    public void applyModifications(Exchange exc, Router router) {
+        exc.setDestinations(computeDestinationExpressions(exc, router));
+
+        // Changing the method must be the last step cause it can empty the body!
+        if (method != null && !method.isEmpty()) {
+            exc.getRequest().changeMethod(method);
+        }
+    }
+
+    private List<String> computeDestinationExpressions(Exchange exc, Router router) {
+        var adapter = new InterceptorAdapter(router, xmlConfig);
+        return exc.getDestinations().stream().map(url -> evaluateTemplate(exc, router, url, adapter))
+                .collect(Collectors.toList()); // Collectors.toList() generates mutable List .toList() => immutable
+    }
+
+    private String evaluateTemplate(Exchange exc, Router router, String url, InterceptorAdapter adapter) {
+        // If the url does not contain ${ we do not have to evaluate the expression
+        if (!containsTemplateMarker(url)) {
+            return url;
+        }
+
+        // Without caching 1_000_000 => 37s with ConcurrentHashMap as Cache => 34s
+        // Cache is probably not worth the effort and complexity
+        return TemplateExchangeExpression.newInstance(adapter,
+                language,
+                url,
+                router,
+                s -> URLEncoder.encode(s, UTF_8)).evaluate(exc, REQUEST, String.class);
     }
 
     public String getHost() {
@@ -148,10 +168,6 @@ public class Target implements XMLSupport {
     @MCAttribute
     public void setMethod(String method) {
         this.method = method;
-    }
-
-    public ExchangeExpression getExchangeExpression() {
-        return exchangeExpression;
     }
 
     public ExchangeExpression.Language getLanguage() {

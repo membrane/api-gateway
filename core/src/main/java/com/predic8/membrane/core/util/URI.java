@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.xml.Host;
-
 import java.net.*;
 import java.util.regex.*;
 
@@ -100,7 +98,8 @@ public class URI {
         hostPort = parseHostPort(rawAuthority);
     }
 
-    record HostPort(String host, int port) {}
+    record HostPort(String host, int port) {
+    }
 
     static HostPort parseHostPort(String rawAuthority) {
         if (rawAuthority == null)
@@ -142,7 +141,7 @@ public class URI {
         if (end < 0) {
             throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
         }
-        String ipv6 = hostAndPort.substring(0, end+1);
+        String ipv6 = hostAndPort.substring(0, end + 1);
 
         if (ipv6.length() <= 2) {
             throw new IllegalArgumentException("Host must not be empty.");
@@ -281,6 +280,23 @@ public class URI {
             r.append('?').append(getRawQuery());
         }
         return r.toString();
+    }
+
+    public URI resolve(URI relative) throws URISyntaxException {
+        if (uri != null) {
+            java.net.URI resolved = uri.resolve(relative.uri != null ? relative.uri : new java.net.URI(relative.toString()));
+            return new URI(false, resolved.toString());
+        }
+        // Custom-parsed: scheme://authority + relative path
+        String resolvedPath = relative.getRawPath();
+        if (resolvedPath == null || resolvedPath.isEmpty()) {
+            resolvedPath = this.getRawPath();
+        }
+        String result = scheme + "://" + authority + resolvedPath;
+        if (relative.getRawQuery() != null) {
+            result += "?" + relative.getRawQuery();
+        }
+        return new URI(true, result);
     }
 
     @Override
