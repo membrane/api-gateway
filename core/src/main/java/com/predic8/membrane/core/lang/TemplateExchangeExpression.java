@@ -30,7 +30,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateExchangeExpression.class);
 
-    private final Function<String,String> encoder;
+    private final Function<String, String> encoder;
 
     /**
      * For parsing strings with expressions inside ${} e.g. "foo ${property.bar} baz"
@@ -40,18 +40,18 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     private final List<Token> tokens;
 
     public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router) {
-        return newInstance(interceptor,language,expression,router, identity());
+        return newInstance(interceptor, language, expression, router, identity());
     }
 
-    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router, Function<String,String> encoder) {
+    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router, Function<String, String> encoder) {
         // SpEL can take expressions like "a: ${..} b: ${..}" as input. We do not use that feature and tokenize the expression ourselves to enable encoding
-        return new TemplateExchangeExpression(interceptor, language, expression, router,encoder);
+        return new TemplateExchangeExpression(interceptor, language, expression, router, encoder);
     }
 
-    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression, Router router, Function<String,String> encoder) {
+    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression, Router router, Function<String, String> encoder) {
         super(expression, router);
         this.encoder = encoder;
-        tokens = parseTokens(interceptor,language);
+        tokens = parseTokens(interceptor, language);
     }
 
     @Override
@@ -65,37 +65,40 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
             }
             return type.cast(evaluateToObject(exchange, flow));
         }
-        return type.cast( evaluateToString(exchange, flow));
+        return type.cast(evaluateToString(exchange, flow));
     }
 
     private Object evaluateToObject(Exchange exchange, Flow flow) {
         try {
-            return tokens.getFirst().eval(exchange, flow,Object.class);
+            return tokens.getFirst().eval(exchange, flow, Object.class);
         } catch (Exception e) {
-            throw new ExchangeExpressionException(tokens.getFirst().toString(),e);
+            throw new ExchangeExpressionException(tokens.getFirst().toString(), e);
         }
     }
 
     private String evaluateToString(Exchange exchange, Flow flow) {
         var line = new StringBuilder();
-        for(Token token : tokens) {
+        for (var token : tokens) {
             try {
                 var value = token.eval(exchange, flow, String.class);
-                if (token instanceof Expression) {
-                    line.append(encoder.apply(value));
-                } else {
-                    // For text tokens we trust the configuration
+                if (token instanceof Text) {
                     line.append(value);
+                    continue;
+                }
+                if (value == null) {
+                    line.append("null");
+                } else {
+                    line.append(encoder.apply(value));
                 }
             } catch (Exception e) {
-                throw new ExchangeExpressionException(token.toString(),e);
+                throw new ExchangeExpressionException(token.toString(), e);
             }
         }
         return line.toString();
     }
 
     List<Token> parseTokens(Interceptor interceptor, Language language) {
-        log.debug("Parsing: {}",expression);
+        log.debug("Parsing: {}", expression);
 
         List<Token> tokens = new ArrayList<>();
         Matcher m = scriptPattern.matcher(expression);
@@ -114,7 +117,8 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     }
 
     interface Token {
-        <T> T eval(Exchange exchange, Flow flow, Class<T>  type);
+        <T> T eval(Exchange exchange, Flow flow, Class<T> type);
+
         String getExpression();
     }
 
@@ -127,7 +131,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         }
 
         @Override
-        public <T> T eval(Exchange exchange, Flow flow, Class<T>  type) {
+        public <T> T eval(Exchange exchange, Flow flow, Class<T> type) {
             return type.cast(value);
         }
 
@@ -159,7 +163,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         }
 
         @Override
-        public <T> T eval(Exchange exchange, Flow flow, Class<T>  type) {
+        public <T> T eval(Exchange exchange, Flow flow, Class<T> type) {
             return exchangeExpression.evaluate(exchange, flow, type);
         }
 
