@@ -28,17 +28,24 @@ import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.text.TextUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import static java.util.Collections.emptyList;
+
+/**
+ * @description
+ * JSON Web Key Set, configured <b>either</b> by an explicit list of JWK <b>or</b> by a list of JWK URIs that will be refreshed periodically.
+ */
 @MCElement(name="jwks")
 public class Jwks {
 
-    List<Jwk> jwks = new ArrayList<>();
+    private static final Logger log = LoggerFactory.getLogger(Jwks.class);
+    volatile List<Jwk> jwks = new ArrayList<>();
     String jwksUris;
     AuthorizationService authorizationService;
 
@@ -65,30 +72,76 @@ public class Jwks {
     public void init(Router router) {
         if(jwksUris == null || jwksUris.isEmpty())
             return;
+        if (!jwks.isEmpty())
+            throw new ConfigurationException("JWKs cannot be set both via JwksUris and Jwks elements.");
+        this.jwks = loadJwks(router, false);
+        if (authorizationService.getJwksRefreshInterval() > 0) {
+            router.getTimerManager().schedulePeriodicTask(new TimerTask() {
+                                                              @Override
+                                                              public void run() {
+                                                                  setJwks(loadJwks(router, true));
+                                                              }
+                                                          }, authorizationService.getJwksRefreshInterval() * 1_000L, "JWKS Refresh"
+            );
+        }
+    }
 
+    private List<Jwk> loadJwks(Router router, boolean suppressExceptions) {
         ObjectMapper mapper = new ObjectMapper();
-        for (String uri : jwksUris.split(" ")) {
-            try {
-                for (Object jwkRaw : parseJwksUriIntoList(router.getResolverMap(), router.getConfiguration().getBaseLocation(), mapper, uri)) {
-                    Jwk jwk = new Jwk();
-                    jwk.setContent(mapper.writeValueAsString(jwkRaw));
-                    this.jwks.add(jwk);
-                }
-            } catch (JsonProcessingException e) {
-                throw new ConfigurationException("Could not parse JWK keys retrieved from %s.".formatted(uri), e);
-            } catch (ResourceRetrievalException e) {
-                throw new ConfigurationException("Could not retrieve JWK keys from %s.".formatted(uri), e);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        return Arrays.stream(jwksUris.split(" "))
+                .map(uri -> parseJwksUriIntoList(router.getResolverMap(), router.getConfiguration().getBaseLocation(), mapper, uri, suppressExceptions))
+                .flatMap(l -> l.jwks().stream().map(jwkRaw -> convertToJwk(jwkRaw, mapper, l.uri(), suppressExceptions)))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private static Jwk convertToJwk(Object jwkRaw, ObjectMapper mapper, String uri, boolean suppressExceptions) {
+        try {
+            Jwk jwk = new Jwk();
+            jwk.setContent(mapper.writeValueAsString(jwkRaw));
+            return jwk;
+        } catch (JsonProcessingException e) {
+            String message = "Could not parse JWK keys retrieved from %s.".formatted(uri);
+            if (suppressExceptions) {
+                log.error(message);
+                return null;
+            } else {
+                throw new ConfigurationException(message, e);
             }
         }
     }
 
-    private List parseJwksUriIntoList(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper, String uri) throws Exception {
-        InputStream resolve = authorizationService != null ?
-                authorizationService.resolve(resolverMap, baseLocation, uri) :
-                resolverMap.resolve(ResolverMap.combine(baseLocation, uri));
-        return (List) mapper.readValue(resolve, Map.class).get("keys");
+    private record JwkListByUri(String uri, List<?> jwks) {}
+
+    private JwkListByUri parseJwksUriIntoList(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper, String uri, boolean suppressExceptions) {
+        try {
+            InputStream resolve = authorizationService != null ?
+                    authorizationService.resolve(resolverMap, baseLocation, uri) :
+                    resolverMap.resolve(ResolverMap.combine(baseLocation, uri));
+            return new JwkListByUri(uri, ((List<?>) mapper.readValue(resolve, Map.class).get("keys")));
+        } catch (JsonProcessingException e) {
+            String message = "Could not parse JWK keys retrieved from %s.".formatted(uri);
+            if (suppressExceptions) {
+                log.error(message);
+            } else {
+                throw new ConfigurationException(message, e);
+            }
+        } catch (ResourceRetrievalException e) {
+            String message = "Could not retrieve JWK keys from %s.".formatted(uri);
+            if (suppressExceptions) {
+                log.error(message);
+            } else {
+                throw new ConfigurationException(message, e);
+            }
+        } catch (Exception e) {
+            if (suppressExceptions) {
+                log.error(e.toString());
+                log.error(e.getMessage());
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+        return new JwkListByUri(uri, emptyList());
     }
 
     public AuthorizationService getAuthorizationService() {
@@ -146,14 +199,14 @@ public class Jwks {
 
             Map<String,Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
 
-            if(mapped.containsKey("keys"))
+            if (mapped.containsKey("keys"))
                 return handleJwks(mapper, mapped);
 
             return maybeJwk;
         }
 
         private String handleJwks(ObjectMapper mapper, Map<String, Object> mapped) {
-            return ((List<Map>)mapped.get("keys")).stream()
+            return ((List<Map>) mapped.get("keys")).stream()
                     .filter(m -> m.get("kid").toString().equals(kid))
                     .map(m -> {
                         try {
@@ -162,7 +215,7 @@ public class Jwks {
                             throw new RuntimeException(e);
                         }
                     })
-                    .findFirst().get();
+                    .findFirst().orElseThrow();
         }
     }
 
