@@ -17,7 +17,7 @@ package com.predic8.membrane.core.interceptor.acl.targets;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.acl.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.proxies.Target.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;

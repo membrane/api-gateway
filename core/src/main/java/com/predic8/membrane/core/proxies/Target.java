@@ -22,9 +22,12 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.transport.ws.interceptors.*;
+import com.predic8.membrane.core.util.*;
 
 import java.net.*;
 import java.util.*;
+import java.util.function.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -41,16 +44,26 @@ import static java.nio.charset.StandardCharsets.*;
  */
 @MCElement(name = "target", component = false)
 public class Target implements XMLSupport {
+
     private String host;
     private int port = -1;
     private String method;
+
     protected String url;
-    private boolean adjustHostHeader = true;
     private ExchangeExpression.Language language = SPEL;
+    private Escaping escaping = Escaping.URL;
+
+    private boolean adjustHostHeader = true;
 
     private SSLParser sslParser;
 
     protected XmlConfig xmlConfig;
+
+    public enum Escaping {
+        NONE,
+        URL,
+        SEGMENT
+    }
 
     public Target() {
     }
@@ -91,7 +104,15 @@ public class Target implements XMLSupport {
                 language,
                 url,
                 router,
-                s -> URLEncoder.encode(s, UTF_8)).evaluate(exc, REQUEST, String.class);
+                getEscapingFunction()).evaluate(exc, REQUEST, String.class);
+    }
+
+    private Function<String,String> getEscapingFunction() {
+        return switch (escaping) {
+          case NONE -> Function.identity();
+          case URL -> s -> URLEncoder.encode(s, UTF_8);
+          case SEGMENT -> URLUtil::pathSeg;
+        };
     }
 
     public String getHost() {
@@ -182,6 +203,22 @@ public class Target implements XMLSupport {
     @MCAttribute
     public void setLanguage(ExchangeExpression.Language language) {
         this.language = language;
+    }
+
+    public Escaping getEscaping() {
+        return escaping;
+    }
+
+    /**
+     * @description When url contains placeholders ${}, the computed values should be escaped
+     * to prevent injection attacks.
+     *
+     * @default URL
+     * @param escaping NONE, URL, SEGMENT
+     */
+    @MCAttribute
+    public void setEscaping(Escaping escaping) {
+        this.escaping = escaping;
     }
 
     /**

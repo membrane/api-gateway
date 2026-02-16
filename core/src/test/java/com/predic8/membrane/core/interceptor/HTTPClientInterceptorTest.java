@@ -18,6 +18,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.proxies.Target.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
@@ -26,6 +27,8 @@ import java.net.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.proxies.Target.Escaping.NONE;
+import static com.predic8.membrane.core.proxies.Target.Escaping.SEGMENT;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HTTPClientInterceptorTest {
@@ -73,7 +76,7 @@ class HTTPClientInterceptorTest {
                 .header("foo", "% ${}")
                 .header("bar", "$&:/)")
                 .buildExchange();
-        testExpression(GROOVY, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+        testExpression(GROOVY, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
     }
 
     @Test
@@ -82,7 +85,7 @@ class HTTPClientInterceptorTest {
                 .header("foo", "% ${}")
                 .header("bar", "$&:/)")
                 .buildExchange();
-        testExpression(SPEL, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+        testExpression(SPEL, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
     }
 
     @Test
@@ -95,7 +98,7 @@ class HTTPClientInterceptorTest {
                         }
                         """)
                 .buildExchange();
-        testExpression(JSONPATH, exc, "http://localhost/foo/${$.foo}: {}${$.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+        testExpression(JSONPATH, exc, "http://localhost/foo/${$.foo}: {}${$.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
     }
 
     @Test
@@ -108,13 +111,30 @@ class HTTPClientInterceptorTest {
                         </root>
                         """)
                 .buildExchange();
-        testExpression(XPATH, exc, "http://localhost/foo/${//foo}: {}${//bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29");
+        testExpression(XPATH, exc, "http://localhost/foo/${//foo}: {}${//bar}",
+                "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
     }
 
-    private void testExpression(Language language, Exchange exc, String url, String expected) {
+    @Test
+    void computeNoneEscaping() throws Exception {
+        var exc = post("/foo").buildExchange();
+        testExpression(SPEL, exc, "http://localhost/foo/${'&?äöü!\"=:#/\\'}",
+                "http://localhost/foo/&?äöü!\"=:#/\\", NONE);
+    }
+
+    @Test
+    void computeSegmentEscaping() throws Exception {
+        var exc = post("/foo").buildExchange();
+        testExpression(SPEL, exc, "http://localhost/foo/${'&?äöü!\"=:#/\\'}",
+                "http://localhost/foo/%26%3F%C3%A4%C3%B6%C3%BC%21%22%3D%3A%23%2F%5C", SEGMENT);
+    }
+
+
+    private void testExpression(Language language, Exchange exc, String url, String expected, Escaping escaping) {
         var target = new Target();
         target.setUrl(url);
         target.setLanguage(language);
+        target.setEscaping(escaping);
 
         var api = new APIProxy();
         api.setTarget(target);
