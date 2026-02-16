@@ -40,6 +40,11 @@ import static com.predic8.membrane.core.util.text.TextUtil.*;
  * HTTP response body has fully been read (or never, if
  * {@link Request#isBindTargetConnectionToIncoming()} is true).
  * <p>
+ * During this period of time, first the {@link Exchange} (and the current thread) owns the connection (=is responsible
+ * for reading the body and then closing). When the {@link Exchange} comes back to {@link HttpServerHandler} and still owns
+ * the Connection, {@link HttpServerHandler} transfers the ownership of the Connection to the next {@link Exchange} or simply
+ * discards the body and closes the Connection.
+ * <p>
  * The connection will be registered by the {@link HttpClient} as a
  * {@link MessageObserver} on the {@link Response} to get notified when the HTTP
  * response body has fully been read and it should deassociate itself from the
@@ -250,7 +255,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 					return;
 				exchange.setTargetConnection(null);
 				exchange = null;
-				release();
+				release(); // here the current thread loses ownership of the Connection
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
