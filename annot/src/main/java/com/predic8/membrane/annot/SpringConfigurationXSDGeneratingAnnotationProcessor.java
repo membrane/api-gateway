@@ -549,6 +549,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
         new Parsers(processingEnv).writeParserDefinitior(m);
         new HelpReference(processingEnv).writeHelp(m);
         new NamespaceInfo(processingEnv).writeInfo(m);
+        new YamlDocsGenerator(processingEnv).write(m);
         if (processingEnv.getElementUtils().getTypeElement("org.apache.aries.blueprint.ParserContext") != null) {
             new BlueprintParsers(processingEnv).writeParserDefinitior(m);
             new BlueprintParsers(processingEnv).writeParsers(m);
