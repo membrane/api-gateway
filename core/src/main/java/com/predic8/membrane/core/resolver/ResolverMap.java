@@ -95,10 +95,9 @@ public class ResolverMap implements Cloneable, Resolver {
         }
         if (parent.contains(":/")) {
             try {
-                if (parent.startsWith("http"))
+                if (parent.startsWith("http") || parent.startsWith("classpath:") || parent.startsWith("internal:"))
                     return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
-                if (parent.startsWith("classpath:"))
-                    return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
+                // Assume file parent is a file path either file:, or c:\, or /, or a/b, ...
                 return convertPath2FileURI(parent).resolve(prepare4Uri(relativeChild)).toString();
             } catch (Exception e) {
                 throw new RuntimeException(e);

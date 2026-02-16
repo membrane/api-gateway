@@ -282,17 +282,24 @@ public class URI {
         return r.toString();
     }
 
+    /**
+     * Use ResolverMap to combine URIs. Only resort to this function if it is not possible to use ResolverMap e.g.
+     * for URIs with invalid characters like $ { } in the DispatchingInterceptor
+     * @param relative URI
+     * @return Combined URI
+     * @throws URISyntaxException
+     */
     public URI resolve(URI relative) throws URISyntaxException {
         if (uri != null) {
             java.net.URI resolved = uri.resolve(relative.uri != null ? relative.uri : new java.net.URI(relative.toString()));
             return new URI(false, resolved.toString());
         }
         // Custom-parsed: scheme://authority + relative path
-        String resolvedPath = relative.getRawPath();
+        var resolvedPath = relative.getRawPath();
         if (resolvedPath == null || resolvedPath.isEmpty()) {
             resolvedPath = this.getRawPath();
         }
-        String result = scheme + "://" + authority + resolvedPath;
+        var result = scheme + "://" + authority + resolvedPath;
         if (relative.getRawQuery() != null) {
             result += "?" + relative.getRawQuery();
         }
