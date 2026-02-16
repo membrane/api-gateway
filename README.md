@@ -92,7 +92,7 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 
 ![API Gateway eBook Cover](docs/images/api-gateway-ebook-cover.jpg)
 
-[Download instantly](https://www.membrane-api.io/ebook/API-Gateway-Handbook-Pre-Release-2025-07-02.pdf) — **no registration** required.
+[Download instantly](https://www.membrane-api.io/ebook/API-Gateway-Handbook-v1.0.0.pdf) — **no registration** required.
 
 ## Features
 
@@ -347,7 +347,7 @@ api:
 # Requests with a query parameter city and value Paris
 api:
   port: 2000
-  test: params.city == 'Paris'
+  test: params.city?.[0] == 'Paris'
   flow:
     - response:
         - static:
@@ -676,7 +676,7 @@ api:
             contentType: application/json
             pretty: true
             src: |
-              { "answer": ${params.answer} }
+              { "answer": ${params.answer?[0]} }
     - return:
         status: 200
 ```
