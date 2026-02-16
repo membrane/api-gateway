@@ -27,8 +27,7 @@ import java.net.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static com.predic8.membrane.core.proxies.Target.Escaping.NONE;
-import static com.predic8.membrane.core.proxies.Target.Escaping.SEGMENT;
+import static com.predic8.membrane.core.proxies.Target.Escaping.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HTTPClientInterceptorTest {
@@ -127,6 +126,22 @@ class HTTPClientInterceptorTest {
         var exc = post("/foo").buildExchange();
         testExpression(SPEL, exc, "http://localhost/foo/${'&?äöü!\"=:#/\\'}",
                 "http://localhost/foo/%26%3F%C3%A4%C3%B6%C3%BC%21%22%3D%3A%23%2F%5C", SEGMENT);
+    }
+
+    @Test
+    void computeCompletePath() throws Exception {
+        var completePath = "https://predic8.com/foo?bar=baz";
+        var exc = post("/foo")
+                .header("X-URL", completePath)
+                .buildExchange();
+        testExpression(SPEL, exc, "${header['X-URL']}", completePath, NONE);
+    }
+
+    @Test
+    void computeCompletePathURLEncoded() throws Exception {
+        var exc = post("/foo").buildExchange();
+        testExpression(SPEL, exc, "${'&?äöü!'}",
+                "%26%3F%C3%A4%C3%B6%C3%BC%21", Escaping.URL);
     }
 
 
