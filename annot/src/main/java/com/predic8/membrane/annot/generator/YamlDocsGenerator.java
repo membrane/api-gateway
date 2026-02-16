@@ -55,20 +55,20 @@ public class YamlDocsGenerator {
     }
 
     private Object buildRoot(Map<String, Map<String, ElementDoc>> byNamespace) {
-        LinkedHashMap<String, Object> root = new LinkedHashMap<>();
+        Map<String, Object> root = new LinkedHashMap<>();
         root.put("docFormatVersion", DOC_FORMAT_VERSION);
         root.put("membraneVersion", VERSION);
 
-        LinkedHashMap<String, Object> schemas = new LinkedHashMap<>();
+        Map<String, Object> schemas = new LinkedHashMap<>();
 
         for (var nsEntry : byNamespace.entrySet()) {
-            LinkedHashMap<String, Object> ns = new LinkedHashMap<>();
+            Map<String, Object> ns = new LinkedHashMap<>();
 
-            LinkedHashMap<String, Object> elements = new LinkedHashMap<>();
+            Map<String, Object> elements = new LinkedHashMap<>();
             for (var elEntry : nsEntry.getValue().entrySet()) {
                 ElementDoc ed = elEntry.getValue();
 
-                LinkedHashMap<String, Object> el = new LinkedHashMap<>();
+                Map<String, Object> el = new LinkedHashMap<>();
 
                 if (ed.name != null && !ed.name.isBlank()) {
                     el.put("name", ed.name);
@@ -83,7 +83,7 @@ public class YamlDocsGenerator {
                     el.put("children", wrapDocMaps(ed.children));
                 }
                 if (ed.otherAttributes != null && !ed.otherAttributes.isEmpty()) {
-                    LinkedHashMap<String, Object> oa = new LinkedHashMap<>();
+                    Map<String, Object> oa = new LinkedHashMap<>();
                     oa.put("doc", ed.otherAttributes);
                     el.put("otherAttributes", oa);
                 }
@@ -100,9 +100,9 @@ public class YamlDocsGenerator {
     }
 
     private Map<String, Object> wrapDocMaps(Map<String, Map<String, String>> in) {
-        LinkedHashMap<String, Object> out = new LinkedHashMap<>();
+        Map<String, Object> out = new LinkedHashMap<>();
         for (var e : in.entrySet()) {
-            LinkedHashMap<String, Object> v = new LinkedHashMap<>();
+            Map<String, Object> v = new LinkedHashMap<>();
             v.put("doc", e.getValue());
             out.put(e.getKey(), v);
         }
@@ -175,7 +175,7 @@ public class YamlDocsGenerator {
     private Map<String, String> docMap(Doc doc) {
         if (doc == null) return Map.of();
 
-        LinkedHashMap<String, String> out = new LinkedHashMap<>();
+        Map<String, String> out = new LinkedHashMap<>();
         for (Doc.Entry e : doc.getEntries()) {
             String k = e.getKey();
             String v = e.getValueAsXMLSnippet(false);
