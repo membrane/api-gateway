@@ -240,16 +240,17 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 		try {
 			if (exchange != null) {
-				if (exchange.canKeepConnectionAlive()) {
-					if (keepAttachedToExchange)
-						return;
-					else
-						release();
-				} else {
+				if (!exchange.canKeepConnectionAlive()) {
+					exchange.setTargetConnection(null);
+					exchange = null;
 					close();
+					return;
 				}
+				if (keepAttachedToExchange)
+					return;
 				exchange.setTargetConnection(null);
 				exchange = null;
+				release();
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
