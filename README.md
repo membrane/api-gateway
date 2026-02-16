@@ -92,7 +92,7 @@ Learn how API Gateways work with real-world examples and insights into Membrane.
 
 ![API Gateway eBook Cover](docs/images/api-gateway-ebook-cover.jpg)
 
-[Download instantly](https://www.membrane-api.io/ebook/API-Gateway-Handbook-Pre-Release-2025-07-02.pdf) — **no registration** required.
+[Download instantly](https://www.membrane-api.io/ebook/API-Gateway-Handbook-v1.0.0.pdf) — **no registration** required.
 
 ## Features
 
