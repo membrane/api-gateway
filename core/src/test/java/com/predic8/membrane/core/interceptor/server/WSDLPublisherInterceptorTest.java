@@ -37,7 +37,7 @@ public class WSDLPublisherInterceptorTest {
 
 	void before(String wsdlLocation, int port) throws Exception {
 		router = new TestRouter();
-		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "", -1);
+		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "localhost", -1);
 		WSDLPublisherInterceptor wi = new WSDLPublisherInterceptor();
 		wi.setWsdl(wsdlLocation);
 		wi.init(router);
@@ -55,7 +55,7 @@ public class WSDLPublisherInterceptorTest {
 	void doit(String wsdlLocation, int port) throws Exception {
 		before(wsdlLocation, port);
 		// this recursively fetches 5 documents (1 WSDL + 4 XSD)
-		assertEquals(5, WSDLTestUtil.countWSDLandXSDs("http://localhost:" + port + "/articles/?wsdl"));
+		assertEquals(5, WSDLTestUtil.countWSDLandXSDs("http://localhost:%d/articles/?wsdl".formatted(port)));
 		after();
 	}
 }

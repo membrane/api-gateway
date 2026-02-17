@@ -17,13 +17,13 @@ package com.predic8.membrane.core.util;
 import java.net.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.util.URIValidationUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
  * Same behavior as {@link java.net.URI}, but accommodates '{' in paths.
  */
 public class URI {
-    private java.net.URI uri;
 
     private String input;
     private String path;
@@ -41,28 +41,22 @@ public class URI {
     // raw authority string as it appeared in the input (may include user-info)
     private String authority;
 
+    private boolean allowIllegalCharacters = false;
+
     private static final Pattern PATTERN = Pattern.compile("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
     //                                                             12            3  4          5       6   7        8 9
     // if defined, the groups are:
     // 2: scheme, 4: authority, 5: path, 7: query, 9: fragment
 
-    URI(boolean allowCustomParsing, String s) throws URISyntaxException {
-        try {
-            uri = new java.net.URI(s);
-        } catch (URISyntaxException e) {
-            if (allowCustomParsing && customInit(s))
-                return;
-            throw e;
-        }
+    URI(String s) throws URISyntaxException {
+        if (!customInit(s))
+            throw new URISyntaxException(s, "URI did not match regular expression.");
     }
 
-    URI(String s, boolean useCustomParsing) throws URISyntaxException {
-        if (useCustomParsing) {
-            if (!customInit(s))
-                throw new URISyntaxException(s, "URI did not match regular expression.");
-        } else {
-            uri = new java.net.URI(s);
-        }
+    URI(String s, boolean allowIllegalCharacters) throws URISyntaxException {
+        this.allowIllegalCharacters = allowIllegalCharacters;
+        if (!customInit(s))
+            throw new URISyntaxException(s, "URI did not match regular expression.");
     }
 
     private boolean customInit(String s) {
@@ -79,6 +73,12 @@ public class URI {
         path = m.group(5);
         query = m.group(7);
         fragment = m.group(9);
+
+        if (!allowIllegalCharacters) {
+            var options = new UriIllegalCharacterDetector.Options();
+            UriIllegalCharacterDetector.validateAll(this, options);
+        }
+
         return true;
     }
 
@@ -101,12 +101,12 @@ public class URI {
     record HostPort(String host, int port) {
     }
 
-    static HostPort parseHostPort(String rawAuthority) {
+    HostPort parseHostPort(String rawAuthority) {
         if (rawAuthority == null)
             throw new IllegalArgumentException("rawAuthority is null.");
         String hostAndPort = stripUserInfo(rawAuthority);
 
-        if (isIPLiteral(hostAndPort)) {
+        if (isIP6Literal(hostAndPort)) {
             return parseIpv6(hostAndPort);
         }
 
@@ -118,7 +118,7 @@ public class URI {
         return at >= 0 ? authority.substring(at + 1) : authority;
     }
 
-    static HostPort parseIPv4OrHostname(String hostAndPort) {
+    HostPort parseIPv4OrHostname(String hostAndPort) {
         String host;
         int port;
         int colon = hostAndPort.indexOf(':');
@@ -133,6 +133,8 @@ public class URI {
         if (host.isEmpty()) {
             throw new IllegalArgumentException("Host must not be empty.");
         }
+        if (!allowIllegalCharacters)
+            validateHost( host);
         return new HostPort(host, port);
     }
 
@@ -147,11 +149,13 @@ public class URI {
             throw new IllegalArgumentException("Host must not be empty.");
         }
 
+        validateIP6Address(ipv6);
+
         int port = parsePort(hostAndPort.substring(end + 1));
         return new HostPort(ipv6, port);
     }
 
-    static boolean isIPLiteral(String hostAndPort) {
+    static boolean isIP6Literal(String hostAndPort) {
         return hostAndPort.startsWith("[");
     }
 
@@ -166,20 +170,17 @@ public class URI {
     }
 
     private static int validatePortDigits(String p) {
-        if (!p.isEmpty()) {
-            if (!p.matches("\\d{1,5}"))
-                throw new IllegalArgumentException("Invalid port: " + p);
-            int candidate = Integer.parseInt(p);
-            if (candidate < 0 || candidate > 65535)
-                throw new IllegalArgumentException("Port out of range: " + candidate);
-            return candidate;
-        }
-        throw new IllegalArgumentException("Invalid port: ''.");
+        if (p.isEmpty())
+            throw new IllegalArgumentException("Invalid port: ''.");
+
+        validateDigits(p);
+        int i = Integer.parseInt(p);
+        if (i > 65535)
+            throw new IllegalArgumentException("Invalid port: '%s'.".formatted(p));
+        return i;
     }
 
     public String getScheme() {
-        if (uri != null)
-            return uri.getScheme();
         return scheme;
     }
 
@@ -189,43 +190,30 @@ public class URI {
      * - might return something like "[fe80::1%25eth0]".
      */
     public String getHost() {
-        if (uri != null)
-            return uri.getHost();
         return hostPort.host;
     }
 
     public int getPort() {
-        if (uri != null) {
-            return uri.getPort();
-        }
         return hostPort.port;
     }
 
     public String getPath() {
-        if (uri != null)
-            return uri.getPath();
         if (pathDecoded == null)
             pathDecoded = decode(path);
         return pathDecoded;
     }
 
     public String getRawPath() {
-        if (uri != null)
-            return uri.getRawPath();
         return path;
     }
 
     public String getQuery() {
-        if (uri != null)
-            return uri.getQuery();
         if (queryDecoded == null)
             queryDecoded = decode(query);
         return queryDecoded;
     }
 
     public String getRawFragment() {
-        if (uri != null)
-            return uri.getRawFragment();
         return fragment;
     }
 
@@ -233,8 +221,6 @@ public class URI {
      * Returns the fragment (the part after '#'), decoded like {@link #getPath()} and {@link #getQuery()}.
      */
     public String getFragment() {
-        if (uri != null)
-            return uri.getFragment();
         if (fragmentDecoded == null)
             fragmentDecoded = decode(fragment);
         return fragmentDecoded;
@@ -248,19 +234,16 @@ public class URI {
      * Returns {@code null} if no authority is present (e.g. "mailto:").
      */
     public String getAuthority() {
-        if (uri != null) return uri.getAuthority();
         return authority;
     }
 
     private String decode(String string) {
         if (string == null)
-            return string;
+            return null;
         return URLDecoder.decode(string, UTF_8);
     }
 
     public String getRawQuery() {
-        if (uri != null)
-            return uri.getRawQuery();
         return query;
     }
 
@@ -268,7 +251,7 @@ public class URI {
      * Fragments are client side only and should not be propagated to the backend.
      */
     public String getPathWithQuery() {
-        StringBuilder r = new StringBuilder(100);
+        var r = new StringBuilder(100);
 
         if (getRawPath() != null && !getRawPath().isBlank()) {
             r.append(getRawPath());
@@ -276,40 +259,181 @@ public class URI {
             r.append("/");
         }
 
-        if (getRawQuery() != null && !getRawQuery().isBlank()) {
-            r.append('?').append(getRawQuery());
-        }
-        return r.toString();
+        if (getRawQuery() == null)
+            return r.toString();
+
+        return r.append('?').append(getRawQuery()).toString();
+    }
+
+    /**
+     * Returns the first part of the URI till the first slash or # or
+     *
+     * @return
+     */
+    public String getWithoutPath() {
+        return getScheme() + "://" + getAuthority();
     }
 
     /**
      * Use ResolverMap to combine URIs. Only resort to this function if it is not possible to use ResolverMap e.g.
      * for URIs with invalid characters like $ { } in the DispatchingInterceptor
+     *
      * @param relative URI
      * @return Combined URI
      * @throws URISyntaxException
      */
     public URI resolve(URI relative) throws URISyntaxException {
-        if (uri != null) {
-            java.net.URI resolved = uri.resolve(relative.uri != null ? relative.uri : new java.net.URI(relative.toString()));
-            return new URI(false, resolved.toString());
+        return resolve(relative, new URIFactory(true));
+    }
+
+    public URI resolve(URI relative, URIFactory factory) throws URISyntaxException {
+        // RFC 3986, Section 5.2.2 - resolve a relative reference against a base URI.
+        // Uses getter methods to read components regardless of parsing mode.
+
+        String rScheme = relative.getScheme();
+        String rAuthority = relative.getAuthority();
+        String rPath = relative.getRawPath();
+        String rQuery = relative.getRawQuery();
+        String rFragment = relative.getRawFragment();
+
+        String tScheme, tAuthority, tPath, tQuery, tFragment;
+
+        if (rScheme != null) {
+            tScheme = rScheme;
+            tAuthority = rAuthority;
+            tPath = removeDotSegments(rPath);
+            tQuery = rQuery;
+        } else {
+            if (rAuthority != null) {
+                tScheme = this.getScheme();
+                tAuthority = rAuthority;
+                tPath = removeDotSegments(rPath);
+                tQuery = rQuery;
+            } else {
+                if (rPath == null || rPath.isEmpty()) {
+                    tPath = this.getRawPath();
+                    tQuery = rQuery != null ? rQuery : this.getRawQuery();
+                } else {
+                    if (rPath.startsWith("/")) {
+                        tPath = removeDotSegments(rPath);
+                    } else {
+                        var merged = merge(this.getAuthority(), this.getRawPath(), rPath);
+                        if (this.getScheme().equals("classpath")) {
+                            tPath = merged;
+                        } else {
+                            tPath = removeDotSegments(merged);
+                        }
+                    }
+                    tQuery = rQuery;
+                }
+                tScheme = this.getScheme();
+                tAuthority = this.getAuthority();
+            }
         }
-        // Custom-parsed: scheme://authority + relative path
-        var resolvedPath = relative.getRawPath();
-        if (resolvedPath == null || resolvedPath.isEmpty()) {
-            resolvedPath = this.getRawPath();
+        tFragment = rFragment;
+
+        // Recompose per RFC 3986, Section 5.3
+        var result = new StringBuilder();
+        if (tScheme != null) {
+            result.append(tScheme).append(':');
         }
-        var result = scheme + "://" + authority + resolvedPath;
-        if (relative.getRawQuery() != null) {
-            result += "?" + relative.getRawQuery();
+        if (tAuthority != null) {
+            result.append("//").append(tAuthority);
         }
-        return new URI(true, result);
+        if (tPath != null) {
+            result.append(tPath);
+        }
+        if (tQuery != null) {
+            result.append('?').append(tQuery);
+        }
+        if (tFragment != null) {
+            result.append('#').append(tFragment);
+        }
+
+        return factory.create(result.toString());
+    }
+
+    /**
+     * RFC 3986, Section 5.2.3 - Merge base path with relative reference.
+     */
+    private static String merge(String baseAuthority, String basePath, String relativePath) {
+        if (baseAuthority != null && (basePath == null || basePath.isEmpty())) {
+            return "/" + relativePath;
+        }
+        if (basePath == null) {
+            return relativePath;
+        }
+        int lastSlash = basePath.lastIndexOf('/');
+        if (lastSlash >= 0) {
+            return basePath.substring(0, lastSlash + 1) + relativePath;
+        }
+        return relativePath;
+    }
+
+    /**
+     * RFC 3986, Section 5.2.4 - Remove dot segments from a path.
+     */
+    public static String removeDotSegments(String path) {
+        if (path == null || path.isEmpty()) {
+            return path;
+        }
+
+        StringBuilder out = new StringBuilder();
+        int i = 0;
+        while (i < path.length()) {
+            // A: remove prefix "../" or "./"
+            if (path.startsWith("../", i)) {
+                i += 3;
+            } else if (path.startsWith("./", i)) {
+                i += 2;
+            }
+            // B: remove prefix "/./" or "/."(end)
+            else if (path.startsWith("/./", i)) {
+                i += 2;
+            } else if (i + 2 == path.length() && path.startsWith("/.", i)) {
+                out.append('/');
+                i += 2;
+            }
+            // C: remove prefix "/../" or "/.."(end), and remove last output segment
+            else if (path.startsWith("/../", i)) {
+                i += 3;
+                removeLastSegment(out);
+            } else if (i + 3 == path.length() && path.startsWith("/..", i)) {
+                removeLastSegment(out);
+                out.append('/');
+                i += 3;
+            }
+            // D: "." or ".." only
+            else if ((i == path.length() - 1 && path.charAt(i) == '.') ||
+                     (i == path.length() - 2 && path.charAt(i) == '.' && path.charAt(i + 1) == '.')) {
+                i = path.length();
+            }
+            // E: move first path segment (including initial "/" if any) to output
+            else {
+                if (path.charAt(i) == '/') {
+                    out.append('/');
+                    i++;
+                }
+                while (i < path.length() && path.charAt(i) != '/') {
+                    out.append(path.charAt(i));
+                    i++;
+                }
+            }
+        }
+        return out.toString();
+    }
+
+    private static void removeLastSegment(StringBuilder out) {
+        int lastSlash = out.lastIndexOf("/");
+        if (lastSlash >= 0) {
+            out.setLength(lastSlash);
+        } else {
+            out.setLength(0);
+        }
     }
 
     @Override
     public String toString() {
-        if (uri != null)
-            return uri.toString();
         return input;
     }
 }

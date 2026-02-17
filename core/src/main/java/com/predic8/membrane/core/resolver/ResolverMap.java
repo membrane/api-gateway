@@ -33,6 +33,7 @@ import java.net.URI;
 import java.security.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.util.URIFactory.DEFAULT_URI_FACTORY;
 import static com.predic8.membrane.core.util.URIUtil.*;
 
 /**
@@ -58,13 +59,17 @@ public class ResolverMap implements Cloneable, Resolver {
      * @param locations List of relative paths
      * @return combined path
      */
-    public static String combine(String... locations) {
-        String resolved = combineInternal(locations);
+    public static String combine(URIFactory factory, String... locations) {
+        String resolved = combineInternal(factory,locations);
         log.debug("Resolved locations: {} to: {}", locations, resolved);
         return resolved;
     }
 
-    private static String combineInternal(String... locations) {
+    public static String combine(String... locations) {
+        return combine(DEFAULT_URI_FACTORY,locations);
+    }
+
+    private static String combineInternal(URIFactory factory,String... locations) {
         if (locations.length < 2)
             throw new InvalidParameterException();
 
@@ -75,14 +80,17 @@ public class ResolverMap implements Cloneable, Resolver {
             return combine(combine(l), locations[locations.length - 1]);
         }
 
-        String parent = locations[0];
-        String relativeChild = locations[1];
+        return combineInternal2( factory, locations,locations[1], locations[0]);
+    }
+
+    private static String combineInternal2(URIFactory uriFactory, String[] locations, String relativeChild, String parent) {
 
         if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
             return relativeChild;
-        if (parent.startsWith("file://")) {
+
+        if (parent.startsWith("file:/")) {
             if (relativeChild.startsWith("\\") || relativeChild.startsWith("/")) {
-                return  convertPath2FilePathString( new File(relativeChild).getAbsolutePath());
+                return convertPath2FilePathString(new File(relativeChild).getAbsolutePath());
             }
             File parentFile = new File(pathFromFileURI(parent));
             if (!parent.endsWith("/") && !parent.endsWith("\\"))
@@ -93,12 +101,12 @@ public class ResolverMap implements Cloneable, Resolver {
                 throw new RuntimeException("Error combining: " + Arrays.toString(locations), e);
             }
         }
+
         if (parent.contains(":/")) {
             try {
-                if (parent.startsWith("http") || parent.startsWith("classpath:") || parent.startsWith("internal:"))
-                    return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
-                // Assume file parent is a file path either file:, or c:\, or /, or a/b, ...
-                return convertPath2FileURI(parent).resolve(prepare4Uri(relativeChild)).toString();
+                if (parent.startsWith("http") || parent.startsWith("classpath:") || parent.startsWith("internal:")) {
+                    return uriFactory.create(parent).resolve(uriFactory.create(prepare4Uri(relativeChild)),uriFactory).toString();
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -133,8 +141,7 @@ public class ResolverMap implements Cloneable, Resolver {
      */
     protected static String prepare4Uri(String path) {
         path = path.replaceAll("\\\\", "/");
-        path = path.replaceAll(" ", "%20");
-        return path;
+        return path.replaceAll(" ", "%20");
     }
 
     protected static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
