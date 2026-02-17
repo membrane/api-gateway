@@ -99,11 +99,11 @@ jobs:
           GITLAB_TRIGGER_TOKEN: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
         run: |
           VERSION='${{ steps.get_version.outputs.VERSION }}'
-          curl -q -X POST --fail \
+          curl -sS -X POST --fail \
             --connect-timeout 10 \
             --max-time 30 \
-            -F token="${GITLAB_TRIGGER_TOKEN}" \
-            -F ref=main \
+            -F "token=${GITLAB_TRIGGER_TOKEN}" \
+            -F "ref=main" \
+            -F "variables[PIPELINE]=release" \
             -F "variables[MEMBRANE_VERSION]=${VERSION}" \
-            https://gitlab.predic8.de/api/v4/projects/prod%2Fmembrane-api.io/trigger/pipeline
-              
+            "https://gitlab.predic8.de/api/v4/projects/94/trigger/pipeline"
