@@ -27,11 +27,7 @@ public class ExceptionTestInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        try {
-            exc.setResponse(ok().body(exc.getRequest().getBody().getContent()).build());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        exc.setResponse(ok().body(exc.getRequest().getBody().getContent()).build());
         throw new RuntimeException();
     }
 

@@ -322,11 +322,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
         }
 
         public void bodyComplete(AbstractBody body) {
-            try {
-                snapInternal(exc, flow, getBody(body));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            snapInternal(exc, flow, getBody(body));
         }
     }
 }

@@ -15,13 +15,29 @@ package com.predic8.membrane.core.util;
 
 public class ExceptionUtil {
 
+    /**
+     * Concatenates the messages of all nested exceptions.
+     *
+     * This could be improved to make the resulting String more dense in case of repeated information parts.
+     *
+     * @param throwable the exception
+     * @return a String containing all messages of nested exceptions
+     */
     public static String concatMessageAndCauseMessages(Throwable throwable) {
         StringBuilder sb = new StringBuilder();
+        boolean causedBy = false;
         do {
-            sb.append(throwable.getMessage());
+            boolean skip = sb.toString().contains(throwable.getMessage());
+            if (!skip) {
+                if (causedBy) {
+                    sb.append(" caused by: ");
+                    causedBy = false;
+                }
+                sb.append(throwable.getMessage());
+            }
             throwable = throwable.getCause();
-            if (throwable != null) {
-                sb.append(" caused by: ");
+            if (throwable != null && !skip) {
+                causedBy = true;
             }
         } while (throwable != null);
         return sb.toString();

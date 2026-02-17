@@ -63,7 +63,7 @@ public abstract class BodyCollectingMessageObserver implements MessageObserver {
         storedSize += chunk.getLength();
     }
 
-    public AbstractBody getBody(AbstractBody body) throws IOException {
+    public AbstractBody getBody(AbstractBody body) {
         if (!body.wasStreamed()) {
             return body;
         }
