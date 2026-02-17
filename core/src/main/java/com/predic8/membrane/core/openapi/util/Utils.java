@@ -226,7 +226,7 @@ public class Utils {
         return !ve.isEmpty();
     }
 
-    public static <T extends Body> Request<T> getOpenapiValidatorRequest(Exchange exc) throws IOException, ParseException {
+    public static <T extends Body> Request<T> getOpenapiValidatorRequest(Exchange exc) throws ParseException {
         Request<T> request = new Request<>(exc.getRequest().getMethod(), exc.getRequestURI());
         for (HeaderField header : exc.getRequest().getHeader().getAllHeaderFields()) {
             request.getHeaders().put(header.getHeaderName().toString(), header.getValue());
@@ -244,7 +244,7 @@ public class Utils {
         return request;
     }
 
-    public static <T extends Body> Response<T> getOpenapiValidatorResponse(Exchange exc) throws ParseException, IOException {
+    public static <T extends Body> Response<T> getOpenapiValidatorResponse(Exchange exc) throws ParseException {
         Response<T> response = Response.statusCode(exc.getResponse().getStatusCode());
 
         for (HeaderField header : exc.getResponse().getHeader().getAllHeaderFields()) {

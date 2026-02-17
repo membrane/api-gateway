@@ -42,6 +42,10 @@ import static java.nio.charset.StandardCharsets.*;
  * Streams do not have to be read completely. Accessing the body from multiple
  * threads is illegal. Using a Body Stream after the Body as been accessed by
  * someone else (using streams or not) is illegal.
+ * <p>
+ * Public instance methods must not throw {@link IOException}s. Throw an
+ * unchecked {@link ReadingBodyException} or {@link WritingBodyException} instead.
+ * (This is enforced by the BodyDoesntThrowIOExceptionTest .)
  */
 public abstract class AbstractBody {
 	private static final Logger log = LoggerFactory.getLogger(AbstractBody.class.getName());
@@ -53,7 +57,7 @@ public abstract class AbstractBody {
 	protected final List<MessageObserver> observers = new ArrayList<>(1);
 	private boolean wasStreamed = false;
 
-	public void read() throws IOException {
+	public void read() {
 		if (read)
 			return;
 
@@ -64,11 +68,15 @@ public abstract class AbstractBody {
 			observer.bodyRequested(this);
 
 		chunks.clear();
-		readLocal();
+		try {
+			readLocal();
+		} catch (IOException e) {
+			throw new ReadingBodyException(e);
+		}
 		markAsRead();
 	}
 
-	public void discard() throws IOException {
+	public void discard() {
 		read();
 	}
 
@@ -105,7 +113,7 @@ public abstract class AbstractBody {
 	 * {@link #getContent()}. If you do not need the body as one single byte[],
 	 * you should therefore use {@link #getContentAsStream()} instead.
 	 */
-	public byte[] getContent() throws IOException {
+	public byte[] getContent() {
 		if (wasStreamed)
 			throw new IllegalStateException("Cannot read body after it was streamed.");
 		read();
@@ -117,25 +125,29 @@ public abstract class AbstractBody {
 		return content;
 	}
 
-	public InputStream getContentAsStream() throws IOException {
+	public InputStream getContentAsStream() {
 		if (wasStreamed)
 			throw new IllegalStateException("Cannot read body after it was streamed.");
 		read();
 		return new BodyInputStream(chunks);
 	}
 
-	public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
-		if (!read && !retainCopy) {
-			if (wasStreamed)
-				log.warn("Streaming the body twice will not work.");
-			for (MessageObserver observer : observers)
-				observer.bodyRequested(this);
-			wasStreamed = true;
-			writeStreamed(out);
-			return;
-		}
+	public void write(AbstractBodyTransferrer out, boolean retainCopy) {
+		try {
+			if (!read && !retainCopy) {
+				if (wasStreamed)
+					log.warn("Streaming the body twice will not work.");
+				for (MessageObserver observer : observers)
+					observer.bodyRequested(this);
+				wasStreamed = true;
+				writeStreamed(out);
+				return;
+			}
 
-		writeAlreadyRead(out);
+			writeAlreadyRead(out);
+		} catch (IOException e) {
+			throw new WritingBodyException(e);
+		}
 	}
 
 	protected abstract void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException;
@@ -145,7 +157,7 @@ public abstract class AbstractBody {
 	/**
 	 * Is called when there are no observers that need to read the body. Streams the body without reading it
 	 */
-	protected abstract void writeStreamed(AbstractBodyTransferrer out) throws IOException;
+	protected abstract void writeStreamed(AbstractBodyTransferrer out);
 
 	/**
 	 * Warning: Calling this method will trigger reading the body from the client, disabling "streaming".
@@ -153,7 +165,7 @@ public abstract class AbstractBody {
 	 *
 	 * @return the length of the return value of {@link #getContent()}
 	 */
-	public int getLength() throws IOException {
+	public int getLength() {
 		read();
 
 		int length = 0;
@@ -182,10 +194,14 @@ public abstract class AbstractBody {
 	 * 0
 	 * </pre>
 	 */
-	public byte[] getRaw() throws IOException {
+	public byte[] getRaw() {
 		read();
-		return getRawLocal();
-	}
+        try {
+            return getRawLocal();
+        } catch (IOException e) {
+            throw new ReadingBodyException(e);
+        }
+    }
 
 	protected abstract byte[] getRawLocal() throws IOException;
 
@@ -204,9 +220,9 @@ public abstract class AbstractBody {
 		}
 		try {
 			return new String(getRaw(), UTF_8);
-		} catch (IOException e) {
-			log.error("", e);
-			return "Error in body: " + e;
+		} catch (ReadingBodyException e) {
+			log.error(e.getMessage());
+			return "Error in body: " + e.getMessage();
 		}
 	}
 

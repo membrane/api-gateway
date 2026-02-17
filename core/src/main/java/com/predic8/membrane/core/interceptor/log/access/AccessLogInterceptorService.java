@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.log.access;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.log.AdditionalVariable;
 import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
 import org.slf4j.Logger;
@@ -134,7 +135,7 @@ public class AccessLogInterceptorService {
         return () -> {
             try {
                 return msg.getBody().getLength();
-            } catch (IOException e) {
+            } catch (ReadingBodyException e) {
                 return defaultValue;
             }
         };

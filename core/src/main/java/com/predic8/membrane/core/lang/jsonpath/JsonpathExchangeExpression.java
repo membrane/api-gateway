@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.exc.*;
 import com.jayway.jsonpath.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
@@ -69,8 +70,8 @@ public class JsonpathExchangeExpression extends AbstractExchangeExpression {
                 log.debug("Body is empty or Content-Type not JSON. Nothing to evaluate for expression: {}", expression); // Normal
                 return resultForNoEvaluation(type);
             }
-        } catch (IOException e) {
-            log.error("Error checking if body is empty", e);
+        } catch (ReadingBodyException e) {
+            log.error("Error checking if body is empty: {}", e.getMessage());
             return resultForNoEvaluation(type);
         }
 

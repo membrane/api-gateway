@@ -36,36 +36,44 @@ public class MessageUtil {
 		saxParserFactory.setValidating(false);
 	}
 
-	public static InputStream getContentAsStream(Message msg) throws IOException {
-		if (msg.isGzip()) {
-			return new GZIPInputStream(msg.getBodyAsStream());
+	public static InputStream getContentAsStream(Message msg) {
+		try {
+			if (msg.isGzip()) {
+				return new GZIPInputStream(msg.getBodyAsStream());
+			}
+			if (msg.isDeflate()) {
+				return new ByteArrayInputStream(getDecompressedData(msg.getBody().getContent()));
+			}
+			if (msg.isBrotli()) {
+				return new BrotliInputStream(msg.getBodyAsStream());
+			}
+			return msg.getBodyAsStream();
+		} catch (IOException e) {
+			throw new ReadingBodyException(e);
 		}
-		if (msg.isDeflate()) {
-			return new ByteArrayInputStream(getDecompressedData(msg.getBody().getContent()));
-		}
-		if (msg.isBrotli()) {
-			return new BrotliInputStream(msg.getBodyAsStream());
-		}
-		return msg.getBodyAsStream();
 	}
 	
-	public static byte[] getContent(Message msg) throws Exception {
-		if (msg.isGzip()) {
-			try (InputStream lInputStream = msg.getBodyAsStream();
-				 GZIPInputStream lGZIPInputStream = new GZIPInputStream(lInputStream)) {
-                return lGZIPInputStream.readAllBytes();
-            }
-		}
-		if (msg.isDeflate()) {
-			return getDecompressedData(msg.getBody().getContent());
-		}
-		if (msg.isBrotli()) {
-			try (InputStream lInputStream = msg.getBodyAsStream();
-				 BrotliInputStream lBrotliInputStream = new BrotliInputStream(lInputStream)) {
-				return lBrotliInputStream.readAllBytes();
+	public static byte[] getContent(Message msg) {
+		try {
+			if (msg.isGzip()) {
+				try (InputStream lInputStream = msg.getBodyAsStream();
+					 GZIPInputStream lGZIPInputStream = new GZIPInputStream(lInputStream)) {
+					return lGZIPInputStream.readAllBytes();
+				}
 			}
+			if (msg.isDeflate()) {
+				return getDecompressedData(msg.getBody().getContent());
+			}
+			if (msg.isBrotli()) {
+				try (InputStream lInputStream = msg.getBodyAsStream();
+					 BrotliInputStream lBrotliInputStream = new BrotliInputStream(lInputStream)) {
+					return lBrotliInputStream.readAllBytes();
+				}
+			}
+			return msg.getBody().getContent();
+		} catch (IOException e) {
+			throw new ReadingBodyException(e);
 		}
-		return msg.getBody().getContent();
 	}
 	
 	public static Source getSOAPBody(InputStream stream) {

@@ -25,7 +25,7 @@ public class SpELBodyToStringTypeConverter implements Converter<LazyBody, String
     @Override
     public String convert(LazyBody body) {
         try {
-            return new String(MessageUtil.getContent(body.getMessage()));
+            return new String(MessageUtil.getContent(body.getMessage()), body.getMessage().getCharsetOrDefault());
         } catch (Exception e) {
             log.warn("Cannot log body content", e);
             throw new RuntimeException(e);

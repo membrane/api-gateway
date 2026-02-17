@@ -138,11 +138,7 @@ public class NtlmInterceptor extends AbstractInterceptor {
     }
 
     private void prepareStreamByEmptyingIt(Exchange exc) {
-        try {
-            exc.getResponse().getBody().getContent();
-        } catch (IOException e) {
-            LOG.warn("",e);
-        }
+        exc.getResponse().getBody().getContent();
     }
 
     @MCChildElement(order = 1)
