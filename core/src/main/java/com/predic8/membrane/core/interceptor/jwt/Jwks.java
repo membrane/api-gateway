@@ -48,6 +48,7 @@ public class Jwks {
     volatile List<Jwk> jwks = new ArrayList<>();
     String jwksUris;
     AuthorizationService authorizationService;
+    private final List<Runnable> observers = new ArrayList<>();
 
     public List<Jwk> getJwks() {
         return jwks;
@@ -56,6 +57,7 @@ public class Jwks {
     @MCChildElement
     public Jwks setJwks(List<Jwk> jwks) {
         this.jwks = jwks;
+        notifyObservers();
         return this;
     }
 
@@ -151,6 +153,20 @@ public class Jwks {
     @MCAttribute
     public void setAuthorizationService(AuthorizationService authService) {
         authorizationService = authService;
+    }
+
+    public void addObserver(Runnable observer) {
+        observers.add(observer);
+    }
+
+    private void notifyObservers() {
+        for (Runnable observer : observers) {
+            try {
+                observer.run();
+            } catch (Exception e) {
+                log.error("Error notifying observer", e);
+            }
+        }
     }
 
     @MCElement(name="jwk", mixed = true, component = false, id="jwks-jwk")
