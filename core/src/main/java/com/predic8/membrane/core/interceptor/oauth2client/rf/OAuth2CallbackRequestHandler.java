@@ -90,7 +90,7 @@ public class OAuth2CallbackRequestHandler {
             try {
                 originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
             } catch (Exception e) {
-                log.warn("Could not reconstruct exchange snapshot '{}'", stateFromUri);
+                log.warn("OAuth2 flow could not find original exchange data in '{}'", originalExchangeStore.getClass().getSimpleName());
                 throw new OAuth2Exception(
                         MEMBRANE_EXCHANGE_NOT_FOUND,
                         MEMBRANE_EXCHANGE_NOT_FOUND_DESCRIPTION,
