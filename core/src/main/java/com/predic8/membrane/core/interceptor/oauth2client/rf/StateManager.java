@@ -98,7 +98,7 @@ public class StateManager {
 
         // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
         if (!(session.get(SESSION_PARAMETER_STATE).equals(stateFromUri.getSecurityToken()))) {
-            log.warn("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
+            log.debug("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
         }
         session.put(SESSION_PARAMETER_STATE, stateFromUri.getSecurityToken());
     }
