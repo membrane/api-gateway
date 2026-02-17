@@ -223,22 +223,35 @@ public class StreamInfo {
         }
 
         @Override
-        protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+        protected void writeStreamed(AbstractBodyTransferrer out) {
             chunks.clear();
             while (true) {
-                DataFrame df = removeDataFrame();
+                DataFrame df = null;
+                try {
+                    df = removeDataFrame();
+                } catch (IOException e) {
+                    throw new ReadingBodyException(e);
+                }
                 if (df == null)
                     continue;
                 int len = df.getDataLength();
                 if (len > 0) {
-                    out.write(df.getContent(), df.getDataStartIndex(), len);
+                    try {
+                        out.write(df.getContent(), df.getDataStartIndex(), len);
+                    } catch (IOException e) {
+                        throw new WritingBodyException(e);
+                    }
                     streamedLength += len;
                 }
 
                 if (df.isEndStream())
                     break;
             }
-            out.finish(trailer);
+            try {
+                out.finish(trailer);
+            } catch (IOException e) {
+                throw new WritingBodyException(e);
+            }
             markAsRead();
         }
 
@@ -254,7 +267,7 @@ public class StreamInfo {
         }
 
         @Override
-        public int getLength() throws IOException {
+        public int getLength() {
             if (wasStreamed())
                 return streamedLength;
             return super.getLength();

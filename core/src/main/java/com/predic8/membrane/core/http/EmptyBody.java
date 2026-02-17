@@ -44,7 +44,7 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+	protected void writeStreamed(AbstractBodyTransferrer out) {
 		//ignore
 	}
 
@@ -54,8 +54,12 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
-		out.finish(null);
+	public void write(AbstractBodyTransferrer out, boolean retainCopy) {
+		try {
+			out.finish(null);
+		} catch (IOException e) {
+			throw new WritingBodyException(e);
+		}
 		markAsRead();
 	}
 
