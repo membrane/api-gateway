@@ -18,6 +18,7 @@ import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2client.rf.OAuth2Exception;
 import com.predic8.membrane.core.interceptor.session.Session;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -56,7 +57,11 @@ public class AccessTokenRefresher {
             try {
                 exc.setProperty(OAUTH2, refreshAccessToken(session, wantedScope));
             } catch (Exception e) {
-                log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow.", e);
+                if (e instanceof OAuth2Exception oae) {
+                    log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow. [{}]", oae.getErrorDescription());
+                } else {
+                    log.warn("Failed to refresh access token, clearing session and restarting OAuth2 flow.");
+                }
                 session.clearAuthentication();
             }
         }
