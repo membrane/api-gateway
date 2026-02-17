@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
@@ -55,11 +56,14 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             exc.getDestinations().clear();
             try {
                 exc.getDestinations().add(getForwardingDestination(exc));
+            } catch (IllegalArgumentException e) {
+                createInvalidCharacterProblemDetails(exc)
+                        .detail(e.getMessage())
+                        .buildAndSetResponse(exc);
+                return ABORT;
             } catch (URISyntaxException e) {
-                var pd = user(getRouter().getConfiguration().isProduction(), "invalid-path")
-                        .title("Request path contains an invalid character.")
+                var pd = createInvalidCharacterProblemDetails(exc)
                         .detail(getMessageForURISyntaxException(exc, e))
-                        .internal("path", exc.getRequest().getUri())
                         .internal("destination", e.getInput());
                 if (e.getIndex() >= 0)
                     pd.internal("index", e.getIndex());
@@ -77,6 +81,12 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         }
         exc.getDestinations().add(exc.getRequest().getUri());
         return CONTINUE;
+    }
+
+    private ProblemDetails createInvalidCharacterProblemDetails(Exchange exc) {
+        return user(getRouter().getConfiguration().isProduction(), "invalid-path")
+            .title("Request path contains an invalid character.")
+             .internal("path", exc.getRequest().getUri());
     }
 
     private static @NotNull String getMessageForURISyntaxException(Exchange exc, URISyntaxException e) {
@@ -115,7 +125,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
                 // The URL is from the target in the configuration, that is maintained by the admin
                 var basePath = UriUtil.getPathFromURL(URI_FACTORY_ALLOW_ILLEGAL, targetURL);
                 if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
-                    return URI_FACTORY_ALLOW_ILLEGAL.create(targetURL).resolve(URI_FACTORY_ALLOW_ILLEGAL.create(getUri(exc))).toString();
+                    return router.getResolverMap().combine(router.getConfiguration().getUriFactory(),targetURL,getUri(exc));
                 }
             }
             return targetURL;

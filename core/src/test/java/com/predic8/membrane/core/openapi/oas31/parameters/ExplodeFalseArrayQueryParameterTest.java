@@ -16,7 +16,6 @@ package com.predic8.membrane.core.openapi.oas31.parameters;
 
 import com.predic8.membrane.core.openapi.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.validators.*;
 import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
@@ -112,7 +111,9 @@ public class ExplodeFalseArrayQueryParameterTest {
 
         @Test
         void valuesUTF8() {
-            assertEquals(0, validator.validate(get().path("/array?const=foo,äöü,baz")).size());
+            var err = validator.validate(get().path("/array?const=foo,äöü,baz"));
+            assertEquals(1, err.size());
+            assertTrue(err.get(0).getMessage().contains("Invalid query string"));
         }
 
         @Test

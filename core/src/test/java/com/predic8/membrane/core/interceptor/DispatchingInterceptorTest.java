@@ -27,6 +27,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.router.DummyTestRouter.*;
+import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DispatchingInterceptorTest {
@@ -35,14 +36,17 @@ class DispatchingInterceptorTest {
 
 	DispatchingInterceptor dispatcher;
 	ServiceProxy serviceProxy;
-
 	Exchange exc;
+	Router defaultRouter;
+	Router routerAllowIllegal;
 
 	@BeforeEach
 	void setUp() {
-		DefaultRouter router = new DefaultRouter();
+		routerAllowIllegal = new DefaultRouter();
+		routerAllowIllegal.getConfiguration().setUriFactory(ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY);
+		defaultRouter = new DefaultRouter();
 		dispatcher = new DispatchingInterceptor();
-		dispatcher.init(router);
+		dispatcher.init(defaultRouter);
 		exc = new Exchange(null);
 		serviceProxy = new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
 	}
@@ -155,9 +159,10 @@ class DispatchingInterceptorTest {
 		api.setTarget(new Target() {{
 			setUrl("https://${property.host}:8080"); // Has illegal characters $ { } in base path
 		}});
+		api.init(routerAllowIllegal);
+		dispatcher.init(routerAllowIllegal);
 
 		var exc =  get("/foo").buildExchange();
-		exc.setProperty("host", "predic8.de");
 		exc.setProxy(api);
 
         assertEquals("https://${property.host}:8080/foo", dispatcher.getAddressFromTargetElement(exc));
@@ -177,7 +182,6 @@ class DispatchingInterceptorTest {
 			var jn = om.readTree(r.getBodyAsStringDecoded());
 			assertTrue(jn.get(TITLE).asText().contains("invalid character"));
 			assertEquals("https://membrane-api.io/problems/user", jn.get(TYPE).asText());
-			assertEquals(4, jn.get("index").asInt());
 			assertEquals("/foo{invalidUri}", jn.get("path").asText());
 		}
 

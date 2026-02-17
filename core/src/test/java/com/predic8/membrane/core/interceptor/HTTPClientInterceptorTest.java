@@ -15,11 +15,13 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Target.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -144,21 +146,76 @@ class HTTPClientInterceptorTest {
                 "%26%3F%C3%A4%C3%B6%C3%BC%21", Escaping.URL);
     }
 
+    @Nested
+    class injection {
+
+        @Test
+        void deactivateEvaluationOfURLTemplatesWhenIllegalCharactersAreAllowed() {
+            allowIllegalURICharacters();
+            var exc = new Request.Builder().method(METHOD_GET).uri("/foo/${555}").buildExchange();
+            invokeDispatching(SPEL, exc, "https://${'hostname'}", Escaping.URL);
+            if (!(exc.getProxy() instanceof APIProxy apiProxy)) {
+                fail();
+                return;
+            }
+            assertFalse(apiProxy.getTarget().isEvaluateExpressions());
+            assertEquals(1, exc.getDestinations().size());
+
+            // The template should not be evaluated, cause illegal characters are allowed!
+            assertEquals("https://${'hostname'}/foo/${555}", exc.getDestinations().getFirst());
+        }
+
+        @Test
+        void illegalCharacterWithoutTemplate() {
+            allowIllegalURICharacters();
+            var exc = new Request.Builder().method(METHOD_GET).uri("/foo/${555}").buildExchange();
+            invokeDispatching(SPEL, exc, "https://localhost", Escaping.URL);
+            if (!(exc.getProxy() instanceof APIProxy apiProxy)) {
+                fail();
+                return;
+            }
+            assertEquals(false, apiProxy.getTarget().isEvaluateExpressions());
+            assertEquals(1, exc.getDestinations().size());
+
+            // The template should not be evaluated, cause illegal characters are allowed!
+            assertEquals("https://localhost/foo/${555}", exc.getDestinations().getFirst());
+        }
+
+        @Test
+        void uriTemplateAndIllegalCharacters() throws URISyntaxException {
+            allowIllegalURICharacters();
+            var exc = get("/foo").buildExchange();
+            invokeDispatching(SPEL, exc, "https://${'hostname'}", Escaping.URL);
+            // The template should not be evaluated, cause illegal characters are allowed!
+            assertEquals("https://${'hostname'}/foo", exc.getDestinations().getFirst());
+        }
+    }
+
+    private void allowIllegalURICharacters() {
+        router.getConfiguration().setUriFactory(new URIFactory(true));
+    }
 
     private void testExpression(Language language, Exchange exc, String url, String expected, Escaping escaping) {
+        invokeDispatching(language, exc, url, escaping);
+        assertEquals(1, exc.getDestinations().size());
+        assertEquals(expected, exc.getDestinations().getFirst());
+    }
+
+    private void invokeDispatching(Language language, Exchange exc, String url, Escaping escaping) {
         var target = new Target();
         target.setUrl(url);
         target.setLanguage(language);
         target.setEscaping(escaping);
+        target.init(router);
 
         var api = new APIProxy();
         api.setTarget(target);
         exc.setProxy(api);
         hci.init(router);
-        new DispatchingInterceptor().handleRequest(exc);
+        var di = new DispatchingInterceptor();
+        di.init(router);
+        di.handleRequest(exc);
         hci.applyTargetModifications(exc);
-        assertEquals(1, exc.getDestinations().size());
-        assertEquals(expected, exc.getDestinations().getFirst());
     }
 
 }

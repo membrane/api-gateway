@@ -65,7 +65,7 @@ public class URLUtilTest {
 
     @Test
     void testDecodePath() throws Exception {
-        URI u = new URI(true, "/path/to%20my/resource");
+        URI u = new com.predic8.membrane.core.util.URI( "/path/to%20my/resource",true);
         assertEquals("/path/to my/resource", u.getPath());
         assertEquals("/path/to%20my/resource", u.getRawPath());
     }

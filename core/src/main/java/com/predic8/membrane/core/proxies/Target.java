@@ -22,8 +22,9 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
 import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.ws.interceptors.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.text.*;
+import org.slf4j.*;
 
 import java.net.*;
 import java.util.*;
@@ -33,6 +34,7 @@ import java.util.stream.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.util.TemplateUtil.*;
+import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -45,6 +47,8 @@ import static java.nio.charset.StandardCharsets.*;
 @MCElement(name = "target", component = false)
 public class Target implements XMLSupport {
 
+    private static final Logger log = LoggerFactory.getLogger(Target.class);
+
     private String host;
     private int port = -1;
     private String method;
@@ -53,10 +57,14 @@ public class Target implements XMLSupport {
     private ExchangeExpression.Language language = SPEL;
     private Escaping escaping = Escaping.URL;
 
+    /**
+     * If exchangeExpressions should be evaluated.
+     */
+    private boolean evaluateExpressions = false;
+
     private boolean adjustHostHeader = true;
 
     private SSLParser sslParser;
-
     protected XmlConfig xmlConfig;
 
     public enum Escaping {
@@ -77,6 +85,18 @@ public class Target implements XMLSupport {
         setPort(port);
     }
 
+    public void init(Router router) {
+        // URL Template evaluation is only activated when there are template markers ${ in the URL
+        if (!containsTemplateMarker(url))
+            return;
+
+        if (router.getConfiguration().getUriFactory().isAllowIllegalCharacters()) {
+            log.warn("{}Url templates are disabled for security.{} Disable configuration/uriFactory/allowIllegalCharacters to enable them. Illegal characters in templates may lead to injection attacks.", TerminalColors.BRIGHT_RED(), RESET());
+        } else {
+            evaluateExpressions = true;
+        }
+    }
+
     public void applyModifications(Exchange exc, Router router) {
         exc.setDestinations(computeDestinationExpressions(exc, router));
 
@@ -93,6 +113,10 @@ public class Target implements XMLSupport {
     }
 
     private String evaluateTemplate(Exchange exc, Router router, String url, InterceptorAdapter adapter) {
+        // Only evaluate if the target url contains a template marker ${}
+        if (!evaluateExpressions)
+            return url;
+
         // If the url does not contain ${ we do not have to evaluate the expression
         if (!containsTemplateMarker(url)) {
             return url;
@@ -107,16 +131,20 @@ public class Target implements XMLSupport {
                 getEscapingFunction()).evaluate(exc, REQUEST, String.class);
     }
 
-    private Function<String,String> getEscapingFunction() {
+    private Function<String, String> getEscapingFunction() {
         return switch (escaping) {
-          case NONE -> Function.identity();
-          case URL -> s -> URLEncoder.encode(s, UTF_8);
-          case SEGMENT -> URLUtil::pathSeg;
+            case NONE -> Function.identity();
+            case URL -> s -> URLEncoder.encode(s, UTF_8);
+            case SEGMENT -> URLUtil::pathSeg;
         };
     }
 
     public String getHost() {
         return host;
+    }
+
+    public boolean isEvaluateExpressions() {
+        return evaluateExpressions;
     }
 
     /**
@@ -210,11 +238,10 @@ public class Target implements XMLSupport {
     }
 
     /**
+     * @param escaping NONE, URL, SEGMENT
      * @description When url contains placeholders ${}, the computed values should be escaped
      * to prevent injection attacks.
-     *
      * @default URL
-     * @param escaping NONE, URL, SEGMENT
      */
     @MCAttribute
     public void setEscaping(Escaping escaping) {

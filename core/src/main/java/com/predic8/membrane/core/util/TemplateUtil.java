@@ -23,6 +23,7 @@ public class TemplateUtil {
      * @return true if the string contains a template marker, false otherwise
      */
     public static boolean containsTemplateMarker(String s) {
+        if (s == null) return false;
         for (int i = 0, len = s.length() - 1; i < len; i++) {
             if (s.charAt(i) == '$' && s.charAt(i + 1) == '{') {
                 return true;
