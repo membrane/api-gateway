@@ -19,8 +19,7 @@ import java.nio.file.*;
 import java.security.*;
 
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
-import static com.predic8.membrane.core.util.OSUtil.wl;
-import static com.predic8.membrane.core.util.URIFactory.DEFAULT_URI_FACTORY;
+import static com.predic8.membrane.core.util.OSUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ResolverMapCombineTest {
