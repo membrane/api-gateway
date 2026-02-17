@@ -315,9 +315,13 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
      * client, nothing will be done. (Allowing the HTTP connection state to skip
      * over the body transmission.)
      */
-    private void removeBodyFromBuffer() throws IOException {
-        if (!exchange.getRequest().getHeader().is100ContinueExpected() || srcIn.available() > 0) {
-            exchange.getRequest().discardBody();
+    private void removeBodyFromBuffer() throws ReadingBodyException {
+        try {
+            if (!exchange.getRequest().getHeader().is100ContinueExpected() || srcIn.available() > 0) {
+                exchange.getRequest().discardBody();
+            }
+        } catch (IOException e) {
+            throw new ReadingBodyException(e);
         }
     }
 

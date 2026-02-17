@@ -74,8 +74,8 @@ public abstract class Message {
 	public void discardBody() {
         try {
             body.discard();
-        } catch (IOException e) {
-            log.debug("Error discarding body. Can be ignored.", e);
+        } catch (ReadingBodyException e) {
+            log.debug("Error discarding body ({}). Can be ignored.", e.getMessage());
         }
     }
 
@@ -94,13 +94,8 @@ public abstract class Message {
 	 *
 	 * @see AbstractBody#getContentAsStream()
 	 */
-	public InputStream getBodyAsStream() {
-		try {
-			return body.getContentAsStream();
-		} catch (IOException e) {
-			log.error("Could not get body as stream", e);
-			throw new ReadingBodyException(e);
-		}
+	public InputStream getBodyAsStream() throws ReadingBodyException {
+		return body.getContentAsStream();
 	}
 
 	/**
@@ -110,7 +105,7 @@ public abstract class Message {
 	 *
 	 * <p>Supports streaming: The HTTP message does not have to be completely received yet for this method to return.</p>
 	 */
-	public InputStream getBodyAsStreamDecoded() {
+	public InputStream getBodyAsStreamDecoded() throws ReadingBodyException {
 		// TODO: this logic should be split up into configurable decoding modules
 		// TODO: decoding result should be cached
 		try {
@@ -118,6 +113,8 @@ public abstract class Message {
 			if (m != null)
 				return m.getBodyAsStream(); // we know decoding is not necessary any more
 			return MessageUtil.getContentAsStream(this);
+		} catch (ReadingBodyException e) {
+			throw e;
 		} catch (Exception e) {
 			log.error("Could not decode body stream", e);
 			throw new RuntimeException("Could not decode body stream", e);
@@ -136,7 +133,7 @@ public abstract class Message {
 	 *
 	 * @return the message's body as a Java String.
 	 */
-	public String getBodyAsStringDecoded() {
+	public String getBodyAsStringDecoded() throws ReadingBodyException {
 		try {
 			return new String(MessageUtil.getContent(this), getCharsetOrDefault());
 		} catch (Exception e) {
@@ -148,7 +145,7 @@ public abstract class Message {
 	 * Sets the body.
 	 * Does <b>NOT</b> adjust the header fields (<tt>Content-Length</tt> etc.): Use {@link #setBodyContent(byte[])} instead.
 	 */
-	public void setBody(AbstractBody b) {
+	public void setBody(AbstractBody b) throws ReadingBodyException {
 		discardBody(); // Make sure remaining bytes are read from original body's input stream
 		body = b;
 	}
@@ -156,7 +153,7 @@ public abstract class Message {
 	/**
 	 * Sets the body. Also adjusts the header fields (<tt>Content-Length</tt>, <tt>Content-Encoding</tt>, <tt>Transfer-Encoding</tt>).
 	 */
-	public void setBodyContent(byte[] content) {
+	public void setBodyContent(byte[] content) throws ReadingBodyException {
 		discardBody(); // Make sure remaining bytes are read from original body's input stream
 		body = new Body(content);
 		header.removeFields(CONTENT_ENCODING);
@@ -295,12 +292,13 @@ public abstract class Message {
 		return "message";
 	}
 
-	public boolean isBodyEmpty() throws IOException {
+	public boolean isBodyEmpty() throws ReadingBodyException {
 		if (header.hasContentLength())
 			return header.getContentLength() == 0;
 
-		if (getBody().read)
+		if (getBody().read) {
 			return getBody().getLength() == 0;
+        }
 
 		return getBody() instanceof EmptyBody;
 	}
@@ -351,14 +349,10 @@ public abstract class Message {
 	}
 
 	public int estimateHeapSize() {
-		try {
-			return 100 +
-					(header != null ? header.estimateHeapSize() : 0) +
-					(body != null ? body.isRead() ? body.getLength() : 0 : 0) +
-					(errorMessage != null ? 2*errorMessage.length() : 0);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		return 100 +
+				(header != null ? header.estimateHeapSize() : 0) +
+				(body != null ? body.isRead() ? body.getLength() : 0 : 0) +
+				(errorMessage != null ? 2*errorMessage.length() : 0);
 	}
 
     public abstract <T extends Message> T createSnapshot(Runnable bodyUpdatedCallback, BodyCollectingMessageObserver.Strategy strategy, long limit) throws Exception;
@@ -404,7 +398,7 @@ public abstract class Message {
 		public void bodyComplete(AbstractBody body2) {
 			try {
 				result.setBody(getBody(body2));
-			} catch (IOException e) {
+			} catch (ReadingBodyException e) {
 				throw new RuntimeException(e);
 			}
 			try {

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.json.*;
 import com.predic8.membrane.core.proxies.*;
@@ -151,8 +152,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         try {
             if (exc.getMessage(flow).isBodyEmpty())
                 return CONTINUE;
-        } catch (IOException e) {
-            log.error("", e);
+        } catch (ReadingBodyException e) {
+            log.error("Validation failed: {}", e.getMessage());
             internal(router.isProduction(),getDisplayName())
                     .addSubSee("io")
                     .detail("Could not read message body")

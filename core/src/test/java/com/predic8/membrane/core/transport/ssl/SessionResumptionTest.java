@@ -100,13 +100,7 @@ public class SessionResumptionTest {
             public Outcome handleRequest(Exchange exc) {
                 // Inlined from Exchange. Maybe use EchoIntercepor
                 Response.ResponseBuilder builder = Response.ok();
-                byte[] content;
-                try {
-                    content = exc.getRequest().getBody().getContent();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                builder.body(content);
+                builder.body(exc.getRequest().getBody().getContent());
                 String contentType = exc.getRequest().getHeader().getContentType();
                 if (contentType != null)
                     builder.header(CONTENT_TYPE, contentType);

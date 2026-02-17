@@ -50,9 +50,11 @@ public class SOAPUtil {
                     QName name = ((StartElement) event).getName();
                     return (isSOAP11Element(name)
                             || isSOAP12Element(name)) &&
-                           "Envelope".equals(name.getLocalPart());
+                            "Envelope".equals(name.getLocalPart());
                 }
             }
+        } catch (ReadingBodyException e) {
+            throw e;
         } catch (Exception e) {
             log.warn("Ignoring exception: ", e);
         }

@@ -54,8 +54,8 @@ public class BeautifierInterceptor extends AbstractInterceptor {
         try {
             if (msg.isBodyEmpty())
                 return CONTINUE;
-        } catch (IOException e) {
-            log.error("", e);
+        } catch (ReadingBodyException e) {
+            log.error("Could not beautify body ({}), but continuing flow.", e.getMessage());
             return CONTINUE;
         }
 

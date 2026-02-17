@@ -130,7 +130,7 @@ public class XML2HTTP {
                     message.getHeader().clear();
                 if (!foundBody)
                     message.setBodyContent(new byte[0]);
-            } catch (XMLStreamException | IOException | XML2HTTPException e) {
+            } catch (XMLStreamException | XML2HTTPException e) {
                 log.error("Failed to unwrap XML-HTTP document for message.", e);
             }
         }

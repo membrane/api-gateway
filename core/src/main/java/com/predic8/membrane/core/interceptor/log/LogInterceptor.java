@@ -107,7 +107,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         try {
             if (!body || msg.isBodyEmpty())
                 return;
-        } catch (IOException e) {
+        } catch (ReadingBodyException e) {
             writeLog("Error accessing body: " + e.getMessage());
             return;
         }
