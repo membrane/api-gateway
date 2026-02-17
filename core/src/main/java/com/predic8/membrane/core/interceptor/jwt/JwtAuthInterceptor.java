@@ -84,7 +84,11 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
             jwtRetriever = new HeaderJwtRetriever("Authorization","Bearer");
 
         jwks.init(router);
+        jwks.addObserver(this::updateKeys);
+        updateKeys();
+    }
 
+    private void updateKeys() {
         kidToKey = jwks.getJwks().stream()
                 .map(jwk -> {
                     try {
@@ -108,6 +112,8 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
         if (kidToKey.isEmpty())
             throw new RuntimeException("No JWKs given or none resolvable - please specify at least one resolvable JWK");
+
+        log.info("Loaded keys: " + kidToKey.keySet());
     }
 
     @Override
@@ -157,6 +163,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         var kid = decodedJwt.getHeader().kid();
 
         if (!kidToKey.containsKey(kid)) {
+            log.warn("Unknown key: " + kid + ". Available keys: " + kidToKey.keySet());
             throw new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID);
         }
 
