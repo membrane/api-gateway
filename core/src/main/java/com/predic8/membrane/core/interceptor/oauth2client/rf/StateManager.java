@@ -88,7 +88,7 @@ public class StateManager {
                         MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION_DESCRIPTION,
                         badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION_DESCRIPTION).build());
             } else {
-                log.warn("Token from Session: '{}', Token from URI: '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
+                log.debug("Token from Session: '{}', Token from URI: '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
                 throw new OAuth2Exception(
                         MEMBRANE_CSRF_TOKEN_MISMATCH,
                         MEMBRANE_CSRF_TOKEN_MISMATCH_DESCRIPTION,
