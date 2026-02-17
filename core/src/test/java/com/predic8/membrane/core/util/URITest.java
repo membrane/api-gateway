@@ -114,7 +114,6 @@ class URITest {
             com.predic8.membrane.core.util.URI u = new com.predic8.membrane.core.util.URI(uri, true);
             assertEquals(path, u.getPath());
             assertEquals(query, u.getQuery());
-            u.getRawQuery();
         } catch (URISyntaxException | IllegalArgumentException e) {
             throw new RuntimeException(e);
         }

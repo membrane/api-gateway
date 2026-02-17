@@ -174,7 +174,7 @@ class HTTPClientInterceptorTest {
                 fail();
                 return;
             }
-            assertEquals(false, apiProxy.getTarget().isEvaluateExpressions());
+            assertFalse(apiProxy.getTarget().isEvaluateExpressions());
             assertEquals(1, exc.getDestinations().size());
 
             // The template should not be evaluated, cause illegal characters are allowed!

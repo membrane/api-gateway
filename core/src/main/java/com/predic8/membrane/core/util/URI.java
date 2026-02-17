@@ -424,12 +424,7 @@ public class URI {
     }
 
     private static void removeLastSegment(StringBuilder out) {
-        int lastSlash = out.lastIndexOf("/");
-        if (lastSlash >= 0) {
-            out.setLength(lastSlash);
-        } else {
-            out.setLength(0);
-        }
+        out.setLength(Math.max(out.lastIndexOf("/"), 0));
     }
 
     @Override
