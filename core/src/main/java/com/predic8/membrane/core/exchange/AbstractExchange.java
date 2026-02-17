@@ -329,11 +329,7 @@ public abstract class AbstractExchange {
 			return length;
 
 		if (getResponse().getBody().isRead()) {
-			try {
-				return  getResponse().getBody().getLength();
-			} catch (IOException e) {
-				log.error("", e);
-			}
+			return getResponse().getBody().getLength();
 		}
 
 		return -1;
