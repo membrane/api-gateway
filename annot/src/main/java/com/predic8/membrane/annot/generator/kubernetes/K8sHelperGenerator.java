@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static java.util.stream.Stream.concat;
 
@@ -148,7 +147,7 @@ public class K8sHelperGenerator extends AbstractK8sGenerator {
                         ei.getElement().getQualifiedName())),
                 // non-global
                 main.getIis().stream()
-                        .flatMap(ei -> ei.getCeis().stream().map(cei -> Pair.of(ei, cei)))
+                        .flatMap(ei -> ei.getChildElementSpecs().stream().map(cei -> Pair.of(ei, cei)))
                         .flatMap(p -> main.getChildElementDeclarations().get(p.y.getTypeDeclaration())
                                 .getElementInfo().stream().map(ei -> Pair.of(p.x, ei)))
                         .filter(p -> !p.y.getAnnotation().topLevel())

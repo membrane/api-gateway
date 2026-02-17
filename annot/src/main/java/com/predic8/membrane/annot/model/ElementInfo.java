@@ -64,7 +64,7 @@ public class ElementInfo extends AbstractJavadocedInfo {
 	public void setHasIdField(boolean hasIdField) {
 		this.hasIdField = hasIdField;
 	}
-	public List<ChildElementInfo> getCeis() {
+	public List<ChildElementInfo> getChildElementSpecs() {
 		return ceis;
 	}
 	public void setCeis(List<ChildElementInfo> ceis) {

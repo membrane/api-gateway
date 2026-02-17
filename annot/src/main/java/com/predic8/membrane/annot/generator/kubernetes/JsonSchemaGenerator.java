@@ -56,7 +56,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void assembleBase(Model m, Writer w, MainInfo main, ElementInfo i) throws IOException {
-        if (i.getAnnotation().mixed() && i.getCeis().size() > 0) {
+        if (i.getAnnotation().mixed() && i.getChildElementSpecs().size() > 0) {
             throw new ProcessingException(
                     "@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
                     i.getElement()
@@ -96,7 +96,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
 
         while (!stack.isEmpty()) {
             ElementInfo current = stack.pop();
-            current.getCeis().stream()
+            current.getChildElementSpecs().stream()
                     .flatMap(cei -> main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo().stream())
                     .filter(ei -> !all.containsKey(ei.getXSDTypeName(m)))
                     .forEach(ei -> {
@@ -131,7 +131,7 @@ public class JsonSchemaGenerator extends AbstractK8sGenerator {
     }
 
     private void collectChildElements(Model m, MainInfo main, ElementInfo i, ISchema so) {
-        for (ChildElementInfo cei : i.getCeis()) {
+        for (ChildElementInfo cei : i.getChildElementSpecs()) {
             boolean isList = cei.isList();
 
             ISchema parent2 = so;

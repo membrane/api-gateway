@@ -106,7 +106,7 @@ public class Schemas {
 
 		w.append("<xsd:complexContent ").append(i.getAnnotation().mixed() ? "mixed=\"true\"" : "").append(">\r\n").append("<xsd:extension base=\"beans:identifiedType\">\r\n");
 
-		if (i.getAnnotation().mixed() && !i.getCeis().isEmpty()) {
+		if (i.getAnnotation().mixed() && !i.getChildElementSpecs().isEmpty()) {
 			throw new ProcessingException(
 					"@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
 					i.getElement());
@@ -122,7 +122,7 @@ public class Schemas {
 
 	private void assembleElementInfo(Writer w, Model m, MainInfo main, ElementInfo i) throws IOException {
 		w.append("<xsd:sequence>\r\n");
-		for (ChildElementInfo cei : i.getCeis()) {
+		for (ChildElementInfo cei : i.getChildElementSpecs()) {
 			w.append("<xsd:choice" + (cei.isRequired() ? " minOccurs=\"1\"" : " minOccurs=\"0\"") + (cei.isList() ? " maxOccurs=\"unbounded\"" : "") + ">\r\n");
 			assembleDocumentation(w, cei);
 			for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
