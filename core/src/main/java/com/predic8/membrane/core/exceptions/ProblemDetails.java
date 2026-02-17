@@ -18,6 +18,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import org.slf4j.spi.LoggingEventBuilder;
 
 import java.util.*;
 
@@ -263,18 +264,30 @@ public class ProblemDetails {
 
         try {
             MDC.put(LOG_KEY, logKey);
-            log.info("ProblemDetails hidden. type={}, title={}, detail={}, internal={}",
-                    getTypeSubtypeString(), title, detail, internalFields);
-            if (exception != null) {
-                log.info("Message={}", exception.getMessage());
-                if (stacktrace) {
-                    log.info("Stacktrace for hidden details:", exception);
-                }
-            }
+            buildLoggingEvent().log();
         } finally {
             MDC.remove(LOG_KEY);
         }
         root.put(DETAIL, "Internal details are hidden. See server log (key: %s)".formatted(logKey));
+    }
+
+    private @NotNull LoggingEventBuilder buildLoggingEvent() {
+        var loggingEvent = log.atInfo()
+                .addArgument(getTypeSubtypeString())
+                .addArgument(title)
+                .addArgument(detail)
+                .addArgument(internalFields);
+
+        String msg = "ProblemDetails hidden. type={}, title={}, detail={}, internal={}";
+
+        if (exception != null) {
+            if (stacktrace) {
+                return loggingEvent.setCause(exception).setMessage(msg + ", Stacktrace for hidden details:");
+            } else {
+                return loggingEvent.addArgument(exception.getMessage()).setMessage(msg + ", Message={}");
+            }
+        }
+        return loggingEvent.setMessage(msg);
     }
 
     private @NotNull String getTypeSubtypeString() {

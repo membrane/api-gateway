@@ -88,7 +88,7 @@ public class StateManager {
                         MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION_DESCRIPTION,
                         badRequest().body(MEMBRANE_CSRF_TOKEN_MISSING_IN_SESSION_DESCRIPTION).build());
             } else {
-                log.warn("Token from Session: '{}', Token from URI: '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
+                log.debug("Token from Session: '{}', Token from URI: '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
                 throw new OAuth2Exception(
                         MEMBRANE_CSRF_TOKEN_MISMATCH,
                         MEMBRANE_CSRF_TOKEN_MISMATCH_DESCRIPTION,
@@ -98,7 +98,7 @@ public class StateManager {
 
         // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
         if (!(session.get(SESSION_PARAMETER_STATE).equals(stateFromUri.getSecurityToken()))) {
-            log.warn("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
+            log.debug("Replacing saved state '{}' with '{}'", session.get(SESSION_PARAMETER_STATE), stateFromUri.getSecurityToken());
         }
         session.put(SESSION_PARAMETER_STATE, stateFromUri.getSecurityToken());
     }

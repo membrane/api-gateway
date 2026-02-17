@@ -340,10 +340,9 @@ public abstract class AuthorizationService {
                     refreshTokenBodyBuilder(refreshToken).scope(wantedScope), fc)
                     .buildExchange());
         } catch (Exception e) {
-            log.warn("Error contacting OAuth2 Authorization Server during refresh request: {}", e.getMessage());
             throw new OAuth2Exception(
                     MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR,
-                    MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION,
+                    "%s %s".formatted(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION, e.getMessage()),
                     internalServerError().body(MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION).build());
         }
         return parseTokenResponse(checkTokenResponse(response));
