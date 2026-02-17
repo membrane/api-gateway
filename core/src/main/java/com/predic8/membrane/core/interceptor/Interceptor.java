@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.session.SessionManagementException;
 
 import java.util.*;
 
@@ -52,7 +53,7 @@ public interface Interceptor {
 		}
 	}
 
-	Outcome handleRequest(Exchange exchange);
+	Outcome handleRequest(Exchange exchange) throws SessionManagementException;
 	Outcome handleResponse(Exchange exchange);
 
 	/**
