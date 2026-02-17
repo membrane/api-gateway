@@ -84,38 +84,43 @@ public class Doc {
 
 		@Override
 		public int compareTo(Entry o) {
-			return POSITIVE.indexOf(key) - POSITIVE.indexOf(o.key);
+			int p1 = priorityOf(key);
+			int p2 = priorityOf(o.key);
+			if (p1 != p2) return Integer.compare(p1, p2);
+			return key.compareTo(o.key);
 		}
 	}
 
 	HashSet<String> keys = new HashSet<>();
 	List<Entry> entries = new ArrayList<>();
 
-	static final List<String> POSITIVE = Arrays.asList("topic", "description", "example", "default", "explanation", "deprecated");
+	static final List<String> PRIORITY = Arrays.asList(
+			"topic", "description", "example", "default", "explanation", "deprecated", "yaml"
+	);
 	static final List<String> NEGATIVE = Arrays.asList("author", "param", "see");
+
+	private static int priorityOf(String key) {
+		int idx = PRIORITY.indexOf(key);
+		return idx >= 0 ? idx : 10_000;
+	}
 
 	private void handle(String key, String value) {
 		value = value.trim();
 
-		if (value.length() == 0)
+		if (value.isEmpty())
 			return;
 
 		if (NEGATIVE.contains(key))
 			return;
-
-		if (!POSITIVE.contains(key)) {
-			processingEnv.getMessager().printMessage(Kind.WARNING, "Unknown javadoc tag: " + key, e);
-			return;
-		}
 
 		if (keys.contains(key)) {
 			processingEnv.getMessager().printMessage(Kind.WARNING, "Duplicate JavaDoc tag: " + key, e);
 			return;
 		}
 
-        if (value.contains("{@code")) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, "@code not allowed!", e);
-        }
+		if (value.contains("{@code")) {
+			processingEnv.getMessager().printMessage(Kind.ERROR, "@code not allowed!", e);
+		}
 
 		keys.add(key);
 		entries.add(new Entry(key, value));
