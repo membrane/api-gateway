@@ -62,7 +62,7 @@ public class FileUtilTest {
 
     @Test
     void directoryPart() {
-        assertEquals(null, FileUtil.getDirectoryPart(""));
+        assertNull(getDirectoryPart(""));
         assertEquals(new File(separator), FileUtil.getDirectoryPart("/"));
         assertEquals(new File("\\"), FileUtil.getDirectoryPart("\\"));
         assertEquals(new File(separator), FileUtil.getDirectoryPart("/foo"));

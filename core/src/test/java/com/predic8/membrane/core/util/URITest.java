@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class URITest {
 
     private static URI URI_ALLOW_ILLEGAL;
-    private static URIFactory FAC = DEFAULT_URI_FACTORY;
+    private static final URIFactory FAC = DEFAULT_URI_FACTORY;
 
     @BeforeAll
     static void init() throws URISyntaxException {

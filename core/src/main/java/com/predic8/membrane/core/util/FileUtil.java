@@ -58,7 +58,7 @@ public class FileUtil {
 
 	/**
 	 * Checks if string starts / or \
-	 * @param filepath
+	 * @param filepath String to check
 	 * @return boolean true if path starts with / or \
 	 */
 	public static boolean startsWithSlash(String filepath) {
