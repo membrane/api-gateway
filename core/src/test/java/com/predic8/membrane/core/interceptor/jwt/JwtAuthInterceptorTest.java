@@ -265,8 +265,7 @@ public class JwtAuthInterceptorTest{
 
         JwtAuthInterceptor interceptor = new JwtAuthInterceptor();
         Jwks jwks = new Jwks();
-        jwks.setJwks(new ArrayList<>());
-        jwks.getJwks().add(jwk);
+        jwks.setJwks(List.of(jwk));
         interceptor.setJwks(jwks);
         interceptor.setExpectedAud(AUDIENCE);
         interceptor.setExpectedTid(TENANT_ID);
