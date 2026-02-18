@@ -28,6 +28,8 @@ import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.text.TextUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jose4j.jwk.RsaJsonWebKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
+import static com.predic8.membrane.core.interceptor.jwt.JwtSignInterceptor.DEFAULT_PKEY;
 import static java.util.Collections.emptyList;
 
 /**
@@ -44,11 +47,41 @@ import static java.util.Collections.emptyList;
 @MCElement(name="jwks")
 public class Jwks {
 
+    public static final String DEFAULT_JWK_WARNING = """
+            \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
+                    This key is for demonstration purposes only and UNSAFE for production use.          \s
+            ---------------------------------------------------------------------------------------------""";
     private static final Logger log = LoggerFactory.getLogger(Jwks.class);
-    volatile List<Jwk> jwks = new ArrayList<>();
+    final ObjectMapper mapper = new ObjectMapper();
+
+    private volatile List<Jwk> jwks = new ArrayList<>(); // this is basically a write-only field, contents are converted to keysByKid ASAP
+    private volatile HashMap<String, RsaJsonWebKey> keysByKid = new HashMap<>();
+
     String jwksUris;
     AuthorizationService authorizationService;
-    private final List<Runnable> observers = new ArrayList<>();
+    private Router router;
+
+    public void init(Router router) {
+        this.router = router;
+        if(jwksUris == null || jwksUris.isEmpty()) {
+            if (jwks.isEmpty())
+                throw new ConfigurationException("JWKs need to be configured either via JwksUris or Jwks.");
+            this.keysByKid = buildKeyMap(jwks);
+            return;
+        }
+        if (!jwks.isEmpty())
+            throw new ConfigurationException("JWKs cannot be set both via JwksUris and Jwks elements.");
+        setJwks(loadJwks(false));
+        if (authorizationService.getJwksRefreshInterval() > 0) {
+            router.getTimerManager().schedulePeriodicTask(new TimerTask() {
+                                                              @Override
+                                                              public void run() {
+                                                                  setJwks(loadJwks(true));
+                                                              }
+                                                          }, authorizationService.getJwksRefreshInterval() * 1_000L, "JWKS Refresh"
+            );
+        }
+    }
 
     public List<Jwk> getJwks() {
         return jwks;
@@ -56,8 +89,9 @@ public class Jwks {
 
     @MCChildElement
     public Jwks setJwks(List<Jwk> jwks) {
-        this.jwks = jwks;
-        notifyObservers();
+        this.jwks = jwks;  // unnecessary, mainly for consistency when debugging
+        if (router != null)  // set in init, so we can't update prior to that call
+            this.keysByKid = buildKeyMap(jwks);
         return this;
     }
 
@@ -71,24 +105,41 @@ public class Jwks {
         return this;
     }
 
-    public void init(Router router) {
-        if(jwksUris == null || jwksUris.isEmpty())
-            return;
-        if (!jwks.isEmpty())
-            throw new ConfigurationException("JWKs cannot be set both via JwksUris and Jwks elements.");
-        this.jwks = loadJwks(router, false);
-        if (authorizationService.getJwksRefreshInterval() > 0) {
-            router.getTimerManager().schedulePeriodicTask(new TimerTask() {
-                                                              @Override
-                                                              public void run() {
-                                                                  setJwks(loadJwks(router, true));
-                                                              }
-                                                          }, authorizationService.getJwksRefreshInterval() * 1_000L, "JWKS Refresh"
-            );
+    public HashMap<String, RsaJsonWebKey> getKeysByKid() {
+        return keysByKid;
+    }
+
+    private HashMap<String, RsaJsonWebKey> buildKeyMap(List<Jwk> jwks) {
+        var keyMap = jwks.stream()
+                .map(this::extractRsaJsonWebKey)
+                .collect(
+                        () -> new HashMap<String, RsaJsonWebKey>(),
+                        (m,e) -> m.put(e.getKeyId(),e),
+                        HashMap::putAll
+                );
+        if (keyMap.isEmpty())
+            throw new RuntimeException("No JWKs given or none resolvable - please specify at least one resolvable JWK");
+        return keyMap;
+    }
+
+    private @NotNull RsaJsonWebKey extractRsaJsonWebKey(Jwk jwk) {
+        try {
+            var params = mapper.readValue(jwk.getJwk(router, mapper), new TypeReference<Map<String, Object>>() {});
+            if (Objects.equals(params.get("p"), DEFAULT_PKEY)) {
+                log.warn(DEFAULT_JWK_WARNING);
+                if (router.getConfiguration().isProduction()) {
+                    throw new RuntimeException("Default JWK detected in production environment. Please use a secure key.");
+                }
+            }
+
+            return new RsaJsonWebKey(params);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private List<Jwk> loadJwks(Router router, boolean suppressExceptions) {
+
+    private List<Jwk> loadJwks(boolean suppressExceptions) {
         ObjectMapper mapper = new ObjectMapper();
         return Arrays.stream(jwksUris.split(" "))
                 .map(uri -> parseJwksUriIntoList(router.getResolverMap(), router.getConfiguration().getBaseLocation(), mapper, uri, suppressExceptions))
@@ -153,20 +204,6 @@ public class Jwks {
     @MCAttribute
     public void setAuthorizationService(AuthorizationService authService) {
         authorizationService = authService;
-    }
-
-    public void addObserver(Runnable observer) {
-        observers.add(observer);
-    }
-
-    private void notifyObservers() {
-        for (Runnable observer : observers) {
-            try {
-                observer.run();
-            } catch (Exception e) {
-                log.error("Error notifying observer", e);
-            }
-        }
     }
 
     @MCElement(name="jwk", mixed = true, component = false, id="jwks-jwk")
