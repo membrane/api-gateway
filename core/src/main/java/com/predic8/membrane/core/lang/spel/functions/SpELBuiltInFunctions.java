@@ -115,8 +115,8 @@ public class SpELBuiltInFunctions {
         return CommonBuiltInFunctions.urlEncode(s);
     }
 
-    public String pathSeg(String segment, SpELExchangeEvaluationContext ignored) {
-        return CommonBuiltInFunctions.pathSeg(segment);
+    public String pathEncode(String segment, SpELExchangeEvaluationContext ignored) {
+        return CommonBuiltInFunctions.pathEncode(segment);
     }
 
     public static List<String> getBuiltInFunctionNames() {

@@ -121,8 +121,8 @@ public class GroovyBuiltInFunctions extends Binding {
         return CommonBuiltInFunctions.urlEncode(s);
     }
 
-    public String pathSeg(String segment) {
-        return CommonBuiltInFunctions.pathSeg(segment);
+    public String pathEncode(String segment) {
+        return CommonBuiltInFunctions.pathEncode(segment);
     }
 
     /**

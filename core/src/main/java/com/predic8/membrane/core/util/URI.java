@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.util.ip.*;
+
 import java.net.*;
 import java.util.regex.*;
 
@@ -94,17 +96,15 @@ public class URI {
         if (at >= 0) {
             userInfo = rawAuthority.substring(0, at);
         }
-
         hostPort = parseHostPort(rawAuthority);
     }
 
-    record HostPort(String host, int port) {
-    }
+    record HostPort(String host, int port) {}
 
     HostPort parseHostPort(String rawAuthority) {
         if (rawAuthority == null)
             throw new IllegalArgumentException("rawAuthority is null.");
-        String hostAndPort = stripUserInfo(rawAuthority);
+        var hostAndPort = stripUserInfo(rawAuthority);
 
         if (isIP6Literal(hostAndPort)) {
             return parseIpv6(hostAndPort);
@@ -143,13 +143,13 @@ public class URI {
         if (end < 0) {
             throw new IllegalArgumentException("Invalid IPv6 bracket literal: missing ']'.");
         }
-        String ipv6 = hostAndPort.substring(0, end + 1);
+        var ipv6 = hostAndPort.substring(0, end + 1);
 
         if (ipv6.length() <= 2) {
             throw new IllegalArgumentException("Host must not be empty.");
         }
 
-        validateIP6Address(ipv6);
+        IPv6Util.validateIP6Address(ipv6);
 
         int port = parsePort(hostAndPort.substring(end + 1));
         return new HostPort(ipv6, port);
@@ -237,6 +237,10 @@ public class URI {
         return authority;
     }
 
+    public String getUserInfo() {
+        return userInfo;
+    }
+
     private String decode(String string) {
         if (string == null)
             return null;
@@ -318,6 +322,9 @@ public class URI {
                         tPath = removeDotSegments(rPath);
                     } else {
                         var merged = merge(this.getAuthority(), this.getRawPath(), rPath);
+
+                        // Classpath is special cause there is no separate authority
+                        // classpath://a/b/c
                         if (this.getScheme().equals("classpath")) {
                             tPath = merged;
                         } else {
@@ -378,7 +385,7 @@ public class URI {
             return path;
         }
 
-        StringBuilder out = new StringBuilder();
+        var out = new StringBuilder();
         int i = 0;
         while (i < path.length()) {
             // A: remove prefix "../" or "./"

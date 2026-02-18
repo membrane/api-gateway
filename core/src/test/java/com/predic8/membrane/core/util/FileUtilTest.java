@@ -19,9 +19,11 @@ package com.predic8.membrane.core.util;
 import org.junit.jupiter.api.*;
 
 import java.io.*;
+import java.net.*;
 import java.nio.file.Path;
 
 import static com.predic8.membrane.core.util.FileUtil.*;
+import static java.io.File.separator;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class FileUtilTest {
@@ -47,5 +49,25 @@ public class FileUtilTest {
     private String getTmpFilename() {
         String tmpDir = System.getProperty("java.io.tmpdir");
         return Path.of(tmpDir, "test.tmp").toString();
+    }
+
+    @Test
+    void resolveFile() throws URISyntaxException {
+        var file = new File("/a/b/c");
+        var dir = new File("/a/b/c/");
+        assertEquals("file:/a/b/c/d", FileUtil.resolve(file,"d"));
+        assertEquals("file:/a/b/c/d/", FileUtil.resolve(file,"d/"));
+        assertEquals("file:/a/b/c/d/", FileUtil.resolve(dir,"d/"));
+    }
+
+    @Test
+    void directoryPart() {
+        assertEquals(null, FileUtil.getDirectoryPart(""));
+        assertEquals(new File(separator), FileUtil.getDirectoryPart("/"));
+        assertEquals(new File("\\"), FileUtil.getDirectoryPart("\\"));
+        assertEquals(new File(separator), FileUtil.getDirectoryPart("/foo"));
+        assertEquals(new File("/foo/"), FileUtil.getDirectoryPart("/foo/"));
+        assertEquals(new File("/foo/"), FileUtil.getDirectoryPart("/foo/bar"));
+        assertEquals(new File("/foo/"), FileUtil.getDirectoryPart("/foo/bar.txt"));
     }
 }

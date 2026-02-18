@@ -73,5 +73,4 @@ public class URIFactory {
 			throw new IllegalArgumentException(e);
 		}
 	}
-
 }

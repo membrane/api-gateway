@@ -19,14 +19,15 @@ import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.text.*;
+import com.predic8.membrane.core.util.uri.*;
+import com.predic8.membrane.core.util.uri.EscapingUtil.*;
 import org.slf4j.*;
 
-import java.net.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -35,7 +36,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.util.TemplateUtil.*;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.uri.EscapingUtil.getEscapingFunction;
 
 /**
  * @description <p>
@@ -54,8 +55,13 @@ public class Target implements XMLSupport {
     private String method;
 
     protected String url;
-    private ExchangeExpression.Language language = SPEL;
+    private Language language = SPEL;
+
+    /**
+     * Escaping strategy for URL placeholders.
+     */
     private Escaping escaping = Escaping.URL;
+    private Function<String, String> escapingFunction;
 
     /**
      * If exchangeExpressions should be evaluated.
@@ -67,14 +73,7 @@ public class Target implements XMLSupport {
     private SSLParser sslParser;
     protected XmlConfig xmlConfig;
 
-    public enum Escaping {
-        NONE,
-        URL,
-        SEGMENT
-    }
-
-    public Target() {
-    }
+    public Target() {}
 
     public Target(String host) {
         setHost(host);
@@ -92,8 +91,16 @@ public class Target implements XMLSupport {
 
         if (router.getConfiguration().getUriFactory().isAllowIllegalCharacters()) {
             log.warn("{}Url templates are disabled for security.{} Disable configuration/uriFactory/allowIllegalCharacters to enable them. Illegal characters in templates may lead to injection attacks.", TerminalColors.BRIGHT_RED(), RESET());
+            throw new ConfigurationException("""
+                URL Templating and Illegal URL Characters
+                
+                Url templating expressions and enablement of illegal characters in URLs are mutually exclusive. Either disable
+                illegal characters in the configuration (configuration/uriFactory/allowIllegalCharacters) or remove the
+                templating expression %s from the target URL.
+                """.formatted(url));
         } else {
             evaluateExpressions = true;
+            escapingFunction = getEscapingFunction(escaping);
         }
     }
 
@@ -128,15 +135,7 @@ public class Target implements XMLSupport {
                 language,
                 url,
                 router,
-                getEscapingFunction()).evaluate(exc, REQUEST, String.class);
-    }
-
-    private Function<String, String> getEscapingFunction() {
-        return switch (escaping) {
-            case NONE -> Function.identity();
-            case URL -> s -> URLEncoder.encode(s, UTF_8);
-            case SEGMENT -> URLUtil::pathSeg;
-        };
+                escapingFunction).evaluate(exc, REQUEST, String.class);
     }
 
     public String getHost() {
@@ -219,7 +218,7 @@ public class Target implements XMLSupport {
         this.method = method;
     }
 
-    public ExchangeExpression.Language getLanguage() {
+    public Language getLanguage() {
         return language;
     }
 
@@ -229,7 +228,7 @@ public class Target implements XMLSupport {
      * @example SpEL, groovy, jsonpath, xpath
      */
     @MCAttribute
-    public void setLanguage(ExchangeExpression.Language language) {
+    public void setLanguage(Language language) {
         this.language = language;
     }
 
