@@ -127,13 +127,10 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         var decodedJwt = new JsonWebToken(jwt);
         var kid = decodedJwt.getHeader().kid();
 
-        if (!jwks.getKeysByKid().containsKey(kid)) {
-            throw new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID);
-        }
-
         // we could make it possible that every key is checked instead of having the "kid" field mandatory
         // this would then need up to n checks per incoming JWT - could be a performance problem
-        RsaJsonWebKey key = jwks.getKeysByKid().get(kid);
+        RsaJsonWebKey key = Optional.ofNullable(jwks.getKeysByKid().get(kid))
+                .orElseThrow(() -> new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID));
 
         Map<String, Object> jwtClaims = createValidator(key).processToClaims(jwt).getClaimsMap();
 
