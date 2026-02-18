@@ -171,7 +171,7 @@ public class Jwks {
             InputStream resolve = authorizationService != null ?
                     authorizationService.resolve(resolverMap, baseLocation, uri) :
                     resolverMap.resolve(ResolverMap.combine(baseLocation, uri));
-            return new JwkListByUri(uri, ((List<?>) mapper.readValue(resolve, Map.class).get("keys")));
+            return new JwkListByUri(uri, mapper.convertValue(mapper.readTree(resolve).path("keys"), List.class));
         } catch (JsonProcessingException e) {
             String message = "Could not parse JWK keys retrieved from %s.".formatted(uri);
             if (suppressExceptions) {
