@@ -16,19 +16,16 @@ package com.predic8.membrane.core.util;
 
 public class TemplateUtil {
 
+    private TemplateUtil() {}
+
     /**
      * Checks if the provided string contains the template marker "${"
-     * Fast implementation.
+     * HotSpot's String.contains → String.indexOf path uses native SIMD intrinsics
+     * should be as fast or faster then manual loop implementation
      * @param s the string to be checked for the presence of a template marker
      * @return true if the string contains a template marker, false otherwise
      */
     public static boolean containsTemplateMarker(String s) {
-        if (s == null) return false;
-        for (int i = 0, len = s.length() - 1; i < len; i++) {
-            if (s.charAt(i) == '$' && s.charAt(i + 1) == '{') {
-                return true;
-            }
-        }
-        return false;
+        return s != null && s.contains("${");
     }
 }

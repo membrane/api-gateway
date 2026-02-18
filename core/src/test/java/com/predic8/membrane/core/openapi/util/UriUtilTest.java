@@ -83,13 +83,13 @@ public class UriUtilTest {
     }
 
     @Test
-    public void rewriteWithoutHttp() throws URISyntaxException {
+    public void rewriteFromHttpToHttp() throws URISyntaxException {
         assertEquals("http://predic8.de:2000", doRewrite("http://localhost:3000", "http", "predic8.de", 2000));
         assertEquals("http://predic8.de", doRewrite("http://localhost:3000", "http", "predic8.de", 80));
     }
 
     @Test
-    public void rewriteWithoutHttps() throws URISyntaxException {
+    public void rewriteFromHttpToHttps() throws URISyntaxException {
         assertEquals("https://predic8.de:2000", doRewrite("http://localhost:3000", "https", "predic8.de", 2000));
         assertEquals("https://predic8.de", doRewrite("http://localhost:3000", "https", "predic8.de", 443));
     }

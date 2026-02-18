@@ -14,9 +14,13 @@
 
 package com.predic8.membrane.core.util;
 
-public class URIValidationUtil {
+public final class URIValidationUtil {
+
+    private URIValidationUtil() {}
 
     public static void validateDigits(String port) {
+        if (port == null)
+            return;
         for (int i = 0; i < port.length(); i++) {
             if (!isDigit(port.charAt(i)))
                 throw new IllegalArgumentException("Invalid port: " + port);
@@ -64,7 +68,7 @@ public class URIValidationUtil {
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
 
-            if (c == '.' || c == '%' || c == ':' || c == '[' || c == ']')
+            if (c == '%' || c == ':' || c == '[' || c == ']')
                 continue;
 
             if (isUnreserved(c) || isSubDelims(c))

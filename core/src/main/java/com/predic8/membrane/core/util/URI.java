@@ -77,8 +77,7 @@ public class URI {
         fragment = m.group(9);
 
         if (!allowIllegalCharacters) {
-            var options = new UriIllegalCharacterDetector.Options();
-            UriIllegalCharacterDetector.validateAll(this, options);
+            UriIllegalCharacterDetector.validateAll(this, new UriIllegalCharacterDetector.Options.Builder().build());
         }
 
         return true;
@@ -170,8 +169,8 @@ public class URI {
     }
 
     private static int validatePortDigits(String p) {
-        if (p.isEmpty())
-            throw new IllegalArgumentException("Invalid port: ''.");
+        if (p == null || p.isEmpty())
+            return -1;
 
         validateDigits(p);
         int i = Integer.parseInt(p);
@@ -190,10 +189,14 @@ public class URI {
      * - might return something like "[fe80::1%25eth0]".
      */
     public String getHost() {
+        if (hostPort == null)
+            return null;
         return hostPort.host;
     }
 
     public int getPort() {
+        if (hostPort == null)
+            return -1;
         return hostPort.port;
     }
 
@@ -275,7 +278,14 @@ public class URI {
      * @return
      */
     public String getWithoutPath() {
-        return getScheme() + "://" + getAuthority();
+        String r ="";
+        if (scheme != null) {
+            r += scheme + "://";
+        }
+        if (authority != null) {
+            return r + authority;
+        }
+        return r;
     }
 
     /**

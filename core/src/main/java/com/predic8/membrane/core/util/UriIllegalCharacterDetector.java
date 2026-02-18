@@ -1,3 +1,17 @@
+/* Copyright 2026 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core.util;
 
 import java.util.*;
@@ -56,31 +70,71 @@ public final class UriIllegalCharacterDetector {
     }
 
     public static final class Options {
-        /**
-         * If true, no checks are performed.
-         */
-        public boolean skipAllValidation = false;
 
-        /**
-         * If true, apply RFC 3986 component character rules (plus configured extensions).
-         * If false, only control/space + percent-encoding checks are applied.
-         */
-        public boolean strictRfc3986 = true;
+        private boolean skipAllValidation = false;
+        private boolean strictRfc3986 = true;
+        private boolean allowBracesInPath = false;
+        private boolean allowBracesInQueryAndFragment = false;
+        private boolean allowBracesInUserInfo = false;
 
-        /**
-         * Custom extension used by Membrane: allow '{' and '}' in path.
-         */
-        public boolean allowBracesInPath = false;
+        private Options() {}
 
-        /**
-         * If true, allow '{' and '}' also in query/fragment (default false).
-         */
-        public boolean allowBracesInQueryAndFragment = false;
+        public static Builder builder() {
+            return new Builder();
+        }
 
-        /**
-         * If true, allow '{' and '}' in user-info too (default false).
-         */
-        public boolean allowBracesInUserInfo = false;
+        public static final class Builder {
+
+            private final Options o = new Options();
+
+            /**
+             * If true, no validation checks are performed at all.
+             */
+            public Builder skipAllValidation(boolean value) {
+                o.skipAllValidation = value;
+                return this;
+            }
+
+            /**
+             * If true, enforce RFC 3986 component character rules
+             * (plus configured extensions).
+             * If false, only control/space and percent-encoding checks are applied.
+             */
+            public Builder strictRfc3986(boolean value) {
+                o.strictRfc3986 = value;
+                return this;
+            }
+
+            /**
+             * Membrane extension: allow '{' and '}' inside the path component.
+             */
+            public Builder allowBracesInPath(boolean value) {
+                o.allowBracesInPath = value;
+                return this;
+            }
+
+            /**
+             * If true, allow '{' and '}' in query and fragment components.
+             * Default is false.
+             */
+            public Builder allowBracesInQueryAndFragment(boolean value) {
+                o.allowBracesInQueryAndFragment = value;
+                return this;
+            }
+
+            /**
+             * If true, allow '{' and '}' in the user-info component.
+             * Default is false.
+             */
+            public Builder allowBracesInUserInfo(boolean value) {
+                o.allowBracesInUserInfo = value;
+                return this;
+            }
+
+            public Options build() {
+                return o;
+            }
+        }
     }
 
     private static void validateScheme(String scheme) {

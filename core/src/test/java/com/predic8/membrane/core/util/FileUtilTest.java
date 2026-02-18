@@ -23,6 +23,7 @@ import java.net.*;
 import java.nio.file.Path;
 
 import static com.predic8.membrane.core.util.FileUtil.*;
+import static com.predic8.membrane.core.util.OSUtil.wl;
 import static java.io.File.separator;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -55,9 +56,9 @@ public class FileUtilTest {
     void resolveFile() throws URISyntaxException {
         var file = new File("/a/b/c");
         var dir = new File("/a/b/c/");
-        assertEquals("file:/a/b/c/d", FileUtil.resolve(file,"d"));
-        assertEquals("file:/a/b/c/d/", FileUtil.resolve(file,"d/"));
-        assertEquals("file:/a/b/c/d/", FileUtil.resolve(dir,"d/"));
+        assertEquals(wl("file:/C:/a/b/c/d",  "file:/a/b/c/d"),  FileUtil.resolve(file, "d"));
+        assertEquals(wl("file:/C:/a/b/c/d/", "file:/a/b/c/d/"), FileUtil.resolve(file, "d/"));
+        assertEquals(wl("file:/C:/a/b/c/d/", "file:/a/b/c/d/"), FileUtil.resolve(dir,  "d/"));
     }
 
     @Test

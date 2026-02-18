@@ -110,13 +110,6 @@ public class ExplodeFalseArrayQueryParameterTest {
         }
 
         @Test
-        void valuesUTF8() {
-            var err = validator.validate(get().path("/array?const=foo,äöü,baz"));
-            assertEquals(1, err.size());
-            assertTrue(err.get(0).getMessage().contains("Invalid query string"));
-        }
-
-        @Test
         void valuesAreDecoded() {
             assertEquals(0, validator.validate(get().path("/array?const=foo,%C3%A4%3D%23,baz")).size());
         }
@@ -129,6 +122,13 @@ public class ExplodeFalseArrayQueryParameterTest {
 
     @Nested
     class Invalid {
+
+        @Test
+        void rawUTF8InQueryStringIsInvalid() {
+            var err = validator.validate(get().path("/array?const=foo,äöü,baz"));
+            assertEquals(1, err.size());
+            assertTrue(err.get(0).getMessage().contains("Invalid query string"));
+        }
 
         @Test
         void stringNotNumber() {

@@ -73,6 +73,8 @@ public class Target implements XMLSupport {
     private SSLParser sslParser;
     protected XmlConfig xmlConfig;
 
+    private InterceptorAdapter adapter;
+
     public Target() {}
 
     public Target(String host) {
@@ -88,6 +90,8 @@ public class Target implements XMLSupport {
         // URL Template evaluation is only activated when there are template markers ${ in the URL
         if (!containsTemplateMarker(url))
             return;
+
+         adapter = new InterceptorAdapter(router, xmlConfig);
 
         if (router.getConfiguration().getUriFactory().isAllowIllegalCharacters()) {
             log.warn("{}Url templates are disabled for security.{} Disable configuration/uriFactory/allowIllegalCharacters to enable them. Illegal characters in templates may lead to injection attacks.", TerminalColors.BRIGHT_RED(), RESET());
@@ -114,7 +118,6 @@ public class Target implements XMLSupport {
     }
 
     private List<String> computeDestinationExpressions(Exchange exc, Router router) {
-        var adapter = new InterceptorAdapter(router, xmlConfig);
         return exc.getDestinations().stream().map(url -> evaluateTemplate(exc, router, url, adapter))
                 .collect(Collectors.toList()); // Collectors.toList() generates mutable List .toList() => immutable
     }

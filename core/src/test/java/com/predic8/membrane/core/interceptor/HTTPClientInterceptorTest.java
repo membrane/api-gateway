@@ -150,12 +150,10 @@ class HTTPClientInterceptorTest {
     class injection {
 
         @Test
-        void deactivateEvaluationOfURLTemplatesWhenIllegalCharactersAreAllowed() {
+        void illegalCharactersAndTemplateInTargetURL() throws URISyntaxException {
             allowIllegalURICharacters();
-            var exc = new Request.Builder().method(METHOD_GET).uri("/foo/${555}").buildExchange();
-
-            assertThrows(ConfigurationException.class, ()->
-                    invokeDispatching(SPEL, exc, "https://${'hostname'}", Escaping.URL));
+            var exc = get("/foo").buildExchange();
+            assertThrows(ConfigurationException.class, () -> invokeDispatching(SPEL, exc, "https://${'hostname'}", Escaping.URL));
         }
 
         @Test
@@ -172,13 +170,6 @@ class HTTPClientInterceptorTest {
 
             // The template should not be evaluated, cause illegal characters are allowed!
             assertEquals("https://localhost/foo/${555}", exc.getDestinations().getFirst());
-        }
-
-        @Test
-        void uriTemplateAndIllegalCharacters() throws URISyntaxException {
-            allowIllegalURICharacters();
-            var exc = get("/foo").buildExchange();
-            assertThrows(ConfigurationException.class, () -> invokeDispatching(SPEL, exc, "https://${'hostname'}", Escaping.URL));
         }
     }
 
