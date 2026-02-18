@@ -19,11 +19,14 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.util.URI.*;
+import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
+import static com.predic8.membrane.core.util.URIFactory.DEFAULT_URI_FACTORY;
 import static org.junit.jupiter.api.Assertions.*;
 
 class URITest {
 
     private static URI URI_ALLOW_ILLEGAL;
+    private static URIFactory FAC = DEFAULT_URI_FACTORY;
 
     @BeforeAll
     static void init() throws URISyntaxException {
@@ -128,7 +131,7 @@ class URITest {
 
     @Test
     void withoutPath() throws URISyntaxException {
-        URIFactory uf = new URIFactory(true);
+        var uf = ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
         assertEquals("http://localhost", uf.create("http://localhost").getWithoutPath());
         assertEquals("http://localhost:8080", uf.create("http://localhost:8080").getWithoutPath());
         assertEquals("http://localhost:8080", uf.create("http://localhost:8080/foo").getWithoutPath());
@@ -194,6 +197,11 @@ class URITest {
             assertEquals("[2001:db8::1]", new URI("http://[2001:db8::1]/foo", false).getAuthority());
             assertEquals("[2001:db8::1]:8080", new com.predic8.membrane.core.util.URI("http://[2001:db8::1]:8080/foo", false).getAuthority());
         }
+    }
+
+    @Test
+    void userInfo() throws URISyntaxException {
+        assertEquals("alice:secret", FAC.create("http://alice:secret@localhost").getUserInfo());
     }
 
     @Test

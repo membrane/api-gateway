@@ -37,30 +37,6 @@ public class URIValidationUtil {
                (c >= 'a' && c <= 'f');
     }
 
-     /**
-     * Security focused validation only: allowed characters for an IPv6 address text.
-     * Does not validate IPv6 semantics. Intended for bracket hosts like "[...]" where ':' is expected.
-     *
-     * Allowed: HEX, ':', '.', '%', unreserved, sub-delims, '[' and ']'.
-     * '%' is allowed because zone IDs and percent-encoded sequences may appear (validation of %HH is done elsewhere).
-     */
-    public static void validateIP6Address(String s) {
-        if (s == null || s.isEmpty())
-            throw new IllegalArgumentException("Invalid IPv6 address: empty.");
-
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-
-            if (isHex(c) || c == ':' || c == '.' || c == '%' || c == '[' || c == ']')
-                continue;
-
-            if (isUnreserved(c) || isSubDelims(c))
-                continue;
-
-            throw new IllegalArgumentException("Invalid character in IPv6 address: '" + c + "'");
-        }
-    }
-
     /**
      * Security focused validation only: host may be a reg-name or IPv4-ish or contain IPv6 literals.
      * Does not validate correctness of IP addresses. Only enforces allowed characters.

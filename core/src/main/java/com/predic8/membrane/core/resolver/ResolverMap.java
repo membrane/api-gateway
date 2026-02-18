@@ -23,7 +23,6 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import com.predic8.xml.util.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.ls.*;
 
@@ -51,6 +50,34 @@ public class ResolverMap implements Cloneable, Resolver {
 
     private static final Logger log = LoggerFactory.getLogger(ResolverMap.class.getName());
 
+    int count = 0;
+    private String[] schemas;
+    private SchemaResolver[] resolvers;
+
+    public ResolverMap() {
+        this(null, null);
+    }
+
+    public ResolverMap(HttpClientFactory httpClientFactory, KubernetesClientFactory kubernetesClientFactory) {
+        schemas = new String[10];
+        resolvers = new SchemaResolver[10];
+
+        // the default config
+        addSchemaResolver(new ClasspathSchemaResolver());
+        addSchemaResolver(new HTTPSchemaResolver(httpClientFactory));
+        addSchemaResolver(new KubernetesSchemaResolver(kubernetesClientFactory));
+        addSchemaResolver(new FileSchemaResolver());
+    }
+
+    private ResolverMap(ResolverMap other) {
+        count = other.count;
+        schemas = new String[other.schemas.length];
+        resolvers = new SchemaResolver[other.resolvers.length];
+
+        System.arraycopy(other.schemas, 0, schemas, 0, count);
+        System.arraycopy(other.resolvers, 0, resolvers, 0, count);
+    }
+
     /**
      * First param is the parent. The following params will be combined to one path
      * e.g. "/foo/bar", "baz/x.yaml" ", "soo" => "/foo/bar/baz/soo"
@@ -60,7 +87,7 @@ public class ResolverMap implements Cloneable, Resolver {
      * @return combined path
      */
     public static String combine(URIFactory factory, String... locations) {
-        String resolved = combineInternal(factory,locations);
+        var resolved = combineInternal(factory,locations);
         log.debug("Resolved locations: {} to: {}", locations, resolved);
         return resolved;
     }
@@ -88,20 +115,19 @@ public class ResolverMap implements Cloneable, Resolver {
         if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
             return relativeChild;
 
+        // parent is file
         if (parent.startsWith("file:/")) {
-            if (relativeChild.startsWith("\\") || relativeChild.startsWith("/")) {
+            if (FileUtil.startsWithSlash(relativeChild)) {
                 return convertPath2FilePathString(new File(relativeChild).getAbsolutePath());
             }
-            File parentFile = new File(pathFromFileURI(parent));
-            if (!parent.endsWith("/") && !parent.endsWith("\\"))
-                parentFile = parentFile.getParentFile();
             try {
-                return keepTrailingSlash(parentFile, relativeChild);
+                return FileUtil.resolve(FileUtil.getDirectoryPart(URIUtil.pathFromFileURI(parent)), relativeChild);
             } catch (URISyntaxException e) {
-                throw new RuntimeException("Error combining: " + Arrays.toString(locations), e);
+                throw new RuntimeException("Error combining: " + locations, e);
             }
         }
 
+        // parent is http or classpath or internal
         if (parent.contains(":/")) {
             try {
                 if (parent.startsWith("http") || parent.startsWith("classpath:") || parent.startsWith("internal:")) {
@@ -111,6 +137,8 @@ public class ResolverMap implements Cloneable, Resolver {
                 throw new RuntimeException(e);
             }
         }
+
+        // parent is absolute path
         if (parent.startsWith("/")) {
             try {
                 return pathFromFileURI(convertPath2FileURI(parent).resolve(relativeChild));
@@ -123,11 +151,10 @@ public class ResolverMap implements Cloneable, Resolver {
                         """.formatted(parent, relativeChild));
             }
         }
-        File parentFile = new File(parent);
-        if (!parent.endsWith("/") && !parent.endsWith("\\"))
-            parentFile = parentFile.getParentFile();
+
+        // assume file paths
         try {
-            return new File(parentFile, relativeChild).getCanonicalPath();
+            return new File(FileUtil.getDirectoryPart(parent), relativeChild).getCanonicalPath();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -142,45 +169,6 @@ public class ResolverMap implements Cloneable, Resolver {
     protected static String prepare4Uri(String path) {
         path = path.replaceAll("\\\\", "/");
         return path.replaceAll(" ", "%20");
-    }
-
-    protected static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
-        String res = toFileURIString(new File(parentFile, relativeChild));
-        if (endsWithSlash(relativeChild))
-            return res + "/";
-        return res;
-    }
-
-    private static boolean endsWithSlash(String path) {
-        return path.endsWith("/") || path.endsWith("\\");
-    }
-
-    int count = 0;
-    private String[] schemas;
-    private SchemaResolver[] resolvers;
-
-    public ResolverMap() {
-        this(null, null);
-    }
-
-    public ResolverMap(HttpClientFactory httpClientFactory, KubernetesClientFactory kubernetesClientFactory) {
-        schemas = new String[10];
-        resolvers = new SchemaResolver[10];
-
-        // the default config
-        addSchemaResolver(new ClasspathSchemaResolver());
-        addSchemaResolver(new HTTPSchemaResolver(httpClientFactory));
-        addSchemaResolver(new KubernetesSchemaResolver(kubernetesClientFactory));
-        addSchemaResolver(new FileSchemaResolver());
-    }
-
-    private ResolverMap(ResolverMap other) {
-        count = other.count;
-        schemas = new String[other.schemas.length];
-        resolvers = new SchemaResolver[other.resolvers.length];
-
-        System.arraycopy(other.schemas, 0, schemas, 0, count);
-        System.arraycopy(other.resolvers, 0, resolvers, 0, count);
     }
 
     @Override
@@ -319,6 +307,5 @@ public class ResolverMap implements Cloneable, Resolver {
                 }
             };
         }
-
     }
 }

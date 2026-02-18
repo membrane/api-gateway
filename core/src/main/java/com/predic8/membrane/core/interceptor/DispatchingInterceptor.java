@@ -29,6 +29,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
 
 /**
  * @description This interceptor adds the destination specified in the target
@@ -44,7 +45,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 public class DispatchingInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class);
-    public static final URIFactory URI_FACTORY_ALLOW_ILLEGAL = new URIFactory(true);
 
     public DispatchingInterceptor() {
         name = "dispatching interceptor";
@@ -115,23 +115,23 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     }
 
     protected String getAddressFromTargetElement(Exchange exc) throws MalformedURLException, URISyntaxException {
-        if (!(exc.getProxy() instanceof AbstractServiceProxy proxy))
+        if (!(exc.getProxy() instanceof AbstractServiceProxy asp))
             return null;
 
-        if (proxy.getTargetURL() != null) {
-            var targetURL = proxy.getTargetURL();
+        if (asp.getTargetURL() != null) {
+            var targetURL = asp.getTargetURL();
             if (targetURL.startsWith("http") || targetURL.startsWith("internal")) {
                 // Here illegal character as $ { } are allowed in the URI to make URL expressions possible.
-                // The URL is from the target in the configuration, that is maintained by the admin
-                var basePath = UriUtil.getPathFromURL(URI_FACTORY_ALLOW_ILLEGAL, targetURL);
+                // The URL is from the target in the configuration, maintained by admin
+                var basePath = UriUtil.getPathFromURL(ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY, targetURL);
                 if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
                     return router.getResolverMap().combine(router.getConfiguration().getUriFactory(),targetURL,getUri(exc));
                 }
             }
             return targetURL;
         }
-        if (proxy.getTargetHost() != null) {
-            return new URL(proxy.getTargetScheme(), proxy.getTargetHost(), proxy.getTargetPort(), getUri(exc)).toString();
+        if (asp.getTargetHost() != null) {
+            return new URL(asp.getTargetScheme(), asp.getTargetHost(), asp.getTargetPort(), getUri(exc)).toString();
         }
 
         // That's fine. Maybe it is a <soapProxy> without a target

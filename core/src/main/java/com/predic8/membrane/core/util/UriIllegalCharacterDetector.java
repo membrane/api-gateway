@@ -15,11 +15,12 @@ public final class UriIllegalCharacterDetector {
     }
 
     public static void validateAll(URI uri, Options options) {
-        validateAll(uri.getScheme(), uri.getAuthority(), uri.getRawPath(), uri.getRawQuery(), uri.getRawFragment(), options);
+        validateAll(uri.getScheme(), uri.getAuthority(), uri.getUserInfo(), uri.getRawPath(), uri.getRawQuery(), uri.getRawFragment(), options);
     }
 
     public static void validateAll(String scheme,
                                    String authority,
+                                   String userInfo,
                                    String rawPath,
                                    String rawQuery,
                                    String rawFragment,
@@ -41,6 +42,8 @@ public final class UriIllegalCharacterDetector {
         validatePctEncoding(rawQuery, "query");
         validatePctEncoding(rawFragment, "fragment");
         validatePctEncoding(authority, "authority");
+        validateUserInfo(userInfo, options);
+
         // scheme never contains '%' in valid RFC 3986; no need to check percent there.
 
         if (options.strictRfc3986) {

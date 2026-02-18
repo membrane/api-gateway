@@ -30,6 +30,9 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateExchangeExpression.class);
 
+    /**
+     * Plugable encoder to apply various encoding strategies like URL, or path segment encoding.
+     */
     private final Function<String, String> encoder;
 
     /**
@@ -87,9 +90,9 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
                 }
                 if (value == null) {
                     line.append("null");
-                } else {
-                    line.append(encoder.apply(value));
+                    continue;
                 }
+                line.append(encoder.apply(value));
             } catch (Exception e) {
                 throw new ExchangeExpressionException(token.toString(), e);
             }
@@ -118,7 +121,6 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
     interface Token {
         <T> T eval(Exchange exchange, Flow flow, Class<T> type);
-
         String getExpression();
     }
 

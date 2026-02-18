@@ -15,6 +15,7 @@
 
 package com.predic8.membrane.core.util;
 
+import com.predic8.membrane.core.util.uri.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -47,7 +48,6 @@ public class URLUtilTest {
         assertEquals("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1",
                 createQueryString("endpoint", "http://node1.clustera",
                         "cluster", "c1"));
-
     }
 
     @Test
@@ -154,7 +154,7 @@ public class URLUtilTest {
         @MethodSource("cases")
         @DisplayName("pathSeg encodes as RFC3986 path segment")
         void encodesExpected(Case c) {
-            assertEquals(c.expected(),  URLUtil.pathSeg(c.in()));
+            assertEquals(c.expected(),  EscapingUtil.pathEncode(c.in()));
         }
 
         record AllowedCase(Object in) {
@@ -174,7 +174,7 @@ public class URLUtilTest {
         @MethodSource("allowedCases")
         @DisplayName("pathSeg output contains only unreserved characters or percent-escapes")
         void outputAllowedCharactersOnly(AllowedCase c) {
-            String out = URLUtil.pathSeg(c.in());
+            String out = EscapingUtil.pathEncode(c.in());
             assertTrue(out.matches("[A-Za-z0-9\\-._~%]*"), out);
 
             // If '%' appears, it must be followed by two hex digits

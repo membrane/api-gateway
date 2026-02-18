@@ -18,6 +18,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
@@ -154,18 +155,13 @@ class DispatchingInterceptorTest {
 	}
 
 	@Test
-	void getAddressFromTargetElement() throws Exception {
+	void initWithAllowIllegalAndURLExpression() {
 		var api = new APIProxy();
 		api.setTarget(new Target() {{
 			setUrl("https://${property.host}:8080"); // Has illegal characters $ { } in base path
 		}});
-		api.init(routerAllowIllegal);
-		dispatcher.init(routerAllowIllegal);
 
-		var exc =  get("/foo").buildExchange();
-		exc.setProxy(api);
-
-        assertEquals("https://${property.host}:8080/foo", dispatcher.getAddressFromTargetElement(exc));
+		assertThrows(ConfigurationException.class, ()-> api.init(routerAllowIllegal));
 	}
 
 	@Nested

@@ -1,0 +1,96 @@
+package com.predic8.membrane.core.util.uri;
+
+import java.net.*;
+import java.util.function.*;
+
+import static java.lang.Character.*;
+import static java.nio.charset.StandardCharsets.*;
+
+public class EscapingUtil {
+
+    /**
+     * Specifies the types of escaping that can be performed on strings.
+     *
+     * The escaping strategies include:
+     *
+     * - {@code NONE}: No escaping is applied. Strings are returned as-is.
+     * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
+     *   other special characters with their percent-encoded counterparts (e.g., SPACE -> %20).
+     * - {@code SEGMENT}: Encodes strings as safe URI path segments, ensuring they do not introduce
+     *   path separators, query delimiters, or other unsafe characters, as per RFC 3986.
+     */
+    public enum Escaping {
+        NONE,
+        URL,
+        SEGMENT
+    }
+
+    public static Function<String, String> getEscapingFunction(Escaping escaping) {
+        return switch (escaping) {
+            case NONE -> Function.identity();
+            case URL -> s -> URLEncoder.encode(s, UTF_8);
+            case SEGMENT -> EscapingUtil::pathEncode;
+        };
+    }
+
+    /**
+     * Encodes the given value so it can be safely used as a single URI path segment.
+     *
+     * <p>The method performs percent-encoding according to RFC&nbsp;3986 for
+     * <em>path segment</em> context. All characters except the unreserved set
+     * {@code A-Z a-z 0-9 - . _ ~} are UTF-8 encoded and emitted as {@code %HH}
+     * sequences.</p>
+     *
+     * <p>This guarantees that the returned string:</p>
+     * <ul>
+     *   <li>cannot introduce additional path separators ({@code /})</li>
+     *   <li>cannot inject query or fragment delimiters ({@code ?, #, &})</li>
+     *   <li>does not rely on {@code +} for spaces (spaces become {@code %20})</li>
+     *   <li>is safe to concatenate into {@code ".../foo/" + pathSeg(value)}</li>
+     * </ul>
+     *
+     * <p>The input is converted using {@link Object#toString()} and encoded as UTF-8.
+     * A {@code null} value results in an empty string.</p>
+     *
+     * <p><strong>Example:</strong></p>
+     * <pre>{@code
+     * pathSeg("a/b & c")  -> "a%2Fb%20%26%20c"
+     * pathSeg("ä")        -> "%C3%A4"
+     * pathSeg(123)        -> "123"
+     * }</pre>
+     *
+     * <p><strong>Note:</strong> This method is intended for encoding a single
+     * path segment only. It must not be used for whole URLs, query strings,
+     * or already structured paths. For those cases, use a URI builder or
+     * context-specific encoding.</p>
+     *
+     * @param value the value to encode as a path segment; may be {@code null}
+     * @return a percent-encoded string safe for use as one URI path segment
+     */
+    public static String pathEncode(Object value) {
+        if (value == null) return "";
+
+        byte[] bytes = value.toString().getBytes(UTF_8);
+        var out = new StringBuilder(bytes.length * 3);
+
+        for (byte b : bytes) {
+            int c = b & 0xff;
+
+            // RFC 3986 unreserved characters
+            if ((c >= 'A' && c <= 'Z') ||
+                (c >= 'a' && c <= 'z') ||
+                (c >= '0' && c <= '9') ||
+                c == '-' || c == '.' || c == '_' || c == '~') {
+
+                out.append((char) c);
+            } else {
+                out.append('%');
+                char hex1 = toUpperCase(forDigit((c >> 4) & 0xF, 16));
+                char hex2 = toUpperCase(forDigit(c & 0xF, 16));
+                out.append(hex1).append(hex2);
+            }
+        }
+
+        return out.toString();
+    }
+}

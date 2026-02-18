@@ -22,7 +22,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.security.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.uri.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
 import org.jetbrains.annotations.*;
@@ -269,7 +269,7 @@ public class CommonBuiltInFunctions {
      * @param segment the string value to encode
      * @return a percent-encoded string safe for use as a single URI path segment
      */
-    public static String pathSeg(String segment) {
-        return URLUtil.pathSeg(segment);
+    public static String pathEncode(String segment) {
+        return EscapingUtil.pathEncode(segment);
     }
 }

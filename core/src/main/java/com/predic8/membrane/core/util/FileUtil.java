@@ -15,8 +15,10 @@
 package com.predic8.membrane.core.util;
 
 import org.apache.commons.io.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
+import java.net.*;
 
 import static java.util.Objects.*;
 import static java.util.stream.Collectors.*;
@@ -52,5 +54,54 @@ public class FileUtil {
 		if (location == null)
 			return false;
 		return JSON.equalsIgnoreCase(FilenameUtils.getExtension(location));
+	}
+
+	/**
+	 * Checks if string starts / or \
+	 * @param filepath
+	 * @return boolean true if path starts with / or \
+	 */
+	public static boolean startsWithSlash(String filepath) {
+		return filepath.startsWith("\\") || filepath.startsWith("/");
+	}
+
+	public static String toFileURIString(File f) throws URISyntaxException {
+		return URIUtil.convertPath2FileURI(f.getAbsolutePath()).toString();
+	}
+
+	public static boolean endsWithSlash(String filepath) {
+		return filepath.endsWith("/") || filepath.endsWith("\\");
+	}
+
+	/**
+	 * Resolves the absolute URI string of a file given a parent directory
+	 * and a relative child path. If the relative child path ends with a slash,
+	 * the returned URI string will also end with a slash.
+	 *
+	 * @param parent the parent directory as a {@link File} object
+	 * @param relativeChild the relative child path as a {@link String}
+	 * @return the resolved absolute URI string of the file
+	 * @throws URISyntaxException if an error occurs while converting the file path to a URI string
+	 */
+	public static @NotNull String resolve(File parent, String relativeChild) throws URISyntaxException {
+		var res = toFileURIString(new File(parent, relativeChild));
+		if (endsWithSlash(relativeChild))
+			return res + "/";
+		return res;
+	}
+
+	/**
+	 * Retrieves the filepath directory of the given file path.
+	 * foo/ => foo/
+	 * foo/bar.txt => foo/
+	 *
+	 * @param filepath the file path as a string
+	 * @return a {@link File} object representing the filepath directory or the file itself if the path ends with a slash
+	 */
+	public static File getDirectoryPart(String filepath) {
+		var parentFile = new File(filepath);
+		if (!endsWithSlash(filepath))
+			return parentFile.getParentFile();
+		return parentFile;
 	}
 }
