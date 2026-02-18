@@ -90,8 +90,8 @@ public class StatisticCollector {
 			totalBytesSent += requestBody.isRead() ? requestBody.getLength() : 0;
 			AbstractBody responseBody = exc.getResponse().getBody();
 			totalBytesReceived += responseBody.isRead() ? responseBody.getLength() : 0;
-		} catch (IOException e) {
-			log.warn("", e);
+		} catch (ReadingBodyException e) {
+			log.warn("Could not count statistic: {}", e.getMessage());
 		}
 	}
 

@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.interceptor.balancer.Node.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
@@ -134,8 +135,8 @@ public class BalancerHealthMonitor implements ApplicationContextAware, Initializ
             return DOWN;
         try {
             exc.getResponse().getBody().read();
-        } catch (IOException e) {
-            log.debug("Calling health endpoint failed: {} {}", exc, concatMessageAndCauseMessages(e));
+        } catch (ReadingBodyException e) {
+            log.debug("Calling health endpoint failed: {} {}", exc, e.getMessage());
             return DOWN;
         }
         int status = exc.getResponse().getStatusCode();

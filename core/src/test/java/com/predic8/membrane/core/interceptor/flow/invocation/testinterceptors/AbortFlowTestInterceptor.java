@@ -28,11 +28,7 @@ public class AbortFlowTestInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        try {
-            exc.setResponse(Response.ok().body(exc.getRequest().getBody().getContent()).build());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        exc.setResponse(Response.ok().body(exc.getRequest().getBody().getContent()).build());
         return ABORT;
     }
 

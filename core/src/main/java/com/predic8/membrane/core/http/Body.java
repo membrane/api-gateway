@@ -81,7 +81,7 @@ public class Body extends AbstractBody {
 		}
 	}
 
-	public void discard() throws IOException {
+	public void discard() {
 		if (read)
 			return;
 		if (wasStreamed())
@@ -90,8 +90,12 @@ public class Body extends AbstractBody {
 		for (MessageObserver observer : observers)
 			observer.bodyRequested(this);
 
-		skipBodyContent();
-	}
+        try {
+            skipBodyContent();
+        } catch (IOException e) {
+            throw new ReadingBodyException(e);
+        }
+    }
 
 	private void skipBodyContent() throws IOException {
 		byte[] buffer = null;
@@ -148,25 +152,39 @@ public class Body extends AbstractBody {
 	}
 
 	@Override
-	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+	protected void writeStreamed(AbstractBodyTransferrer out) {
 		byte[] buffer = new byte[BUFFER_SIZE];
 
 		long totalLength = 0;
 		int length;
 		chunks.clear();
-		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
-			totalLength += length;
+		while (true) {
+            try {
+                if (!((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0))
+                    break;
+            } catch (IOException e) {
+                throw new ReadingBodyException(e);
+            }
+            totalLength += length;
 			streamedLength += length;
-			out.write(buffer, 0, length);
+			try {
+				out.write(buffer, 0, length);
+			} catch (IOException e) {
+				throw new WritingBodyException(e);
+			}
 			for (MessageObserver observer : observers)
 				observer.bodyChunk(buffer, 0, length);
 		}
-		out.finish(null);
-		markAsRead();
+        try {
+            out.finish(null);
+        } catch (IOException e) {
+            throw new WritingBodyException(e);
+        }
+        markAsRead();
 	}
 
 	@Override
-	public int getLength() throws IOException {
+	public int getLength() {
 		if (wasStreamed())
 			return (int)streamedLength;
 		return super.getLength();

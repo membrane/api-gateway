@@ -124,11 +124,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
         if (!methodShouldHaveBody(method)) {
             return;
         }
-        try {
-            builder.body(exchange.getRequest().getBody().getContent());
-        } catch (IOException e) {
-            throw new RuntimeException("Error setting request body", e);
-        }
+        builder.body(exchange.getRequest().getBody().getContent());
     }
 
     private static boolean methodShouldHaveBody(String method) {

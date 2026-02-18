@@ -109,17 +109,25 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    public void read() throws IOException {
-        if (bodyObserved && !bodyComplete)
-            ByteUtil.readStream(getContentAsStream());
-        bodyObserved = true;
-        super.read();
+    public void read() {
+        try {
+            if (bodyObserved && !bodyComplete)
+                ByteUtil.readStream(getContentAsStream());
+            bodyObserved = true;
+            super.read();
+        } catch (IOException e) {
+            throw new ReadingBodyException(e);
+        }
     }
 
     @Override
-    public void write(AbstractBodyTransferrer out, boolean retainCopy) throws IOException {
-        if (bodyObserved && !bodyComplete)
-            ByteUtil.readStream(getContentAsStream());
+    public void write(AbstractBodyTransferrer out, boolean retainCopy) {
+        try {
+            if (bodyObserved && !bodyComplete)
+                ByteUtil.readStream(getContentAsStream());
+        } catch (IOException e) {
+            throw new ReadingBodyException(e);
+        }
         super.write(out, retainCopy);
     }
 
@@ -140,7 +148,7 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    public void discard() throws IOException {
+    public void discard() {
         if (read)
             return;
         if (wasStreamed())
@@ -149,8 +157,12 @@ public class ChunkedBody extends AbstractBody {
         for (MessageObserver observer : observers)
             observer.bodyRequested(this);
 
-        readChunksAndDrop(inputStream);
-        trailer = readTrailer(inputStream);
+        try {
+            readChunksAndDrop(inputStream);
+            trailer = readTrailer(inputStream);
+        } catch (IOException e) {
+            throw new ReadingBodyException(e);
+        }
         markAsRead();
     }
 
@@ -212,22 +224,34 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+    protected void writeStreamed(AbstractBodyTransferrer out) {
         log.debug("writeStreamed");
         int chunkSize;
-        while ((chunkSize = readChunkSize(inputStream)) > 0) {
-            Chunk chunk = new Chunk(readByteArray(inputStream, chunkSize));
-            out.write(chunk);
-            for (MessageObserver observer : observers)
-                observer.bodyChunk(chunk);
-            //noinspection ResultOfMethodCallIgnored
-            inputStream.read(); // CR
-            //noinspection ResultOfMethodCallIgnored
-            inputStream.read(); // LF
-            lengthStreamed += chunkSize;
+        try {
+            while ((chunkSize = readChunkSize(inputStream)) > 0) {
+                Chunk chunk = new Chunk(readByteArray(inputStream, chunkSize));
+                try {
+                    out.write(chunk);
+                } catch (IOException e) {
+                    throw new WritingBodyException(e);
+                }
+                for (MessageObserver observer : observers)
+                    observer.bodyChunk(chunk);
+                //noinspection ResultOfMethodCallIgnored
+                inputStream.read(); // CR
+                //noinspection ResultOfMethodCallIgnored
+                inputStream.read(); // LF
+                lengthStreamed += chunkSize;
+            }
+            trailer = readTrailer(inputStream);
+        } catch (IOException e) { // note that we only want to catch the IOExceptions associated to *reading* the body
+            throw new ReadingBodyException(e);
         }
-        trailer = readTrailer(inputStream);
-        out.finish(trailer);
+        try {
+            out.finish(trailer);
+        } catch (IOException e) {
+            throw new WritingBodyException(e);
+        }
         markAsRead();
     }
 
@@ -281,7 +305,7 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    public int getLength() throws IOException {
+    public int getLength() {
         if (wasStreamed())
             return (int) lengthStreamed;
         return super.getLength();
