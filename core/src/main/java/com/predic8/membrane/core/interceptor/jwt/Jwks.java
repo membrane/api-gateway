@@ -114,8 +114,8 @@ public class Jwks {
         return this;
     }
 
-    public HashMap<String, RsaJsonWebKey> getKeysByKid() {
-        return keysByKid;
+    public Optional<RsaJsonWebKey> getKeyByKid(String kid) {
+        return Optional.ofNullable(keysByKid.get(kid));
     }
 
     private HashMap<String, RsaJsonWebKey> buildKeyMap(List<Jwk> jwks) {
