@@ -72,11 +72,20 @@ public class Jwks {
         if (!jwks.isEmpty())
             throw new ConfigurationException("JWKs cannot be set both via JwksUris and Jwks elements.");
         setJwks(loadJwks(false));
-        if (authorizationService.getJwksRefreshInterval() > 0) {
+        if (authorizationService != null && authorizationService.getJwksRefreshInterval() > 0) {
             router.getTimerManager().schedulePeriodicTask(new TimerTask() {
                                                               @Override
                                                               public void run() {
-                                                                  setJwks(loadJwks(true));
+                                                                  try {
+                                                                      List<Jwk> loaded = loadJwks(true);
+                                                                      if (!loaded.isEmpty()) {
+                                                                          setJwks(loaded);
+                                                                      } else {
+                                                                          log.warn("JWKS refresh returned no keys — keeping previous key set.");
+                                                                      }
+                                                                  } catch (Exception e) {
+                                                                      log.error("JWKS refresh failed, will retry on next interval.", e);
+                                                                  }
                                                               }
                                                           }, authorizationService.getJwksRefreshInterval() * 1_000L, "JWKS Refresh"
             );
