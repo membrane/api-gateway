@@ -29,7 +29,7 @@ public class EscapingUtil {
      * <p/>
      * - {@code NONE}: No escaping is applied. Strings are returned as-is.
      * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
-     *   other special characters with their percent-encoded counterparts (e.g., SPACE -> %20).
+     *   other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
      * - {@code SEGMENT}: Encodes strings as safe URI path segments, ensuring they do not introduce
      *   path separators, query delimiters, or other unsafe characters, as per RFC 3986.
      */
@@ -68,9 +68,9 @@ public class EscapingUtil {
      *
      * <p><strong>Example:</strong></p>
      * <pre>{@code
-     * pathSeg("a/b & c")  -> "a%2Fb%20%26%20c"
-     * pathSeg("ä")        -> "%C3%A4"
-     * pathSeg(123)        -> "123"
+     * pathEncode("a/b & c")  -> "a%2Fb%20%26%20c"
+     * pathEncode("ä")        -> "%C3%A4"
+     * pathEncode(123)        -> "123"
      * }</pre>
      *
      * <p><strong>Note:</strong> This method is intended for encoding a single

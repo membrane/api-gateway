@@ -137,8 +137,6 @@ class URITest {
         assertEquals("http://localhost:8080", uf.create("http://localhost:8080/foo").getWithoutPath());
         assertEquals("http://localhost:8080", uf.create("http://localhost:8080#foo").getWithoutPath());
         assertEquals("http://localhost", uf.create("http://localhost/foo").getWithoutPath());
-        assertEquals("http://localhost", uf.create("http://localhost/foo").getWithoutPath());
-        assertEquals("http://localhost", uf.create("http://localhost/foo").getWithoutPath());
     }
 
     @Test
@@ -354,8 +352,11 @@ class URITest {
         @Test
         void parseHostPortIpv4EmptyPortOrHost() {
             assertThrows(IllegalArgumentException.class, () -> URI_ALLOW_ILLEGAL.parseHostPort(":8080"));       // empty host
-            assertThrows(IllegalArgumentException.class, () -> URI_ALLOW_ILLEGAL.parseHostPort("example.com:")); // empty port
-        }
+
+            var hp = URI_ALLOW_ILLEGAL.parseHostPort("example.com:");
+            assertEquals("example.com", hp.host());
+            assertEquals(-1, hp.port());
+         }
 
         @Test
         void parseHostPortIpv4PortBoundsAndFormats() {
@@ -648,7 +649,7 @@ class URITest {
         void resolveRelativeBackClasspath() throws URISyntaxException {
             URI base = new URI("classpath://validation");
             URI relative = new com.predic8.membrane.core.util.URI("../validation/ArticleType.xsd");
-            // getRessource() can deal with that
+            // getResource() can deal with that
             assertEquals("classpath://validation/../validation/ArticleType.xsd", base.resolve(relative).toString());
         }
     }

@@ -62,7 +62,7 @@ class URIVsJavaNetURITest {
         assertEquals(j.getQuery(), custom.getQuery(), "query (decoded)");
         assertEquals(j.getFragment(), custom.getFragment(), "fragment (decoded)");
 
-        assertEquals(j.getHost(), custom.getHost(), "host (java host is bracket-free)");
+        assertEquals(j.getHost(), custom.getHost(), "host");
         assertEquals(j.getPort(), custom.getPort(), "port");
 
         // getPathWithQuery is Membrane-specific; compare to Java reconstruction.

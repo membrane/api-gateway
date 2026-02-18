@@ -50,7 +50,7 @@ public class ResolverMap implements Cloneable, Resolver {
 
     private static final Logger log = LoggerFactory.getLogger(ResolverMap.class.getName());
 
-    int count = 0;
+    private int count = 0;
     private String[] schemas;
     private SchemaResolver[] resolvers;
 
@@ -104,7 +104,7 @@ public class ResolverMap implements Cloneable, Resolver {
             // lfold
             String[] l = new String[locations.length - 1];
             System.arraycopy(locations, 0, l, 0, locations.length - 1);
-            return combine(combine(l), locations[locations.length - 1]);
+            return combine(factory,combine(l), locations[locations.length - 1]);
         }
 
         return combineInternal2( factory, locations,locations[1], locations[0]);
