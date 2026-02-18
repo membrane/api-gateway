@@ -18,7 +18,6 @@ import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -29,7 +28,8 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.URIFactory.ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.URIFactory.*;
 
 /**
  * @description This interceptor adds the destination specified in the target
@@ -125,7 +125,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
                 // The URL is from the target in the configuration, maintained by admin
                 var basePath = UriUtil.getPathFromURL(ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY, targetURL);
                 if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
-                    return router.getResolverMap().combine(router.getConfiguration().getUriFactory(),targetURL,getUri(exc));
+                    return combine(router.getConfiguration().getUriFactory(),targetURL,getUri(exc));
                 }
             }
             return targetURL;
