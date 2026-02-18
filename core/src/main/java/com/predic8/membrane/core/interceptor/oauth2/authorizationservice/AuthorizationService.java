@@ -62,7 +62,7 @@ public abstract class AuthorizationService {
     private String clientId;
     @GuardedBy("lock")
     private String clientSecret;
-    private Integer jwksRefreshInterval = 24 * 60 * 60;
+    private int jwksRefreshInterval = 24 * 60 * 60;
     private JWSSigner JWSSigner;
     protected String scope;
     private SSLParser sslParser;
@@ -181,9 +181,8 @@ public abstract class AuthorizationService {
     }
 
     @MCAttribute
-    public AuthorizationService setJwksRefreshInterval(Integer jwksRefreshInterval) {
+    public void setJwksRefreshInterval(int jwksRefreshInterval) {
         this.jwksRefreshInterval = jwksRefreshInterval;
-        return this;
     }
 
 
