@@ -34,6 +34,7 @@ public class JwksRefreshTest {
 
     public static final int PROVIDER_PORT = 3000;
     public static final int AUTH_INTERCEPTOR_PORT = 3001;
+    public static final int JWKS_REFRESH_INTERVAL = 1;
     static DefaultRouter jwksProvider;
     static DefaultRouter jwtValidator;
 
@@ -89,7 +90,7 @@ public class JwksRefreshTest {
     private static @NotNull JwtAuthInterceptor jwtAuthInterceptor() {
         Jwks jwks = new Jwks();
         jwks.setJwksUris("http://localhost:%d/jwks".formatted(PROVIDER_PORT));
-        jwks.setAuthorizationService(buildAuthorizationService(1));
+        jwks.setAuthorizationService(buildAuthorizationService(JWKS_REFRESH_INTERVAL));
 
         JwtAuthInterceptor jwtAuth = new JwtAuthInterceptor();
         jwtAuth.setExpectedAud("some-audience");
@@ -147,7 +148,7 @@ public class JwksRefreshTest {
 
             // 2. switch keys
             currentJwkSet.set(new JsonWebKeySet(publicKey2));
-            Thread.sleep(2000); // wait for refresh
+            Thread.sleep(JWKS_REFRESH_INTERVAL * 1_000 * 2); // wait for refresh
 
             // 3. new key works
             Exchange exc3 = new Request.Builder()
