@@ -123,8 +123,7 @@ public class JWTInterceptorAndSecurityValidatorTest {
         Jwks.Jwk jwk = new Jwks.Jwk();
         jwk.setContent(publicOnly.toJson());
         Jwks jwks = new Jwks();
-        jwks.setJwks(new ArrayList<>());
-        jwks.getJwks().add(jwk);
+        jwks.setJwks(List.of(jwk));
         return jwks;
     }
 

@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor.*;
@@ -60,7 +61,7 @@ public class JwtAuthInterceptorUnitTests {
         jwk.setContent("{\"kty\":\"RSA\", \"n\":\""+
                 "B".repeat(1024 * 8 / 6)
                 +"\", \"e\":\"BB\"}");
-        jwks.getJwks().add(jwk);
+        jwks.setJwks(List.of(jwk));
         interceptor.setJwks(jwks);
         interceptor.init(new DummyTestRouter());
         interceptor.handleRequest(exchange);
