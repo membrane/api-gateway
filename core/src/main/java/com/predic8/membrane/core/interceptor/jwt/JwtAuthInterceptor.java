@@ -13,7 +13,6 @@
 package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.*;
@@ -129,8 +128,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
         // we could make it possible that every key is checked instead of having the "kid" field mandatory
         // this would then need up to n checks per incoming JWT - could be a performance problem
-        RsaJsonWebKey key = Optional.ofNullable(jwks.getKeysByKid().get(kid))
-                .orElseThrow(() -> new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID));
+        RsaJsonWebKey key = jwks.getKeyByKid(kid).orElseThrow(() -> new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID));
 
         Map<String, Object> jwtClaims = createValidator(key).processToClaims(jwt).getClaimsMap();
 
