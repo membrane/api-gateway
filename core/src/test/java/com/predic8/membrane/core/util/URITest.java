@@ -294,10 +294,12 @@ class URITest {
         }
 
         @Test
-        void parseIpv6InvalidCases() {
+        void parseIpv6InvalidAndEdgeCases() {
             assertThrows(IllegalArgumentException.class, () -> parseIpv6("::1"));
             assertThrows(IllegalArgumentException.class, () -> parseIpv6("[::1"));
-            assertThrows(IllegalArgumentException.class, () -> parseIpv6("[::1]:"));
+            var hostPort = parseIpv6("[::1]:");
+            assertEquals("[::1]", hostPort.host());
+            assertEquals(-1, hostPort.port());
             assertThrows(IllegalArgumentException.class, () -> parseIpv6("[::1]:badport"));
         }
 
@@ -309,9 +311,11 @@ class URITest {
         }
 
         @Test
-        void parseHostPortIpv4InvalidCases() {
+        void parseHostPortIpv4InvalidAndEdgeCases() {
             assertThrows(IllegalArgumentException.class, () -> URI_ALLOW_ILLEGAL.parseIPv4OrHostname(":8080"));
-            assertThrows(IllegalArgumentException.class, () -> URI_ALLOW_ILLEGAL.parseIPv4OrHostname("example.com:"));
+            var hostPort = URI_ALLOW_ILLEGAL.parseIPv4OrHostname("example.com:");
+            assertEquals("example.com", hostPort.host());
+            assertEquals(-1, hostPort.port());
             assertThrows(IllegalArgumentException.class, () -> URI_ALLOW_ILLEGAL.parseIPv4OrHostname("example.com:abc"));
             assertThrows(IllegalArgumentException.class, () -> URI_ALLOW_ILLEGAL.parseIPv4OrHostname("host:1:2"));
         }
@@ -382,8 +386,10 @@ class URITest {
         }
 
         @Test
-        void parseHostPortIpv6BadPortAndJunk() {
-            assertThrows(IllegalArgumentException.class, () -> URI_ALLOW_ILLEGAL.parseHostPort("[::1]:"));
+        void parseHostPortIpv6BadPortJunkAndEdge() {
+            var hostPort = URI_ALLOW_ILLEGAL.parseHostPort("[::1]:");
+            assertEquals("[::1]", hostPort.host());
+            assertEquals(-1, hostPort.port());
             assertThrows(IllegalArgumentException.class, () -> URI_ALLOW_ILLEGAL.parseHostPort("[::1]:bad"));
             assertThrows(IllegalArgumentException.class, () -> URI_ALLOW_ILLEGAL.parseHostPort("[::1]x123"));
         }
