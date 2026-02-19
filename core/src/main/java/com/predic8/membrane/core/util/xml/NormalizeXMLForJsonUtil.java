@@ -53,22 +53,27 @@ public class NormalizeXMLForJsonUtil {
      * For other objects, they are returned as is.
      */
     public static Object normalizeForJson(Object o) {
-        if (o == null) return null;
-
-        // XPath often returns NodeList (e.g. DTMNodeList). Convert to JSON-friendly structure.
-        if (o instanceof NodeList nl) {
-            var arr = new ArrayList<>(nl.getLength());
-            for (int i = 0; i < nl.getLength(); i++) {
-                arr.add(nodeToJsonValue(nl.item(i)));
+        switch (o) {
+            case null -> {
+                return null;
             }
-            if (arr.size() == 1) {
-                return arr.getFirst();
-            }
-            return arr;
-        }
 
-        if (o instanceof Node n) {
-            return nodeToJsonValue(n);
+            // XPath often returns NodeList (e.g. DTMNodeList). Convert to JSON-friendly structure.
+            case NodeList nl -> {
+                var arr = new ArrayList<>(nl.getLength());
+                for (int i = 0; i < nl.getLength(); i++) {
+                    arr.add(nodeToJsonValue(nl.item(i)));
+                }
+                if (arr.size() == 1) {
+                    return arr.getFirst();
+                }
+                return arr;
+            }
+            case Node n -> {
+                return nodeToJsonValue(n);
+            }
+            default -> {
+            }
         }
 
         return o;
