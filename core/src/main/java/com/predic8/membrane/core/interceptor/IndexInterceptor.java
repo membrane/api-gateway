@@ -29,7 +29,7 @@ import java.util.*;
  *              To use this feature just add a serviceProxy containing the index
  *              element. Of course you can protect the service proxy by using
  *              SSL or Username and Password.
- * @topic 6. Misc
+ * @topic 9. Misc
  */
 @MCElement(name="index", id="index-interceptor")
 public class IndexInterceptor extends AbstractInterceptor {
