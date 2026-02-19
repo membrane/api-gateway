@@ -48,6 +48,24 @@ import static java.nio.charset.StandardCharsets.*;
  * <a href="https://github.com/membrane/api-gateway/tree/master/distribution/examples/templating/json">JSON templating example</a>, executing
  * <code>curl "localhost:2000/?answer=20"</code> returns <code>{ "answer" : "20" }</code>. The quotes surrounding the value 20 are added by the auto-escaping mechanism
  * to ensure the output remains a valid string. This feature significantly mitigates security risks by preventing inadvertent JSON injection attacks.
+ *
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - request:
+ *         - template:
+ *             contentType: application/json
+ *             src: |
+ *               {
+ *                 "name": ${params.name},
+ *                 "age": ${params.age}
+ *               }
+ *     - response:
+ *         - template:
+ *             location: template.xml
+ *     - return: {}
+ * </code></pre>
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "template", mixed = true)

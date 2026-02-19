@@ -42,12 +42,11 @@ import static java.lang.Long.MAX_VALUE;
  * If an OpenTelemetry parent Span is present on the {@link Exchange}, a child sub-span is created
  * around the measured section so timing data is exported to OTel as well.
  *
- * @example <pre><code>
- * <api port="2000">
- *   <time label="flow-timing">
- *        <setHeader name="foo" value="$.data.bar" language="jsonpath" />
- *   </time>
- * </api>
+ * @yaml  <pre><code>
+ * time:
+ *   label: flow-timing
+ *   flow:
+ *     - log: {} # nested plugins here
  *</code></pre>
  *
  * @topic 4. Monitoring, Logging and Statistics

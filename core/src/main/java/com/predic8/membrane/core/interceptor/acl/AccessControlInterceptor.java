@@ -26,7 +26,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
- * @topic 3. Security
+ * @topic 3. Security and Validation
  * @description
  * <p>Applies access control rules to incoming requests based on the peer address.</p>
  *
