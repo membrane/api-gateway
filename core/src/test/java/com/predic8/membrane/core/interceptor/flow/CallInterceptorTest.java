@@ -13,26 +13,38 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.templating.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
+import org.junit.jupiter.api.*;
 
-import java.net.URISyntaxException;
+import java.io.*;
+import java.net.*;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.flow.CallInterceptor.copyHeadersFromResponseToRequest;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.interceptor.flow.CallInterceptor.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class CallInterceptorTest {
 
-    static Exchange exc;
+    private Exchange exc;
+    private Router router;
 
-    @BeforeAll
-    static void beforeAll() throws URISyntaxException {
-        exc = Request.get("/foo").buildExchange();
+    @BeforeEach
+    void setup() throws URISyntaxException {
+        exc = get("/foo").buildExchange();
+        exc.setProperty("a", "b");
+        router = new DefaultRouter();
+    }
+
+    @AfterEach
+    void teardown() {
+        router.stop();
     }
 
     @Test
@@ -46,12 +58,47 @@ class CallInterceptorTest {
         copyHeadersFromResponseToRequest(exc, exc);
 
         // preserve
-        assertEquals("42",exc.getRequest().getHeader().getFirstValue("X-FOO"));
+        var header = exc.getRequest().getHeader();
+        assertEquals("42", header.getFirstValue("X-FOO"));
 
         // take out
-        assertNull(exc.getRequest().getHeader().getFirstValue(SERVER));
-        assertNull(exc.getRequest().getHeader().getFirstValue(TRANSFER_ENCODING));
-        assertNull(exc.getRequest().getHeader().getFirstValue(CONTENT_ENCODING));
+        assertNull(header.getFirstValue(SERVER));
+        assertNull(header.getFirstValue(TRANSFER_ENCODING));
+        assertNull(header.getFirstValue(CONTENT_ENCODING));
     }
 
+    @Test
+    void evaluateUrlTemplate() throws IOException {
+        extracted("Path: /b");
+    }
+
+    @Test
+    void urlTemplateAndAllowIllegalCharactersInURL() {
+        router.getConfiguration().getUriFactory().setAllowIllegalCharacters(true);
+        assertThrows(ConfigurationException.class, () -> extracted("dummy"));
+    }
+
+    private void extracted(String expected) throws IOException {
+        var api = new APIProxy();
+        api.setKey(new APIProxyKey(2000));
+        api.getFlow().add(new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                System.out.println(exc);
+                return super.handleRequest(exc);
+            }
+        });
+        api.getFlow().add(new TemplateInterceptor() {{
+            setSrc("Path: ${path}");
+        }});
+        api.getFlow().add(new ReturnInterceptor());
+        router.add(api);
+        router.start();
+
+        var ci = new CallInterceptor();
+        ci.setUrl("http://localhost:2000/${property.a}");
+        ci.init(router);
+        ci.handleRequest(exc);
+        assertEquals(expected, exc.getRequest().getBodyAsStringDecoded());
+    }
 }
