@@ -52,9 +52,9 @@ public class ApiKeyHeaderExtractor implements ApiKeyExtractor{
 
     /**
      * @description The HTTP header name to check for an API key.
-     * @default X-Api-Key
      * @example Authorization
      */
+   @Required
     @MCAttribute(attributeName = "name")
     public void setHeaderName(String headerName) {
         if(!headerName.isBlank()) this.headerName = new HeaderName(headerName);

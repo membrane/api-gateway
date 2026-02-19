@@ -64,9 +64,9 @@ public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
 
     /**
      * @description The query parameter name to check for an API key.
-     * @default api-key
      * @example api_key
      */
+    @Required
     @MCAttribute(attributeName = "name")
     public void setParamName(String paramName) {
         this.paramName = paramName;
