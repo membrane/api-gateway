@@ -47,10 +47,10 @@ public class NormalizeXMLForJsonUtil {
      *
      * @param o the XML input object to normalize, which could be a {@link NodeList},
      *          a single {@link Node}, or any other object
-     * @return a JSON-compatible string representation of the input object. If the input
-     * is a {@link NodeList}, it converts to a list of normalized node values.
-     * If it is a single {@link Node}, it converts to its normalized value.
-     * For other objects, they are returned as is.
+     * `@return` a JSON-compatible object. If the input is a {`@link` NodeList}, it converts
+     * to a list of normalized node values (or a single unwrapped value for single-item lists).
+     * If it is a single {`@link` Node}, it converts to its normalized value.
+     * For other objects, they are returned as-is.
      */
     public static Object normalizeForJson(Object o) {
         switch (o) {
@@ -80,7 +80,7 @@ public class NormalizeXMLForJsonUtil {
     }
 
     private static Object nodeToJsonValue(Node n) {
-        if (n == null) return "";
+        if (n == null) return null;
 
         var value = switch (n.getNodeType()) {
             case ELEMENT_NODE -> elementToJsonValue(n);

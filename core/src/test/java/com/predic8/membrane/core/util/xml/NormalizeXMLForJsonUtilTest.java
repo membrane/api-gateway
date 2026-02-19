@@ -41,7 +41,7 @@ class NormalizeXMLForJsonUtilTest {
                     </root>
                     """);
 
-            var norm = normalizeForJson(evaluateXPathForRootA(doc,"/root/a"));
+            var norm = normalizeForJson(evaluateXPath(doc,"/root/a"));
 
             assertTrue(norm instanceof List<?>);
             List<?> list = (List<?>) norm;
@@ -59,7 +59,7 @@ class NormalizeXMLForJsonUtilTest {
                     </root>
                     """);
 
-            var norm = normalizeForJson(evaluateXPathForRootA(doc,"/root/a"));
+            var norm = normalizeForJson(evaluateXPath(doc,"/root/a"));
 
             assertInstanceOf(Number.class, norm);
             assertEquals(1, ((Number) norm).intValue());
@@ -110,7 +110,7 @@ class NormalizeXMLForJsonUtilTest {
                     </root>
                     """);
 
-            var norm = normalizeForJson(evaluateXPathForRootA(doc,"/root/a"));
+            var norm = normalizeForJson(evaluateXPath(doc,"/root/a"));
 
             assertTrue(norm instanceof List<?>);
             List<?> list = (List<?>) norm;
@@ -128,11 +128,22 @@ class NormalizeXMLForJsonUtilTest {
                     </root>
                     """);
 
-            var norm = normalizeForJson(evaluateXPathForRootA(doc,"/root/a"));
+            var norm = normalizeForJson(evaluateXPath(doc,"/root/a"));
 
             var roundTrip = om.readValue(om.writeValueAsString(norm), Object.class);
             assertTrue(roundTrip instanceof List<?>);
             assertEquals(3, ((List<?>) roundTrip).size());
+        }
+
+        @Test
+        void emptyNodeList_isJsonSerializable() throws Exception {
+            var doc = parseXml("""
+                    <root>
+                      <a></a>
+                    </root>
+                    """);
+            var norm = normalizeForJson(evaluateXPath(doc,"/root/notThere"));
+            assertEquals(Collections.emptyList(), norm);
         }
 
         private Document parseXml(String xml) throws Exception {
@@ -142,7 +153,7 @@ class NormalizeXMLForJsonUtilTest {
         }
     }
 
-    private static Object evaluateXPathForRootA(Document doc, String xpath) throws XPathExpressionException {
+    private static Object evaluateXPath(Document doc, String xpath) throws XPathExpressionException {
         return XPathFactory.newInstance()
                 .newXPath()
                 .evaluate(xpath, doc, NODESET);

@@ -65,7 +65,7 @@ public class CommonBuiltInFunctions {
 
     public static String toJSON(Object o) {
         try {
-            if (o instanceof NodeList) {
+            if (o instanceof NodeList || o instanceof Node) {
                 o = normalizeForJson(o);
             }
             return objectMapper.writeValueAsString(o);
