@@ -119,7 +119,7 @@ class NormalizeXMLForJsonUtilTest {
 
             var norm = normalizeForJson(evaluateXPath(doc, "/root/a"));
 
-            assertInstanceOf(List<?>.class, norm);
+            assertTrue(norm instanceof List<?>);
             List<?> list = (List<?>) norm;
 
             assertEquals(List.of("foo", "bar"), list);
@@ -138,7 +138,7 @@ class NormalizeXMLForJsonUtilTest {
             var norm = normalizeForJson(evaluateXPath(doc, "/root/a"));
 
             var roundTrip = om.readValue(om.writeValueAsString(norm), Object.class);
-            assertInstanceOf(List<?>.class, roundTrip);
+            assertTrue(roundTrip instanceof List<?>);
             assertEquals(3, ((List<?>) roundTrip).size());
         }
 
