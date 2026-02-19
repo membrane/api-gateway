@@ -41,10 +41,8 @@ apiKey:
 # now 
 apiKey:
   extractors:
-    - header:
-        name: X-API-KEY
-    - query:
-        name: api-key
+    - header: X-API-KEY
+    - query: api-key
 ```
 
 ## fileUserDataProvider
