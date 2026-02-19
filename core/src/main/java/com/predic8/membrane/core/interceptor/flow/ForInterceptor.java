@@ -39,7 +39,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
  * @yaml <pre><code>
  * for:
  *   in: message.headers['items']
- *   language: jsonpath
+ *   language: SpEL
  *   flow:
  *     - log: {} # nested plugins here
  * </code></pre>

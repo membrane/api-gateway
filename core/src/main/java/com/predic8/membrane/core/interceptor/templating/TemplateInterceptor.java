@@ -63,7 +63,7 @@ import static java.nio.charset.StandardCharsets.*;
  *               }
  *     - response:
  *         - template:
- *             src: template.xml
+ *             location: template.xml
  *     - return: {}
  * </code></pre>
  * @topic 2. Enterprise Integration Patterns

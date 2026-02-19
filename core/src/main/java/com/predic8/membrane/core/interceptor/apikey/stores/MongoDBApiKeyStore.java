@@ -31,11 +31,12 @@ import static com.mongodb.client.model.Filters.*;
  * <p>
  * Example MongoDB document:
  * </p>
- *
+ * <pre><code>
  * {
  *   "_id": "123456",
  *   "scopes": ["read", "write"]
  * }
+ * </code></pre>
  *
  * @yaml <pre><code>
  * apiKey:
