@@ -45,6 +45,7 @@ import static com.predic8.membrane.annot.yaml.YamlParsingUtils.*;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.List.of;
+import static java.util.Locale.ROOT;
 import static java.util.UUID.randomUUID;
 
 public class GenericYamlParser {
@@ -420,9 +421,43 @@ public class GenericYamlParser {
 
     private static Object parseInlineListItem(ParsingContext<?> ctx, JsonNode node, Class<?> elemType) {
         if (elemType == null) throw new ConfigurationParsingException("Inline list item form requires a typed list element.");
+        if (isScalarElementType(elemType)) {
+            if (node.isObject() || node.isArray()) {
+                throw new ConfigurationParsingException(
+                        "Scalar list item expected for list of %s, but got %s."
+                                .formatted(elemType.getSimpleName(), node.getNodeType()));
+            }
+            return coerceScalarListItem(node, elemType);
+        }
         if (elemType.isInterface() || isAbstract(elemType.getModifiers()))
             throw new ConfigurationParsingException("Inline list item form requires a concrete element type, but found: %s.".formatted(elemType.getName()));
         return createAndPopulateNode(ctx.updateContext(getElementName(elemType)), elemType, node);
     }
 
+    private static boolean isScalarElementType(Class<?> t) {
+        return t == String.class
+                || t == Boolean.class
+                || t == Character.class
+                || Number.class.isAssignableFrom(t)
+                || t.isEnum();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object coerceScalarListItem(JsonNode node, Class<?> elemType) {
+        if (elemType == String.class)
+            return node.isTextual() ? resolveSpelValue(node.asText(), String.class) : node.asText();
+        if (elemType.isEnum()) {
+            String raw = node.asText();
+            try {
+                return Enum.valueOf((Class<? extends Enum>) elemType, raw);
+            } catch (IllegalArgumentException ignored) {}
+            try {
+                return Enum.valueOf((Class<? extends Enum>) elemType, raw.toUpperCase(ROOT));
+            } catch (IllegalArgumentException e) {
+                throw new ConfigurationParsingException(
+                        "Invalid value '%s' for enum type %s.".formatted(raw, elemType.getSimpleName()));
+            }
+        }
+        return convertScalarOrSpel(node, elemType);
+    }
 }
