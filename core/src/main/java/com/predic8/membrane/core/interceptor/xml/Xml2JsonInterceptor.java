@@ -14,22 +14,33 @@
 
 package com.predic8.membrane.core.interceptor.xml;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.xml.*;
-import org.json.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.xml.XMLEncodingUtil;
+import org.json.XML;
+import org.json.XMLParserConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.json.XMLParserConfiguration.ORIGINAL;
 
 /**
  * @description Converts an XML message body to JSON.
@@ -69,6 +80,17 @@ import static java.nio.charset.StandardCharsets.*;
 public class Xml2JsonInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(Xml2JsonInterceptor.class);
+
+    private boolean keepString = false;
+    private boolean convertNilAttributeToNull = true;
+    private final List<String> forceList = new ArrayList<>();
+    private volatile XMLParserConfiguration xmlParserConfig;
+
+    @Override
+    public void init() {
+        xmlParserConfig = buildParserConfig();
+        super.init();
+    }
 
     @Override
     public String getShortDescription() {
@@ -115,7 +137,7 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
 
     private byte[] xml2json(String xml) {
         // In org.json.XML the encoding is skipped, so xml encoding is always ignored: x.skipPast("?>");
-        return XML.toJSONObject(xml).toString().getBytes(UTF_8);
+        return XML.toJSONObject(xml, xmlParserConfig).toString().getBytes(UTF_8);
     }
 
     private void handleException(Exchange exc, Flow flow, Exception e, String msg) {
@@ -132,8 +154,61 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
                 .buildAndSetResponse(exc);
     }
 
+    private XMLParserConfiguration buildParserConfig() {
+        XMLParserConfiguration cfg = ORIGINAL
+                .withKeepStrings(keepString)
+                .withConvertNilAttributeToNull(convertNilAttributeToNull);
+
+        if (!forceList.isEmpty())
+            cfg = cfg.withForceList(new HashSet<>(forceList));
+
+        return cfg;
+    }
+
     @Override
     public String getDisplayName() {
         return "xml 2 json";
+    }
+
+
+    public boolean isKeepString() {
+        return keepString;
+    }
+
+    /**
+     * @description
+     * If true, keeps element text values as Strings instead of trying to coerce them
+     * into Number/Boolean types during XML-to-JSON conversion.
+     */
+    @MCAttribute
+    public void setKeepString(boolean keepString) {
+        this.keepString = keepString;
+    }
+
+    public boolean isConvertNilAttributeToNull() {
+        return convertNilAttributeToNull;
+    }
+
+    /**
+     * @description
+     * If true, converts xsi:nil="true" on elements into JSON null values.
+     */
+    @MCAttribute
+    public void setConvertNilAttributeToNull(boolean convertNilAttributeToNull) {
+        this.convertNilAttributeToNull = convertNilAttributeToNull;
+    }
+
+    public List<String> getForceList() {
+        return forceList;
+    }
+
+    /**
+     * @description
+     * Forces the specified element names to be represented as JSON arrays even if they occur only once.
+     * @example ["customer", "product"]
+     */
+    @MCChildElement(allowForeign = true)
+    public void setForceList(List<String> forceList) {
+        this.forceList.addAll(forceList);
     }
 }
