@@ -20,11 +20,12 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.security.*;
 import org.junit.jupiter.api.*;
 import org.w3c.dom.*;
-import org.xml.sax.InputSource;
+import org.xml.sax.*;
 
 import javax.xml.parsers.*;
-import java.net.*;
+import javax.xml.xpath.*;
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
@@ -32,8 +33,8 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.CommonBuiltInFunctions.*;
 import static com.predic8.membrane.core.security.ApiKeySecurityScheme.In.*;
-import static javax.xml.xpath.XPathConstants.*;
 import static java.util.List.*;
+import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class CommonBuiltInFunctionsTest {
@@ -231,7 +232,7 @@ class CommonBuiltInFunctionsTest {
             assertEquals("1", toJSON(1));
         }
 
-                @Test
+        @Test
         void bool() {
             assertEquals("true", toJSON(true));
         }
