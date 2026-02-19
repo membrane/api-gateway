@@ -81,10 +81,9 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(Xml2JsonInterceptor.class);
 
-    // TODO defaults?
-    private boolean keepString = true;
+    private boolean keepString = false;
     private boolean convertNilAttributeToNull = true;
-    private List<String>  forceList = new ArrayList<>();
+    private final List<String> forceList = new ArrayList<>();
     private volatile XMLParserConfiguration xmlParserConfig;
 
     @Override
