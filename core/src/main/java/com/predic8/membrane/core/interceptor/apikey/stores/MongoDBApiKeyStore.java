@@ -31,21 +31,20 @@ import static com.mongodb.client.model.Filters.*;
  * <p>
  * Example MongoDB document:
  * </p>
- * <pre>
+ *
  * {
  *   "_id": "123456",
  *   "scopes": ["read", "write"]
  * }
- * </pre>
- * <p>
- * Configuration example:
- * </p>
- * <pre><code><apiKey>
- *   <mongoDBApiKeyStore
- *       connection="mongodb://localhost:27017"
- *       database="security"
- *       collection="apikeys"/>
- * </apiKey></code></pre>
+ *
+ * @yaml <pre><code>
+ * apiKey:
+ *   stores:
+ *     - mongoDBApiKeyStore:
+ *         connection: mongodb://localhost:27017
+ *         database: security
+ *         collection: apikeys
+ * </code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "mongoDBApiKeyStore")

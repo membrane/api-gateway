@@ -36,10 +36,13 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
  * its nested interceptors for each element. The current element is exposed
  * in the exchange under the property key <code>"it"</code>.
  *
- * Example configuration:
- * <pre><code><for in="message.headers['items']" language="jsonpath">
- * <!-- nested interceptors here -->
- * </for></code></pre>
+ * @yaml <pre><code>
+ * for:
+ *   in: message.headers['items']
+ *   language: jsonpath
+ *   flow:
+ *     - log: {} # nested plugins here
+ * </code></pre>
  *
  * @topic 1. Proxies and Flow
  */
