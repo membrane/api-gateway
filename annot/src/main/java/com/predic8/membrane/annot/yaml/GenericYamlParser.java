@@ -45,6 +45,7 @@ import static com.predic8.membrane.annot.yaml.YamlParsingUtils.*;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.List.of;
+import static java.util.Locale.ROOT;
 import static java.util.UUID.randomUUID;
 
 public class GenericYamlParser {
@@ -443,9 +444,20 @@ public class GenericYamlParser {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static Object coerceScalarListItem(JsonNode node, Class<?> elemType) {
-        if (elemType == String.class) return node.isTextual() ? resolveSpelValue(node.asText(), String.class) : node.asText();
-        if (elemType.isEnum()) return Enum.valueOf((Class<? extends Enum>) elemType, node.asText().toUpperCase(java.util.Locale.ROOT));
+        if (elemType == String.class)
+            return node.isTextual() ? resolveSpelValue(node.asText(), String.class) : node.asText();
+        if (elemType.isEnum()) {
+            String raw = node.asText();
+            try {
+                return Enum.valueOf((Class<? extends Enum>) elemType, raw);
+            } catch (IllegalArgumentException ignored) {}
+            try {
+                return Enum.valueOf((Class<? extends Enum>) elemType, raw.toUpperCase(ROOT));
+            } catch (IllegalArgumentException e) {
+                throw new ConfigurationParsingException(
+                        "Invalid value '%s' for enum type %s.".formatted(raw, elemType.getSimpleName()));
+            }
+        }
         return convertScalarOrSpel(node, elemType);
     }
-
 }
