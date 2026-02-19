@@ -11,12 +11,19 @@ import java.util.*;
 
 import static com.predic8.membrane.core.util.xml.NormalizeXMLForJsonUtil.*;
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Collections.emptyList;
 import static javax.xml.xpath.XPathConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NormalizeXMLForJsonUtilTest {
 
     private static final ObjectMapper om = new ObjectMapper();
+
+    private static Object evaluateXPath(Document doc, String xpath) throws XPathExpressionException {
+        return XPathFactory.newInstance()
+                .newXPath()
+                .evaluate(xpath, doc, NODESET);
+    }
 
     @Nested
     class normalizeForJson_ {
@@ -41,7 +48,7 @@ class NormalizeXMLForJsonUtilTest {
                     </root>
                     """);
 
-            var norm = normalizeForJson(evaluateXPath(doc,"/root/a"));
+            var norm = normalizeForJson(evaluateXPath(doc, "/root/a"));
 
             assertTrue(norm instanceof List<?>);
             List<?> list = (List<?>) norm;
@@ -59,7 +66,7 @@ class NormalizeXMLForJsonUtilTest {
                     </root>
                     """);
 
-            var norm = normalizeForJson(evaluateXPath(doc,"/root/a"));
+            var norm = normalizeForJson(evaluateXPath(doc, "/root/a"));
 
             assertInstanceOf(Number.class, norm);
             assertEquals(1, ((Number) norm).intValue());
@@ -79,7 +86,7 @@ class NormalizeXMLForJsonUtilTest {
 
             var norm = normalizeForJson(node);
 
-            assertTrue(norm instanceof Number);
+            assertInstanceOf(Number.class, norm);
             // numberValue() may yield Double for 1.0
             assertEquals(1.0d, ((Number) norm).doubleValue(), 0.0d);
         }
@@ -110,9 +117,9 @@ class NormalizeXMLForJsonUtilTest {
                     </root>
                     """);
 
-            var norm = normalizeForJson(evaluateXPath(doc,"/root/a"));
+            var norm = normalizeForJson(evaluateXPath(doc, "/root/a"));
 
-            assertTrue(norm instanceof List<?>);
+            assertInstanceOf(List<?>.class, norm);
             List<?> list = (List<?>) norm;
 
             assertEquals(List.of("foo", "bar"), list);
@@ -128,10 +135,10 @@ class NormalizeXMLForJsonUtilTest {
                     </root>
                     """);
 
-            var norm = normalizeForJson(evaluateXPath(doc,"/root/a"));
+            var norm = normalizeForJson(evaluateXPath(doc, "/root/a"));
 
             var roundTrip = om.readValue(om.writeValueAsString(norm), Object.class);
-            assertTrue(roundTrip instanceof List<?>);
+            assertInstanceOf(List<?>.class, roundTrip);
             assertEquals(3, ((List<?>) roundTrip).size());
         }
 
@@ -142,8 +149,11 @@ class NormalizeXMLForJsonUtilTest {
                       <a></a>
                     </root>
                     """);
-            var norm = normalizeForJson(evaluateXPath(doc,"/root/notThere"));
-            assertEquals(Collections.emptyList(), norm);
+            var norm = normalizeForJson(evaluateXPath(doc, "/root/notThere"));
+            assertEquals(emptyList(), norm);
+            // verify it survives a Jackson round-trip
+            var roundTrip = om.readValue(om.writeValueAsString(norm), Object.class);
+            assertEquals(emptyList(), roundTrip);
         }
 
         private Document parseXml(String xml) throws Exception {
@@ -151,11 +161,5 @@ class NormalizeXMLForJsonUtilTest {
             dbf.setNamespaceAware(true);
             return dbf.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(UTF_8)));
         }
-    }
-
-    private static Object evaluateXPath(Document doc, String xpath) throws XPathExpressionException {
-        return XPathFactory.newInstance()
-                .newXPath()
-                .evaluate(xpath, doc, NODESET);
     }
 }

@@ -84,7 +84,7 @@ public class NormalizeXMLForJsonUtil {
 
         var value = switch (n.getNodeType()) {
             case ELEMENT_NODE -> elementToJsonValue(n);
-            case ATTRIBUTE_NODE, TEXT_NODE, CDATA_SECTION_NODE -> n.getNodeValue().trim();
+            case ATTRIBUTE_NODE, TEXT_NODE, CDATA_SECTION_NODE -> n.getNodeValue() != null ? n.getNodeValue().trim() : "";
             default -> n.getTextContent();
         };
         var number = parseJsonNumber(value);
@@ -105,7 +105,7 @@ public class NormalizeXMLForJsonUtil {
         if (!(o instanceof String s)) return null;
         try {
             var n = om.readTree(s);
-            if (!n.isNumber())
+            if (n == null || !n.isNumber())
                 return null;
             return n.numberValue();   // returns Integer, Long, Double, BigDecimal, etc.
         } catch (Exception e) {
