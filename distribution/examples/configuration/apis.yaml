@@ -22,7 +22,6 @@ configuration:
   uriFactory:
     # Allow non-RFC-compliant characters like {, } in URIs
     # Attention: This may lead to security vulnerabilities! Use with care!
-    # - ${expression} in the URI will be evaluated
     allowIllegalCharacters: true
     autoEscapeBackslashes: true # Escape backslashes in incoming URIs (\\ -> %5C)
 ---

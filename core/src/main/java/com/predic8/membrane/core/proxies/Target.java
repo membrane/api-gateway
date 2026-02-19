@@ -24,7 +24,6 @@ import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.text.*;
-import com.predic8.membrane.core.util.uri.*;
 import com.predic8.membrane.core.util.uri.EscapingUtil.*;
 import org.slf4j.*;
 
@@ -64,9 +63,9 @@ public class Target implements XMLSupport {
     private Function<String, String> escapingFunction;
 
     /**
-     * If exchangeExpressions should be evaluated.
+     * If url contains template marker ${}, if not expression evaluation is skipped
      */
-    private boolean evaluateExpressions = false;
+    private boolean urlIsTemplate = false;
 
     private boolean adjustHostHeader = true;
 
@@ -75,7 +74,8 @@ public class Target implements XMLSupport {
 
     private InterceptorAdapter adapter;
 
-    public Target() {}
+    public Target() {
+    }
 
     public Target(String host) {
         setHost(host);
@@ -91,21 +91,24 @@ public class Target implements XMLSupport {
         if (!containsTemplateMarker(url))
             return;
 
-         adapter = new InterceptorAdapter(router, xmlConfig);
+        adapter = new InterceptorAdapter(router, xmlConfig);
 
         if (router.getConfiguration().getUriFactory().isAllowIllegalCharacters()) {
             log.warn("{}Url templates are disabled for security.{} Disable configuration/uriFactory/allowIllegalCharacters to enable them. Illegal characters in templates may lead to injection attacks.", TerminalColors.BRIGHT_RED(), RESET());
             throw new ConfigurationException("""
-                URL Templating and Illegal URL Characters
-                
-                Url templating expressions and enablement of illegal characters in URLs are mutually exclusive. Either disable
-                illegal characters in the configuration (configuration/uriFactory/allowIllegalCharacters) or remove the
-                templating expression %s from the target URL.
-                """.formatted(url));
-        } else {
-            evaluateExpressions = true;
-            escapingFunction = getEscapingFunction(escaping);
+                    URL Templating and Illegal URL Characters
+                    
+                    Url templating expressions and enablement of illegal characters in URLs are mutually exclusive. Either disable
+                    illegal characters in the configuration (configuration/uriFactory/allowIllegalCharacters) or remove the
+                    templating expression %s from the target URL.
+                    """.formatted(url));
         }
+
+        // If there is no template marker ${ than do not try to evaluate url as expression
+        if(containsTemplateMarker(url)) {
+            urlIsTemplate = true;
+        }
+        escapingFunction = getEscapingFunction(escaping);
     }
 
     public void applyModifications(Exchange exc, Router router) {
@@ -124,13 +127,8 @@ public class Target implements XMLSupport {
 
     private String evaluateTemplate(Exchange exc, Router router, String url, InterceptorAdapter adapter) {
         // Only evaluate if the target url contains a template marker ${}
-        if (!evaluateExpressions)
+        if (!urlIsTemplate)
             return url;
-
-        // If the url does not contain ${ we do not have to evaluate the expression
-        if (!containsTemplateMarker(url)) {
-            return url;
-        }
 
         // Without caching 1_000_000 => 37s with ConcurrentHashMap as Cache => 34s
         // Cache is probably not worth the effort and complexity
@@ -145,8 +143,8 @@ public class Target implements XMLSupport {
         return host;
     }
 
-    public boolean isEvaluateExpressions() {
-        return evaluateExpressions;
+    public boolean isUrlIsTemplate() {
+        return urlIsTemplate;
     }
 
     /**
