@@ -43,7 +43,7 @@ import java.util.*;
  *     keystoreLocation: classpath:client.jks
  *     keystorePassword: secret
  * </code></pre>
- * @topic 4. Transports and Clients
+ * @topic 7. Transports and Clients
  */
 @MCElement(name = "httpClientConfig")
 public class HttpClientConfiguration implements ApplicationContextAware {
