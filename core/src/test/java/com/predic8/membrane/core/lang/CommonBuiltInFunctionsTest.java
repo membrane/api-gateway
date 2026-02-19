@@ -99,12 +99,12 @@ class CommonBuiltInFunctionsTest {
                 """);
 
         Object nodes = xpath("//fruit", document, null);
-        assertTrue(nodes instanceof NodeList);
+        assertInstanceOf(NodeList.class, nodes);
         assertEquals(2, ((NodeList) nodes).getLength());
 
-        Node firstFruit = ((NodeList) nodes).item(0);
+        var firstFruit = ((NodeList) nodes).item(0);
         Object nameNode = xpath("./name", firstFruit, null);
-        assertTrue(nameNode instanceof Node);
+        assertInstanceOf(Node.class, nameNode);
         assertEquals("name", ((Node) nameNode).getNodeName());
 
         assertEquals("Apricot", xpath("string(./name)", firstFruit, null));
