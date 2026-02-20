@@ -51,22 +51,6 @@ import static com.predic8.membrane.core.util.UrlNormalizer.*;
  *   <li>Content-Type (with certain MIME type restrictions)</li>
  * </ul>
  *
- * <h3>Configuration Examples</h3>
- *
- * <p><strong>Basic Configuration (Allow all origins):</strong></p>
- * <pre><code><cors />
- * </code></pre>
- *
- * <p><strong>Restrictive Configuration:</strong></p>
- * <pre><code><cors origins="https://example.com https://app.example.com" methods="GET,POST,PUT"
- *   headers="Authorization,X-Custom-Header"
- *   credentials="true"
- *   maxAge="3600" /></code></pre>
- *
- * <p><strong>Permissive Configuration:</strong></p>
- * <pre><code><cors allowAll="true" />
- * </code></pre>
- *
  * <h3>Security Considerations</h3>
  * <ul>
  *   <li>When <code>credentials="true"</code>, wildcard origins (*) are forbidden for security reasons</li>
@@ -79,6 +63,21 @@ import static com.predic8.membrane.core.util.UrlNormalizer.*;
  *
  * <p>see: <a href="https://www.membrane-api.io/cors-api-gateway.html">CORS Guide for API Developers</a></p>
  * <p>see: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">MDN CORS Documentation</a></p>
+ *
+ * @yaml <pre><code>
+ * # Basic Configuration (Allow all origins)
+ * - cors: {}
+ * # Restrictive Configuration
+ * - cors:
+ *     origins: https://example.com https://app.example.com
+ *     methods: GET, POST, PUT
+ *     headers: Authorization, X-Custom-Header
+ *     credentials: true
+ *     maxAge: 3600
+ * # Permissive Configuration
+ * - cors:
+ *     allowAll: true
+ * </code></pre>
  *
  * @author predic8 GmbH
  * @topic 3. Security and Validation

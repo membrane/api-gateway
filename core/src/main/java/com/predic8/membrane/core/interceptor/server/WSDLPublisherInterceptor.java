@@ -50,7 +50,7 @@ import static com.predic8.membrane.core.resolver.ResolverMap.*;
  *   target:
  *     url: https://api.predic8.de
  * </code></pre>
- * @topic 5. Web Services with SOAP and WSDL
+ * @topic 6. Web Services with SOAP and WSDL
  */
 @MCElement(name = "wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {

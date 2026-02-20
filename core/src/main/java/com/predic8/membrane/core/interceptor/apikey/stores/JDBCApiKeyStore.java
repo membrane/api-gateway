@@ -34,15 +34,15 @@ import java.util.*;
  * By default, the store will attempt to create the required tables at startup if they do not exist
  * (controlled by <code>autoCreate</code>).
  * </p>
- * <p>
- * Example configuration:
- * </p>
- * <pre><code><apiKey>
- *   <databaseApiKeyStore autoCreate="true">
- *     <keyTable name="api_keys"/>
- *     <scopeTable name="api_scopes"/>
- *   </databaseApiKeyStore>
- * </apiKey></code></pre>
+ * @yaml <pre><code>
+ * apiKey:
+ *   stores:
+ *     - databaseApiKeyStore:
+ *         datasource: datasource
+ *         autoCreate: true
+ *         keyTable: api_keys
+ *         scopeTable: api_scopes
+ * </code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "databaseApiKeyStore")

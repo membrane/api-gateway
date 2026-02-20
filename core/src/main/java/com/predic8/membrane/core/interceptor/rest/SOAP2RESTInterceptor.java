@@ -29,7 +29,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 /**
  * @description Converts SOAP messages into REST requests.
- * @topic 5. Web Services with SOAP and WSDL
+ * @topic 6. Web Services with SOAP and WSDL
  */
 @MCElement(name="soap2Rest")
 public class SOAP2RESTInterceptor extends SOAPRESTHelper {

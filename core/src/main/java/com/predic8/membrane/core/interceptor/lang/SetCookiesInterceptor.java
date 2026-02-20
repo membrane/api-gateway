@@ -41,7 +41,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  *             - name: SESSION
  *               value: akj34
  * </code></pre>
- * @topic 6. Misc
+ * @topic 9. Misc
  */
 @MCElement(name = "setCookies", noEnvelope = true)
 public class SetCookiesInterceptor extends AbstractInterceptor {

@@ -36,9 +36,15 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
  * @description <p>
  * if allows conditional execution of nested interceptors.
  * </p>
- * <pre><code><if test="method == 'POST'" language="SpEL">
- *         ...
- * </if></code></pre>
+ * @yaml <pre><code>
+ * if:
+ *   test: method == 'POST'
+ *   language: SpEL
+ *   flow:
+ *     - log: {} # nested plugins here
+ *   else:
+ *     - return: {}
+ * </code></pre>
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "if")

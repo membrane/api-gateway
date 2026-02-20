@@ -37,7 +37,7 @@ import static java.util.Locale.US;
  * @description <p>
  * Rewrites or redirects the path of incoming requests based on a mapping.
  * </p>
- * @topic 6. Misc
+ * @topic 9. Misc
  */
 @MCElement(name = "rewriter", noEnvelope = true, component = false)
 public class RewriteInterceptor extends AbstractInterceptor {
