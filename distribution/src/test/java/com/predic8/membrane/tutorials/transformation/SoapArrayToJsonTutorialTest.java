@@ -37,6 +37,7 @@ public class SoapArrayToJsonTutorialTest extends AbstractTransformationTutorialT
         .when()
             .post("http://localhost:2000")
         .then()
+            .log().ifValidationFails()
             .statusCode(200)
             .contentType("application/json")
             .body("fruits", hasSize(3))
