@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
+import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.router.*;
@@ -21,7 +22,11 @@ import org.junit.jupiter.api.*;
 
 import java.net.*;
 
-import static com.predic8.membrane.core.http.Response.notImplemented;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
+import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -37,7 +42,7 @@ class SetBodyInterceptorTest {
     void setup() throws URISyntaxException {
         sbi = new SetBodyInterceptor();
 
-        exc = Request.get("/foo").buildExchange();
+        exc = get("/foo").buildExchange();
         exc.setResponse(notImplemented().body("bar").build());
     }
 
@@ -57,7 +62,39 @@ class SetBodyInterceptorTest {
         assertEquals("/foo", exc.getRequest().getBodyAsStringDecoded());
     }
 
-        @Test
+    @Test
+    void escapeNull() {
+        exc.getRequest().setBodyContent("""
+                {"a":null}
+                """.getBytes(UTF_8));
+        sbi.setLanguage(JSONPATH);
+        sbi.setValue("${$.a}");
+        sbi.init(new DefaultRouter());
+        sbi.handleRequest(exc);
+        // When inserting a value from JSONPath into a JSON document like:
+        // { "a": ${.a} }
+        // Inserting an empty string will break the JSON
+        // Different from Groovy: See below
+        // See: https://github.com/membrane/api-gateway/discussions/2812
+        assertEquals("", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void escapeNulGroovy() {
+        exc.getRequest().setBodyContent("""
+                {"a":null}
+                """.getBytes(UTF_8));
+        sbi.setLanguage(GROOVY);
+        sbi.setContentType(APPLICATION_JSON_UTF8);
+        sbi.setValue("${fn.jsonPath('$.a')}");
+        sbi.init(new DefaultRouter());
+        sbi.handleRequest(exc);
+        // See also test above
+        // Here JSON is not broken. But is it right?
+        assertEquals("\"\"", exc.getRequest().getBodyAsStringDecoded());
+    }
+
+    @Test
     void response() {
         sbi.setValue("SC: ${statusCode}");
         sbi.init(new DefaultRouter());
