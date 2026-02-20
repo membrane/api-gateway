@@ -26,13 +26,12 @@ api:
             name: SOAPAction
             value: https://predic8.de/cities/get
     - response:
-        - setBody:
-            language: xpath
+        - template:
             contentType: application/json
-            value: |
+            src: |
               {
-                "country": "${//country}",
-                "population": ${//population}
+                "country": ${xpath('//country')},
+                "population": ${xpath('//population')}
               }
   target:
     # Change method to POST
