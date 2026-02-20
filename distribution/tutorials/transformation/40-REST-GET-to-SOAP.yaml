@@ -31,7 +31,7 @@ api:
             contentType: application/json
             value: |
               {
-                "country": "${//country}",
+                "country": ${//country},
                 "population": ${//population}
               }
   target:

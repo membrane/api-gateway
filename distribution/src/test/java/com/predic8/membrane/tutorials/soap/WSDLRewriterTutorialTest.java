@@ -59,6 +59,7 @@ public class WSDLRewriterTutorialTest extends AbstractSOAPTutorialTest {
         .when()
             .post("http://localhost:%d/my-service".formatted(getPort()))
         .then()
+            .log().ifValidationFails()
             .body("Envelope.Body.getCityResponse.population", equalTo("34665600"));
          // @formatter:on
     }

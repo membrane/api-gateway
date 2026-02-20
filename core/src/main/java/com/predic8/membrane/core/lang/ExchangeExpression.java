@@ -23,6 +23,7 @@ import com.predic8.membrane.core.lang.jsonpath.*;
 import com.predic8.membrane.core.lang.spel.*;
 import com.predic8.membrane.core.lang.xpath.*;
 import com.predic8.membrane.core.router.*;
+import org.jetbrains.annotations.*;
 
 /**
  * Language expression that takes an exchange as input
@@ -59,13 +60,16 @@ public interface ExchangeExpression {
      * @return
      */
     static ExchangeExpression expression(Interceptor interceptor, Language language, String expression) {
-        var router = interceptor != null ? interceptor.getRouter() : null;
         return switch (language) {
-            case GROOVY -> new GroovyExchangeExpression(expression, router);
-            case SPEL -> new SpELExchangeExpression(expression,null, router); // parserContext is null on purpose ${} or #{} are not needed here
-            case XPATH -> new XPathExchangeExpression(interceptor,expression, router);
-            case JSONPATH -> new JsonpathExchangeExpression(expression, router);
+            case GROOVY -> new GroovyExchangeExpression(expression, getRouter(interceptor));
+            case SPEL -> new SpELExchangeExpression(expression,null, getRouter(interceptor)); // parserContext is null on purpose ${} or #{} are not needed here
+            case XPATH -> new XPathExchangeExpression(interceptor,expression, getRouter(interceptor));
+            case JSONPATH -> new JsonpathExchangeExpression(expression, getRouter(interceptor));
         };
+    }
+
+    private static @Nullable Router getRouter(Interceptor interceptor) {
+        return interceptor != null ? interceptor.getRouter() : null;
     }
 
     /**
