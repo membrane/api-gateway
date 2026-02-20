@@ -111,6 +111,14 @@ public class SpELBuiltInFunctions {
         return CommonBuiltInFunctions.env(s);
     }
 
+    public String urlEncode(String s, SpELExchangeEvaluationContext ignored) {
+        return CommonBuiltInFunctions.urlEncode(s);
+    }
+
+    public String pathEncode(String segment, SpELExchangeEvaluationContext ignored) {
+        return CommonBuiltInFunctions.pathEncode(segment);
+    }
+
     public static List<String> getBuiltInFunctionNames() {
         return Arrays.stream(SpELBuiltInFunctions.class.getDeclaredMethods())
                 .filter(m -> isPublic(m.getModifiers()))
@@ -127,8 +135,8 @@ public class SpELBuiltInFunctions {
     }
 
     private XmlConfig getXmlConfig(Router router) {
-         if (router == null || router.getRegistry() == null)
-             return null;
-         return router.getRegistry().getBean(XmlConfig.class).orElse(null);
+        if (router == null || router.getRegistry() == null)
+            return null;
+        return router.getRegistry().getBean(XmlConfig.class).orElse(null);
     }
 }

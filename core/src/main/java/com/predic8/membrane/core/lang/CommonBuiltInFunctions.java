@@ -22,20 +22,24 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.security.*;
+import com.predic8.membrane.core.util.uri.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.slf4j.Logger;
+import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.util.xml.NormalizeXMLForJsonUtil.normalizeForJson;
 import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
@@ -63,6 +67,9 @@ public class CommonBuiltInFunctions {
 
     public static String toJSON(Object o) {
         try {
+            if (o instanceof NodeList || o instanceof Node) {
+                o = normalizeForJson(o);
+            }
             return objectMapper.writeValueAsString(o);
         } catch (Exception e) {
             log.info("Failed to convert object to JSON", e);
@@ -253,4 +260,21 @@ public class CommonBuiltInFunctions {
         return getenv(name);
     }
 
+    public static String urlEncode(String s) {
+        if (s == null) return "";
+        return URLEncoder.encode(s, UTF_8);
+    }
+
+    /**
+     * Encodes the given string value as a URI-safe path segment.
+     * This method performs percent-encoding according to RFC 3986, ensuring that the encoded string
+     * is safe to use as a single path segment in URIs. Characters outside the unreserved set
+     * {@code A-Z, a-z, 0-9, -, ., _, ~} are encoded as {@code %HH} sequences.
+     *
+     * @param segment the string value to encode
+     * @return a percent-encoded string safe for use as a single URI path segment
+     */
+    public static String pathEncode(String segment) {
+        return EscapingUtil.pathEncode(segment);
+    }
 }

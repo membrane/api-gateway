@@ -33,13 +33,11 @@ import static java.util.Optional.*;
  * @yaml <pre><code>
  * - apiKey:
  *     extractors:
- *       - query: {} # default: api-key
- *       - query:
- *           name: auth # custom query param name
+ *       - query: apikey # custom query param name
  * </code></pre>
  * @topic 3. Security and Validation
  */
-@MCElement(name = "query", id="queryParamExtractor", component = false)
+@MCElement(name = "query", id="queryParamExtractor", component = false, collapsed = true)
 public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
 
     private static final Logger log = LoggerFactory.getLogger(ApiKeyQueryParamExtractor.class);
@@ -66,9 +64,9 @@ public class ApiKeyQueryParamExtractor implements ApiKeyExtractor{
 
     /**
      * @description The query parameter name to check for an API key.
-     * @default api-key
      * @example api_key
      */
+    @Required
     @MCAttribute(attributeName = "name")
     public void setParamName(String paramName) {
         this.paramName = paramName;

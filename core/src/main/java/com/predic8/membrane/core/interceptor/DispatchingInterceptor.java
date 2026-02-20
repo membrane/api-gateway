@@ -26,10 +26,10 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.URIFactory.*;
 
 /**
  * @description This interceptor adds the destination specified in the target
@@ -44,7 +44,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 @MCElement(name = "dispatching", excludeFromFlow = true)
 public class DispatchingInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class);
 
     public DispatchingInterceptor() {
         name = "dispatching interceptor";
@@ -56,11 +56,14 @@ public class DispatchingInterceptor extends AbstractInterceptor {
             exc.getDestinations().clear();
             try {
                 exc.getDestinations().add(getForwardingDestination(exc));
+            } catch (IllegalArgumentException e) {
+                createInvalidCharacterProblemDetails(exc)
+                        .detail(e.getMessage())
+                        .buildAndSetResponse(exc);
+                return ABORT;
             } catch (URISyntaxException e) {
-                var pd = user(getRouter().getConfiguration().isProduction(), "invalid-path")
-                        .title("Request path contains an invalid character.")
+                var pd = createInvalidCharacterProblemDetails(exc)
                         .detail(getMessageForURISyntaxException(exc, e))
-                        .internal("path", exc.getRequest().getUri())
                         .internal("destination", e.getInput());
                 if (e.getIndex() >= 0)
                     pd.internal("index", e.getIndex());
@@ -78,6 +81,12 @@ public class DispatchingInterceptor extends AbstractInterceptor {
         }
         exc.getDestinations().add(exc.getRequest().getUri());
         return CONTINUE;
+    }
+
+    private ProblemDetails createInvalidCharacterProblemDetails(Exchange exc) {
+        return user(getRouter().getConfiguration().isProduction(), "invalid-path")
+            .title("Request path contains an invalid character.")
+             .internal("path", exc.getRequest().getUri());
     }
 
     private static @NotNull String getMessageForURISyntaxException(Exchange exc, URISyntaxException e) {
@@ -106,22 +115,23 @@ public class DispatchingInterceptor extends AbstractInterceptor {
     }
 
     protected String getAddressFromTargetElement(Exchange exc) throws MalformedURLException, URISyntaxException {
-        AbstractServiceProxy p = (AbstractServiceProxy) exc.getProxy();
+        if (!(exc.getProxy() instanceof AbstractServiceProxy asp))
+            return null;
 
-        if (p.getTargetURL() != null) {
-            String targetURL = p.getTarget().compileUrl(exc, REQUEST);
+        if (asp.getTargetURL() != null) {
+            var targetURL = asp.getTargetURL();
             if (targetURL.startsWith("http") || targetURL.startsWith("internal")) {
-                String basePath = UriUtil.getPathFromURL(router.getConfiguration().getUriFactory(), targetURL);
+                // Here illegal character as $ { } are allowed in the URI to make URL expressions possible.
+                // The URL is from the target in the configuration, maintained by admin
+                var basePath = UriUtil.getPathFromURL(ALLOW_ILLEGAL_CHARACTERS_URI_FACTORY, targetURL);
                 if (basePath == null || basePath.isEmpty() || "/".equals(basePath)) {
-                    URI base = new URI(targetURL);
-                    // Resolve and normalize slashes consistently with the branch below.
-                    return base.resolve(getUri(exc)).toString();
+                    return combine(router.getConfiguration().getUriFactory(),targetURL,getUri(exc));
                 }
             }
             return targetURL;
         }
-        if (p.getTargetHost() != null) {
-            return new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), getUri(exc)).toString();
+        if (asp.getTargetHost() != null) {
+            return new URL(asp.getTargetScheme(), asp.getTargetHost(), asp.getTargetPort(), getUri(exc)).toString();
         }
 
         // That's fine. Maybe it is a <soapProxy> without a target

@@ -23,7 +23,6 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import com.predic8.xml.util.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.ls.*;
 
@@ -33,6 +32,7 @@ import java.net.URI;
 import java.security.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.util.URIFactory.DEFAULT_URI_FACTORY;
 import static com.predic8.membrane.core.util.URIUtil.*;
 
 /**
@@ -50,106 +50,7 @@ public class ResolverMap implements Cloneable, Resolver {
 
     private static final Logger log = LoggerFactory.getLogger(ResolverMap.class.getName());
 
-    /**
-     * First param is the parent. The following params will be combined to one path
-     * e.g. "/foo/bar", "baz/x.yaml" ", "soo" => "/foo/bar/baz/soo"
-     * See ResolverMapCombinedTest
-     *
-     * @param locations List of relative paths
-     * @return combined path
-     */
-    public static String combine(String... locations) {
-        String resolved = combineInternal(locations);
-        log.debug("Resolved locations: {} to: {}", locations, resolved);
-        return resolved;
-    }
-
-    private static String combineInternal(String... locations) {
-        if (locations.length < 2)
-            throw new InvalidParameterException();
-
-        if (locations.length > 2) {
-            // lfold
-            String[] l = new String[locations.length - 1];
-            System.arraycopy(locations, 0, l, 0, locations.length - 1);
-            return combine(combine(l), locations[locations.length - 1]);
-        }
-
-        String parent = locations[0];
-        String relativeChild = locations[1];
-
-        if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
-            return relativeChild;
-        if (parent.startsWith("file://")) {
-            if (relativeChild.startsWith("\\") || relativeChild.startsWith("/")) {
-                return  convertPath2FilePathString( new File(relativeChild).getAbsolutePath());
-            }
-            File parentFile = new File(pathFromFileURI(parent));
-            if (!parent.endsWith("/") && !parent.endsWith("\\"))
-                parentFile = parentFile.getParentFile();
-            try {
-                return keepTrailingSlash(parentFile, relativeChild);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException("Error combining: " + Arrays.toString(locations), e);
-            }
-        }
-        if (parent.contains(":/")) {
-            try {
-                if (parent.startsWith("http"))
-                    return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
-                if (parent.startsWith("classpath:"))
-                    return new URI(parent).resolve(prepare4Uri(relativeChild)).toString();
-                return convertPath2FileURI(parent).resolve(prepare4Uri(relativeChild)).toString();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        if (parent.startsWith("/")) {
-            try {
-                return pathFromFileURI(convertPath2FileURI(parent).resolve(relativeChild));
-            } catch (Exception e) {
-                throw new ConfigurationException("""
-                        Error resolving paths to resources. Check proxies.xml, OpenAPI, JSON/XSD Schema and WSDL documents for references.
-                        
-                        Parent path: %s
-                        Child path: %s
-                        """.formatted(parent, relativeChild));
-            }
-        }
-        File parentFile = new File(parent);
-        if (!parent.endsWith("/") && !parent.endsWith("\\"))
-            parentFile = parentFile.getParentFile();
-        try {
-            return new File(parentFile, relativeChild).getCanonicalPath();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Prepares a path string to be used to construct a URI
-     *
-     * @param path
-     * @return
-     */
-    protected static String prepare4Uri(String path) {
-        path = path.replaceAll("\\\\", "/");
-        path = path.replaceAll(" ", "%20");
-        return path;
-    }
-
-    protected static @NotNull String keepTrailingSlash(File parentFile, String relativeChild) throws URISyntaxException {
-        String res = toFileURIString(new File(parentFile, relativeChild));
-        if (endsWithSlash(relativeChild))
-            return res + "/";
-        return res;
-    }
-
-    private static boolean endsWithSlash(String path) {
-        return path.endsWith("/") || path.endsWith("\\");
-    }
-
-    int count = 0;
+    private int count = 0;
     private String[] schemas;
     private SchemaResolver[] resolvers;
 
@@ -175,6 +76,99 @@ public class ResolverMap implements Cloneable, Resolver {
 
         System.arraycopy(other.schemas, 0, schemas, 0, count);
         System.arraycopy(other.resolvers, 0, resolvers, 0, count);
+    }
+
+    /**
+     * First param is the parent. The following params will be combined to one path
+     * e.g. "/foo/bar", "baz/x.yaml" ", "soo" => "/foo/bar/baz/soo"
+     * See ResolverMapCombinedTest
+     *
+     * @param locations List of relative paths
+     * @return combined path
+     */
+    public static String combine(URIFactory factory, String... locations) {
+        var resolved = combineInternal(factory,locations);
+        log.debug("Resolved locations: {} to: {}", locations, resolved);
+        return resolved;
+    }
+
+    public static String combine(String... locations) {
+        return combine(DEFAULT_URI_FACTORY,locations);
+    }
+
+    private static String combineInternal(URIFactory factory,String... locations) {
+        if (locations.length < 2)
+            throw new InvalidParameterException();
+
+        if (locations.length > 2) {
+            // lfold
+            String[] l = new String[locations.length - 1];
+            System.arraycopy(locations, 0, l, 0, locations.length - 1);
+            return combine(factory,combine(l), locations[locations.length - 1]);
+        }
+
+        return combineInternal2( factory, locations,locations[1], locations[0]);
+    }
+
+    private static String combineInternal2(URIFactory uriFactory, String[] locations, String relativeChild, String parent) {
+
+        if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
+            return relativeChild;
+
+        // parent is file
+        if (parent.startsWith("file:/")) {
+            if (FileUtil.startsWithSlash(relativeChild)) {
+                return convertPath2FilePathString(new File(relativeChild).getAbsolutePath());
+            }
+            try {
+                return FileUtil.resolve(FileUtil.getDirectoryPart(URIUtil.pathFromFileURI(parent)), relativeChild);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("Error combining: " + locations, e);
+            }
+        }
+
+        // parent is http or classpath or internal
+        if (parent.contains(":/")) {
+            try {
+                if (parent.startsWith("http") || parent.startsWith("classpath:") || parent.startsWith("internal:")) {
+                    return uriFactory.create(parent).resolve(uriFactory.create(prepare4Uri(relativeChild)),uriFactory).toString();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        // parent is absolute path
+        if (parent.startsWith("/")) {
+            try {
+                return pathFromFileURI(convertPath2FileURI(parent).resolve(relativeChild));
+            } catch (Exception e) {
+                throw new ConfigurationException("""
+                        Error resolving paths to resources. Check proxies.xml, OpenAPI, JSON/XSD Schema and WSDL documents for references.
+                        
+                        Parent path: %s
+                        Child path: %s
+                        """.formatted(parent, relativeChild));
+            }
+        }
+
+        // assume file paths
+        try {
+            return new File(FileUtil.getDirectoryPart(parent), relativeChild).getCanonicalPath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Prepares a path string to be used to construct a URI
+     *
+     * @param path
+     * @return
+     */
+    protected static String prepare4Uri(String path) {
+        path = path.replaceAll("\\\\", "/");
+        return path.replaceAll(" ", "%20");
     }
 
     @Override
@@ -313,6 +307,5 @@ public class ResolverMap implements Cloneable, Resolver {
                 }
             };
         }
-
     }
 }

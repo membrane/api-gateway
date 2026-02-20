@@ -22,22 +22,18 @@ api:
         # Static in-memory user configuration.
         # Alternatives: JDBC-, LDAP-, or FileUserDataProvider.
         users:
-          - user:
-              username: alice
-              password: "qwertz"
-          - user:
-              username: carol
-              # Hashed password for "abc123" (Argon2id version 19, 65MB memory, 3 rounds, 1 parallelism)
-              #
-              # Generate hashes with:
-              #   on Windows:
-              #     membrane.cmd argon2id -pass "abc123"
-              #   on Linux:
-              #     membrane.sh argon2id -pass "abc123"
-              password: "$argon2id$v=19$m=65536,t=3,p=1$gJkRz2WT5QcamKhhhKTH0Q$RuP5LUCTiEiO4W4dwrJqgpd+Phrk77n1QcdjIcB2zas"
+          - username: alice
+            password: "qwertz"
+          - username: carol
+            # Hashed password for "abc123" (Argon2id version 19, 65MB memory, 3 rounds, 1 parallelism)
+            #
+            # Generate hashes with:
+            #   on Windows:
+            #     membrane.cmd argon2id -pass "abc123"
+            #   on Linux:
+            #     membrane.sh argon2id -pass "abc123"
+            password: "$argon2id$v=19$m=65536,t=3,p=1$gJkRz2WT5QcamKhhhKTH0Q$RuP5LUCTiEiO4W4dwrJqgpd+Phrk77n1QcdjIcB2zas"
     - static:
         src: You're in!
     - return:
         status: 200
-
-

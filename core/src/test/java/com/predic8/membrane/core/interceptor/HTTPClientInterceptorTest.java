@@ -15,53 +15,189 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.ExchangeExpression.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.uri.EscapingUtil.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
 
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
+import static com.predic8.membrane.core.util.uri.EscapingUtil.Escaping.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HTTPClientInterceptorTest {
 
     HTTPClientInterceptor hci;
+    Router router;
 
     @BeforeEach
     void setUp() {
         hci = new HTTPClientInterceptor();
+        router = new DefaultRouter();
     }
 
     @Test
     void protocolUpgradeRejected() throws URISyntaxException {
-        DefaultRouter r = new DefaultRouter();
+        hci.init(router);
 
-        hci.init(r);
-
-        Exchange e = get("http://localhost:2000/")
+        var exc = get("http://localhost:2000/")
                 .header(CONNECTION, "upgrade")
                 .header(UPGRADE, "rejected")
                 .buildExchange();
-        e.setProxy(new NullProxy());
+        exc.setProxy(new NullProxy());
 
-        hci.handleRequest(e);
+        hci.handleRequest(exc);
 
-        assertEquals(401, e.getResponse().getStatusCode());
+        assertEquals(401, exc.getResponse().getStatusCode());
     }
 
     @Test
     void passFailOverOn500Default() {
-        hci.init(new DefaultRouter());
+        hci.init(router);
         assertFalse(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
     }
 
     @Test
     void passFailOverOn500() {
         hci.setFailOverOn5XX(true);
-        hci.init(new DefaultRouter());
+        hci.init(router);
         assertTrue(hci.getHttpClientConfig().getRetryHandler().isFailOverOn5XX());
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingGroovy() throws Exception {
+        var exc = get("/foo")
+                .header("foo", "% ${}")
+                .header("bar", "$&:/)")
+                .buildExchange();
+        testExpression(GROOVY, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingSpEL() throws Exception {
+        var exc = get("/foo")
+                .header("foo", "% ${}")
+                .header("bar", "$&:/)")
+                .buildExchange();
+        testExpression(SPEL, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingJsonPath() throws Exception {
+        var exc = post("/foo")
+                .json("""
+                        {
+                          "foo": "% ${}",
+                          "bar": "$&:/)"
+                        }
+                        """)
+                .buildExchange();
+        testExpression(JSONPATH, exc, "http://localhost/foo/${$.foo}: {}${$.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
+    }
+
+    @Test
+    void computeTargetUrlWithEncodingXPath() throws Exception {
+        var exc = post("/foo")
+                .xml("""
+                        <root>
+                          <foo>% ${}</foo>
+                          <bar>$&amp;:/)</bar>
+                        </root>
+                        """)
+                .buildExchange();
+        testExpression(XPATH, exc, "http://localhost/foo/${//foo}: {}${//bar}",
+                "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
+    }
+
+    @Test
+    void computeNoneEscaping() throws Exception {
+        var exc = post("/foo").buildExchange();
+        testExpression(SPEL, exc, "http://localhost/foo/${'&?äöü!\"=:#/\\'}",
+                "http://localhost/foo/&?äöü!\"=:#/\\", NONE);
+    }
+
+    @Test
+    void computeSegmentEscaping() throws Exception {
+        var exc = post("/foo").buildExchange();
+        testExpression(SPEL, exc, "http://localhost/foo/${'&?äöü!\"=:#/\\'}",
+                "http://localhost/foo/%26%3F%C3%A4%C3%B6%C3%BC%21%22%3D%3A%23%2F%5C", SEGMENT);
+    }
+
+    @Test
+    void computeCompletePath() throws Exception {
+        var completePath = "https://predic8.com/foo?bar=baz";
+        var exc = post("/foo")
+                .header("X-URL", completePath)
+                .buildExchange();
+        testExpression(SPEL, exc, "${header['X-URL']}", completePath, NONE);
+    }
+
+    @Test
+    void computeCompletePathURLEncoded() throws Exception {
+        var exc = post("/foo").buildExchange();
+        testExpression(SPEL, exc, "${'&?äöü!'}",
+                "%26%3F%C3%A4%C3%B6%C3%BC%21", Escaping.URL);
+    }
+
+    @Nested
+    class injection {
+
+        @Test
+        void illegalCharactersAndTemplateInTargetURL() throws URISyntaxException {
+            allowIllegalURICharacters();
+            var exc = get("/foo").buildExchange();
+            assertThrows(ConfigurationException.class, () -> invokeDispatching(SPEL, exc, "https://${'hostname'}", Escaping.URL));
+        }
+
+        @Test
+        void illegalCharacterWithoutTemplate() {
+            allowIllegalURICharacters();
+            var exc = new Request.Builder().method(METHOD_GET).uri("/foo/${555}").buildExchange();
+            invokeDispatching(SPEL, exc, "https://localhost", Escaping.URL);
+            if (!(exc.getProxy() instanceof APIProxy apiProxy)) {
+                fail();
+                return;
+            }
+            assertFalse(apiProxy.getTarget().isUrlIsTemplate());
+            assertEquals(1, exc.getDestinations().size());
+
+            // The template should not be evaluated, cause illegal characters are allowed!
+            assertEquals("https://localhost/foo/${555}", exc.getDestinations().getFirst());
+        }
+    }
+
+    private void allowIllegalURICharacters() {
+        router.getConfiguration().setUriFactory(new URIFactory(true));
+    }
+
+    private void testExpression(Language language, Exchange exc, String url, String expected, Escaping escaping) {
+        invokeDispatching(language, exc, url, escaping);
+        assertEquals(1, exc.getDestinations().size());
+        assertEquals(expected, exc.getDestinations().getFirst());
+    }
+
+    private void invokeDispatching(Language language, Exchange exc, String url, Escaping escaping) {
+        var target = new Target();
+        target.setUrl(url);
+        target.setLanguage(language);
+        target.setEscaping(escaping);
+        target.init(router);
+
+        var api = new APIProxy();
+        api.setTarget(target);
+        exc.setProxy(api);
+        hci.init(router);
+        var di = new DispatchingInterceptor();
+        di.init(router);
+        di.handleRequest(exc);
+        hci.applyTargetModifications(exc);
     }
 
 }

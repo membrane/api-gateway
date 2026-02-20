@@ -19,7 +19,7 @@ import java.nio.file.*;
 import java.security.*;
 
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
-import static com.predic8.membrane.core.util.OSUtil.wl;
+import static com.predic8.membrane.core.util.OSUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ResolverMapCombineTest {
@@ -153,7 +153,8 @@ public class ResolverMapCombineTest {
 
     @Test
     void combineParentWithInvalidURI() {
-        assertThrows(RuntimeException.class, () -> combine("http://invalid:\\path", "array.yml"));
+        assertThrows(RuntimeException.class, () ->
+                combine("http://invalid:path{", "array.yml"));
     }
 
     @Test
