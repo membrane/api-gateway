@@ -10,7 +10,7 @@ api:
           - apiKeyFileStore:
               location: demo-keys.txt
         extractors:
-          - header: {}
+          - header: X-Api-Key
     - request:
         - template:
             contentType: application/json
