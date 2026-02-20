@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.1.0.json
+#
+# Tutorial: SOAP Routing by SOAPAction
+#
+# Routes SOAP requests based on the SOAPAction header.
+# A more common approach is routing by the SOAPBody child element
+# (see sample 70-Routing-by-Wrapper-Element.yaml).
+#
+# Try:
+#      curl localhost:2000 -H "SOAPAction: https://predic8.de/city-service/get"
+#      curl localhost:2000 -H "SOAPAction: https://predic8.de/city-service/create"
+#
+# Notes:
+# - Some SOAP stacks send SOAPAction with quotes, e.g. "https://.../get"
+
+api:
+  port: 2000
+  test: header.SOAPAction == 'https://predic8.de/city-service/get'
+  flow:
+    - setBody:
+        value: getCity
+    - return:
+        status: 200
+
+---
+api:
+  port: 2000
+  test: header.SOAPAction == 'https://predic8.de/city-service/create'
+  flow:
+    - setBody:
+        value: createCity
+    - return:
+        status: 200
+
+---
+api:
+  port: 2000
+  flow:
+    - log:
+        message: "Not supported: ${header.SOAPAction}"
+    - return:
+        status: 404
