@@ -15,10 +15,14 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
+
+import static java.nio.file.Files.readAllLines;
 
 /**
  * @description A <i>user data provider</i> utilizing <code>htpasswd</code>-style files.
@@ -36,7 +40,6 @@ import java.util.*;
  */
 @MCElement(name="htpasswdFileProvider")
 public class FileUserDataProvider extends AbstractUserDataProvider {
-    private final Map<String, User> usersByName = new HashMap<>();
 
     private String location;
 
@@ -50,19 +53,32 @@ public class FileUserDataProvider extends AbstractUserDataProvider {
 
     public String getLocation() { return this.location; }
 
-
     @Override
     public void init(Router router) {
+        addUsersFromLines(readHtAccess());
+    }
+
+    private @NotNull List<String> readHtAccess() {
         List<String> lines;
         try {
-            lines = Files.readAllLines(Paths.get(this.location));
+            lines = readAllLines(Paths.get(location));
+        } catch (NoSuchFileException e) {
+            throw new ConfigurationException("""
+                    FileUserDataProvider: Configuration
+                    
+                    Could not find file at location: %s.
+                    """.formatted(location));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        return lines;
+    }
+
+    private void addUsersFromLines(List<String> lines) {
         for (String line : lines) {
-            String[] parts = line.split(":", 2);  // FIX: limit to 2 parts
+            var parts = line.split(":", 2);  // FIX: limit to 2 parts
             if (parts.length == 2) {
-                User user = new User(parts[0], parts[1]);
+                var user = new User(parts[0], parts[1]);
                 getUsersByName().put(user.getUsername(), user);
             }
         }
