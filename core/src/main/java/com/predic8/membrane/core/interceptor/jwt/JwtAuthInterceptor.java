@@ -13,7 +13,6 @@
 package com.predic8.membrane.core.interceptor.jwt;
 
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.ProblemDetails;
 import com.predic8.membrane.core.exchange.*;
@@ -28,7 +27,6 @@ import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.jwt.JwtSignInterceptor.DEFAULT_PKEY;
 import static java.util.EnumSet.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
@@ -62,15 +60,11 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     public static final String ERROR_JWT_VALUE_NOT_PRESENT_ID = "jwt-payload-entry-missing";
     private static final Logger log = LoggerFactory.getLogger(JwtAuthInterceptor.class);
 
-    final ObjectMapper mapper = new ObjectMapper();
     JwtRetriever jwtRetriever;
     Jwks jwks;
     String expectedAud;
     String expectedTid;
 
-    // should be used read only after init
-    // Hashmap done on purpose as only here the read only thread safety is guaranteed
-    volatile HashMap<String, RsaJsonWebKey> kidToKey;
 
     public JwtAuthInterceptor() {
         name = "jwt checker.";
@@ -84,30 +78,6 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
             jwtRetriever = new HeaderJwtRetriever("Authorization","Bearer");
 
         jwks.init(router);
-
-        kidToKey = jwks.getJwks().stream()
-                .map(jwk -> {
-                    try {
-                        Map params = mapper.readValue(jwk.getJwk(router, mapper), Map.class);
-                        if (Objects.equals(params.get("p"), DEFAULT_PKEY)) {
-                            log.warn("""
-                                \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
-                                        This key is for demonstration purposes only and UNSAFE for production use.          \s
-                                ---------------------------------------------------------------------------------------------""");
-                            if (router.getConfiguration().isProduction()) {
-                                throw new RuntimeException("Default JWK detected in production environment. Please use a secure key.");
-                            }
-                        }
-
-                        return new RsaJsonWebKey(params);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .collect(HashMap::new, (m,e) -> m.put(e.getKeyId(),e), HashMap::putAll);
-
-        if (kidToKey.isEmpty())
-            throw new RuntimeException("No JWKs given or none resolvable - please specify at least one resolvable JWK");
     }
 
     @Override
@@ -156,13 +126,9 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         var decodedJwt = new JsonWebToken(jwt);
         var kid = decodedJwt.getHeader().kid();
 
-        if (!kidToKey.containsKey(kid)) {
-            throw new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID);
-        }
-
         // we could make it possible that every key is checked instead of having the "kid" field mandatory
         // this would then need up to n checks per incoming JWT - could be a performance problem
-        RsaJsonWebKey key = kidToKey.get(kid);
+        RsaJsonWebKey key = jwks.getKeyByKid(kid).orElseThrow(() -> new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID));
 
         Map<String, Object> jwtClaims = createValidator(key).processToClaims(jwt).getClaimsMap();
 
