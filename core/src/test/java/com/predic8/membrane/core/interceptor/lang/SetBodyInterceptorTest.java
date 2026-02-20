@@ -14,19 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_UTF8;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -62,36 +60,40 @@ class SetBodyInterceptorTest {
         assertEquals("/foo", exc.getRequest().getBodyAsStringDecoded());
     }
 
-    @Test
-    void escapeNull() {
-        exc.getRequest().setBodyContent("""
-                {"a":null}
-                """.getBytes(UTF_8));
-        sbi.setLanguage(JSONPATH);
-        sbi.setValue("${$.a}");
-        sbi.init(new DefaultRouter());
-        sbi.handleRequest(exc);
-        // When inserting a value from JSONPath into a JSON document like:
-        // { "a": ${.a} }
-        // Inserting an empty string will break the JSON
-        // Different from Groovy: See below
-        // See: https://github.com/membrane/api-gateway/discussions/2812
-        assertEquals("", exc.getRequest().getBodyAsStringDecoded());
-    }
+    /**
+     * When inserting a value from JSONPath into a JSON document like:
+     * { "a": ${.a} }
+     * and the value is null, the document should be:
+     * { "a": null }
+     */
+    @Nested
+    class Null {
 
-    @Test
-    void escapeNulGroovy() {
-        exc.getRequest().setBodyContent("""
-                {"a":null}
-                """.getBytes(UTF_8));
-        sbi.setLanguage(GROOVY);
-        sbi.setContentType(APPLICATION_JSON_UTF8);
-        sbi.setValue("${fn.jsonPath('$.a')}");
-        sbi.init(new DefaultRouter());
-        sbi.handleRequest(exc);
-        // See also test above
-        // Here JSON is not broken. But is it right?
-        assertEquals("\"\"", exc.getRequest().getBodyAsStringDecoded());
+        @Test
+        void escapeNullJsonPath() throws URISyntaxException {
+            callSetBody(JSONPATH, "${$.a}");
+        }
+
+        @Test
+        void escapeNullGroovy() throws URISyntaxException {
+            callSetBody(GROOVY, "${fn.jsonPath('$.a')}");
+        }
+
+        private void callSetBody(ExchangeExpression.Language language, String expression) throws URISyntaxException {
+            exc = setJsonSample();
+            sbi.setLanguage(language);
+            sbi.setContentType(APPLICATION_JSON_UTF8);
+            sbi.setValue(expression);
+            sbi.init(new DefaultRouter());
+            sbi.handleRequest(exc);
+            assertEquals("null", exc.getRequest().getBodyAsStringDecoded());
+        }
+
+        private Exchange setJsonSample() throws URISyntaxException {
+            return post("/foo").json("""
+                    {"a":null}
+                    """).buildExchange();
+        }
     }
 
     @Test

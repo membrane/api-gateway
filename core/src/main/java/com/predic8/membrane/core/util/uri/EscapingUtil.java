@@ -39,9 +39,9 @@ public class EscapingUtil {
      * <p/>
      * - {@code NONE}: No escaping is applied. Strings are returned as-is.
      * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
+     *   other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
      * - {@code JSON}: Escapes strings for safe inclusion in a JSON context.
      * - {@code XML}: Escapes strings for safe inclusion in an XML context using XML 1.1 rules.
-     *   other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
      * - {@code SEGMENT}: Encodes strings as safe URI path segments, ensuring they do not introduce
      *   path separators, query delimiters, or other unsafe characters, as per RFC 3986.
      */
@@ -55,10 +55,10 @@ public class EscapingUtil {
 
     public static Optional<Function<String, String>> getEscapingFunction(String mimeType) {
         if (isJson(mimeType)) {
-            return Optional.of( getEscapingFunction(JSON));
+            return Optional.of(getEscapingFunction(JSON));
         }
         if (isXML(mimeType)) {
-            return Optional.of( getEscapingFunction(XML));
+            return Optional.of(getEscapingFunction(XML));
         }
         return Optional.empty();
     }

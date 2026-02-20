@@ -65,16 +65,19 @@ public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
         var msg = exchange.getMessage(flow);
         try {
             // The value is typically set from YAML there we can assume UTF-8
-            var result = exchangeExpression.evaluate(exchange, flow, String.class);
+            var result = exchangeExpression.evaluate(exchange, flow, Object.class);
             if (result == null) {
                 result = "null";
             }
-            msg.setBodyContent(result.getBytes(UTF_8));
-
+            if (result instanceof String s) {
+                msg.setBodyContent(s.getBytes(UTF_8));
+            } else {
+                // Hope that all possibles return types are covered
+                msg.setBodyContent(result.toString().getBytes(UTF_8));
+            }
             if (contentType != null) {
                 msg.getHeader().setContentType(contentType);
             }
-
             return CONTINUE;
         } catch (Exception e) {
             var root = ExceptionUtil.getRootCause(e);
