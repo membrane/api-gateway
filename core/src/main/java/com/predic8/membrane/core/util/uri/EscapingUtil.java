@@ -16,13 +16,17 @@ package com.predic8.membrane.core.util.uri;
 
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
+import groovy.json.*;
+import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.*;
 
 import java.net.*;
 import java.util.*;
 import java.util.function.*;
 
 import static com.predic8.membrane.core.http.MimeType.isJson;
-import static com.predic8.membrane.core.util.uri.EscapingUtil.Escaping.JSON;
+import static com.predic8.membrane.core.http.MimeType.isXML;
+import static com.predic8.membrane.core.util.uri.EscapingUtil.Escaping.*;
 import static java.lang.Character.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -43,12 +47,16 @@ public class EscapingUtil {
         NONE,
         URL,
         SEGMENT,
-        JSON
+        JSON,
+        XML
     }
 
     public static Optional<Function<String, String>> getEscapingFunction(String mimeType) {
         if (isJson(mimeType)) {
             return Optional.of( getEscapingFunction(JSON));
+        }
+        if (isXML(mimeType)) {
+            return Optional.of( getEscapingFunction(XML));
         }
         return Optional.empty();
     }
@@ -58,7 +66,8 @@ public class EscapingUtil {
             case NONE -> Function.identity();
             case URL -> s -> URLEncoder.encode(s, UTF_8);
             case SEGMENT -> EscapingUtil::pathEncode;
-            case JSON -> CommonBuiltInFunctions::toJSON;
+            case JSON -> CommonBuiltInFunctions::toJSON; // Alternative: StringEscapeUtils::escapeJson ?
+            case XML -> StringEscapeUtils::escapeXml11;
         };
     }
 
