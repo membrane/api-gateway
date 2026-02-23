@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 /**
  * Immutable parsing state passed down while traversing YAML.
@@ -26,6 +27,8 @@ import org.jetbrains.annotations.*;
  * - grammar: resolves element names to Java classes via local/global lookups.
  */
 public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(String context, T registry, Grammar grammar, JsonNode topLevel, String path, String key) {
+
+    private static final Logger log = LoggerFactory.getLogger(ParsingContext.class);
 
     public ParsingContext<T> updateContext(String context) {
         return new ParsingContext<>(context, registry, grammar, topLevel, path,key);
@@ -44,7 +47,8 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
         if (clazz == null)
             clazz = grammar.getElement(key);
         if (clazz == null) {
-            var e = new ConfigurationParsingException("Did not find java class for key '%s'.".formatted(key));
+            log.debug("Did not find class for key '{}'", key);
+            var e = new ConfigurationParsingException("Unknown configuration element '%s'.".formatted(key));
             e.setParsingContext(this);
             throw e;
         }
