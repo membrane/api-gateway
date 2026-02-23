@@ -41,7 +41,7 @@ public class ComponentClassGenerator extends ClassGenerator{
                  * @yaml <pre><code>
                  * components:
                  *   demoComponent: # id for the component
-                 *     log: {} # referencable plugin
+                 *     log: {} # referenceable plugin
                  * ---
                  * api:
                  *   port: 2000
