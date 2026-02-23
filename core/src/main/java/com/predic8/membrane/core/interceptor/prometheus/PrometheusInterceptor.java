@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.annot.Constants.VERSION;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
@@ -126,6 +127,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     private void buildPrometheusStyleResponse(Context ctx) {
         ctx.resetAll();
         ctx.reset();
+        buildVersionLine(ctx);
         for (Proxy r : router.getRuleManager().getRules()) {
             if (!ctx.seenRules.add(prometheusCompatibleName(r.getName()))) {
                 // the prometheus format is not allowed to contain the same metric more than once
@@ -157,6 +159,10 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         buildDuplicateRuleNameWarning(ctx, issuedDuplicateRuleNameWarning);
         ctx.collect();
 
+    }
+
+    private void buildVersionLine(Context ctx) {
+        ctx.count.append("membrane_info{version=\"" + prometheusCompatibleName(VERSION) + "\"} 1\n");
     }
 
     private void buildLoadBalancerLines(Context ctx) {
