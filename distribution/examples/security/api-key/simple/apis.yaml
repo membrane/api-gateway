@@ -14,11 +14,11 @@ global:
       extractors:
         # Fetch the API key from header
         # X-Api-Key: demokey
-        - header: {}
+        - header: X-Api-Key
 
         # Fetch key from query
         # GET /foo?api-key=abc123
-        - query: {}
+        - query: api-key
 
 ---
 

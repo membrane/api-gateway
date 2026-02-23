@@ -113,7 +113,7 @@ public class ScriptingUtils {
         params.put("pathParam", new PathParametersMap(exc));
 
         // "fn" is the special key used to set the Groovy Binding.
-        // The Groovy Binding is allows function invocation in Groovy scripts with ${functionname()} .
+        // The Groovy Binding allows function invocation in Groovy scripts with ${functionname()} .
         params.put(BINDING, new GroovyBuiltInFunctions(exc, flow, router, params) {
             @Override
             public Object escape(Object o) {

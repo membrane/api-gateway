@@ -15,7 +15,6 @@ package com.predic8.membrane.core.util;
 
 import org.jetbrains.annotations.*;
 
-import java.io.*;
 import java.net.URI;
 import java.net.*;
 import java.util.*;
@@ -28,10 +27,6 @@ import static java.util.Optional.*;
 public class URIUtil {
 
     private static final Pattern driveLetterPattern = Pattern.compile("^(\\w)[/:|].*");
-
-    public static String toFileURIString(File f) throws URISyntaxException {
-        return convertPath2FileURI(f.getAbsolutePath()).toString();
-    }
 
     /**
      *

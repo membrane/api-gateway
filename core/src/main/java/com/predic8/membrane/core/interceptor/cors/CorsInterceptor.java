@@ -243,7 +243,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "" (no additional headers beyond safe headers)
      *
      * @example
-     * <pre><code><cors headers="Authorization,X-Custom-Header,X-Requested-With" /></code></pre>
+     * Authorization,X-Custom-Header,X-Requested-With
      */
     @MCAttribute
     public void setHeaders(String headers) {
@@ -266,7 +266,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @default "" (expose no additional headers)
      *
      * @example
-     * <pre><code><cors exposeHeaders="X-Total-Count,X-Custom-Info" /></code></pre>
+     * X-Total-Count,X-Custom-Info
      */
     @MCAttribute
     public void setExposeHeaders(String headers) {
@@ -289,10 +289,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @param credentials true to allow credentials, false to disallow
      * @default false
      *
-     * @example
-     * <pre><code><cors
-     *   origins="https://trusted-app.com"
-     *   credentials="true" /></code></pre>
+     * @example true
      */
     @MCAttribute
     public void setCredentials(boolean credentials) {
@@ -315,8 +312,7 @@ public class CorsInterceptor extends AbstractInterceptor {
      * @param maxAge maximum cache age in seconds (0 = no caching)
      * @default 5 seconds
      *
-     * @example
-     * <pre><code><cors maxAge="3600" /></code></pre>
+     * @example 3600
      */
     @MCAttribute
     public void setMaxAge(int maxAge) {

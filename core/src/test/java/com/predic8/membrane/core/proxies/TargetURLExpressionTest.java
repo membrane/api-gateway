@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.router.*;
@@ -43,19 +42,18 @@ class TargetURLExpressionTest {
 
     @Test
     void targetWithExpression() throws URISyntaxException {
-        Exchange rq = get("http://localhost:2000/").buildExchange();
+        var exc = get("http://localhost:2000/").buildExchange();
         APIProxy api = new APIProxy() {{
             setTarget(new Target() {{
-                setUrl("http://localhost:${2000 + 1000}");
+                setUrl("http://localhost/${1+2}");
             }});
         }};
-        rq.setProxy(api);
+        var di = new DispatchingInterceptor();
+        exc.setProxy(api);
         api.init(router);
-
-        DispatchingInterceptor di = new DispatchingInterceptor();
-        di.init(router);
-        di.handleRequest(rq);
-
-        assertEquals("http://localhost:3000/", rq.getDestinations().getFirst());
+        di.handleRequest(exc);
+        assertEquals(1, exc.getDestinations().size());
+        assertEquals("http://localhost/${1+2}", exc.getDestinations().getFirst());
     }
+
 }

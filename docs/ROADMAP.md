@@ -4,6 +4,15 @@
 
 - Correct YAML example on GitHub README
 
+# 7.1.1
+
+# Improvements
+- Move URL template evaluation after the request flow has been processed. Before expressions in the target were evaluated before the request flow was processed.
+- In a target/url with an expression like "a: ${propery.a} b: ${property.b}" the evaluation result of ${} is now URL encoded. 
+
+# Features
+- urlEncode(), pathSeg() functions of SpEL and Groovy
+
 # 7.X
 
 PRIO 1:

@@ -121,7 +121,9 @@ public class ExplodedArrayQueryParameterTest {
 
     @Test
     void valuesUTF8() {
-        assertEquals(0, validator.validate(get().path("/array?const=foo&const=äöü&const=baz")).size());
+        var err = validator.validate(get().path("/array?const=foo&const=äöü&const=baz"));
+        assertEquals(1, err.size());
+        assertTrue(err.get(0).getMessage().contains("Illegal character"));
     }
 
     @Test

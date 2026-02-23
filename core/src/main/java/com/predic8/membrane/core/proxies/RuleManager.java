@@ -203,7 +203,7 @@ public class RuleManager {
                 // Prevent matches before DispatchingInterceptor was called
                 if (exc.getDestinations().isEmpty())
                     continue;
-                String serviceName = URLUtil.getHost(exc.getDestinations().getFirst());
+                String serviceName = URLUtil.getAuthority(exc.getDestinations().getFirst());
                 if (!proxy.getName().equals(serviceName))
                     continue;
             }

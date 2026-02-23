@@ -202,12 +202,12 @@ public class RewriteInterceptor extends AbstractInterceptor {
     private String getPathQueryOrSetError(URIFactory factory, String destination, Exchange exc) {
         try {
             return URLUtil.getPathQuery(factory, destination);
-        } catch (URISyntaxException ignore) {
+        } catch (URISyntaxException | IllegalArgumentException e) {
             log.info("Can't parse query: {}", destination);
             user(false,getDisplayName())
                     .addSubType("path")
                     .title("The path does not follow the URI specification. Confirm the validity of the provided URL.")
-                    .detail("Check the URL: " + destination)
+                    .detail(e.getMessage())
                     .internal("component", "rewrite")
                     .internal("path", destination)
                     .buildAndSetResponse(exc);

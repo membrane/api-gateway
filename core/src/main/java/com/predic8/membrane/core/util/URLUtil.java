@@ -18,38 +18,39 @@ import java.net.*;
 
 public class URLUtil {
 
-	public static String getHost(String uri) {
-		int i = uri.indexOf(":") + 1;
-		while (uri.charAt(i) == '/')
-			i++;
-		int j = uri.indexOf("/", i);
-		return j == -1 ? uri.substring(i) : uri.substring(i, j);
-	}
+    public static String getAuthority(String uri) {
+        int i = uri.indexOf(":") + 1;
+        while (uri.charAt(i) == '/')
+            i++;
+        int j = uri.indexOf("/", i);
+        return j == -1 ? uri.substring(i) : uri.substring(i, j);
+    }
 
-	public static String getPathQuery(URIFactory uriFactory, String uri) throws URISyntaxException {
-		URI u = uriFactory.create(uri);
-		String query = u.getRawQuery();
-		String path = u.getRawPath();
-		return (path.isEmpty() ? "/" : path) + (query == null ? "" : "?" + query);
-	}
+    public static String getPathQuery(URIFactory uriFactory, String uri) throws URISyntaxException {
+        URI u = uriFactory.create(uri);
+        String query = u.getRawQuery();
+        String path = u.getRawPath();
+        return (path.isEmpty() ? "/" : path) + (query == null ? "" : "?" + query);
+    }
 
-	/**
-	 * Extracts and returns the name component from the path of a URI. The name
-	 * corresponds to the substring after the last '/' in the path. If no '/' is
-	 * found, the entire path is returned.
-	 *
-	 * @param uriFactory An instance of {@code URIFactory} used to create the {@code URI} object.
-	 * @param uri The URI string to process.
-	 * @return The name component extracted from the URI's path.
-	 * @throws URISyntaxException If the URI string is invalid and cannot be converted into a {@code URI}.
-	 */
-	public static String getNameComponent(URIFactory uriFactory, String uri) throws URISyntaxException {
+    /**
+     * Extracts and returns the name component from the path of a URI. The name
+     * corresponds to the substring after the last '/' in the path. If no '/' is
+     * found, the entire path is returned.
+     *
+     * @param uriFactory An instance of {@code URIFactory} used to create the {@code URI} object.
+     * @param uri        The URI string to process.
+     * @return The name component extracted from the URI's path.
+     * @throws URISyntaxException If the URI string is invalid and cannot be converted into a {@code URI}.
+     */
+    public static String getNameComponent(URIFactory uriFactory, String uri) throws URISyntaxException {
         var p = uriFactory.create(uri).getPath();
-		int i = p.lastIndexOf('/');
-		return i == -1 ? p : p.substring(i+1);
-	}
+        int i = p.lastIndexOf('/');
+        return i == -1 ? p : p.substring(i + 1);
+    }
 
-	public static int getPortFromURL(URL loc2) {
-		return loc2.getPort() == -1 ? loc2.getDefaultPort() : loc2.getPort();
-	}
+    public static int getPortFromURL(URL loc2) {
+        return loc2.getPort() == -1 ? loc2.getDefaultPort() : loc2.getPort();
+    }
+
 }
