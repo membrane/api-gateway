@@ -33,6 +33,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -126,7 +127,7 @@ public abstract class SessionManager {
                 initIssuer(exc);
         }
 
-        getSessionFromExchange(exc).ifPresent(session -> {
+        Optional.ofNullable(exc.getProperty(SESSION, Session.class)).ifPresent(session -> {
             try {
                 createDefaultResponseIfNeeded(exc);
                 handleSetCookieHeaderForResponse(exc, session);
@@ -297,18 +298,20 @@ public abstract class SessionManager {
 
     @NotNull
     public Session getSession(Exchange exc) {
-        return getSessionFromExchange(exc).orElseGet(() -> getSessionFromManager(exc));
+        try {
+            return getOrUpdateSession(exc, () -> getSessionInternal(exc));
+        } catch (Exception e) {
+            throw new SessionManagementException(e);
+        }
     }
 
-    // TODO Side effect!
-    private Session getSessionFromManager(Exchange exc) {
-        exc.setProperty(SESSION, getSessionInternal(exc));
-        return getSessionFromExchange(exc).get();
-    }
-
-
-    private Optional<Session> getSessionFromExchange(Exchange exc) {
-        return Optional.ofNullable(exc.getProperty(SESSION, Session.class));
+    private Session getOrUpdateSession(Exchange exc, Supplier<Session> supplier) {
+        var session = exc.getProperty(SESSION, Session.class);
+        if (session == null) {
+            session = supplier.get();
+            exc.setProperty(SESSION, session);
+        }
+        return session;
     }
 
     public List<String> createCookieAttributes(Exchange exc) {

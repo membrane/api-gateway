@@ -132,6 +132,14 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .internal("url",exc.getRequest().getUri())
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (NoResponseException e) {
+            log.error("NoResponseException due to {}; {}", e.getCause(), e.getCause().getMessage());
+            internal(router.isProduction(), getDisplayName())
+                    .exception(e)
+                    .stacktrace(false)
+                    .internal("proxy", exc.getProxy().getName())
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (Exception e) {
             log.error("", e);
             internal(router.isProduction(), getDisplayName())
