@@ -63,7 +63,8 @@ public class ResolverMapCombineTest {
 
     @Test
     void fileSingleSlashPlusFile() {
-        assertEquals("file:/chi/gnat", combine("file:/chi/elm","gnat"));
+        assertEquals(wl("file:/C:/chi/gnat",
+                "file:/chi/gnat"), combine("file:/chi/elm","gnat"));
     }
 
     @Test
@@ -195,7 +196,10 @@ public class ResolverMapCombineTest {
 
     @Test
     void filePlusPathSpace() {
-        assertEquals("file:/cock%20lock", combine("file:/chi","cock lock"));
+        assertEquals(wl(
+                "file:/C:/cock%20lock",
+                        "file:/cock%20lock"),
+                combine("file:/chi","cock lock"));
     }
 
     @Test
