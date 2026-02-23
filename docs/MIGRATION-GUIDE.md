@@ -27,8 +27,8 @@ Remove these elements from your configuration and replace them with modern equiv
 - Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually.
 
 ## ApiKey extractors:
-- Rename `headerExtractor` to `header`
-- Rename `queryParamExtractor` to `query`
+- Replace `headerExtractor: \n    name: <value>` with `header: <value>`
+- Replace `queryParamExtractor: \n    name: <value>` with `query: <value>`
 ```yaml
 # before
 apiKey: 
@@ -41,10 +41,8 @@ apiKey:
 # now 
 apiKey:
   extractors:
-    - header:
-        name: X-API-KEY
-    - query:
-        name: api-key
+    - header: X-API-KEY
+    - query: api-key
 ```
 
 ## fileUserDataProvider
@@ -209,7 +207,7 @@ api:
 ### YAML configuration for Elements with exactly one configurable Attribute
 Some Elements with **exactly one** configurable Attribute can now be configured inline. This **does not** apply to all elements with exactly one configurable Attribute.
 
-The supported elements are: `api.description`, `publicURL`, `headerFilter.include`, `headerFilter.exclude`, `keyTable`, `scopeTable`, `accessControl.allow`, `accessControl.deny`, `counter`, `mutation`
+The supported elements are: `api.description`, `publicURL`, `headerFilter.include`, `headerFilter.exclude`, `keyTable`, `scopeTable`, `accessControl.allow`, `accessControl.deny`, `counter`, `mutation`, `header` (ApiKey extractor), `query` (ApiKey extractor)
 
 #### headerFilter
 ```yaml

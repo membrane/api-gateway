@@ -20,6 +20,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -32,6 +33,7 @@ import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.util.TemplateUtil.*;
 import static java.util.Collections.*;
 
 /**
@@ -42,6 +44,11 @@ import static java.util.Collections.*;
 public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(CallInterceptor.class);
+
+    /**
+     * If url contains template marker ${}, if not expression evaluation is skipped
+     */
+    private boolean urlIsTemplate = false;
 
     /**
      * These headers are filtered out from the response of a called resource
@@ -56,6 +63,21 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     @Override
     public void init() {
         super.init();
+
+        if (router.getConfiguration().getUriFactory().isAllowIllegalCharacters()) {
+             throw new ConfigurationException("""
+                    URL Templating and Illegal URL Characters
+                    
+                    Url templating expressions and enablement of illegal characters in URLs are mutually exclusive. Either disable
+                    illegal characters in the configuration (configuration/uriFactory/allowIllegalCharacters) or remove the
+                    templating expression %s from the URL in the call URL.
+                    """.formatted(exchangeExpression.getExpression()));
+        }
+
+        // If there is no template marker ${ than do not try to evaluate url as expression
+        if (containsTemplateMarker(exchangeExpression.getExpression())) {
+            urlIsTemplate = true;
+        }
     }
 
     @Override
@@ -69,7 +91,7 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private Outcome handleInternal(Exchange exc) {
-        final String dest = exchangeExpression.evaluate(exc, REQUEST, String.class);
+        var dest = computeDestinationUrl(exc);
         log.debug("Calling {}", dest);
 
         final Exchange newExc = createNewExchange(dest, getNewRequest(exc));
@@ -105,6 +127,13 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    private String computeDestinationUrl(Exchange exc) {
+        if (urlIsTemplate) {
+            return exchangeExpression.evaluate(exc, REQUEST, String.class);
+        }
+        return exchangeExpression.getExpression();
     }
 
     private ProblemDetails createProblemDetails(String dest) {

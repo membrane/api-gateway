@@ -42,7 +42,7 @@ api:
             pretty: true
             src: |
               {
-                  "products": [ ${property.res} ]
+                  "products": <%= property.res %>
               }
     - return:
         status: 200

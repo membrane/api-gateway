@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.*;
 
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static io.restassured.RestAssured.*;
 
@@ -39,17 +41,16 @@ class AbstractServiceProxyTest extends AbstractTestWithRouter {
             .get("http://localhost:2000")
         .then()
             .statusCode(200)
-            .header("X-Called-Method", "POST");
+            .header("X-Called-Method", METHOD_POST);
     }
 
     private static @NotNull AbstractServiceProxy getAPI() {
-        AbstractServiceProxy proxy = new AbstractServiceProxy() {};
+        var proxy = new AbstractServiceProxy() {};
         proxy.setKey(new ServiceProxyKey(2000));
         proxy.getFlow().add(A);
 
-        var target = new Target() {
-        };
-        target.setMethod("POST");
+        var target = new Target() {};
+        target.setMethod(METHOD_POST);
         target.setHost("localhost");
         target.setPort(2010);
 
@@ -58,14 +59,13 @@ class AbstractServiceProxyTest extends AbstractTestWithRouter {
     }
 
     private static @NotNull APIProxy getBackend() {
-        APIProxy p = new APIProxy();
+        var p = new APIProxy();
         p.key = new APIProxyKey(2010);
-        SetHeaderInterceptor sh = new SetHeaderInterceptor();
+        var sh = new SetHeaderInterceptor();
         sh.setFieldName("X-Called-Method");
         sh.setValue("${method}");
         p.getFlow().add(sh);
         p.getFlow().add(new ReturnInterceptor());
         return p;
     }
-
 }

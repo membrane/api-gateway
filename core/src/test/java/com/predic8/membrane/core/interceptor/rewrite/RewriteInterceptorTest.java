@@ -99,6 +99,7 @@ public class RewriteInterceptorTest {
 
 		assertEquals("https://membrane-api.io/problems/user/path",json.get("type").asText());
 		assertEquals("The path does not follow the URI specification. Confirm the validity of the provided URL.",json.get("title").asText());
-		assertTrue(json.get("detail").asText().contains("/buy/banana/%"));
+		assertTrue(json.get("path").asText().contains("/buy/banana/%"));
+		assertTrue(json.get("component").asText().contains("rewrite"));
 	}
 }
