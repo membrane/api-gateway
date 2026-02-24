@@ -338,10 +338,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         if (!isComponentsList(parentElementInfo, childSpec) && itemElementInfo.getAnnotation().component()) {
             var variants = new ArrayList<AbstractSchema<?>>();
             variants.add(itemsSchema);
-            variants.add(object()
-                    .title("componentRef")
-                    .additionalProperties(false)
-                    .property(string($_REF).required(false)));
+            variants.add(componentRefVariantSchema(false));
             itemsSchema = anyOf(variants);
         }
 
@@ -364,10 +361,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         // Allow referencing a component instance directly on list-item level:
         // flow:
         //   - $ref: ...
-        variants.add(object()
-                .title("componentRef")
-                .additionalProperties(false)
-                .property(string($_REF)));
+        variants.add(componentRefVariantSchema());
         return variants;
     }
 
@@ -584,6 +578,22 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private static SchemaRef defsSchemaRef(String propertyName, String defName) {
         return ref(propertyName).ref(defsRefPath(defName));
+    }
+
+    private static SchemaObject componentRefVariantSchema() {
+        return componentRefVariantSchema(null);
+    }
+
+    private static SchemaObject componentRefVariantSchema(Boolean required) {
+        var refProperty = string($_REF);
+        if (required != null) {
+            refProperty.required(required);
+        }
+
+        return object()
+                .title("componentRef")
+                .additionalProperties(false)
+                .property(refProperty);
     }
 
     private enum ScalarSchemaKind {
