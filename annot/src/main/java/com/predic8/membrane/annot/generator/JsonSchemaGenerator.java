@@ -136,6 +136,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         boolean flowParserType = shouldGenerateFlowParserType(childSpec);
         if (flowParserType) {
+            ensureFlowParserDefinition(getSchemaObjects(model, main, childSpec));
             return ref(parserName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
         }
 
@@ -156,7 +157,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             schema.definition(childParserArray);
         }
 
-        return ref(parserName).ref(defsRefPath(defName));
+        return ref(parserName).ref(defsRefPath(childName + "Parser"));
     }
 
     private AbstractSchema<?> createCollapsedParser(ElementInfo elementInfo, String parserName) {
@@ -311,7 +312,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         for (ChildElementInfo childSpec : parentElementInfo.getChildElementSpecs()) {
 
             if (!childSpec.isList()) {
-                addChildsAsProperties(model, main, childSpec, (SchemaObject) parentSchema, isComponentsList(parentElementInfo, childSpec), false);
+                if (parentSchema instanceof SchemaObject parentObjectSchema) {
+                    addChildsAsProperties(model, main, childSpec, parentObjectSchema, isComponentsList(parentElementInfo, childSpec), false);
+                }
                 continue;
             }
 
@@ -443,12 +446,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private void addFlowParserRef(AbstractSchema<?> parentSchema, String propertyName, List<AbstractSchema<?>> itemVariants) {
-        if (!flowDefCreated) {
-            schema.definition(array(FLOW_PARSER_DEF_NAME).items(anyOf(itemVariants)));
-            flowDefCreated = true;
-        }
+        ensureFlowParserDefinition(itemVariants);
         SchemaRef flowParserRef = ref(propertyName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
-
         setItemsIfArray(parentSchema, flowParserRef);
         addPropertyIfObject(parentSchema, flowParserRef);
     }
@@ -641,6 +640,15 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             case "java.lang.Double", "java.lang.Float" -> ScalarSchemaKind.NUMBER;
             default -> ScalarSchemaKind.NONE;
         };
+    }
+
+    private void ensureFlowParserDefinition(List<AbstractSchema<?>> itemVariants) {
+        if (flowDefCreated) {
+            return;
+        }
+
+        schema.definition(array(FLOW_PARSER_DEF_NAME).items(anyOf(itemVariants)));
+        flowDefCreated = true;
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
