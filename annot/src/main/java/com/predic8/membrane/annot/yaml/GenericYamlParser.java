@@ -64,8 +64,9 @@ public class GenericYamlParser {
      * turned into a {@link BeanDefinition}. Validation errors are mapped back to line/column
      * numbers using {@link JsonLocationMap} to produce helpful error messages.
      * </p>
+     *
      * @param grammar provides schema location and Java type resolution
-     * @param yaml the raw YAML content (may contain multi-document stream)
+     * @param yaml    the raw YAML content (may contain multi-document stream)
      * @throws IOException if schema loading or validation fails
      */
     public GenericYamlParser(Grammar grammar, String yaml) throws IOException {
@@ -81,10 +82,10 @@ public class GenericYamlParser {
             // Deactivated temporarily to get better error messages
             //validateAgainstSchema(grammar, jsonNode, jsonLocationMap);
 
-            var pc = new ParsingContext<>("",null,grammar, jsonNode, "$",null);
+            var pc = new ParsingContext<>("", null, grammar, jsonNode, "$", null);
 
             if ("components".equals(getBeanType(pc, jsonNode))) {
-                beanDefs.addAll(extractComponentBeanDefinitions(pc.addPath(".components"),jsonNode.get("components")));
+                beanDefs.addAll(extractComponentBeanDefinitions(pc.addPath(".components"), jsonNode.get("components")));
             }
 
             beanDefs.add(new BeanDefinition(
@@ -118,8 +119,9 @@ public class GenericYamlParser {
      *   <li>Validates each document against the JSON Schema provided by {@code grammar}.</li>
      *   <li>Emits helpful line/column locations for malformed multi-document input.</li>
      * </ul>
+     *
      * @param resource the input stream to parse. The method takes care of closing the stream.
-     * @param grammar the grammar to use for type resolution and schema location
+     * @param grammar  the grammar to use for type resolution and schema location
      * @return list of parsed bean definitions
      */
     public static List<BeanDefinition> parseMembraneResources(@NotNull InputStream resource, Grammar grammar) throws IOException {
@@ -150,18 +152,18 @@ public class GenericYamlParser {
      * grammar and delegates to {@link #createAndPopulateNode(ParsingContext, Class, JsonNode)}.</p>
      */
     public static <R extends BeanRegistry & BeanLifecycleManager> Object readMembraneObject(String kind, Grammar grammar, JsonNode node, R registry) throws ConfigurationParsingException {
-        return createAndPopulateNode(new ParsingContext<>(kind, registry, grammar,node, "$." + kind,null), decideClazz(kind, grammar, node), node.get(kind));
+        return createAndPopulateNode(new ParsingContext<>(kind, registry, grammar, node, "$." + kind, null), decideClazz(kind, grammar, node), node.get(kind));
     }
 
     /**
      * Detects the class that will be selected to represent the node in Java.
      */
     public static Class<?> decideClazz(String kind, Grammar grammar, JsonNode node) {
-        ensureSingleKey(new ParsingContext("",null, grammar,node,"$",null),node);
+        ensureSingleKey(new ParsingContext("", null, grammar, node, "$", null), node);
         Class<?> clazz = grammar.getElement(kind);
         if (clazz == null) {
-            var pc = new ParsingContext("", null,grammar,node,"$",null).key(kind);
-            throw new ConfigurationParsingException("Did not find java class for kind '%s'.".formatted(kind),null,pc);
+            var pc = new ParsingContext("", null, grammar, node, "$", null).key(kind);
+            throw new ConfigurationParsingException("Did not find java class for kind '%s'.".formatted(kind), null, pc);
         }
         return clazz;
     }
@@ -170,7 +172,7 @@ public class GenericYamlParser {
      * Creates and populates an instance of {@code clazz} from the given YAML/JSON node.
      * - Arrays: only valid for {@code @MCElement(noEnvelope=true)}; items are parsed and passed to the single {@code @MCChildElement} list setter.
      * - Objects: each field is mapped to a setter resolved by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)};
-     *   values are produced by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)}. A top-level {@code "$ref"} injects a previously defined bean.
+     * values are produced by {@link MethodSetter#getMethodSetter(ParsingContext, Class, String)}. A top-level {@code "$ref"} injects a previously defined bean.
      * All failures are wrapped in a {@link ConfigurationParsingException} with location information.
      */
     public static <T> T createAndPopulateNode(ParsingContext<?> pc, Class<T> clazz, JsonNode node) throws ConfigurationParsingException {
@@ -189,7 +191,7 @@ public class GenericYamlParser {
             ensureMappingStart(node);
             if (isNoEnvelope(clazz)) {
                 log.error("Class {} is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.", clazz.getName());
-                throw new ConfigurationParsingException("Class %s is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.".formatted(clazz.getName()),null,pc);
+                throw new ConfigurationParsingException("Class %s is annotated with @MCElement(noEnvelope=true), but the YAML/JSON structure does not contain a list.".formatted(clazz.getName()), null, pc);
             }
 
             JsonNode refNode = node.get("$ref");
@@ -215,9 +217,8 @@ public class GenericYamlParser {
             if (e.getParsingContext() == null)
                 e.setParsingContext(pc);
             throw e;
-        }
-        catch (Throwable cause) {
-            log.debug("",cause);
+        } catch (Throwable cause) {
+            log.debug("", cause);
             throw new ConfigurationParsingException(cause);
         }
     }
@@ -234,9 +235,8 @@ public class GenericYamlParser {
                 setter.setSetter(configObj, ctx, node, key);
             } catch (ConfigurationParsingException e) {
                 throw e;
-            }
-            catch (Throwable cause) {
-                log.debug("",cause);
+            } catch (Throwable cause) {
+                log.debug("", cause);
                 var e = new ConfigurationParsingException(cause.getMessage());
                 e.setParsingContext(ctx.key(key));
                 throw e;
@@ -246,7 +246,8 @@ public class GenericYamlParser {
 
     private static <T> @NotNull T handleCollapsed(ParsingContext<?> ctx, Class<T> clazz, JsonNode node, T configObj) {
         if (node.isNull()) throw new ConfigurationParsingException("Collapsed element must not be null.");
-        if (node.isArray() || node.isObject()) throw new ConfigurationParsingException("Element is collapsed; expected an inline scalar value, not an %s.".formatted((node.isArray() ? "array" : "object")));
+        if (node.isArray() || node.isObject())
+            throw new ConfigurationParsingException("Element is collapsed; expected an inline scalar value, not an %s.".formatted((node.isArray() ? "array" : "object")));
         applyCollapsedScalar(clazz, node, configObj);
         return handlePostConstructAndPreDestroy(ctx, configObj);
     }
@@ -272,7 +273,7 @@ public class GenericYamlParser {
             JsonNode def = componentsNode.get(id);
 
             // Each component definition must have exactly one key (the component type)
-            ensureSingleKey(pc.addPath("."+id),def);
+            ensureSingleKey(pc.addPath("." + id), def);
             String componentKind = def.fieldNames().next();
 
             // Wrap it into a normal top-level node: { <kind>: <body> }
@@ -321,7 +322,7 @@ public class GenericYamlParser {
         try {
             return ctx.getRegistry().resolve(refNode.asText());
         } catch (RuntimeException e) {
-            throw new ConfigurationParsingException(e);
+            throw new ConfigurationParsingException("Cannot resolve reference: " + refNode.asText(),e,ctx.key("$ref"));
         }
     }
 
@@ -330,7 +331,7 @@ public class GenericYamlParser {
     }
 
     public static List<Object> parseListIncludingStartEvent(ParsingContext<?> pc, JsonNode node, Class<?> elemType) throws ConfigurationParsingException {
-        ensureArray(pc,node);
+        ensureArray(pc, node);
         return parseListExcludingStartEvent(pc, node, elemType);
     }
 
@@ -347,7 +348,7 @@ public class GenericYamlParser {
      * delegating to {@link #parseMapToObj(ParsingContext, JsonNode, String)}.
      */
     private static Object parseMapToObj(ParsingContext<?> pc, JsonNode node) throws ConfigurationParsingException {
-        ensureSingleKey(pc,node);
+        ensureSingleKey(pc, node);
         String key = node.fieldNames().next();
         return parseMapToObj(pc, node.get(key), key);
     }
@@ -420,7 +421,8 @@ public class GenericYamlParser {
     }
 
     private static Object parseInlineListItem(ParsingContext<?> ctx, JsonNode node, Class<?> elemType) {
-        if (elemType == null) throw new ConfigurationParsingException("Inline list item form requires a typed list element.");
+        if (elemType == null)
+            throw new ConfigurationParsingException("Inline list item form requires a typed list element.");
         if (isScalarElementType(elemType)) {
             if (node.isObject() || node.isArray()) {
                 throw new ConfigurationParsingException(
@@ -436,10 +438,10 @@ public class GenericYamlParser {
 
     private static boolean isScalarElementType(Class<?> t) {
         return t == String.class
-                || t == Boolean.class
-                || t == Character.class
-                || Number.class.isAssignableFrom(t)
-                || t.isEnum();
+               || t == Boolean.class
+               || t == Character.class
+               || Number.class.isAssignableFrom(t)
+               || t.isEnum();
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -450,7 +452,8 @@ public class GenericYamlParser {
             String raw = node.asText();
             try {
                 return Enum.valueOf((Class<? extends Enum>) elemType, raw);
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException ignored) {
+            }
             try {
                 return Enum.valueOf((Class<? extends Enum>) elemType, raw.toUpperCase(ROOT));
             } catch (IllegalArgumentException e) {
