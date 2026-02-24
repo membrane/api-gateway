@@ -27,7 +27,7 @@ public class ExceptionUtil {
         StringBuilder sb = new StringBuilder();
         boolean causedBy = false;
         do {
-            boolean skip = sb.toString().contains(throwable.getMessage());
+            boolean skip = throwable.getMessage() == null || sb.toString().contains(throwable.getMessage());
             if (!skip) {
                 if (causedBy) {
                     sb.append(" caused by: ");
