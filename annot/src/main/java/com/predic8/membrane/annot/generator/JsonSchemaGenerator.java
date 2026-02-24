@@ -52,7 +52,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     // TODO keep this pattern or allow *?
     public static final String COMPONENT_ID_PATTERN = "^[A-Za-z_][A-Za-z0-9_-]*$";
 
-    private final Map<String, Boolean> componentAdded = new HashMap<>();
+    private final Set<String> componentParsersAdded = new HashSet<>();
 
     private boolean flowDefCreated = false;
     private Schema schema;
@@ -71,7 +71,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         // Reset so multiple calls would be possible
         flowDefCreated = false;
         schema = schema("membrane");
-        componentAdded.clear();
+        componentParsersAdded.clear();
 
         addParserDefinitions(m, main);
         addTopLevelProperties(m, main);
@@ -123,11 +123,11 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             ChildElementInfo child = elementInfo.getChildElementSpecs().getFirst();
             var childName = child.getPropertyName();
 
-            if (!componentAdded.containsKey(childName) && !shouldGenerateFlowParserType(child)) {
+            if (!componentParsersAdded.contains(childName) && !shouldGenerateFlowParserType(child)) {
                 SchemaArray array = array(childName + "Parser");
                 processMCChilds(m, main, child.getEi(), array);
                 schema.definition(array);
-                componentAdded.put(childName, true);
+                componentParsersAdded.add(childName);
             }
 
             if (shouldGenerateFlowParserType(child)) {
