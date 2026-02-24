@@ -52,7 +52,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     // TODO keep this pattern or allow *?
     public static final String COMPONENT_ID_PATTERN = "^[A-Za-z_][A-Za-z0-9_-]*$";
 
-    private final Set<String> componentParsersAdded = new HashSet<>();
+    private final Map<String, String> noEnvelopeParserSourceByDefName = new HashMap<>();
 
     private boolean flowDefCreated = false;
     private Schema schema;
@@ -71,7 +71,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         // Reset so multiple calls would be possible
         flowDefCreated = false;
         schema = schema("membrane");
-        componentParsersAdded.clear();
+        noEnvelopeParserSourceByDefName.clear();
 
         addParserDefinitions(m, main);
         addTopLevelProperties(m, main);
@@ -134,18 +134,29 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         ChildElementInfo childSpec = elementInfo.getChildElementSpecs().getFirst();
         String childName = childSpec.getPropertyName();
 
-        if (!componentParsersAdded.contains(childName) && !shouldGenerateFlowParserType(childSpec)) {
-            SchemaArray childParserArray = array(childName + "Parser");
-            processMCChilds(model, main, childSpec.getEi(), childParserArray);
-            schema.definition(childParserArray);
-            componentParsersAdded.add(childName);
-        }
-
-        if (shouldGenerateFlowParserType(childSpec)) {
+        boolean flowParserType = shouldGenerateFlowParserType(childSpec);
+        if (flowParserType) {
             return ref(parserName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
         }
 
-        return ref(parserName).ref(defsRefPath(childName + "Parser"));
+        String defName = childName + "Parser";
+        String sourceType = childSpec.getTypeDeclaration() == null ? "<null>" : childSpec.getTypeDeclaration().getQualifiedName().toString();
+
+        String previousSourceType = noEnvelopeParserSourceByDefName.putIfAbsent(defName, sourceType);
+        if (previousSourceType != null && !previousSourceType.equals(sourceType)) {
+            throw new IllegalStateException(
+                    "Conflicting noEnvelope parser definition '%s': %s vs %s"
+                            .formatted(defName, previousSourceType, sourceType)
+            );
+        }
+
+        if (previousSourceType == null) {
+            SchemaArray childParserArray = array(defName);
+            processMCChilds(model, main, childSpec.getEi(), childParserArray);
+            schema.definition(childParserArray);
+        }
+
+        return ref(parserName).ref(defsRefPath(defName));
     }
 
     private AbstractSchema<?> createCollapsedParser(ElementInfo elementInfo, String parserName) {
@@ -325,7 +336,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private void processInlineList(Model model, MainInfo main, ElementInfo parentElementInfo, AbstractSchema<?> parentSchema, ChildElementInfo childSpec) {
-        var childDeclaration = getChildElementDeclarationInfo(main, childSpec);
+        var childDeclaration = requireChildElementDeclarationInfo(main, childSpec);
 
         ElementInfo itemElementInfo = childDeclaration.getElementInfo().stream()
                 .filter(candidateElementInfo -> !candidateElementInfo.getAnnotation().topLevel())
@@ -338,7 +349,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         if (!isComponentsList(parentElementInfo, childSpec) && itemElementInfo.getAnnotation().component()) {
             var variants = new ArrayList<AbstractSchema<?>>();
             variants.add(itemsSchema);
-            variants.add(componentRefVariantSchema(false));
+            variants.add(componentRefVariantSchema(true));
             itemsSchema = anyOf(variants);
         }
 
@@ -348,7 +359,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private static @NotNull ArrayList<AbstractSchema<?>> getSchemaObjects(Model model, MainInfo main, ChildElementInfo childSpec) {
         var variants = new ArrayList<AbstractSchema<?>>();
 
-        for (ElementInfo candidateElementInfo : main.getChildElementDeclarations().get(childSpec.getTypeDeclaration()).getElementInfo()) {
+        for (ElementInfo candidateElementInfo : requireChildElementDeclarationInfo(main, childSpec).getElementInfo()) {
             if (candidateElementInfo.getAnnotation().excludeFromFlow())
                 continue;
 
@@ -363,6 +374,19 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         //   - $ref: ...
         variants.add(componentRefVariantSchema());
         return variants;
+    }
+
+    private static ChildElementDeclarationInfo requireChildElementDeclarationInfo(MainInfo main, ChildElementInfo childSpec) {
+        ChildElementDeclarationInfo decl = getChildElementDeclarationInfo(main, childSpec);
+        if (decl != null) {
+            return decl;
+        }
+        throw new IllegalStateException(
+                "Missing child element declaration for child property '%s' (type: %s)."
+                        .formatted(childSpec.getPropertyName(), childSpec.getTypeDeclaration() == null
+                                ? "<null>"
+                                : childSpec.getTypeDeclaration().getQualifiedName().toString())
+        );
     }
 
     private boolean isScalarChildList(ChildElementInfo childSpec) {
@@ -412,9 +436,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         if (parentElementInfo.getAnnotation().noEnvelope()) {
             setItemsIfArray(parentSchema, itemsObjectSchema);
+            return itemsObjectSchema;
         }
         addPropertyIfObject(parentSchema, createFromChild(childSpec, itemsObjectSchema));
-
         return itemsObjectSchema;
     }
 
@@ -430,8 +454,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private void addChildsAsProperties(Model model, MainInfo main, ChildElementInfo childSpec, SchemaObject parentObjectSchema, boolean componentsContext, boolean listItemContext) {
-        var childElementInfos = getChildElementDeclarationInfo(main, childSpec).getElementInfo().stream()
-                // Top-level elements cannot be configurable as nested children
+        var childElementInfos = requireChildElementDeclarationInfo(main, childSpec).getElementInfo().stream()
                 .filter(candidateElementInfo -> !candidateElementInfo.getAnnotation().topLevel())
                 .toList();
 
@@ -581,7 +604,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private static SchemaObject componentRefVariantSchema() {
-        return componentRefVariantSchema(null);
+        return componentRefVariantSchema(true);
     }
 
     private static SchemaObject componentRefVariantSchema(Boolean required) {
