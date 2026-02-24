@@ -64,7 +64,7 @@ public class OSUtil {
         if (!isWindows()) return "C:";
 
         try {
-            Path root = Paths.get("").toAbsolutePath().getRoot(); // e.g. "D:\"
+            Path root = Paths.get("").toAbsolutePath().getRoot();
             if (root == null) return "C:";
             String r = root.toString();
             return (r.length() >= 2 && r.charAt(1) == ':') ? r.substring(0, 2) : "C:";
