@@ -287,6 +287,11 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 continue;
             }
 
+            if (isScalarChildList(cei)) {
+                attachArrayItems(i, so, cei, scalarItemsSchema(cei));
+                continue;
+            }
+
             if (shouldGenerateFlowParserType(cei)) {
                 processList(i, so, cei, getSchemaObjects(m, main, cei));
                 continue;
@@ -347,6 +352,44 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .additionalProperties(false)
                 .property(string("$ref")));
         return sos;
+    }
+
+    private boolean isScalarChildList(ChildElementInfo cei) {
+        if (!cei.isList()) return false;
+        if (cei.getTypeDeclaration() == null) return false;
+
+        String qn = cei.getTypeDeclaration().getQualifiedName().toString();
+
+        return "java.lang.String".equals(qn)
+                || "java.lang.Boolean".equals(qn)
+                || "java.lang.Integer".equals(qn)
+                || "java.lang.Long".equals(qn)
+                || "java.lang.Double".equals(qn)
+                || "java.lang.Float".equals(qn)
+                || "java.lang.Short".equals(qn)
+                || "java.lang.Byte".equals(qn);
+    }
+
+    private AbstractSchema<?> scalarItemsSchema(ChildElementInfo cei) {
+        String qn = cei.getTypeDeclaration().getQualifiedName().toString();
+
+        if ("java.lang.String".equals(qn)) {
+            return SchemaFactory.from("string").type("string");
+        }
+        if ("java.lang.Boolean".equals(qn)) {
+            return SchemaFactory.from("boolean").type("boolean");
+        }
+        if ("java.lang.Integer".equals(qn)
+                || "java.lang.Long".equals(qn)
+                || "java.lang.Short".equals(qn)
+                || "java.lang.Byte".equals(qn)) {
+            return SchemaFactory.from("integer").type("integer");
+        }
+        if ("java.lang.Double".equals(qn) || "java.lang.Float".equals(qn)) {
+            return SchemaFactory.from("number").type("number");
+        }
+
+        return SchemaFactory.from("string").type("string");
     }
 
     private boolean isComponentsList(ElementInfo parent, ChildElementInfo cei) {
