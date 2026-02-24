@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import org.jetbrains.annotations.NotNull;
+
 public class ExceptionUtil {
 
     /**
@@ -23,11 +25,11 @@ public class ExceptionUtil {
      * @param throwable the exception
      * @return a String containing all messages of nested exceptions
      */
-    public static String concatMessageAndCauseMessages(Throwable throwable) {
+    public static String concatMessageAndCauseMessages(@NotNull Throwable throwable) {
         StringBuilder sb = new StringBuilder();
         boolean causedBy = false;
         do {
-            boolean skip = sb.toString().contains(throwable.getMessage());
+            boolean skip = throwable.getMessage() == null || sb.toString().contains(throwable.getMessage());
             if (!skip) {
                 if (causedBy) {
                     sb.append(" caused by: ");
