@@ -14,9 +14,19 @@
 
 package com.predic8.membrane.core.util.uri;
 
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.*;
+import groovy.json.*;
+import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.*;
+
 import java.net.*;
+import java.util.*;
 import java.util.function.*;
 
+import static com.predic8.membrane.core.http.MimeType.isJson;
+import static com.predic8.membrane.core.http.MimeType.isXML;
+import static com.predic8.membrane.core.util.uri.EscapingUtil.Escaping.*;
 import static java.lang.Character.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -30,13 +40,27 @@ public class EscapingUtil {
      * - {@code NONE}: No escaping is applied. Strings are returned as-is.
      * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
      *   other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
+     * - {@code JSON}: Escapes strings for safe inclusion in a JSON context.
+     * - {@code XML}: Escapes strings for safe inclusion in an XML context using XML 1.1 rules.
      * - {@code SEGMENT}: Encodes strings as safe URI path segments, ensuring they do not introduce
      *   path separators, query delimiters, or other unsafe characters, as per RFC 3986.
      */
     public enum Escaping {
         NONE,
         URL,
-        SEGMENT
+        SEGMENT,
+        JSON,
+        XML
+    }
+
+    public static Optional<Function<String, String>> getEscapingFunction(String mimeType) {
+        if (isJson(mimeType)) {
+            return Optional.of(getEscapingFunction(JSON));
+        }
+        if (isXML(mimeType)) {
+            return Optional.of(getEscapingFunction(XML));
+        }
+        return Optional.empty();
     }
 
     public static Function<String, String> getEscapingFunction(Escaping escaping) {
@@ -44,6 +68,8 @@ public class EscapingUtil {
             case NONE -> Function.identity();
             case URL -> s -> URLEncoder.encode(s, UTF_8);
             case SEGMENT -> EscapingUtil::pathEncode;
+            case JSON -> CommonBuiltInFunctions::toJSON; // Alternative: StringEscapeUtils::escapeJson ?
+            case XML -> StringEscapeUtils::escapeXml11;
         };
     }
 

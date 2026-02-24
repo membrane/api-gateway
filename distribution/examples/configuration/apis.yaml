@@ -37,7 +37,7 @@ global:
 components:
 
   demoComponent: # id for the component
-    log: {} # referencable plugin
+    log: {} # referenceable plugin
 
   jmx: # id for the bean
     bean:
