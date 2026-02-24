@@ -27,7 +27,7 @@ public final class NodeValidationUtils {
     public static void ensureSingleKey(ParsingContext<?> ctx, JsonNode node) {
         ensureMappingStart(node);
         if (node.size() != 1) {
-            var e = new ConfigurationParsingException("Expected exactly one key but there are %d.".formatted(node.size()));
+            var e = new ConfigurationParsingException("Expected exactly one key but there are %d. Separate APIs and configuration by ---".formatted(node.size()));
             e.setParsingContext(ctx);
             throw e;
         }
