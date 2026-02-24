@@ -416,13 +416,10 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         itemsObjectSchema.type("object").additionalProperties(childSpec.getAnnotation().allowForeign());
 
-        if (parentElementInfo.getAnnotation().noEnvelope() && parentSchema instanceof SchemaArray schemaArray) {
-            schemaArray.items(itemsObjectSchema);
-        } else {
-            if (parentSchema instanceof SchemaObject schemaObject) {
-                schemaObject.property(createFromChild(childSpec, itemsObjectSchema));
-            }
+        if (parentElementInfo.getAnnotation().noEnvelope()) {
+            setItemsIfArray(parentSchema, itemsObjectSchema);
         }
+        addPropertyIfObject(parentSchema, createFromChild(childSpec, itemsObjectSchema));
 
         return itemsObjectSchema;
     }
@@ -434,11 +431,8 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
         SchemaRef flowParserRef = ref(propertyName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
 
-        if (parentSchema instanceof SchemaArray schemaArray) {
-            schemaArray.items(flowParserRef);
-        } else if (parentSchema instanceof SchemaObject schemaObject) {
-            schemaObject.property(flowParserRef);
-        }
+        setItemsIfArray(parentSchema, flowParserRef);
+        addPropertyIfObject(parentSchema, flowParserRef);
     }
 
     private void addChildsAsProperties(Model model, MainInfo main, ChildElementInfo childSpec, SchemaObject parentObjectSchema, boolean componentsContext, boolean listItemContext) {
@@ -552,17 +546,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private void attachArrayItems(ElementInfo parentElementInfo, AbstractSchema<?> parentSchema, ChildElementInfo childSpec, AbstractSchema<?> arrayItemsSchema) {
         // noEnvelope list: parent is an array already
-        if (parentElementInfo.getAnnotation().noEnvelope() && parentSchema instanceof SchemaArray schemaArray) {
-            schemaArray.items(arrayItemsSchema);
+        if (parentElementInfo.getAnnotation().noEnvelope()) {
+            setItemsIfArray(parentSchema, arrayItemsSchema);
             return;
         }
-
-        if (parentSchema instanceof SchemaObject schemaObject) {
-            schemaObject.property(array(childSpec.getPropertyName())
-                    .items(arrayItemsSchema)
-                    .required(childSpec.isRequired())
-                    .description(getDescriptionContent(childSpec)));
-        }
+        addPropertyIfObject(parentSchema, array(childSpec.getPropertyName())
+                .items(arrayItemsSchema)
+                .required(childSpec.isRequired())
+                .description(getDescriptionContent(childSpec)));
     }
 
     private boolean hasAnyConfigurableProperty(ElementInfo elementInfo, MainInfo main) {
@@ -573,6 +564,18 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 || !elementInfo.getChildElementSpecs().isEmpty()
                 || elementInfo.getOai() != null
                 || hasComponentChild(elementInfo, main);
+    }
+
+    private void setItemsIfArray(AbstractSchema<?> parentSchema, AbstractSchema<?> itemsSchema) {
+        if (parentSchema instanceof SchemaArray schemaArray) {
+            schemaArray.items(itemsSchema);
+        }
+    }
+
+    private void addPropertyIfObject(AbstractSchema<?> parentSchema, AbstractSchema<?> propertySchema) {
+        if (parentSchema instanceof SchemaObject schemaObject) {
+            schemaObject.property(propertySchema);
+        }
     }
 
     private static String defsRefPath(String defName) {
