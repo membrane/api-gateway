@@ -371,42 +371,17 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return variants;
     }
 
-    private boolean isScalarChildList(ChildElementInfo cei) {
-        if (!cei.isList()) return false;
-        if (cei.getTypeDeclaration() == null) return false;
-
-        String qn = cei.getTypeDeclaration().getQualifiedName().toString();
-
-        return "java.lang.String".equals(qn)
-                || "java.lang.Boolean".equals(qn)
-                || "java.lang.Integer".equals(qn)
-                || "java.lang.Long".equals(qn)
-                || "java.lang.Double".equals(qn)
-                || "java.lang.Float".equals(qn)
-                || "java.lang.Short".equals(qn)
-                || "java.lang.Byte".equals(qn);
+    private boolean isScalarChildList(ChildElementInfo childSpec) {
+        return childSpec.isList() && getScalarSchemaKind(childSpec) != ScalarSchemaKind.NONE;
     }
 
-    private AbstractSchema<?> scalarItemsSchema(ChildElementInfo cei) {
-        String qn = cei.getTypeDeclaration().getQualifiedName().toString();
-
-        if ("java.lang.String".equals(qn)) {
-            return SchemaFactory.from("string").type("string");
-        }
-        if ("java.lang.Boolean".equals(qn)) {
-            return SchemaFactory.from("boolean").type("boolean");
-        }
-        if ("java.lang.Integer".equals(qn)
-                || "java.lang.Long".equals(qn)
-                || "java.lang.Short".equals(qn)
-                || "java.lang.Byte".equals(qn)) {
-            return SchemaFactory.from("integer").type("integer");
-        }
-        if ("java.lang.Double".equals(qn) || "java.lang.Float".equals(qn)) {
-            return SchemaFactory.from("number").type("number");
-        }
-
-        return SchemaFactory.from("string").type("string");
+    private AbstractSchema<?> scalarItemsSchema(ChildElementInfo childSpec) {
+        return switch (getScalarSchemaKind(childSpec)) {
+            case STRING, NONE -> SchemaFactory.from("string").type("string");
+            case BOOLEAN -> SchemaFactory.from("boolean").type("boolean");
+            case INTEGER -> SchemaFactory.from("integer").type("integer");
+            case NUMBER -> SchemaFactory.from("number").type("number");
+        };
     }
 
     private boolean isComponentsList(ElementInfo parentElementInfo, ChildElementInfo childSpec) {
@@ -606,6 +581,30 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private static SchemaRef defsSchemaRef(String propertyName, String defName) {
         return ref(propertyName).ref(defsRefPath(defName));
+    }
+
+    private enum ScalarSchemaKind {
+        NONE,
+        STRING,
+        BOOLEAN,
+        INTEGER,
+        NUMBER
+    }
+
+    private ScalarSchemaKind getScalarSchemaKind(ChildElementInfo childSpec) {
+        if (childSpec.getTypeDeclaration() == null) {
+            return ScalarSchemaKind.NONE;
+        }
+
+        String qualifiedName = childSpec.getTypeDeclaration().getQualifiedName().toString();
+
+        return switch (qualifiedName) {
+            case "java.lang.String" -> ScalarSchemaKind.STRING;
+            case "java.lang.Boolean" -> ScalarSchemaKind.BOOLEAN;
+            case "java.lang.Integer", "java.lang.Long", "java.lang.Short", "java.lang.Byte" -> ScalarSchemaKind.INTEGER;
+            case "java.lang.Double", "java.lang.Float" -> ScalarSchemaKind.NUMBER;
+            default -> ScalarSchemaKind.NONE;
+        };
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
