@@ -77,7 +77,7 @@ public class CommonBuiltInFunctions {
             try {
                 return objectMapper.writeValueAsString(String.valueOf(o));
             } catch (Exception fallback) {
-                log.debug("Failed to convert fallback value to JSON.", fallback);
+                log.info("Failed to convert fallback value to JSON.", fallback);
                 return "null";
             }
         }
