@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.1.0.json
+#
+# Tutorial: SOAP Routing by Wrapper Element
+#
+# Routes SOAP requests by inspecting the wrapper element inside the SOAP Body.
+# Some SOAP stacks route using the SOAPAction header instead
+# (see 75-Routing-by-SOAPAction.yaml).
+#
+# Try:
+#      curl localhost:2000
+#      curl localhost:2000 -H "Content-Type: text/xml" -d @city.soap.xml -v
+
+components:
+  ns:
+    xmlConfig:
+      namespaces:
+        - prefix: c
+          uri: https://predic8.de/cities
+
+---
+api:
+  port: 2000
+  test: //c:getCity
+  language: xpath
+  flow:
+    - setBody:
+        value: getCity
+    - return:
+        status: 200
+
+---
+api:
+  port: 2000
+  flow:
+    - log:
+        message: "Missed!"
+    - return:
+        status: 404
