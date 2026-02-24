@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.templating;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.security.*;
 import com.predic8.membrane.core.util.*;
@@ -29,6 +28,7 @@ import org.xml.sax.*;
 import javax.xml.parsers.*;
 import javax.xml.xpath.*;
 import java.io.*;
+import java.net.*;
 import java.nio.file.*;
 import java.util.*;
 
@@ -51,7 +51,7 @@ public class TemplateInterceptorTest {
     Router router;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         router = new DummyTestRouter();
         ti = new TemplateInterceptor();
         exc = new Exchange(null);
@@ -84,7 +84,7 @@ public class TemplateInterceptorTest {
     @SuppressWarnings("unchecked")
     @Test
     void createJson() throws Exception {
-        Exchange exchange = Request.put("/foo").contentType(APPLICATION_JSON).buildExchange();
+        var exchange = Request.put("/foo").contentType(APPLICATION_JSON).buildExchange();
 
         invokeInterceptor(exchange, """
                 {"foo":7,"bar":"baz"}
@@ -92,15 +92,15 @@ public class TemplateInterceptorTest {
 
         assertEquals(APPLICATION_JSON, exchange.getRequest().getHeader().getContentType());
 
-        Map<String,Object> m = om.readValue(exchange.getRequest().getBodyAsStringDecoded(),Map.class);
-        assertEquals(7,m.get("foo"));
-        assertEquals("baz",m.get("bar"));
+        Map<String, Object> m = om.readValue(exchange.getRequest().getBodyAsStringDecoded(), Map.class);
+        assertEquals(7, m.get("foo"));
+        assertEquals("baz", m.get("bar"));
     }
 
     @Test
     void accessBindings() throws Exception {
         Exchange exchange = post("/foo?a=1&b=2").contentType(TEXT_PLAIN).body("vlinder").buildExchange();
-        exchange.setProperty("baz",7);
+        exchange.setProperty("baz", 7);
 
         invokeInterceptor(exchange, """
                 <% for(h in header.allHeaderFields) { %>
@@ -123,7 +123,7 @@ public class TemplateInterceptorTest {
                     <%= p.key %> : <%= p.value %>
                 <% } %>
                 """, APPLICATION_JSON);
-        
+
         String body = exchange.getRequest().getBodyAsStringDecoded();
         assertTrue(body.contains("/foo"));
         assertTrue(body.contains("Flow: \"REQUEST\""));
@@ -201,7 +201,7 @@ public class TemplateInterceptorTest {
     @Test
     void contentTypeTestJson() {
         setAndHandleRequest("json/template_test.json");
-        assertEquals(APPLICATION_JSON,exc.getRequest().getHeader().getContentType());
+        assertEquals(APPLICATION_JSON, exc.getRequest().getHeader().getContentType());
     }
 
     @Test
@@ -209,7 +209,7 @@ public class TemplateInterceptorTest {
         ti.setSrc("normal text");
         ti.init(router);
         ti.handleRequest(exc);
-        assertEquals(TEXT_PLAIN,exc.getRequest().getHeader().getContentType());
+        assertEquals(TEXT_PLAIN, exc.getRequest().getHeader().getContentType());
     }
 
     @Test
@@ -223,7 +223,7 @@ public class TemplateInterceptorTest {
 
         ti.setContentType(APPLICATION_JSON);
         ti.setSrc(inputJson);
-        ti.setPretty( TRUE);
+        ti.setPretty(TRUE);
         ti.init();
         assertArrayEquals(expectedPrettyJson.getBytes(UTF_8), ti.prettify(inputJson.getBytes(UTF_8)));
     }
@@ -246,12 +246,38 @@ public class TemplateInterceptorTest {
         exc.setProperty(SECURITY_SCHEMES, List.of(new BasicHttpSecurityScheme().username("alice")));
         ti.setContentType(APPLICATION_JSON);
         ti.setSrc("""
-        { "foo": ${user()} }
-        """);
+                { "foo": ${user()} }
+                """);
         ti.init(router);
         ti.handleRequest(exc);
 
         assertTrue(exc.getRequest().getBodyAsStringDecoded().contains("alice"));
+    }
+
+    /**
+     * When inserting a value from JSONPath into a JSON document like:
+     * { "a": ${.a} }
+     * and the value is null, the document should be:
+     * { "a": null }
+     */
+    @Nested
+    class Null {
+
+        @Test
+        void escapeNull() throws URISyntaxException {
+            exc = setJsonSample();
+            ti.setContentType(APPLICATION_JSON_UTF8);
+            ti.setSrc("${fn.jsonPath('$.a')}");
+            ti.init(new DefaultRouter());
+            ti.handleRequest(exc);
+            assertEquals("null", exc.getRequest().getBodyAsStringDecoded());
+        }
+
+        private Exchange setJsonSample() throws URISyntaxException {
+            return post("/foo").json("""
+                    {"a":null}
+                    """).buildExchange();
+        }
     }
 
     private void setAndHandleRequest(String location) {
