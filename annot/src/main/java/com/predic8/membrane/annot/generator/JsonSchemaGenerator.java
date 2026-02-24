@@ -45,6 +45,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     public static final String MEMBRANE_SCHEMA_JSON_FILENAME = "membrane.schema.json";
     public static final String COMPONENTS = "components";
     private static final String INTERCEPTOR_FQN = "com.predic8.membrane.core.interceptor.Interceptor";
+    private static final String JSON_SCHEMA_DEFS_PREFIX = "#/$defs/";
+    private static final String $_REF = "$ref";
+    private static final String FLOW_PARSER_DEF_NAME = "flowParser";
 
     // TODO keep this pattern or allow *?
     public static final String COMPONENT_ID_PATTERN = "^[A-Za-z_][A-Za-z0-9_-]*$";
@@ -85,8 +88,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         for (ElementInfo e : top) {
             String name = e.getAnnotation().name();
-            String refName = "#/$defs/" + e.getXSDTypeName(m);
-            schema.property(ref(name).ref(refName));
+            schema.property(defsSchemaRef(name, e.getXSDTypeName(m)));
         }
 
         if (!top.isEmpty()) {
@@ -129,9 +131,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             }
 
             if (shouldGenerateFlowParserType(child)) {
-                return ref(parserName).ref("#/$defs/flowParser");
+                return ref(parserName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
             }
-            return ref(parserName).ref("#/$defs/%sParser".formatted(childName));
+            return ref(parserName).ref(defsRefPath(childName + "Parser"));
         }
 
         // enforce the inline form for collapsed elements
@@ -148,7 +150,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
         // Allow object-level component reference if any setter expects a component.
         if (hasComponentChild(elementInfo, main) && !parser.hasProperty("$ref")) {
-            parser.property(string("$ref")
+            parser.property(string($_REF)
                     .description("JSON Pointer to a component.")
                     .required(false));
         }
@@ -315,7 +317,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .findFirst()
                 .orElseThrow(); // should never happen due to shouldInlineListItems
 
-        AbstractSchema<?> itemsSchema = ref(itemEi.getAnnotation().name()).ref("#/$defs/" + itemEi.getXSDTypeName(m));
+        AbstractSchema<?> itemsSchema = defsSchemaRef(itemEi.getAnnotation().name(), itemEi.getXSDTypeName(m));
 
         // keep "- $ref: ..." alternative for component items
         if (!isComponentsList(i, cei) && itemEi.getAnnotation().component()) {
@@ -324,7 +326,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             variants.add(object()
                     .title("componentRef")
                     .additionalProperties(false)
-                    .property(string("$ref").required(false)));
+                    .property(string($_REF).required(false)));
             itemsSchema = anyOf(variants);
         }
 
@@ -341,8 +343,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             sos.add(object()
                     .title(ei.getAnnotation().name())
                     .additionalProperties(false)
-                    .property(ref(ei.getAnnotation().name())
-                            .ref("#/$defs/" + ei.getXSDTypeName(m))));
+                    .property(defsSchemaRef(ei.getAnnotation().name(), ei.getXSDTypeName(m))));
         }
         // Allow referencing a component instance directly on list-item level:
         // flow:
@@ -350,7 +351,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         sos.add(object()
                 .title("componentRef")
                 .additionalProperties(false)
-                .property(string("$ref")));
+                .property(string($_REF)));
         return sos;
     }
 
@@ -437,10 +438,10 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private void addFlowParserRef(AbstractSchema<?> parentSchema, String propertyName, List<AbstractSchema<?>> sos) {
         if (!flowDefCreated) {
-            schema.definition(array("flowParser").items(anyOf(sos)));
+            schema.definition(array(FLOW_PARSER_DEF_NAME).items(anyOf(sos)));
             flowDefCreated = true;
         }
-        SchemaRef ref = ref(propertyName).ref("#/$defs/flowParser");
+        SchemaRef ref = ref(propertyName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
 
         if (parentSchema instanceof SchemaArray sa) {
             sa.items(ref);
@@ -459,7 +460,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         // If this list can contain at least one @MCElement(component=true) type,
         // allow "- $ref: ..." as an alternative list item shape.
         if (listItemContext && !componentsContext && eis.stream().anyMatch(ei -> ei.getAnnotation().component())) {
-            parent2.property(string("$ref").required(false));
+            parent2.property(string($_REF).required(false));
         }
 
         for (ElementInfo ei : eis) {
@@ -471,7 +472,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private static SchemaRef getRef(Model m, ElementInfo ei) {
-        return ref(ei.getAnnotation().name()).ref("#/$defs/" + ei.getXSDTypeName(m));
+        return defsSchemaRef(ei.getAnnotation().name(), ei.getXSDTypeName(m));
     }
 
     private static ChildElementDeclarationInfo getChildElementDeclarationInfo(MainInfo main, ChildElementInfo cei) {
@@ -521,8 +522,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                     .title(n)
                     .additionalProperties(false)
                     .minProperties(1)
-                    .property(ref(n)
-                            .ref("#/$defs/" + comp.getXSDTypeName(m))));
+                    .property(defsSchemaRef(n, comp.getXSDTypeName(m))));
         }
         return variants;
     }
@@ -581,6 +581,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 || !ei.getChildElementSpecs().isEmpty()
                 || ei.getOai() != null
                 || hasComponentChild(ei, main);
+    }
+
+    private static String defsRefPath(String defName) {
+        return JSON_SCHEMA_DEFS_PREFIX + defName;
+    }
+
+    private static SchemaRef defsSchemaRef(String propertyName, String defName) {
+        return ref(propertyName).ref(defsRefPath(defName));
     }
 
     // For description. Probably we'll include that later. (Temporarily deactivated!)
