@@ -110,52 +110,67 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         }
     }
 
-    private AbstractSchema<?> createParser(Model m, MainInfo main, ElementInfo elementInfo) {
-        String parserName = elementInfo.getXSDTypeName(m);
+    private AbstractSchema<?> createParser(Model model, MainInfo main, ElementInfo elementInfo) {
+        String parserName = elementInfo.getXSDTypeName(model);
 
         if (isComponentsMap(elementInfo)) {
-            return createComponentsMapParser(m, main, elementInfo, parserName);
+            return createComponentsMapParser(model, main, elementInfo, parserName);
         }
 
-        // e.g. to prevent a request from needing a flow child noEnvelope=true is used
         if (elementInfo.getAnnotation().noEnvelope()) {
-            // With noEnvelope=true, there should be exactly one child element
-            ChildElementInfo child = elementInfo.getChildElementSpecs().getFirst();
-            var childName = child.getPropertyName();
-
-            if (!componentParsersAdded.contains(childName) && !shouldGenerateFlowParserType(child)) {
-                SchemaArray array = array(childName + "Parser");
-                processMCChilds(m, main, child.getEi(), array);
-                schema.definition(array);
-                componentParsersAdded.add(childName);
-            }
-
-            if (shouldGenerateFlowParserType(child)) {
-                return ref(parserName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
-            }
-            return ref(parserName).ref(defsRefPath(childName + "Parser"));
+            return createNoEnvelopeParser(model, main, elementInfo, parserName);
         }
 
         // enforce the inline form for collapsed elements
         if (elementInfo.getAnnotation().collapsed()) {
-            if (elementInfo.getAnnotation().noEnvelope()) {
-                throw new ProcessingException("@MCElement(collapsed=true) is not compatible with noEnvelope=true.", elementInfo.getElement());
-            }
-            return createCollapsedInlineParser(elementInfo, parserName);
+            return createCollapsedParser(elementInfo, parserName);
         }
 
-        SchemaObject parser = getParserSchemaObject(elementInfo, parserName);
+        return createRegularParser(model, main, elementInfo, parserName);
+    }
 
-        collectProperties(m, main, elementInfo, parser);
+    private AbstractSchema<?> createNoEnvelopeParser(Model model, MainInfo main, ElementInfo elementInfo, String parserName) {
+        // With noEnvelope=true, there should be exactly one child element
+        ChildElementInfo childSpec = elementInfo.getChildElementSpecs().getFirst();
+        String childName = childSpec.getPropertyName();
+
+        if (!componentParsersAdded.contains(childName) && !shouldGenerateFlowParserType(childSpec)) {
+            SchemaArray childParserArray = array(childName + "Parser");
+            processMCChilds(model, main, childSpec.getEi(), childParserArray);
+            schema.definition(childParserArray);
+            componentParsersAdded.add(childName);
+        }
+
+        if (shouldGenerateFlowParserType(childSpec)) {
+            return ref(parserName).ref(defsRefPath(FLOW_PARSER_DEF_NAME));
+        }
+
+        return ref(parserName).ref(defsRefPath(childName + "Parser"));
+    }
+
+    private AbstractSchema<?> createCollapsedParser(ElementInfo elementInfo, String parserName) {
+        if (elementInfo.getAnnotation().noEnvelope()) {
+            throw new ProcessingException(
+                    "@MCElement(collapsed=true) is not compatible with noEnvelope=true.",
+                    elementInfo.getElement()
+            );
+        }
+        return createCollapsedInlineParser(elementInfo, parserName);
+    }
+
+    private AbstractSchema<?> createRegularParser(Model model, MainInfo main, ElementInfo elementInfo, String parserName) {
+        SchemaObject parserSchema = getParserSchemaObject(elementInfo, parserName);
+
+        collectProperties(model, main, elementInfo, parserSchema);
 
         // Allow object-level component reference if any setter expects a component.
-        if (hasComponentChild(elementInfo, main) && !parser.hasProperty("$ref")) {
-            parser.property(string($_REF)
+        if (hasComponentChild(elementInfo, main) && !parserSchema.hasProperty($_REF)) {
+            parserSchema.property(string($_REF)
                     .description("JSON Pointer to a component.")
                     .required(false));
         }
 
-        return parser;
+        return parserSchema;
     }
 
     private AbstractSchema<?> createCollapsedInlineParser(ElementInfo ei, String parserName) {
