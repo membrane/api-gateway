@@ -13,21 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.annot.util;
 
-import com.predic8.membrane.annot.Grammar;
-import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.beanregistry.SpringContextAdapter;
+import com.predic8.membrane.annot.beanregistry.*;
+import com.predic8.membrane.annot.yaml.*;
 import org.hamcrest.*;
 import org.hamcrest.collection.*;
 import org.jetbrains.annotations.*;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.CommonAnnotationBeanPostProcessor;
-import org.springframework.context.support.AbstractRefreshableApplicationContext;
+import org.springframework.context.support.*;
 
 import javax.tools.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.regex.*;
 import java.util.regex.Matcher;
 import java.util.stream.*;
@@ -104,6 +100,10 @@ public class CompilerHelper {
             return action.get();
         } catch (RuntimeException | Error e) {
             throw e;
+        } catch (InvocationTargetException e) {
+          if (e.getTargetException() instanceof ConfigurationParsingException cpe)
+              throw cpe;
+          throw new RuntimeException(e.getTargetException());
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

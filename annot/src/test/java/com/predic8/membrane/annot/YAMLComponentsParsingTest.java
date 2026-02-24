@@ -290,7 +290,7 @@ public class YAMLComponentsParsingTest {
     }
 
     @Test
-    public void objectLevelRefTypeMismatchError() {
+    void objectLevelRefTypeMismatchError() {
         var ex = assertThrows(RuntimeException.class, () -> parse("""
                 components:
                   manager:
@@ -304,8 +304,11 @@ public class YAMLComponentsParsingTest {
                         issuer: https://issuer
                         $ref: "#/components/manager"
                 """));
-        assertAnyErrorContains(ex, "Referenced component '#/components/manager' (type 'basicAuthentication') is not allowed in 'oauth2authserver'.");
-    }
+        assertInstanceOf(ConfigurationParsingException.class, ex);
+        var cpe = (ConfigurationParsingException) ex;
+        assertTrue(cpe.getMessage().contains("#/components/manager"));
+        assertTrue(cpe.getMessage().contains("basicAuthentication"));
+   }
 
     @Test
     public void flowRefTypeMismatchError() {
