@@ -312,7 +312,7 @@ public class GenericYamlParser {
         } catch (RuntimeException e) {
             throw new ConfigurationParsingException(
                     "Referenced component '%s' (type '%s') is not allowed in '%s'."
-                            .formatted(refNode.asText(), refKey, ctx.getContext()));
+                            .formatted(refNode.asText(), refKey, ctx.getContext()),e,ctx.key("$ref"));
         } catch (Throwable t) {
             throw new ConfigurationParsingException(t);
         }
