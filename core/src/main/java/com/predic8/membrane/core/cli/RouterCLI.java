@@ -20,32 +20,33 @@ import com.predic8.membrane.annot.yaml.*;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.*;
 import org.apache.commons.cli.*;
-import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.binary.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
+import java.nio.charset.*;
+import java.security.*;
 import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.*;
 import static com.predic8.membrane.core.config.spring.CheckableBeanFactory.*;
 import static com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext.*;
-import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.buildArgon2idPCH;
+import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.proxies.ApiInfo.logInfosAboutStartedProxies;
 import static com.predic8.membrane.core.util.ExceptionUtil.*;
 import static com.predic8.membrane.core.util.OSUtil.*;
 import static com.predic8.membrane.core.util.URIUtil.*;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.lang.Integer.*;
-import static org.apache.commons.cli.Option.builder;
 import static org.apache.commons.lang3.exception.ExceptionUtils.*;
 
 public class RouterCLI {
@@ -225,9 +226,9 @@ public class RouterCLI {
                 .ifPresent(beanDefinition -> router.applyConfiguration((Configuration) reg.resolve(beanDefinition.getName())));
 
         reg.finishStaticConfiguration();
-
         reg.start();
         router.start();
+        logInfosAboutStartedProxies(router.getRuleManager());
         logStartupMessage();
         return router;
     }

@@ -366,7 +366,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         log.debug("Asynchronous initialization finished.");
         if (!success && !configuration.isRetryInit())
             System.exit(1);
-        ApiInfo.logInfosAboutStartedProxies(getRuleManager());
     }
 
     @Override
