@@ -36,6 +36,20 @@ public class ComponentClassGenerator extends ClassGenerator{
                 
                 import java.util.Map;
                 
+                /**
+                 * @description Defines reusable, named components that can be referenced from other sections (e.g., via <code>$ref</code>).
+                 * @yaml <pre><code>
+                 * components:
+                 *   demoComponent: # id for the component
+                 *     log: {} # referenceable plugin
+                 * ---
+                 * api:
+                 *   port: 2000
+                 *   flow:
+                 *     - $ref: '#/components/demoComponent' # references the demo component
+                 * </code></pre>
+                 * @topic 1. Proxies and Flow
+                 */
                 @MCElement(name = "components", topLevel = true, component=false)
                 public class Components {
                 

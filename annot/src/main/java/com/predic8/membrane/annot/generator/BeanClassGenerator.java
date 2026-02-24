@@ -46,12 +46,10 @@ public class BeanClassGenerator extends ClassGenerator{
                  *       class: com.example.MyInterceptor
                  *       scope: SINGLETON
                  *       constructorArgs:
-                 *         - constructorArg:
-                 *             value: foo
+                 *         - value: foo
                  *       properties:
-                 *         - property:
-                 *             name: bar
-                 *             value: baz
+                 *         - name: bar
+                 *           value: baz
                  */
                 @MCElement(name = "bean")
                 public class Bean {
