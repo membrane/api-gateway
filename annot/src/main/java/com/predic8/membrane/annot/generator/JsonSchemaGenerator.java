@@ -44,6 +44,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     public static final String MEMBRANE_SCHEMA_JSON_FILENAME = "membrane.schema.json";
     public static final String COMPONENTS = "components";
+    private static final String INTERCEPTOR_FQN = "com.predic8.membrane.core.interceptor.Interceptor";
 
     // TODO keep this pattern or allow *?
     public static final String COMPONENT_ID_PATTERN = "^[A-Za-z_][A-Za-z0-9_-]*$";
@@ -127,6 +128,9 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 componentAdded.put(childName, true);
             }
 
+            if (shouldGenerateFlowParserType(child)) {
+                return ref(parserName).ref("#/$defs/flowParser");
+            }
             return ref(parserName).ref("#/$defs/%sParser".formatted(childName));
         }
 
@@ -352,7 +356,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private boolean shouldGenerateFlowParserType(ChildElementInfo cei) {
-        return "flow".equals(cei.getPropertyName()) && !isFlowFromWebSocket(cei);
+        if (!cei.isList()) return false;
+        if (isFlowFromWebSocket(cei)) return false;
+
+        TypeElement interceptor = processingEnv.getElementUtils().getTypeElement(INTERCEPTOR_FQN);
+        if (interceptor == null) {
+            return INTERCEPTOR_FQN.equals(cei.getTypeDeclaration().getQualifiedName().toString());
+        }
+        return processingEnv.getTypeUtils().isAssignable(cei.getTypeDeclaration().asType(), interceptor.asType());
     }
 
     boolean isFlowFromWebSocket(ChildElementInfo cei) {
@@ -364,7 +375,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         SchemaObject items = object("items");
 
         if (shouldGenerateFlowParserType(cei)) {
-            addFlowParserRef(so, sos);
+            addFlowParserRef(so, cei.getPropertyName(), sos);
             return items;
         }
 
@@ -381,15 +392,16 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         return items;
     }
 
-    private void addFlowParserRef(AbstractSchema<?> so, List<AbstractSchema<?>> sos) {
+    private void addFlowParserRef(AbstractSchema<?> parentSchema, String propertyName, List<AbstractSchema<?>> sos) {
         if (!flowDefCreated) {
             schema.definition(array("flowParser").items(anyOf(sos)));
             flowDefCreated = true;
         }
-        SchemaRef ref = ref("flow").ref("#/$defs/flowParser");
-        if (so instanceof SchemaArray sa) {
+        SchemaRef ref = ref(propertyName).ref("#/$defs/flowParser");
+
+        if (parentSchema instanceof SchemaArray sa) {
             sa.items(ref);
-        } else if (so instanceof SchemaObject sObj) {
+        } else if (parentSchema instanceof SchemaObject sObj) {
             sObj.property(ref);
         }
     }
