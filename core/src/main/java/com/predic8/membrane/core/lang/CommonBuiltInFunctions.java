@@ -39,7 +39,7 @@ import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.util.xml.NormalizeXMLForJsonUtil.normalizeForJson;
+import static com.predic8.membrane.core.util.xml.NormalizeXMLForJsonUtil.*;
 import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
@@ -71,9 +71,15 @@ public class CommonBuiltInFunctions {
                 o = normalizeForJson(o);
             }
             return objectMapper.writeValueAsString(o);
-        } catch (Exception e) {
-            log.info("Failed to convert object to JSON", e);
-            return null;
+        } catch (Exception first) {
+            // Fallback: always return valid JSON, even for unsupported types (e.g. java.time.* without modules).
+            log.debug("Failed to convert object to JSON. Falling back to JSON string.", first);
+            try {
+                return objectMapper.writeValueAsString(String.valueOf(o));
+            } catch (Exception fallback) {
+                log.info("Failed to convert fallback value to JSON.", fallback);
+                return "null";
+            }
         }
     }
 
