@@ -28,7 +28,7 @@ public class ApiInfo {
 
     public static void logInfosAboutStartedProxies(RuleManager manager) {
         if (manager.getRules().isEmpty()) {
-            // Nothing started yet. Happens when the router is started with YAML configuration or on K8S startup.
+            // Nothing started yet. Happens when the router is started with on K8S startup.
             return;
         }
         log.info("Started {} API{}:", manager.getRules().size(), (manager.getRules().size() > 1 ? "s" : ""));
