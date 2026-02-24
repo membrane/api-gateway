@@ -17,15 +17,16 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import org.springframework.beans.factory.xml.*;
 
 import javax.annotation.concurrent.*;
-import java.io.IOException;
-import java.lang.reflect.Method;
+import java.io.*;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.annot.yaml.WatchAction.ADDED;
+import static com.predic8.membrane.annot.yaml.WatchAction.*;
 
 /**
  * TODO:
