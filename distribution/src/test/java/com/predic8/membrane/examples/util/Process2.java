@@ -77,11 +77,6 @@ public class Process2 implements AutoCloseable {
 			return this;
 		}
 
-		public Builder env(String key, String value) {
-			env.put(key, value);
-			return this;
-		}
-
 		public Builder withEnv(Map<String, String> envs) {
 			env.putAll(envs);
 			return this;

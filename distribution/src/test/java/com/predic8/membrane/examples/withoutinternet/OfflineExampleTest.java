@@ -31,9 +31,9 @@ public class OfflineExampleTest extends AbstractSampleMembraneStartStopTestcase 
         return "/configuration";
     }
 
-    @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        process = new Process2.Builder().in(baseDir).script("membrane").withParameters("-c offline.apis.yaml").waitForMembrane().start();
+    @Override
+    protected String getParameters() {
+        return "-c offline.apis.yaml";
     }
 
     @Test
