@@ -44,6 +44,16 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * XPath-expression is run on the reconstituted message; if it matches, the message is replaced by the
  * modified reconstituted message.
  * </p>
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - response:
+ *         - xmlContentFilter:
+ *             xPath: //book/reviews
+ *   target:
+ *     url: https://membrane-api.io
+ * </code></pre>
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "xmlContentFilter")

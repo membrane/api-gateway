@@ -34,6 +34,19 @@ import static com.predic8.membrane.core.security.HttpSecurityScheme.*;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - basicAuthentication:
+ *         users:
+ *           - username: user
+ *             password: user123
+ *           - username: admin
+ *             password: admin456
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  * @topic 3. Security and Validation
  */
 @MCElement(name = "basicAuthentication")

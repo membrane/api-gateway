@@ -32,9 +32,21 @@ import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidF
 
 /**
  * @description Using the formValidation interceptor you can validate the input of HTML forms.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - formValidation:
+ *         - name: age
+ *           regex: |
+ *             \d+
+ *         - name: name
+ *           regex: |
+ *             [a-z]+
+ * </code></pre>
  * @topic 3. Security and Validation
  */
-@MCElement(name="formValidation")
+@MCElement(name="formValidation", noEnvelope = true)
 public class FormValidationInterceptor extends AbstractInterceptor {
 
 	@MCElement(name="field", component =false, id="formValidation-field")
