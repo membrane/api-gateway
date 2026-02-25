@@ -42,6 +42,17 @@ import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCha
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   target:
+ *     url: https://api.predic8.de
+ * ---
+ * api:
+ *   port: 2000
+ *   openapi:
+ *     - location: fruitshop-api-v1.oas.yaml
+ * </code></pre>
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "api", topLevel = true, component = false)

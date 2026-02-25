@@ -26,6 +26,17 @@ import static com.predic8.membrane.core.interceptor.headerfilter.HeaderFilterInt
 /**
  * @description Removes message headers matching a list of patterns.
  * The first matching child element will be acted upon by the filter.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - headerFilter:
+ *         - include: Content.*
+ *         - include: Location
+ *         - exclude: .*
+ *   target:
+ *     url: https://membrane-api.io
+ * </code></pre>
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "headerFilter", noEnvelope = true)

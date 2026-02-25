@@ -23,6 +23,15 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 /**
  * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
  * &lt;response&gt; plugin you can limit their application to responses only.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - response:
+ *         - static:
+ *             src: Hello!
+ *     - return: {}
+ * </code></pre>
  * @topic 1. Proxies and Flow
  */
 @MCElement(name = "response", component = false, noEnvelope = true)
