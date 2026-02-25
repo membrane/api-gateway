@@ -16,16 +16,18 @@
 
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
-import java.net.*;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 
 import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.OSUtil.wl;
+import static com.predic8.membrane.test.TestUtil.wl;
 import static java.io.File.separator;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class FileUtilTest {
 

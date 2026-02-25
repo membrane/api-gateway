@@ -16,8 +16,6 @@
 
 package com.predic8.membrane.core.util;
 
-import org.jetbrains.annotations.*;
-
 import static com.predic8.membrane.core.util.OSUtil.OS.*;
 
 public class OSUtil {
@@ -49,9 +47,4 @@ public class OSUtil {
         return s.replaceAll("\\\\", "/");
     }
 
-    public  static String wl(String windows, String linux) {
-        if (OSUtil.isWindows())
-            return windows;
-        return linux;
-    }
 }
