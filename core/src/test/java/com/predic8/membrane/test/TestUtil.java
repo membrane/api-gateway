@@ -71,6 +71,9 @@ public class TestUtil {
         return linux;
     }
 
+    // Determines the current Windows drive (e.g., "C:") from the process working directory root
+    // falls back to "C:" on non-Windows or on errors.
+    // Example: if running from "D:\\work\\proj", returns "D:".
     private static String detectWindowsDrive() {
         if (!isWindows()) return "C:";
 
