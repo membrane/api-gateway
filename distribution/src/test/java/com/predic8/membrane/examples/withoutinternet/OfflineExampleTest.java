@@ -15,7 +15,11 @@
 package com.predic8.membrane.examples.withoutinternet;
 
 import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.*;
@@ -24,7 +28,12 @@ public class OfflineExampleTest extends AbstractSampleMembraneStartStopTestcase 
 
     @Override
     protected String getExampleDirName() {
-        return "/offline";
+        return "/configuration";
+    }
+
+    @BeforeEach
+    void startMembrane() throws IOException, InterruptedException {
+        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c offline.apis.yaml").waitForMembrane().start();
     }
 
     @Test
