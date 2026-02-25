@@ -53,8 +53,7 @@ api:
       - apiKey:
            required: false
            extractors:
-              - header:
-                   name: X-Key
+              - header: X-Key
       - setProperty:
            name: scopes
            value: ${scopes()}

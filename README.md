@@ -884,8 +884,7 @@ global:
             - secret:
                 value: 08f121fa-3cda-49c6-90db-1f189ff80756
       extractors:
-        - header:
-            name: X-Api-Key
+        - header: X-Api-Key
 ```
 
 ### Advanced Use Cases
