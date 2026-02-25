@@ -13,14 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.nio.file.*;
-import java.security.*;
+import java.nio.file.Paths;
+import java.security.InvalidParameterException;
 
-import static com.predic8.membrane.core.resolver.ResolverMap.*;
-import static com.predic8.membrane.core.util.OSUtil.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.test.TestUtil.wl;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ResolverMapCombineTest {
     /**

@@ -27,8 +27,6 @@ public class OSUtil {
 
     public static final String OS_NAME_PROPERTY = "os.name";
 
-    private static final String WINDOWS_DRIVE = detectWindowsDrive();
-
     public static boolean isWindows() {
         return System.getProperty(OS_NAME_PROPERTY,"").toLowerCase().contains("windows");
     }
@@ -54,37 +52,4 @@ public class OSUtil {
         return s.replaceAll("\\\\", "/");
     }
 
-    public static String wl(String windows, String linux) {
-        if (OSUtil.isWindows())
-            return normalizeWindowsDrive(windows);
-        return linux;
-    }
-
-    private static String detectWindowsDrive() {
-        if (!isWindows()) return "C:";
-
-        try {
-            Path root = Paths.get("").toAbsolutePath().getRoot();
-            if (root == null) return "C:";
-            String r = root.toString();
-            return (r.length() >= 2 && r.charAt(1) == ':') ? r.substring(0, 2) : "C:";
-        } catch (Exception ignored) {
-            return "C:";
-        }
-    }
-
-    private static String normalizeWindowsDrive(String s) {
-        if (!isWindows() || s == null || "C:".equals(WINDOWS_DRIVE)) return s;
-
-        if (s.startsWith("file:/C:")) {
-            return "file:/" + WINDOWS_DRIVE + s.substring("file:/C:".length());
-        }
-        if (s.startsWith("C:\\")) {
-            return WINDOWS_DRIVE + s.substring(2);
-        }
-        if (s.startsWith("C:/")) {
-            return WINDOWS_DRIVE + s.substring(2);
-        }
-        return s;
-    }
 }
