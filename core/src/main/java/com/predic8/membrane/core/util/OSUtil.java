@@ -16,11 +16,6 @@
 
 package com.predic8.membrane.core.util;
 
-import org.jetbrains.annotations.*;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 import static com.predic8.membrane.core.util.OSUtil.OS.*;
 
 public class OSUtil {
