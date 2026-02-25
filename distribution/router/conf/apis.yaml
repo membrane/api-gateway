@@ -1,20 +1,9 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.1.0.json
 #
-# How to start this configuration:
+# Start the gateway:
 #   cd membrane-api-gateway...
-#   ./membrane.sh (or membrane.cmd on Windows)
-#
-# Helpful resources:
-#   - Tutorials: tutorials/getting-started
-#   - Examples: examples/*
-#   - Free API Gateway Book: https://www.membrane-api.io/api-gateway-ebook.html
-#   - Documentation: https://www.membrane-api.io/docs/
-#
-# Troubleshooting:
-#   This configuration requires direct Internet access.
-#   If you are behind a corporate proxy, use examples/offline.
+#   ./membrane.sh (Windows: membrane.cmd)
 
----
 # Forward requests starting with /fact
 # Try: curl http://localhost:2000/fact
 api:
@@ -25,14 +14,31 @@ api:
     url: https://catfact.ninja/fact
 
 ---
-# Deploy an API from OpenAPI
-# API docs: http://localhost:2000/api-docs
-# Try: curl http://localhost:2000/shop/v2/products
+# Open in Browser: http://localhost:2000/api-docs
+# Try: curl http://localhost:2000/shop/v2/
 api:
   port: 2000
+  # Deploy from OpenAPI
   openapi:
     - location: openapi/fruitshop-v2-2-0.oas.yml
       validateRequests: true
+
+---
+# Default API, when no path is specified
+# curl http://localhost:2000
+api:
+  port: 2000
+  flow:
+    - request:
+      # Dynamically generate response
+      - template:
+          contentType: application/json
+          src: |
+            { 
+              "time": ${java.time.OffsetDateTime.now()}
+            }
+      - return:
+          status: 200
 
 ---
 # Admin Web Console
@@ -40,9 +46,19 @@ api:
 api:
   port: 9000
   flow:
-    # Protect the Admin Console using authentication (Basic, OAuth2, ACL, or none).
+    # Protect access with Basic, OAuth2, ACL, ...).
     - basicAuthentication:
         users:
           - username: admin
             password: admin
     - adminConsole: {}
+
+# Next steps:
+#   - Tutorials: tutorials/getting-started
+#   - Free API Gateway Book: https://www.membrane-api.io/api-gateway-ebook.html
+#   - Examples: examples/*
+#   - Documentation: https://www.membrane-api.io/docs/
+#
+# Troubleshooting:
+#     This configuration requires direct Internet access.
+#     For proxy configuration and offline sample see: examples/configuration

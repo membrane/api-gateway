@@ -33,6 +33,7 @@ public class RestGetToSoapTutorialTest extends AbstractTransformationTutorialTes
         .when()
             .get("http://localhost:2000/cities/Bielefeld")
         .then()
+            .log().ifValidationFails()
             .statusCode(200)
             .body("country", equalTo("Germany"))
             .body("population", greaterThan(0));
