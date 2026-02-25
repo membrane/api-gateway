@@ -14,14 +14,14 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
-import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
+import static io.restassured.RestAssured.when;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ThrottleExampleTest extends DistributionExtractingTestcase {
+public class ThrottleExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -30,12 +30,9 @@ public class ThrottleExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-			ha.getAndAssert200(LOCALHOST_2000);
-			long start = System.currentTimeMillis();
-			ha.getAndAssert200(LOCALHOST_2000);
-			long elapsedMillis = System.currentTimeMillis() - start;
-			assertTrue(elapsedMillis >= 1000);
-		}
+		when().get(LOCALHOST_2000).then().statusCode(200);
+		long start = System.currentTimeMillis();
+		when().get(LOCALHOST_2000).then().statusCode(200);
+        assertTrue(System.currentTimeMillis() - start >= 1000);
 	}
 }

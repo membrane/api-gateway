@@ -14,13 +14,14 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 
-public class OutgoingAPIGatewayExampleTest extends DistributionExtractingTestcase {
+public class OutgoingAPIGatewayExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -29,24 +30,22 @@ public class OutgoingAPIGatewayExampleTest extends DistributionExtractingTestcas
 
     @Test
     public void test() throws Exception {
-        try (Process2 ignored = startServiceProxyScript()) {
-            // @formatter:off
-            given()
-                    .baseUri("http://localhost:2000")
-                    .header("X-Api-Key", "10430")
-                    .header("User-Agent", "secret")
-                    .header("Authorization", "secret")
-            .when()
-                    .get("/")
-            .then()
-                    .log().ifValidationFails()
-                    .statusCode(200)
-                    .body(containsString("X-Api-Key"))
-                    .body(not(containsString("User-Agent")))
-                    .body(not(containsString("Authorization")))
-                    .body(not(containsString("X-Forwarded")));
-            // @formatter:on
-        }
+        // @formatter:off
+        given()
+                .baseUri("http://localhost:2000")
+                .header("X-Api-Key", "10430")
+                .header("User-Agent", "secret")
+                .header("Authorization", "secret")
+        .when()
+                .get("/")
+        .then()
+                .log().ifValidationFails()
+                .statusCode(200)
+                .body(containsString("X-Api-Key"))
+                .body(not(containsString("User-Agent")))
+                .body(not(containsString("Authorization")))
+                .body(not(containsString("X-Forwarded")));
+        // @formatter:on
     }
 }
 

@@ -32,9 +32,9 @@ public class DistributionApisYamlExampleTest extends AbstractSampleMembraneStart
         return "..";
     }
 
-    @BeforeEach
-    void startMembrane() throws IOException, InterruptedException {
-        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c conf/apis.yaml").waitForMembrane().start();
+    @Override
+    protected String getParameters() {
+        return "-c conf/apis.yaml";
     }
 
     // @formatter:off

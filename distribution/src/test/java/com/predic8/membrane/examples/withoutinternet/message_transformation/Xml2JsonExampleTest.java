@@ -38,8 +38,8 @@ public class Xml2JsonExampleTest extends DistributionExtractingTestcase {
                 .body(readFileFromBaseDir("jobs.xml"))
             .when()
                 .post(LOCALHOST_2000)
-.then()
-                    .statusCode(200);
+            .then()
+                .statusCode(200);
             // @formatter:on
             assertThat(logger.toString(), containsString("{\"jobs\":{\"job\":"));
         }

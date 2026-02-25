@@ -14,14 +14,16 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
+import static io.restassured.RestAssured.when;
 import static java.io.File.separator;
 
-public class FormValidationExampleTest extends DistributionExtractingTestcase {
+public class FormValidationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -30,9 +32,7 @@ public class FormValidationExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-			ha.getAndAssert(400, "http://localhost:2000/?name=banana0");
-			ha.getAndAssert(200, "http://localhost:2000/?name=banana");
-		}
+		when().get("http://localhost:2000/?name=banana0").then().statusCode(400);
+		when().get("http://localhost:2000/?name=banana").then().statusCode(200);
 	}
 }

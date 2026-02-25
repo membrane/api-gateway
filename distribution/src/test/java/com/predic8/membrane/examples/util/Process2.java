@@ -61,11 +61,6 @@ public class Process2 implements AutoCloseable {
 			return this;
 		}
 
-		public Builder parameters(String parameters) {
-			this.parameters = parameters;
-			return this;
-		}
-
 		public Builder executable(String line) {
 			if (id != null)
 				throw new IllegalStateException("executable or script is already set.");
@@ -82,8 +77,13 @@ public class Process2 implements AutoCloseable {
 			return this;
 		}
 
-		public Builder env(String key, String value) {
-			env.put(key, value);
+		public Builder withEnv(Map<String, String> envs) {
+			env.putAll(envs);
+			return this;
+		}
+
+		public Builder withParameters(String parameters) {
+			this.parameters = parameters;
 			return this;
 		}
 

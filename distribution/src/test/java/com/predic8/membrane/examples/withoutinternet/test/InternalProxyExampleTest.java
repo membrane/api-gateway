@@ -13,14 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.examples.withoutinternet.test;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
-import static org.hamcrest.Matchers.*;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.XML;
+import static org.hamcrest.Matchers.containsStringIgnoringCase;
 
-public class InternalProxyExampleTest extends DistributionExtractingTestcase {
+public class InternalProxyExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     private static final String BASE_URL = "http://localhost:2000";
 
@@ -31,44 +31,42 @@ public class InternalProxyExampleTest extends DistributionExtractingTestcase {
 
     @Test
     void expressOrderRoutesToInternalProxy() throws Exception {
-        try(Process2 ignored = startServiceProxyScript()) {
-            // @formatter:off
-            given()
-                .contentType(XML)
-                .body(readFileFromBaseDir("express.xml"))
-            .when()
-                .post(BASE_URL)
-            .then()
-                .statusCode(200)
-                .body(containsStringIgnoringCase("Express"));
+        // @formatter:off
+        given()
+            .contentType(XML)
+            .body(readFileFromBaseDir("express.xml"))
+        .when()
+            .post(BASE_URL)
+        .then()
+            .statusCode(200)
+            .body(containsStringIgnoringCase("Express"));
 
-            given()
-                .when()
-                    .body(readFileFromBaseDir("normal.xml"))
-                    .post(BASE_URL)
-                .then()
-                    .statusCode(200)
-                    .body(containsStringIgnoringCase("Normal"))
-                    .extract()
-                    .asString();
+        given()
+        .when()
+            .body(readFileFromBaseDir("normal.xml"))
+            .post(BASE_URL)
+        .then()
+            .statusCode(200)
+            .body(containsStringIgnoringCase("Normal"))
+            .extract()
+            .asString();
 
-            given()
-                    .contentType(XML)
-                    .body("""
-                        <order express='no'>
-                            <items>
-                                <item id="1" count="1"/>
-                            </items>
-                        </order>
-                        """)
-                .when()
-                    .post(BASE_URL)
-                .then()
-                    .statusCode(200)
-                    .body(containsStringIgnoringCase("Normal"))
-                    .extract()
-                    .asString();
-            // @formatter:on
-        }
+        given()
+            .contentType(XML)
+            .body("""
+                <order express='no'>
+                    <items>
+                        <item id="1" count="1"/>
+                    </items>
+                </order>
+                """)
+        .when()
+            .post(BASE_URL)
+        .then()
+            .statusCode(200)
+            .body(containsStringIgnoringCase("Normal"))
+            .extract()
+            .asString();
+        // @formatter:on
     }
 }

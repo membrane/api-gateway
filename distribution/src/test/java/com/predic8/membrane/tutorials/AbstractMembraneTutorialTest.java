@@ -31,10 +31,7 @@ public abstract class AbstractMembraneTutorialTest extends AbstractSampleMembran
     }
 
     @Override
-    protected Process2 startServiceProxyScript(ConsoleWatcher watch, String script) throws IOException, InterruptedException {
-        Process2.Builder builder = new Process2.Builder().in(baseDir);
-        if (watch != null)
-            builder = builder.withWatcher(watch);
-        return builder.script(script).waitForMembrane().parameters("-c %s".formatted(getTutorialYaml())).start();
+    protected String getParameters() {
+        return "-c %s".formatted(getTutorialYaml());
     }
 }

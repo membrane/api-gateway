@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 
-public class RewriterExampleTest extends DistributionExtractingTestcase {
+public class RewriterExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -29,13 +29,12 @@ public class RewriterExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignore = startServiceProxyScript()) {
-
-			given()
-				.get("http://localhost:2000/store/products/")
-			.then()
-				.statusCode(200)
-				.body("meta.count", greaterThanOrEqualTo(0));
-		}
+		// @formatter:off
+		given()
+			.get("http://localhost:2000/store/products/")
+		.then()
+			.statusCode(200)
+			.body("meta.count", greaterThanOrEqualTo(0));
+		// @formatter:on
 	}
 }

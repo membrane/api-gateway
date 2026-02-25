@@ -138,7 +138,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
         @Test
         void https_backendsReachable() throws Exception {
             ensureCertificates();
-            try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
+            try (Process2 ignored = builder.withParameters(PROXIES_TLS_XML_OPTION).start()) {
                 // @formatter:off
             given()
                 .relaxedHTTPSValidation()
@@ -163,7 +163,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
         @Test
         void https_lbAlternates() throws Exception {
             ensureCertificates();
-            try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
+            try (Process2 ignored = builder.withParameters(PROXIES_TLS_XML_OPTION).start()) {
                 Set<String> seen = new HashSet<>();
                 for (int i = 0; i < 4; i++) {
                     // @formatter:off
@@ -188,7 +188,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
         @Test
         void https_adminShowsNodesUp() throws Exception {
             ensureCertificates();
-            try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
+            try (Process2 ignored = builder.withParameters(PROXIES_TLS_XML_OPTION).start()) {
             // @formatter:off
             String html = given()
                 .relaxedHTTPSValidation()
@@ -211,7 +211,7 @@ class Loadbalancing6HealthMonitorExampleTest extends DistributionExtractingTestc
             withBackedUpFile("proxies-tls.xml", () -> {
                 try {
                     setNode1Delay(baseDir.toPath().resolve("proxies-tls.xml"), 3000);
-                    try (Process2 ignored = builder.parameters(PROXIES_TLS_XML_OPTION).start()) {
+                    try (Process2 ignored = builder.withParameters(PROXIES_TLS_XML_OPTION).start()) {
 
                     // @formatter:off
                     String html = given()

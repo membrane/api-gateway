@@ -22,7 +22,7 @@ import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
-public class VersioningSoapXsltExampleTest extends DistributionExtractingTestcase {
+public class VersioningSoapXsltExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     String request_old;
     String request_new;
@@ -40,25 +40,22 @@ public class VersioningSoapXsltExampleTest extends DistributionExtractingTestcas
 
     @Test
     public void test() throws Exception {
+        // @formatter:off
+        given()
+            .body(request_new)
+            .post("http://localhost:2000/city-service")
+        .then()
+            .statusCode(200)
+            .body("Envelope.Body.getCityResponse.population", equalTo("327000"));
 
-        try (Process2 ignored1 = startServiceProxyScript()) {
-            // @formatter:off
-            given()
-                .body(request_new)
-                .post("http://localhost:2000/city-service")
-            .then()
-                .statusCode(200)
-                .body("Envelope.Body.getCityResponse.population", equalTo("327000"));
-
-            given()
-                .body(request_old)
-                .post("http://localhost:2000/city-service")
-            .then()
-                .log().ifValidationFails(ALL)
-                .statusCode(200)
-                .body("Envelope.Body.getCityResponse.country", equalTo("Germany"));
-            // @formatter:on
-        }
+        given()
+            .body(request_old)
+            .post("http://localhost:2000/city-service")
+        .then()
+            .log().ifValidationFails(ALL)
+            .statusCode(200)
+            .body("Envelope.Body.getCityResponse.country", equalTo("Germany"));
+        // @formatter:on
     }
 
 }

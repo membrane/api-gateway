@@ -56,7 +56,7 @@ public class OAuth2CredentialsExampleTest extends DistributionExtractingTestcase
                 .in(getExampleDir( getExampleDirName()))
                 .withWatcher(logger)
                 .script("client")
-                .parameters("john password")
+                .withParameters("john password")
                 .waitAfterStartFor("Ok")
                 .start()) {
             assertTrue(true);

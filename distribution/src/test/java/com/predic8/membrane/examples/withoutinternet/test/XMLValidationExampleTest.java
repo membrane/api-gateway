@@ -14,14 +14,14 @@
 
 package com.predic8.membrane.examples.withoutinternet.test;
 
-import com.predic8.membrane.examples.util.*;
-import io.restassured.response.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import io.restassured.response.Response;
+import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.*;
-import static java.io.File.*;
+import static io.restassured.RestAssured.given;
+import static java.io.File.separator;
 
-public class XMLValidationExampleTest extends DistributionExtractingTestcase {
+public class XMLValidationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -30,20 +30,18 @@ public class XMLValidationExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-			// @formatter:off
-			Response r = given()
-				.body(readFileFromBaseDir("year.xml"))
-				.post(LOCALHOST_2000);
-			r.then()
-				.statusCode(200);
+		// @formatter:off
+		Response r = given()
+			.body(readFileFromBaseDir("year.xml"))
+			.post(LOCALHOST_2000);
+		r.then()
+			.statusCode(200);
 
-			given()
-					.body(readFileFromBaseDir("invalid-year.xml"))
-					.post(LOCALHOST_2000)
-				.then()
-					.statusCode(400);
-			// @formatter:on
-		}
+		given()
+				.body(readFileFromBaseDir("invalid-year.xml"))
+				.post(LOCALHOST_2000)
+			.then()
+				.statusCode(400);
+		// @formatter:on
 	}
 }

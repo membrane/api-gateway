@@ -29,7 +29,7 @@ import static java.lang.Thread.*;
 import static java.util.Calendar.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase {
+public class FileExchangeStoreExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     private static final Logger log = LoggerFactory.getLogger(FileExchangeStoreExampleTest.class.getName());
 
@@ -40,7 +40,7 @@ public class FileExchangeStoreExampleTest extends DistributionExtractingTestcase
 
     @Test
     void test() throws Exception {
-        try (Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+        try (HttpAssertions ha = new HttpAssertions()) {
             ha.getAndAssert200("http://localhost:2000/");
 
             sleep(300);
