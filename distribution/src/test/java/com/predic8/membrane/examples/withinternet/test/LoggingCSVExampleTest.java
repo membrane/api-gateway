@@ -14,15 +14,16 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.test.StringAssertions.assertContains;
+import static io.restassured.RestAssured.when;
 
-public class LoggingCSVExampleTest extends DistributionExtractingTestcase {
+public class LoggingCSVExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -31,9 +32,8 @@ public class LoggingCSVExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
-			ha.getAndAssert200("http://localhost:2000/");
-		}
+		when().get("http://localhost:2000/").then().statusCode(200);
 		assertContains(APPLICATION_JSON, readFile("log.csv"));
 	}
+
 }

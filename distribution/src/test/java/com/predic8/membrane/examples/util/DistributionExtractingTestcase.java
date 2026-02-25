@@ -43,7 +43,24 @@ public abstract class DistributionExtractingTestcase {
     private static File membraneHome;
     protected File baseDir;
 
+    /**
+     * The directory of the example relative to <code>distribution/examples</code>
+     */
     protected abstract String getExampleDirName();
+
+    /**
+     * The parameters to start the script with
+     */
+    protected String getParameters() {
+        return "";
+    }
+
+    /**
+     * The environment variables for the script
+     */
+    protected Map<String, String> getEnvs() {
+        return Map.of();
+    }
 
     @BeforeAll
     public static void beforeAll() throws Exception {
@@ -193,11 +210,6 @@ public abstract class DistributionExtractingTestcase {
         return startServiceProxyScript(null, "membrane");
     }
 
-    protected Process2 startServiceProxyScriptWithEnv(String env, String val) throws IOException, InterruptedException {
-        Process2.Builder builder = new Process2.Builder().env(env, val).in(baseDir);
-        return builder.script("membrane").waitForMembrane().start();
-    }
-
     protected Process2 startServiceProxyScript(ConsoleWatcher watch) throws IOException, InterruptedException {
         return startServiceProxyScript(watch, "membrane");
     }
@@ -206,7 +218,7 @@ public abstract class DistributionExtractingTestcase {
         Process2.Builder builder = new Process2.Builder().in(baseDir);
         if (watch != null)
             builder = builder.withWatcher(watch);
-        return builder.script(script).waitForMembrane().start();
+        return builder.script(script).withParameters(getParameters()).withEnv(getEnvs()).waitForMembrane().start();
     }
 
     protected String readFile(String s) throws IOException {

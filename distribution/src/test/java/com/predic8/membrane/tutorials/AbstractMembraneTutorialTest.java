@@ -35,6 +35,6 @@ public abstract class AbstractMembraneTutorialTest extends AbstractSampleMembran
         Process2.Builder builder = new Process2.Builder().in(baseDir);
         if (watch != null)
             builder = builder.withWatcher(watch);
-        return builder.script(script).waitForMembrane().parameters("-c %s".formatted(getTutorialYaml())).start();
+        return builder.script(script).waitForMembrane().withParameters("-c %s".formatted(getTutorialYaml())).start();
     }
 }

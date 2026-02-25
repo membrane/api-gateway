@@ -14,15 +14,15 @@
 
 package com.predic8.membrane.examples.withoutinternet.openapi;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
-import org.skyscreamer.jsonassert.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.CoreMatchers.containsString;
 
-public class OpenAPIValidationSimpleExampleTest extends DistributionExtractingTestcase {
+public class OpenAPIValidationSimpleExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	final String createPersonValid = """
 			{"name": "Johannes Gutenberg","age": 78}
@@ -57,31 +57,28 @@ public class OpenAPIValidationSimpleExampleTest extends DistributionExtractingTe
 
 	@Test
 	public void test() throws Exception {
+		// @formatter:off
+		// Test valid person creation
+		given()
+			.contentType(JSON)
+			.body(createPersonValid)
+		.when()
+			.post(LOCALHOST_2000 + "/persons")
+		.then()
+			.statusCode(201)
+			.body(containsString("success"));
 
-		try(Process2 ignored = startServiceProxyScript()) {
-			// @formatter:off
-			// Test valid person creation
-			given()
-				.contentType(JSON)
-				.body(createPersonValid)
-			.when()
-				.post(LOCALHOST_2000 + "/persons")
-			.then()
-				.statusCode(201)
-				.body(containsString("success"));
+		// Test invalid person creation
+		String response =given()
+			.contentType(JSON)
+			.body(createPersonInvalid)
+		.when()
+			.post(LOCALHOST_2000 + "/persons")
+		.then()
+			.statusCode(400)
+			.extract().response().asString();
+		// @formatter:on
 
-			// Test invalid person creation
-			String response =given()
-				.contentType(JSON)
-				.body(createPersonInvalid)
-			.when()
-				.post(LOCALHOST_2000 + "/persons")
-			.then()
-				.statusCode(400)
-				.extract().response().asString();
-			// @formatter:on
-
-			JSONAssert.assertEquals(validationResult, response, false);
-		}
+		JSONAssert.assertEquals(validationResult, response, false);
 	}
 }

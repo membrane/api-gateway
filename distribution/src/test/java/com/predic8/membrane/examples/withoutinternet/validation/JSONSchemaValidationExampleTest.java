@@ -14,16 +14,17 @@
 
 package com.predic8.membrane.examples.withoutinternet.validation;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static io.restassured.RestAssured.*;
-import static io.restassured.http.ContentType.*;
-import static java.io.File.*;
-import static org.hamcrest.Matchers.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static io.restassured.RestAssured.given;
+import static io.restassured.http.ContentType.JSON;
+import static java.io.File.separator;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 
-public class JSONSchemaValidationExampleTest extends DistributionExtractingTestcase {
+public class JSONSchemaValidationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -32,55 +33,48 @@ public class JSONSchemaValidationExampleTest extends DistributionExtractingTestc
 
     @Test
     void port2000() throws Exception {
-        try(Process2 ignored = startServiceProxyScript()) {
+        // @formatter:off
+        // Test good JSON
+        given()
+            .contentType(JSON)
+            .body(readFileFromBaseDir("good2000.json"))
+        .when()
+            .post("http://localhost:2000")
+        .then()
+            .statusCode(200);
 
-            // @formatter:off
-            // Test good JSON
-            given()
-                .contentType(JSON)
-                .body(readFileFromBaseDir("good2000.json"))
-            .when()
-                .post("http://localhost:2000")
-            .then()
-                .statusCode(200);
-
-            // Test bad JSON
-            given()
-                .contentType(JSON)
-                .body(readFileFromBaseDir("bad2000.json"))
-            .when()
-                .post("http://localhost:2000")
-            .then()
-                .statusCode(400)
-                .contentType(APPLICATION_PROBLEM_JSON)
-                .body("title", equalTo("JSON validation failed"))
-                .body("type", equalTo("https://membrane-api.io/problems/user/validation"))
-                .body(containsString("p1"))
-                .body("errors.find { it.pointer == '/required' }.message", containsString("not found"));
-            // @formatter:on
-
-        }
+        // Test bad JSON
+        given()
+            .contentType(JSON)
+            .body(readFileFromBaseDir("bad2000.json"))
+        .when()
+            .post("http://localhost:2000")
+        .then()
+            .statusCode(400)
+            .contentType(APPLICATION_PROBLEM_JSON)
+            .body("title", equalTo("JSON validation failed"))
+            .body("type", equalTo("https://membrane-api.io/problems/user/validation"))
+            .body(containsString("p1"))
+            .body("errors.find { it.pointer == '/required' }.message", containsString("not found"));
+        // @formatter:on
     }
 
     @Test
     void port2001() throws Exception {
-        try(Process2 ignored = startServiceProxyScript()) {
-            // @formatter:off
-            given()
-                .contentType(JSON)
-                .body(readFileFromBaseDir("bad2001.json"))
-            .when()
-                .post("http://localhost:2001")
-                .then()
-                .statusCode(400)
-                .contentType(APPLICATION_PROBLEM_JSON)
-                .body("title", equalTo("JSON validation failed"))
-                .body("type", equalTo("https://membrane-api.io/problems/user/validation"))
-                .body("errors.find { it.pointer == '/properties/params/minItems' }.message", containsString("at least 2 items"))
-                .body("errors.find { it.pointer == '/properties/meta/$ref/properties/source/minLength' }.message", containsString("at least 1"))
-                .body("errors.find { it.pointer == '/properties/meta/$ref/additionalProperties' }.message", containsString("unexpected"));
-            // @formatter:on
-
-        }
+        // @formatter:off
+        given()
+            .contentType(JSON)
+            .body(readFileFromBaseDir("bad2001.json"))
+        .when()
+            .post("http://localhost:2001")
+            .then()
+            .statusCode(400)
+            .contentType(APPLICATION_PROBLEM_JSON)
+            .body("title", equalTo("JSON validation failed"))
+            .body("type", equalTo("https://membrane-api.io/problems/user/validation"))
+            .body("errors.find { it.pointer == '/properties/params/minItems' }.message", containsString("at least 2 items"))
+            .body("errors.find { it.pointer == '/properties/meta/$ref/properties/source/minLength' }.message", containsString("at least 1"))
+            .body("errors.find { it.pointer == '/properties/meta/$ref/additionalProperties' }.message", containsString("unexpected"));
+        // @formatter:on
     }
 }

@@ -23,7 +23,7 @@ import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class AccessLogExampleTest extends DistributionExtractingTestcase {
+public class AccessLogExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -31,49 +31,31 @@ public class AccessLogExampleTest extends DistributionExtractingTestcase {
     }
 
     @Test
-    void console() throws Exception {
-        try (var process = startServiceProxyScript()) {
+    void console() {
+        var console = new WaitableConsoleEvent(
+                process,
+                p -> p.contains("\"GET / HTTP/1.1\" 200 0 [application/json]")
+        );
 
-            var console = new WaitableConsoleEvent(
-                    process,
-                    p -> p.contains("\"GET / HTTP/1.1\" 200 0 [application/json]")
-            );
+        given()
+            .when()
+            .get("http://localhost:2000")
+        .then()
+            .log().ifValidationFails()
+            .statusCode(200);
 
-            given()
-                .when()
-                .get("http://localhost:2000")
-            .then()
-                .log().ifValidationFails()
-                .statusCode(200);
-
-            assertTrue(console.occurred());
-        }
+        assertTrue(console.occurred());
     }
 
     @Test
     void rollingFile() throws Exception {
-        try (var ignore = startServiceProxyScript()) {
-            given()
-                    .when()
-                    .get("http://localhost:2000")
-                    .then()
-                    .statusCode(200);
-        }
-
-        var log = readFile("access.log");
-        assertThat(log, containsString("\"GET / HTTP/1.1\" 200 0 [application/json]"));
+        when().get("http://localhost:2000").then().statusCode(200);
+        assertThat(readFile("access.log"), containsString("\"GET / HTTP/1.1\" 200 0 [application/json]"));
     }
 
     @Test
     void header() throws Exception {
-        try (var ignore = startServiceProxyScript()) {
-            given()
-                    .when()
-                    .get("http://localhost:2000")
-                    .then()
-                    .statusCode(200);
-        }
-
+        when().get("http://localhost:2000").then().statusCode(200);
         assertThat(readFile("access.log"), containsString("X-Forwarded-For: 127.0.0.1"));
     }
 }

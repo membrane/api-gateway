@@ -14,12 +14,11 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.util.Process2;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import com.predic8.membrane.test.HttpAssertions;
 import org.junit.jupiter.api.Test;
 
-public class ACLExampleTest extends DistributionExtractingTestcase {
+public class ACLExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -28,7 +27,7 @@ public class ACLExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript(); HttpAssertions ha = new HttpAssertions()) {
+		try(HttpAssertions ha = new HttpAssertions()) {
 			ha.getAndAssert200("http://localhost:2000/");
 
 			ha.getAndAssert(200, "http://localhost:2000/products/");

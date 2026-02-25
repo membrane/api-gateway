@@ -33,7 +33,7 @@ public class OfflineExampleTest extends AbstractSampleMembraneStartStopTestcase 
 
     @BeforeEach
     void startMembrane() throws IOException, InterruptedException {
-        process = new Process2.Builder().in(baseDir).script("membrane").parameters("-c offline.apis.yaml").waitForMembrane().start();
+        process = new Process2.Builder().in(baseDir).script("membrane").withParameters("-c offline.apis.yaml").waitForMembrane().start();
     }
 
     @Test

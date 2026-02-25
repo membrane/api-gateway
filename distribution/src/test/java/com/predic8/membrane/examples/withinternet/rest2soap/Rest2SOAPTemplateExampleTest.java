@@ -21,7 +21,7 @@ import static io.restassured.RestAssured.*;
 import static io.restassured.filter.log.LogDetail.*;
 import static org.hamcrest.Matchers.*;
 
-public class Rest2SOAPTemplateExampleTest extends DistributionExtractingTestcase {
+public class Rest2SOAPTemplateExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -29,18 +29,15 @@ public class Rest2SOAPTemplateExampleTest extends DistributionExtractingTestcase
     }
 
     @Test
-    void test() throws Exception {
-
-        try (Process2 ignored = startServiceProxyScript()) {
-            // @formatter:off
-            given()
-                .get("http://localhost:2000/cities/Bielefeld")
-            .then()
-                .log().ifValidationFails(ALL)
-                .statusCode(200)
-                .contentType(APPLICATION_JSON)
-                .body("population", equalTo(333000F));
-            // @formatter:on
-        }
+    void test() {
+        // @formatter:off
+        given()
+            .get("http://localhost:2000/cities/Bielefeld")
+        .then()
+            .log().ifValidationFails(ALL)
+            .statusCode(200)
+            .contentType(APPLICATION_JSON)
+            .body("population", equalTo(333000F));
+        // @formatter:on
     }
 }

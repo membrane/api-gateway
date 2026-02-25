@@ -14,35 +14,41 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static io.restassured.RestAssured.given;
 
-public class ConfigurationPropertiesTest extends DistributionExtractingTestcase {
+public class ConfigurationPropertiesTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
         return "extending-membrane/configuration-properties";
     }
 
+    @Override
+    protected Map<String, String> getEnvs() {
+        return Map.of("TARGET", "https://www.predic8.de/");
+    }
+
     @Test
     public void test() throws Exception {
-        try (Process2 ignored = startServiceProxyScriptWithEnv("TARGET", "https://www.predic8.de/")) {
-            // @formatter:off
-            given()
-                .redirects().follow(false)
-                .get("http://localhost:2000/")
-            .then()
-                .statusCode(307);
+        // @formatter:off
+        given()
+            .redirects().follow(false)
+            .get("http://localhost:2000/")
+        .then()
+            .statusCode(307);
 
-            given()
-                .redirects().follow(false)
-                .get("http://localhost:2001/")
-            .then()
-                .statusCode(200);
-            // @formatter:on
-        }
+        given()
+            .redirects().follow(false)
+            .get("http://localhost:2001/")
+        .then()
+            .statusCode(200);
+        // @formatter:on
     }
 }

@@ -14,17 +14,16 @@
 
 package com.predic8.membrane.examples.withoutinternet.validation;
 
-import com.predic8.membrane.examples.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_SOAP_XML;
+import static io.restassured.RestAssured.given;
+import static java.io.File.separator;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static io.restassured.RestAssured.*;
-import static java.io.File.*;
-import static org.hamcrest.CoreMatchers.*;
-
-public class SOAPProxyValidationExampleTest extends DistributionExtractingTestcase {
+public class SOAPProxyValidationExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -33,34 +32,30 @@ public class SOAPProxyValidationExampleTest extends DistributionExtractingTestca
 
     @Test
     void testValidCitySoapRequest() throws Exception {
-        try (Process2 ignored = startServiceProxyScript()) {
-            // @formatter:off
-			given()
-				.contentType(APPLICATION_SOAP_XML)
-				.body(readFile("city-soap.xml"))
-			.when()
-				.post("http://localhost:2000/")
-			.then()
-				.body(not(containsString("faultcode")))
-				.statusCode(200);
-			// @formatter:on
-        }
+		// @formatter:off
+		given()
+			.contentType(APPLICATION_SOAP_XML)
+			.body(readFile("city-soap.xml"))
+		.when()
+			.post("http://localhost:2000/")
+		.then()
+			.body(not(containsString("faultcode")))
+			.statusCode(200);
+		// @formatter:on
     }
 
     @Test
-    void testInvalidCitySoapRequest() throws IOException, InterruptedException {
-        try (Process2 ignored = startServiceProxyScript()) {
-            // @formatter:off
-			given()
-				.contentType(APPLICATION_SOAP_XML)
-				.body(readFile("invalid-city-soap.xml"))
-			.when()
-				.post("http://localhost:2000/")
-			.then()
-				.log().ifValidationFails()
-				.body(containsString("faultcode"))
-				.statusCode(200); // SOAP: even errors return 200 :-)
-			// @formatter:on
-        }
+    void testInvalidCitySoapRequest() throws Exception {
+		// @formatter:off
+		given()
+			.contentType(APPLICATION_SOAP_XML)
+			.body(readFile("invalid-city-soap.xml"))
+		.when()
+			.post("http://localhost:2000/")
+		.then()
+			.log().ifValidationFails()
+			.body(containsString("faultcode"))
+			.statusCode(200); // SOAP: even errors return 200 :-)
+		// @formatter:on
     }
 }

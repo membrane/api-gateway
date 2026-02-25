@@ -57,7 +57,7 @@ public class OAuth2APIExampleTest extends DistributionExtractingTestcase {
                 .in(getExampleDir(getExampleDirName()))
                 .withWatcher(logger)
                 .script("client")
-                .parameters("john password")
+                .withParameters("john password")
                 .waitAfterStartFor("true")
                 .start()) {
             assertTrue(logger.contains("success"));

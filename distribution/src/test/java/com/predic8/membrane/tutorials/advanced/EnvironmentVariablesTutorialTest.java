@@ -49,7 +49,7 @@ public class EnvironmentVariablesTutorialTest extends AbstractAdvancedTutorialTe
         if (watch != null)
             builder = builder.withWatcher(watch);
 
-        return builder.script(script).waitForMembrane().parameters("-c %s".formatted(getTutorialYaml())).start();
+        return builder.script(script).waitForMembrane().withParameters("-c %s".formatted(getTutorialYaml())).start();
     }
 
 }

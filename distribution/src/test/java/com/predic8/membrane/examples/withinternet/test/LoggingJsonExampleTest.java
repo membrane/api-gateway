@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Map;
 
 import static java.lang.System.nanoTime;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,12 +35,17 @@ public class LoggingJsonExampleTest extends DistributionExtractingTestcase {
         return "logging/json";
     }
 
+    @Override
+    protected Map<String, String> getEnvs() {
+        return Map.of("JAVA_OPTS", "-Dlog4j.configurationFile=examples/logging/json/log4j2_json.xml -Dlog4j.debug=true");
+    }
+
     @Test
     public void test() throws Exception {
         Path logFile = baseDir.toPath().resolve("membrane_json.log");
         Files.deleteIfExists(logFile);
 
-        try (Process2 sl = startServiceProxyScriptWithEnv("JAVA_OPTS", "-Dlog4j.configurationFile=examples/logging/json/log4j2_json.xml -Dlog4j.debug=true");
+        try (Process2 sl = startServiceProxyScript();
              HttpAssertions ha = new HttpAssertions()) {
 
             SubstringWaitableConsoleEvent logged = new SubstringWaitableConsoleEvent(sl, "HTTP/1.1");

@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.examples.withinternet.test;
 
-import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.AbstractSampleMembraneStartStopTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +22,7 @@ import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
 
-public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingTestcase {
+public class Loadbalancing4XmlSessionExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	private static final String BODY_SESSION_1 = """
 			{"id":"SESSION1"}""";
@@ -36,70 +36,70 @@ public class Loadbalancing4XmlSessionExampleTest extends DistributionExtractingT
 
 	@Test
 	void test() throws Exception {
-		try(Process2 ignored = startServiceProxyScript()) {
-            given().when()
-                    .body(BODY_SESSION_1)
-                    .contentType(APPLICATION_JSON)
-                    .post("http://localhost:8080")
-                .then()
-                    .statusCode(200)
-                    .body(containsString("Request count: 1"));
+		// @formatter:off
+		given().when()
+			.body(BODY_SESSION_1)
+			.contentType(APPLICATION_JSON)
+			.post("http://localhost:8080")
+		.then()
+			.statusCode(200)
+			.body(containsString("Request count: 1"));
 
-            given().when()
-                    .body(BODY_SESSION_1)
-                    .contentType(APPLICATION_JSON)
-                    .post("http://localhost:8080")
-                    .then()
-                    .statusCode(200)
-                    .body(containsString("Request count: 2"));
+		given().when()
+			.body(BODY_SESSION_1)
+			.contentType(APPLICATION_JSON)
+			.post("http://localhost:8080")
+		.then()
+			.statusCode(200)
+			.body(containsString("Request count: 2"));
 
-            given().when()
-                    .body(BODY_SESSION_1)
-                    .contentType(APPLICATION_JSON)
-                    .post("http://localhost:8080")
-                    .then()
-                    .statusCode(200)
-                    .body(containsString("Request count: 3"));
+		given().when()
+			.body(BODY_SESSION_1)
+			.contentType(APPLICATION_JSON)
+			.post("http://localhost:8080")
+		.then()
+			.statusCode(200)
+			.body(containsString("Request count: 3"));
 
-            given().when()
-                    .body(BODY_SESSION_1)
-                    .contentType(APPLICATION_JSON)
-                    .post("http://localhost:8080")
-                    .then()
-                    .statusCode(200)
-                    .body(containsString("Request count: 4"));
+		given().when()
+			.body(BODY_SESSION_1)
+			.contentType(APPLICATION_JSON)
+			.post("http://localhost:8080")
+		.then()
+			.statusCode(200)
+			.body(containsString("Request count: 4"));
 
-            given().when()
-                    .body(BODY_SESSION_2)
-                    .contentType(APPLICATION_JSON)
-                    .post("http://localhost:8080")
-                    .then()
-                    .statusCode(200)
-                    .body(containsString("Request count: 1"));
+		given().when()
+			.body(BODY_SESSION_2)
+			.contentType(APPLICATION_JSON)
+			.post("http://localhost:8080")
+		.then()
+			.statusCode(200)
+			.body(containsString("Request count: 1"));
 
-            given().when()
-                    .body(BODY_SESSION_2)
-                    .contentType(APPLICATION_JSON)
-                    .post("http://localhost:8080")
-                    .then()
-                    .statusCode(200)
-                    .body(containsString("Request count: 2"));
+		given().when()
+			.body(BODY_SESSION_2)
+			.contentType(APPLICATION_JSON)
+			.post("http://localhost:8080")
+		.then()
+			.statusCode(200)
+			.body(containsString("Request count: 2"));
 
-            given().when()
-                    .body(BODY_SESSION_2)
-                    .contentType(APPLICATION_JSON)
-                    .post("http://localhost:8080")
-                    .then()
-                    .statusCode(200)
-                    .body(containsString("Request count: 3"));
+		given().when()
+			.body(BODY_SESSION_2)
+			.contentType(APPLICATION_JSON)
+			.post("http://localhost:8080")
+		.then()
+			.statusCode(200)
+			.body(containsString("Request count: 3"));
 
-            given().when()
-                    .body(BODY_SESSION_2)
-                    .contentType(APPLICATION_JSON)
-                    .post("http://localhost:8080")
-                    .then()
-                    .statusCode(200)
-                    .body(containsString("Request count: 4"));
-		}
+		given().when()
+			.body(BODY_SESSION_2)
+			.contentType(APPLICATION_JSON)
+			.post("http://localhost:8080")
+		.then()
+			.statusCode(200)
+			.body(containsString("Request count: 4"));
+		// @formatter:on
 	}
 }

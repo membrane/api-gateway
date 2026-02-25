@@ -21,7 +21,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static io.restassured.RestAssured.*;
 import static org.hamcrest.Matchers.*;
 
-public class CBRXPathExampleTest extends DistributionExtractingTestcase {
+public class CBRXPathExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
 	@Override
 	protected String getExampleDirName() {
@@ -30,31 +30,28 @@ public class CBRXPathExampleTest extends DistributionExtractingTestcase {
 
 	@Test
 	void test() throws Exception {
+		// @formatter:off
+		given()
+			.body(readFile("order.xml"))
+			.post(LOCALHOST_2000)
+		.then()
+			.statusCode(200)
+			.body(containsString("Normal"));
 
-		try(Process2 ignored = startServiceProxyScript()) {
-			// @formatter:off
-			given()
-				.body(readFile("order.xml"))
-				.post(LOCALHOST_2000)
+		given()
+			.contentType(APPLICATION_XML)
+			.body(readFile("express.xml"))
+			.post(LOCALHOST_2000)
+		.then()
+			.statusCode(200)
+			.body(containsString("Express"));
+
+		given()
+			.body(readFile("import.xml"))
+			.post(LOCALHOST_2000)
 			.then()
-				.statusCode(200)
-				.body(containsString("Normal"));
-
-			given()
-				.contentType(APPLICATION_XML)
-				.body(readFile("express.xml"))
-				.post(LOCALHOST_2000)
-			.then()
-				.statusCode(200)
-				.body(containsString("Express"));
-
-			given()
-				.body(readFile("import.xml"))
-				.post(LOCALHOST_2000)
-				.then()
-				.statusCode(200)
-				.body(containsString("import"));
-			// @formatter:on
-		}
+			.statusCode(200)
+			.body(containsString("import"));
+		// @formatter:on
 	}
 }
