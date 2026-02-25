@@ -25,14 +25,14 @@ import static com.predic8.membrane.core.interceptor.RegExReplaceInterceptor.Targ
 
 /**
  * @description Runs a regular-expression-replacement on either the message body (default) or all header values.
- * @yaml <per><code>
+ * @yaml <pre><code>
  * api:
  *   port: 2000
  *   flow:
  *     - regExReplacer:
  *         regex: Hallo
  *         replace: Hello
- * </code></per>
+ * </code></pre>
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name = "regExReplacer")
