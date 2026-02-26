@@ -36,30 +36,13 @@ public class XSLTTransformer {
 		fac = TransformerFactory.newInstance();
 
 		this.styleSheet = styleSheet;
-
-		ResolverMap rr = router.getResolverMap();
-		String baseLocation = router.getConfiguration().getBaseLocation();
-
-		fac.setURIResolver((href, base) -> {
-			try {
-                String loc = ResolverMap.combine((base == null || base.isBlank()) ? baseLocation : base, href);
-				StreamSource s = new StreamSource(rr.resolve(loc));
-				s.setSystemId(loc);
-				return s;
-			} catch (Exception e) {
-				throw new TransformerException("Failed to resolve XSLT include/import: href=%s, base=%s".formatted(href, base), e);
-			}
-		});
-
-		log.debug("using {} parallel transformer instances for {}", concurrency, styleSheet);
+		log.debug("using {} parallel transformer instances for {}",concurrency, styleSheet);
 		transformers = new ArrayBlockingQueue<>(concurrency);
-
-		createOneTransformer(rr, baseLocation);
-
+		createOneTransformer(router.getResolverMap(), router.getConfiguration().getBaseLocation());
 		Thread.ofVirtual().start(() -> {
 			try {
 				for (int i = 1; i < concurrency; i++)
-					createOneTransformer(rr, baseLocation);
+					createOneTransformer(router.getResolverMap(), router.getConfiguration().getBaseLocation());
 			} catch (Exception e) {
 				log.error("Error creating XSLT transformer:", e);
 			}
@@ -71,9 +54,8 @@ public class XSLTTransformer {
 		if (isNullOrEmpty(styleSheet))
 			t = fac.newTransformer();
 		else {
-			String loc = ResolverMap.combine(baseLocation, styleSheet);
-			StreamSource source = new StreamSource(rr.resolve(loc));
-			source.setSystemId(loc);
+			StreamSource source = new StreamSource(rr.resolve(ResolverMap.combine(baseLocation, styleSheet)));
+			source.setSystemId(styleSheet);
 			t = fac.newTransformer(source);
 		}
 		transformers.put(t);
