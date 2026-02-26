@@ -292,7 +292,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         return httpClientConfig;
     }
 
-    @MCAttribute
+    @MCChildElement
     public void setWsdlHttpClientConfig(HttpClientConfiguration httpClientConfig) {
         this.httpClientConfig = httpClientConfig;
     }
