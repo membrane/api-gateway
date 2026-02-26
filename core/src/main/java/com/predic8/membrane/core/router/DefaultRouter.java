@@ -262,6 +262,17 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     /**
+     * @description A 'global' (per router) &lt;httpClientConfig&gt;. This instance is used everywhere
+     * a HTTP Client is used. In every specific place, you should still be able to configure a local
+     * &lt;httpClientConfig&gt; (with higher precedence compared to this global instance).
+     */
+    @MCChildElement()
+    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        configuration.setHttpClientConfig(httpClientConfig);
+    }
+
+
+    /**
      * Adds a proxy to the router.
      * Can be called at any time before or after start().
      *
