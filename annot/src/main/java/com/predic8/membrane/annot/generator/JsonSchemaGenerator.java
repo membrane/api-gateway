@@ -14,6 +14,7 @@
 package com.predic8.membrane.annot.generator;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.annot.ProcessingException;
 import com.predic8.membrane.annot.generator.kubernetes.AbstractGrammar;
 import com.predic8.membrane.annot.generator.kubernetes.model.*;
@@ -29,6 +30,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
+import static com.predic8.membrane.annot.Constants.VERSION;
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
@@ -70,7 +72,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private void assemble(Model m, MainInfo main) throws IOException {
         // Reset so multiple calls would be possible
         flowDefCreated = false;
-        schema = schema("membrane");
+        schema = schema("membrane").version(VERSION);
         noEnvelopeParserSourceByDefName.clear();
 
         addParserDefinitions(m, main);
