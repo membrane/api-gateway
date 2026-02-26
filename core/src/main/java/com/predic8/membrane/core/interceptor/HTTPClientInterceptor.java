@@ -47,7 +47,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private HttpClientConfiguration httpClientConfig;
 
-    private HttpClient hc;
+    private HttpClient httpClient;
 
     public HTTPClientInterceptor() {
         name = "http client";
@@ -55,7 +55,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     }
 
     public HTTPClientInterceptor(HttpClient httpClient) {
-        hc = httpClient;
+        this.httpClient = httpClient;
         name = "http client";
         setAppliedFlow(REQUEST_FLOW);
     }
@@ -64,22 +64,24 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
 
-        if (hc != null) return;
-        httpClientConfig = router.getHttpClientConfig();
-        // Overwrite httpClientConfiguration with local value
-        if (failOverOn5XX != null) {
-            httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);
+        if (httpClient == null) {
+            httpClientConfig = router.getHttpClientConfig();
+            // Overwrite httpClientConfiguration with local value
+            if (failOverOn5XX != null) {
+                httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);
+            }
+
+            httpClient = router.getHttpClientFactory().createClient(httpClientConfig);
         }
 
-        hc = router.getHttpClientFactory().createClient(httpClientConfig);
-        hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
+        httpClient.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
             applyTargetModifications(exc);
-            hc.call(exc);
+            httpClient.call(exc);
             return RETURN;
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
