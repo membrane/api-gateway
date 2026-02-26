@@ -89,7 +89,7 @@ public class TestRouter extends AbstractRouter implements BeanRegistryAware {
     }
 
     public TestRouter() {
-        resolverMap = new ResolverMap(getHtt, kubernetesClientFactory);
+        resolverMap = new ResolverMap(httpClientFactory.createClient(getHttpClientConfig()), kubernetesClientFactory);
         resolverMap.addRuleResolver(this);
     }
 

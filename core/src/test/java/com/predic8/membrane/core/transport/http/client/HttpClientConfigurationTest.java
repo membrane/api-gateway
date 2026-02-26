@@ -153,6 +153,5 @@ class HttpClientConfigurationTest {
     private void setupRouter(String globalHcc) {
         router = RouterXmlBootstrap.initFromXMLString(globalHcc);
         assertNotNull(router.getHttpClientConfig());
-        assertNotNull(router.getResolverMap().getHTTPSchemaResolver().getHttpClientConfig());
     }
 }

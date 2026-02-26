@@ -51,7 +51,7 @@ public abstract class Transport {
         this.interceptors = flow;
     }
 
-    public void init(DefaultRouter router) {
+    public void init(Router router) {
         this.router = router;
 
         if (interceptors.isEmpty()) {
@@ -64,7 +64,10 @@ public abstract class Transport {
                 dr.getRegistry().getBean(GlobalInterceptor.class).ifPresent(i -> interceptors.add(i ));
             interceptors.add(getInterceptor(UserFeatureInterceptor.class));
             interceptors.add(getInterceptor(InternalRoutingInterceptor.class));
-            interceptors.add(new HTTPClientInterceptor(router.getHttpClient()));
+
+            if(router instanceof DefaultRouter r)
+                interceptors.add(new HTTPClientInterceptor(r.getHttpClient()));
+            else interceptors.add(getInterceptor(HTTPClientInterceptor.class));
         }
 
         for (Interceptor interceptor : interceptors) {
