@@ -412,6 +412,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     public void applyConfiguration(Configuration configuration) {
         hotDeployer = configuration.isHotDeploy() ? new DefaultHotDeployer() : new NullHotDeployer();
         this.configuration = configuration;
+        mainComponents.setHttpClientConfig(configuration.getHttpClientConfig());
     }
 
     /**

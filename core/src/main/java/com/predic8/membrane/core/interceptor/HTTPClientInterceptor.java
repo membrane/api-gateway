@@ -58,6 +58,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
 
+        httpClientConfig = router.getResolverMap().getHTTPSchemaResolver().getHttpClientConfig();
         // Overwrite httpClientConfiguration with local value
         if (failOverOn5XX != null) {
             httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);

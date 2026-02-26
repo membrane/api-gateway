@@ -17,6 +17,7 @@ package com.predic8.membrane.core.router;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.*;
 
 /**
@@ -43,6 +44,8 @@ public class Configuration {
     private URIFactory uriFactory = new URIFactory(false);
 
     private String baseLocation;
+
+    private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 
     /**
      * @param hotDeploy If true the hot deploy feature will be activated during init of the Router.
@@ -142,6 +145,20 @@ public class Configuration {
 
     public URIFactory getUriFactory() {
         return uriFactory;
+    }
+
+    /**
+     * @description A global &lt;httpClientConfig&gt;. This instance is used everywhere
+     * a HTTP Client is used. In every specific place, you should still be able to configure a local
+     * &lt;httpClientConfig&gt; (with higher precedence compared to this global instance).
+     */
+    @MCChildElement
+    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        this.httpClientConfig = httpClientConfig;
+    }
+
+    public HttpClientConfiguration getHttpClientConfig() {
+        return httpClientConfig;
     }
 
     /**

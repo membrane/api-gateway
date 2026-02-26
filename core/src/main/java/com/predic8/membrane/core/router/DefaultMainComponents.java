@@ -73,9 +73,11 @@ public class DefaultMainComponents implements MainComponents {
             registry.register("router", router);
         }
 
-        registry.registerIfAbsent(HttpClientConfiguration.class, HttpClientConfiguration::new);
+        registry.registerIfAbsent(HttpClientConfiguration.class, () -> router.getConfiguration().getHttpClientConfig());
         registry.registerIfAbsent(ExchangeStore.class, LimitedMemoryExchangeStore::new);
         registry.registerIfAbsent(DNSCache.class, DNSCache::new);
+
+        setHttpClientConfig(router.getConfiguration().getHttpClientConfig());
 
         // Transport last
         if (transport == null) {
