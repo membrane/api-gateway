@@ -14,28 +14,31 @@
 
 package com.predic8.membrane.core.resolver;
 
-import com.google.common.collect.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.functionalInterfaces.*;
+import com.google.common.collect.Lists;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
-import javax.annotation.*;
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.util.*;
-import java.util.concurrent.*;
+import javax.annotation.Nullable;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
+import static com.predic8.membrane.core.http.Header.USER_AGENT;
 import static com.predic8.membrane.core.http.Request.Builder;
-import static com.predic8.membrane.core.http.Request.*;
-import static java.lang.Thread.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.Request.METHOD_GET;
+import static java.lang.Thread.sleep;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @MCElement(name = "httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
@@ -48,9 +51,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 
     private static final byte[] NO_HASH = "NO_HASH".getBytes(UTF_8);
 
-    private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
-
-    private HttpClient httpClient;
+    private final HttpClient httpClient;
     private final URIFactory uriFactory = new URIFactory(false);
 
     private final Runnable httpWatchJob = new Runnable() {
@@ -104,17 +105,8 @@ public class HTTPSchemaResolver implements SchemaResolver {
         return new Builder().method(METHOD_GET).url(uriFactory, url).header(USER_AGENT, PRODUCT_NAME).buildExchange();
     }
 
-    public HTTPSchemaResolver(@Nullable HttpClientFactory httpClientFactory) {
-        this.httpClientFactory = httpClientFactory;
-    }
-
-    private synchronized HttpClient getHttpClient() {
-        if (httpClient == null) {
-            if (httpClientFactory == null)
-                httpClientFactory = new HttpClientFactory(null);
-            httpClient = httpClientFactory.createClient(httpClientConfig);
-        }
-        return httpClient;
+    public HTTPSchemaResolver(@Nullable HttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
     @Override
@@ -125,7 +117,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
     public InputStream resolve(String url) throws ResourceRetrievalException {
         try {
             var resolveExchange = createResolveExchange(url);
-            getHttpClient().call(resolveExchange);
+            httpClient.call(resolveExchange);
             Response response = resolveExchange.getResponse();
             response.readBody();
 
@@ -163,12 +155,4 @@ public class HTTPSchemaResolver implements SchemaResolver {
         return 0;
     }
 
-    public synchronized HttpClientConfiguration getHttpClientConfig() {
-        return httpClientConfig;
-    }
-
-    public synchronized void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
-        this.httpClientConfig = httpClientConfig;
-        httpClient = null;
-    }
 }

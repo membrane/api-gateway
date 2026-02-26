@@ -14,39 +14,53 @@
 
 package com.predic8.membrane.core.router;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.annot.beanregistry.*;
-import com.predic8.membrane.core.cli.*;
-import com.predic8.membrane.core.config.spring.*;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.administration.*;
-import com.predic8.membrane.core.jmx.*;
-import com.predic8.membrane.core.kubernetes.*;
-import com.predic8.membrane.core.kubernetes.client.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.proxies.RuleManager.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.hotdeploy.*;
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.transport.http.streampump.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
-import org.springframework.beans.*;
-import org.springframework.beans.factory.*;
-import org.springframework.context.*;
-import org.springframework.context.support.*;
+import com.predic8.membrane.core.cli.ExitException;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
+import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
+import com.predic8.membrane.core.interceptor.FlowController;
+import com.predic8.membrane.core.interceptor.GlobalInterceptor;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
+import com.predic8.membrane.core.jmx.JmxExporter;
+import com.predic8.membrane.core.kubernetes.KubernetesWatcher;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.serviceproxy.DuplicatePathException;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.RuleManager;
+import com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.hotdeploy.DefaultHotDeployer;
+import com.predic8.membrane.core.router.hotdeploy.HotDeployer;
+import com.predic8.membrane.core.router.hotdeploy.NullHotDeployer;
+import com.predic8.membrane.core.transport.PortOccupiedException;
+import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.streampump.Statistics;
+import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.TimerManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
-import javax.annotation.concurrent.*;
-import java.io.*;
-import java.util.*;
+import javax.annotation.concurrent.GuardedBy;
+import java.io.IOException;
+import java.util.Collection;
 
-import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.*;
-import static com.predic8.membrane.core.util.DLPUtil.*;
+import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
+import static com.predic8.membrane.core.util.DLPUtil.displayTraceWarning;
 
 /*
  * Responsibilities:
@@ -235,26 +249,16 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         mainComponents.setTransport(transport);
     }
 
-    public HttpClientConfiguration getHttpClientConfig() {
-        return mainComponents.getHttpClientConfig();
-    }
-
-    /**
-     * @description A 'global' (per router) &lt;httpClientConfig&gt;. This instance is used everywhere
-     * a HTTP Client is used. In every specific place, you should still be able to configure a local
-     * &lt;httpClientConfig&gt; (with higher precedence compared to this global instance).
-     */
-    @MCChildElement()
-    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
-        mainComponents.setHttpClientConfig(httpClientConfig);
-    }
-
     public DNSCache getDnsCache() {
         return mainComponents.getDnsCache();
     }
 
     public ResolverMap getResolverMap() {
         return mainComponents.getResolverMap();
+    }
+
+    public HttpClient getHttpClient() {
+        return mainComponents.getHttpClient();
     }
 
     /**
@@ -357,6 +361,11 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     @Override
+    public HttpClientConfiguration getHttpClientConfig() {
+        return configuration.getHttpClientConfig();
+    }
+
+    @Override
     public FlowController getFlowController() {
         return mainComponents.getFlowController();
     }
@@ -412,7 +421,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     public void applyConfiguration(Configuration configuration) {
         hotDeployer = configuration.isHotDeploy() ? new DefaultHotDeployer() : new NullHotDeployer();
         this.configuration = configuration;
-        mainComponents.setHttpClientConfig(configuration.getHttpClientConfig());
     }
 
     /**
