@@ -56,6 +56,8 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     public HTTPClientInterceptor(HttpClient httpClient) {
         hc = httpClient;
+        name = "http client";
+        setAppliedFlow(REQUEST_FLOW);
     }
 
     @Override
