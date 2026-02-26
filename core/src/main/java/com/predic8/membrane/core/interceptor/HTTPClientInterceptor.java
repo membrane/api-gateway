@@ -54,10 +54,15 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         setAppliedFlow(REQUEST_FLOW);
     }
 
+    public HTTPClientInterceptor(HttpClient httpClient) {
+        hc = httpClient;
+    }
+
     @Override
     public void init() {
         super.init();
 
+        if (hc != null) return;
         httpClientConfig = router.getHttpClientConfig();
         // Overwrite httpClientConfiguration with local value
         if (failOverOn5XX != null) {
