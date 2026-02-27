@@ -54,8 +54,9 @@ public class XSLTTransformer {
 		if (isNullOrEmpty(styleSheet))
 			t = fac.newTransformer();
 		else {
-			StreamSource source = new StreamSource(rr.resolve(ResolverMap.combine(baseLocation, styleSheet)));
-			source.setSystemId(styleSheet);
+			String resolved = ResolverMap.combine(baseLocation, styleSheet);
+			StreamSource source = new StreamSource(rr.resolve(resolved));
+			source.setSystemId(resolved);
 			t = fac.newTransformer(source);
 		}
 		transformers.put(t);
