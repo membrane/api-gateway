@@ -3,8 +3,7 @@ api:
   port: 2000
   flow:
     - formValidation:
-        fields:
-          - name: name
-            regex: '[a-zA-Z]+'
+        - name: name
+          regex: '[a-zA-Z]+'
   target:
     url: https://api.predic8.de/shop/v2/products
