@@ -27,9 +27,10 @@ class AbstractScriptInterceptorTest {
     void getScriptSrcResolvesLocationViaResolver() {
 
         var interceptor = new TestScriptInterceptor();
-        interceptor.setRouterForTest(new DefaultRouter());
+        var router = new DefaultRouter();
+        router.init();
+        interceptor.setRouterForTest(router);
         interceptor.setLocation("classpath:/resolver/script.groovy");
-
         assertEquals("CONTINUE", interceptor.getScriptSrc());
     }
 
