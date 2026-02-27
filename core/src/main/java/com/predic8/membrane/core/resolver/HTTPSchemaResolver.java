@@ -106,9 +106,8 @@ public class HTTPSchemaResolver implements SchemaResolver {
         return new Builder().method(METHOD_GET).url(uriFactory, url).header(USER_AGENT, PRODUCT_NAME).buildExchange();
     }
 
-    public HTTPSchemaResolver(@Nullable HttpClient httpClient, HttpClientFactory httpClientFactory) {
-        if(httpClient == null) this.httpClient = httpClientFactory.createClient(new HttpClientConfiguration());
-        else this.httpClient = httpClient;
+    public HTTPSchemaResolver(@Nullable HttpClient httpClient) {
+       this.httpClient = httpClient;
     }
 
     @Override

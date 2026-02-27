@@ -45,7 +45,7 @@ public class DummyTestRouter extends AbstractRouter {
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
-    private final ResolverMap resolverMap = new ResolverMap(httpClientFactory.createClient(getHttpClientConfig()), kubernetesClientFactory, httpClientFactory);
+    private final ResolverMap resolverMap = new ResolverMap(httpClientFactory.createClient(getHttpClientConfig()), kubernetesClientFactory);
 
     private final HttpTransport transport;
 

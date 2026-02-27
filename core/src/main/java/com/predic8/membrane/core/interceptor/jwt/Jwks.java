@@ -135,7 +135,7 @@ public class Jwks {
             ResolverMap rm = router.getResolverMap();
 
             if (httpClientConfig != null) {
-                HTTPSchemaResolver httpSR = new HTTPSchemaResolver(router.getHttpClientFactory().createClient(httpClientConfig), router.getHttpClientFactory());
+                HTTPSchemaResolver httpSR = new HTTPSchemaResolver(router.getHttpClientFactory().createClient(httpClientConfig));
 
                 rm = rm.clone();
                 rm.addSchemaResolver(httpSR);
