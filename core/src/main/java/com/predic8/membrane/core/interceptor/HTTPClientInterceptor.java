@@ -140,6 +140,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         }
     }
 
+    // Used to update the httpClientConfig in tests
     public void updateHttpClientConfig(HttpClientConfiguration httpClientConfig) {
         this.httpClient = null;
         this.httpClientConfig = httpClientConfig;
