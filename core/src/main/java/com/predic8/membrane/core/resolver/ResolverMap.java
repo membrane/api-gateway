@@ -105,7 +105,7 @@ public class ResolverMap implements Cloneable, Resolver {
             // lfold
             String[] l = new String[locations.length - 1];
             System.arraycopy(locations, 0, l, 0, locations.length - 1);
-            return combine(factory,combine(l), locations[locations.length - 1]);
+            return combine(factory,combine(factory,l), locations[locations.length - 1]);
         }
 
         return combineInternal2( factory, locations,locations[1], locations[0]);
