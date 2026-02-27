@@ -68,7 +68,7 @@ public class DefaultMainComponents implements MainComponents {
 
     public void init() {
         httpClient = httpClientFactory.createClient(getHttpClientConfig());
-        resolverMap = new ResolverMap(httpClient, kubernetesClientFactory);
+        resolverMap = new ResolverMap(httpClient, kubernetesClientFactory, httpClientFactory);
         resolverMap.addRuleResolver(router);
 
         log.debug("Initializing.");

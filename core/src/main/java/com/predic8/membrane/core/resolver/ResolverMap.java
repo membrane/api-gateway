@@ -55,16 +55,16 @@ public class ResolverMap implements Cloneable, Resolver {
     private SchemaResolver[] resolvers;
 
     public ResolverMap() {
-        this(null, null);
+        this(null, null, new HttpClientFactory(new TimerManager()));
     }
 
-    public ResolverMap(HttpClient httpClient, KubernetesClientFactory kubernetesClientFactory) {
+    public ResolverMap(HttpClient httpClient, KubernetesClientFactory kubernetesClientFactory, HttpClientFactory httpClientFactory) {
         schemas = new String[10];
         resolvers = new SchemaResolver[10];
 
         // the default config
         addSchemaResolver(new ClasspathSchemaResolver());
-        addSchemaResolver(new HTTPSchemaResolver(httpClient));
+        addSchemaResolver(new HTTPSchemaResolver(httpClient, httpClientFactory));
         addSchemaResolver(new KubernetesSchemaResolver(kubernetesClientFactory));
         addSchemaResolver(new FileSchemaResolver());
     }
