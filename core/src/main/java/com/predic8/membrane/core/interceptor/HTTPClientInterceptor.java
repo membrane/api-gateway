@@ -49,19 +49,17 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
     private HttpClient httpClient;
 
-    public HTTPClientInterceptor() {
-        name = "http client";
-        setAppliedFlow(REQUEST_FLOW);
-    }
+    public HTTPClientInterceptor() {}
 
     public HTTPClientInterceptor(HttpClient httpClient) {
         this.httpClient = httpClient;
-        name = "http client";
-        setAppliedFlow(REQUEST_FLOW);
     }
 
     @Override
     public void init() {
+        name = "http client";
+        setAppliedFlow(REQUEST_FLOW);
+
         super.init();
 
         if (httpClientConfig == null) httpClientConfig = router.getHttpClientConfig();
