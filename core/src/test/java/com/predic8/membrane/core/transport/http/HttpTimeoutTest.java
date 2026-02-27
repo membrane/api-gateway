@@ -59,8 +59,7 @@ public class HttpTimeoutTest {
         proxyRouter.add(sp2);
         proxyRouter.start();
         var client = proxyRouter.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
-        client.setHttpClientConfig(hcc);
-        client.init(); // Copies the config into the HttpClient. It is needed to call because router.start() above already called init()
+        client.updateHttpClientConfig(hcc);
     }
 
     private static @NotNull ServiceProxy getServiceProxy(int port, String localhost, int targetPort) {

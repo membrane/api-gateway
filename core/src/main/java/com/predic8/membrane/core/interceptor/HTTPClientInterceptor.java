@@ -65,7 +65,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
         super.init();
 
         if (httpClient == null) {
-            httpClientConfig = router.getHttpClientConfig();
+            if (httpClientConfig == null) httpClientConfig = router.getHttpClientConfig();
             // Overwrite httpClientConfiguration with local value
             if (failOverOn5XX != null) {
                 httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);
@@ -139,6 +139,12 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    public void updateHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        this.httpClient = null;
+        this.httpClientConfig = httpClientConfig;
+        init();
     }
 
     /**

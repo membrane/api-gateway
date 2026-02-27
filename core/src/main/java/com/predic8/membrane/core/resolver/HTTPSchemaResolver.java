@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpClientFactory;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
 
@@ -106,7 +107,8 @@ public class HTTPSchemaResolver implements SchemaResolver {
     }
 
     public HTTPSchemaResolver(@Nullable HttpClient httpClient) {
-        this.httpClient = httpClient;
+        if(httpClient == null) this.httpClient = httpClientFactory.createClient(new HttpClientConfiguration());
+        else this.httpClient = httpClient;
     }
 
     @Override
