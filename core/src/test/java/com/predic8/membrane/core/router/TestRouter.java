@@ -85,11 +85,11 @@ public class TestRouter extends AbstractRouter implements BeanRegistryAware {
     public TestRouter(ProxyConfiguration proxyConfiguration) {
         this();
         if (proxyConfiguration != null)
-            getResolverMap().getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
+            getHttpClientConfig().setProxy(proxyConfiguration);
     }
 
     public TestRouter() {
-        resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
+        resolverMap = new ResolverMap(httpClientFactory.createClient(getHttpClientConfig()), kubernetesClientFactory);
         resolverMap.addRuleResolver(this);
     }
 

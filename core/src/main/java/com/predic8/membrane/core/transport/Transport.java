@@ -64,7 +64,10 @@ public abstract class Transport {
                 dr.getRegistry().getBean(GlobalInterceptor.class).ifPresent(i -> interceptors.add(i ));
             interceptors.add(getInterceptor(UserFeatureInterceptor.class));
             interceptors.add(getInterceptor(InternalRoutingInterceptor.class));
-            interceptors.add(getInterceptor(HTTPClientInterceptor.class));
+
+            if(router instanceof DefaultRouter r)
+                interceptors.add(new HTTPClientInterceptor(r.getHttpClient()));
+            else interceptors.add(getInterceptor(HTTPClientInterceptor.class));
         }
 
         for (Interceptor interceptor : interceptors) {

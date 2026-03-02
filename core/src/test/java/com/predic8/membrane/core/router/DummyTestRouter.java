@@ -37,23 +37,23 @@ import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource
  */
 public class DummyTestRouter extends AbstractRouter {
 
-    private FlowController flowController = new FlowController(this);
+    private final FlowController flowController = new FlowController(this);
     private ExchangeStore exchangeStore = new LimitedMemoryExchangeStore();
-    private RuleManager ruleManager = new RuleManager();
+    private final RuleManager ruleManager = new RuleManager();
 
+    private final Configuration configuration = new Configuration();
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
-    private ResolverMap resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
+    private final ResolverMap resolverMap = new ResolverMap(httpClientFactory.createClient(getHttpClientConfig()), kubernetesClientFactory);
 
-    private HttpTransport transport;
+    private final HttpTransport transport;
 
-    private DNSCache dnsCache = new DNSCache();
+    private final DNSCache dnsCache = new DNSCache();
 
     private final Statistics statistics = new Statistics();
     private ApplicationContext applicationContext;
 
-    private Configuration configuration = new Configuration();
 
     public DummyTestRouter() {
         this(null);
@@ -68,7 +68,7 @@ public class DummyTestRouter extends AbstractRouter {
     public DummyTestRouter(ProxyConfiguration proxyConfiguration) {
         transport = createTransport();
         if (proxyConfiguration != null)
-            getResolverMap().getHTTPSchemaResolver().getHttpClientConfig().setProxy(proxyConfiguration);
+            getHttpClientConfig().setProxy(proxyConfiguration);
     }
 
     @Override
@@ -189,8 +189,9 @@ public class DummyTestRouter extends AbstractRouter {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public HttpClientConfiguration getHttpClientConfig() {
-        return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
+        return configuration.getHttpClientConfig();
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) {

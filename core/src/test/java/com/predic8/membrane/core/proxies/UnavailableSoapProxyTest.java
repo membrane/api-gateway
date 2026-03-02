@@ -53,7 +53,7 @@ public class UnavailableSoapProxyTest {
 		r = new DefaultRouter();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.getRetryHandler().setRetries(1);
-		r.setHttpClientConfig(httpClientConfig);
+		r.getConfiguration().setHttpClientConfig(httpClientConfig);
 		r.getConfiguration().setHotDeploy(false);
 		r.getConfiguration().setRetryInit(true);
 
