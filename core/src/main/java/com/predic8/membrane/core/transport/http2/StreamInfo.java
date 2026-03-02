@@ -230,7 +230,7 @@ public class StreamInfo {
                 try {
                     df = removeDataFrame();
                 } catch (IOException e) {
-                    throw new ReadingBodyException(e);
+                    throw setObservedException(new ReadingBodyException(e));
                 }
                 if (df == null)
                     continue;

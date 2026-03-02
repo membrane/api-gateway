@@ -325,5 +325,9 @@ public class FileExchangeStore extends AbstractExchangeStore {
         public void bodyComplete(AbstractBody body) {
             snapInternal(exc, flow, getBody(body));
         }
+
+        public void bodyError(ReadingBodyException e) {
+            // TODO: we could store the error in the snapshot
+        }
     }
 }

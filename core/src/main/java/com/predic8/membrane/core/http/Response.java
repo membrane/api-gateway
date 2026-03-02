@@ -117,6 +117,15 @@ public class Response extends Message {
 					log.error("Could not close body stream.", e);
 				}
 			}
+
+			@Override
+			public void bodyError(ReadingBodyException e) {
+				try {
+					stream.close();
+				} catch (IOException e2) {
+					log.error("Could not close body stream.", e2);
+				}
+			}
 		}
 
 		public ResponseBuilder body(final InputStream stream, boolean closeStreamWhenDone) {

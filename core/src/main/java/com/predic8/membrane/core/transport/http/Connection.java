@@ -247,8 +247,21 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-
 	}
+
+	@Override
+	public void bodyError(ReadingBodyException e) {
+		try {
+			if (exchange != null) {
+				close();
+				exchange.setTargetConnection(null);
+				exchange = null;
+			}
+		} catch (IOException e2) {
+			throw new RuntimeException(e2);
+		}
+	}
+
 
 	public final void setTimeout(long timeout) {
 		this.timeout = timeout;
