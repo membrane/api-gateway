@@ -93,7 +93,7 @@ public class Body extends AbstractBody {
         try {
             skipBodyContent();
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+			throw setObservedException(new ReadingBodyException(e));
         }
     }
 
@@ -163,7 +163,7 @@ public class Body extends AbstractBody {
                 if (!((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0))
                     break;
             } catch (IOException e) {
-                throw new ReadingBodyException(e);
+				throw setObservedException(new ReadingBodyException(e));
             }
             totalLength += length;
 			streamedLength += length;

@@ -407,5 +407,10 @@ public abstract class Message {
 				throw new RuntimeException(e);
 			}
 		}
+
+		@Override
+		public void bodyError(ReadingBodyException e) {
+			// TODO: we could track the error in the snapshotted message
+		}
 	}
 }

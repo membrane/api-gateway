@@ -57,6 +57,9 @@ public class ShadowingInterceptor extends AbstractInterceptor {
             public void bodyComplete(AbstractBody completeBody) {
                 cloneRequestAndSend(completeBody, exc, copiedHeader);
             }
+
+            @Override
+            public void bodyError(ReadingBodyException e) {}
         });
         return CONTINUE;
     }
