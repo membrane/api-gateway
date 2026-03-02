@@ -14,7 +14,6 @@
 package com.predic8.membrane.annot.generator;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.annot.ProcessingException;
 import com.predic8.membrane.annot.generator.kubernetes.AbstractGrammar;
 import com.predic8.membrane.annot.generator.kubernetes.model.*;
@@ -115,20 +114,28 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private AbstractSchema<?> createParser(Model model, MainInfo main, ElementInfo elementInfo) {
         String parserName = elementInfo.getXSDTypeName(model);
 
+        AbstractSchema<?> parser;
         if (isComponentsMap(elementInfo)) {
-            return createComponentsMapParser(model, main, elementInfo, parserName);
+            parser = createComponentsMapParser(model, main, elementInfo, parserName);
+        } else if (elementInfo.getAnnotation().noEnvelope()) {
+            parser = createNoEnvelopeParser(model, main, elementInfo, parserName);
+        } else if (elementInfo.getAnnotation().collapsed()) {
+            // enforce the inline form for collapsed elements
+            parser = createCollapsedParser(elementInfo, parserName);
+        } else {
+            parser = createRegularParser(model, main, elementInfo, parserName);
         }
 
-        if (elementInfo.getAnnotation().noEnvelope()) {
-            return createNoEnvelopeParser(model, main, elementInfo, parserName);
-        }
+        return tagElementId(parser, elementInfo);
+    }
 
-        // enforce the inline form for collapsed elements
-        if (elementInfo.getAnnotation().collapsed()) {
-            return createCollapsedParser(elementInfo, parserName);
-        }
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private static AbstractSchema<?> tagElementId(AbstractSchema<?> schema, ElementInfo elementInfo) {
+        String id = elementInfo.getId();
+        if (id == null || id.isBlank()) return schema;
 
-        return createRegularParser(model, main, elementInfo, parserName);
+        ((AbstractSchema) schema).elementId(id);
+        return schema;
     }
 
     private AbstractSchema<?> createNoEnvelopeParser(Model model, MainInfo main, ElementInfo elementInfo, String parserName) {
