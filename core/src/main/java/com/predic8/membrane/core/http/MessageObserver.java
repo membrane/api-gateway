@@ -54,4 +54,9 @@ public interface MessageObserver {
 	 */
     void bodyComplete(AbstractBody body);
 
+	/**
+	 * Notification that an error occurred while reading the body.
+	 */
+	void bodyError(ReadingBodyException e);
+
 }
