@@ -134,7 +134,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         String id = elementInfo.getId();
         if (id == null || id.isBlank()) return schema;
 
-        ((AbstractSchema) schema).elementId(id);
+        ((AbstractSchema) schema).id(id);
         return schema;
     }
 
