@@ -78,8 +78,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
 
     private static void setClientConfig(Router router, HttpClientConfiguration hcc) {
         var client = getHttpClientInterceptor(router);
-        client.setHttpClientConfig(hcc);
-        client.init();
+        client.updateHttpClientConfig(hcc);
     }
 
     private static @NotNull ServiceProxy getServiceProxy(int port, String localhost, int targetPort) {
