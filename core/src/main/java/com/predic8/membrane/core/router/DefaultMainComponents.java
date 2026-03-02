@@ -50,7 +50,7 @@ public class DefaultMainComponents implements MainComponents {
     private HttpClient httpClient = new HttpClient();
 
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
-    private ResolverMap resolverMap;
+    private ResolverMap resolverMap = new ResolverMap();
 
     private final FlowController flowController;
     private final RuleManager ruleManager;
