@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client.rf;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.exchange.snapshots.*;
@@ -90,7 +91,11 @@ public class OAuth2CallbackRequestHandler {
             try {
                 originalRequest = originalExchangeStore.reconstruct(exc, session, stateFromUri);
             } catch (Exception e) {
-                log.warn("Could not reconstruct exchange snapshot '{}'", stateFromUri);
+                if (e.getCause() instanceof JsonProcessingException) {
+                    log.warn("OAuth2 flow failed to reconstruct original exchange from data found in '{}'", originalExchangeStore.getClass().getSimpleName());
+                } else {
+                    log.warn("OAuth2 flow could not find original exchange data in '{}'. This is likely caused by either an illegal state (e.g. the user pressing 'back' inside the OAuth2 flow) or an operational issue with the exchange store.", originalExchangeStore.getClass().getSimpleName());
+                }
                 throw new OAuth2Exception(
                         MEMBRANE_EXCHANGE_NOT_FOUND,
                         MEMBRANE_EXCHANGE_NOT_FOUND_DESCRIPTION,

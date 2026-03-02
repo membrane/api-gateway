@@ -64,6 +64,14 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
         Outcome outcome;
         try {
             outcome = handleRequestInternal(exc);
+        } catch (SessionManagementException e) {
+            internal(router.isProduction(),getDisplayName())
+                    .flow(REQUEST)
+                    .detail("Error handling session for request!")
+                    .exception(e)
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (Exception e) {
             log.error("", e);
             internal(router.isProduction(),getDisplayName())
