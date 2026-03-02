@@ -25,6 +25,7 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
 
     protected String title;
     protected String name;
+    protected String id;
     protected String type;
     protected String description;
     protected List<String> typeList;
@@ -76,6 +77,11 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
         return self();
     }
 
+    public T id(String id) {
+        this.id = id;
+        return self();
+    }
+
     public T type(String type) {
         this.type = type;
         return self();
@@ -102,6 +108,10 @@ public abstract class AbstractSchema<T extends AbstractSchema<T>> implements ISc
             node.set("type", arr);
         } else if (type != null) {
             node.put("type", type);
+        }
+
+        if (id != null && !id.isBlank()) {
+            node.put("id", id);
         }
 
         return node;
