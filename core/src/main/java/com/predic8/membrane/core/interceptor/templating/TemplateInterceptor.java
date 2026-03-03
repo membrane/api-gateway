@@ -88,7 +88,7 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
         super.init();
         template = createTemplate();
 
-        escaping = getSerializationFunction(contentType).or(() -> Optional.of(TEXT_SERIALIZATION)).get();
+        escaping = getSerialization(contentType).or(() -> Optional.of(TEXT_SERIALIZATION)).get();
 
         // If the template accesses somewhere the json variable make sure it is there
         // You can even access json in an XML or Text Template. See tests.

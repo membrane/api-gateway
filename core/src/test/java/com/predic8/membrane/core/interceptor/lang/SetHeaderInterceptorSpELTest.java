@@ -153,7 +153,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
         interceptor.setFailOnError(true);
         interceptor.init(router);
         assertEquals(ABORT, interceptor.handleRequest(exchange));
-        assertNull(super.getHeader("x-FoO"));
+        assertNull(super.getHeader("x-bar"));
     }
 
     @Test
@@ -162,7 +162,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
         interceptor.setFailOnError(false);
         interceptor.init(router);
         assertEquals(CONTINUE, interceptor.handleRequest(exchange));
-        assertNull(super.getHeader("x-FoO"));
+        assertNull(super.getHeader("x-bar"));
     }
 
     private String setHeaderEvalGetValue(String expr) {

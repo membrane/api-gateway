@@ -21,16 +21,13 @@ import com.predic8.membrane.core.util.text.*;
 import org.junit.jupiter.api.*;
 
 import java.util.*;
-import java.util.function.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.TemplateExchangeExpression.*;
 import static com.predic8.membrane.core.lang.TemplateExpressionParser.*;
-import static com.predic8.membrane.core.util.text.SerializationFunction.IDENTITY_SERIALIZATION;
-import static com.predic8.membrane.core.util.text.SerializationFunction.URL_SERIALIZATION;
-import static com.predic8.membrane.core.util.text.SerializationUtil.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.*;
 import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.*;
 import static com.predic8.membrane.core.util.xml.XMLTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -52,7 +49,7 @@ class TemplateExchangeExpressionTest {
         language = SPEL;
         router = new DefaultRouter();
         adapter = new InterceptorAdapter(router);
-        expression = new TemplateExchangeExpression(adapter, language, "aaa", router, IDENTITY_SERIALIZATION);
+        expression = new TemplateExchangeExpression(adapter, language, "aaa", router, TEXT_SERIALIZATION);
     }
 
     @Test
@@ -116,7 +113,7 @@ class TemplateExchangeExpressionTest {
                     {
                         "list": ${//item/text()}
                     }
-                    """, getSerializationFunction(JSON))).get("list");
+                    """, SerializationUtil.getSerialization(JSON))).get("list");
             assertEquals(3, list.size());
             assertEquals("Foo", list.get(0).asText());
             assertEquals("Bar", list.get(1).asText());
@@ -126,7 +123,7 @@ class TemplateExchangeExpressionTest {
         @Test
         void serializeXML() throws Exception {
             assertEquals(3,
-                    parse(eval("<list>${//item}</list>", getSerializationFunction(XML)))
+                    parse(eval("<list>${//item}</list>", SerializationUtil.getSerialization(XML)))
                             .getElementsByTagName("item").getLength());
         }
 
@@ -134,7 +131,7 @@ class TemplateExchangeExpressionTest {
         void serializeText() {
             assertEquals("List: Foo,Bar,Baz",
                     eval("List: ${//item}",
-                            getSerializationFunction(TEXT)));
+                            SerializationUtil.getSerialization(TEXT)));
         }
 
         private String eval(String expr, SerializationFunction escaping) {
@@ -144,6 +141,6 @@ class TemplateExchangeExpressionTest {
     }
 
     private String eval(Exchange exc, String expr) {
-        return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr, router, IDENTITY_SERIALIZATION).evaluate(exc, REQUEST, String.class);
+        return new TemplateExchangeExpression(new InterceptorAdapter(router), language, expr, router, TEXT_SERIALIZATION).evaluate(exc, REQUEST, String.class);
     }
 }

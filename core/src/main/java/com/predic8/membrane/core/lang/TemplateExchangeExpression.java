@@ -37,7 +37,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     private final List<Token> tokens;
 
     public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router) {
-        return newInstance(interceptor, language, expression, router, IDENTITY_SERIALIZATION);
+        return newInstance(interceptor, language, expression, router, TEXT_SERIALIZATION);
     }
 
     public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router, SerializationFunction encoder) {
@@ -69,7 +69,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         try {
             return tokens.getFirst().eval(exchange, flow, Object.class);
         } catch (Exception e) {
-            throw new ExchangeExpressionException(tokens.getFirst().toString(), e);
+            throw new ExchangeExpressionException(tokens.getFirst().getExpression(), e);
         }
     }
 
@@ -86,12 +86,9 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
                     line.append("null");
                     continue;
                 }
-                if (value instanceof Node n) {
-                    value = n.getTextContent();
-                }
                 line.append(encoder.apply(value));
             } catch (Exception e) {
-                throw new ExchangeExpressionException(token.toString(), e);
+                throw new ExchangeExpressionException(token.getExpression(), e);
             }
         }
         return line.toString();

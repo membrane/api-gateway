@@ -139,7 +139,7 @@ class SetBodyInterceptorTest {
 
         @Test
         void escape_xpath() throws Exception {
-            exc = post("/foo").json("""
+            exc = post("/foo").xml("""
                     <root>
                       <string>Dublin</string>
                       <number>123</number>

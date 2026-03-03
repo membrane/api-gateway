@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.util.text;
 
+import org.apache.commons.text.*;
 import org.w3c.dom.*;
 
 import javax.xml.transform.dom.*;
@@ -22,13 +23,14 @@ import java.io.*;
 
 import static javax.xml.transform.OutputKeys.*;
 import static javax.xml.transform.TransformerFactory.*;
+import static org.apache.commons.text.StringEscapeUtils.escapeXml11;
 
 public class ToXMLSerializer {
 
     public static String toXML(Object o) {
         return switch (o) {
             case null -> "";
-            case String s -> s; // Already XML (string)
+            case String s -> escapeXml11(s);
             case Node node -> nodeToString(node);
             case NodeList nl -> nodeListToString(nl);
             default -> String.valueOf(o);
@@ -45,7 +47,7 @@ public class ToXMLSerializer {
         return sb.toString();
     }
 
-    private static String nodeToString(org.w3c.dom.Node node) {
+    private static String nodeToString(Node node) {
         try {
             var t = newInstance().newTransformer();
             t.setOutputProperty(OMIT_XML_DECLARATION, "yes");

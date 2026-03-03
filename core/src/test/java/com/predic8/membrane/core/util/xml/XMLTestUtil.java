@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.util.xml;
 
+import com.predic8.membrane.core.util.xml.parser.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
-import javax.xml.parsers.*;
 import java.io.*;
 
 public class XMLTestUtil {
@@ -26,7 +26,6 @@ public class XMLTestUtil {
     }
 
     public static Document parse(String xml) throws Exception {
-        return DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                .parse(new InputSource(new StringReader(xml)));
+        return HardenedXmlParser.getInstance().parse(new InputSource(new StringReader(xml)));
     }
 }

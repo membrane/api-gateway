@@ -48,7 +48,6 @@ public class XPathTutorialTest extends AbstractXmlTutorialTest {
                     .log().ifValidationFails()
                     .statusCode(200)
                     .contentType(TEXT)
-               //     .header("X-Sunny","Sunny is a parrot")
                     .body(allOf(
                             containsString("Names: Skye,Molly,Biscuit,Sunny,Bubbles"),
                             containsString("Animals: dog,cat,rabbit,parrot,goldfish")

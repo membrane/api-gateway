@@ -14,23 +14,15 @@
 
 package com.predic8.membrane.core.util.text;
 
-import com.predic8.membrane.core.util.xml.*;
-import org.w3c.dom.*;
-
-import static java.net.URLEncoder.encode;
+import static com.predic8.membrane.core.util.text.SerializationFunction.*;
+import static java.net.URLEncoder.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class ToURLSerializer {
 
-    private ToURLSerializer() {
-    }
+    private ToURLSerializer() {}
 
     public static String toURL(Object o) {
-        if (o instanceof String s)
-            return encode(SerializationUtil.identity(s), UTF_8);
-        if (o instanceof NodeList nl) {
-            return encode(XMLTextUtil.nodeListToString(nl,","), UTF_8);
-        }
-        return encode(o.toString(), UTF_8);
+        return encode( TEXT_SERIALIZATION.apply(o), UTF_8);
     }
 }

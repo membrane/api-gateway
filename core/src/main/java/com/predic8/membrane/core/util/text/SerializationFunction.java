@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core.util.text;
 
-import com.predic8.membrane.core.lang.*;
-
 import java.util.function.*;
 
 /**
@@ -27,11 +25,10 @@ import java.util.function.*;
  */
 public interface SerializationFunction extends Function<Object, String> {
 
-    SerializationFunction JSON_SERIALIZATION = CommonBuiltInFunctions::toJSON;
+    SerializationFunction JSON_SERIALIZATION = ToJsonSerializer::toJson;
     SerializationFunction XML_SERIALIZATION = ToXMLSerializer::toXML;
     SerializationFunction TEXT_SERIALIZATION = ToTextSerializer::toText;
     SerializationFunction URL_SERIALIZATION = ToURLSerializer::toURL;
-    SerializationFunction IDENTITY_SERIALIZATION = SerializationUtil::identity;
     SerializationFunction SEGMENT_SERIALIZATION = SerializationUtil::pathEncode;
 
 }

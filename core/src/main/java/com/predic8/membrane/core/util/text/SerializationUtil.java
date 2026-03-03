@@ -14,61 +14,38 @@
 
 package com.predic8.membrane.core.util.text;
 
-import com.predic8.membrane.core.lang.*;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
+import org.w3c.dom.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.text.SerializationFunction.*;
-import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.*;
 import static java.lang.Character.*;
 import static java.nio.charset.StandardCharsets.*;
 
 public class SerializationUtil {
 
-    /**
-     * Specifies the types of serialization that can be performed on strings.
-     * <p/>
-     * The strategies include:
-     * <p/>
-     * - {@code NONE}: No escaping is applied. Strings are returned as-is.
-     * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
-     * other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
-     * - {@code JSON}: Serializes strings for safe inclusion in a JSON context.
-     * - {@code XML}: Serializes strings for safe inclusion in an XML context using XML 1.1 rules.
-     * - {@code SEGMENT}: Encodes strings as safe URI path segments, ensuring they do not introduce
-     * path separators, query delimiters, or other unsafe characters, as per RFC 3986.
-     */
-    public enum Serialization {
-        TEXT,
-        URL,
-        SEGMENT,
-        JSON,
-        XML
-    }
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static Optional<SerializationFunction> getSerializationFunction(String mimeType) {
+    private SerializationUtil() {}
+
+    public static Optional<SerializationFunction> getSerialization(String mimeType) {
         if (isJson(mimeType)) {
-            return Optional.of(getSerializationFunction(JSON));
+            return Optional.of(JSON_SERIALIZATION);
         }
         if (isXML(mimeType)) {
-            return Optional.of(getSerializationFunction(XML));
+            return Optional.of(XML_SERIALIZATION);
         }
+        if (isText(mimeType)) {
+            return Optional.of(TEXT_SERIALIZATION);
+        }
+        // Optional needed, so the caller can warn that a default is used
         return Optional.empty();
     }
 
-    /**
-     * Typed version of Function::identity. If the param is a String it is returned.
-     * Otherwise the value is converted into a String.
-     *
-     * @param o the object to be converted to its string representation; may be {@code null}
-     * @return the string representation of the specified object, or "null" if the object is {@code null}
-     */
-    public static String identity(Object o) {
-        return String.valueOf(o);
-    }
-
-    public static SerializationFunction getSerializationFunction(Serialization escaping) {
+    public static SerializationFunction getSerialization(Serialization escaping) {
         return switch (escaping) {
             case TEXT -> TEXT_SERIALIZATION;
             case URL -> URL_SERIALIZATION;
@@ -137,5 +114,34 @@ public class SerializationUtil {
         }
 
         return out.toString();
+    }
+
+    /**
+     * Specifies the types of serialization that can be performed on strings.
+     * <p/>
+     * The strategies include:
+     * <p/>
+     * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
+     * other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
+     * - {@code JSON}: Serializes s for safe inclusion in a JSON context.
+     * - {@code XML}: Serializes for safe inclusion in an XML context using XML 1.1 rules.
+     * - {@code SEGMENT}: Encodes as safe URI path segments, ensuring they do not introduce
+     * - {@code TEXT}: Serializes as plain text, without any encoding.
+     * path separators, query delimiters, or other unsafe characters, as per RFC 3986.
+     */
+    public enum Serialization {
+        TEXT,
+        URL,
+        SEGMENT,
+        JSON,
+        XML
+    }
+
+    public static String nodeListToJson(NodeList nl) throws JsonProcessingException {
+        var values = new ArrayList<String>(nl.getLength());
+        for (int i = 0; i < nl.getLength(); i++) {
+            values.add(String.valueOf(nl.item(i).getTextContent()));
+        }
+        return objectMapper.writeValueAsString(values);
     }
 }

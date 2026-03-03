@@ -18,8 +18,6 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression.*;
 import org.junit.jupiter.api.*;
 
-import java.util.*;
-
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.lang.TemplateExpressionParser.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -37,9 +35,7 @@ class TemplateExpressionParserTest {
 
     @Test
     void parsesPlainTextOnly() {
-        List<TemplateExchangeExpression.Token> tokens =
-                parseTokens(interceptor, SPEL, "hello");
-
+        var tokens = parseTokens(interceptor, SPEL, "hello");
         assertEquals(1, tokens.size());
         assertInstanceOf(Text.class, tokens.getFirst());
         assertEquals("hello", tokens.getFirst().getExpression());
@@ -48,7 +44,6 @@ class TemplateExpressionParserTest {
     @Test
     void parsesSingleExpressionOnly() {
         var tokens = parseTokens(interceptor, SPEL, "${a}");
-
         assertEquals(1, tokens.size());
         assertInstanceOf(Expression.class, tokens.getFirst());
         assertEquals("a", tokens.getFirst().getExpression());
@@ -57,12 +52,10 @@ class TemplateExpressionParserTest {
     @Test
     void parsesTextExpressionText() {
         var tokens = parseTokens(interceptor, SPEL, "a ${b} c");
-
         assertEquals(3, tokens.size());
         assertInstanceOf(Text.class, tokens.get(0));
         assertInstanceOf(Expression.class, tokens.get(1));
         assertInstanceOf(Text.class, tokens.get(2));
-
         assertEquals("a ", tokens.get(0).getExpression());
         assertEquals("b", tokens.get(1).getExpression());
         assertEquals(" c", tokens.get(2).getExpression());
@@ -70,9 +63,7 @@ class TemplateExpressionParserTest {
 
     @Test
     void parsesMultipleExpressions() {
-        List<TemplateExchangeExpression.Token> tokens =
-                parseTokens(interceptor, SPEL, "a ${b} c ${d} e");
-
+        var tokens = parseTokens(interceptor, SPEL, "a ${b} c ${d} e");
         assertEquals(5, tokens.size());
         assertEquals("a ", tokens.get(0).getExpression());
         assertEquals("b", tokens.get(1).getExpression());
@@ -84,12 +75,11 @@ class TemplateExpressionParserTest {
     @Test
     void parsesExpressionWithNestedBracesArrayInitializer() {
         // Regression for: ${new String[]{'a','b','c'}[1]}
-        List<TemplateExchangeExpression.Token> tokens =
-                parseTokens(
-                        interceptor,
-                        SPEL,
-                        "\"array\": ${new String[]{'a','b','c'}[1]}"
-                );
+        var tokens = parseTokens(
+                interceptor,
+                SPEL,
+                "\"array\": ${new String[]{'a','b','c'}[1]}"
+        );
 
         assertEquals(2, tokens.size());
         assertInstanceOf(Text.class, tokens.get(0));
@@ -101,12 +91,11 @@ class TemplateExpressionParserTest {
 
     @Test
     void ignoresBracesInsideSingleQuotedStringLiteral() {
-        List<TemplateExchangeExpression.Token> tokens =
-                parseTokens(
-                        interceptor,
-                        SPEL,
-                        "x ${'a{b}c'} y"
-                );
+        var tokens = parseTokens(
+                interceptor,
+                SPEL,
+                "x ${'a{b}c'} y"
+        );
 
         assertEquals(3, tokens.size());
         assertEquals("x ", tokens.get(0).getExpression());
@@ -116,12 +105,11 @@ class TemplateExpressionParserTest {
 
     @Test
     void ignoresBracesInsideDoubleQuotedStringLiteral() {
-        List<TemplateExchangeExpression.Token> tokens =
-                parseTokens(
-                        interceptor,
-                        SPEL,
-                        "x ${\"a{b}c\"} y"
-                );
+        var tokens = parseTokens(
+                interceptor,
+                SPEL,
+                "x ${\"a{b}c\"} y"
+        );
 
         assertEquals(3, tokens.size());
         assertEquals("x ", tokens.get(0).getExpression());
@@ -132,12 +120,11 @@ class TemplateExpressionParserTest {
     @Test
     void supportsSpelSingleQuoteEscapingWithDoubleSingleQuote() {
         // SpEL: '' inside single-quoted string represents a literal '
-        List<TemplateExchangeExpression.Token> tokens =
-                parseTokens(
-                        interceptor,
-                        SPEL,
-                        "x ${'it''s {fine}'} y"
-                );
+        var tokens = parseTokens(
+                interceptor,
+                SPEL,
+                "x ${'it''s {fine}'} y"
+        );
 
         assertEquals(3, tokens.size());
         assertEquals("x ", tokens.get(0).getExpression());
@@ -156,8 +143,7 @@ class TemplateExpressionParserTest {
 
     @Test
     void treatsDollarWithoutBraceAsPlainText() {
-        List<TemplateExchangeExpression.Token> tokens =
-                parseTokens(interceptor, SPEL, "x $ y");
+        var tokens = parseTokens(interceptor, SPEL, "x $ y");
 
         assertEquals(1, tokens.size());
         assertEquals("x $ y", tokens.getFirst().getExpression());
@@ -170,5 +156,14 @@ class TemplateExpressionParserTest {
         assertEquals(2, tokens.size());
         assertEquals("a", tokens.get(0).getExpression());
         assertEquals("b", tokens.get(1).getExpression());
+    }
+
+    @Test
+    void doubleSingleQuoteEscaping() {
+        var tokens = parseTokens(interceptor, SPEL, "x ${'Ehm'' '} y");
+        assertEquals(3, tokens.size());
+        assertEquals("x ", tokens.get(0).getExpression());
+        assertEquals("'Ehm'' '", tokens.get(1).getExpression());
+        assertEquals(" y", tokens.get(2).getExpression());
     }
 }

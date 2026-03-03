@@ -21,6 +21,7 @@ import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.text.*;
 import com.predic8.membrane.core.util.text.SerializationUtil.*;
 import org.junit.jupiter.api.*;
 
@@ -117,7 +118,7 @@ class HTTPClientInterceptorTest {
     }
 
     @Test
-    void computeNoneEscaping() throws Exception {
+    void computeTextEscaping() throws Exception {
         var exc = post("/foo").buildExchange();
         testExpression(SPEL, exc, "http://localhost/foo/${'&?äöü!\"=:#/\\'}",
                 "http://localhost/foo/&?äöü!\"=:#/\\", TEXT);

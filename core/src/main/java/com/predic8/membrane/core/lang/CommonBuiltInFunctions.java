@@ -28,7 +28,6 @@ import com.predic8.membrane.core.util.xml.parser.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.slf4j.Logger;
-import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
@@ -39,8 +38,7 @@ import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.util.xml.NormalizeXMLForJsonUtil.*;
-import static com.predic8.membrane.core.util.xml.XMLTextUtil.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.JSON_SERIALIZATION;
 import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
@@ -67,24 +65,7 @@ public class CommonBuiltInFunctions {
     }
 
     public static String toJSON(Object o) {
-        try {
-            if (o instanceof NodeList || o instanceof Node) {
-                o = normalizeForJson(o);
-            }
-            if (o instanceof NodeList nl) {
-                return nodeListToString(nl,",");
-            }
-            return objectMapper.writeValueAsString(o);
-        } catch (Exception first) {
-            // Fallback: always return valid JSON, even for unsupported types (e.g. java.time.* without modules).
-            log.debug("Failed to convert object to JSON. Falling back to JSON string.", first);
-            try {
-                return objectMapper.writeValueAsString(String.valueOf(o));
-            } catch (Exception fallback) {
-                log.info("Failed to convert fallback value to JSON.", fallback);
-                return "null";
-            }
-        }
+       return JSON_SERIALIZATION.apply(o);
     }
 
     /**

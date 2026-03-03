@@ -26,6 +26,9 @@ public class TemplateExpressionParser {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateExpressionParser.class);
 
+    private TemplateExpressionParser() {
+    }
+
     public static List<Token> parseTokens(Interceptor interceptor, ExchangeExpression.Language language, String expression) {
         log.debug("Parsing: {}", expression);
 

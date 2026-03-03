@@ -28,14 +28,13 @@ import com.predic8.membrane.core.util.text.SerializationUtil.*;
 import org.slf4j.*;
 
 import java.util.*;
-import java.util.function.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.util.TemplateUtil.*;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
-import static com.predic8.membrane.core.util.text.SerializationUtil.getSerializationFunction;
+import static com.predic8.membrane.core.util.text.SerializationUtil.getSerialization;
 
 /**
  * @description <p>
@@ -108,7 +107,7 @@ public class Target implements XMLSupport {
         if(containsTemplateMarker(url)) {
             urlIsTemplate = true;
         }
-        escapingFunction = getSerializationFunction(escaping);
+        escapingFunction = getSerialization(escaping);
     }
 
     public void applyModifications(Exchange exc, Router router) {
