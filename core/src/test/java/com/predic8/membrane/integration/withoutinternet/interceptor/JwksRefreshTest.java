@@ -1,5 +1,7 @@
-package com.predic8.membrane.core.interceptor.jwt;
+package com.predic8.membrane.integration.withoutinternet.interceptor;
 
+import com.predic8.membrane.core.interceptor.jwt.Jwks;
+import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
