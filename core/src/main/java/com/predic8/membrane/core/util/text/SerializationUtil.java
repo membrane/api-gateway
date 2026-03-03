@@ -14,9 +14,7 @@
 
 package com.predic8.membrane.core.util.text;
 
-import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
-import org.w3c.dom.*;
 
 import java.util.*;
 
@@ -29,7 +27,29 @@ public class SerializationUtil {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private SerializationUtil() {}
+    private SerializationUtil() {
+    }
+
+    /**
+     * Specifies the types of serialization that can be performed on strings.
+     * <p/>
+     * The strategies include:
+     * <p/>
+     * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
+     * other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
+     * - {@code JSON}: Serializes s for safe inclusion in a JSON context.
+     * - {@code XML}: Serializes for safe inclusion in an XML context using XML 1.1 rules.
+     * - {@code SEGMENT}: Encodes as safe URI path segments, ensuring they do not introduce
+     * - {@code TEXT}: Serializes as plain text, without any encoding.
+     * path separators, query delimiters, or other unsafe characters, as per RFC 3986.
+     */
+    public enum Serialization {
+        TEXT,
+        URL,
+        SEGMENT,
+        JSON,
+        XML
+    }
 
     public static Optional<SerializationFunction> getSerialization(String mimeType) {
         if (isJson(mimeType)) {
@@ -114,34 +134,5 @@ public class SerializationUtil {
         }
 
         return out.toString();
-    }
-
-    /**
-     * Specifies the types of serialization that can be performed on strings.
-     * <p/>
-     * The strategies include:
-     * <p/>
-     * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
-     * other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
-     * - {@code JSON}: Serializes s for safe inclusion in a JSON context.
-     * - {@code XML}: Serializes for safe inclusion in an XML context using XML 1.1 rules.
-     * - {@code SEGMENT}: Encodes as safe URI path segments, ensuring they do not introduce
-     * - {@code TEXT}: Serializes as plain text, without any encoding.
-     * path separators, query delimiters, or other unsafe characters, as per RFC 3986.
-     */
-    public enum Serialization {
-        TEXT,
-        URL,
-        SEGMENT,
-        JSON,
-        XML
-    }
-
-    public static String nodeListToJson(NodeList nl) throws JsonProcessingException {
-        var values = new ArrayList<String>(nl.getLength());
-        for (int i = 0; i < nl.getLength(); i++) {
-            values.add(String.valueOf(nl.item(i).getTextContent()));
-        }
-        return objectMapper.writeValueAsString(values);
     }
 }

@@ -28,7 +28,6 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.INFO;
 import static com.predic8.membrane.core.util.ExceptionUtil.*;
-import static com.predic8.membrane.core.util.text.SerializationFunction.*;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static org.slf4j.LoggerFactory.*;
 
@@ -64,10 +63,6 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
     public LogInterceptor() {
         name = "log";
-    }
-
-    protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression, router, TEXT_SERIALIZATION);
     }
 
     @Override

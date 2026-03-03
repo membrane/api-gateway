@@ -56,27 +56,27 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
 
     @Test
-    void computeSingeExpression() throws Exception {
+    void computeSingeExpression() {
         assertEquals("24", setHeaderEvalGetValue("${1*2*3*4}"));
     }
 
     @Test
-    void computeSingeExpressionWithCtx() throws Exception {
+    void computeSingeExpressionWithCtx() {
         assertEquals("Panama", setHeaderEvalGetValue("${property.bar}"));
     }
 
     @Test
-    void accessNonExistingProperty() throws Exception {
+    void accessNonExistingProperty() {
         assertEquals("null", setHeaderEvalGetValue("${properties.unknown}"));
     }
 
     @Test
-    void complex() throws Exception {
+    void complex() {
         assertEquals("foo Panama baz null coo 6/a", setHeaderEvalGetValue("foo ${properties.bar} baz ${properties.foo} coo ${2*3}/${'a'}"));
     }
 
     @Test
-    void getJson() throws Exception {
+    void getJson() {
         assertEquals("foo 5 baz", setHeaderEvalGetValue("foo ${json['a']} baz"));
     }
 
