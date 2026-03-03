@@ -173,34 +173,34 @@ public class Jwks {
     private record JwkListByUri(String uri, List<?> jwks) {}
 
     private JwkListByUri parseJwksUriIntoList(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper, String uri, boolean suppressExceptions) {
-        try {
-            InputStream resolve = authorizationService != null ?
-                    authorizationService.resolve(resolverMap, baseLocation, uri) :
-                    resolverMap.resolve(ResolverMap.combine(baseLocation, uri));
-            return new JwkListByUri(uri, mapper.convertValue(mapper.readTree(resolve).path("keys"), List.class));
-        } catch (JsonProcessingException e) {
-            String message = "Could not parse JWK keys retrieved from %s.".formatted(uri);
-            if (suppressExceptions) {
-                log.error(message);
-            } else {
-                throw new ConfigurationException(message, e);
-            }
-        } catch (ResourceRetrievalException e) {
-            String message = "Could not retrieve JWK keys from %s.".formatted(uri);
-            if (suppressExceptions) {
-                log.error(message);
-            } else {
-                throw new ConfigurationException(message, e);
-            }
+        try (InputStream jwksResponse = resolveToken(resolverMap, baseLocation, uri)) {
+            return new JwkListByUri(uri, mapper.convertValue(mapper.readTree(jwksResponse).path("keys"), List.class));
         } catch (Exception e) {
+            String message = switch (e) {
+                case JsonProcessingException ignored -> "Could not parse JWK keys retrieved from %s.".formatted(uri);
+                case ResourceRetrievalException ignored -> "Could not retrieve JWK keys from %s.".formatted(uri);
+                default -> {
+                    if (suppressExceptions) log.error(e.toString());
+                    yield e.getMessage();
+                }
+            };
             if (suppressExceptions) {
-                log.error(e.toString());
-                log.error(e.getMessage());
+                log.error(message);
+                return new JwkListByUri(uri, emptyList());
             } else {
-                throw new RuntimeException(e);
+                if (e instanceof JsonProcessingException || e instanceof ResourceRetrievalException) {
+                    throw new ConfigurationException(message, e);
+                } else {
+                    throw new RuntimeException(message, e);
+                }
             }
         }
-        return new JwkListByUri(uri, emptyList());
+    }
+
+    private InputStream resolveToken(ResolverMap resolverMap, String baseLocation, String uri) throws Exception {
+        return authorizationService != null ?
+                authorizationService.resolve(resolverMap, baseLocation, uri) :
+                resolverMap.resolve(ResolverMap.combine(baseLocation, uri));
     }
 
     public AuthorizationService getAuthorizationService() {
@@ -265,7 +265,7 @@ public class Jwks {
 
         private String handleJwks(ObjectMapper mapper, Map<String, Object> mapped) {
             return ((List<Map>) mapped.get("keys")).stream()
-                    .filter(m -> m.get("kid").toString().equals(kid))
+                    .filter(m -> Objects.equals(m.get("kid"), kid))
                     .map(m -> {
                         try {
                             return mapper.writeValueAsString(m);
@@ -273,7 +273,7 @@ public class Jwks {
                             throw new RuntimeException(e);
                         }
                     })
-                    .findFirst().orElseThrow();
+                    .findFirst().orElseThrow(() -> new RuntimeException("No JWK found for kid '" + kid + "'."));
         }
     }
 
