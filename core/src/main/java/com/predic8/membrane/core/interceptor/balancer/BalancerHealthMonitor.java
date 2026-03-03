@@ -41,6 +41,7 @@ import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
 
 /**
  * @description Health monitor for a {@link LoadBalancingInterceptor} {@link Cluster}.
@@ -113,12 +114,7 @@ public class BalancerHealthMonitor implements ApplicationContextAware, BeanRegis
     }
 
     private void createScheduler() {
-        router.getTimerManager().schedulePeriodicTask(new TimerTask() {
-            @Override
-            public void run() {
-                healthCheckTask.run();
-            }
-        }, INITIAL_DELAY, BALANCER_HEALTH_MONITOR);
+        router.getTimerManager().schedulePeriodicTask(createTimerTask(healthCheckTask), INITIAL_DELAY, BALANCER_HEALTH_MONITOR);
     }
 
     private Status isHealthy(Node node) {

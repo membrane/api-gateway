@@ -23,6 +23,8 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
+
 /**
  * Contains the fault state of the nodes.
  *
@@ -65,26 +67,23 @@ class FaultMonitoringState {
 		}
 
 		timer = new Timer(true); //using a daemon thread
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				try {
-					Iterator<NodeFaultProfile> iterator = map.values().iterator();
-					while (iterator.hasNext()) {
-						NodeFaultProfile current = iterator.next();
-						long lastFailureTimestamp = current.getLastFailureTimestamp();
-						long diff = System.currentTimeMillis() - lastFailureTimestamp;
-						if (diff >= clearFaultyProfilesByTimerAfterLastFailureSeconds) {
-							//it has been a while, clear it.
-							//we could ask some pre-removal callback for checking if the service looks good now.
-							iterator.remove(); //this concurrent modification is safe because we do it on an Iterator object.
-						}
+		timer.schedule(createTimerTask(() ->{
+			try {
+				Iterator<NodeFaultProfile> iterator = map.values().iterator();
+				while (iterator.hasNext()) {
+					NodeFaultProfile current = iterator.next();
+					long lastFailureTimestamp = current.getLastFailureTimestamp();
+					long diff = System.currentTimeMillis() - lastFailureTimestamp;
+					if (diff >= clearFaultyProfilesByTimerAfterLastFailureSeconds) {
+						//it has been a while, clear it.
+						//we could ask some pre-removal callback for checking if the service looks good now.
+						iterator.remove(); //this concurrent modification is safe because we do it on an Iterator object.
 					}
-				} catch (Exception e) {
-					//must catch all exceptions, otherwise the timer task aborts and is not run anymore.
-					log.error("Unexpected exception when running maintenance timer", e);
 				}
+			} catch (Exception e) {
+				//must catch all exceptions, otherwise the timer task aborts and is not run anymore.
+				log.error("Unexpected exception when running maintenance timer", e);
 			}
-		}, clearFaultyTimerIntervalSeconds, clearFaultyTimerIntervalSeconds);
+		}), clearFaultyTimerIntervalSeconds, clearFaultyTimerIntervalSeconds);
 	}
 }

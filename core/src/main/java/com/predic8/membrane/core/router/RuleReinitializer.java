@@ -19,6 +19,8 @@ import org.slf4j.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
+
 public class RuleReinitializer {
 
     private static final Logger log = LoggerFactory.getLogger(RuleReinitializer.class);
@@ -40,12 +42,7 @@ public class RuleReinitializer {
             return;
 
         timer = new Timer("reinitializer", true);
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                retry();
-            }
-        }, router.getConfiguration().getRetryInitInterval(), router.getConfiguration().getRetryInitInterval());
+        timer.schedule(createTimerTask(this::retry), router.getConfiguration().getRetryInitInterval(), router.getConfiguration().getRetryInitInterval());
     }
 
     public synchronized void stop() {
