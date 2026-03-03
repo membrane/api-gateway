@@ -78,7 +78,7 @@ public class HttpEndpointListener extends Thread {
         try {
             serverSocket = getServerSocket(p);
 
-            transport.getRouter().getTimerManager().schedulePeriodicTask(createTimerTask(() -> ipConnectionCount.entrySet().removeIf(HttpEndpointListener::lastUseMoreThen10SecondsAgo)), 60000, "HttpEndpointListener removing old IPs");
+            transport.getRouter().getTimerManager().schedulePeriodicTask(createTimerTask(() -> ipConnectionCount.entrySet().removeIf(HttpEndpointListener::lastUseMoreThan10MinutesAgo)), 60000, "HttpEndpointListener removing old IPs");
 
             final String s = p.toShortString();
             setName("Connection Acceptor " + s);
@@ -88,7 +88,7 @@ public class HttpEndpointListener extends Thread {
         }
     }
 
-    private static boolean lastUseMoreThen10SecondsAgo(Map.Entry<InetAddress, ClientInfo> entry) {
+    private static boolean lastUseMoreThan10MinutesAgo(Map.Entry<InetAddress, ClientInfo> entry) {
         ClientInfo v = entry.getValue();
         return v.get() == 0 && (currentTimeMillis() - v.lastUse >= 10 * 60 * 1000);
     }
