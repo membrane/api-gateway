@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap.KeySetView;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.lang.System.*;
 
@@ -77,15 +78,7 @@ public class HttpEndpointListener extends Thread {
         try {
             serverSocket = getServerSocket(p);
 
-            transport.getRouter().getTimerManager().schedulePeriodicTask(new TimerTask() {
-                @Override
-                public void run() {
-                    ipConnectionCount.entrySet().removeIf(entry -> {
-                        ClientInfo v = entry.getValue();
-                        return v.get() == 0 && (currentTimeMillis() - v.lastUse >= 10 * 60 * 1000);
-                    });
-                }
-            }, 60000, "HttpEndpointListener removing old IPs");
+            transport.getRouter().getTimerManager().schedulePeriodicTask(createTimerTask(() -> ipConnectionCount.entrySet().removeIf(HttpEndpointListener::lastUseMoreThen10SecondsAgo)), 60000, "HttpEndpointListener removing old IPs");
 
             final String s = p.toShortString();
             setName("Connection Acceptor " + s);
@@ -93,6 +86,11 @@ public class HttpEndpointListener extends Thread {
         } catch (BindException e) {
             throw new PortOccupiedException(p);
         }
+    }
+
+    private static boolean lastUseMoreThen10SecondsAgo(Map.Entry<InetAddress, ClientInfo> entry) {
+        ClientInfo v = entry.getValue();
+        return v.get() == 0 && (currentTimeMillis() - v.lastUse >= 10 * 60 * 1000);
     }
 
     private ServerSocket getServerSocket(IpPort p) throws IOException {

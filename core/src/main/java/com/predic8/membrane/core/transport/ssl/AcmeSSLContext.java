@@ -33,6 +33,8 @@ import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
+
 public class AcmeSSLContext extends SSLContext {
     private static final Logger log = LoggerFactory.getLogger(AcmeSSLContext.class);
     public static final int TLS_CERTIFICATE_UNKNOWN = 46;
@@ -262,14 +264,11 @@ public class AcmeSSLContext extends SSLContext {
         if (shutdown.get())
             return;
 
-        router.getTimerManager().schedule(new TimerTask() {
-            @Override
-            public void run() {
+        router.getTimerManager().schedule(createTimerTask(() -> {
                 if (!"never".equals(parser.getAcme().getRenewal()))
                     new AcmeRenewal(client, hosts).doWork();
                 initAndSchedule();
-            }
-        }, nextRun, "ACME timer " + constructHostsString());
+        }), nextRun, "ACME timer " + constructHostsString());
     }
 
     public static long renewAt(long validFrom, long validUntil) {

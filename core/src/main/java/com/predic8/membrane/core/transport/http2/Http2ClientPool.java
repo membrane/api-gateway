@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.*;
 
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
+
 public class Http2ClientPool {
 
     private static final Logger log = LoggerFactory.getLogger(Http2ClientPool.class.getName());
@@ -37,13 +39,10 @@ public class Http2ClientPool {
         this.keepAliveTimeout = keepAliveTimeout;
         long autoCloseInterval = keepAliveTimeout * 2;
         timer = new Timer("Connection Closer", true);
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
+        timer.schedule(createTimerTask(() -> {
                 if (closeOldConnections() == 0 && shutdownWhenDone)
                     timer.cancel();
-            }
-        }, autoCloseInterval, autoCloseInterval);
+        }), autoCloseInterval, autoCloseInterval);
     }
 
     public Http2Client reserveStream(String host, int port, SSLProvider sslProvider, String sniServerName, ProxyConfiguration proxy, SSLContext proxySSLContext) {

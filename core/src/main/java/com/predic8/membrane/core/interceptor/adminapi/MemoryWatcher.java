@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.util.TimerTask;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
 
 public class MemoryWatcher {
 
@@ -32,12 +33,7 @@ public class MemoryWatcher {
 
     public void init(TimerManager timerManager, WebSocketConnectionCollection connections) {
         this.connections = connections;
-        timerManager.schedulePeriodicTask(new TimerTask() {
-            @Override
-            public void run() {
-                getMemoryStats();
-            }
-        }, intervalMilliseconds, "MemoryWatcher");
+        timerManager.schedulePeriodicTask(createTimerTask(this::getMemoryStats), intervalMilliseconds, "MemoryWatcher");
     }
 
     private void getMemoryStats() {

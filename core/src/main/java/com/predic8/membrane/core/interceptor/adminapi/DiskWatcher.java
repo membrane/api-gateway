@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.TimerTask;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
 
 public class DiskWatcher {
 
@@ -33,12 +34,7 @@ public class DiskWatcher {
 
     public void init(TimerManager timerManager, WebSocketConnectionCollection connections) {
         this.connections = connections;
-        timerManager.schedulePeriodicTask(new TimerTask() {
-            @Override
-            public void run() {
-                getDiskStats();
-            }
-        }, intervalMilliseconds, "DiskWatcher");
+        timerManager.schedulePeriodicTask(createTimerTask(this::getDiskStats), intervalMilliseconds, "DiskWatcher");
     }
 
     private void getDiskStats() {

@@ -28,6 +28,7 @@ import java.text.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
 import static com.predic8.membrane.core.util.xml.XMLTextUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Calendar.*;
@@ -77,19 +78,15 @@ public class FileExchangeStore extends AbstractExchangeStore {
         if (firstRun.before(Calendar.getInstance()))
             firstRun.add(DAY_OF_MONTH, 1);
 
-        oldFilesCleanupTimer.scheduleAtFixedRate(
-                new TimerTask() {
-                    @Override
-                    public void run() {
-                        try {
-                            deleteOldFolders(Calendar.getInstance());
-                        } catch (IOException e) {
-                            log.error("", e);
-                        }
+        oldFilesCleanupTimer.scheduleAtFixedRate(createTimerTask(() -> {
+                    try {
+                        deleteOldFolders(Calendar.getInstance());
+                    } catch (IOException e) {
+                        log.error("", e);
                     }
-                },
+                }),
                 firstRun.getTime(),
-                24*60*60*1000		// one day
+                24 * 60 * 60 * 1000        // one day
         );
     }
 

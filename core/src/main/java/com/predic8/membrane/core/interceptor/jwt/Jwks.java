@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.jwt.JwtSignInterceptor.DEFAULT_PKEY;
+import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
 import static java.util.Collections.emptyList;
 
 /**
@@ -60,6 +61,18 @@ public class Jwks {
     String jwksUris;
     AuthorizationService authorizationService;
     private Router router;
+    private final Runnable refreshJwksTask = () -> {
+        try {
+            List<Jwk> loaded = loadJwks(true);
+            if (!loaded.isEmpty()) {
+                setJwks(loaded);
+            } else {
+                log.warn("JWKS refresh returned no keys — keeping previous key set.");
+            }
+        } catch (Exception e) {
+            log.error("JWKS refresh failed, will retry on next interval.", e);
+        }
+    };
 
     public void init(Router router) {
         this.router = router;
@@ -73,22 +86,7 @@ public class Jwks {
             throw new ConfigurationException("JWKs cannot be set both via JwksUris and Jwks elements.");
         setJwks(loadJwks(false));
         if (authorizationService != null && authorizationService.getJwksRefreshInterval() > 0) {
-            router.getTimerManager().schedulePeriodicTask(new TimerTask() {
-                                                              @Override
-                                                              public void run() {
-                                                                  try {
-                                                                      List<Jwk> loaded = loadJwks(true);
-                                                                      if (!loaded.isEmpty()) {
-                                                                          setJwks(loaded);
-                                                                      } else {
-                                                                          log.warn("JWKS refresh returned no keys — keeping previous key set.");
-                                                                      }
-                                                                  } catch (Exception e) {
-                                                                      log.error("JWKS refresh failed, will retry on next interval.", e);
-                                                                  }
-                                                              }
-                                                          }, authorizationService.getJwksRefreshInterval() * 1_000L, "JWKS Refresh"
-            );
+            router.getTimerManager().schedulePeriodicTask(createTimerTask(refreshJwksTask), authorizationService.getJwksRefreshInterval() * 1_000L, "JWKS Refresh");
         }
     }
 
