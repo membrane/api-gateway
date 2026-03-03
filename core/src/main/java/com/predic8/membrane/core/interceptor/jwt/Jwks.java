@@ -100,11 +100,11 @@ public class Jwks {
 
     @MCChildElement
     public Jwks setJwks(List<Jwk> jwks) {
-        if (jwks == null)
-            throw new ConfigurationException("JWKs list must not be null.");
-        this.jwks = jwks;  // unnecessary, mainly for consistency when debugging
-        if (router != null)  // set in init, so we can't update prior to that call
+        if (router != null) {  // set in init, so we can't update prior to that call
+            if (jwks == null) throw new ConfigurationException("JWKs list must not be null.");
             this.keysByKid = buildKeyMap(jwks);
+        }
+        this.jwks = jwks;  // unnecessary, mainly for consistency when debugging
         return this;
     }
 
@@ -114,7 +114,11 @@ public class Jwks {
 
     @MCAttribute
     public Jwks setJwksUris(String jwksUris) {
-        this.jwksUris = Arrays.stream(jwksUris.trim().split("\\s+"))
+        if (jwksUris == null) {
+            this.jwksUris = emptyList();
+            return this;
+        }
+        this.jwksUris = Arrays.stream(jwksUris.split("\\s+"))
                 .map(StringUtils::strip)
                 .filter(StringUtils::isNotBlank)
                 .toList();
@@ -289,7 +293,7 @@ public class Jwks {
     }
 
     String getLongDescription() {
-        if (jwksUris != null)
+        if (jwksUris != null && !jwksUris.isEmpty())
             return " JWKs from <a href=\" "+ TextUtil.toEnglishList("and", jwksUris.toArray(new String[0])) +"\">here</a> ";
         return "a predefined set of JWKs";
     }
