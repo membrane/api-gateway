@@ -28,6 +28,7 @@ import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.text.TextUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.slf4j.Logger;
@@ -58,7 +59,7 @@ public class Jwks {
     private volatile List<Jwk> jwks = new ArrayList<>(); // this is basically a write-only field, contents are converted to keysByKid ASAP
     private volatile HashMap<String, RsaJsonWebKey> keysByKid = new HashMap<>();
 
-    String jwksUris;
+    List<String> jwksUris = emptyList();
     AuthorizationService authorizationService;
     private Router router;
     private final Runnable refreshJwksTask = () -> {
@@ -105,12 +106,15 @@ public class Jwks {
     }
 
     public String getJwksUris() {
-        return jwksUris;
+        return String.join(" ", jwksUris);
     }
 
     @MCAttribute
     public Jwks setJwksUris(String jwksUris) {
-        this.jwksUris = jwksUris;
+        this.jwksUris = Arrays.stream(jwksUris.trim().split("\\s+"))
+                .map(StringUtils::strip)
+                .filter(StringUtils::isNotBlank)
+                .toList();
         return this;
     }
 
@@ -141,17 +145,14 @@ public class Jwks {
                     throw new RuntimeException("Default JWK detected in production environment. Please use a secure key.");
                 }
             }
-
             return new RsaJsonWebKey(params);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-
     private List<Jwk> loadJwks(boolean suppressExceptions) {
-        return Arrays.stream(jwksUris.trim().split("\\s+"))
-                .filter(s -> !s.isBlank())
+        return jwksUris.stream()
                 .map(uri -> parseJwksUriIntoList(router.getResolverMap(), router.getConfiguration().getBaseLocation(), mapper, uri, suppressExceptions))
                 .flatMap(l -> l.jwks().stream().map(jwkRaw -> convertToJwk(jwkRaw, mapper, l.uri(), suppressExceptions)))
                 .filter(Objects::nonNull)
@@ -283,7 +284,7 @@ public class Jwks {
 
     String getLongDescription() {
         if (jwksUris != null)
-            return " JWKs from <a href=\" "+ TextUtil.toEnglishList("and", jwksUris.split(" ")) +"\">here</a> ";
+            return " JWKs from <a href=\" "+ TextUtil.toEnglishList("and", jwksUris.toArray(new String[0])) +"\">here</a> ";
         return "a predefined set of JWKs";
     }
 
