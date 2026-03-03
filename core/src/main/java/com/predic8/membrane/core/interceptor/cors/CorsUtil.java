@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.cors;
 
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.util.StringList;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
@@ -38,9 +39,6 @@ public class CorsUtil {
     }
 
     public static @NotNull Set<String> splitBySpace(String origins) {
-        return stream(origins.split(SPACE))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(toSet());
+        return StringList.parseToSet(origins);
     }
 }

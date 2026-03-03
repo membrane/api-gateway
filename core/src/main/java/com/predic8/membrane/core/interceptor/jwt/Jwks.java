@@ -27,6 +27,7 @@ import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.StringList;
 import com.predic8.membrane.core.util.text.TextUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -118,10 +119,7 @@ public class Jwks {
             this.jwksUris = emptyList();
             return this;
         }
-        this.jwksUris = Arrays.stream(jwksUris.split("\\s+"))
-                .map(StringUtils::strip)
-                .filter(StringUtils::isNotBlank)
-                .toList();
+        this.jwksUris = StringList.parseToList(jwksUris);
         return this;
     }
 
