@@ -39,6 +39,7 @@ public class JwksRefreshTest {
     public static final int JWKS_REFRESH_INTERVAL = 1;
     static DefaultRouter jwksProvider;
     static DefaultRouter jwtValidator;
+    static HttpClient httpClient;
 
     static RsaJsonWebKey privateKey1;
     static RsaJsonWebKey publicKey1;
@@ -68,19 +69,22 @@ public class JwksRefreshTest {
         // Wait for jwksProvider to start
         Thread.sleep(1000);
 
+        httpClient = new HttpClient();
         jwtValidator = new DefaultRouter();
-        jwtValidator.add(proxyWithInterceptors(
-                AUTH_INTERCEPTOR_PORT,
-                jwtAuthInterceptor(),
-                new AbstractInterceptor() {
-                    @Override
-                    public Outcome handleRequest(Exchange exc) {
-                        exc.setResponse(Response.ok().build());
-                        return Outcome.RETURN;
-                    }
-                })
+        jwtValidator.add(
+                proxyWithInterceptors(AUTH_INTERCEPTOR_PORT, jwtAuthInterceptor(httpClient), okResponder())
         );
         jwtValidator.start();
+    }
+
+    private static @NotNull AbstractInterceptor okResponder() {
+        return new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                exc.setResponse(Response.ok().build());
+                return Outcome.RETURN;
+            }
+        };
     }
 
     private static @NotNull ServiceProxy proxyWithInterceptors(int port, @NotNull AbstractInterceptor... interceptors) {
@@ -89,10 +93,10 @@ public class JwksRefreshTest {
         return proxy;
     }
 
-    private static @NotNull JwtAuthInterceptor jwtAuthInterceptor() {
+    private static @NotNull JwtAuthInterceptor jwtAuthInterceptor(HttpClient httpClient) {
         Jwks jwks = new Jwks();
         jwks.setJwksUris("http://localhost:%d/jwks".formatted(PROVIDER_PORT));
-        jwks.setAuthorizationService(buildAuthorizationService(JWKS_REFRESH_INTERVAL));
+        jwks.setAuthorizationService(buildAuthorizationService(JWKS_REFRESH_INTERVAL, httpClient));
 
         JwtAuthInterceptor jwtAuth = new JwtAuthInterceptor();
         jwtAuth.setExpectedAud("some-audience");
@@ -111,7 +115,7 @@ public class JwksRefreshTest {
         };
     }
 
-    private static @NotNull AuthorizationService buildAuthorizationService(int jwksRefreshInterval) {
+    private static @NotNull AuthorizationService buildAuthorizationService(int jwksRefreshInterval, HttpClient httpClient) {
         AuthorizationService authService = new AuthorizationService() {
             @Override public void init() {}
             @Override public String getIssuer() { return null; }
@@ -124,7 +128,7 @@ public class JwksRefreshTest {
             @Override public String getRevocationEndpoint() { return null; }
         };
         authService.setJwksRefreshInterval(jwksRefreshInterval);
-        authService.setHttpClient(new HttpClient());
+        authService.setHttpClient(httpClient);
         return authService;
     }
 
@@ -132,6 +136,7 @@ public class JwksRefreshTest {
     public static void teardown() throws IOException {
         jwksProvider.stop();
         jwtValidator.stop();
+        httpClient.close();
     }
 
     @Test
