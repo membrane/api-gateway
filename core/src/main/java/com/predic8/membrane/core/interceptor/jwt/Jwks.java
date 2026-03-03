@@ -104,7 +104,7 @@ public class Jwks {
             if (jwks == null) throw new ConfigurationException("JWKs list must not be null.");
             this.keysByKid = buildKeyMap(jwks);
         }
-        this.jwks = jwks;  // unnecessary, mainly for consistency when debugging
+        this.jwks = (jwks == null) ? emptyList() : jwks;  // unnecessary, mainly for consistency when debugging
         return this;
     }
 
