@@ -46,8 +46,11 @@ public class DefaultMainComponents implements MainComponents {
 
     private final TimerManager timerManager = new TimerManager();
     private final HttpClientFactory httpClientFactory = new HttpClientFactory(timerManager);
+
+    private HttpClient httpClient = new HttpClient();
+
     private final KubernetesClientFactory kubernetesClientFactory = new KubernetesClientFactory(httpClientFactory);
-    private final ResolverMap resolverMap;
+    private ResolverMap resolverMap = new ResolverMap();
 
     private final FlowController flowController;
     private final RuleManager ruleManager;
@@ -58,14 +61,16 @@ public class DefaultMainComponents implements MainComponents {
     public DefaultMainComponents(DefaultRouter router) {
         log.debug("Creating new router.");
         this.router = router;
-        resolverMap = new ResolverMap(httpClientFactory, kubernetesClientFactory);
-        resolverMap.addRuleResolver(router);
         flowController = new FlowController(router);
         ruleManager= new RuleManager();
         ruleManager.setRouter(router);
     }
 
     public void init() {
+        httpClient = httpClientFactory.createClient(getHttpClientConfig());
+        resolverMap = new ResolverMap(httpClient, kubernetesClientFactory);
+        resolverMap.addRuleResolver(router);
+
         log.debug("Initializing.");
 
         if (registry == null) {
@@ -73,7 +78,7 @@ public class DefaultMainComponents implements MainComponents {
             registry.register("router", router);
         }
 
-        registry.registerIfAbsent(HttpClientConfiguration.class, HttpClientConfiguration::new);
+        registry.registerIfAbsent(HttpClientConfiguration.class, () -> router.getConfiguration().getHttpClientConfig());
         registry.registerIfAbsent(ExchangeStore.class, LimitedMemoryExchangeStore::new);
         registry.registerIfAbsent(DNSCache.class, DNSCache::new);
 
@@ -126,14 +131,6 @@ public class DefaultMainComponents implements MainComponents {
         this.transport = transport;
     }
 
-    public HttpClientConfiguration getHttpClientConfig() {
-        return getResolverMap().getHTTPSchemaResolver().getHttpClientConfig();
-    }
-
-    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
-        getResolverMap().getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
-    }
-
     @Override
     public DNSCache getDnsCache() {
         return getRegistry().getBean(DNSCache.class).orElseThrow(); // TODO
@@ -165,6 +162,15 @@ public class DefaultMainComponents implements MainComponents {
 
     public HttpClientFactory getHttpClientFactory() {
         return httpClientFactory;
+    }
+
+    @Override
+    public HttpClientConfiguration getHttpClientConfig() {
+        return router.getConfiguration().getHttpClientConfig();
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
     }
 
     public FlowController getFlowController() {

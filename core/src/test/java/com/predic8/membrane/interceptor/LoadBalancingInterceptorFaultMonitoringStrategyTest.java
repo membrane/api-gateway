@@ -100,8 +100,7 @@ class LoadBalancingInterceptorFaultMonitoringStrategyTest {
         r.add(sp3);
         r.start();
         var client = r.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
-        client.setHttpClientConfig(getHttpClientConfigurationWithRetries());
-        client.init();
+        client.updateHttpClientConfig(getHttpClientConfigurationWithRetries());
         return r;
     }
 

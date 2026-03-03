@@ -20,6 +20,7 @@ import com.predic8.membrane.core.kubernetes.*;
 import com.predic8.membrane.core.kubernetes.client.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
 import com.predic8.xml.util.*;
@@ -54,17 +55,18 @@ public class ResolverMap implements Cloneable, Resolver {
     private String[] schemas;
     private SchemaResolver[] resolvers;
 
+
     public ResolverMap() {
-        this(null, null);
+        this(new HttpClientFactory(null).createClient(new HttpClientConfiguration()), null);
     }
 
-    public ResolverMap(HttpClientFactory httpClientFactory, KubernetesClientFactory kubernetesClientFactory) {
+    public ResolverMap(HttpClient httpClient, KubernetesClientFactory kubernetesClientFactory) {
         schemas = new String[10];
         resolvers = new SchemaResolver[10];
 
         // the default config
         addSchemaResolver(new ClasspathSchemaResolver());
-        addSchemaResolver(new HTTPSchemaResolver(httpClientFactory));
+        addSchemaResolver(new HTTPSchemaResolver(httpClient));
         addSchemaResolver(new KubernetesSchemaResolver(kubernetesClientFactory));
         addSchemaResolver(new FileSchemaResolver());
     }
@@ -104,7 +106,7 @@ public class ResolverMap implements Cloneable, Resolver {
             // lfold
             String[] l = new String[locations.length - 1];
             System.arraycopy(locations, 0, l, 0, locations.length - 1);
-            return combine(factory,combine(l), locations[locations.length - 1]);
+            return combine(factory,combine(factory,l), locations[locations.length - 1]);
         }
 
         return combineInternal2( factory, locations,locations[1], locations[0]);

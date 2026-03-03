@@ -206,8 +206,7 @@ public class ChunkedBodyTest {
             HTTPClientInterceptor interceptor = router.getTransport().getFirstInterceptorOfType(HTTPClientInterceptor.class).orElseThrow();
             HttpClientConfiguration cfg = new HttpClientConfiguration();
             cfg.setUseExperimentalHttp2(true);
-            interceptor.setHttpClientConfig(cfg);
-            interceptor.init(); // Copies the config into the HttpClient. It is needed to call because router.start() above already called init()
+            interceptor.updateHttpClientConfig(cfg);
         }
         return router;
     }

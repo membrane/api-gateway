@@ -131,7 +131,7 @@ public class AccessLogInterceptorService {
         return () -> {
             try {
                 return msg.getBody().getLength();
-            } catch (IOException e) {
+            } catch (ReadingBodyException e) {
                 return defaultValue;
             }
         };

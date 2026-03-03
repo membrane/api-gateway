@@ -15,14 +15,14 @@
 package com.predic8.membrane.core.http;
 
 /**
- * Indicates that an error occurred while reading the body of a message.
+ * Indicates that an error occurred while writing the body of a message.
  *
  * The 'message' should already be enough to indicate the error.
  *
  * (No need to use {@link com.predic8.membrane.core.util.ExceptionUtil#concatMessageAndCauseMessages(Throwable)}.)
  */
-public class ReadingBodyException extends RuntimeException {
-    public ReadingBodyException(Exception e) {
+public class WritingBodyException extends RuntimeException {
+    public WritingBodyException(Exception e) {
         super(e);
     }
 }

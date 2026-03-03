@@ -78,10 +78,8 @@ public class SOAPProxy extends AbstractServiceProxy {
     public void init() {
         resolverMap = router.getResolverMap();
         if (httpClientConfig != null) {
-            HTTPSchemaResolver httpSR = new HTTPSchemaResolver(router.getHttpClientFactory());
-            httpSR.setHttpClientConfig(httpClientConfig);
             resolverMap = resolverMap.clone();
-            resolverMap.addSchemaResolver(httpSR);
+            resolverMap.addSchemaResolver(new HTTPSchemaResolver(router.getHttpClientFactory().createClient(httpClientConfig)));
         }
         configureFromWSDL();
         super.init(); // Must be called last! Otherwise, SSL will not be configured!
@@ -293,7 +291,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         return httpClientConfig;
     }
 
-    @MCAttribute
+    @MCChildElement
     public void setWsdlHttpClientConfig(HttpClientConfiguration httpClientConfig) {
         this.httpClientConfig = httpClientConfig;
     }

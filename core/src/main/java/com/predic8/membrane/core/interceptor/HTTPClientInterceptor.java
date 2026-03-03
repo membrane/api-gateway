@@ -45,33 +45,42 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     // null => inherit from HttpClientConfiguration unless explicitly set here
     private Boolean failOverOn5XX;
 
-    private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
+    private HttpClientConfiguration httpClientConfig;
 
-    private HttpClient hc;
+    private HttpClient httpClient;
 
-    public HTTPClientInterceptor() {
-        name = "http client";
-        setAppliedFlow(REQUEST_FLOW);
+    public HTTPClientInterceptor() {}
+
+    public HTTPClientInterceptor(HttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
     @Override
     public void init() {
+        name = "http client";
+        setAppliedFlow(REQUEST_FLOW);
+
         super.init();
+
+        if (httpClientConfig == null) httpClientConfig = router.getHttpClientConfig();
 
         // Overwrite httpClientConfiguration with local value
         if (failOverOn5XX != null) {
             httpClientConfig.getRetryHandler().setFailOverOn5XX(failOverOn5XX);
         }
 
-        hc = router.getHttpClientFactory().createClient(httpClientConfig);
-        hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
+        if (httpClient == null) {
+            httpClient = router.getHttpClientFactory().createClient(httpClientConfig);
+        }
+
+        httpClient.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
             applyTargetModifications(exc);
-            hc.call(exc);
+            httpClient.call(exc);
             return RETURN;
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
@@ -129,6 +138,13 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    // Used to update the httpClientConfig in tests
+    public void updateHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        this.httpClient = null;
+        this.httpClientConfig = httpClientConfig;
+        init();
     }
 
     /**
