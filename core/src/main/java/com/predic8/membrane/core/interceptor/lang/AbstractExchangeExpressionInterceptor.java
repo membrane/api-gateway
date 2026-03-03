@@ -15,8 +15,7 @@ package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.core.lang.*;
 
-import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
-import static com.predic8.membrane.core.util.text.SerializationUtil.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.*;
 
 public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInterceptor {
 

@@ -51,7 +51,7 @@ public class GroovyTemplateEscapingTest {
     }
 
     @Test
-    void json() throws IOException, ClassNotFoundException, URISyntaxException {
+    void json() throws IOException, ClassNotFoundException {
         var t = new StreamingTemplateEngine().createTemplate(new StringReader(
                 "${flow} $flow <%= flow %> ${hasScope('foo')}"));
 

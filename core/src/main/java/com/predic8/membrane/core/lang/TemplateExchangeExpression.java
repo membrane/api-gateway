@@ -29,17 +29,10 @@ import static com.predic8.membrane.core.util.text.SerializationFunction.*;
 
 public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
-    private static final Logger log = LoggerFactory.getLogger(TemplateExchangeExpression.class);
-
     /**
      * Plugable encoder to apply various encoding strategies like URL, or path segment encoding.
      */
     private final SerializationFunction encoder;
-
-    /**
-     * For parsing strings with expressions inside ${} e.g. "foo ${property.bar} baz"
-     */
-    private static final Pattern scriptPattern = Pattern.compile("([^$]+)?(\\$\\{(.*?)})?|");
 
     private final List<Token> tokens;
 

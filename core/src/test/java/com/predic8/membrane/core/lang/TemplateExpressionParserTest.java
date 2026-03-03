@@ -42,7 +42,7 @@ class TemplateExpressionParserTest {
 
         assertEquals(1, tokens.size());
         assertInstanceOf(Text.class, tokens.getFirst());
-        assertEquals("hello", ((Text) tokens.getFirst()).getExpression());
+        assertEquals("hello", tokens.getFirst().getExpression());
     }
 
     @Test

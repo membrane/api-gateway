@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.lang;
 
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.lang.TemplateExchangeExpression.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -25,10 +26,10 @@ public class TemplateExpressionParser {
 
     private static final Logger log = LoggerFactory.getLogger(TemplateExpressionParser.class);
 
-    public static List<TemplateExchangeExpression.Token> parseTokens(Interceptor interceptor, ExchangeExpression.Language language, String expression) {
+    public static List<Token> parseTokens(Interceptor interceptor, ExchangeExpression.Language language, String expression) {
         log.debug("Parsing: {}", expression);
 
-        List<TemplateExchangeExpression.Token> tokens = new ArrayList<>();
+        List<Token> tokens = new ArrayList<>();
 
         int i = 0;
         int textStart = 0;

@@ -50,7 +50,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @ParameterizedTest
     @MethodSource("cases")
-    void withoutExpressionOnlyConstant(String expression, String expected) throws Exception {
+    void withoutExpressionOnlyConstant(String expression, String expected) {
         extracted(expression, expected);
     }
 
@@ -114,7 +114,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @Test
     @DisplayName("Overwrite header when it is not absent")
-    void notIfAbsent() throws Exception {
+    void notIfAbsent() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
         interceptor.setFieldName("X-FOO");
         interceptor.setValue("42");
@@ -126,7 +126,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @Test
     @DisplayName("Do not overwrite existing header.")
-    void ifAbsent() throws Exception {
+    void ifAbsent() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
         interceptor.setFieldName("X-FOO");
         interceptor.setValue("42");
@@ -138,7 +138,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @Test
     @DisplayName("Overwrite header when it is not absent with different casing")
-    void notIfAbsentCaseDiff() throws Exception {
+    void notIfAbsentCaseDiff() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
         interceptor.setFieldName("x-fOo");
         interceptor.setValue("42");
@@ -148,26 +148,24 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     }
 
     @Test
-    void failOnErrorTrue() throws Exception {
+    void failOnErrorTrue() {
         interceptor.setValue("42${wrong}");
         interceptor.setFailOnError(true);
         interceptor.init(router);
-        Outcome outcome = interceptor.handleRequest(exchange);
-        assertEquals(ABORT, outcome);
+        assertEquals(ABORT, interceptor.handleRequest(exchange));
         assertNull(super.getHeader("x-FoO"));
     }
 
     @Test
-    void failOnErrorFalse() throws Exception {
+    void failOnErrorFalse() {
         interceptor.setValue("42${wrong}");
         interceptor.setFailOnError(false);
         interceptor.init(router);
-        Outcome outcome = interceptor.handleRequest(exchange);
-        assertEquals(CONTINUE, outcome);
+        assertEquals(CONTINUE, interceptor.handleRequest(exchange));
         assertNull(super.getHeader("x-FoO"));
     }
 
-    private String setHeaderEvalGetValue(String expr) throws Exception {
+    private String setHeaderEvalGetValue(String expr) {
         interceptor.setValue(expr);
         interceptor.init(router);
         interceptor.handleRequest(exchange);

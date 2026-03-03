@@ -28,7 +28,6 @@ import com.predic8.membrane.core.util.text.*;
 @MCElement(name = "setHeader")
 public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
-    @SuppressWarnings("rawtypes")
     @Override
     protected Class<?> getExpressionReturnType() {
         return String.class;

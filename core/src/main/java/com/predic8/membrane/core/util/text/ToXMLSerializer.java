@@ -14,8 +14,11 @@
 
 package com.predic8.membrane.core.util.text;
 
+import org.w3c.dom.*;
+
 import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
+import java.io.*;
 
 import static javax.xml.transform.OutputKeys.*;
 import static javax.xml.transform.TransformerFactory.*;
@@ -23,31 +26,19 @@ import static javax.xml.transform.TransformerFactory.*;
 public class ToXMLSerializer {
 
     public static String toXML(Object o) {
-        if (o == null) {
-            return "";
-        }
-
-        // Already XML (string)
-        if (o instanceof String s) {
-            return s;
-        }
-
-        // Membrane / W3C DOM nodes
-        if (o instanceof org.w3c.dom.Node node) {
-            return nodeToString(node);
-        }
-        if (o instanceof org.w3c.dom.NodeList nl) {
-            return nodeListToString(nl);
-        }
-
-        // Fallback
-        return String.valueOf(o);
+        return switch (o) {
+            case null -> "";
+            case String s -> s; // Already XML (string)
+            case Node node -> nodeToString(node);
+            case NodeList nl -> nodeListToString(nl);
+            default -> String.valueOf(o);
+        };
     }
 
     private static String nodeListToString(org.w3c.dom.NodeList nl) {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         for (int i = 0; i < nl.getLength(); i++) {
-            org.w3c.dom.Node n = nl.item(i);
+            var n = nl.item(i);
             if (n == null) continue;
             sb.append(nodeToString(n));
         }
@@ -60,7 +51,7 @@ public class ToXMLSerializer {
             t.setOutputProperty(OMIT_XML_DECLARATION, "yes");
             t.setOutputProperty(INDENT, "no");
 
-            var sw = new java.io.StringWriter();
+            var sw = new StringWriter();
             t.transform(new DOMSource(node), new StreamResult(sw));
             return sw.toString();
         } catch (Exception e) {

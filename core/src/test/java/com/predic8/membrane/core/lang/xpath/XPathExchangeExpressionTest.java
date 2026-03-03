@@ -102,7 +102,6 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
      */
     @Test
     void getListString() {
-        var o = evalString("//persons/name");
         assertEquals("John Doe", evalString("//persons/name"));
     }
 

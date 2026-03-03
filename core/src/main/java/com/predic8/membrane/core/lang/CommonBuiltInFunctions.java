@@ -40,7 +40,7 @@ import java.util.function.Predicate;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.xml.NormalizeXMLForJsonUtil.*;
-import static com.predic8.membrane.core.util.xml.XMLTextUtil.nodeListToString;
+import static com.predic8.membrane.core.util.xml.XMLTextUtil.*;
 import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
@@ -167,8 +167,7 @@ public class CommonBuiltInFunctions {
     }
 
     public static String user(Exchange exchange) {
-        List<SecurityScheme> schemes = exchange.getProperty(SECURITY_SCHEMES, List.class);
-        for (SecurityScheme scheme : schemes) {
+        for (var scheme : (List<SecurityScheme>) exchange.getProperty(SECURITY_SCHEMES, List.class)) {
             if (scheme instanceof BasicHttpSecurityScheme basic) {
                 return basic.getUsername();
             }

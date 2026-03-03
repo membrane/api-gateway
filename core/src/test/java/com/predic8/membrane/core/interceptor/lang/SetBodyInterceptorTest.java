@@ -126,7 +126,7 @@ class SetBodyInterceptorTest {
             var json = om.readTree(exc.getRequest().getBodyAsStringDecoded());
             assertEquals("Dublin", json.get("string").asText());
             assertEquals(123, json.get("number").asInt());
-            assertEquals(true, json.get("boolean").asBoolean());
+            assertTrue(json.get("boolean").asBoolean());
             assertEquals(3, json.get("array").size());
             assertEquals("a", json.get("array").get(0).asText());
             assertEquals("b", json.get("array").get(1).asText());

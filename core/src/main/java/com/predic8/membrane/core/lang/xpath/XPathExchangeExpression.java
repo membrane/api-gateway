@@ -30,6 +30,7 @@ import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
 import static com.predic8.membrane.core.util.text.StringUtil.*;
+import static javax.xml.xpath.XPathConstants.*;
 
 public class XPathExchangeExpression extends AbstractExchangeExpression {
 
@@ -52,10 +53,10 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         var msg = exchange.getMessage(flow);
         try {
             if (Boolean.class.isAssignableFrom(type)) {
-                return type.cast(evalutateAndCast(msg, XPathConstants.BOOLEAN));
+                return type.cast(evaluateAndCast(msg, XPathConstants.BOOLEAN));
             }
             if (String.class.isAssignableFrom(type)) {
-                return type.cast(evalutateAndCast(msg, XPathConstants.STRING));
+                return type.cast(evaluateAndCast(msg, XPathConstants.STRING));
             }
             if (Object.class.isAssignableFrom(type)) {
                 return type.cast(evaluateAndCastToObject(msg));
@@ -81,24 +82,18 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     }
 
     private Object evaluateAndCastToObject(Message msg) throws XPathExpressionException {
-//        var t = evalutateAndCast(msg, null);
-        var t = evalutateAndCast(msg, XPathConstants.NODESET);
-        if (t instanceof XPathEvaluationResult xpr) {
+        var t = evaluateAndCast(msg, NODESET);
+        if (t instanceof XPathEvaluationResult<?> xpr) {
             return xpr.value();
-//            if (xpr.type() == NUMBER || xpr.type() == BOOLEAN || xpr.type() == STRING) {
-//                return xpr.value();
-//            }
-//            if (xpr.type() == XPathResultType.NODESET) {
-//                return xpr.value();
-//            }
         }
         if (t instanceof NodeList nl) {
             return nl;
         }
-        throw new RuntimeException("Should not Happen!");
+        log.debug("That point should not be reached.");
+        return t;
     }
 
-    private Object evalutateAndCast(Message msg, QName xmlType) throws XPathExpressionException {
+    private Object evaluateAndCast(Message msg, QName xmlType) throws XPathExpressionException {
         if (log.isDebugEnabled()) {
             log.debug("Evaluating: {}", expression);
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
@@ -110,17 +105,15 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
         try {
             if (xmlType == null) {
                 return xPath.evaluateExpression(expression, parser.parse(XMLUtil.getInputSource(msg)));
-            } else {
-                try {
-                    // Depending on the xpath it is not always possible to set it to specified xmlType
-                    // e.g., xmlType=NodeSet xpath=string(//city)
-                    return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
-                } catch (XPathExpressionException e) {
-                    log.debug("XPath expression failed. Trying again without type.", e);
-                    return xPath.evaluateExpression(expression, parser.parse(XMLUtil.getInputSource(msg)));
-                }
             }
-
+            try {
+                // Depending on the xpath it is not always possible to set it to specified xmlType
+                // e.g., xmlType=NodeSet xpath=string(//city)
+                return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
+            } catch (XPathExpressionException e) {
+                log.debug("XPath expression failed. Trying again without type.", e);
+                return xPath.evaluateExpression(expression, parser.parse(XMLUtil.getInputSource(msg)));
+            }
         } catch (RuntimeException e) {
             // Parser errors may escape as unchecked exceptions.
             if (causeMessageContains(e, "not allowed in prolog")) {

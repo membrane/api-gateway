@@ -22,8 +22,10 @@ import com.tngtech.archunit.lang.syntax.ArchRuleDefinition;
 
 import java.io.IOException;
 
+@SuppressWarnings("unused")
 @AnalyzeClasses(packages = "com.predic8.membrane.core")
 public class BodyDoesntThrowIOExceptionTest {
+
     @ArchTest
     static final ArchRule bodyMethodsShouldNotThrowIOException =
             ArchRuleDefinition.methods().that()
