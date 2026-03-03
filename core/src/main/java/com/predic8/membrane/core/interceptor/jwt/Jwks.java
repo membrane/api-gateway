@@ -171,9 +171,8 @@ public class Jwks {
             if (suppressExceptions) {
                 log.error(message);
                 return null;
-            } else {
-                throw new ConfigurationException(message, e);
             }
+            throw new ConfigurationException(message, e);
         }
     }
 
@@ -194,13 +193,11 @@ public class Jwks {
             if (suppressExceptions) {
                 log.error(message);
                 return new JwkListByUri(uri, emptyList());
-            } else {
-                if (e instanceof JsonProcessingException || e instanceof ResourceRetrievalException) {
-                    throw new ConfigurationException(message, e);
-                } else {
-                    throw new RuntimeException(message, e);
-                }
             }
+            if (e instanceof JsonProcessingException || e instanceof ResourceRetrievalException) {
+                throw new ConfigurationException(message, e);
+            }
+            throw new RuntimeException(message, e);
         }
     }
 
