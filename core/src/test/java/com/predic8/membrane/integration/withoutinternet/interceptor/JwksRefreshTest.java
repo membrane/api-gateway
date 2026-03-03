@@ -1,5 +1,6 @@
 package com.predic8.membrane.integration.withoutinternet.interceptor;
 
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import com.predic8.membrane.core.interceptor.jwt.Jwks;
 import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
 import com.predic8.membrane.core.router.DefaultRouter;
@@ -72,19 +73,9 @@ public class JwksRefreshTest {
         httpClient = new HttpClient();
         jwtValidator = new DefaultRouter();
         jwtValidator.add(
-                proxyWithInterceptors(AUTH_INTERCEPTOR_PORT, jwtAuthInterceptor(httpClient), okResponder())
+                proxyWithInterceptors(AUTH_INTERCEPTOR_PORT, jwtAuthInterceptor(httpClient), new ReturnInterceptor())
         );
         jwtValidator.start();
-    }
-
-    private static @NotNull AbstractInterceptor okResponder() {
-        return new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(Exchange exc) {
-                exc.setResponse(Response.ok().build());
-                return Outcome.RETURN;
-            }
-        };
     }
 
     private static @NotNull ServiceProxy proxyWithInterceptors(int port, @NotNull AbstractInterceptor... interceptors) {
