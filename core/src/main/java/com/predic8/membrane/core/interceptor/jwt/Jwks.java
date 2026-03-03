@@ -150,7 +150,8 @@ public class Jwks {
 
 
     private List<Jwk> loadJwks(boolean suppressExceptions) {
-        return Arrays.stream(jwksUris.split(" "))
+        return Arrays.stream(jwksUris.trim().split("\\s+"))
+                .filter(s -> !s.isBlank())
                 .map(uri -> parseJwksUriIntoList(router.getResolverMap(), router.getConfiguration().getBaseLocation(), mapper, uri, suppressExceptions))
                 .flatMap(l -> l.jwks().stream().map(jwkRaw -> convertToJwk(jwkRaw, mapper, l.uri(), suppressExceptions)))
                 .filter(Objects::nonNull)
