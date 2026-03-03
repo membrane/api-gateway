@@ -97,6 +97,8 @@ public class Jwks {
     @MCChildElement
     public Jwks setJwks(List<Jwk> jwks) {
         this.jwks = jwks;  // unnecessary, mainly for consistency when debugging
+        if (jwks == null)
+            throw new ConfigurationException("JWKs list must not be null.");
         if (router != null)  // set in init, so we can't update prior to that call
             this.keysByKid = buildKeyMap(jwks);
         return this;
