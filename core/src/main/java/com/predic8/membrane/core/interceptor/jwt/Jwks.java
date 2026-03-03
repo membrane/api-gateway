@@ -119,13 +119,14 @@ public class Jwks {
     }
 
     private HashMap<String, RsaJsonWebKey> buildKeyMap(List<Jwk> jwks) {
-        var keyMap = jwks.stream()
-                .map(this::extractRsaJsonWebKey)
-                .collect(
-                        () -> new HashMap<String, RsaJsonWebKey>(),
-                        (m,e) -> m.put(e.getKeyId(),e),
-                        HashMap::putAll
-                );
+        var keyMap = new HashMap<String, RsaJsonWebKey>();
+        for (RsaJsonWebKey key : jwks.stream().map(this::extractRsaJsonWebKey).toList()) {
+            String kid = key.getKeyId();
+            if (kid == null || kid.isBlank())
+                throw new RuntimeException("Each JWK must provide a non-empty 'kid'.");
+            if (keyMap.putIfAbsent(kid, key) != null)
+                throw new RuntimeException("Duplicate JWK kid '%s'.".formatted(kid));
+        }
         if (keyMap.isEmpty())
             throw new RuntimeException("No JWKs given or none resolvable - please specify at least one resolvable JWK");
         return keyMap;
