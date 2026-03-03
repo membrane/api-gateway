@@ -29,6 +29,8 @@ public class ToJsonSerializer {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private ToJsonSerializer() {}
+
     public static String toJson(Object o) {
          try {
             if (o instanceof NodeList || o instanceof Node) {

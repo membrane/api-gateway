@@ -167,4 +167,13 @@ class TemplateExpressionParserTest {
         assertEquals(" y", tokens.get(2).getExpression());
     }
 
+    @Test
+    void handlesEmptyExpression() {
+        var tokens = parseTokens(interceptor, GROOVY, "x ${} y");
+        assertEquals(3, tokens.size());
+        assertEquals("x ", tokens.get(0).getExpression());
+        assertEquals("", tokens.get(1).getExpression());
+        assertEquals(" y", tokens.get(2).getExpression());
+    }
+
 }

@@ -61,7 +61,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     }
 
     @Test
-    void computeSingeExpressionWithCtx() {
+    void computeSingleExpressionWithCtx() {
         assertEquals("Panama", setHeaderEvalGetValue("${property.bar}"));
     }
 
@@ -81,12 +81,12 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     }
 
     @Test
-    void jsonWrongAttribute() throws Exception {
+    void jsonWrongAttribute() {
         assertEquals("foo null baz", setHeaderEvalGetValue("foo ${json['b']} baz"));
     }
 
     @Test
-    void jsonPath() throws Exception {
+    void jsonPath() {
         assertEquals("Mango", setHeaderEvalGetValue("${jsonPath('$.name')}"));
     }
 
