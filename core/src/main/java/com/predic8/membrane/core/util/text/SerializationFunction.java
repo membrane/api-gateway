@@ -17,7 +17,7 @@ package com.predic8.membrane.core.util.text;
 import java.util.function.*;
 
 /**
- * Represents a specialized function that serializes an object into its string representation.m.
+ * Represents a specialized function that serializes an object into its string representation.
  * <p>
  * Implementations of this interface are expected to define the logic for serialization
  * of objects, translating various object types into a standardized or application-specific

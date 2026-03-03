@@ -30,7 +30,7 @@ public class XPathTutorialTest extends AbstractXmlTutorialTest {
     }
 
     @Test
-    void xpathExtractsPropertiesAndSetsHeader() throws IOException {
+    void extractXPath() throws IOException {
 
         synchronized (System.out) {
             var out = new ByteArrayOutputStream();

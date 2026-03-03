@@ -15,14 +15,9 @@
 package com.predic8.membrane.core.util.text;
 
 import org.junit.jupiter.api.*;
-import org.w3c.dom.*;
-
-import javax.xml.parsers.*;
-import java.io.*;
-import java.nio.charset.*;
 
 import static com.predic8.membrane.core.util.text.ToXMLSerializer.*;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.util.xml.XMLTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ToXMLSerializerTest {
@@ -39,7 +34,7 @@ class ToXMLSerializerTest {
 
     @Test
     void nodeIsSerializedWithoutXmlDeclaration() throws Exception {
-        var out = toXML(parseXml("<root><a>1</a></root>").getDocumentElement());
+        var out = toXML(parse("<root><a>1</a></root>").getDocumentElement());
         assertFalse(out.startsWith("<?xml"), "XML declaration must be omitted");
         assertTrue(out.contains("<root>"));
         assertTrue(out.contains("<a>1</a>"));
@@ -48,7 +43,7 @@ class ToXMLSerializerTest {
 
     @Test
     void nodeListIsSerializedByConcatenatingAllItems() throws Exception {
-        var doc = parseXml("""
+        var doc = parse("""
             <root>
                 <item id="1"/>
                 <item id="2"/>
@@ -78,12 +73,6 @@ class ToXMLSerializerTest {
 
     @Test
     void emptyNodeListProducesEmptyString() throws Exception {
-        assertEquals("", toXML(parseXml("<root/>").getElementsByTagName("does-not-exist")));
-    }
-
-    private static Document parseXml(String xml) throws Exception {
-        var dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        return dbf.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(UTF_8)));
+        assertEquals("", toXML(parse("<root/>").getElementsByTagName("does-not-exist")));
     }
 }

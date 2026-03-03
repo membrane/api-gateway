@@ -34,9 +34,6 @@ public class ToJsonSerializer {
             if (o instanceof NodeList || o instanceof Node) {
                 o = normalizeForJson(o);
             }
-            if (o instanceof NodeList nl) {
-                return nodeListToJson(nl);
-            }
             return objectMapper.writeValueAsString(o);
         } catch (Exception first) {
             // Fallback: always return valid JSON, even for unsupported types (e.g. java.time.* without modules).
@@ -48,13 +45,5 @@ public class ToJsonSerializer {
                 return "null";
             }
         }
-    }
-
-    public static String nodeListToJson(NodeList nl) throws JsonProcessingException {
-        var values = new ArrayList<String>(nl.getLength());
-        for (int i = 0; i < nl.getLength(); i++) {
-            values.add(String.valueOf(nl.item(i).getTextContent()));
-        }
-        return objectMapper.writeValueAsString(values);
     }
 }

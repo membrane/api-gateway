@@ -166,4 +166,5 @@ class TemplateExpressionParserTest {
         assertEquals("'Ehm'' '", tokens.get(1).getExpression());
         assertEquals(" y", tokens.get(2).getExpression());
     }
+
 }

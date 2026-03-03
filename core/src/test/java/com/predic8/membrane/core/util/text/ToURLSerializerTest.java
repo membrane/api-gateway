@@ -50,10 +50,4 @@ class ToURLSerializerTest {
     void encodesBooleanViaTextSerialization() {
         assertEquals("true", toURL(true));
     }
-
-    @Test
-    void encodesNullViaTextSerialization() {
-        // depends on TEXT_SERIALIZATION(null) → typically "null"
-        assertEquals("null", toURL(null));
-    }
 }

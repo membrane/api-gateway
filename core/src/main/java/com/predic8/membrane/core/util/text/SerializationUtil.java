@@ -65,8 +65,8 @@ public class SerializationUtil {
         return Optional.empty();
     }
 
-    public static SerializationFunction getSerialization(Serialization escaping) {
-        return switch (escaping) {
+    public static SerializationFunction getSerialization(Serialization serialization) {
+        return switch (serialization) {
             case TEXT -> TEXT_SERIALIZATION;
             case URL -> URL_SERIALIZATION;
             case SEGMENT -> SEGMENT_SERIALIZATION;

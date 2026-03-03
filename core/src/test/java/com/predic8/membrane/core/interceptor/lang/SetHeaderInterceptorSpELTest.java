@@ -56,7 +56,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
 
     @Test
-    void computeSingeExpression() {
+    void computeSingleExpression() {
         assertEquals("24", setHeaderEvalGetValue("${1*2*3*4}"));
     }
 
