@@ -24,7 +24,7 @@ import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.text.*;
-import com.predic8.membrane.core.util.uri.EscapingUtil.*;
+import com.predic8.membrane.core.util.text.SerializationUtil.*;
 import org.slf4j.*;
 
 import java.util.*;
@@ -35,7 +35,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static com.predic8.membrane.core.util.TemplateUtil.*;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
-import static com.predic8.membrane.core.util.uri.EscapingUtil.getEscapingFunction;
+import static com.predic8.membrane.core.util.text.SerializationUtil.getSerializationFunction;
 
 /**
  * @description <p>
@@ -59,8 +59,8 @@ public class Target implements XMLSupport {
     /**
      * Escaping strategy for URL placeholders.
      */
-    private Escaping escaping = Escaping.URL;
-    private Function<String, String> escapingFunction;
+    private Serialization escaping = Serialization.URL;
+    private SerializationFunction escapingFunction;
 
     /**
      * If url contains template marker ${}, if not expression evaluation is skipped
@@ -108,7 +108,7 @@ public class Target implements XMLSupport {
         if(containsTemplateMarker(url)) {
             urlIsTemplate = true;
         }
-        escapingFunction = getEscapingFunction(escaping);
+        escapingFunction = getSerializationFunction(escaping);
     }
 
     public void applyModifications(Exchange exc, Router router) {
@@ -233,7 +233,7 @@ public class Target implements XMLSupport {
         this.language = language;
     }
 
-    public Escaping getEscaping() {
+    public Serialization getEscaping() {
         return escaping;
     }
 
@@ -244,7 +244,7 @@ public class Target implements XMLSupport {
      * @default URL
      */
     @MCAttribute
-    public void setEscaping(Escaping escaping) {
+    public void setEscaping(Serialization escaping) {
         this.escaping = escaping;
     }
 

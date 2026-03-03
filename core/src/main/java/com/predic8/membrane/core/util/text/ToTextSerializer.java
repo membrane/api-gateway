@@ -12,17 +12,25 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.proxies;
+package com.predic8.membrane.core.util.text;
 
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.util.xml.*;
+import org.w3c.dom.*;
 
-import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.*;
-import static org.junit.jupiter.api.Assertions.*;
+public class ToTextSerializer {
 
-class TargetTest {
+    private ToTextSerializer() {}
 
-    @Test
-    void defaultEscaping() {
-        assertEquals(URL,new Target().getEscaping());
+    public static String toText(Object o) {
+        if (o instanceof String s) {
+            return s;
+        }
+        if (o == null) {
+            return "null";
+        }
+        if (o instanceof NodeList nl) {
+            return XMLTextUtil.nodeListToString(nl,",");
+        }
+        return String.valueOf(o);
     }
 }

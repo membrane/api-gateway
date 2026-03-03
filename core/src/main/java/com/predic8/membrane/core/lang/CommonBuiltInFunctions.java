@@ -22,7 +22,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.security.*;
-import com.predic8.membrane.core.util.uri.*;
+import com.predic8.membrane.core.util.text.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
 import org.jetbrains.annotations.*;
@@ -40,6 +40,7 @@ import java.util.function.Predicate;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.util.xml.NormalizeXMLForJsonUtil.*;
+import static com.predic8.membrane.core.util.xml.XMLTextUtil.nodeListToString;
 import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
@@ -69,6 +70,9 @@ public class CommonBuiltInFunctions {
         try {
             if (o instanceof NodeList || o instanceof Node) {
                 o = normalizeForJson(o);
+            }
+            if (o instanceof NodeList nl) {
+                return nodeListToString(nl,",");
             }
             return objectMapper.writeValueAsString(o);
         } catch (Exception first) {
@@ -281,6 +285,6 @@ public class CommonBuiltInFunctions {
      * @return a percent-encoded string safe for use as a single URI path segment
      */
     public static String pathEncode(String segment) {
-        return EscapingUtil.pathEncode(segment);
+        return SerializationUtil.pathEncode(segment);
     }
 }

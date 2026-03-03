@@ -24,23 +24,24 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 import groovy.lang.*;
+import org.apache.commons.io.*;
 import org.graalvm.polyglot.*;
 import org.jetbrains.annotations.*;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.*;
 
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 import java.util.function.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
-import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.resolver.ResolverMap.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.*;
 import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.lang3.StringUtils.*;
 
@@ -207,7 +208,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
     }
 
     private Map<String, Object> getParameterBindings(Exchange exc, Flow flow, Message msg) {
-        var binding = createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON(), false);
+        var binding = createParameterBindings(router, exc, flow, scriptAccessesJson && msg.isJSON(), TEXT_SERIALIZATION);
         addOutcomeObjects(binding);
         return binding;
     }

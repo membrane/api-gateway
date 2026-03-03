@@ -85,10 +85,8 @@ public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartS
             .get("http://localhost:2000/service")
         .then()
             .statusCode(500)
-            .body(
-                    containsString("<case>d</case>"),
-                    containsString("<message>XML Fehler Meldung vom Backend!!</message>")
-            );
+            .body("error.case", equalTo("d"))
+            .body("error.description", equalTo("XML error at the backend!"));
     }
 
     @Test

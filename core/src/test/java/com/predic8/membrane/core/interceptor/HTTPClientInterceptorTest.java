@@ -21,7 +21,7 @@ import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.uri.EscapingUtil.*;
+import com.predic8.membrane.core.util.text.SerializationUtil.*;
 import org.junit.jupiter.api.*;
 
 import java.net.*;
@@ -29,7 +29,7 @@ import java.net.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static com.predic8.membrane.core.util.uri.EscapingUtil.Escaping.*;
+import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HTTPClientInterceptorTest {
@@ -77,7 +77,7 @@ class HTTPClientInterceptorTest {
                 .header("foo", "% ${}")
                 .header("bar", "$&:/)")
                 .buildExchange();
-        testExpression(GROOVY, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
+        testExpression(GROOVY, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Serialization.URL);
     }
 
     @Test
@@ -86,7 +86,7 @@ class HTTPClientInterceptorTest {
                 .header("foo", "% ${}")
                 .header("bar", "$&:/)")
                 .buildExchange();
-        testExpression(SPEL, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
+        testExpression(SPEL, exc, "http://localhost/foo/${header.foo}: {}${header.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Serialization.URL);
     }
 
     @Test
@@ -99,7 +99,7 @@ class HTTPClientInterceptorTest {
                         }
                         """)
                 .buildExchange();
-        testExpression(JSONPATH, exc, "http://localhost/foo/${$.foo}: {}${$.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
+        testExpression(JSONPATH, exc, "http://localhost/foo/${$.foo}: {}${$.bar}", "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Serialization.URL);
     }
 
     @Test
@@ -113,14 +113,14 @@ class HTTPClientInterceptorTest {
                         """)
                 .buildExchange();
         testExpression(XPATH, exc, "http://localhost/foo/${//foo}: {}${//bar}",
-                "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Escaping.URL);
+                "http://localhost/foo/%25+%24%7B%7D: {}%24%26%3A%2F%29", Serialization.URL);
     }
 
     @Test
     void computeNoneEscaping() throws Exception {
         var exc = post("/foo").buildExchange();
         testExpression(SPEL, exc, "http://localhost/foo/${'&?äöü!\"=:#/\\'}",
-                "http://localhost/foo/&?äöü!\"=:#/\\", NONE);
+                "http://localhost/foo/&?äöü!\"=:#/\\", TEXT);
     }
 
     @Test
@@ -136,14 +136,14 @@ class HTTPClientInterceptorTest {
         var exc = post("/foo")
                 .header("X-URL", completePath)
                 .buildExchange();
-        testExpression(SPEL, exc, "${header['X-URL']}", completePath, NONE);
+        testExpression(SPEL, exc, "${header['X-URL']}", completePath, TEXT);
     }
 
     @Test
     void computeCompletePathURLEncoded() throws Exception {
         var exc = post("/foo").buildExchange();
         testExpression(SPEL, exc, "${'&?äöü!'}",
-                "%26%3F%C3%A4%C3%B6%C3%BC%21", Escaping.URL);
+                "%26%3F%C3%A4%C3%B6%C3%BC%21", Serialization.URL);
     }
 
     @Nested
@@ -153,14 +153,14 @@ class HTTPClientInterceptorTest {
         void illegalCharactersAndTemplateInTargetURL() throws URISyntaxException {
             allowIllegalURICharacters();
             var exc = get("/foo").buildExchange();
-            assertThrows(ConfigurationException.class, () -> invokeDispatching(SPEL, exc, "https://${'hostname'}", Escaping.URL));
+            assertThrows(ConfigurationException.class, () -> invokeDispatching(SPEL, exc, "https://${'hostname'}", Serialization.URL));
         }
 
         @Test
         void illegalCharacterWithoutTemplate() {
             allowIllegalURICharacters();
             var exc = new Request.Builder().method(METHOD_GET).uri("/foo/${555}").buildExchange();
-            invokeDispatching(SPEL, exc, "https://localhost", Escaping.URL);
+            invokeDispatching(SPEL, exc, "https://localhost", Serialization.URL);
             if (!(exc.getProxy() instanceof APIProxy apiProxy)) {
                 fail();
                 return;
@@ -177,13 +177,13 @@ class HTTPClientInterceptorTest {
         router.getConfiguration().setUriFactory(new URIFactory(true));
     }
 
-    private void testExpression(Language language, Exchange exc, String url, String expected, Escaping escaping) {
+    private void testExpression(Language language, Exchange exc, String url, String expected, Serialization escaping) {
         invokeDispatching(language, exc, url, escaping);
         assertEquals(1, exc.getDestinations().size());
         assertEquals(expected, exc.getDestinations().getFirst());
     }
 
-    private void invokeDispatching(Language language, Exchange exc, String url, Escaping escaping) {
+    private void invokeDispatching(Language language, Exchange exc, String url, Serialization escaping) {
         var target = new Target();
         target.setUrl(url);
         target.setLanguage(language);

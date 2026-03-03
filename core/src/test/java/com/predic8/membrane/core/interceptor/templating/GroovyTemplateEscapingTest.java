@@ -14,21 +14,21 @@
 
 package com.predic8.membrane.core.interceptor.templating;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.lang.groovy.adapted.StreamingTemplateEngine;
-import com.predic8.membrane.core.router.TestRouter;
-import groovy.text.Template;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.lang.groovy.adapted.*;
+import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.text.*;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.net.URISyntaxException;
+import java.io.*;
+import java.net.*;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.lang.ScriptingUtils.createParameterBindings;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.lang.ScriptingUtils.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.JSON_SERIALIZATION;
+import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class GroovyTemplateEscapingTest {
     private TestRouter r;
@@ -41,22 +41,22 @@ public class GroovyTemplateEscapingTest {
     }
 
     @Test
-    void noJson() throws IOException, ClassNotFoundException, URISyntaxException {
-        Template t = new StreamingTemplateEngine().createTemplate(new StringReader(
+    void noJson() throws IOException, ClassNotFoundException {
+        var t = new StreamingTemplateEngine().createTemplate(new StringReader(
                 "${flow} $flow <%= flow %> ${hasScope('foo')}"));
 
         assertEquals("REQUEST REQUEST REQUEST false",
-                t.make(createParameterBindings(r, e, REQUEST, false, false))
+                t.make(createParameterBindings(r, e, REQUEST, false, TEXT_SERIALIZATION))
                         .toString());
     }
 
     @Test
     void json() throws IOException, ClassNotFoundException, URISyntaxException {
-        Template t = new StreamingTemplateEngine().createTemplate(new StringReader(
+        var t = new StreamingTemplateEngine().createTemplate(new StringReader(
                 "${flow} $flow <%= flow %> ${hasScope('foo')}"));
 
         assertEquals("\"REQUEST\" \"REQUEST\" \"REQUEST\" false",
-                t.make(createParameterBindings(r, e, REQUEST, false, true))
+                t.make(createParameterBindings(r, e, REQUEST, false, JSON_SERIALIZATION ))
                         .toString());
     }
 

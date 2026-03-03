@@ -15,6 +15,9 @@ package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.core.lang.*;
 
+import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
+import static com.predic8.membrane.core.util.text.SerializationUtil.*;
+
 public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInterceptor {
 
     protected ExchangeExpression exchangeExpression;
@@ -27,6 +30,6 @@ public class AbstractExchangeExpressionInterceptor extends AbstractLanguageInter
     }
 
     protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression, router);
+        return TemplateExchangeExpression.newInstance(this, language, expression, router, TEXT_SERIALIZATION);
     }
 }

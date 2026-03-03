@@ -17,10 +17,10 @@ package com.predic8.membrane.core.interceptor.templating;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.groovy.adapted.StreamingTemplateEngine;
 import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.text.*;
 import groovy.lang.*;
 import groovy.text.*;
 import org.jetbrains.annotations.*;
@@ -33,7 +33,9 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
 import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.text.StringUtil.addLineNumbers;
+import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
+import static com.predic8.membrane.core.util.text.SerializationUtil.*;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -75,6 +77,8 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
 
     private Template template;
 
+    private SerializationFunction escaping;
+
     public TemplateInterceptor() {
         name = "template";
     }
@@ -83,6 +87,8 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
     public void init() {
         super.init();
         template = createTemplate();
+
+        escaping = getSerializationFunction(contentType).or(() -> Optional.of(TEXT_SERIALIZATION)).get();
 
         // If the template accesses somewhere the json variable make sure it is there
         // You can even access json in an XML or Text Template. See tests.
@@ -146,15 +152,11 @@ public class TemplateInterceptor extends AbstractTemplateInterceptor {
     }
 
     private @NotNull Map<String, Object> getVariableBinding(Exchange exc, Flow flow) {
-        return createParameterBindings(router, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow), producesJSON());
+        return createParameterBindings(router, exc, flow, scriptAccessesJson && isJsonMessage(exc, flow), escaping);
     }
 
     private static boolean isJsonMessage(Exchange exc, Flow flow) {
         return exc.getMessage(flow).isJSON();
-    }
-
-    private boolean producesJSON() {
-        return contentType != null && MimeType.isJson(contentType);
     }
 
     private Template createTemplate() {

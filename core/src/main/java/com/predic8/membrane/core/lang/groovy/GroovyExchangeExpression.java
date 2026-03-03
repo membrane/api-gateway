@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.text.*;
 import groovy.lang.*;
 import org.codehaus.groovy.control.*;
 import org.slf4j.*;
@@ -27,6 +28,7 @@ import java.util.*;
 import java.util.function.*;
 
 import static com.predic8.membrane.core.lang.ScriptingUtils.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
 
 public class GroovyExchangeExpression extends AbstractExchangeExpression {
 
@@ -47,7 +49,7 @@ public class GroovyExchangeExpression extends AbstractExchangeExpression {
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
         Object o = null;
         try {
-            o = script.apply(createParameterBindings(router, exchange, flow, false, false));
+            o = script.apply(createParameterBindings(router, exchange, flow, false, TEXT_SERIALIZATION));
         } catch (MissingPropertyException mpe) {
             log.info("Expression {} tries to access non existing property {}",expression,mpe.getMessage());
             if (type.getName().equals(Object.class.getName())) {

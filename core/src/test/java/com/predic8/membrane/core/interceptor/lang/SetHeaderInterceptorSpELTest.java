@@ -67,12 +67,12 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @Test
     void accessNonExistingProperty() throws Exception {
-        assertEquals("", setHeaderEvalGetValue("${properties.unknown}"));
+        assertEquals("null", setHeaderEvalGetValue("${properties.unknown}"));
     }
 
     @Test
     void complex() throws Exception {
-        assertEquals("foo Panama baz  coo 6/a", setHeaderEvalGetValue("foo ${properties.bar} baz ${properties.foo} coo ${2*3}/${'a'}"));
+        assertEquals("foo Panama baz null coo 6/a", setHeaderEvalGetValue("foo ${properties.bar} baz ${properties.foo} coo ${2*3}/${'a'}"));
     }
 
     @Test
@@ -82,7 +82,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @Test
     void jsonWrongAttribute() throws Exception {
-        assertEquals("foo  baz", setHeaderEvalGetValue("foo ${json['b']} baz"));
+        assertEquals("foo null baz", setHeaderEvalGetValue("foo ${json['b']} baz"));
     }
 
     @Test
@@ -154,7 +154,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
         interceptor.init(router);
         Outcome outcome = interceptor.handleRequest(exchange);
         assertEquals(ABORT, outcome);
-        assertEquals(null, super.getHeader("x-FoO"));
+        assertNull(super.getHeader("x-FoO"));
     }
 
     @Test
@@ -164,7 +164,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
         interceptor.init(router);
         Outcome outcome = interceptor.handleRequest(exchange);
         assertEquals(CONTINUE, outcome);
-        assertEquals(null, super.getHeader("x-FoO"));
+        assertNull(super.getHeader("x-FoO"));
     }
 
     private String setHeaderEvalGetValue(String expr) throws Exception {

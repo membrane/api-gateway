@@ -14,13 +14,14 @@
 
 package com.predic8.membrane.tutorials.xml;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import java.io.IOException;
+import java.io.*;
 
-import static io.restassured.RestAssured.given;
-import static io.restassured.http.ContentType.XML;
+import static io.restassured.RestAssured.*;
+import static io.restassured.http.ContentType.*;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class XPathTutorialTest extends AbstractXmlTutorialTest {
     @Override
@@ -30,19 +31,36 @@ public class XPathTutorialTest extends AbstractXmlTutorialTest {
 
     @Test
     void xpathExtractsPropertiesAndSetsHeader() throws IOException {
-        // @formatter:off
-        given()
-            .body(readFileFromBaseDir("animals.xml"))
-            .contentType(XML)
-        .when()
-            .post("http://localhost:2000")
-        .then()
-            .statusCode(200)
-            .contentType(XML)
-            .body(allOf(
-                    containsString("Names: Skye Molly Biscuit Sunny Bubbles"),
-                    containsString("Name: Skye")
-            ));
-        // @formatter:on
+
+        synchronized (System.out) {
+            var out = new ByteArrayOutputStream();
+            var original = System.out;
+            System.setOut(new PrintStream(out));
+
+            try {
+                // @formatter:off+
+                given()
+                    .body(readFileFromBaseDir("animals.xml"))
+                    .contentType(XML)
+                .when()
+                    .post("http://localhost:2000")
+                .then()
+                    .log().ifValidationFails()
+                    .statusCode(200)
+                    .contentType(TEXT)
+               //     .header("X-Sunny","Sunny is a parrot")
+                    .body(allOf(
+                            containsString("Names: Skye,Molly,Biscuit,Sunny,Bubbles"),
+                            containsString("Animals: dog,cat,rabbit,parrot,goldfish")
+                    ));
+                // @formatter:on
+            } finally {
+                System.setOut(original);
+            }
+
+            var console = out.toString();
+            assertTrue(console.contains("# of animals: 5"));
+            assertTrue(console.contains("Dog found!"));
+        }
     }
 }

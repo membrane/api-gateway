@@ -12,17 +12,21 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.proxies;
+package com.predic8.membrane.core.util.xml;
 
-import org.junit.jupiter.api.*;
+import org.w3c.dom.*;
+import org.xml.sax.*;
 
-import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.*;
-import static org.junit.jupiter.api.Assertions.*;
+import javax.xml.parsers.*;
+import java.io.*;
 
-class TargetTest {
+public class XMLTestUtil {
 
-    @Test
-    void defaultEscaping() {
-        assertEquals(URL,new Target().getEscaping());
+    private XMLTestUtil() {
+    }
+
+    public static Document parse(String xml) throws Exception {
+        return DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                .parse(new InputSource(new StringReader(xml)));
     }
 }

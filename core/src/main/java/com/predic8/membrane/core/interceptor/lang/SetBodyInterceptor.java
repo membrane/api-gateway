@@ -16,22 +16,17 @@ package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.uri.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
-
-import java.util.function.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.util.uri.EscapingUtil.Escaping.NONE;
-import static com.predic8.membrane.core.util.uri.EscapingUtil.getEscapingFunction;
+import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
+import static com.predic8.membrane.core.util.text.SerializationUtil.*;
 import static java.nio.charset.StandardCharsets.*;
 
 /**
@@ -96,9 +91,9 @@ public class SetBodyInterceptor extends AbstractExchangeExpressionInterceptor {
 
     protected ExchangeExpression getExchangeExpression() {
         return TemplateExchangeExpression.newInstance(this, language, expression, router,
-                getEscapingFunction(contentType).orElseGet(() -> {
+                getSerializationFunction(contentType).orElseGet(() -> {
             log.warn("Turning off escaping for 'setBody'. No escaping found for content type {}. To enable escaping set 'contentType' on setBody.", contentType);
-            return getEscapingFunction(NONE);
+            return TEXT_SERIALIZATION;
         }));
     }
 

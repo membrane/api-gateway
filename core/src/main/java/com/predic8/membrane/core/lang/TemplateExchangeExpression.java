@@ -17,14 +17,15 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.text.*;
 import org.slf4j.*;
+import org.w3c.dom.*;
 
 import java.util.*;
-import java.util.function.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.lang.ExchangeExpression.*;
-import static java.util.function.Function.*;
+import static com.predic8.membrane.core.lang.TemplateExpressionParser.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.*;
 
 public class TemplateExchangeExpression extends AbstractExchangeExpression {
 
@@ -33,7 +34,7 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     /**
      * Plugable encoder to apply various encoding strategies like URL, or path segment encoding.
      */
-    private final Function<String, String> encoder;
+    private final SerializationFunction encoder;
 
     /**
      * For parsing strings with expressions inside ${} e.g. "foo ${property.bar} baz"
@@ -43,18 +44,18 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
     private final List<Token> tokens;
 
     public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router) {
-        return newInstance(interceptor, language, expression, router, identity());
+        return newInstance(interceptor, language, expression, router, IDENTITY_SERIALIZATION);
     }
 
-    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router, Function<String, String> encoder) {
+    public static ExchangeExpression newInstance(Interceptor interceptor, Language language, String expression, Router router, SerializationFunction encoder) {
         // SpEL can take expressions like "a: ${..} b: ${..}" as input. We do not use that feature and tokenize the expression ourselves to enable encoding
         return new TemplateExchangeExpression(interceptor, language, expression, router, encoder);
     }
 
-    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression, Router router, Function<String, String> encoder) {
+    protected TemplateExchangeExpression(Interceptor interceptor, Language language, String expression, Router router, SerializationFunction encoder) {
         super(expression, router);
         this.encoder = encoder;
-        tokens = parseTokens(interceptor, language);
+        tokens = parseTokens(interceptor, language, expression);
     }
 
     @Override
@@ -64,14 +65,14 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         }
         if (tokens.size() == 1) {
             if (type.getName().equals(String.class.getName())) {
-                return type.cast(evaluateToString(exchange, flow));
+                return type.cast(evaluateMultiple(exchange, flow));
             }
-            return type.cast(evaluateToObject(exchange, flow));
+            return type.cast(evaluateSingle(exchange, flow));
         }
-        return type.cast(evaluateToString(exchange, flow));
+        return type.cast(evaluateMultiple(exchange, flow));
     }
 
-    private Object evaluateToObject(Exchange exchange, Flow flow) {
+    private Object evaluateSingle(Exchange exchange, Flow flow) {
         try {
             return tokens.getFirst().eval(exchange, flow, Object.class);
         } catch (Exception e) {
@@ -79,11 +80,11 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         }
     }
 
-    private String evaluateToString(Exchange exchange, Flow flow) {
+    private String evaluateMultiple(Exchange exchange, Flow flow) {
         var line = new StringBuilder();
         for (var token : tokens) {
             try {
-                var value = token.eval(exchange, flow, String.class);
+                var value = token.eval(exchange, flow, Object.class);
                 if (token instanceof Text) {
                     line.append(value);
                     continue;
@@ -91,6 +92,9 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
                 if (value == null) {
                     line.append("null");
                     continue;
+                }
+                if (value instanceof Node n) {
+                    value = n.getTextContent();
                 }
                 line.append(encoder.apply(value));
             } catch (Exception e) {
@@ -100,27 +104,9 @@ public class TemplateExchangeExpression extends AbstractExchangeExpression {
         return line.toString();
     }
 
-    List<Token> parseTokens(Interceptor interceptor, Language language) {
-        log.debug("Parsing: {}", expression);
-
-        List<Token> tokens = new ArrayList<>();
-        Matcher m = scriptPattern.matcher(expression);
-        while (m.find()) {
-            String text = m.group(1);
-            if (text != null) {
-                tokens.add(new Text(text));
-            }
-            String expr = m.group(3);
-            if (expr != null) {
-                tokens.add(new Expression(expression(interceptor, language, expr)));
-            }
-        }
-        log.debug("Tokens: {}", tokens);
-        return tokens;
-    }
-
     interface Token {
         <T> T eval(Exchange exchange, Flow flow, Class<T> type);
+
         String getExpression();
     }
 

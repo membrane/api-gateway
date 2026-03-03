@@ -45,6 +45,11 @@ public class ExchangeExpressionException extends RuntimeException {
      */
     private String body;
 
+    public ExchangeExpressionException(String expression, String message) {
+        super(message);
+        this.expression = expression;
+    }
+
     public ExchangeExpressionException(String expression, Throwable cause, String message) {
         super(message, cause);
         this.expression = expression;
