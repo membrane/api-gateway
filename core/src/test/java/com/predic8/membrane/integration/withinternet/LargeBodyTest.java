@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.lang.Integer.*;
@@ -109,8 +110,8 @@ public class LargeBodyTest {
     public void largeChunked() throws Exception {
         long len = MAX_VALUE + 1L;
 
-        Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
-        try (HttpClient hc = new HttpClient(hcc)) {
+        var e = post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
+        try (var hc = new HttpClient(hcc)) {
             hc.call(e);
         }
         assertTrue(e.getRequest().getBody().wasStreamed());

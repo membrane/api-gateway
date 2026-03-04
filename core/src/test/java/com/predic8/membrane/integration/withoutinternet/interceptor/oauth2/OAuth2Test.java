@@ -97,7 +97,7 @@ class OAuth2Test {
         JSONObject jsonObject = new JSONObject(json);
         assertEquals("Bearer", jsonObject.getString("token_type"));
         assertNotNull(jsonObject.getString("access_token"));
-        assertEquals("Ok", sendRequestToTarget(parseTokenRequestResponse("access_token", json)));
+        assertEquals("OK", sendRequestToTarget(parseTokenRequestResponse("access_token", json)));
     }
 
     @Test
@@ -114,7 +114,7 @@ class OAuth2Test {
 
         assertEquals("Bearer", jsonObject.getString("token_type"));
         assertNotNull(jsonObject.getString("access_token"));
-        assertEquals("Ok", sendRequestToTarget(parseTokenRequestResponse("access_token", json)));
+        assertEquals("OK", sendRequestToTarget(parseTokenRequestResponse("access_token", json)));
 
         assertEquals(getJwtClaim(at1, "iss"), getJwtClaim(at2, "iss"));
         assertEquals(getJwtClaim(at1, "sub"), getJwtClaim(at2, "sub"));
