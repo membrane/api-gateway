@@ -4,6 +4,10 @@
 
 - Correct YAML example on GitHub README
 
+# 7.2.0
+
+- Move SOAP samples from tutorials/transformations to ../soap TB
+
 # 7.1.1
 
 # Improvements
