@@ -13,7 +13,7 @@
 #       No session => 401 Unauthorized
 #     curl http://localhost:3000/login -i
 #       Returns SESSION cookie
-#     curl -H "Cookie: SESSION=akj34" http://localhost:3001
+#     curl -v -H "Cookie: SESSION=akj34" http://localhost:3001
 #       Valid session => Success!
 #     curl http://localhost:2000
 #       Gateway performs login and forwards cookie to backend (see logs)
@@ -76,8 +76,7 @@ api:
             flow:
               - return:
                   status: 401
-    - response:
         - static:
             src: Success!
-    - return:
-        status: 200
+        - return:
+            status: 200
