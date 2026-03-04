@@ -19,7 +19,7 @@ api:
                     property.result = property.result ?: []
                     property.result.add(
                       [ "name": property.it.name,
-                        "price": fn.jsonPath('$.price')
+                        "price": jsonPath('$.price')
                       ])
         # Render a simplified JSON response with only product name and price
         - template:
