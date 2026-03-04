@@ -193,12 +193,12 @@ public class ResponseTest {
     }
 
     @Test
-    void isEmpty() throws IOException {
+    void isEmpty() {
         assertTrue(ok().build().isBodyEmpty());
     }
 
     @Test
-    void isNotEmpty() throws Exception {
+    void isNotEmpty() {
         assertFalse(ok("ABC").build().isBodyEmpty());
     }
 
