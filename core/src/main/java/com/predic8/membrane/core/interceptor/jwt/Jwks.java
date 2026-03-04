@@ -114,13 +114,11 @@ public class Jwks {
     }
 
     @MCAttribute
-    public Jwks setJwksUris(String jwksUris) {
+    public void setJwksUris(String jwksUris) {
         if (jwksUris == null) {
             this.jwksUris = emptyList();
-            return this;
         }
         this.jwksUris = StringList.parseToList(jwksUris);
-        return this;
     }
 
     public Optional<RsaJsonWebKey> getKeyByKid(String kid) {
