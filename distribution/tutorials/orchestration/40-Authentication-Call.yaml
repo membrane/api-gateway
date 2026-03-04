@@ -36,7 +36,7 @@ api:
         # Forward session to backend
         - setHeader:
             name: Cookie
-            value: ${header['Set-Cookie']}
+            value: ${header['Set-Cookie'].split(';')[0]}
         # Do not forward Set-Cookie
         - headerFilter:
             - exclude: Set-Cookie
@@ -70,7 +70,7 @@ api:
   flow:
     - request:
         - log:
-            message: "Session: ${cookie.SESSION}"
+            message: "Session: ${cookie.SESSION} ${header}"
         - if:
             test: cookie.SESSION != 'akj34'
             flow:
