@@ -177,7 +177,7 @@ public class HttpUtil {
 	public static String getMessageForStatusCode(int code) {
 		return switch (code) {
 			case 100 -> "Continue";
-			case 200 -> "Ok";
+			case 200 -> "OK";
 			case 201 -> "Created";
 			case 202 -> "Accepted";
 			case 204 -> "No Content";
