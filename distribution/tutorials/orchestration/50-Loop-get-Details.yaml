@@ -34,7 +34,7 @@ api:
                     property.res = property.res ?: []
                     property.res.add(
                       [ "name": it['name'],
-                        "price": jsonPath('$.price')
+                        "price": fn.jsonPath('$.price')
                       ])
         # Render the aggregated result as JSON
         - template:
