@@ -11,6 +11,14 @@
 #    curl -v -H "Content-Type: application/json" -d @plum.json http://localhost:2000/products
 #    curl -v -H "Content-Type: application/json" -d @plum.json http://localhost:2000/products -H "X-Mock-Mode: fault"
 
+components:
+  ns:
+    xmlConfig:
+      namespaces:
+        - prefix: s11
+          uri: http://schemas.xmlsoap.org/soap/envelope/
+
+---
 api:
   name: Products API
   port: 2000
@@ -22,8 +30,9 @@ api:
           location: json-to-soap-request.groovy
     - response:
         - if:
-            test: //*[local-name()='Fault']
+            test: //s11:Fault
             language: XPath
+            $ref: "#/components/ns"
             flow:
               - groovy:
                   location: soap-fault-to-json.groovy
