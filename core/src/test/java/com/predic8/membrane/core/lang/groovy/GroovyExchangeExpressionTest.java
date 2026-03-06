@@ -136,4 +136,11 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertEquals("bar", evalObject("cookies.foo"));
     }
 
+    @Test
+    void multipleCookies() {
+        exchange.getRequest().getHeader().add("Cookie", "foo=bar; baz=qux");
+        assertEquals("bar", evalObject("cookie.foo"));
+        assertEquals("qux", evalObject("cookie.baz"));
+    }
+
 }
