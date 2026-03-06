@@ -19,6 +19,7 @@ package com.predic8.membrane.core.lang;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -84,6 +85,9 @@ public class ScriptingUtils {
             var headerMap = new HeaderMap(msg.getHeader());
             params.put("header", headerMap);
             params.put("headers", headerMap);
+            var cookieMap = createCookieMap(msg.getHeader());
+            params.put("cookie", cookieMap);
+            params.put("cookies", cookieMap);
             if (includeJsonObject) {
                 try {
                     log.debug("Parsing body as JSON for scripting plugins");
@@ -138,5 +142,15 @@ public class ScriptingUtils {
         }
         // Add map to avoid a second parsing
         return emptyMap();
+    }
+
+    private static Map<String, String> createCookieMap(Header header) {
+        var map = new HashMap<String, String>();
+        var cookies = new Cookies(new MimeHeaders(header));
+        for (int i = 0; i < cookies.getCookieCount(); i++) {
+            var cookie = cookies.getCookie(i);
+            map.putIfAbsent(cookie.getName().toString(), cookie.getValue().toString());
+        }
+        return map;
     }
 }
