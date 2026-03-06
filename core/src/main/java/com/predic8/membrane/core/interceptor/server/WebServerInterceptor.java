@@ -126,7 +126,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
         try {
             exc.setTimeReqSent(currentTimeMillis());
-            exc.setResponse(createResponse(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri)));
+            exc.setResponse(createResponseInternal(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri)));
             exc.setReceived();
             exc.setTimeResReceived(currentTimeMillis());
             return RETURN;
@@ -151,7 +151,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
     private boolean tryToReceiveResource(Exchange exc, String uri) {
         for (String i : index) {
             try {
-                exc.setResponse(createResponse(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri + i)));
+                exc.setResponse(createResponseInternal(router.getResolverMap(), combine(router.getBaseLocation(), docBase, uri + i)));
                 exc.setReceived();
                 exc.setTimeResReceived(currentTimeMillis());
                 return true;
@@ -217,10 +217,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
     public Response createResponse(ResolverMap rr, String resPath) {
         try {
-            return ok()
-                    .header(createHeaders(getContentType(resPath)))
-                    .body(rr.resolve(resPath), true)
-                    .build();
+            return createResponseInternal(rr, resPath);
         } catch (Exception e) {
             return internal(router.isProduction(),getDisplayName())
                     .title("Could not resolve file")
@@ -228,6 +225,13 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     .exception(e)
                     .build();
         }
+    }
+
+    private Response createResponseInternal(ResolverMap rr, String resPath) throws ResourceRetrievalException {
+        return ok()
+                .header(createHeaders(getContentType(resPath)))
+                .body(rr.resolve(resPath), true)
+                .build();
     }
 
     // @TODO Move to Util
