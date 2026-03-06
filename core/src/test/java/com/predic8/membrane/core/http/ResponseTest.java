@@ -193,12 +193,12 @@ public class ResponseTest {
     }
 
     @Test
-    void isEmpty() throws IOException {
+    void isEmpty() {
         assertTrue(ok().build().isBodyEmpty());
     }
 
     @Test
-    void isNotEmpty() throws Exception {
+    void isNotEmpty() {
         assertFalse(ok("ABC").build().isBodyEmpty());
     }
 
@@ -218,7 +218,7 @@ public class ResponseTest {
     private static Stream<Arguments> statusCodeMessageGenerator() {
         return Stream.of(
             // Do not check body
-            of(ok(), 200, "Ok", false),
+            of(ok(), 200, "OK", false),
             of(noContent(), 204, "No Content", false),
             of(forbidden(), 403, "Forbidden", false),
             of(continue100(), 100, "Continue", false),
@@ -251,7 +251,7 @@ public class ResponseTest {
         assertEquals(200,response.getStatusCode());
         assertTrue(isOfMediaType( TEXT_HTML,response.getHeader().getContentType()));
         assertEquals("""
-                <html><head><title>200 Ok.</title></head><body><h1>200 Ok.</h1><p>The Message <b>is</b> this!</p></body></html>""",
+                <html><head><title>200 OK.</title></head><body><h1>200 OK.</h1><p>The Message <b>is</b> this!</p></body></html>""",
                 response.getBodyAsStringDecoded());
     }
 

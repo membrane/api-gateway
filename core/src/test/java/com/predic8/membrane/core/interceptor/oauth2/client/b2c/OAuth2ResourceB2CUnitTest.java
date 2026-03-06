@@ -383,7 +383,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
         var exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api-no-auth-needed/"));
 
         assertEquals(200, exc.getResponse().getStatusCode());
-        assertEquals("Ok", exc.getResponse().getStatusMessage());
+        assertEquals("OK", exc.getResponse().getStatusMessage());
         var res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
         assertEquals("null", res.get("accessToken"));
 
@@ -392,7 +392,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
         // access 2: authenticated, expecting JWT
         exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api-no-auth-needed/"));
         assertEquals(200, exc.getResponse().getStatusCode());
-        assertEquals("Ok", exc.getResponse().getStatusMessage());
+        assertEquals("OK", exc.getResponse().getStatusMessage());
         res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
         assertTrue(((String)res.get("accessToken")).startsWith("eyJ"));
     }
@@ -411,7 +411,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
         // access 2: authenticated, expecting JWT
         exc = browser.applyWithoutRedirect(get(tc.getClientAddress() + "/api-no-redirect/"));
         assertEquals(200, exc.getResponse().getStatusCode());
-        assertEquals("Ok", exc.getResponse().getStatusMessage());
+        assertEquals("OK", exc.getResponse().getStatusMessage());
         var res = om.readValue(exc.getResponse().getBodyAsStringDecoded(), Map.class);
         assertTrue(((String)res.get("accessToken")).startsWith("eyJ"));
     }

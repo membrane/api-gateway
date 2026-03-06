@@ -57,7 +57,7 @@ public class OAuth2CredentialsExampleTest extends DistributionExtractingTestcase
                 .withWatcher(logger)
                 .script("client")
                 .withParameters("john password")
-                .waitAfterStartFor("Ok")
+                .waitAfterStartFor("OK")
                 .start()) {
             assertTrue(true);
         }
