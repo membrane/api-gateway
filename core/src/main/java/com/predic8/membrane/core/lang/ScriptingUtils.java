@@ -19,7 +19,6 @@ package com.predic8.membrane.core.lang;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.http.cookie.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
@@ -145,12 +144,6 @@ public class ScriptingUtils {
     }
 
     private static Map<String, String> createCookieMap(Header header) {
-        var map = new HashMap<String, String>();
-        var cookies = new Cookies(new MimeHeaders(header));
-        for (int i = 0; i < cookies.getCookieCount(); i++) {
-            var cookie = cookies.getCookie(i);
-            map.putIfAbsent(cookie.getName().toString(), cookie.getValue().toString());
-        }
-        return map;
+        return new LazyCookieMap(header);
     }
 }
