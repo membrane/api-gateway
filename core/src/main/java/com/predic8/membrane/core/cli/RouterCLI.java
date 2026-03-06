@@ -176,12 +176,13 @@ public class RouterCLI {
         } catch (ConfigurationParsingException e) {
             // Keep with one param to log otherwise first color code will be ignored!
             try {
-                log.error("{}", "%s%s%s\n%s".formatted(RED(),e.getMessage(), RESET(),e.getFormattedReport()));
+                log.error("{}", "%s%s%s\n%s".formatted(RED(), e.getMessage(), RESET(), e.getFormattedReport()));
             } catch (JsonProcessingException ex) {
                 throw new RuntimeException(ex);
             }
-        }
-        catch (Exception ex) {
+        } catch (ExitException ignored) {
+            // do nothing
+        } catch (Exception ex) {
             SpringConfigurationErrorHandler.handleRootCause(ex, log);
         }
         System.exit(1);
