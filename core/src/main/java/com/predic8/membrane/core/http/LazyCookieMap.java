@@ -17,11 +17,7 @@ package com.predic8.membrane.core.http;
 import com.predic8.membrane.core.http.cookie.Cookies;
 import com.predic8.membrane.core.http.cookie.MimeHeaders;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class LazyCookieMap implements Map<String, String> {
 
@@ -40,7 +36,7 @@ public class LazyCookieMap implements Map<String, String> {
     }
 
     private static Map<String, String> parseCookies(Header header) {
-        var parsed = new HashMap<String, String>();
+        var parsed = new LinkedHashMap<String, String>();
         var cookies = new Cookies(new MimeHeaders(header));
         for (int i = 0; i < cookies.getCookieCount(); i++) {
             var cookie = cookies.getCookie(i);

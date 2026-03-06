@@ -84,7 +84,7 @@ public class ScriptingUtils {
             var headerMap = new HeaderMap(msg.getHeader());
             params.put("header", headerMap);
             params.put("headers", headerMap);
-            var cookieMap = createCookieMap(msg.getHeader());
+            var cookieMap = new LazyCookieMap(msg.getHeader());
             params.put("cookie", cookieMap);
             params.put("cookies", cookieMap);
             if (includeJsonObject) {
@@ -143,7 +143,4 @@ public class ScriptingUtils {
         return emptyMap();
     }
 
-    private static Map<String, String> createCookieMap(Header header) {
-        return new LazyCookieMap(header);
-    }
 }
