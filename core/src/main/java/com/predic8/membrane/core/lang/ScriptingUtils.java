@@ -24,9 +24,11 @@ import com.predic8.membrane.core.lang.groovy.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.text.*;
 import org.slf4j.*;
 
 import java.util.*;
+import java.util.function.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
@@ -42,7 +44,7 @@ public class ScriptingUtils {
 
     public static final String BINDING = "fn";
 
-    public static Map<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject, boolean isJSON) {
+    public static Map<String, Object> createParameterBindings(Router router, Exchange exc, Flow flow, boolean includeJsonObject, SerializationFunction serialization) {
 
         var msg = exc.getMessage(flow);
 
@@ -120,9 +122,7 @@ public class ScriptingUtils {
         params.put(BINDING, new GroovyBuiltInFunctions(exc, flow, router, params) {
             @Override
             public Object escape(Object o) {
-                if (isJSON)
-                    return toJSON(o);
-                return o;
+                return serialization.apply(o);
             }
         });
 

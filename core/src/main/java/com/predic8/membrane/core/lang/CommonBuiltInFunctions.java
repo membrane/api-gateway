@@ -22,13 +22,12 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.security.*;
-import com.predic8.membrane.core.util.uri.*;
+import com.predic8.membrane.core.util.text.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.slf4j.Logger;
-import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
@@ -39,7 +38,7 @@ import java.util.function.Predicate;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.util.xml.NormalizeXMLForJsonUtil.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.JSON_SERIALIZATION;
 import static java.lang.System.*;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Collections.*;
@@ -66,21 +65,7 @@ public class CommonBuiltInFunctions {
     }
 
     public static String toJSON(Object o) {
-        try {
-            if (o instanceof NodeList || o instanceof Node) {
-                o = normalizeForJson(o);
-            }
-            return objectMapper.writeValueAsString(o);
-        } catch (Exception first) {
-            // Fallback: always return valid JSON, even for unsupported types (e.g. java.time.* without modules).
-            log.debug("Failed to convert object to JSON. Falling back to JSON string.", first);
-            try {
-                return objectMapper.writeValueAsString(String.valueOf(o));
-            } catch (Exception fallback) {
-                log.info("Failed to convert fallback value to JSON.", fallback);
-                return "null";
-            }
-        }
+       return JSON_SERIALIZATION.apply(o);
     }
 
     /**
@@ -163,8 +148,7 @@ public class CommonBuiltInFunctions {
     }
 
     public static String user(Exchange exchange) {
-        List<SecurityScheme> schemes = exchange.getProperty(SECURITY_SCHEMES, List.class);
-        for (SecurityScheme scheme : schemes) {
+        for (var scheme : (List<SecurityScheme>) exchange.getProperty(SECURITY_SCHEMES, List.class)) {
             if (scheme instanceof BasicHttpSecurityScheme basic) {
                 return basic.getUsername();
             }
@@ -281,6 +265,6 @@ public class CommonBuiltInFunctions {
      * @return a percent-encoded string safe for use as a single URI path segment
      */
     public static String pathEncode(String segment) {
-        return EscapingUtil.pathEncode(segment);
+        return SerializationUtil.pathEncode(segment);
     }
 }

@@ -18,6 +18,7 @@ package com.predic8.membrane.core.util.xml;
 import com.predic8.xml.beautifier.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import org.w3c.dom.*;
 
 import javax.xml.stream.*;
 import javax.xml.stream.events.*;
@@ -93,5 +94,24 @@ public class XMLTextUtil {
             log.debug("Invalid XML snippet.", e);
             return false;
         }
+    }
+
+    /**
+     * Converts a NodeList into a concatenated string of all its node text contents.
+     *
+     * @param nl the NodeList to be converted; may be null
+     * @return a single string containing the concatenated text content of all nodes in the NodeList,
+     *         or an empty string if the NodeList is null or empty
+     */
+    public static String nodeListToString(NodeList nl, String separator) {
+        if (nl == null)
+            return "";
+        var sb = new StringBuilder();
+        for (int i = 0; i < nl.getLength(); i++) {
+            sb.append(nl.item(i).getTextContent());
+            if (separator != null && i < nl.getLength() - 1)
+                sb.append(separator);
+        }
+        return sb.toString();
     }
 }

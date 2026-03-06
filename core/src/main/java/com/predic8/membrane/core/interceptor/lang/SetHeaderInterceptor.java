@@ -15,6 +15,8 @@ package com.predic8.membrane.core.interceptor.lang;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.core.util.text.*;
 
 /**
  * @description Set HTTP header on the current message.
@@ -26,7 +28,6 @@ import com.predic8.membrane.core.exchange.*;
 @MCElement(name = "setHeader")
 public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
-    @SuppressWarnings("rawtypes")
     @Override
     protected Class<?> getExpressionReturnType() {
         return String.class;

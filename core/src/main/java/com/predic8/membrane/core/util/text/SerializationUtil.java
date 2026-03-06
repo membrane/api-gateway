@@ -12,64 +12,66 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.util.uri;
+package com.predic8.membrane.core.util.text;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.lang.*;
-import groovy.json.*;
-import org.apache.commons.text.StringEscapeUtils;
-import org.jetbrains.annotations.*;
+import com.fasterxml.jackson.databind.*;
 
-import java.net.*;
 import java.util.*;
-import java.util.function.*;
 
-import static com.predic8.membrane.core.http.MimeType.isJson;
-import static com.predic8.membrane.core.http.MimeType.isXML;
-import static com.predic8.membrane.core.util.uri.EscapingUtil.Escaping.*;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.*;
 import static java.lang.Character.*;
 import static java.nio.charset.StandardCharsets.*;
 
-public class EscapingUtil {
+public class SerializationUtil {
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    private SerializationUtil() {
+    }
 
     /**
-     * Specifies the types of escaping that can be performed on strings.
+     * Specifies the types of serialization that can be performed on strings.
      * <p/>
-     * The escaping strategies include:
+     * The strategies include:
      * <p/>
-     * - {@code NONE}: No escaping is applied. Strings are returned as-is.
      * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
-     *   other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
-     * - {@code JSON}: Escapes strings for safe inclusion in a JSON context.
-     * - {@code XML}: Escapes strings for safe inclusion in an XML context using XML 1.1 rules.
-     * - {@code SEGMENT}: Encodes strings as safe URI path segments, ensuring they do not introduce
-     *   path separators, query delimiters, or other unsafe characters, as per RFC 3986.
+     * other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
+     * - {@code JSON}: Serializes s for safe inclusion in a JSON context.
+     * - {@code XML}: Serializes for safe inclusion in an XML context using XML 1.1 rules.
+     * - {@code SEGMENT}: Encodes as safe URI path segments, ensuring they do not introduce
+     * - {@code TEXT}: Serializes as plain text, without any encoding.
+     * path separators, query delimiters, or other unsafe characters, as per RFC 3986.
      */
-    public enum Escaping {
-        NONE,
+    public enum Serialization {
+        TEXT,
         URL,
         SEGMENT,
         JSON,
         XML
     }
 
-    public static Optional<Function<String, String>> getEscapingFunction(String mimeType) {
+    public static Optional<SerializationFunction> getSerialization(String mimeType) {
         if (isJson(mimeType)) {
-            return Optional.of(getEscapingFunction(JSON));
+            return Optional.of(JSON_SERIALIZATION);
         }
         if (isXML(mimeType)) {
-            return Optional.of(getEscapingFunction(XML));
+            return Optional.of(XML_SERIALIZATION);
         }
+        if (isText(mimeType)) {
+            return Optional.of(TEXT_SERIALIZATION);
+        }
+        // Optional needed, so the caller can warn that a default is used
         return Optional.empty();
     }
 
-    public static Function<String, String> getEscapingFunction(Escaping escaping) {
-        return switch (escaping) {
-            case NONE -> Function.identity();
-            case URL -> s -> URLEncoder.encode(s, UTF_8);
-            case SEGMENT -> EscapingUtil::pathEncode;
-            case JSON -> CommonBuiltInFunctions::toJSON; // Alternative: StringEscapeUtils::escapeJson ?
-            case XML -> StringEscapeUtils::escapeXml11;
+    public static SerializationFunction getSerialization(Serialization serialization) {
+        return switch (serialization) {
+            case TEXT -> TEXT_SERIALIZATION;
+            case URL -> URL_SERIALIZATION;
+            case SEGMENT -> SEGMENT_SERIALIZATION;
+            case JSON -> JSON_SERIALIZATION;
+            case XML -> XML_SERIALIZATION;
         };
     }
 

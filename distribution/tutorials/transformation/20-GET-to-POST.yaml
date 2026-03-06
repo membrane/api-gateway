@@ -15,8 +15,8 @@ api:
       - setBody:
           value: |
             {
-              "name": "${param.name}",
-              "price": ${param.price}
+              "name": "${param.name[0]}",
+              "price": ${param.price[0]}
             }
       - setHeader:
           name: Content-Type

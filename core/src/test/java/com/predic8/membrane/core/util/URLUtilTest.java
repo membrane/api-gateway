@@ -15,7 +15,7 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.util.uri.*;
+import com.predic8.membrane.core.util.text.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -26,6 +26,7 @@ import java.util.stream.*;
 import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static com.predic8.membrane.core.util.URLUtil.*;
+import static com.predic8.membrane.core.util.text.SerializationUtil.pathEncode;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class URLUtilTest {
@@ -154,7 +155,7 @@ public class URLUtilTest {
         @MethodSource("cases")
         @DisplayName("pathSeg encodes as RFC3986 path segment")
         void encodesExpected(Case c) {
-            assertEquals(c.expected(),  EscapingUtil.pathEncode(c.in()));
+            assertEquals(c.expected(),  pathEncode(c.in()));
         }
 
         record AllowedCase(Object in) {
@@ -174,7 +175,7 @@ public class URLUtilTest {
         @MethodSource("allowedCases")
         @DisplayName("pathSeg output contains only unreserved characters or percent-escapes")
         void outputAllowedCharactersOnly(AllowedCase c) {
-            String out = EscapingUtil.pathEncode(c.in());
+            var out = pathEncode(c.in());
             assertTrue(out.matches("[A-Za-z0-9\\-._~%]*"), out);
 
             // If '%' appears, it must be followed by two hex digits

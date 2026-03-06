@@ -23,8 +23,9 @@ import org.junit.jupiter.api.*;
 import org.w3c.dom.*;
 
 import java.net.*;
+import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -44,18 +45,16 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         return post("/foo")
                 .contentType(APPLICATION_XML)
                 .body("""
-                <persons id="7">
-                    <name>John Doe</name>
-                    <name>James Smith</name>
-                    <name>Thomas Müller</name>
-                </persons>
-                """);
+                        <persons id="7">
+                            <name>John Doe</name>
+                            <name>James Smith</name>
+                            <name>Thomas Müller</name>
+                        </persons>
+                        """);
     }
 
-    // Boolean
-
     @Test
-    void boolSimple() {
+    void booleanSimple() {
         assertTrue(evalBool("true()"));
         assertFalse(evalBool("false()"));
     }
@@ -68,16 +67,14 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
         assertTrue(evalBool("//persons/@id = 7"));
     }
 
-    // String
-
     @Test
     void attribute() {
-        assertEquals("7",evalString("//persons/@id"));
+        assertEquals("7", evalString("//persons/@id"));
     }
 
     @Test
     void getStringTextContent() {
-        assertEquals("John Doe",evalString("/persons/name[1]"));
+        assertEquals("John Doe", evalString("/persons/name[1]"));
     }
 
     @Test
@@ -89,17 +86,28 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
     @Test
     void getList() {
-        Object o = evalObject("//persons/name");
+        var o = evalObject("//persons/name");
         if (o instanceof NodeList nl) {
             assertEquals(3, nl.getLength());
+            assertEquals("John Doe", nl.item(0).getTextContent());
+            assertEquals("James Smith", nl.item(1).getTextContent());
+            assertEquals("Thomas Müller", nl.item(2).getTextContent());
             return;
         }
         fail();
     }
 
+    /**
+     * XPath result is evaluated as a string (XPath 1.0 behavior):
+     */
+    @Test
+    void getListString() {
+        assertEquals("John Doe", evalString("//persons/name"));
+    }
+
     @Test
     void getSingleElement() {
-        Object o = evalObject("//persons/name[2]");
+        var o = evalObject("//persons/name[2]");
         if (o instanceof NodeList nl) {
             assertEquals(1, nl.getLength());
             assertEquals("James Smith", nl.item(0).getTextContent());
@@ -113,7 +121,7 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
     @Test
     void wrongContentType() {
         exchange.getRequest().getHeader().setContentType(APPLICATION_JSON);
-        assertEquals("John Doe",evalString("/persons/name[1]"));
+        assertEquals("John Doe", evalString("/persons/name[1]"));
     }
 
     @Nested
@@ -132,7 +140,7 @@ class XPathExchangeExpressionTest extends AbstractExchangeExpressionTest {
 
         @Test
         void localName() {
-            assertEquals("Trevor", expression( new InterceptorAdapter(router),getLanguage(),
+            assertEquals("Trevor", expression(new InterceptorAdapter(router), getLanguage(),
                     "//*[local-name()='firstname']")
                     .evaluate(pExc, REQUEST, String.class));
         }

@@ -1,7 +1,8 @@
 <animals>
-    <animal name="Skye" species="dog" legs="4"/>
-    <animal name="Molly" species="cat" legs="4"/>
-    <animal name="Biscuit" species="rabbit" legs="4"/>
-    <animal name="Sunny" species="parrot" legs="2"/>
-    <animal name="Bubbles" species="goldfish" legs="0"/>
+    <location>Bonn Zoo</location>
+    <animal species="dog" legs="4">Skye</animal>
+    <animal species="cat" legs="4">Molly</animal>
+    <animal species="rabbit" legs="4">Biscuit</animal>
+    <animal species="parrot" legs="2">Sunny</animal>
+    <animal species="goldfish" legs="0">Bubbles</animal>
 </animals>

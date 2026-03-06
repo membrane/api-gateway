@@ -20,7 +20,6 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.text.*;
 import com.predic8.membrane.core.util.xml.*;
 import com.predic8.membrane.core.util.xml.parser.*;
 import org.jetbrains.annotations.*;
@@ -30,8 +29,7 @@ import org.w3c.dom.*;
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
-import static com.predic8.membrane.core.util.text.StringUtil.tail;
-import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static com.predic8.membrane.core.util.text.StringUtil.*;
 import static javax.xml.xpath.XPathConstants.*;
 
 public class XPathExchangeExpression extends AbstractExchangeExpression {
@@ -43,7 +41,7 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     private XmlConfig xmlConfig;
 
     public XPathExchangeExpression(Interceptor interceptor, String xpath, Router router) {
-        super(xpath,router);
+        super(xpath, router);
 
         if (interceptor instanceof XMLSupport xns) {
             xmlConfig = xns.getXmlConfig();
@@ -52,13 +50,13 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
 
     @Override
     public <T> T evaluate(Exchange exchange, Interceptor.Flow flow, Class<T> type) {
-        Message msg = exchange.getMessage(flow);
+        var msg = exchange.getMessage(flow);
         try {
             if (Boolean.class.isAssignableFrom(type)) {
-                return type.cast(evalutateAndCast(msg, BOOLEAN));
+                return type.cast(evaluateAndCast(msg, XPathConstants.BOOLEAN));
             }
             if (String.class.isAssignableFrom(type)) {
-                return type.cast(evalutateAndCast(msg, STRING));
+                return type.cast(evaluateAndCast(msg, XPathConstants.STRING));
             }
             if (Object.class.isAssignableFrom(type)) {
                 return type.cast(evaluateAndCastToObject(msg));
@@ -84,35 +82,49 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
     }
 
     private Object evaluateAndCastToObject(Message msg) throws XPathExpressionException {
-        Object t = evalutateAndCast(msg, NODESET);
-        if (t instanceof NodeList nl) {
-            return new NodeListWrapper(nl);
+        var t = evaluateAndCast(msg, NODESET);
+        if (t instanceof XPathEvaluationResult<?> xpr) {
+            return xpr.value();
         }
+        if (t instanceof NodeList nl) {
+            return nl;
+        }
+        log.debug("That point should not be reached.");
         return t;
     }
 
-    private Object evalutateAndCast(Message msg, QName xmlType) throws XPathExpressionException {
+    private Object evaluateAndCast(Message msg, QName xmlType) throws XPathExpressionException {
         if (log.isDebugEnabled()) {
             log.debug("Evaluating: {}", expression);
             log.debug("Body: {}", msg.getBodyAsStringDecoded()); // is expensive!
         }
 
         // XPath is not thread safe!
-        XPath xPath = XPathUtil.newXPath(xmlConfig);
+        var xPath = XPathUtil.newXPath(xmlConfig);
 
         try {
-            return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
+            if (xmlType == null) {
+                return xPath.evaluateExpression(expression, parser.parse(XMLUtil.getInputSource(msg)));
+            }
+            try {
+                // Depending on the xpath it is not always possible to set it to specified xmlType
+                // e.g., xmlType=NodeSet xpath=string(//city)
+                return xPath.evaluate(expression, parser.parse(XMLUtil.getInputSource(msg)), xmlType);
+            } catch (XPathExpressionException e) {
+                log.debug("XPath expression failed. Trying again without type.", e);
+                return xPath.evaluateExpression(expression, parser.parse(XMLUtil.getInputSource(msg)));
+            }
         } catch (RuntimeException e) {
             // Parser errors may escape as unchecked exceptions.
             if (causeMessageContains(e, "not allowed in prolog")) {
-                throw new ExchangeExpressionException(expression, e,"Content not allowed in prolog of XML input.")
+                throw new ExchangeExpressionException(expression, e, "Content not allowed in prolog of XML input.")
                         .detail("There are extra characters before the XML declaration <?xml ... ?>")
                         .body(truncateAfter(msg.getBodyAsStringDecoded(), 50))
                         .excludeException();
             }
 
             if (causeMessageContains(e, "is not allowed in trailing section")) {
-                throw new ExchangeExpressionException(expression, e,"Content not allowed in trailing section of XML input.")
+                throw new ExchangeExpressionException(expression, e, "Content not allowed in trailing section of XML input.")
                         .detail("There are extra characters after the XML root element (after the final closing tag like </root>).")
                         .body(tail(msg.getBodyAsStringDecoded(), 50))
                         .excludeException();

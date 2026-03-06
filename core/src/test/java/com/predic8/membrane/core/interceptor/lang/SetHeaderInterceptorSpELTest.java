@@ -50,43 +50,43 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @ParameterizedTest
     @MethodSource("cases")
-    void withoutExpressionOnlyConstant(String expression, String expected) throws Exception {
+    void withoutExpressionOnlyConstant(String expression, String expected) {
         extracted(expression, expected);
     }
 
 
     @Test
-    void computeSingeExpression() throws Exception {
+    void computeSingleExpression() {
         assertEquals("24", setHeaderEvalGetValue("${1*2*3*4}"));
     }
 
     @Test
-    void computeSingeExpressionWithCtx() throws Exception {
+    void computeSingleExpressionWithCtx() {
         assertEquals("Panama", setHeaderEvalGetValue("${property.bar}"));
     }
 
     @Test
-    void accessNonExistingProperty() throws Exception {
-        assertEquals("", setHeaderEvalGetValue("${properties.unknown}"));
+    void accessNonExistingProperty() {
+        assertEquals("null", setHeaderEvalGetValue("${properties.unknown}"));
     }
 
     @Test
-    void complex() throws Exception {
-        assertEquals("foo Panama baz  coo 6/a", setHeaderEvalGetValue("foo ${properties.bar} baz ${properties.foo} coo ${2*3}/${'a'}"));
+    void complex() {
+        assertEquals("foo Panama baz null coo 6/a", setHeaderEvalGetValue("foo ${properties.bar} baz ${properties.foo} coo ${2*3}/${'a'}"));
     }
 
     @Test
-    void getJson() throws Exception {
+    void getJson() {
         assertEquals("foo 5 baz", setHeaderEvalGetValue("foo ${json['a']} baz"));
     }
 
     @Test
-    void jsonWrongAttribute() throws Exception {
-        assertEquals("foo  baz", setHeaderEvalGetValue("foo ${json['b']} baz"));
+    void jsonWrongAttribute() {
+        assertEquals("foo null baz", setHeaderEvalGetValue("foo ${json['b']} baz"));
     }
 
     @Test
-    void jsonPath() throws Exception {
+    void jsonPath() {
         assertEquals("Mango", setHeaderEvalGetValue("${jsonPath('$.name')}"));
     }
 
@@ -114,7 +114,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @Test
     @DisplayName("Overwrite header when it is not absent")
-    void notIfAbsent() throws Exception {
+    void notIfAbsent() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
         interceptor.setFieldName("X-FOO");
         interceptor.setValue("42");
@@ -126,7 +126,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @Test
     @DisplayName("Do not overwrite existing header.")
-    void ifAbsent() throws Exception {
+    void ifAbsent() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
         interceptor.setFieldName("X-FOO");
         interceptor.setValue("42");
@@ -138,7 +138,7 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
 
     @Test
     @DisplayName("Overwrite header when it is not absent with different casing")
-    void notIfAbsentCaseDiff() throws Exception {
+    void notIfAbsentCaseDiff() {
         exchange.getRequest().getHeader().add("X-FOO", "0");
         interceptor.setFieldName("x-fOo");
         interceptor.setValue("42");
@@ -148,26 +148,24 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     }
 
     @Test
-    void failOnErrorTrue() throws Exception {
+    void failOnErrorTrue() {
         interceptor.setValue("42${wrong}");
         interceptor.setFailOnError(true);
         interceptor.init(router);
-        Outcome outcome = interceptor.handleRequest(exchange);
-        assertEquals(ABORT, outcome);
-        assertEquals(null, super.getHeader("x-FoO"));
+        assertEquals(ABORT, interceptor.handleRequest(exchange));
+        assertNull(super.getHeader("x-bar"));
     }
 
     @Test
-    void failOnErrorFalse() throws Exception {
+    void failOnErrorFalse() {
         interceptor.setValue("42${wrong}");
         interceptor.setFailOnError(false);
         interceptor.init(router);
-        Outcome outcome = interceptor.handleRequest(exchange);
-        assertEquals(CONTINUE, outcome);
-        assertEquals(null, super.getHeader("x-FoO"));
+        assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+        assertNull(super.getHeader("x-bar"));
     }
 
-    private String setHeaderEvalGetValue(String expr) throws Exception {
+    private String setHeaderEvalGetValue(String expr) {
         interceptor.setValue(expr);
         interceptor.init(router);
         interceptor.handleRequest(exchange);

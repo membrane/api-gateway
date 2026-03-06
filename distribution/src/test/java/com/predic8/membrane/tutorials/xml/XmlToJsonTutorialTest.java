@@ -39,12 +39,13 @@ public class XmlToJsonTutorialTest extends AbstractXmlTutorialTest {
         .when()
             .post("http://localhost:2000")
         .then()
+            .log().ifValidationFails()
             .statusCode(200)
             .contentType(JSON)
             .body("animals.animal.size()", equalTo(5))
-            .body("animals.animal.name", hasItems("Skye", "Sunny", "Bubbles"))
-            .body("animals.animal.find { it.name == 'Sunny' }.legs", equalTo(2))
-            .body("animals.animal.find { it.name == 'Bubbles' }.species", equalTo("goldfish"));
+            .body("animals.animal.content", hasItems("Skye", "Sunny", "Bubbles","Molly","Biscuit"))
+            .body("animals.animal.find { it.content == 'Sunny' }.legs", equalTo(2))
+            .body("animals.animal.find { it.content == 'Bubbles' }.species", equalTo("goldfish"));
         // @formatter:on
     }
 }

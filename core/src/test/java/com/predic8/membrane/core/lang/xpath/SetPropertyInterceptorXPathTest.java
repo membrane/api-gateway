@@ -16,18 +16,19 @@ package com.predic8.membrane.core.lang.xpath;
 
 import com.predic8.membrane.core.config.xml.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.lang.*;
 import com.predic8.membrane.core.router.*;
 import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
+import org.w3c.dom.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class SetPropertyInterceptorXPathTest {
 
@@ -46,10 +47,15 @@ class SetPropertyInterceptorXPathTest {
         }
 
         @Test
-        void normal() {
-            var interceptor = getInterceptor(null,"${//firstname}");
-            assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        void string() {
+            assertEquals(CONTINUE, getInterceptor(null,"${string(//firstname)}").handleRequest(exc));
             assertEquals("Trevor", exc.getProperty("firstname").toString());
+        }
+
+        @Test
+        void nodelist() {
+            assertEquals(CONTINUE, getInterceptor(null,"${//firstname}").handleRequest(exc));
+            assertInstanceOf(NodeList.class, exc.getProperty("firstname"));
         }
     }
 
@@ -68,29 +74,25 @@ class SetPropertyInterceptorXPathTest {
 
         @Test
         void noNamespacesDeclaredQueryWithPrefix() {
-            var interceptor = getInterceptor(null,"${//p8:firstname}");
-            assertEquals(CONTINUE, interceptor.handleRequest(exc));
+            assertEquals(CONTINUE, getInterceptor(null,"${string(//p8:firstname)}").handleRequest(exc));
             assertEquals("", exc.getProperty("firstname").toString());
         }
 
         @Test
         void noNamespacesDeclaredQueryWithLocalName() {
-            var interceptor = getInterceptor(null,"${//*[local-name() = 'firstname']}");
-            assertEquals(CONTINUE, interceptor.handleRequest(exc));
+            assertEquals(CONTINUE, getInterceptor(null,"${string(//*[local-name() = 'firstname'])}").handleRequest(exc));
             assertEquals("Trevor", exc.getProperty("firstname").toString());
         }
 
         @Test
         void nsUri() {
-            var interceptor = getInterceptor(null,"${//*[namespace-uri() = 'https://predic8.de/other']}");
-            assertEquals(CONTINUE, interceptor.handleRequest(exc));
+            assertEquals(CONTINUE, getInterceptor(null,"${string(//*[namespace-uri() = 'https://predic8.de/other'])}").handleRequest(exc));
             assertEquals("baz", exc.getProperty("firstname").toString());
         }
 
         @Test
         void nsPrefixed() {
-            var interceptor = getInterceptor(getNamespaces(),"${//p8:firstname}");
-            assertEquals(CONTINUE, interceptor.handleRequest(exc));
+            assertEquals(CONTINUE, getInterceptor(getNamespaces(),"${string(//p8:firstname)}").handleRequest(exc));
             assertEquals("Trevor", exc.getProperty("firstname").toString());
         }
 
@@ -99,7 +101,7 @@ class SetPropertyInterceptorXPathTest {
             var interceptor = getInterceptor(getNamespaces(),"${//unknown:firstname}");
             assertEquals(ABORT, interceptor.handleRequest(exc));
             assertEquals(500, exc.getResponse().getStatusCode());
-            String body = exc.getResponse().getBodyAsStringDecoded();
+            var body = exc.getResponse().getBodyAsStringDecoded();
             assertTrue(body.contains("${//unknown:firstname}"));
             assertTrue(body.contains("unknown"));
         }
@@ -107,7 +109,7 @@ class SetPropertyInterceptorXPathTest {
 
     private static @NotNull SetPropertyInterceptor getInterceptor(Namespaces namespaces, String value) {
         var i = new SetPropertyInterceptor();
-        XmlConfig xc = new XmlConfig();
+        var xc = new XmlConfig();
         xc.setNamespaces(namespaces);
         i.setXmlConfig(xc);
         i.setLanguage(XPATH);

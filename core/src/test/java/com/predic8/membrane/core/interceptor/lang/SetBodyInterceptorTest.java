@@ -14,7 +14,10 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.lang.*;
 import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
@@ -23,6 +26,7 @@ import java.net.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,13 +37,14 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class SetBodyInterceptorTest {
 
+    private static final ObjectMapper om = new ObjectMapper();
+
     private SetBodyInterceptor sbi;
     private Exchange exc;
 
     @BeforeEach
     void setup() throws URISyntaxException {
         sbi = new SetBodyInterceptor();
-
         exc = get("/foo").buildExchange();
         exc.setResponse(notImplemented().body("bar").build());
     }
@@ -94,6 +99,94 @@ class SetBodyInterceptorTest {
                     {"a":null}
                     """).buildExchange();
         }
+    }
+
+    @Nested
+    class escaping {
+
+        @Test
+        void escape() throws URISyntaxException, JsonProcessingException {
+
+            exc = setJsonSample();
+            sbi.setLanguage(SPEL);
+            sbi.setContentType(APPLICATION_JSON_UTF8);
+            sbi.setValue("""
+                    {
+                        "string": ${'Dublin'},
+                        "number": ${123},
+                        "boolean": ${true},
+                        "null": ${null},
+                        "array": ${new String[]{'a','b','c'}},
+                        "map": ${ {'a':'b', 'c':'d'} }
+                    }
+                    """);
+            sbi.init(new DefaultRouter());
+            sbi.handleRequest(exc);
+
+            var json = om.readTree(exc.getRequest().getBodyAsStringDecoded());
+            assertEquals("Dublin", json.get("string").asText());
+            assertEquals(123, json.get("number").asInt());
+            assertTrue(json.get("boolean").asBoolean());
+            assertEquals(3, json.get("array").size());
+            assertEquals("a", json.get("array").get(0).asText());
+            assertEquals("b", json.get("array").get(1).asText());
+            assertEquals("c", json.get("array").get(2).asText());
+            assertEquals(2, json.get("map").size());
+            assertEquals("b", json.get("map").get("a").asText());
+            assertEquals("d", json.get("map").get("c").asText());
+            assertTrue(json.get("null").isNull());
+        }
+
+        @Test
+        void escape_xpath() throws Exception {
+            exc = post("/foo").xml("""
+                    <root>
+                      <string>Dublin</string>
+                      <number>123</number>
+                      <boolean>true</boolean>
+                      <array>
+                        <item>a</item>
+                        <item>b</item>
+                        <item>c</item>
+                      </array>
+                    </root>
+                    """).buildExchange();
+
+            sbi.setLanguage(XPATH);
+            sbi.setContentType(APPLICATION_JSON_UTF8);
+            sbi.setValue("""
+                    {
+                      "string": ${/root/string/text()},
+                      "number": ${number(/root/number)},
+                      "boolean": ${/root/boolean/text() = 'true'},
+                      "null": null,
+                      "array": ${/root/array/item/text()}
+                    }
+                    """);
+
+            sbi.init(new DefaultRouter());
+            sbi.handleRequest(exc);
+
+            var body = exc.getRequest().getBodyAsStringDecoded();
+            var json = om.readTree(body);
+            assertEquals("Dublin", json.get("string").asText());
+            assertEquals(123, json.get("number").asInt());
+            assertTrue(json.get("boolean").asBoolean());
+
+            assertEquals(3, json.get("array").size());
+            assertEquals("a", json.get("array").get(0).asText());
+            assertEquals("b", json.get("array").get(1).asText());
+            assertEquals("c", json.get("array").get(2).asText());
+
+            assertTrue(json.get("null").isNull());
+        }
+
+        private Exchange setJsonSample() throws URISyntaxException {
+            return post("/foo").json("""
+                    {"a":null}
+                    """).buildExchange();
+        }
+
     }
 
     @Test

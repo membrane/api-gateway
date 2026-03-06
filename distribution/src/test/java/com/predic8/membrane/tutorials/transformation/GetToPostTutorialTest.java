@@ -37,6 +37,7 @@ public class GetToPostTutorialTest extends AbstractTransformationTutorialTest {
                 .when()
                     .get("http://localhost:2000/add")
                 .then()
+                    .log().ifValidationFails()
                     .statusCode(201)
                     .body("id", notNullValue())
                     .body("name", equalTo("Lemon"))

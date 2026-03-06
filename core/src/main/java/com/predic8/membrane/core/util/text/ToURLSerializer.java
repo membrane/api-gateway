@@ -12,17 +12,17 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.proxies;
+package com.predic8.membrane.core.util.text;
 
-import org.junit.jupiter.api.*;
+import static com.predic8.membrane.core.util.text.SerializationFunction.*;
+import static java.net.URLEncoder.*;
+import static java.nio.charset.StandardCharsets.*;
 
-import static com.predic8.membrane.core.util.text.SerializationUtil.Serialization.*;
-import static org.junit.jupiter.api.Assertions.*;
+public class ToURLSerializer {
 
-class TargetTest {
+    private ToURLSerializer() {}
 
-    @Test
-    void defaultEscaping() {
-        assertEquals(URL,new Target().getEscaping());
+    public static String toURL(Object o) {
+        return encode( TEXT_SERIALIZATION.apply(o), UTF_8);
     }
 }
