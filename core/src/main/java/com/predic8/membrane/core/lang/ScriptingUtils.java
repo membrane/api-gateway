@@ -84,6 +84,9 @@ public class ScriptingUtils {
             var headerMap = new HeaderMap(msg.getHeader());
             params.put("header", headerMap);
             params.put("headers", headerMap);
+            var cookieMap = new LazyCookieMap(msg.getHeader());
+            params.put("cookie", cookieMap);
+            params.put("cookies", cookieMap);
             if (includeJsonObject) {
                 try {
                     log.debug("Parsing body as JSON for scripting plugins");
@@ -139,4 +142,5 @@ public class ScriptingUtils {
         // Add map to avoid a second parsing
         return emptyMap();
     }
+
 }

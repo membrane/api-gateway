@@ -123,4 +123,24 @@ class GroovyExchangeExpressionTest extends AbstractExchangeExpressionTest {
     void objectToString() {
         assertTrue(evalString("java.time.LocalDate.now()").length() > 6);
     }
+
+    @Test
+    void cookie() {
+        exchange.getRequest().getHeader().add("Cookie", "foo=bar");
+        assertEquals("bar", evalObject("cookie.foo"));
+    }
+
+    @Test
+    void cookies() {
+        exchange.getRequest().getHeader().add("Cookie", "foo=bar");
+        assertEquals("bar", evalObject("cookies.foo"));
+    }
+
+    @Test
+    void multipleCookies() {
+        exchange.getRequest().getHeader().add("Cookie", "foo=bar; baz=qux");
+        assertEquals("bar", evalObject("cookie.foo"));
+        assertEquals("qux", evalObject("cookie.baz"));
+    }
+
 }
