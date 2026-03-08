@@ -1,0 +1,11 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/test/data-types"
+           elementFormDefault="qualified">
+
+  <xs:include schemaLocation="inc/BaseTypes.xsd"/>
+
+  <xs:element name="B5">
+
+  </xs:element>
+
+</xs:schema>

@@ -46,7 +46,7 @@ import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
 @MCElement(name = "validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 
-    private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class);
 
     private String wsdl;
     private String schema;
@@ -99,22 +99,22 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if (wsdl != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+            return new WSDLValidator(resourceResolver, ResolverMap.combine(URIFactory.DEFAULT_URI_FACTORY, getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
         }
         if (schema != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
+            return new XMLSchemaValidator(resourceResolver, ResolverMap.combine(URIFactory.DEFAULT_URI_FACTORY, getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
-            return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
+            return new JSONYAMLSchemaValidator(resourceResolver, ResolverMap.combine(URIFactory.DEFAULT_URI_FACTORY, getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
                 if(schemaMappings != null) setSchemaMappings(schemaMappings.getSchemaMap());
             }};
         }
         if (schematron != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
+            return new SchematronValidator(ResolverMap.combine(URIFactory.DEFAULT_URI_FACTORY, getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
         }
 
         WSDLValidator validator = getWsdlValidatorFromSOAPProxy();
@@ -131,7 +131,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if(soapProxy == null) return null;
         wsdl = soapProxy.getWsdl();
         name = "soap validator";
-        return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+        return new WSDLValidator(resourceResolver, ResolverMap.combine(URIFactory.DEFAULT_URI_FACTORY, getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
     }
 
     private @Nullable String getBaseLocation() {

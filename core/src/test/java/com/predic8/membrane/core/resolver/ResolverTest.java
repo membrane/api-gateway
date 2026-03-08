@@ -143,7 +143,7 @@ public class ResolverTest {
         assertNotNull(resolverMap.resolve(wsdlLocation));
         for (String relUrl : new String[]{"1.xsd", "./1.xsd", "../resolver/1.xsd", "http://localhost:3029/resolver/1.xsd"}) {
             try {
-                assertNotNull(resolverMap.resolve(ResolverMap.combine(wsdlLocation, relUrl)));
+                assertNotNull(resolverMap.resolve(ResolverMap.combine(URIFactory.DEFAULT_URI_FACTORY, wsdlLocation, relUrl)));
             } catch (Exception e) {
                 throw new RuntimeException("Error during combine(\"" + wsdlLocation + "\", \"" + relUrl + "\"):", e);
             }

@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.annot;
 
+import com.sun.net.httpserver.*;
+
 import javax.xml.namespace.*;
 import java.io.*;
 import java.util.*;
@@ -60,6 +62,8 @@ public class Constants {
 	public static final String NOT_APPLICABLE = "N/A";
 
 	public static final String HTTP_VERSION_11 = "1.1";
+
+	public static final String WSDL11_NS = "http://schemas.xmlsoap.org/wsdl/";
 
 	public static final String WSDL_SOAP11_NS = "http://schemas.xmlsoap.org/wsdl/soap/";
 	public static final String WSDL_SOAP12_NS = "http://schemas.xmlsoap.org/wsdl/soap12/";

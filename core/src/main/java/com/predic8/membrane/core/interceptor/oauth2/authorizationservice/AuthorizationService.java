@@ -27,6 +27,7 @@ import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
 import org.jose4j.jwt.*;
 import org.jose4j.lang.*;
@@ -318,7 +319,7 @@ public abstract class AuthorizationService {
     }
 
     public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
-        url = ResolverMap.combine(baseLocation, url);
+        url = ResolverMap.combine(URIFactory.DEFAULT_URI_FACTORY, baseLocation, url);
         // ask the internal httpClient (might be proxied/authenticated), if HTTP
         if (url.startsWith("http")) {
             var exc = get(url).buildExchange();
