@@ -12,7 +12,7 @@ import static org.w3c.dom.Node.*;
 
 public class Binding extends WSDLElement {
 
-    SOAPVersion soapVersion;
+    private SOAPVersion soapVersion;
 
     public enum Style {
         RPC, DOCUMENT;
@@ -25,15 +25,12 @@ public class Binding extends WSDLElement {
         }
     }
 
-    private WSDLParserContext ctx;
-
     private Style style;
-    private List<BindingOperation> operations;
-    private PortType portType;
+    private final List<BindingOperation> operations;
+    private final PortType portType;
 
     public Binding(WSDLParserContext ctx, Node node) {
-        super(node);
-        this.ctx = ctx;
+        super(ctx,node);
         operations = getBindingOperations(node);
         portType = getPortType(node);
     }

@@ -11,7 +11,7 @@ public abstract class AbstractIncludeImport extends WSDLElement {
     protected String schemaLocation;
 
     public AbstractIncludeImport(WSDLParserContext ctx, Node node) {
-        super(node);
+        super(ctx,node);
         var e = (Element) node;
         schemaLocation = e.getAttribute("schemaLocation");
     }
@@ -21,8 +21,6 @@ public abstract class AbstractIncludeImport extends WSDLElement {
             var combined = ResolverMap.combine(ctx.getBasePath(), schemaLocation);
             InputStream is = ctx.getResolver().resolve(combined);
             return new Schema(ctx.basePath(combined), WSDLParserUtil.parse(is));
-        } catch (ResourceRetrievalException e) {
-            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

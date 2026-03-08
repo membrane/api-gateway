@@ -36,12 +36,11 @@ public final class WSDLSchemaExtractor {
 
     public static List<Document> getSchemas(Element wsdl) {
         try {
-            var definitions = wsdl; //.getDocumentElement();
             var result = new ArrayList<Document>();
             var schemas = wsdl.getElementsByTagNameNS(XML_SCHEMA_NS, "schema");
             for (int i = 0; i < schemas.getLength(); i++) {
                 result.add(extractSchema((Element) schemas.item(i),
-                        getNamespaceDeclarations(definitions)));
+                        getNamespaceDeclarations(wsdl)));
             }
             return result;
         } catch (Exception e) {

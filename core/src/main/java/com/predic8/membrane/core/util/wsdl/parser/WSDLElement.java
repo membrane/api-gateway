@@ -3,10 +3,13 @@ package com.predic8.membrane.core.util.wsdl.parser;
 import org.w3c.dom.*;
 
 public class WSDLElement {
-    private Element element;
-    private String name;
 
-    public WSDLElement(Node node) {
+    protected final WSDLParserContext ctx;
+    protected final Element element;
+    protected String name;
+
+    public WSDLElement(WSDLParserContext ctx,Node node) {
+        this.ctx = ctx;
         if (!(node instanceof Element element)) {
             throw new RuntimeException("Not an element: " + node.getClass());
         }

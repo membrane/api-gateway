@@ -8,9 +8,7 @@
         <xs:schema targetNamespace="http://example.com/test" xmlns:xs="http://www.w3.org/2001/XMLSchema"
                    elementFormDefault="qualified">
 
-<!--            <xs:include schemaLocation="./xsd/messages.xsd"/>-->
             <xs:include schemaLocation="xsd/inc/MessageStructureTypes2.xsd"/>
-<!--            <xs:import namespace="http://example.com/test/messages" schemaLocation="./xsd/messages.xsd"/>-->
 
             <!-- Wrapped request -->
             <xs:element name="test">

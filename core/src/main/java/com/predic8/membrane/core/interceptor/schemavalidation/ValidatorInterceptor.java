@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.json.*;
 import com.predic8.membrane.core.proxies.*;
@@ -27,14 +27,11 @@ import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;
 
-import java.io.*;
-
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.resolver.ResolverMap.*;
-import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},

@@ -4,14 +4,11 @@ import org.w3c.dom.*;
 
 public class Address extends WSDLElement {
 
-    private WSDLParserContext ctx;
-
-    private String location;
+    private final String location;
 
     public Address(WSDLParserContext ctx,Node node) {
         super(node);
         location = getLocation(node);
-        this.ctx = ctx;
     }
 
     public String getLocation() {

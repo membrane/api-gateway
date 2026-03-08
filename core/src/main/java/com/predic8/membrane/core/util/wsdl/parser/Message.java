@@ -7,13 +7,10 @@ import static com.predic8.membrane.annot.Constants.WSDL11_NS;
 
 public class Message extends WSDLElement {
 
-    private WSDLParserContext ctx;
-
-    private Part part;
+    private final Part part;
 
     public Message(WSDLParserContext ctx, Node node) {
-        super(node);
-        this.ctx = ctx;
+        super(ctx,node);
         this.part = getPart(node);
     }
 

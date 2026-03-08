@@ -5,14 +5,11 @@ import org.w3c.dom.*;
 
 public class Import extends AbstractIncludeImport {
 
-    private WSDLParserContext ctx;
-    private String namespace;
-
-    private Schema schema;
+    private final String namespace;
+    private final Schema schema;
 
     public Import(WSDLParserContext ctx,Node node) {
         super(ctx,node);
-        this.ctx = ctx;
         var e = (Element) node;
         namespace = e.getAttribute("namespace");
 

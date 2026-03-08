@@ -16,6 +16,6 @@ public class Include extends AbstractIncludeImport {
     private static @NotNull String getSchemaLocation(Node node) {
         if (node instanceof Element e)
             return e.getAttribute("schemaLocation");
-        return null;
+        return "";
     }
 }

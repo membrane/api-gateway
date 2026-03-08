@@ -10,17 +10,19 @@ import static org.w3c.dom.Node.*;
 
 public class Schema extends WSDLElement {
 
-    private WSDLParserContext ctx;
+    private final String targetNamespace;
 
-    private String targetNamespace;
-    private Element schema;
-    private List<SchemaElement> schemaElements;
-    private List<Import> imports;
-    private List<Include> includes;
+    /**
+     * DOM Element of the schema as read from the WSDL.
+     */
+    private final Element schema;
+
+    private final List<SchemaElement> schemaElements;
+    private final List<Import> imports;
+    private final List<Include> includes;
 
     public Schema(WSDLParserContext ctx, Node node) {
-        super(node);
-        this.ctx = ctx;
+        super(ctx,node);
         this.targetNamespace = getTargetNamespace(node);
         this.schema = (Element) node;
         this.schemaElements = getSchemaElements(schema);
@@ -54,7 +56,7 @@ public class Schema extends WSDLElement {
         }
 
         String tns = schema.getAttribute("targetNamespace");
-        return (tns == null || tns.isEmpty()) ? null : tns;
+        return (tns.isEmpty()) ? null : tns;
     }
 
     private List<Include> getIncludes(Node node) {

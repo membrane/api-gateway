@@ -7,14 +7,11 @@ import static org.w3c.dom.Node.ELEMENT_NODE;
 
 public class Port extends WSDLElement {
 
-    private WSDLParserContext ctx;
-
-    private Address address;
-    private Binding binding;
+    private final Address address;
+    private final Binding binding;
 
     public Port(WSDLParserContext ctx, Node node) {
-        super(node);
-        this.ctx = ctx;
+        super(ctx,node);
         address = getAddress(node);
         binding = getBinding(node);
 
@@ -49,7 +46,7 @@ public class Port extends WSDLElement {
             return null;
 
         String bindingAttr = port.getAttribute("binding");
-        if (bindingAttr == null || bindingAttr.isEmpty())
+        if (bindingAttr.isEmpty())
             return null;
 
         var bindingQName = WSDLParserUtil.resolveQName(bindingAttr, port);

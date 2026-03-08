@@ -12,11 +12,9 @@ import static org.w3c.dom.Node.*;
 
 public class Operation extends WSDLElement {
 
-    private WSDLParserContext ctx;
-
-    private List<Message> inputs;
-    private List<Message> outputs;
-    private List<Fault> faults;
+    private final List<Message> inputs;
+    private final List<Message> outputs;
+    private final List<Fault> faults;
 
     public enum Direction {
         INPUT, OUTPUT;
@@ -27,8 +25,7 @@ public class Operation extends WSDLElement {
     }
 
     public Operation(WSDLParserContext ctx, Node node) {
-        super(node);
-        this.ctx = ctx;
+        super(ctx,node);
         inputs = getInputs(node);
         outputs = getOutputs(node);
         faults = getFaults(node);
@@ -77,7 +74,7 @@ public class Operation extends WSDLElement {
 
                 Element io = (Element) child;
                 String messageAttr = io.getAttribute("message");
-                if (messageAttr == null || messageAttr.isEmpty()) {
+                if (messageAttr.isEmpty()) {
                     continue;
                 }
 

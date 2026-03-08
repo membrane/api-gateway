@@ -78,7 +78,7 @@ public class Definitions {
     }
 
     public List<Element> getSchemaElements() {
-        return schemas.stream().map(schema -> schema.getSchemaElement()).toList();
+        return schemas.stream().map(Schema::getSchemaElement).toList();
     }
 
     public List<Message> getMessages() {

@@ -9,15 +9,10 @@ import static com.predic8.membrane.annot.Constants.*;
 public class Service extends WSDLElement {
 
     public static final String PORT = "port";
-
-    private final WSDLParserContext ctx;
-
-    private String name;
-    private List<Port> ports;
+    private final List<Port> ports;
 
     public Service(WSDLParserContext ctx, Node element) {
-        super(element);
-        this.ctx = ctx;
+        super(ctx,element);
         ports = getPorts(element);
         ctx.getDefinitions().services.add(this);
     }

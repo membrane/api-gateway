@@ -45,29 +45,16 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     private static final Logger log = LoggerFactory.getLogger(WSDLValidator.class.getName());
 
     /**
-     * A WSDL can have several definition.service elements. The serviceName is the
-     * name of the service against to validate
-     */
-    private final String serviceName;
-
-    /**
      * List of toplevel soapElements that are valid for requests
      */
-    private Set<QName> requestElements;
+    private final Set<QName> requestElements;
 
     /**
      * List of toplevel soapElements that are valid for responses
      */
-    private Set<QName> responseElements;
+    private final Set<QName> responseElements;
 
-    /**
-     * There might be additional toplevel Elements in a schema that are not used in
-     * a WSDL message. This field controls if it is checked if an element can be used as
-     * a request or response message
-     */
-    private boolean checkIfSOAPElementIsUsedAsAWSDLMessage;
-
-    private Set<SOAPVersion> versions;
+    private final Set<SOAPVersion> versions;
 
     private final boolean skipFaults;
 
@@ -79,7 +66,6 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) {
         super(resourceResolver, location, failureHandler);
         this.skipFaults = skipFaults;
-        this.serviceName = serviceName;
 
         try {
             definitions = com.predic8.membrane.core.util.wsdl.parser.Definitions.parse(resourceResolver, location);

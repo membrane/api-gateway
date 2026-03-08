@@ -6,18 +6,14 @@ import javax.xml.namespace.*;
 
 public class Part extends WSDLElement {
 
-    private WSDLParserContext ctx;
-
-    private QName element;
-    private QName type;
+    private final QName element;
+    private final QName type;
 
     public Part(WSDLParserContext ctx, Node node) {
         super(node);
-        this.ctx = ctx;
         this.element = getElementQName(node);
         this.type = getTypeQName(node);
     }
-
 
     public QName getElementQName() {
         return element;
