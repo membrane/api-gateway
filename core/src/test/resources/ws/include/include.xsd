@@ -1,0 +1,18 @@
+        <xs:schema targetNamespace="http://example.com/test"
+                   elementFormDefault="qualified"
+                    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        >
+
+<!--            <xs:include schemaLocation="./xsd/messages.xsd"/>-->
+            <xs:include schemaLocation="xsd/inc/MessageStructureTypes2.xsd"/>
+<!--            <xs:import namespace="http://example.com/test/messages" schemaLocation="./xsd/messages.xsd"/>-->
+
+            <!-- Wrapped request -->
+            <xs:element name="test">
+            </xs:element>
+
+            <!-- Wrapped response -->
+            <xs:element name="testResponse">
+            </xs:element>
+
+        </xs:schema>

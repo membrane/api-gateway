@@ -20,13 +20,13 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.schema.Schema;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
+import org.w3c.dom.*;
 import org.xml.sax.*;
 
 import javax.xml.transform.*;
-import javax.xml.transform.stream.*;
+import javax.xml.transform.dom.*;
 import javax.xml.validation.*;
 import java.io.*;
 import java.util.*;
@@ -46,20 +46,14 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 	protected final String location;
 	protected final ResolverMap resolver;
 	protected final ValidatorInterceptor.FailureHandler failureHandler;
-	private final boolean skipFaults;
 
 	protected final AtomicLong valid = new AtomicLong();
 	protected final AtomicLong invalid = new AtomicLong();
 
 	public AbstractXMLSchemaValidator(ResolverMap resolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
-		this(resolver, location, failureHandler, false);
-	}
-
-	public AbstractXMLSchemaValidator(ResolverMap resolver, String location, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) {
 		this.location = location;
 		this.resolver = resolver;
 		this.failureHandler = failureHandler;
-		this.skipFaults = skipFaults;
 		xopr = new XOPReconstitutor();
 	}
 
@@ -100,10 +94,6 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 		} else {
 			exceptions.add(new Exception(preliminaryError));
 		}
-		if (skipFaults && isFault(msg)) {
-			valid.incrementAndGet();
-			return CONTINUE;
-		}
 		String errorMsg = getErrorMsg(exceptions); // Errors als simple String
 		if (failureHandler != null) {
 			failureHandler.handleFailure(errorMsg, exc);
@@ -116,31 +106,26 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 	}
 
 	protected List<Validator> createValidators() {
-		SchemaFactory sf = SchemaFactory.newInstance(XSD_NS);
+		var sf = SchemaFactory.newInstance(XSD_NS);
 		sf.setResourceResolver(resolver.toLSResourceResolver());
-		List<Validator> validators = new ArrayList<>();
-		for (Schema schema : getSchemas()) {
-			log.debug("Creating validator for schema: {}", schema);
-            validators.add(getValidator(schema, sf));
+		var validators = new ArrayList<Validator>();
+		for (var schema : getSchemas()) {
+			log.debug("Creating validator for schema: {}", location);
+            validators.add(createValidator(schema, sf));
 		}
 		return validators;
 	}
 
-	private @NotNull Validator getValidator(Schema schema, SchemaFactory sf) {
+	private @NotNull Validator createValidator(Element schema, SchemaFactory sf) {
         try {
-			Validator validator = sf.newSchema(getStreamSource(schema)).newValidator();
-			validator.setResourceResolver(resolver.toLSResourceResolver());
+			DOMSource source = new DOMSource(schema);
+			source.setSystemId(location);
+			var validator = sf.newSchema(source).newValidator();
 			validator.setErrorHandler(new SchemaValidatorErrorHandler());
 			return validator;
         } catch (SAXException e) {
-            throw new ConfigurationException("Cannot read schema %s.".formatted(schema.getName()),e);
+            throw new ConfigurationException("Cannot read schema %s.".formatted(location),e);
         }
-	}
-
-	private @NotNull StreamSource getStreamSource(Schema schema) {
-		StreamSource ss = new StreamSource(new StringReader(schema.getAsString()));
-		ss.setSystemId(location);
-		return ss;
 	}
 
 	private String getErrorMsg(List<Exception> excs) {
@@ -177,13 +162,12 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 		return invalid.get();
 	}
 
-	protected abstract List<Schema> getSchemas();
+	protected abstract List<Element> getSchemas();
 	protected abstract Source getMessageBody(InputStream input);
 
 	protected abstract void setErrorResponse(Exchange exchange, String message);
 	protected abstract void setErrorResponse(Exchange exchange, Interceptor.Flow flow,List<Exception> exceptions);
 
-	protected abstract boolean isFault(Message msg);
 	protected abstract String getPreliminaryError(XOPReconstitutor xopr, Message msg);
 
 	@Override

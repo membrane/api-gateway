@@ -1,0 +1,43 @@
+package com.predic8.membrane.core.util.wsdl.parser;
+
+import org.w3c.dom.*;
+
+import java.util.*;
+
+import static org.w3c.dom.Node.*;
+
+public class PortType extends WSDLElement {
+
+    private WSDLParserContext ctx;
+
+    private List<Operation> operations;
+
+    public PortType(WSDLParserContext ctx, Node node) {
+        super(node);
+        this.ctx = ctx;
+        operations = getOperations(node);
+        ctx.getDefinitions().portTypes.add(this);
+    }
+
+    public List<Operation> getOperations() {
+        return operations;
+    }
+
+    private List<Operation> getOperations(Node node) {
+        var operations = new ArrayList<Operation>();
+        NodeList children = node.getChildNodes();
+
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+
+            if (child.getNodeType() == ELEMENT_NODE
+                && "operation".equals(child.getLocalName())
+//                && WSDL11_NS.equals(child.getNamespaceURI())
+            ) {
+                operations.add(new Operation(ctx, child));
+            }
+        }
+
+        return operations;
+    }
+}

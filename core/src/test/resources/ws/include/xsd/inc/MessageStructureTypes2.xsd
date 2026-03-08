@@ -1,0 +1,14 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/test"
+           elementFormDefault="qualified">
+
+  <xs:import namespace="http://example.com/test/data-types" schemaLocation="./shared/xsd/DataTypes.xsd"/>
+<!--  <xs:include schemaLocation="./shared/xsd/DataTypes.xsd"/>-->
+
+<!--  <xs:complexType name="B3">-->
+
+<!--  </xs:complexType>-->
+
+  <xs:element name="du"/>
+
+</xs:schema>

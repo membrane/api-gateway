@@ -128,12 +128,13 @@ public class SOAPMessageValidatorInterceptorTest {
 
 	@Test
 	void handleRequestInvalidEmailMessageUnknownElement() throws Exception {
-		Exchange exc = post("http://ws.xwebservices.com")
+		var exc = post("http://ws.xwebservices.com")
 				.body(getContent("/validation/invalidEmail3.xml"))
 				.buildExchange();
 		assertEquals(ABORT, createValidatorInterceptor(E_MAIL_SERVICE_WSDL).handleRequest(exc));
 
 		var body = exc.getResponse().getBodyAsStringDecoded();
+		System.out.println(body);
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
 		assertTrue(body.contains("cvc-complex-type.2.4.a"));
 		assertTrue(body.contains("line"));
@@ -148,10 +149,11 @@ public class SOAPMessageValidatorInterceptorTest {
 		assertEquals(ABORT, createValidatorInterceptor(INLINE_ANYTYPE_WSDL).handleRequest(exc));
 
 		var body = exc.getResponse().getBodyAsStringDecoded();
+		System.out.println(body);
 		assertTrue(body.contains(WSDL_MESSAGE_VALIDATION_FAILED));
-		assertTrue(body.contains("cvc-elt.1.a"));
-		assertTrue(body.contains("line"));
-		assertTrue(body.contains("column"));
+		assertTrue(body.contains("ValidateEmailRequest"));
+		assertTrue(body.contains("is not a valid request element"));
+		assertTrue(body.contains("[{http://www.examples.com/wsdl/HelloService.wsdl}sayHello]"));
 	}
 
 	private String getContent(String fileName) throws Exception {

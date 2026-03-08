@@ -1,0 +1,10 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/test"
+           elementFormDefault="qualified">
+
+<!--  <xs:include schemaLocation="sub1/b.xsd"/>-->
+    <xs:include schemaLocation="inc/MessageStructureTypes2.xsd"/>
+
+<!--  <xs:element name="request" type="xs:string"/>-->
+
+</xs:schema>

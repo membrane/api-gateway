@@ -1,0 +1,9 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/test/data-types"
+           elementFormDefault="qualified">
+
+  <xs:element name="B6">
+
+  </xs:element>
+
+</xs:schema>
