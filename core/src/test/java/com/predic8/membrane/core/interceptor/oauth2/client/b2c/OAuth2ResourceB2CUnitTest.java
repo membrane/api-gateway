@@ -55,6 +55,7 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
         assertEquals("/init", body2.get("path"));
         assertEquals("", body2.get("body"));
         assertEquals("GET", body2.get("method"));
+        assertEquals("Mem Brane", body2.get("name"));
         assertTrue(didLogIn.get());
     }
 
@@ -466,6 +467,18 @@ public abstract class OAuth2ResourceB2CUnitTest extends OAuth2ResourceB2CTestSet
         assertEquals("GET", body.get("method"));
         assertTrue(((String)body.get("accessToken")).startsWith("eyJ"));
     }
+
+    @Test
+    void extractClaims() throws Exception {
+        var e = browser.apply(get(tc.getClientAddress() + "/claim"));
+        assertEquals("{\"claim\":\"null\"}", e.getResponse().getBodyAsStringDecoded());
+
+        var excCallResource = browser.apply(get(tc.getClientAddress() + "/init"));
+
+        var e2 = browser.apply(get(tc.getClientAddress() + "/claim"));
+        assertEquals("{\"claim\":\"Mem Brane\"}", e2.getResponse().getBodyAsStringDecoded());
+    }
+
 
     private JwtConsumer createJwtConsumer(String expectedAudience) {
         return new JwtConsumerBuilder()

@@ -72,6 +72,7 @@ public class SessionAuthorizer {
     }
 
     public void authorizeSession(Map<String, Object> userInfo, Session session, String authSubject) {
+        userInfo.forEach((k, v) -> { if (v != null) { session.put("idToken." + k, v); } });
 
         session.put("headerX-Authenticated-" + convertFirstLetterToUpper(authSubject), getUsername(userInfo, auth));
 

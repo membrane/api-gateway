@@ -6,6 +6,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorWithSession;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
 import com.predic8.membrane.core.security.SecurityScheme;
 import org.slf4j.Logger;
@@ -126,6 +127,16 @@ public class CommonBuiltInFunctions {
         } catch (Exception e) {
             log.info("Failed to resolve bean with name '{}'", beanName);
             return false;
+        }
+    }
+
+    public static Session getSession(String beanName, Exchange exc) {
+        try {
+            return ((AbstractInterceptorWithSession) requireNonNull(exc.getHandler().getTransport().getRouter().getBeanFactory()).getBean(beanName))
+                    .getSessionManager().getSession(exc);
+        } catch (Exception e) {
+            log.info("Failed to resolve bean with name '{}'", beanName);
+            return null;
         }
     }
 
