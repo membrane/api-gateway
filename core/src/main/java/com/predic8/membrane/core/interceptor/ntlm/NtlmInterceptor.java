@@ -156,9 +156,8 @@ public class NtlmInterceptor extends AbstractInterceptor {
     }
 
     @MCChildElement(order = 1)
-    public NtlmInterceptor setNTLMRetriever(NTLMRetriever NTLMRetriever) {
+    public void setNTLMRetriever(NTLMRetriever NTLMRetriever) {
         this.NTLMRetriever = NTLMRetriever;
-        return this;
     }
 
     public NTLMRetriever getNTLMRetriever() {

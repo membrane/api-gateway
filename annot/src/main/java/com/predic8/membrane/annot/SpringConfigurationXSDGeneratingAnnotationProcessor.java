@@ -461,6 +461,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
             scan(main, ii, (TypeElement) ((DeclaredType) superclass).asElement());
 
         for (Element e2 : te.getEnclosedElements()) {
+            validateMcSetterReturnType(e2);
             MCAttribute a = e2.getAnnotation(MCAttribute.class);
             if (a != null) {
                 AttributeInfo ai = new AttributeInfo();
@@ -528,6 +529,28 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
                 throw new ProcessingException("@MCChildElement(order=...) must be unique.", cei.getE());
         }
         Collections.sort(ii.getChildElementSpecs());
+    }
+
+    private void validateMcSetterReturnType(Element e2) {
+        if (!(e2 instanceof ExecutableElement executableElement))
+            return;
+        String annotationName = getMcSetterAnnotationName(e2);
+        if (annotationName == null)
+            return;
+        if (executableElement.getReturnType().getKind() != TypeKind.VOID)
+            throw new ProcessingException("Setter annotated with @" + annotationName + " must return void.", e2);
+    }
+
+    private String getMcSetterAnnotationName(Element e2) {
+        if (e2.getAnnotation(MCAttribute.class) != null)
+            return "MCAttribute";
+        if (e2.getAnnotation(MCChildElement.class) != null)
+            return "MCChildElement";
+        if (e2.getAnnotation(MCTextContent.class) != null)
+            return "MCTextContent";
+        if (e2.getAnnotation(MCOtherAttributes.class) != null)
+            return "MCOtherAttributes";
+        return null;
     }
 
     private boolean isRequired(Element e2) {
