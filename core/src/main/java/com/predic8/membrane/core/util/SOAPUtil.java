@@ -102,6 +102,8 @@ public class SOAPUtil {
     }
 
     public static SOAPAnalysisResult analyseSOAPMessage( XOPReconstitutor xopr, Message msg) {
+        log.debug("Analyzing SOAP message: {}", msg);
+
         /*
          * 0: waiting for "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">"
          * 1: waiting for "<soapenv:Body>" (skipping any "<soapenv:Header>")
@@ -116,11 +118,12 @@ public class SOAPUtil {
             SoapVersion version = null;
             int state = 0;
             while (parser.hasNext()) {
-                XMLEvent event = parser.nextEvent();
+                var event = parser.nextEvent();
                 if (event.isStartElement()) {
-                    QName name = ((StartElement) event).getName();
+                    var name = ((StartElement) event).getName();
 
                     if (state < 2 && !isSOAP11Element(name) && !isSOAP12Element(name)) {
+                        log.debug("Not a SOAP Element: {}", name);
                         return NO_SOAP_RESULT;
                     }
 
@@ -167,6 +170,7 @@ public class SOAPUtil {
         } catch (Exception e) {
             log.warn("Ignoring exception: ", e);
         }
+        log.debug("No SOAP Element found.");
         return NO_SOAP_RESULT;
     }
 

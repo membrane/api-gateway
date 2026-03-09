@@ -74,15 +74,15 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
     }
 
     public Outcome validateMessage(Exchange exc, Interceptor.Flow flow) throws Exception {
-        Message msg = exc.getMessage(flow);
-        List<Exception> exceptions = new ArrayList<>();
-        String preliminaryError = getPreliminaryError(xopr, msg);
+        var msg = exc.getMessage(flow);
+        var exceptions = new ArrayList<Exception>();
+        var preliminaryError = getPreliminaryError(xopr, msg);
         if (preliminaryError == null) {
             List<Validator> vals = validators.take();
             try {
                 // the message must be valid for one schema embedded into WSDL
-                for (Validator validator : vals) {
-                    SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler) validator.getErrorHandler();
+                for (var validator : vals) {
+                    var handler = (SchemaValidatorErrorHandler) validator.getErrorHandler();
                     try {
                         validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
                         if (handler.noErrors()) {
@@ -102,7 +102,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         } else {
             exceptions.add(new Exception(preliminaryError));
         }
-        String errorMsg = getErrorMsg(exceptions); // Errors als simple String
+        var errorMsg = getErrorMsg(exceptions); // Errors als simple String
         if (failureHandler != null) {
             failureHandler.handleFailure(errorMsg, exc);
         }
@@ -128,7 +128,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
     private @NotNull Validator createValidator(Element schema, SchemaFactory sf) {
         try {
-            DOMSource source = new DOMSource(schema);
+            var source = new DOMSource(schema);
             source.setSystemId(location);
             var validator = sf.newSchema(source).newValidator();
             validator.setErrorHandler(new SchemaValidatorErrorHandler());
@@ -139,9 +139,9 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
     }
 
     private String getErrorMsg(List<Exception> excs) {
-        StringBuilder buf = new StringBuilder();
+        var buf = new StringBuilder();
         buf.append("%s: ".formatted(getErrorTitle()));
-        for (Exception e : excs) {
+        for (var e : excs) {
             buf.append(e);
             buf.append("; ");
         }

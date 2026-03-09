@@ -35,7 +35,10 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.SoapVersion.*;
+import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.*;
+import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.getPossibleRequestElements;
 import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
 import static com.predic8.membrane.core.util.SOAPUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.*;
@@ -80,9 +83,8 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
                     """.formatted(location, e.getMessage()));
         }
 
-        requestElements = WSDLMessageElementExtractor.getPossibleRequestElements(definitions, serviceName);
-        responseElements = WSDLMessageElementExtractor.getPossibleResponseElements(definitions, serviceName);
-
+        requestElements = getPossibleRequestElements(definitions, serviceName);
+        responseElements = getPossibleResponseElements(definitions, serviceName);
         versions = definitions.getSoapVersions();
     }
 
@@ -93,11 +95,13 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
     @Override
     public Outcome validateMessage(Exchange exc, Interceptor.Flow flow) throws Exception {
-        var msg = exc.getMessage(flow);
-        var result = analyseSOAPMessage(xopr, msg);
+        var message = exc.getMessage(flow);
+        var result = analyseSOAPMessage(xopr, message);
 
         if (!result.isSOAP()) {
+            log.error("Message: ", message);
             setErrorResponse(exc, "Not a valid SOAP message.");
+            exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
             return ABORT;
         }
 
@@ -117,17 +121,14 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
             }
         }
 
-//        if (checkIfSOAPElementIsUsedAsAWSDLMessage) {
-        if (msg instanceof Request && !isPossibleRequestElement(result.soapElement())) {
+        if (message instanceof Request && !isPossibleRequestElement(result.soapElement())) {
             setErrorResponse(exc, "%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements));
             return ABORT;
         }
-        if (msg instanceof Response && !isPossibleResponseElement(result.soapElement())) {
+        if (message instanceof Response && !isPossibleResponseElement(result.soapElement())) {
             setErrorResponse(exc, "%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), responseElements));
             return ABORT;
         }
-//        }
-
         return super.validateMessage(exc, flow);
     }
 

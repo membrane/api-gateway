@@ -249,13 +249,13 @@ public class URIUtilTest {
 
         @Test
         void classpathUri() {
-            // schema is the authority of the URI so .. does not apply.
+            // The '..' within the path portion normalizes correctly.
             assertEquals("classpath://authority/xsd/test.xsd", normalize("classpath://authority/schema/../xsd/test.xsd"));
         }
 
         @Test
         void keepsClasspathUri() {
-            // schema is the authority of the URI so .. does not apply.
+            // The '..' at the start of the path (after authority) cannot traverse above the authority, so it's preserved.
             assertEquals("classpath://authority/../xsd/test.xsd", normalize("classpath://authority/../xsd/test.xsd"));
         }
 
