@@ -16,8 +16,6 @@ package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.*;
 import org.jetbrains.annotations.*;
@@ -28,11 +26,8 @@ import java.io.*;
 import java.net.*;
 
 import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Request.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.util.soap.WSDLUtil.*;
-import static java.nio.charset.StandardCharsets.*;
 
 /**
  * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
@@ -47,9 +42,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     public static final QName XSD_INCLUDE_QNAME = new QName(XSD_NS, "include");
     public static final String LOCATION = "location";
 
-    private String registryWSDLRegisterURL;
     private boolean rewriteEndpoint = true;
-    private HttpClient hc;
 
     /**
      * Path of the service location to rewrite
@@ -64,7 +57,6 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     @Override
     public void init() {
         super.init();
-        hc = router.getHttpClientFactory().createClient(null);
 
         if (path != null)
             setPathRewriterOnWSDLInterceptor(path);
@@ -94,12 +86,9 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     protected void rewrite(Exchange exc) throws Exception {
         log.debug("Changing endpoint address in WSDL");
 
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        Relocator relocator = getRelocator(exc, stream);
+        var stream = new ByteArrayOutputStream();
+        var relocator = getRelocator(exc, stream);
         relocator.relocate(exc.getResponse().getBodyAsStream());
-        if (relocator.isWsdlFound()) {
-            registerWSDL(exc);
-        }
         exc.getResponse().setBodyContent(stream.toByteArray());
 
         // Preserve existing Content-Type if present; otherwise set a sane default including charset.
@@ -126,71 +115,6 @@ public class WSDLInterceptor extends RelocatingInterceptor {
         return new Relocator(new OutputStreamWriter(stream,
                 exc.getResponse().getCharsetOrDefault()), getLocationProtocol(), getLocationHost(exc),
                 getLocationPort(exc), exc.getHandler().getContextPath(exc), pathRewriter);
-    }
-
-    private void registerWSDL(Exchange exc) {
-        if (registryWSDLRegisterURL == null)
-            return;
-
-        StringBuilder buf = new StringBuilder(2000);
-        buf.append(registryWSDLRegisterURL);
-        buf.append("?wsdl=");
-
-        buf.append(URLDecoder.decode(getWSDLURL(exc), US_ASCII));
-
-        callRegistry(buf.toString());
-
-        log.debug(buf.toString());
-    }
-
-    private void callRegistry(String uri) {
-        try {
-            var exchange = createExchange(uri);
-            hc.call(exchange);
-            Response res = exchange.getResponse();
-            if (res.getStatusCode() != 200)
-                log.warn("{}", res);
-        } catch (Exception e) {
-            log.error("", e);
-        }
-    }
-
-    private Exchange createExchange(String uri) throws MalformedURLException, URISyntaxException {
-        return get(getCompletePath(new URL(uri))).header(HOST, getHost(uri)).buildExchange();
-
-    }
-
-    private static String getHost(String uri) throws MalformedURLException {
-        return new URL(uri).getHost();
-    }
-
-    private String getCompletePath(URL url) {
-        if (url.getQuery() == null)
-            return url.getPath();
-        return url.getPath() + "?" + url.getQuery();
-    }
-
-    private String getWSDLURL(Exchange exc) {
-        StringBuilder buf = new StringBuilder();
-        buf.append(getLocationProtocol());
-        buf.append("://");
-        buf.append(getLocationHost(exc));
-        if (getLocationPort(exc) != 80) {
-            buf.append(":");
-            buf.append(getLocationPort(exc));
-        }
-        buf.append("/");
-        buf.append(exc.getRequest().getUri());
-        return buf.toString();
-    }
-
-    @MCAttribute
-    public void setRegistryWSDLRegisterURL(String registryWSDLRegisterURL) {
-        this.registryWSDLRegisterURL = registryWSDLRegisterURL;
-    }
-
-    public String getRegistryWSDLRegisterURL() {
-        return registryWSDLRegisterURL;
     }
 
     @Override
