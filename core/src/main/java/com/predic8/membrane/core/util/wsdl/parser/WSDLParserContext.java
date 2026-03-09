@@ -7,9 +7,9 @@ import java.util.*;
 
 public class WSDLParserContext {
 
-    private Definitions definitions;
-    private Resolver resolver;
-    private String basePath;
+    private final Definitions definitions;
+    private final Resolver resolver;
+    private final String basePath;
     private List<String> visitedLocations = new ArrayList<>();
 
     public WSDLParserContext(Definitions wsdl, Resolver resolver, String basePath, List<String> visitedLocations) {

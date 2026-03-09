@@ -88,7 +88,7 @@ public class Binding extends WSDLElement {
         }
 
         var type = bindingElement.getAttribute("type");
-        if (type == null || type.isEmpty()) {
+        if (type.isEmpty()) {
             return null;
         }
 

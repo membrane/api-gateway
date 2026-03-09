@@ -10,7 +10,7 @@ import static org.w3c.dom.Node.*;
 
 public class PortType extends WSDLElement {
 
-    private List<Operation> operations;
+    private final List<Operation> operations;
 
     public PortType(WSDLParserContext ctx, Node node) {
         super(ctx,node);

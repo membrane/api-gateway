@@ -52,8 +52,7 @@ class WSDLMessageElementExtractorTest {
     }
 
     private static @NotNull Definitions getDefinitions(String location) throws Exception {
-        var definitions = Definitions.parse(new ResolverMap(), location);
-        return definitions;
+        return Definitions.parse(new ResolverMap(), location);
     }
 
 }
