@@ -22,7 +22,7 @@ import java.util.*;
 
 public class Import extends AbstractIncludeImport {
 
-    private String namespace;
+    private final String namespace;
 
     public Import(WSDLParserContext ctx, Node node, Schema referensingSchema) {
         super(ctx, node, referensingSchema);

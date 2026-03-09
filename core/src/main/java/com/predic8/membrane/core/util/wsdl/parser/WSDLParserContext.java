@@ -24,7 +24,7 @@ public class WSDLParserContext {
     private final Definitions definitions;
     private final Resolver resolver;
     private final String basePath;
-    private List<String> visitedLocations = new ArrayList<>();
+    private List<String> visitedLocations;
 
     public WSDLParserContext(Definitions wsdl, Resolver resolver, String basePath, List<String> visitedLocations) {
         this.definitions = wsdl;

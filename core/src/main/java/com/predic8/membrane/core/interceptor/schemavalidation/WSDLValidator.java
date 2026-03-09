@@ -64,7 +64,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     /**
      * Parsed WSDL document
      */
-    private com.predic8.membrane.core.util.wsdl.parser.Definitions definitions;
+    private final com.predic8.membrane.core.util.wsdl.parser.Definitions definitions;
 
     public WSDLValidator(ResolverMap resourceResolver, String location, String serviceName, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) {
         super(resourceResolver, location, failureHandler);
@@ -99,7 +99,6 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         var result = analyseSOAPMessage(xopr, message);
 
         if (!result.isSOAP()) {
-            log.error("Message: ", message);
             setErrorResponse(exc, "Not a valid SOAP message.");
             exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
             return ABORT;
