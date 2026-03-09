@@ -49,6 +49,15 @@ class WSDLParserTest {
         assertEquals("getCity", getCityPart.getName());
         assertEquals("getCity", getCityPart.getElementQName().getLocalPart());
         assertEquals("https://predic8.de/cities", getCityPart.getElementQName().getNamespaceURI());
+
+        assertEquals(1,definitions.getBindings().size());
+        var binding1 = definitions.getBindings().getFirst();
+        assertEquals("CitySoapBinding", binding1.getName());
+        assertEquals(DOCUMENT, binding1.getStyle());
+
+        assertEquals(2,definitions.getMessages().size());
+        assertEquals("City", definitions.getMessages().getFirst().getName());
+        assertEquals("CityResponse", definitions.getMessages().getLast().getName());
     }
 
     @Test

@@ -20,7 +20,7 @@ public class Import extends AbstractIncludeImport {
         namespace = getNamespace(node);
 
         if (!schema.getTargetNamespace().equals(namespace)) {
-            throw new WSDLParserException("The namespace {%s} of the import does not match the targetNamespace of the imported schema {}.".formatted(namespace, schema.getTargetNamespace()));
+            throw new WSDLParserException("The namespace {%s} of the import does not match the targetNamespace of the imported schema {%s}.".formatted(namespace, schema.getTargetNamespace()));
         }
     }
 

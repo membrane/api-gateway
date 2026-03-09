@@ -28,6 +28,7 @@ import static java.util.Optional.*;
 public class URIUtil {
 
     private static final Pattern driveLetterPattern = Pattern.compile("^(\\w)[/:|].*");
+    private static final Pattern URI_SCHEME_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:.*");
 
     /**
      *
@@ -143,12 +144,23 @@ public class URIUtil {
         if (location == null || location.isEmpty())
             throw new IllegalArgumentException("location must not be null or empty");
 
+        // Windows drive letter path (e.g., C:\foo or C:/foo)
+        if (location.length() >= 2 && Character.isLetter(location.charAt(0))
+            && location.charAt(1) == ':'
+            && (location.length() == 2 || location.charAt(2) == '/' || location.charAt(2) == '\\')) {
+            return normalizeInternal(location);
+        }
+
         // already absolute URI
-        if (location.matches("^[a-zA-Z][a-zA-Z0-9+.-]*:.*")) {
+        if (URI_SCHEME_PATTERN.matcher(location).matches()) {
             return URI.create(location).normalize().toString();
         }
 
         // filesystem path
+        return normalizeInternal(location);
+    }
+
+    private static @NotNull String normalizeInternal(String location) {
         return Path.of(location).toAbsolutePath().normalize().toString();
     }
 

@@ -13,6 +13,7 @@ public class Message extends WSDLElement {
     public Message(WSDLParserContext ctx, Node node) {
         super(ctx,node);
         this.parts.add(getPart(node));
+        ctx.getDefinitions().messages.add(this);
     }
 
     /**

@@ -26,6 +26,9 @@ public abstract class AbstractIncludeImport extends WSDLElement {
     }
 
     protected Schema getSchema(WSDLParserContext ctx) {
+        if (schemaLocation == null || schemaLocation.isEmpty())
+            return null;
+
         try {
             var resolved = resolve(ctx);
 

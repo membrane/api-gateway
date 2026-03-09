@@ -19,9 +19,9 @@ public class Definitions {
     WSDLParserContext ctx;
 
     List<Schema> schemas = new ArrayList<>();
-    List<Message> messages;
+    List<Message> messages = new ArrayList<>();
     List<PortType> portTypes = new ArrayList<>();
-    List<Binding> bindings;
+    List<Binding> bindings = new ArrayList<>();
     List<Service> services = new ArrayList<>();
 
     String targetNamespace;
@@ -67,6 +67,8 @@ public class Definitions {
         try {
             ctx = ctx.resolver(resolver);
             parse(WSDLParserUtil.parse(is));
+        } catch (WSDLParserException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Could not parse WSDL", e);
         }

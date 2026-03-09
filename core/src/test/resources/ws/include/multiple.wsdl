@@ -1,21 +1,33 @@
-<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
-             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+<definitions xmlns:xs="http://www.w3.org/2001/XMLSchema"
              xmlns:tns="http://example.com/cyclic"
              xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
              targetNamespace="http://example.com/cyclic">
 
     <types>
-        <xs:schema targetNamespace="http://example.com/cyclic" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://example.com/cyclic"
                    elementFormDefault="qualified">
 
             <xs:include schemaLocation="multiple/a.xsd"/>
 
             <!-- Wrapped request -->
             <xs:element name="test">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element ref="tns:a"/>
+                    </xs:sequence>
+                </xs:complexType>
             </xs:element>
 
             <!-- Wrapped response -->
             <xs:element name="testResponse">
+                <xs:element name="test">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element ref="tns:a"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
             </xs:element>
 
         </xs:schema>
