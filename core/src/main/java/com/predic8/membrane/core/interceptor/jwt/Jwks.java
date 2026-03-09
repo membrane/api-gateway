@@ -100,13 +100,12 @@ public class Jwks {
     }
 
     @MCChildElement
-    public Jwks setJwks(List<Jwk> jwks) {
+    public void setJwks(List<Jwk> jwks) {
         if (router != null) {  // set in init, so we can't update prior to that call
             if (jwks == null) throw new ConfigurationException("JWKs list must not be null.");
             this.keysByKid = buildKeyMap(jwks);
         }
         this.jwks = (jwks == null) ? emptyList() : jwks;  // unnecessary, mainly for consistency when debugging
-        return this;
     }
 
     public String getJwksUris() {
@@ -232,9 +231,8 @@ public class Jwks {
         }
 
         @MCAttribute
-        public Jwk setKid(String kid) {
+        public void setKid(String kid) {
             this.kid = kid;
-            return this;
         }
 
         /**

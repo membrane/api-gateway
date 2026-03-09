@@ -437,9 +437,8 @@ public abstract class SessionManager {
      * @default false
      */
     @MCAttribute
-    public SessionManager setSecure(boolean secure) {
+    public void setSecure(boolean secure) {
         this.secure = secure;
-        return this;
     }
 
     public boolean isSessionCookie() {
@@ -451,9 +450,8 @@ public abstract class SessionManager {
      * @default false
      */
     @MCAttribute
-    public SessionManager setSessionCookie(boolean sessionCookie) {
+    public void setSessionCookie(boolean sessionCookie) {
         this.sessionCookie = sessionCookie;
-        return this;
     }
 
     protected String getKeyOfCookie(String validCookie) {

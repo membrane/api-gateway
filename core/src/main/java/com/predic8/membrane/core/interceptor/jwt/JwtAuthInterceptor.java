@@ -197,9 +197,8 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
      * <p>Use "any!!" to allow any audience value. This is strongly discouraged.</p>
      */
     @MCAttribute
-    public JwtAuthInterceptor setExpectedAud(String expectedAud) {
+    public void setExpectedAud(String expectedAud) {
         this.expectedAud = expectedAud;
-        return this;
     }
 
     /**
@@ -209,9 +208,8 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
      * @example 67c869d3-0cd4-4a99-86db-088bed1a9601
      */
     @MCAttribute
-    public JwtAuthInterceptor setExpectedTid(String expectedTid) {
+    public void setExpectedTid(String expectedTid) {
         this.expectedTid = expectedTid;
-        return this;
     }
 
     @Override
