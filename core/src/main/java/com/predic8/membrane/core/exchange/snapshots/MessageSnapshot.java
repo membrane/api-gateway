@@ -127,5 +127,10 @@ public class MessageSnapshot {
                 throw new RuntimeException(e);
             }
         }
+
+        @Override
+        public void bodyError(ReadingBodyException e) {
+            // TODO: we could store the error in the snapshot
+        }
     }
 }
