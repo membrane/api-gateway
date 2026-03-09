@@ -116,7 +116,7 @@ public class ChunkedBody extends AbstractBody {
             bodyObserved = true;
             super.read();
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+            throw setObservedException(new ReadingBodyException(e));
         }
     }
 
@@ -126,7 +126,7 @@ public class ChunkedBody extends AbstractBody {
             if (bodyObserved && !bodyComplete)
                 ByteUtil.readStream(getContentAsStream());
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+            throw setObservedException(new ReadingBodyException(e));
         }
         super.write(out, retainCopy);
     }
@@ -161,7 +161,7 @@ public class ChunkedBody extends AbstractBody {
             readChunksAndDrop(inputStream);
             trailer = readTrailer(inputStream);
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+            throw setObservedException(new ReadingBodyException(e));
         }
         markAsRead();
     }
@@ -245,7 +245,7 @@ public class ChunkedBody extends AbstractBody {
             }
             trailer = readTrailer(inputStream);
         } catch (IOException e) { // note that we only want to catch the IOExceptions associated to *reading* the body
-            throw new ReadingBodyException(e);
+            throw setObservedException(new ReadingBodyException(e));
         }
         try {
             out.finish(trailer);

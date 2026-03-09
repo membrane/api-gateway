@@ -35,4 +35,8 @@ public abstract class AbstractMessageObserver implements MessageObserver {
 		// do nothing
 	}
 
+	@Override
+	public void bodyError(ReadingBodyException e) {
+		// do nothing
+	}
 }

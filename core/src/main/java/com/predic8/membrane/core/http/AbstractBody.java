@@ -55,6 +55,8 @@ public abstract class AbstractBody {
 
 	protected final List<Chunk> chunks = new ArrayList<>();
 	protected final List<MessageObserver> observers = new ArrayList<>(1);
+	// tracks whether an error occurred while reading the body (=a ReadingBodyException was thrown)
+	protected ReadingBodyException observedException;
 	private boolean wasStreamed = false;
 
 	public void read() {
@@ -71,10 +73,14 @@ public abstract class AbstractBody {
 		try {
 			readLocal();
 		} catch (IOException e) {
-			throw new ReadingBodyException(e);
+			throw setObservedException(new ReadingBodyException(e));
 		}
 		markAsRead();
 	}
+
+    protected ReadingBodyException setObservedException(ReadingBodyException e) {
+        return observedException = e;
+    }
 
 	public void discard() {
 		read();
@@ -199,7 +205,7 @@ public abstract class AbstractBody {
         try {
             return getRawLocal();
         } catch (IOException e) {
-            throw new ReadingBodyException(e);
+            throw setObservedException(new ReadingBodyException(e));
         }
     }
 
