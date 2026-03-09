@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.lang.spel.functions;
 
+import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.lang.CommonBuiltInFunctions;
 import com.predic8.membrane.core.lang.spel.SpELExchangeEvaluationContext;
 
@@ -38,6 +39,10 @@ public class SpELBuiltInFunctions {
 
     public static boolean isLoggedIn(String beanName, SpELExchangeEvaluationContext ctx) {
         return CommonBuiltInFunctions.isLoggedIn(beanName, ctx.getExchange());
+    }
+
+    public static Session getSession(String beanName, SpELExchangeEvaluationContext ctx) {
+        return CommonBuiltInFunctions.getSession(beanName, ctx.getExchange());
     }
 
     public static long getDefaultSessionLifetime(String beanName, SpELExchangeEvaluationContext ctx) {

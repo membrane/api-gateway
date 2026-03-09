@@ -2,6 +2,7 @@ package com.predic8.membrane.core.lang.groovy;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.lang.CommonBuiltInFunctions;
 import groovy.lang.GroovyObjectSupport;
 
@@ -73,6 +74,10 @@ public class GroovyBuiltInFunctions extends GroovyObjectSupport {
 
     public boolean isLoggedIn(String beanName) {
         return CommonBuiltInFunctions.isLoggedIn(beanName, exchange);
+    }
+
+    public Session getSession(String beanName) {
+        return CommonBuiltInFunctions.getSession(beanName, exchange);
     }
 
     public long getDefaultSessionLifetime(String beanName) {

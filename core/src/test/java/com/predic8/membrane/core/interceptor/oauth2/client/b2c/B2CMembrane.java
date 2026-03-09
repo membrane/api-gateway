@@ -19,10 +19,12 @@ import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.*;
 import com.predic8.membrane.core.interceptor.oauth2client.*;
 import com.predic8.membrane.core.interceptor.session.*;
+import com.predic8.membrane.core.interceptor.templating.TemplateInterceptor;
 import com.predic8.membrane.core.proxies.*;
 import org.jetbrains.annotations.*;
 
@@ -88,7 +90,9 @@ public class B2CMembrane {
         });
         ServiceProxy sp7_requireAuth = createRequireAuthServiceProxy(tc.api2Id, "/api2/", ra -> ra.setScope("https://localhost/" + tc.api2Id + "/Read"));
         ServiceProxy sp8_afterLogout = createAfterLogoutServiceProxy();
+        ServiceProxy sp9_getClaim = createGetClaimProxy();
 
+        oauth2Resource.getRuleManager().addProxy(sp9_getClaim, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp8_afterLogout, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp7_requireAuth, MANUAL);
         oauth2Resource.getRuleManager().addProxy(sp6_requireAuth_ErrorStatus403, MANUAL);
@@ -99,6 +103,9 @@ public class B2CMembrane {
         oauth2Resource.getRuleManager().addProxy(sp1_oauth2resource2, MANUAL);
         oauth2Resource.start();
 
+        FakeApplicationContext applicationContext = new FakeApplicationContext();
+        applicationContext.registerBean("oauth2", oAuth2Resource2Interceptor);
+        oauth2Resource.setApplicationContext(applicationContext);
     }
 
     public void stop() {
@@ -197,6 +204,21 @@ public class B2CMembrane {
                 return RETURN;
             }
         });
+
+        return sp;
+    }
+
+    private ServiceProxy createGetClaimProxy() {
+        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(tc.clientPort), null, 99999);
+        Path p = new Path();
+        p.setUri("/claim");
+        sp.setPath(p);
+
+        TemplateInterceptor ti = new TemplateInterceptor();
+        ti.setContentType("application/json");
+        ti.setSrc("{\"claim\":\"${fn.getSession('oauth2')?.get('idToken.name')}\"}");
+        sp.getFlow().add(ti);
+        sp.getFlow().add(new ReturnInterceptor());
 
         return sp;
     }
