@@ -53,8 +53,7 @@ public class URIUtil {
     }
 
     public static String convertPath2FilePathString(String path) {
-        path = addFilePrefix(path);
-        return path.replaceAll(" ", "%20").replaceAll("\\\\", "/");
+        return encodePathCharactersForUri(addFilePrefix(path));
     }
 
     /**
@@ -104,7 +103,7 @@ public class URIUtil {
     }
 
     static Optional<String> getPossibleDriveLetter(String p) {
-        Matcher m = driveLetterPattern.matcher(p);
+        var m = driveLetterPattern.matcher(p);
         if (m.matches()) {
             return Optional.of(m.group(1));
         }
@@ -153,6 +152,11 @@ public class URIUtil {
 
         // already absolute URI
         if (URI_SCHEME_PATTERN.matcher(location).matches()) {
+            return URI.create(location).normalize().toString();
+        }
+
+        // ? (Query String) or # (Fragment) are hints of URLs, not filesystem paths
+        if (location.contains("?") || location.contains("#") || location.startsWith("//")) {
             return URI.create(location).normalize().toString();
         }
 

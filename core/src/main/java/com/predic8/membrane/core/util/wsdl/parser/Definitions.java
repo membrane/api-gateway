@@ -16,8 +16,6 @@ public class Definitions {
         SOAP_11, SOAP_12
     }
 
-    WSDLParserContext ctx;
-
     List<Schema> schemas = new ArrayList<>();
     List<Message> messages = new ArrayList<>();
     List<PortType> portTypes = new ArrayList<>();
@@ -31,11 +29,7 @@ public class Definitions {
     private Definitions() {
     }
 
-    public Definitions(WSDLParserContext ctx) {
-        this.ctx = ctx.definitions(this);
-    }
-
-    public void parse(Element element) {
+    public void parse(WSDLParserContext ctx,Element element) {
         targetNamespace = element.getAttribute("targetNamespace");
 
         for (var schemaElement : getSchemaElements(element)) {
@@ -56,22 +50,10 @@ public class Definitions {
 
     public static Definitions parse(Resolver resolver, String location) throws Exception {
         var defs = new Definitions();
-        defs.ctx = new WSDLParserContext(defs, resolver, location, new ArrayList<>());
         try(var is = resolver.resolve(location)) {
-            defs.parse(WSDLParserUtil.parse(is));
+            defs.parse(new WSDLParserContext(defs, resolver, location, new ArrayList<>()),WSDLParserUtil.parse(is));
         }
         return defs;
-    }
-
-    public void parse(InputStream is, Resolver resolver) {
-        try {
-            ctx = ctx.resolver(resolver);
-            parse(WSDLParserUtil.parse(is));
-        } catch (WSDLParserException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Could not parse WSDL", e);
-        }
     }
 
     public List<Schema> getSchemas() {
@@ -133,19 +115,16 @@ public class Definitions {
                 }
             }
         }
-
         return schemas;
     }
 
     private static List<Element> getElements(Element wsdl, String name) {
-        var services = new ArrayList<Element>();
+        var result = new ArrayList<Element>();
         var list = wsdl.getElementsByTagNameNS(WSDL11_NS, name);
 
         for (int i = 0; i < list.getLength(); i++) {
-            services.add((Element) list.item(i));
+            result.add((Element) list.item(i));
         }
-        return services;
+        return result;
     }
-
-
 }

@@ -273,5 +273,28 @@ public class URIUtilTest {
             var expected = Path.of(input).toAbsolutePath().normalize().toString();
             assertEquals(expected, normalize(input));
         }
+
+        @Test
+        void keepsRelativeUriWithQuery() {
+            assertEquals("schema.xsd?version=1", normalize("schema.xsd?version=1")
+            );
+        }
+
+        @Test
+        void keepsRelativeUriWithFragment() {
+            assertEquals("../types.xsd#frag", normalize("../types.xsd#frag")
+            );
+        }
+
+        @Test
+        void keepsRelativeUriWithQueryAndFragment() {
+            assertEquals("../types.xsd?version=1#frag", normalize("../types.xsd?version=1#frag")
+            );
+        }
+
+        @Test
+        void keepsSchemeRelativeReference() {
+            assertEquals("/example.com/schema.xsd?version=1", normalize("/example.com/schema.xsd?version=1"));
+        }
     }
 }

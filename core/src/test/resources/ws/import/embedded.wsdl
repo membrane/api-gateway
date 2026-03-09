@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions
+        xmlns="http://schemas.xmlsoap.org/wsdl/"
+        xmlns:tns="http://example.com/service"
+        xmlns:types="http://example.com/types"
+        xmlns:common="http://example.com/common"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="http://example.com/service"
+        name="TestService">
+
+  <types>
+
+    <!-- Schema 1: referenced by messages -->
+    <xs:schema
+            targetNamespace="http://example.com/service"
+            elementFormDefault="qualified">
+
+      <xs:import namespace="http://example.com/types"/>
+      <xs:import namespace="http://example.com/common"/>
+
+      <xs:element name="getCustomerRequest">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="id" type="common:IdType"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="getCustomerResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="customer" type="types:CustomerType"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+    </xs:schema>
+
+
+    <!-- Schema 2: imported by schema 1 -->
+    <xs:schema
+            targetNamespace="http://example.com/types"
+            elementFormDefault="qualified">
+
+      <xs:element name="from2" type="xs:string"/>
+
+      <xs:complexType name="CustomerType">
+        <xs:sequence>
+          <xs:element name="id" type="xs:string"/>
+          <xs:element name="name" type="xs:string"/>
+        </xs:sequence>
+      </xs:complexType>
+
+    </xs:schema>
+
+
+    <!-- Schema 3: imported by schema 1 -->
+    <xs:schema
+            targetNamespace="http://example.com/common"
+            elementFormDefault="qualified">
+
+      <xs:element name="from3" type="xs:string"/>
+
+      <xs:simpleType name="IdType">
+        <xs:restriction base="xs:string">
+          <xs:pattern value="[A-Z0-9]+"/>
+        </xs:restriction>
+      </xs:simpleType>
+
+    </xs:schema>
+
+  </types>
+
+
+  <message name="GetCustomerRequest">
+    <part name="parameters" element="tns:getCustomerRequest"/>
+  </message>
+
+  <message name="GetCustomerResponse">
+    <part name="parameters" element="tns:getCustomerResponse"/>
+  </message>
+
+
+  <portType name="CustomerPortType">
+    <operation name="GetCustomer">
+      <input message="tns:GetCustomerRequest"/>
+      <output message="tns:GetCustomerResponse"/>
+    </operation>
+  </portType>
+
+
+  <binding name="CustomerBinding" type="tns:CustomerPortType">
+    <soap:binding xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  style="document"
+                  transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <operation name="GetCustomer">
+      <soap:operation xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                      soapAction="getCustomer"/>
+      <input>
+        <soap:body xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" use="literal"/>
+      </input>
+      <output>
+        <soap:body xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" use="literal"/>
+      </output>
+    </operation>
+  </binding>
+
+
+  <service name="CustomerService">
+    <port name="CustomerPort" binding="tns:CustomerBinding">
+      <soap:address xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                    location="http://example.com/service"/>
+    </port>
+  </service>
+
+</definitions>
