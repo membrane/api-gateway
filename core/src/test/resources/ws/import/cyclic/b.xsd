@@ -1,0 +1,9 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/b"
+           elementFormDefault="qualified">
+
+    <xs:import schemaLocation="a.xsd" namespace="http://example.com/a"/>
+
+    <xs:element name="b" type="xs:string"/>
+
+</xs:schema>

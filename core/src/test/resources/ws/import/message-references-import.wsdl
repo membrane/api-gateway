@@ -1,43 +1,36 @@
 <definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
              xmlns:xs="http://www.w3.org/2001/XMLSchema"
-             xmlns:tns="http://example.com/test"
+             xmlns:tns="http://example.com/cyclic"
              xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-             targetNamespace="http://example.com/test">
+             targetNamespace="http://example.com/cyclic"
+             xmlns:m="http://example.com/messages"
+>
 
     <types>
-        <xs:schema targetNamespace="http://example.com/test" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        <xs:schema targetNamespace="http://example.com/cyclic"
+                   xmlns:xs="http://www.w3.org/2001/XMLSchema"
                    elementFormDefault="qualified">
 
-            <xs:include schemaLocation="xsd/inc/MessageStructureTypes2.xsd"/>
-
-            <!-- Wrapped request -->
-            <xs:element name="test">
-            </xs:element>
-
-            <!-- Wrapped response -->
-            <xs:element name="testResponse">
-            </xs:element>
+            <xs:import schemaLocation="messages.xsd" namespace="http://example.com/messages"/>
 
         </xs:schema>
     </types>
 
-    <message name="TestRequest">
-        <part name="parameters" element="tns:test"/>
+    <message name="GetRequest">
+        <part name="parameters" element="m:get"/>
     </message>
 
-    <message name="TestResponse">
-        <part name="parameters" element="tns:testResponse"/>
+    <message name="GetResponse">
+        <part name="parameters" element="m:Response"/>
     </message>
 
-    <!-- Abstract interface -->
     <portType name="TestPortType">
-        <operation name="test">
-            <input message="tns:TestRequest"/>
-            <output message="tns:TestResponse"/>
+        <operation name="get">
+            <input message="tns:GetRequest"/>
+            <output message="tns:GetResponse"/>
         </operation>
     </portType>
 
-    <!-- Binding -->
     <binding name="TestBinding" type="tns:TestPortType">
         <soap:binding style="document"
                       transport="http://schemas.xmlsoap.org/soap/http"/>
@@ -52,12 +45,10 @@
         </operation>
     </binding>
 
-    <!-- Service -->
     <service name="TestService">
         <port name="TestPort" binding="tns:TestBinding">
             <soap:address location="http://localhost:8080/test"/>
         </port>
     </service>
-
 
 </definitions>

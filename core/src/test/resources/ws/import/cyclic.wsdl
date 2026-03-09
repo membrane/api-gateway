@@ -1,14 +1,14 @@
 <definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
              xmlns:xs="http://www.w3.org/2001/XMLSchema"
-             xmlns:tns="http://example.com/test"
+             xmlns:tns="http://example.com/cyclic"
              xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-             targetNamespace="http://example.com/test">
+             targetNamespace="http://example.com/cyclic">
 
     <types>
-        <xs:schema targetNamespace="http://example.com/test" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        <xs:schema targetNamespace="http://example.com/cyclic" xmlns:xs="http://www.w3.org/2001/XMLSchema"
                    elementFormDefault="qualified">
 
-            <xs:include schemaLocation="xsd/inc/MessageStructureTypes2.xsd"/>
+            <xs:import schemaLocation="cyclic/a.xsd" namespace="http://example.com/a"/>
 
             <!-- Wrapped request -->
             <xs:element name="test">

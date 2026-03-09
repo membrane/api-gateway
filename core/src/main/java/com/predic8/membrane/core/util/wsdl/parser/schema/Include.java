@@ -1,21 +1,19 @@
 package com.predic8.membrane.core.util.wsdl.parser.schema;
 
 import com.predic8.membrane.core.util.wsdl.parser.*;
-import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 
 public class Include extends AbstractIncludeImport {
 
-    public Include(WSDLParserContext ctx, Node node, Schema schema) {
-        super(ctx,node);
-        this.schemaLocation = getSchemaLocation( node);
+    public Include(WSDLParserContext ctx, Node node, Schema referensingSchema) {
+        super(ctx,node,referensingSchema);
 
-        schema.getSchemaElements().addAll(getSchema(ctx).getSchemaElements());
+        // Copy all elements from the imported Schema into the importing
+        referensingSchema.include(schema);
     }
 
-    private static @NotNull String getSchemaLocation(Node node) {
-        if (node instanceof Element e)
-            return e.getAttribute("schemaLocation");
-        return "";
+    @Override
+    protected void registerLocation(String normalizedLocation) {
+        referensingSchema.getIncludes().add(this);
     }
 }

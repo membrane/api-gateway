@@ -1,21 +1,30 @@
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import com.predic8.membrane.annot.*;
 import org.w3c.dom.*;
 
-import static com.predic8.membrane.annot.Constants.WSDL11_NS;
+import java.util.*;
+
+import static com.predic8.membrane.annot.Constants.*;
 
 public class Message extends WSDLElement {
 
-    private final Part part;
+    private final List<Part> parts = new ArrayList<>();
 
     public Message(WSDLParserContext ctx, Node node) {
         super(ctx,node);
-        this.part = getPart(node);
+        this.parts.add(getPart(node));
     }
 
+    /**
+     * Document style only uses one part.
+     * @return
+     */
     public Part getPart() {
-        return part;
+        return parts.getFirst();
+    }
+
+    public List<Part> getParts() {
+        return parts;
     }
 
     private Part getPart(Node node) {
@@ -35,6 +44,6 @@ public class Message extends WSDLElement {
 
     @Override
     public String toString() {
-        return "Message [part=" + part + "]";
+        return "Message [parts=" + parts + "]";
     }
 }

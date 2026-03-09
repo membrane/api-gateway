@@ -62,14 +62,13 @@ public class Binding extends WSDLElement {
             if (child.getNodeType() == ELEMENT_NODE
                 && "binding".equals(child.getLocalName())) {
                 style = getStyle(child);
-                ctx.style(style);
-                if (child.getNamespaceURI().equals(WSDL_SOAP11_NS)) {
+                if (WSDL_SOAP11_NS.equals(child.getNamespaceURI())) {
                     soapVersion = SOAPVersion.SOAP_11;
-                } else if (child.getNamespaceURI().equals(WSDL_SOAP12_NS)) {
+                    ctx.getDefinitions().addSoapVersion(soapVersion);
+                } else if (WSDL_SOAP12_NS.equals(child.getNamespaceURI())) {
                     soapVersion = SOAPVersion.SOAP_12;
+                    ctx.getDefinitions().addSoapVersion(soapVersion);
                 }
-                ctx.getDefinitions().addSoapVersion(soapVersion);
-
             }
         }
         return result;
@@ -95,12 +94,11 @@ public class Binding extends WSDLElement {
 
         var portTypeQName = WSDLParserUtil.resolveQName(type, bindingElement);
 
-        Element definitions = bindingElement.getOwnerDocument().getDocumentElement();
-        NodeList portTypes = definitions.getElementsByTagNameNS(WSDL11_NS, "portType");
+        var definitions = bindingElement.getOwnerDocument().getDocumentElement();
+        var portTypes = definitions.getElementsByTagNameNS(WSDL11_NS, "portType");
 
         for (int i = 0; i < portTypes.getLength(); i++) {
-            Element portType = (Element) portTypes.item(i);
-
+            var portType = (Element) portTypes.item(i);
             if (portTypeQName.getLocalPart().equals(portType.getAttribute("name"))) {
                 return new PortType(ctx, portType);
             }

@@ -7,8 +7,15 @@ public class BindingOperation extends WSDLElement{
     private final String soapAction;
 
     public BindingOperation(WSDLParserContext ctx, Node node) {
-        super(node);
-        soapAction = node.getAttributes().getNamedItem("soapAction").getNodeValue();
+        super(ctx,node);
+        soapAction = getSoapAction(node);
+    }
+
+    private String getSoapAction(Node node) {
+        Node n = node.getAttributes().getNamedItem("soapAction");
+        if (n == null)
+            return "";
+        return n.getNodeValue();
     }
 
     public String getSoapAction() {

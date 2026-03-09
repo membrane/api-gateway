@@ -3,15 +3,13 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import com.predic8.membrane.core.util.wsdl.parser.Operation.*;
 import org.jetbrains.annotations.*;
-import org.slf4j.*;
 
 import javax.xml.namespace.*;
 import java.util.*;
 import java.util.stream.*;
 
-import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.RPC;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
+import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.*;
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
 import static java.util.stream.Collectors.*;
 
 public class WSDLMessageElementExtractor {
@@ -34,8 +32,8 @@ public class WSDLMessageElementExtractor {
 
         var operationNamesRPC = portTypes.portTypesRPC().stream().map(PortType::getOperations)
                 .flatMap(Collection::stream)
-                .map(op -> new QName(definitions.getTargetNamespace(), getElementNameRPC(op,direction)))
-                                         .collect(toSet());
+                .map(op -> new QName(definitions.getTargetNamespace(), getElementNameRPC(op, direction)))
+                .collect(toSet());
 
 
         Set<QName> namesDocumentStyle = getParts(direction, portTypes.portTypesDocument())
@@ -55,24 +53,28 @@ public class WSDLMessageElementExtractor {
         for (var binding : getBindings(definitions, serviceName)) {
             if (binding.getStyle() == RPC) {
                 portTypesRPC.add(binding.getPortType());
+                continue;
             }
             portTypesDocument.add(binding.getPortType());
         }
         return new PortTypesByStyle(portTypesRPC, portTypesDocument);
     }
 
-    private record PortTypesByStyle(List<PortType> portTypesRPC, List<PortType> portTypesDocument) {
+    private static @NotNull List<Binding> getBindings(Definitions definitions, String serviceName) {
+        return getServices(definitions, serviceName).stream()
+                .flatMap(s -> s.getPorts().stream())
+                .map(Port::getBinding).toList();
     }
 
-    private static @NotNull List<Binding> getBindings(Definitions definitions, String serviceName) {
-        List<Service> services;
+    private static List<Service> getServices(Definitions definitions, String serviceName) {
         if (serviceName != null) {
-            services = List.of(definitions.getService(serviceName));
-        } else {
-            services = definitions.getServices();
+            var service = definitions.getService(serviceName);
+            if (service == null) {
+                throw new IllegalArgumentException("Unknown WSDL service: " + serviceName);
+            }
+            return List.of(service);
         }
-        return services.stream().flatMap(s -> s.getPorts().stream())
-            .map(Port::getBinding).toList();
+        return definitions.getServices();
     }
 
     private static String getElementNameRPC(Operation operation, Direction direction) {
@@ -87,6 +89,9 @@ public class WSDLMessageElementExtractor {
                 .flatMap(Collection::stream)
                 .map(op -> op.getMessagesByDirection(direction))
                 .flatMap(Collection::stream).toList().stream().map(Message::getPart);
+    }
+
+    private record PortTypesByStyle(List<PortType> portTypesRPC, List<PortType> portTypesDocument) {
     }
 
 }

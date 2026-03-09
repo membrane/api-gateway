@@ -7,7 +7,7 @@ public class Address extends WSDLElement {
     private final String location;
 
     public Address(WSDLParserContext ctx,Node node) {
-        super(node);
+        super(ctx,node);
         location = getLocation(node);
     }
 

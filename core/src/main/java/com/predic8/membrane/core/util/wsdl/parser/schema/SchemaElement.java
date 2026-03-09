@@ -8,7 +8,7 @@ public class SchemaElement extends WSDLElement {
     WSDLParserContext ctx;
 
     public SchemaElement(WSDLParserContext ctx,Node node) {
-        super(node);
+        super(ctx,node);
         this.ctx = ctx;
     }
 

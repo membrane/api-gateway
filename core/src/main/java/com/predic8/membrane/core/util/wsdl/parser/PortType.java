@@ -1,9 +1,11 @@
 package com.predic8.membrane.core.util.wsdl.parser;
 
+import com.predic8.membrane.annot.*;
 import org.w3c.dom.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.annot.Constants.WSDL11_NS;
 import static org.w3c.dom.Node.*;
 
 public class PortType extends WSDLElement {
@@ -29,7 +31,7 @@ public class PortType extends WSDLElement {
 
             if (child.getNodeType() == ELEMENT_NODE
                 && "operation".equals(child.getLocalName())
-//                && WSDL11_NS.equals(child.getNamespaceURI())
+                && WSDL11_NS.equals(child.getNamespaceURI())
             ) {
                 operations.add(new Operation(ctx, child));
             }

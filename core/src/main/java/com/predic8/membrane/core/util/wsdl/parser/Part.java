@@ -10,7 +10,7 @@ public class Part extends WSDLElement {
     private final QName type;
 
     public Part(WSDLParserContext ctx, Node node) {
-        super(node);
+        super(ctx,node);
         this.element = getElementQName(node);
         this.type = getTypeQName(node);
     }

@@ -18,16 +18,16 @@ public class Schema extends WSDLElement {
     private final Element schema;
 
     private final List<SchemaElement> schemaElements;
-    private final List<Import> imports;
-    private final List<Include> includes;
+    private final List<Import> imports = new ArrayList<>();
+    private final List<Include> includes = new ArrayList<>();
 
     public Schema(WSDLParserContext ctx, Node node) {
-        super(ctx,node);
+        super(ctx, node);
         this.targetNamespace = getTargetNamespace(node);
         this.schema = (Element) node;
         this.schemaElements = getSchemaElements(schema);
-        this.imports = getImports(node);
-        this.includes = getIncludes(node);
+        parseImports(node);
+        parseIncludes(node);
     }
 
     public String getTargetNamespace() {
@@ -50,47 +50,53 @@ public class Schema extends WSDLElement {
         return includes;
     }
 
+    /**
+     * Take everything from the included schema and add it to the current schema.
+     * At the moment only elements are added. More is not needed.
+     * Later other features can be added as needed.
+     *
+     * @param includedSchema the schema whose elements are to be added to the current schema
+     */
+    public void include(Schema includedSchema) {
+        if (includedSchema == null)
+            return;
+
+        schemaElements.addAll(includedSchema.getSchemaElements());
+        imports.addAll(includedSchema.getImports());
+    }
+
     private String getTargetNamespace(Node node) {
         if (!(node instanceof Element schema)) {
             return null;
         }
-
         String tns = schema.getAttribute("targetNamespace");
         return (tns.isEmpty()) ? null : tns;
     }
 
-    private List<Include> getIncludes(Node node) {
-        var result = new ArrayList<Include>();
+    private void parseIncludes(Node node) {
         var children = node.getChildNodes();
-
         for (int i = 0; i < children.getLength(); i++) {
             var child = children.item(i);
 
             if (child.getNodeType() == ELEMENT_NODE
                 && "include".equals(child.getLocalName())
                 && XSD_NS.equals(child.getNamespaceURI())) {
-                result.add(new Include(ctx, child, this));
+                new Include(ctx, child, this);
             }
         }
-
-        return result;
     }
 
-    private List<Import> getImports(Node node) {
-        var result = new ArrayList<Import>();
+    private void parseImports(Node node) {
         var children = node.getChildNodes();
-
         for (int i = 0; i < children.getLength(); i++) {
             var child = children.item(i);
 
             if (child.getNodeType() == ELEMENT_NODE
                 && "import".equals(child.getLocalName())
                 && XSD_NS.equals(child.getNamespaceURI())) {
-                result.add(new Import(ctx, child));
+                new Import(ctx, child,this);
             }
         }
-
-        return result;
     }
 
     private List<SchemaElement> getSchemaElements(Element schema) {

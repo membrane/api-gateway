@@ -39,139 +39,141 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidator {
 
-	private static final Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
+    protected final XOPReconstitutor xopr;
+    protected final String location;
+    protected final ResolverMap resolver;
+    protected final ValidatorInterceptor.FailureHandler failureHandler;
+    protected final AtomicLong valid = new AtomicLong();
+    protected final AtomicLong invalid = new AtomicLong();
+    private ArrayBlockingQueue<List<Validator>> validators;
 
-	private ArrayBlockingQueue<List<Validator>> validators;
-	protected final XOPReconstitutor xopr;
-	protected final String location;
-	protected final ResolverMap resolver;
-	protected final ValidatorInterceptor.FailureHandler failureHandler;
+    public AbstractXMLSchemaValidator(ResolverMap resolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
+        this.location = location;
+        this.resolver = resolver;
+        this.failureHandler = failureHandler;
+        xopr = new XOPReconstitutor();
+    }
 
-	protected final AtomicLong valid = new AtomicLong();
-	protected final AtomicLong invalid = new AtomicLong();
-
-	public AbstractXMLSchemaValidator(ResolverMap resolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
-		this.location = location;
-		this.resolver = resolver;
-		this.failureHandler = failureHandler;
-		xopr = new XOPReconstitutor();
-	}
-
-	public void init() {
-		super.init();
-		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-		validators = new ArrayBlockingQueue<>(concurrency);
-		for (int i = 0; i < concurrency; i++)
-			validators.add(createValidators());
-	}
-
-	public Outcome validateMessage(Exchange exc, Interceptor.Flow flow) throws Exception {
-		Message msg = exc.getMessage(flow);
-		List<Exception> exceptions = new ArrayList<>();
-		String preliminaryError = getPreliminaryError(xopr, msg);
-		if (preliminaryError == null) {
-			List<Validator> vals = validators.take();
-			try {
-				// the message must be valid for one schema embedded into WSDL
-				for (Validator validator: vals) {
-					SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
-					try {
-                        validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
-						if (handler.noErrors()) {
-							valid.incrementAndGet();
-							return CONTINUE;
-						}
-						exceptions.add(handler.getException());
-					} finally {
-						handler.reset();
-					}
-				}
-			} catch (Exception e) {
-				exceptions.add(e);
-			} finally {
-				validators.put(vals);
-			}
-		} else {
-			exceptions.add(new Exception(preliminaryError));
-		}
-		String errorMsg = getErrorMsg(exceptions); // Errors als simple String
-		if (failureHandler != null) {
-			failureHandler.handleFailure(errorMsg, exc);
-		}
-		exc.setProperty("error", errorMsg); // TODO Search for usage. If it is used rename property. See properties in class Exchange
-		setErrorResponse(exc,flow,exceptions);
-		exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
-		invalid.incrementAndGet();
-		return ABORT;
-	}
-
-	protected List<Validator> createValidators() {
-		var sf = SchemaFactory.newInstance(XSD_NS);
-		sf.setResourceResolver(resolver.toLSResourceResolver());
-		var validators = new ArrayList<Validator>();
-		for (var schema : getSchemas()) {
-			log.debug("Creating validator for schema: {}", location);
-            validators.add(createValidator(schema, sf));
-		}
-		return validators;
-	}
-
-	private @NotNull Validator createValidator(Element schema, SchemaFactory sf) {
-        try {
-			DOMSource source = new DOMSource(schema);
-			source.setSystemId(location);
-			var validator = sf.newSchema(source).newValidator();
-			validator.setErrorHandler(new SchemaValidatorErrorHandler());
-			return validator;
-        } catch (SAXException e) {
-            throw new ConfigurationException("Cannot read schema %s.".formatted(location),e);
+    private static @NotNull Map<String, Object> createErrorEntry(Exception e) {
+        var error = new LinkedHashMap<String, Object>();
+        error.put("message", e.getMessage());
+        if (e instanceof SAXParseException spe) {
+            error.put("line", spe.getLineNumber());
+            error.put("column", spe.getColumnNumber());
         }
-	}
+        return error;
+    }
 
-	private String getErrorMsg(List<Exception> excs) {
-		StringBuilder buf = new StringBuilder();
-		buf.append("%s: ".formatted(getErrorTitle()));
-		for (Exception e : excs) {
-			buf.append(e);
-			buf.append("; ");
-		}
-		return buf.toString();
-	}
+    public void init() {
+        super.init();
+        int concurrency = Runtime.getRuntime().availableProcessors() * 2;
+        validators = new ArrayBlockingQueue<>(concurrency);
+        for (int i = 0; i < concurrency; i++)
+            validators.add(createValidators());
+    }
 
-	protected List<Map<String, Object>> convertExceptionsToMap(List<Exception> exceptions) {
-		return exceptions.stream().map(AbstractXMLSchemaValidator::createErrorEntry).toList();
-	}
+    public Outcome validateMessage(Exchange exc, Interceptor.Flow flow) throws Exception {
+        Message msg = exc.getMessage(flow);
+        List<Exception> exceptions = new ArrayList<>();
+        String preliminaryError = getPreliminaryError(xopr, msg);
+        if (preliminaryError == null) {
+            List<Validator> vals = validators.take();
+            try {
+                // the message must be valid for one schema embedded into WSDL
+                for (Validator validator : vals) {
+                    SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler) validator.getErrorHandler();
+                    try {
+                        validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
+                        if (handler.noErrors()) {
+                            valid.incrementAndGet();
+                            return CONTINUE;
+                        }
+                        exceptions.add(handler.getException());
+                    } finally {
+                        handler.reset();
+                    }
+                }
+            } catch (Exception e) {
+                exceptions.add(e);
+            } finally {
+                validators.put(vals);
+            }
+        } else {
+            exceptions.add(new Exception(preliminaryError));
+        }
+        String errorMsg = getErrorMsg(exceptions); // Errors als simple String
+        if (failureHandler != null) {
+            failureHandler.handleFailure(errorMsg, exc);
+        }
+        exc.setProperty("error", errorMsg); // TODO Search for usage. If it is used rename property. See properties in class Exchange
+        setErrorResponse(exc, flow, exceptions);
+        exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
+        invalid.incrementAndGet();
+        return ABORT;
+    }
 
-	private static @NotNull Map<String, Object> createErrorEntry(Exception e) {
-		var error = new LinkedHashMap<String,Object>();
-		error.put("message", e.getMessage());
-		if (e instanceof SAXParseException spe) {
-			error.put("line", spe.getLineNumber());
-			error.put("column", spe.getColumnNumber());
-		}
-		return error;
-	}
+    protected List<Validator> createValidators() {
+        var sf = SchemaFactory.newInstance(XSD_NS);
+        sf.setResourceResolver(resolver.toLSResourceResolver());
+        var validators = new ArrayList<Validator>();
+        var schemas = getSchemas();
+        for (int i = 0; i < schemas.size(); i++) {
+            var schema = schemas.get(i);
+            log.debug("Creating validator {}/{} for schema at: {}", i + 1, schemas.size(), location);
+            validators.add(createValidator(schema, sf));
+        }
+        return validators;
+    }
 
-	@Override
-	public long getValid() {
-		return valid.get();
-	}
+    private @NotNull Validator createValidator(Element schema, SchemaFactory sf) {
+        try {
+            DOMSource source = new DOMSource(schema);
+            source.setSystemId(location);
+            var validator = sf.newSchema(source).newValidator();
+            validator.setErrorHandler(new SchemaValidatorErrorHandler());
+            return validator;
+        } catch (SAXException e) {
+            throw new ConfigurationException("Cannot read schema %s.".formatted(location), e);
+        }
+    }
 
-	@Override
-	public long getInvalid() {
-		return invalid.get();
-	}
+    private String getErrorMsg(List<Exception> excs) {
+        StringBuilder buf = new StringBuilder();
+        buf.append("%s: ".formatted(getErrorTitle()));
+        for (Exception e : excs) {
+            buf.append(e);
+            buf.append("; ");
+        }
+        return buf.toString();
+    }
 
-	protected abstract List<Element> getSchemas();
-	protected abstract Source getMessageBody(InputStream input);
+    protected List<Map<String, Object>> convertExceptionsToMap(List<Exception> exceptions) {
+        return exceptions.stream().map(AbstractXMLSchemaValidator::createErrorEntry).toList();
+    }
 
-	protected abstract void setErrorResponse(Exchange exchange, String message);
-	protected abstract void setErrorResponse(Exchange exchange, Interceptor.Flow flow,List<Exception> exceptions);
+    @Override
+    public long getValid() {
+        return valid.get();
+    }
 
-	protected abstract String getPreliminaryError(XOPReconstitutor xopr, Message msg);
+    @Override
+    public long getInvalid() {
+        return invalid.get();
+    }
 
-	@Override
-	public String getErrorTitle() {
-		return "XML message validation failed";
-	}
+    protected abstract List<Element> getSchemas();
+
+    protected abstract Source getMessageBody(InputStream input);
+
+    protected abstract void setErrorResponse(Exchange exchange, String message);
+
+    protected abstract void setErrorResponse(Exchange exchange, Interceptor.Flow flow, List<Exception> exceptions);
+
+    protected abstract String getPreliminaryError(XOPReconstitutor xopr, Message msg);
+
+    @Override
+    public String getErrorTitle() {
+        return "XML message validation failed";
+    }
 }

@@ -15,8 +15,9 @@ package com.predic8.membrane.core.util;
 
 import org.jetbrains.annotations.*;
 
-import java.net.URI;
 import java.net.*;
+import java.net.URI;
+import java.nio.file.*;
 import java.util.*;
 import java.util.regex.*;
 
@@ -35,11 +36,11 @@ public class URIUtil {
      * @throws URISyntaxException
      */
     public static java.net.URI convertPath2FileURI(String path) throws URISyntaxException {
-        return new URI( addFilePrefix(encodePathCharactersForUri(path)));
+        return new URI(addFilePrefix(encodePathCharactersForUri(path)));
     }
 
     public static String encodePathCharactersForUri(String s) {
-        return s.replaceAll(" ","%20").replace("\\","/");
+        return s.replaceAll(" ", "%20").replace("\\", "/");
     }
 
     private static @NotNull String addFilePrefix(String path) {
@@ -52,7 +53,7 @@ public class URIUtil {
 
     public static String convertPath2FilePathString(String path) {
         path = addFilePrefix(path);
-        return path.replaceAll(" ","%20").replaceAll("\\\\","/");
+        return path.replaceAll(" ", "%20").replaceAll("\\\\", "/");
     }
 
     /**
@@ -136,6 +137,19 @@ public class URIUtil {
             }
         }
         return sb.toString();
+    }
+
+    public static String normalize(String location) {
+        if (location == null || location.isEmpty())
+            throw new IllegalArgumentException("location must not be null or empty");
+
+        // already absolute URI
+        if (location.matches("^[a-zA-Z][a-zA-Z0-9+.-]*:.*")) {
+            return URI.create(location).normalize().toString();
+        }
+
+        // filesystem path
+        return Path.of(location).toAbsolutePath().normalize().toString();
     }
 
 }

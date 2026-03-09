@@ -3,6 +3,7 @@
              xmlns="http://schemas.xmlsoap.org/wsdl/"
              xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
              xmlns:tns="http://www.examples.com/wsdl/HelloService.wsdl"
+             xmlns:ipo="http://www.example.com/IPO"
 >
 
     <types>
@@ -24,11 +25,11 @@
     </types>
 
     <message name="SayHelloRequest">
-        <part name="firstName" type="SKU"/>
+        <part name="firstName" type="ipo:SKU"/>
     </message>
 
     <message name="SayHelloResponse">
-        <part name="greeting" type="string"/>
+        <part name="greeting" type="ipo:SKU2"/>
     </message>
 
     <portType name="Hello_PortType">

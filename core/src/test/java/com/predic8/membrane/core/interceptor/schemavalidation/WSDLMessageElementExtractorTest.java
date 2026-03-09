@@ -2,10 +2,10 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.wsdl.parser.*;
+import org.jetbrains.annotations.*;
 import org.junit.jupiter.api.*;
 
 import javax.xml.namespace.*;
-import java.io.*;
 
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,48 +22,38 @@ class WSDLMessageElementExtractorTest {
 
     @Test
     void extract() throws Exception {
-        var location = "/ws/cities.wsdl";
-        try (var wsdl = getClass().getResourceAsStream(location)) {
-            var doc = parseWsdl(wsdl, location);
-            var requestElements = getPossibleRequestElements(doc, null);
+        var requestElements = getPossibleRequestElements(getDefinitions("classpath:/ws/cities.wsdl"), null);
 
-            assertEquals(1, requestElements.size());
-            assertTrue(requestElements.contains(GET_CITY_QNAME));
+        assertEquals(1, requestElements.size());
+        assertTrue(requestElements.contains(GET_CITY_QNAME));
 
-            var responseElements = getPossibleResponseElements(doc, null);
-            assertEquals(1, responseElements.size());
-            assertTrue(responseElements.contains(GET_CITYRESPONSE_QNAME));
-        }
+        var responseElements = getPossibleResponseElements(getDefinitions("classpath:/ws/cities.wsdl"), null);
+        assertEquals(1, responseElements.size());
+        assertTrue(responseElements.contains(GET_CITYRESPONSE_QNAME));
+
     }
 
     @Test
     void eMailServiceWSDL() throws Exception {
-        var doc = Definitions.parse(new ResolverMap(), "classpath:/validation/XWebEmailValidation.wsdl.xml");
-        var requestElements = getPossibleRequestElements(doc, null);
+        var requestElements = getPossibleRequestElements(getDefinitions("classpath:/validation/XWebEmailValidation.wsdl.xml"), null);
         assertEquals(1, requestElements.size());
         assertTrue(requestElements.contains(GET_EMAIL_QNAME));
 
-        var responseElements = getPossibleResponseElements(doc, null);
+        var responseElements = getPossibleResponseElements(getDefinitions("classpath:/validation/XWebEmailValidation.wsdl.xml"), null);
         assertEquals(1, responseElements.size());
         assertTrue(responseElements.contains(GET_EMAILRESPONSE_QNAME));
-
     }
 
     @Test
     void rpcStyle() throws Exception {
-        var location = "/validation/inline-anytype.wsdl";
-        try (var wsdl = getClass().getResourceAsStream(location)) {
-            var doc = parseWsdl(wsdl, location);
-            var requestElements = getPossibleRequestElements(doc, "Hello_Service");
-            assertEquals(1, requestElements.size());
-            assertTrue(requestElements.contains(new QName("http://www.examples.com/wsdl/HelloService.wsdl", "sayHello")));
-        }
+        var requestElements = getPossibleRequestElements(getDefinitions("classpath:/validation/inline-anytype.wsdl"), "Hello_Service");
+        assertEquals(1, requestElements.size());
+        assertTrue(requestElements.contains(new QName("http://www.examples.com/wsdl/HelloService.wsdl", "sayHello")));
     }
 
-    private static Definitions parseWsdl(InputStream is, String location) {
-        var ctx = new WSDLParserContext(null, new ResolverMap(), location);
-        var definitions = new Definitions(ctx);
-        definitions.parse(is, null);
+    private static @NotNull Definitions getDefinitions(String location) throws Exception {
+        var definitions = Definitions.parse(new ResolverMap(), location);
         return definitions;
     }
+
 }

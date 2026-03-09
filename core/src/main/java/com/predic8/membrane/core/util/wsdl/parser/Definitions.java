@@ -24,8 +24,6 @@ public class Definitions {
     List<Binding> bindings;
     List<Service> services = new ArrayList<>();
 
-    List<Schema> importedSchemas = new ArrayList<>();
-
     String targetNamespace;
 
     Set<SOAPVersion> soapVersions = new HashSet<>();
@@ -58,15 +56,16 @@ public class Definitions {
 
     public static Definitions parse(Resolver resolver, String location) throws Exception {
         var defs = new Definitions();
-        defs.ctx = new WSDLParserContext(defs, resolver, location);
-        defs.parse(WSDLParserUtil.parse(resolver.resolve(location)));
+        defs.ctx = new WSDLParserContext(defs, resolver, location, new ArrayList<>());
+        try(var is = resolver.resolve(location)) {
+            defs.parse(WSDLParserUtil.parse(is));
+        }
         return defs;
     }
 
     public void parse(InputStream is, Resolver resolver) {
         try {
-            ctx.resolver(resolver);
-            //defs.ctx = new WSDLParserContext(defs, resolver,"");
+            ctx = ctx.resolver(resolver);
             parse(WSDLParserUtil.parse(is));
         } catch (Exception e) {
             throw new RuntimeException("Could not parse WSDL", e);
@@ -105,16 +104,9 @@ public class Definitions {
         return targetNamespace;
     }
 
-    public List<Schema> getImportedSchemas() {
-        return importedSchemas;
-    }
 
     public Set<SOAPVersion> getSoapVersions() {
         return soapVersions;
-    }
-
-    public void addImportedSchema(Schema schema) {
-        importedSchemas.add(schema);
     }
 
     public void addSoapVersion(SOAPVersion soapVersion) {

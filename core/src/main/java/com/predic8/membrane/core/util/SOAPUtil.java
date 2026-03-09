@@ -108,10 +108,10 @@ public class SOAPUtil {
          * 2: waiting for "<soapenv:Fault>"
          */
         try {
-            XMLInputFactory f = XMLInputFactory.newInstance();
+            var f = XMLInputFactory.newInstance();
             f.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
             f.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-            XMLEventReader parser = f.createXMLEventReader(xopr.reconstituteIfNecessary(msg));
+            var parser = f.createXMLEventReader(xopr.reconstituteIfNecessary(msg));
 
             SoapVersion version = null;
             int state = 0;
