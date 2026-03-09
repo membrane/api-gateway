@@ -236,6 +236,8 @@ public class B2CMembrane {
                 body.put("method", exc.getRequest().getMethod());
                 body.put("body", exc.getRequest().getBodyAsStringDecoded());
 
+                body.put("name", ((Session)exc.getProperty("SESSION")).get("idToken.name"));
+
                 exc.setResponse(ok(om.writeValueAsString(body)).build());
                 return RETURN;
             }
