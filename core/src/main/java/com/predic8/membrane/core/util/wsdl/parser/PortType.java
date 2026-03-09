@@ -29,7 +29,7 @@ public class PortType extends WSDLElement {
     public PortType(WSDLParserContext ctx, Node node) {
         super(ctx,node);
         operations = getOperations(node);
-        ctx.getDefinitions().portTypes.add(this);
+        ctx.getDefinitions().getPortTypes().add(this);
     }
 
     public List<Operation> getOperations() {

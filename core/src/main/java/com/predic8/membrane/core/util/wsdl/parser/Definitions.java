@@ -37,13 +37,14 @@ public class Definitions {
         SOAP_11, SOAP_12
     }
 
-    List<Schema> schemas = new ArrayList<>();
-    List<Message> messages = new ArrayList<>();
-    List<PortType> portTypes = new ArrayList<>();
-    List<Binding> bindings = new ArrayList<>();
-    List<Service> services = new ArrayList<>();
+    private List<Schema> schemas = new ArrayList<>();
+    private List<Message> messages = new ArrayList<>();
+    private List<PortType> portTypes = new ArrayList<>();
+    private List<Binding> bindings = new ArrayList<>();
+    private List<Service> services = new ArrayList<>();
 
-    String targetNamespace;
+    private String targetNamespace;
+    private String name;
 
     Set<SOAPVersion> soapVersions = new HashSet<>();
 
@@ -52,6 +53,7 @@ public class Definitions {
 
     public void parse(WSDLParserContext ctx, Element element) {
         targetNamespace = element.getAttribute("targetNamespace");
+        name = getName(element);
 
         for (var schemaElement : getSchemaElements(element)) {
             schemas.add(new Schema(ctx, schemaElement));
@@ -71,6 +73,13 @@ public class Definitions {
                 new PortType(ctx, e);
             }
         }
+    }
+
+    private static @Nullable String getName(Element element) {
+        var name = element.getAttribute("name");
+        if (name.isEmpty())
+            return null;
+        return name;
     }
 
     private void importEmbeddedSchemas() {
@@ -131,6 +140,9 @@ public class Definitions {
         return targetNamespace;
     }
 
+    public String getName() {
+        return name;
+    }
 
     public Set<SOAPVersion> getSoapVersions() {
         return soapVersions;

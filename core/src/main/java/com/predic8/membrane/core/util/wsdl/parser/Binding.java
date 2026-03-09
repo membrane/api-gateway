@@ -45,7 +45,7 @@ public class Binding extends WSDLElement {
 
     public Binding(WSDLParserContext ctx, Node node) {
         super(ctx,node);
-        ctx.getDefinitions().bindings.add(this);
+        ctx.getDefinitions().getBindings().add(this);
         operations = getBindingOperations(node);
         portType = getPortType(node);
     }
@@ -60,6 +60,10 @@ public class Binding extends WSDLElement {
 
     public PortType getPortType() {
         return portType;
+    }
+
+    public SOAPVersion getSoapVersion() {
+        return soapVersion;
     }
 
     private List<BindingOperation> getBindingOperations(Node node) {

@@ -98,7 +98,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     }
 
     private @NotNull Relocator getRelocator(Exchange exc, OutputStream stream) throws Exception {
-        Relocator relocator = createRelocator(exc, stream);
+        var relocator = createRelocator(exc, stream);
 
         if (rewriteEndpoint) {
             relocator.getRelocatingAttributes().put(WSDL11_ADDRESS_SOAP11, LOCATION);

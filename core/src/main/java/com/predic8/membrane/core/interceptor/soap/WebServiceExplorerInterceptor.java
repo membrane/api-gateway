@@ -15,19 +15,16 @@ package com.predic8.membrane.core.interceptor.soap;
 
 import com.googlecode.jatl.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.ProxyAware;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
+import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.wsdl.*;
-import com.predic8.wstool.creator.*;
-import groovy.xml.MarkupBuilder;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -37,7 +34,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.regex.Pattern.*;
 
@@ -47,13 +44,15 @@ import static java.util.regex.Pattern.*;
 @MCElement(name="webServiceExplorer")
 public class WebServiceExplorerInterceptor extends RESTInterceptor implements ProxyAware {
 
-	private static final Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class);
 
 	private static final Pattern wsdlRequest = compile(".*\\?(wsdl|xsd=.*)", CASE_INSENSITIVE);
 
 	private String wsdl;
 	private String portName;
 	private Proxy proxy;
+
+	private com.predic8.membrane.core.util.wsdl.parser.Definitions definitions;
 
 	public WebServiceExplorerInterceptor() {
 		name = "web service explorer";
@@ -80,7 +79,6 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 	@MCAttribute
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
-		this.parsedWSDL = null;
 	}
 
 	public String getPortName() {
@@ -90,64 +88,6 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 	@MCAttribute
 	public void setPortName(String portName) {
 		this.portName = portName;
-	}
-
-	private volatile Definitions parsedWSDL;
-
-	private Definitions getParsedWSDL() {
-		if (parsedWSDL != null)
-			return parsedWSDL;
-		WSDLParserContext ctx = new WSDLParserContext();
-		ctx.setInput(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsdl));
-        return parsedWSDL = getWsdlParser().parse(ctx);
-	}
-
-	private @NotNull WSDLParser getWsdlParser() {
-		WSDLParser wsdlParser = new WSDLParser();
-		wsdlParser.setResourceResolver(router.getResolverMap().toExternalResolver().toExternalResolver());
-		return wsdlParser;
-	}
-
-	@Mapping("[^?]*/operation/([^/?]+)/([^/?]+)/([^/?]+)")
-	public Response createOperationResponse(QueryParameter params, String relativeRootPath) {
-		try {
-			final String bindingName = params.getGroup(1);
-			final String portName = params.getGroup(2);
-			final String operationName = params.getGroup(3);
-
-            final Service service = getService(getParsedWSDL());
-
-			StringWriter sw = new StringWriter();
-			new StandardPage(sw, null) {
-				@Override
-				protected void createContent() {
-					h1().text("Service Proxy for " + service.getName());
-					h2().text("Operation: " + operationName).end();
-
-					h3().text("Sample Request").end();
-
-					pre().text(generateSampleRequest(portName, operationName, bindingName, getParsedWSDL())).end();
-				}
-			};
-			return ok(sw.toString()).build();
-		} catch (IllegalArgumentException e) {
-			log.error("", e);
-			return Response.internalServerError().build();
-		}
-	}
-
-	private Service getService(Definitions d) {
-		
-		if (proxy instanceof SOAPProxy sp) {
-			String serviceName = sp.getServiceName();
-			if (serviceName != null) {
-				return WSDLUtil.getService(d, serviceName);
-			}
-		}
-		
-		if (d.getServices().size() != 1)
-			throw new IllegalArgumentException("WSDL needs to have exactly one service for SOAPUIInterceptor to work.");
-		return d.getServices().getFirst();
 	}
 
 	private String getClientURL(Exchange exc) {
@@ -176,12 +116,13 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 		try {
 			final String myPath = router.getConfiguration().getUriFactory().create(exc.getRequest().getUri()).getPath();
 
-			final Definitions w = getParsedWSDL();
-			final Service service = getService(w);
-			final Port port = SOAPProxy.selectPort(service.getPorts(), portName);
-			final List<Port> ports = getPortsByLocation(service, port);
+			final com.predic8.membrane.core.util.wsdl.parser.Definitions w = getDefinitions();
 
-			StringWriter sw = new StringWriter();
+			final com.predic8.membrane.core.util.wsdl.parser.Service service = w.getServices().getFirst(); // TODO display all services
+			final com.predic8.membrane.core.util.wsdl.parser.Port port = service.getPorts().getFirst();
+			final List<com.predic8.membrane.core.util.wsdl.parser.Port> ports = service.getPorts();
+
+			var sw = new StringWriter();
 			new StandardPage(sw, service.getName()) {
 				@Override
 				protected void createContent() {
@@ -193,20 +134,16 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 					text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
 					end();
 
-					for (PortType pt : WSDLUtil.getPortTypes(service)) {
+					for (com.predic8.membrane.core.util.wsdl.parser.PortType pt : ports.stream().map(port1 -> port1.getBinding()).map(b -> b.getPortType()).toList()) {
 						h2().text("Port Type: " + pt.getName()).end();
-						Documentation d = pt.getDocumentation();
-						if (d != null) {
-							p().text("Documentation: " + d).end();
-						}
+//						Documentation d = pt.getDocumentation();
+//						if (d != null) {
+//							p().text("Documentation: " + d).end();
+//						}
 					}
 
-					Binding binding = port.getBinding();
-					List<Operation> bindingOperations = getOperationsByBinding(w, binding);
-					if (bindingOperations.isEmpty())
-						p().text("There are no operations defined.").end();
-					else
-						createOperationsTable(w, bindingOperations, binding, binding.getPortType());
+					com.predic8.membrane.core.util.wsdl.parser.Binding binding = port.getBinding();
+                    createOperationsTable(definitions, binding, binding.getPortType());
 
 					h2().text("Virtual Endpoint").end();
 					p().a().href(getClientURL(exc)).text(getClientURL(exc)).end().end();
@@ -218,47 +155,42 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 						createEndpointTable(service.getPorts(), ports);
 				}
 
-				private void createOperationsTable(Definitions w, List<Operation> bindingOperations, Binding binding, PortType portType) {
+				private void createOperationsTable(com.predic8.membrane.core.util.wsdl.parser.Definitions w, com.predic8.membrane.core.util.wsdl.parser.Binding binding, com.predic8.membrane.core.util.wsdl.parser.PortType portType) {
 					table().cellspacing("0").cellpadding("0").border(""+1);
 					tr();
-					th().text("Operation").end();
-					th().text("Input").end();
-					th().text("Output").end();
+						th().text("Operation").end();
+						th().text("Input").end();
+						th().text("Output").end();
 					end();
-					for (Operation o : bindingOperations) {
+					for (com.predic8.membrane.core.util.wsdl.parser.Operation o : portType.getOperations()) {
 						tr();
 						td();
-						if ("HTTP".equals(getProtocolVersion(binding))) {
 							text(o.getName());
-						} else {
-							a().href(getLinkForOperation(binding, portType, o, myPath)).text(o.getName()).end();
-						}
 						end();
 						td();
-						for (Part p : o.getInput().getMessage().getParts())
-							text(p.getElement().getName());
-
+						for (com.predic8.membrane.core.util.wsdl.parser.Part p : o.getInputs().stream().map(i -> i.getPart()).toList())
+							text(p.getElementQName().toString());
 						end();
 						td();
-						for (Part p : o.getOutput().getMessage().getParts())
-							text(p.getElement().getName());
+						for (com.predic8.membrane.core.util.wsdl.parser.Part p : o.getOutputs().stream().map(i -> i.getPart()).toList())
+							text(p.getElementQName().toString());
 						end();
 						end();
 					}
 					end();
 				}
 
-				private void createEndpointTable(List<Port> ports, List<Port> matchingPorts) {
+				private void createEndpointTable(List<com.predic8.membrane.core.util.wsdl.parser.Port> ports, List<com.predic8.membrane.core.util.wsdl.parser.Port> matchingPorts) {
 					table().cellspacing("0").cellpadding("0").border(""+1);
 					tr();
 					th().text("Port Name").end();
 					th().text("Protocol").end();
 					th().text("URL").end();
 					end();
-					for (Port p : ports) {
+					for (com.predic8.membrane.core.util.wsdl.parser.Port p : ports) {
 						tr();
 						td().text(p.getName()).end();
-						td().text(getProtocolVersion(p.getBinding())).end();
+						td().text(p.getBinding().getSoapVersion().name()).end();
 						td().text(p.getAddress().getLocation()).end();
 						td();
 						if (matchingPorts.contains(p))
@@ -278,8 +210,8 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 		}
 	}
 
-	private String getLinkForOperation(Binding binding, PortType portType, Operation o, String path) {
-		return path + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName();
+	private com.predic8.membrane.core.util.wsdl.parser.Definitions getDefinitions() throws Exception {
+		return com.predic8.membrane.core.util.wsdl.parser.Definitions.parse(router.getResolverMap(),wsdl);
 	}
 
 	private abstract static class StandardPage extends Html {
@@ -314,49 +246,6 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 		}
 
 		protected abstract void createContent();
-	}
-
-	private List<Operation> getOperationsByBinding(final Definitions w, Binding binding) {
-		List<Operation> bindingOperations = new ArrayList<>();
-		for (Operation o : w.getOperations())
-			if (binding.getOperation(o.getName()) != null)
-				bindingOperations.add(o);
-		return bindingOperations;
-	}
-
-	private List<Port> getPortsByLocation(Service service, Port port) {
-		String location = port.getAddress().getLocation();
-		if (location == null)
-			throw new IllegalArgumentException("Location not set for port in WSDL.");
-
-		final List<Port> ports = new ArrayList<>();
-		for (Port p : service.getPorts())
-			if (location.equals(p.getAddress().getLocation()))
-				ports.add(p);
-		return ports;
-	}
-
-	private String getProtocolVersion(Binding binding) {
-		String transport = getNamespaceURI(binding);
-		if (WSDL_SOAP11_NS.equals(transport))
-			transport = "SOAP 1.1";
-		if (WSDL_SOAP12_NS.equals(transport))
-			transport = "SOAP 1.2";
-		if (WSDL_HTTP_NS.equals(transport))
-			transport = "HTTP";
-		return transport;
-	}
-
-	private String getNamespaceURI(Binding binding) {
-		return ((javax.xml.namespace.QName) binding.getBinding().getElementName()).getNamespaceURI();
-	}
-
-	private String generateSampleRequest(final String portName, final String operationName,
-			final String bindingName, final Definitions w) {
-		StringWriter writer = new StringWriter();
-		SOARequestCreator creator = new SOARequestCreator(w, new RequestTemplateCreator(), new MarkupBuilder(writer));
-		creator.createRequest(portName, operationName, bindingName);
-		return writer.toString();
 	}
 
 	@Override

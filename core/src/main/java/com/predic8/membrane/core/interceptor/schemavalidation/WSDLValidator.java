@@ -22,7 +22,6 @@ import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions.*;
-import com.predic8.wsdl.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;

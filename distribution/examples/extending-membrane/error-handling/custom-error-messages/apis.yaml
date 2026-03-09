@@ -34,6 +34,7 @@ api:
               - if:
                   test: //s11:Fault
                   language: xpath
+                  $ref: "#/components/ns"
                   flow:
                     - template:
                         contentType: application/xml
@@ -42,17 +43,13 @@ api:
                                 <case>e</case>
                                 <statusCode>${statusCode}</statusCode>
                                 <message>SOAP Fault!</message>
-                                <fault>${property.faultstring}</fault>
+                                <fault>${xpath('//faultstring/text()')}</fault>
                             </error>
-                    - setProperty:
-                        name: faultstring
-                        value: ${//faultstring/text()}
-                        language: xpath
               - if:
                   test: statusCode >= 400
                   flow:
                     - if:
-                        test: /s11:Envelope
+                        test: not(/s11:Envelope)
                         language: xpath
                         flow:
                           - template:
@@ -61,12 +58,8 @@ api:
                                 <error>
                                     <case>d</case>
                                     <statusCode>${statusCode}</statusCode>
-                                    ${property.description}
+                                    ${xpath('/failure/description')}
                                 </error>
-                          - setProperty:
-                              name: description
-                              value: ${/failure/description}
-                              language: xpath
     - abort:
         - if:
             test: header['X-Protection'] != null

@@ -56,7 +56,7 @@ public class Relocator {
 
     public static String getNewLocation(String addr, String protocol, String host, int port, String contextPath) {
         try {
-            URL oldURL = new URL(addr);
+            var oldURL = new URL(addr);
             if (port == -1) {
                 return new URL(protocol, host, contextPath + oldURL.getFile()).toString();
             }
@@ -87,7 +87,7 @@ public class Relocator {
     }
 
     private XMLEvent process(XMLEventReader parser) throws XMLStreamException {
-        XMLEvent event = parser.nextEvent();
+        var event = parser.nextEvent();
         if (!event.isStartElement())
             return event;
 
@@ -112,7 +112,7 @@ public class Relocator {
     }
 
     private XMLEvent replace(XMLEvent event, String attribute) {
-        StartElement start = event.asStartElement();
+        var start = event.asStartElement();
         return fac.createStartElement(start.getName(),
                 new ReplaceIterator(fac, attribute, start.getAttributes()),
                 start.getNamespaces());
@@ -147,9 +147,9 @@ public class Relocator {
         }
 
         public Attribute next() {
-            Attribute atr = attrs.next();
+            var atr = attrs.next();
             if (atr.getName().equals(new QName(replace))) {
-                String value = atr.getValue();
+                var value = atr.getValue();
                 if (pathRewriter != null) {
                     value = pathRewriter.rewrite(value);
                     if (value.startsWith("http"))

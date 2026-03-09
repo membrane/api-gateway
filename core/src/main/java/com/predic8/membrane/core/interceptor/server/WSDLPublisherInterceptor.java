@@ -139,7 +139,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                         break;
                     log.debug("processing: {}", doc);
                     exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), doc));
-                    WSDLInterceptor wi = new WSDLInterceptor();
+                    var wi = new WSDLInterceptor();
                     wi.setRewriteEndpoint(false);
                     wi.setPathRewriter(new RelativePathRewriter(exc, doc));
                     wi.handleResponse(exc);
@@ -203,7 +203,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 exc.getResponse().getHeader().setContentType(TEXT_XML);
             }
             if (exc.getRequest().getUri().contains("?xsd=")) {
-                Map<String, String> params = URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+                var params = URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
                 if (params.containsKey("xsd")) {
                     int n = Integer.parseInt(params.get("xsd"));
                     String path;
@@ -220,7 +220,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 }
             }
             if (resource != null) {
-                WSDLInterceptor wi = new WSDLInterceptor();
+                var wi = new WSDLInterceptor();
                 wi.setRewriteEndpoint(false);
                 wi.setPathRewriter(new RelativePathRewriter(exc, combine(router.getConfiguration().getBaseLocation(), wsdl)));
                 wi.init(router);

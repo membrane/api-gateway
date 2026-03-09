@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import com.predic8.wsdl.*;
 import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
@@ -28,7 +27,7 @@ public class Operation extends WSDLElement {
 
     private final List<Message> inputs;
     private final List<Message> outputs;
-    private final List<Fault> faults;
+    private final List<Message> faults;
 
     public enum Direction {
         INPUT, OUTPUT;
@@ -59,7 +58,7 @@ public class Operation extends WSDLElement {
         return outputs;
     }
 
-    public List<Fault> getFaults() {
+    public List<Message> getFaults() {
         return faults;
     }
 
@@ -71,8 +70,8 @@ public class Operation extends WSDLElement {
         return getMessagesByDirection(node, OUTPUT);
     }
 
-    private List<Fault> getFaults(Node node) {
-        return new ArrayList<>();
+    private List<Message> getFaults(Node node) {
+        return new ArrayList<>(); // @TODO
     }
 
     private List<Message> getMessagesByDirection(Node node, Direction direction) {

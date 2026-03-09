@@ -28,7 +28,7 @@ public class Service extends WSDLElement {
     public Service(WSDLParserContext ctx, Node element) {
         super(ctx,element);
         ports = getPorts(element);
-        ctx.getDefinitions().services.add(this);
+        ctx.getDefinitions().getServices().add(this);
     }
 
     public List<Port> getPorts() {

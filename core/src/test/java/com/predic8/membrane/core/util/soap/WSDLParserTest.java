@@ -30,6 +30,7 @@ class WSDLParserTest {
     @Test
     void simpleSchema() throws Exception {
         var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cities.wsdl");
+        assertEquals("cities", definitions.getName());
         assertEquals(1, definitions.getSchemas().size());
         var schema = definitions.getSchemas().getFirst();
         assertEquals("https://predic8.de/cities", schema.getTargetNamespace());
@@ -76,9 +77,10 @@ class WSDLParserTest {
 
     @Test
     void includeImport() throws Exception {
-        var definitions = Definitions.parse(new ResolverMap(), "classpath://ws/include/include.wsdl");
-        assertEquals(1, definitions.getSchemas().size());
-        var embedded = definitions.getSchemas().getFirst();
+        var dn = Definitions.parse(new ResolverMap(), "classpath://ws/include/include.wsdl");
+        assertNull(dn.getName());
+        assertEquals(1, dn.getSchemas().size());
+        var embedded = dn.getSchemas().getFirst();
         assertEquals("http://example.com/test", embedded.getTargetNamespace());
         var schemaElements = embedded.getSchemaElements();
         assertEquals(3, schemaElements.size());

@@ -23,7 +23,6 @@ import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.functionalInterfaces.*;
-import com.predic8.xml.util.*;
 import org.slf4j.*;
 import org.w3c.dom.ls.*;
 
@@ -268,46 +267,9 @@ public class ResolverMap implements Cloneable, Resolver {
         };
     }
 
-    public ExternalResolverConverter toExternalResolver() {
-        return new ExternalResolverConverter();
-    }
 
     public KubernetesSchemaResolver getKubernetesSchemaResolver() {
         return (KubernetesSchemaResolver) getSchemaResolver("kubernetes:");
     }
 
-    public class ExternalResolverConverter {
-
-        public ExternalResolver toExternalResolver() {
-            return new ExternalResolver() {
-                @Override
-                public InputStream resolveAsFile(String filename, String baseDir) {
-                    try {
-                        if (baseDir != null) {
-                            return ResolverMap.this.resolve(combine(baseDir, filename));
-                        }
-                        return ResolverMap.this.resolve(filename);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                @Override
-                protected InputStream resolveViaHttp(Object url) {
-                    try {
-                        String url2 = (String) url;
-                        int q = url2.indexOf('?');
-                        if (q == -1)
-                            url2 = url2.replaceAll("/[^/]+/\\.\\./", "/");
-                        else
-                            url2 = url2.substring(0, q).replaceAll("/[^/]+/\\.\\./", "/") + url2.substring(q);
-
-                        return getSchemaResolver(url2).resolve(url2);
-                    } catch (ResourceRetrievalException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-        }
-    }
 }

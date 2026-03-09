@@ -16,8 +16,10 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import org.w3c.dom.*;
 
-import static com.predic8.membrane.annot.Constants.WSDL11_NS;
-import static org.w3c.dom.Node.ELEMENT_NODE;
+import java.util.*;
+
+import static com.predic8.membrane.annot.Constants.*;
+import static org.w3c.dom.Node.*;
 
 public class Port extends WSDLElement {
 

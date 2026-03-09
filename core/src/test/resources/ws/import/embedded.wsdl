@@ -5,8 +5,7 @@
         xmlns:types="http://example.com/types"
         xmlns:common="http://example.com/common"
         xmlns:xs="http://www.w3.org/2001/XMLSchema"
-        targetNamespace="http://example.com/service"
-        name="TestService">
+        targetNamespace="http://example.com/service">
 
   <types>
 

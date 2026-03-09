@@ -12,7 +12,9 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>service-proxy-core</artifactId>
@@ -88,20 +90,6 @@
         <dependency>
             <groupId>com.googlecode.jatl</groupId>
             <artifactId>jatl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.predic8</groupId>
-            <artifactId>soa-model-core</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>httpclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jcl-over-slf4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-fileupload</groupId>
@@ -230,6 +218,10 @@
             <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-templates</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy-json</artifactId>
+        </dependency>
 
         <!-- ntlm support-->
         <dependency>
@@ -349,7 +341,7 @@
             <version>5.19.1</version>
             <scope>test</scope>
         </dependency>
-          <dependency>
+        <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
@@ -486,7 +478,8 @@
                         <configuration>
                             <target>
                                 <copy todir="../docs">
-                                    <fileset dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
+                                    <fileset
+                                            dir="${project.build.directory}/classes/com/predic8/membrane/core/config/spring">
                                         <include name="router-conf.xsd"/>
                                     </fileset>
                                 </copy>
