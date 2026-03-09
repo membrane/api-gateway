@@ -38,9 +38,7 @@
 
 
     <!-- Schema 2: imported by schema 1 -->
-    <xs:schema
-            targetNamespace="http://example.com/types"
-            elementFormDefault="qualified">
+    <xs:schema targetNamespace="http://example.com/types" elementFormDefault="qualified">
 
       <xs:element name="from2" type="xs:string"/>
 
@@ -53,11 +51,8 @@
 
     </xs:schema>
 
-
     <!-- Schema 3: imported by schema 1 -->
-    <xs:schema
-            targetNamespace="http://example.com/common"
-            elementFormDefault="qualified">
+    <xs:schema targetNamespace="http://example.com/common" elementFormDefault="qualified">
 
       <xs:element name="from3" type="xs:string"/>
 

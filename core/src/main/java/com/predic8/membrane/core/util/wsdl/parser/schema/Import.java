@@ -13,11 +13,11 @@ public class Import extends AbstractIncludeImport {
     public Import(WSDLParserContext ctx, Node node, Schema referensingSchema) {
         super(ctx, node, referensingSchema);
 
-        // Schema is null when it is already imported from somewhere else.
+        namespace = getNamespace(node);
+
+        // Schema is null when it is already imported from somewhere else
         if (schema == null)
             return;
-
-        namespace = getNamespace(node);
 
         if (!Objects.equals(schema.getTargetNamespace(), namespace)) {
             throw new WSDLParserException("The namespace {%s} of the import does not match the targetNamespace of the imported schema {%s}.".formatted(namespace, schema.getTargetNamespace()));
@@ -26,14 +26,15 @@ public class Import extends AbstractIncludeImport {
 
     @Override
     protected Schema getSchema(WSDLParserContext ctx) {
-        // Import of a Schema embedded in the WSDL
         if (schemaLocation == null || schemaLocation.isEmpty()) {
-            return ctx.getDefinitions().getSchemas().stream()
-                    .filter(s -> s.getTargetNamespace().equals(namespace))
-                    .findFirst().orElse(null);
+            registerLocation("");
+            return null;
         }
-
         return super.getSchema(ctx);
+    }
+
+    public void setSchema(Schema schema) {
+        this.schema = schema;
     }
 
     @Override

@@ -49,8 +49,8 @@ public class WSDLMessageElementExtractor {
     }
 
     private static @NotNull PortTypesByStyle getPortTypesByStyle(Definitions definitions, String serviceName) {
-        List<PortType> portTypesRPC = new ArrayList<>();
-        List<PortType> portTypesDocument = new ArrayList<>();
+        var portTypesRPC = new ArrayList<PortType>();
+        var portTypesDocument = new ArrayList<PortType>();
 
         for (var binding : getBindings(definitions, serviceName)) {
             if (binding.getStyle() == RPC) {
@@ -68,13 +68,13 @@ public class WSDLMessageElementExtractor {
                 .map(Port::getBinding).toList();
     }
 
-    private static List<Service> getServices(Definitions definitions, String serviceName) {
+    private static @NotNull List<Service> getServices(Definitions definitions, String serviceName) {
         if (serviceName != null) {
             var service = definitions.getService(serviceName);
-            if (service == null) {
-                throw new IllegalArgumentException("Unknown WSDL service: " + serviceName);
+            if (service.isEmpty()) {
+                throw new IllegalArgumentException("WSDL does not contain service: " + serviceName);
             }
-            return List.of(service);
+            return List.of(service.get());
         }
         return definitions.getServices();
     }

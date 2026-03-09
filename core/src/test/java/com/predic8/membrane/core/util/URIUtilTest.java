@@ -275,6 +275,14 @@ public class URIUtilTest {
         }
 
         @Test
+        @EnabledOnOs(WINDOWS)
+        void handlesWindowsDriveRelativePath() {
+            var input = "C:temp\\..\\data\\test.xsd";
+            var expected = Path.of(input).toAbsolutePath().normalize().toString();
+            assertEquals(expected, normalize(input));
+        }
+
+        @Test
         void keepsRelativeUriWithQuery() {
             assertEquals("schema.xsd?version=1", normalize("schema.xsd?version=1")
             );
@@ -294,7 +302,7 @@ public class URIUtilTest {
 
         @Test
         void keepsSchemeRelativeReference() {
-            assertEquals("/example.com/schema.xsd?version=1", normalize("/example.com/schema.xsd?version=1"));
+            assertEquals("//example.com/schema.xsd?version=1", normalize("//example.com/schema.xsd?version=1"));
         }
     }
 }

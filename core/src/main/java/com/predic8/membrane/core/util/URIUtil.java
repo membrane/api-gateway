@@ -144,9 +144,9 @@ public class URIUtil {
             throw new IllegalArgumentException("location must not be null or empty");
 
         // Windows drive letter path (e.g., C:\foo or C:/foo)
-        if (location.length() >= 2 && Character.isLetter(location.charAt(0))
-            && location.charAt(1) == ':'
-            && (location.length() == 2 || location.charAt(2) == '/' || location.charAt(2) == '\\')) {
+        if (location.length() >= 2
+            && Character.isLetter(location.charAt(0))
+            && location.charAt(1) == ':') {
             return normalizeInternal(location);
         }
 
