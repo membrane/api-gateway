@@ -355,4 +355,22 @@ public class SpringConfigXSDErrorsTest {
         ), result);
     }
 
+    @Test
+    public void mcSetterMustReturnVoid() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+        package com.predic8.membrane.demo;
+        import com.predic8.membrane.annot.*;
+        @MCElement(name="demo")
+        public class DemoElement {
+            @MCAttribute
+            public String setName(String name) { return name; }
+        }
+        """);
+        var result = CompilerHelper.compile(sources, false);
+
+        assertCompilerResult(false, of(
+                error("Setter annotated with @MCAttribute must return void.")
+        ), result);
+    }
+
 }

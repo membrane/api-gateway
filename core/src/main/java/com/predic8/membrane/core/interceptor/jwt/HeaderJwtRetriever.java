@@ -51,9 +51,8 @@ public class HeaderJwtRetriever implements JwtRetriever{
 
     @Required
     @MCAttribute
-    public HeaderJwtRetriever setHeader(String header) {
+    public void setHeader(String header) {
         this.header = header;
-        return this;
     }
 
     public String getRemoveFromValue() {
@@ -61,8 +60,7 @@ public class HeaderJwtRetriever implements JwtRetriever{
     }
 
     @MCAttribute
-    public HeaderJwtRetriever setRemoveFromValue(String removeFromValue) {
+    public void setRemoveFromValue(String removeFromValue) {
         this.removeFromValue = removeFromValue;
-        return this;
     }
 }
