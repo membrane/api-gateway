@@ -32,7 +32,7 @@ public class Definitions extends WSDLElement {
     private static final Logger log = LoggerFactory.getLogger(Definitions.class);
 
     public enum SOAPVersion {
-        SOAP_11, SOAP_12, UNKNOWN;
+        SOAP_11, SOAP_12, UNKNOWN
     }
 
     private List<Schema> schemas = new ArrayList<>();

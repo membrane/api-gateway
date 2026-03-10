@@ -20,7 +20,6 @@ import org.w3c.dom.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.*;
-import static java.util.Optional.*;
 
 public class Binding extends WSDLElement {
 
@@ -35,19 +34,14 @@ public class Binding extends WSDLElement {
         }
     }
 
-    private SOAPVersion soapVersion;
-
     private final List<BindingOperation> operations;
     private final BindingStyle bindingStyle;
-    private final PortType portType;
 
     public Binding(WSDLParserContext ctx, Node node) {
         super(ctx, node);
         ctx.getDefinitions().getBindings().add(this);
         operations = getBindingOperations(node);
-        portType = getPortType(node).orElseThrow(() -> new WSDLParserException("No portType found for binding: " + name));
-        soapVersion = getBindingStyle().getSoapVersion();
-        ctx.getDefinitions().addSoapVersion(soapVersion);
+        ctx.getDefinitions().addSoapVersion(getSoapVersion());
         bindingStyle = getBindingStyle();
     }
 
@@ -59,12 +53,8 @@ public class Binding extends WSDLElement {
         return operations;
     }
 
-    public PortType getPortType() {
-        return portType;
-    }
-
     public SOAPVersion getSoapVersion() {
-        return soapVersion;
+        return getBindingStyle().getSoapVersion();
     }
 
     private List<BindingOperation> getBindingOperations(Node node) {
@@ -75,12 +65,9 @@ public class Binding extends WSDLElement {
         return instantiateChildElements(element, "binding", BindingStyle.class).getFirst();
     }
 
-    private Optional<PortType> getPortType(Node node) {
-        if (!(node instanceof Element bindingElement)) {
-            return empty();
-        }
+    public PortType getPortType() {
         return ctx.getDefinitions().getPortTypes().stream()
                 .filter(pt -> getLocalName(getAttribute("type")).equals(pt.getName()))
-                .findFirst();
+                .findFirst().orElseThrow(() -> new WSDLParserException("No portType found for binding: " + name));
     }
 }
