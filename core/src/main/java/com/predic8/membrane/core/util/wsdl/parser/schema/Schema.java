@@ -22,8 +22,8 @@ import java.util.*;
 public class Schema extends WSDLElement {
 
     private final List<SchemaElement> schemaElements;
-    private List<Import> imports;
-    private List<Include> includes;
+    private final List<Import> imports;
+    private final List<Include> includes;
 
     public Schema(WSDLParserContext ctx, Node node) {
         super(ctx, node);

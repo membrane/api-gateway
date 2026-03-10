@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.annot.Constants.*;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * WSDL elements register themselves via WSDLParserContext. This is more convenient, e.g. binding is not
@@ -71,7 +72,7 @@ public class Definitions extends WSDLElement {
         portTypes = instantiateWSDLElements(element, "portType", PortType.class);
         bindings = instantiateWSDLElements(element, "binding", Binding.class);
         services = instantiateWSDLElements(element, "service", Service.class);
-        soapVersions = bindings.stream().map(b -> b.getSoapVersion()).collect(Collectors.toSet());
+        soapVersions = bindings.stream().map(Binding::getSoapVersion).collect(toSet());
     }
 
     /**
@@ -126,10 +127,6 @@ public class Definitions extends WSDLElement {
 
     public Set<SOAPVersion> getSoapVersions() {
         return soapVersions;
-    }
-
-    public void addSoapVersion(SOAPVersion soapVersion) {
-        soapVersions.add(soapVersion);
     }
 
     private List<Schema> getSchemaElements(Element wsdl) {

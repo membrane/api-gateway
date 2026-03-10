@@ -56,7 +56,7 @@ public class WSDLElement {
 
     protected <T extends WSDLElement> Optional<T> instantiateChild(String name, Class<T> clazz) {
         var children = instantiateChildren(name, clazz);
-        return children.isEmpty() ? Optional.empty() : Optional.of(children.get(0));
+        return children.isEmpty() ? Optional.empty() : Optional.of(children.getFirst());
     }
 
     protected <T extends WSDLElement> List<T> instantiateChildren(String name, Class<T> clazz) {

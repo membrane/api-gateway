@@ -121,7 +121,6 @@ class WSDLParserTest {
     @Test
     void rpcStyle() throws Exception {
         var dn = Definitions.parse(new ResolverMap(),"classpath:/validation/inline-anytype.wsdl");
-        dn.getServices().forEach(s -> s.getPorts().forEach(p -> p.getBinding()));
         assertEquals(RPC, dn.getBindings().getFirst().getStyle());
     }
 
