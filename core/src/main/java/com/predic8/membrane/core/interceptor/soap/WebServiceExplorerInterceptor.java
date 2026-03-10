@@ -48,6 +48,10 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 
 	private String wsdl;
 	private String portName;
+
+	/**
+	 * Field is accessed by reflection
+	 */
 	private Proxy proxy;
 
 	public WebServiceExplorerInterceptor() {

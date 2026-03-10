@@ -58,8 +58,6 @@ import static com.predic8.membrane.core.interceptor.InterceptorUtil.*;
 @MCElement(name = "soapProxy", topLevel = true, component = false)
 public class SOAPProxy extends AbstractServiceProxy {
 
-    private static final Logger log = LoggerFactory.getLogger(SOAPProxy.class);
-
     // configuration attributes
     protected String wsdl;
     protected String portName;

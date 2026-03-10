@@ -25,8 +25,6 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
-
 @NotThreadSafe
 public class Relocator {
     private static final Logger log = LoggerFactory.getLogger(Relocator.class.getName());
@@ -41,8 +39,6 @@ public class Relocator {
     private final PathRewriter pathRewriter;
 
     private final Map<QName, String> relocatingAttributes = new HashMap<>();
-
-    private boolean wsdlFound;
 
     public Relocator(OutputStreamWriter osw, String protocol, String host,
                      int port, String contextPath, PathRewriter pathRewriter) throws Exception {
@@ -90,11 +86,6 @@ public class Relocator {
         var event = parser.nextEvent();
         if (!event.isStartElement())
             return event;
-
-        if (getElementName(event).getNamespaceURI().equals(WSDL_SOAP11_NS)
-            || getElementName(event).getNamespaceURI().equals(WSDL_SOAP12_NS)) {
-            wsdlFound = true;
-        }
 
         return relocatingAttributes.entrySet().stream()
                 .filter(e -> shouldProcess(e, event))

@@ -105,4 +105,15 @@ class WSDLParserTest {
         assertEquals(1, Definitions.parse(new ResolverMap(), "classpath:/ws/abstract-service-no-binding.wsdl").getPortTypes().size());
     }
 
+    @Test
+    void fault() throws Exception{
+        var dn = Definitions.parse(new ResolverMap(),"classpath:/ws/calculator-fault.wsdl");
+        var pt = dn.getPortTypes().getFirst();
+        var fault = pt.getOperations().getFirst().getFaults().getFirst();
+        assertNotNull(fault);
+        assertEquals("DivideByZeroFault", fault.getPart().getElementQName().getLocalPart());
+    }
+
+
+
 }

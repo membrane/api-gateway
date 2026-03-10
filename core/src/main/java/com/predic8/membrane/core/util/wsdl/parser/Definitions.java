@@ -48,7 +48,7 @@ public class Definitions extends WSDLElement {
     private Definitions(Resolver resolver, String location) throws Exception {
         super(new WSDLParserContext(null, resolver, location, new ArrayList<>()), read(resolver, location));
         ctx = ctx.definitions(this);
-        parse(ctx, this.getElement());
+        parse(this.getElement());
     }
 
     private static Node read(Resolver resolver, String location) throws Exception {
@@ -62,7 +62,7 @@ public class Definitions extends WSDLElement {
         return new Definitions(resolver, location);
     }
 
-    private void parse(WSDLParserContext ctx, Element element) {
+    private void parse(Element element) {
         targetNamespace = element.getAttribute("targetNamespace");
         schemas = getSchemaElements(element);
         importEmbeddedSchemas();

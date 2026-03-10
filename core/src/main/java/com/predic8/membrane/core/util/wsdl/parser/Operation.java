@@ -31,7 +31,7 @@ public class Operation extends WSDLElement {
     private final List<Message> faults;
 
     public enum Direction {
-        INPUT, OUTPUT;
+        INPUT, OUTPUT, FAULT;
 
         public boolean matches(String s) {
             return name().equalsIgnoreCase(s);
@@ -72,7 +72,7 @@ public class Operation extends WSDLElement {
     }
 
     private List<Message> getFaults(Node node) {
-        return new ArrayList<>(); // @TODO
+        return getMessagesByDirection(node, FAULT);
     }
 
     private List<Message> getMessagesByDirection(Node node, Direction direction) {
