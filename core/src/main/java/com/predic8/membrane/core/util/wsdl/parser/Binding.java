@@ -15,14 +15,16 @@
 package com.predic8.membrane.core.util.wsdl.parser;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions.*;
+import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.DOCUMENT;
-import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
-import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
+import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.*;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.*;
+import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.*;
+import static java.util.Optional.empty;
 import static org.w3c.dom.Node.*;
 
 public class Binding extends WSDLElement {
@@ -48,7 +50,7 @@ public class Binding extends WSDLElement {
         super(ctx,node);
         ctx.getDefinitions().getBindings().add(this);
         operations = getBindingOperations(node);
-        portType = getPortType(node);
+        portType = getPortType(node).orElseThrow(() -> new WSDLParserException("No portType found for binding: " + name));
     }
 
     public Style getStyle() {
@@ -95,32 +97,27 @@ public class Binding extends WSDLElement {
     private static Style getStyle(Node child) {
         var node = child.getAttributes().getNamedItem("style");
         if (node == null) {
+            // Style is missing, assume document style.
             return DOCUMENT;
         }
         return Style.fromString(node.getNodeValue());
     }
 
-    private PortType getPortType(Node node) {
+    private Optional<PortType> getPortType(Node node) {
         if (!(node instanceof Element bindingElement)) {
-            return null;
+            return empty();
         }
+        var portTypeQName = resolveQName(getType(bindingElement), bindingElement);
+        return ctx.getDefinitions().getPortTypes().stream()
+                .filter(pt -> portTypeQName.getLocalPart().equals(pt.getName()))
+                .findFirst();
+    }
 
+    private @NotNull String getType(Element bindingElement) {
         var type = bindingElement.getAttribute("type");
         if (type.isEmpty()) {
-            return null;
+            throw new WSDLParserException("No type attribute found for binding: " + name);
         }
-
-        var portTypeQName = WSDLParserUtil.resolveQName(type, bindingElement);
-
-        var definitions = bindingElement.getOwnerDocument().getDocumentElement();
-        var portTypes = definitions.getElementsByTagNameNS(WSDL11_NS, "portType");
-
-        for (int i = 0; i < portTypes.getLength(); i++) {
-            var portType = (Element) portTypes.item(i);
-            if (portTypeQName.getLocalPart().equals(portType.getAttribute("name"))) {
-                return new PortType(ctx, portType);
-            }
-        }
-        return null;
+        return type;
     }
 }

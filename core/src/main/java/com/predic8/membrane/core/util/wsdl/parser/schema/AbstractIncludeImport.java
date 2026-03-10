@@ -23,17 +23,14 @@ import org.w3c.dom.*;
 public abstract class AbstractIncludeImport extends WSDLElement {
 
     protected String schemaLocation;
-    protected Schema referensingSchema;
+    protected Schema referencingSchema;
     protected Schema schema;
 
-    public AbstractIncludeImport(WSDLParserContext ctx, Node node, Schema referensingSchema) {
+    public AbstractIncludeImport(WSDLParserContext ctx, Node node) {
         super(ctx, node);
-        this.referensingSchema = referensingSchema;
         schemaLocation = getSchemaLocation(node);
         schema = getSchema(ctx);
     }
-
-    protected abstract void registerLocation(String normalizedLocation);
 
     public Schema getSchema() {
         return schema;
@@ -46,8 +43,6 @@ public abstract class AbstractIncludeImport extends WSDLElement {
             // Check if the schema has already been imported or included
             if (ctx.getVisitedLocations().contains(resolved))
                 return null;
-
-            registerLocation(resolved);
 
             try (var is = ctx.getResolver().resolve(resolved)) {
                 return new Schema(ctx.basePath(resolved), WSDLParserUtil.parse(is));

@@ -16,6 +16,7 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import org.w3c.dom.*;
 
+import javax.xml.namespace.*;
 import java.util.*;
 import java.util.function.*;
 
@@ -77,14 +78,22 @@ public class WSDLElement {
     }
 
     protected static boolean isWSDLElementWithName(Node child, String name) {
-        return child.getNodeType() == ELEMENT_NODE
-               && name.equals(child.getLocalName())
-               && WSDL11_NS.equals(child.getNamespaceURI());
+        return isWSDLElement(child) && name.equals(child.getLocalName());
     }
 
     protected static boolean isXSDElementWithName(Node child, String name) {
-        return child.getNodeType() == ELEMENT_NODE
-               && name.equals(child.getLocalName())
-               && XSD_NS.equals(child.getNamespaceURI());
+        return isXSDElement(child) && name.equals(child.getLocalName());
+    }
+
+    protected static boolean isWSDLElement(Node node) {
+        return node.getNodeType() == ELEMENT_NODE && WSDL11_NS.equals(node.getNamespaceURI());
+    }
+
+    protected static boolean isXSDElement(Node node) {
+        return node.getNodeType() == ELEMENT_NODE && XSD_NS.equals(node.getNamespaceURI());
+    }
+
+    protected boolean hasLocalName(QName qn) {
+        return qn.getLocalPart().equals(name);
     }
 }

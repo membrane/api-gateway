@@ -16,13 +16,10 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import org.w3c.dom.*;
 
-import javax.xml.namespace.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
 import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.resolveQName;
-import static org.w3c.dom.Node.*;
 
 public class Operation extends WSDLElement {
 
@@ -81,35 +78,16 @@ public class Operation extends WSDLElement {
 
         for (int i = 0; i < children.getLength(); i++) {
             var child = children.item(i);
-
-            if (child.getNodeType() == ELEMENT_NODE
-                && direction.matches(child.getLocalName())
-                && WSDL11_NS.equals(child.getNamespaceURI())) {
-
+            if (isWSDLElement(child) && direction.matches(child.getLocalName())) {
                 var io = (Element) child;
                 var messageAttr = io.getAttribute("message");
                 if (messageAttr.isEmpty()) {
                     continue;
                 }
-
-                var message = findMessage(resolveQName(messageAttr, io), io.getOwnerDocument());
-                if (message != null) {
-                    result.add(message);
-                }
+                ctx.getDefinitions().findMessage(resolveQName(messageAttr, io).getLocalPart())
+                        .ifPresent(m -> result.add(m));
             }
         }
         return result;
-    }
-
-    private Message findMessage(QName messageQName, Document document) {
-        var definitions = document.getDocumentElement();
-        var messages = definitions.getElementsByTagNameNS(WSDL11_NS, "message");
-        for (int i = 0; i < messages.getLength(); i++) {
-            var message = (Element) messages.item(i);
-            if (messageQName.getLocalPart().equals(message.getAttribute("name"))) {
-                return new Message(ctx, message);
-            }
-        }
-        return null;
     }
 }

@@ -29,8 +29,8 @@ public class Schema extends WSDLElement {
     private final Element schema;
 
     private final List<SchemaElement> schemaElements;
-    private final List<Import> imports = new ArrayList<>();
-    private final List<Include> includes = new ArrayList<>();
+    private List<Import> imports = new ArrayList<>();
+    private List<Include> includes = new ArrayList<>();
 
     public Schema(WSDLParserContext ctx, Node node) {
         super(ctx, node);
@@ -80,42 +80,20 @@ public class Schema extends WSDLElement {
         if (!(node instanceof Element schema)) {
             return null;
         }
-        String tns = schema.getAttribute("targetNamespace");
+        var tns = schema.getAttribute("targetNamespace");
         return (tns.isEmpty()) ? null : tns;
     }
 
     private void parseIncludes(Node node) {
-        var children = node.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            var child = children.item(i);
-
-            if (isXSDElementWithName(child, "include")) {
-                new Include(ctx, child, this);
-            }
-        }
+        includes = instantiateXSDChildElements(node,"include",Include.class);
+        includes.forEach(i -> include(i.getSchema()));
     }
 
     private void parseImports(Node node) {
-        var children = node.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            var child = children.item(i);
-
-            if (isXSDElementWithName(child, "import")) {
-                new Import(ctx, child,this);
-            }
-        }
+        imports = instantiateXSDChildElements(node,"import",Import.class);
     }
 
     private List<SchemaElement> getSchemaElements(Element schema) {
-        var result = new ArrayList<SchemaElement>();
-        var children = schema.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            var child = children.item(i);
-            if (isXSDElementWithName(child, "element")) {
-                result.add(new SchemaElement(ctx, child));
-            }
-        }
-        return result;
+        return instantiateXSDChildElements(schema,"element", SchemaElement.class);
     }
-
 }

@@ -67,10 +67,9 @@ public class Definitions extends WSDLElement {
         schemas = getSchemaElements(element);
         importEmbeddedSchemas();
 
+        instantiateWSDLChildElements(element, "message", Message.class);
+        instantiateWSDLChildElements(element, "portType", PortType.class);
         instantiateWSDLChildElements(element, "service", Service.class);
-        if (services.isEmpty()) {
-            instantiateWSDLChildElements(element, "portType", PortType.class);
-        }
     }
 
     /**
@@ -97,6 +96,10 @@ public class Definitions extends WSDLElement {
 
     public List<Message> getMessages() {
         return messages;
+    }
+
+    public Optional<Message> findMessage(String name) {
+        return messages.stream().filter(m -> m.getName().equals(name)).findFirst();
     }
 
     public List<PortType> getPortTypes() {

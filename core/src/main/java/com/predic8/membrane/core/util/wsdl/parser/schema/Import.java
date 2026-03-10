@@ -27,8 +27,8 @@ public class Import extends AbstractIncludeImport {
 
     private final String namespace;
 
-    public Import(WSDLParserContext ctx, Node node, Schema referensingSchema) {
-        super(ctx, node, referensingSchema);
+    public Import(WSDLParserContext ctx, Node node) {
+        super(ctx, node);
 
         namespace = getNamespace(node);
 
@@ -61,7 +61,6 @@ public class Import extends AbstractIncludeImport {
     @Override
     protected Schema getSchema(WSDLParserContext ctx) {
         if (schemaLocation == null || schemaLocation.isEmpty()) {
-            registerLocation("");
             return null;
         }
         return super.getSchema(ctx);
@@ -71,10 +70,6 @@ public class Import extends AbstractIncludeImport {
         this.schema = schema;
     }
 
-    @Override
-    protected void registerLocation(String normalizedLocation) {
-        referensingSchema.getImports().add(this);
-    }
 
     private @NotNull String getNamespace(Node node) {
         return ((Element) node).getAttribute("namespace");
