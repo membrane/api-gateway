@@ -34,35 +34,30 @@ public class Binding extends WSDLElement {
         }
     }
 
-    private final List<BindingOperation> operations;
-    private final BindingStyle bindingStyle;
-
     public Binding(WSDLParserContext ctx, Node node) {
         super(ctx, node);
-        ctx.getDefinitions().getBindings().add(this);
-        operations = getBindingOperations(node);
-        ctx.getDefinitions().addSoapVersion(getSoapVersion());
-        bindingStyle = getBindingStyle();
     }
 
     public Style getStyle() {
-        return bindingStyle.getStyle();
-    }
-
-    public List<BindingOperation> getOperations() {
-        return operations;
+        return getBindingStyle().getStyle();
     }
 
     public SOAPVersion getSoapVersion() {
         return getBindingStyle().getSoapVersion();
     }
 
-    private List<BindingOperation> getBindingOperations(Node node) {
-        return instantiateWSDLChildElements(node, "operation", BindingOperation.class);
+    public BindingOperation getBindingOperation(String name) {
+        return getBindingOperations().stream()
+                .filter(bo -> bo.getName().equals(name))
+                .findFirst().orElseThrow(() -> new WSDLParserException("No bindingOperation found for name: " + name));
+    }
+
+    public List<BindingOperation> getBindingOperations() {
+        return instantiateWSDLChildren("operation", BindingOperation.class);
     }
 
     private BindingStyle getBindingStyle() {
-        return instantiateChildElements(element, "binding", BindingStyle.class).getFirst();
+        return instantiateChildren( "binding", BindingStyle.class).getFirst();
     }
 
     public PortType getPortType() {

@@ -20,12 +20,8 @@ import java.util.*;
 
 public class Message extends WSDLElement {
 
-    private List<Part> parts = new ArrayList<>();
-
     public Message(WSDLParserContext ctx, Node node) {
         super(ctx,node);
-        this.parts = getParts(node);
-        ctx.getDefinitions().getMessages().add(this);
     }
 
     /**
@@ -33,19 +29,15 @@ public class Message extends WSDLElement {
      * @return
      */
     public Part getPart() {
-        return parts.getFirst();
+        return getParts().getFirst();
     }
 
     public List<Part> getParts() {
-        return parts;
-    }
-
-    private List<Part> getParts(Node node) {
-        return instantiateWSDLChildElements(node, "part", Part.class);
+        return instantiateWSDLChildren("part", Part.class);
     }
 
     @Override
     public String toString() {
-        return "Message [parts=" + parts + "]";
+        return "Message [parts=%s]".formatted(getParts());
     }
 }

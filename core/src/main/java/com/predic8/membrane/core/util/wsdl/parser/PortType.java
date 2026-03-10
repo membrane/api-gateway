@@ -20,19 +20,11 @@ import java.util.*;
 
 public class PortType extends WSDLElement {
 
-    private final List<Operation> operations;
-
     public PortType(WSDLParserContext ctx, Node node) {
         super(ctx, node);
-        operations = getOperations(node);
-        ctx.getDefinitions().getPortTypes().add(this);
     }
 
     public List<Operation> getOperations() {
-        return operations;
-    }
-
-    private List<Operation> getOperations(Node node) {
-        return instantiateWSDLChildElements(node, "operation", Operation.class);
+        return instantiateWSDLChildren( "operation", Operation.class);
     }
 }

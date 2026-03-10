@@ -20,19 +20,11 @@ import java.util.*;
 
 public class Service extends WSDLElement {
 
-    private final List<Port> ports;
-
     public Service(WSDLParserContext ctx, Node element) {
         super(ctx,element);
-        ports = getPorts(element);
-        ctx.getDefinitions().getServices().add(this);
     }
 
     public List<Port> getPorts() {
-        return ports;
-    }
-
-    public List<Port> getPorts(Node service) {
-        return instantiateWSDLChildElements(service, "port", Port.class);
+        return instantiateWSDLChildren( "port", Port.class);
     }
 }

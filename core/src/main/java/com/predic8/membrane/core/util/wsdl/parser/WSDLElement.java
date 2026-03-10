@@ -17,6 +17,7 @@ package com.predic8.membrane.core.util.wsdl.parser;
 import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 
+import javax.xml.namespace.*;
 import java.util.*;
 import java.util.function.*;
 
@@ -53,19 +54,37 @@ public class WSDLElement {
         return element;
     }
 
-    protected <T extends WSDLElement> List<T> instantiateChildElements(Node node, String name, Class<T> clazz) {
-        return instantiateWSDLChildElementsInternal(node, name, clazz, WSDLElement::isElementWithName);
+    protected <T extends WSDLElement> Optional<T> instantiateChild(String name, Class<T> clazz) {
+        var children = instantiateChildren(name, clazz);
+        return children.isEmpty() ? Optional.empty() : Optional.of(children.get(0));
     }
 
-    protected <T extends WSDLElement> List<T> instantiateWSDLChildElements(Node node, String name, Class<T> clazz) {
-        return instantiateWSDLChildElementsInternal(node, name, clazz, WSDLElement::isWSDLElementWithName);
+    protected <T extends WSDLElement> List<T> instantiateChildren(String name, Class<T> clazz) {
+        return instantiateElements(element,name,clazz);
     }
 
-    protected <T extends WSDLElement> List<T> instantiateXSDChildElements(Node node, String name, Class<T> clazz) {
-        return instantiateWSDLChildElementsInternal(node, name, clazz, WSDLElement::isXSDElementWithName);
+    protected <T extends WSDLElement> List<T> instantiateElements(Node node, String name, Class<T> clazz) {
+        return instantiateElementsInternal(node, name, clazz, WSDLElement::isElementWithName);
     }
 
-    protected <T extends WSDLElement> List<T> instantiateWSDLChildElementsInternal(Node node, String name, Class<T> clazz, BiPredicate<Node, String> elementPredicate) {
+    protected <T extends WSDLElement> List<T> instantiateWSDLChildren(String name, Class<T> clazz) {
+        return instantiateWSDLElements(element,name,clazz);
+    }
+
+
+    protected <T extends WSDLElement> List<T> instantiateWSDLElements(Node node, String name, Class<T> clazz) {
+        return instantiateElementsInternal(node, name, clazz, WSDLElement::isWSDLElementWithName);
+    }
+
+     protected <T extends WSDLElement> List<T> instantiateXSDChildren(String name, Class<T> clazz) {
+        return instantiateXSDElements(element,name,clazz);
+     }
+
+    protected <T extends WSDLElement> List<T> instantiateXSDElements(Node node, String name, Class<T> clazz) {
+        return instantiateElementsInternal(node, name, clazz, WSDLElement::isXSDElementWithName);
+    }
+
+    protected <T extends WSDLElement> List<T> instantiateElementsInternal(Node node, String name, Class<T> clazz, BiPredicate<Node, String> elementPredicate) {
         List<T> result = new ArrayList<>();
         var children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -111,5 +130,11 @@ public class WSDLElement {
 
     protected @NotNull String getAttribute(String name) {
         return element.getAttribute(name);
+    }
+
+    public QName resolveQName(String value) {
+        if (value == null)
+            return null;
+        return WSDLParserUtil.resolveQName(value, element);
     }
 }

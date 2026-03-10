@@ -41,6 +41,8 @@ public class WSDLParserUtil {
     }
 
     public static QName resolveQName(String value, Node context) {
+        if (value == null)
+            return null;
 
         if (!value.contains(":"))
             return new QName(context.lookupNamespaceURI(null), value);

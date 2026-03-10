@@ -21,32 +21,24 @@ import java.util.*;
 
 public class Schema extends WSDLElement {
 
-    private final String targetNamespace;
-
-    /**
-     * DOM Element of the schema as read from the WSDL.
-     */
-    private final Element schema;
-
     private final List<SchemaElement> schemaElements;
-    private List<Import> imports = new ArrayList<>();
-    private List<Include> includes = new ArrayList<>();
+    private List<Import> imports;
+    private List<Include> includes;
 
     public Schema(WSDLParserContext ctx, Node node) {
         super(ctx, node);
-        this.targetNamespace = getTargetNamespace(node);
-        this.schema = (Element) node;
-        this.schemaElements = getSchemaElements(schema);
-        parseImports(node);
-        parseIncludes(node);
+        this.schemaElements = instantiateXSDChildren("element", SchemaElement.class);
+        imports = instantiateXSDChildren("import",Import.class);
+        includes = instantiateXSDChildren("include",Include.class);
+        includes.forEach(i -> include(i.getSchema()));
     }
 
     public String getTargetNamespace() {
-        return targetNamespace;
+        return getAttribute("targetNamespace");
     }
 
     public Element getSchemaElement() {
-        return schema;
+        return element;
     }
 
     public List<SchemaElement> getSchemaElements() {
@@ -74,26 +66,5 @@ public class Schema extends WSDLElement {
 
         schemaElements.addAll(includedSchema.getSchemaElements());
         imports.addAll(includedSchema.getImports());
-    }
-
-    private String getTargetNamespace(Node node) {
-        if (!(node instanceof Element schema)) {
-            return null;
-        }
-        var tns = schema.getAttribute("targetNamespace");
-        return (tns.isEmpty()) ? null : tns;
-    }
-
-    private void parseIncludes(Node node) {
-        includes = instantiateXSDChildElements(node,"include",Include.class);
-        includes.forEach(i -> include(i.getSchema()));
-    }
-
-    private void parseImports(Node node) {
-        imports = instantiateXSDChildElements(node,"import",Import.class);
-    }
-
-    private List<SchemaElement> getSchemaElements(Element schema) {
-        return instantiateXSDChildElements(schema,"element", SchemaElement.class);
     }
 }

@@ -23,21 +23,17 @@ import java.util.*;
 
 public class Import extends AbstractIncludeImport {
 
-    private static final Logger log = LoggerFactory.getLogger(Definitions.class);
-
-    private final String namespace;
+    private static final Logger log = LoggerFactory.getLogger(Import.class);
 
     public Import(WSDLParserContext ctx, Node node) {
         super(ctx, node);
-
-        namespace = getNamespace(node);
 
         // Schema is null when it is already imported from somewhere else
         if (schema == null)
             return;
 
-        if (!Objects.equals(schema.getTargetNamespace(), namespace)) {
-            throw new WSDLParserException("The namespace {%s} of the import does not match the targetNamespace of the imported schema {%s}.".formatted(namespace, schema.getTargetNamespace()));
+        if (!Objects.equals(schema.getTargetNamespace(), getNamespace())) {
+            throw new WSDLParserException("The namespace {%s} of the import does not match the targetNamespace of the imported schema {%s}.".formatted(getNamespace(), schema.getTargetNamespace()));
         }
     }
 
@@ -50,8 +46,8 @@ public class Import extends AbstractIncludeImport {
         if (isSchemaLocationMissing())
             return;
 
-        log.debug("Importing embedded schema with namespace: {}", namespace);
-        definitions.getEmbeddedSchema(namespace).ifPresent(s -> schema = s);
+        log.debug("Importing embedded schema with namespace: {}", getNamespace());
+        definitions.getEmbeddedSchema(getNamespace()).ifPresent(s -> schema = s);
     }
 
     private boolean isSchemaLocationMissing() {
@@ -70,12 +66,7 @@ public class Import extends AbstractIncludeImport {
         this.schema = schema;
     }
 
-
-    private @NotNull String getNamespace(Node node) {
-        return ((Element) node).getAttribute("namespace");
-    }
-
     public String getNamespace() {
-        return namespace;
+        return getAttribute("namespace");
     }
 }

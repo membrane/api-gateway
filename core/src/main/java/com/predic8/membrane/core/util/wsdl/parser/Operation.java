@@ -19,13 +19,8 @@ import org.w3c.dom.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
-import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.resolveQName;
 
 public class Operation extends WSDLElement {
-
-    private final List<Message> inputs;
-    private final List<Message> outputs;
-    private final List<Message> faults;
 
     public enum Direction {
         INPUT, OUTPUT, FAULT;
@@ -37,44 +32,23 @@ public class Operation extends WSDLElement {
 
     public Operation(WSDLParserContext ctx, Node node) {
         super(ctx,node);
-        inputs = getInputs(node);
-        outputs = getOutputs(node);
-        faults = getFaults(node);
     }
 
     public List<Message> getInputs() {
-        return inputs;
+        return getMessagesByDirection(INPUT);
     }
 
     public List<Message> getOutputs() {
-        return outputs;
-    }
-
-    public List<Message> getMessagesByDirection(Direction direction) {
-        if (direction == INPUT)
-            return inputs;
-        return outputs;
+        return getMessagesByDirection(OUTPUT);
     }
 
     public List<Message> getFaults() {
-        return faults;
+        return getMessagesByDirection(FAULT);
     }
 
-    private List<Message> getInputs(Node node) {
-        return getMessagesByDirection(node, INPUT);
-    }
-
-    private List<Message> getOutputs(Node node) {
-        return getMessagesByDirection(node, OUTPUT);
-    }
-
-    private List<Message> getFaults(Node node) {
-        return getMessagesByDirection(node, FAULT);
-    }
-
-    private List<Message> getMessagesByDirection(Node node, Direction direction) {
+    public List<Message> getMessagesByDirection(Direction direction) {
         var result = new ArrayList<Message>();
-        var children = node.getChildNodes();
+        var children = element.getChildNodes();
 
         for (int i = 0; i < children.getLength(); i++) {
             var child = children.item(i);
@@ -84,7 +58,7 @@ public class Operation extends WSDLElement {
                 if (messageAttr.isEmpty()) {
                     continue;
                 }
-                ctx.getDefinitions().findMessage(resolveQName(messageAttr, io).getLocalPart())
+                ctx.getDefinitions().findMessage(WSDLParserUtil.resolveQName(messageAttr, io).getLocalPart())
                         .ifPresent(result::add);
             }
         }

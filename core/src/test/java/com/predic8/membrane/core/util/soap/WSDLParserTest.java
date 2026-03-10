@@ -52,6 +52,10 @@ class WSDLParserTest {
         var binding = port.getBinding();
         assertEquals("CitySoapBinding", binding.getName());
         assertEquals(DOCUMENT, binding.getStyle());
+
+        assertEquals("https://predic8.de/cities",binding.getBindingOperation("getCity").getSoapAction());
+
+
         var portType = binding.getPortType();
         assertEquals("CityPort", portType.getName());
         var operations = portType.getOperations();
@@ -117,6 +121,7 @@ class WSDLParserTest {
     @Test
     void rpcStyle() throws Exception {
         var dn = Definitions.parse(new ResolverMap(),"classpath:/validation/inline-anytype.wsdl");
+        dn.getServices().forEach(s -> s.getPorts().forEach(p -> p.getBinding()));
         assertEquals(RPC, dn.getBindings().getFirst().getStyle());
     }
 

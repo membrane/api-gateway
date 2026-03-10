@@ -14,57 +14,31 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
+import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
 
-import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.resolveQName;
-
 public class Part extends WSDLElement {
 
-    private final QName element;
-    private final QName type;
-
     public Part(WSDLParserContext ctx, Node node) {
-        super(ctx,node);
-        this.element = getElementQName(node);
-        this.type = getTypeQName(node);
-    }
-
-    public QName getElementQName() {
-        return element;
+        super(ctx, node);
     }
 
     public QName getTypeQName() {
-        return type;
+        return getAttributeQName("type");
     }
 
-    private QName getTypeQName(Node node) {
-        if (!(node instanceof org.w3c.dom.Element partElement)) {
-            return null;
-        }
-
-        var typeAttr = partElement.getAttribute("type");
-        if (typeAttr.isEmpty()) {
-            return null;
-        }
-
-        return resolveQName(typeAttr, partElement);
+    public QName getElementQName() {
+        return getAttributeQName("element");
     }
 
-    private QName getElementQName(Node node) {
-        if (!(node instanceof Element element)) {
-            return null;
-        }
-        var elementAttr = element.getAttribute("element");
-        if (elementAttr.isEmpty()) {
-            return null;
-        }
-        return resolveQName(elementAttr, element);
+    private @Nullable QName getAttributeQName(String attribute) {
+        return resolveQName(getAttribute(attribute));
     }
 
     @Override
     public String toString() {
-        return "Part [element=" + element + ", type=" + type + "]";
+        return "Part [element=%s, type=%s]".formatted(getElementQName(), getTypeQName());
     }
 }

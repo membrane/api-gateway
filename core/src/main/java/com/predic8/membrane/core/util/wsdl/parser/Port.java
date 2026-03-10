@@ -16,63 +16,25 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import org.w3c.dom.*;
 
-import java.util.*;
-
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.resolveQName;
-import static org.w3c.dom.Node.*;
+import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.getLocalName;
 
 public class Port extends WSDLElement {
 
-    private final Address address;
-    private final Binding binding;
-
     public Port(WSDLParserContext ctx, Node node) {
         super(ctx,node);
-        address = getAddress(node);
-        binding = getBinding(node);
-
     }
 
     public Address getAddress() {
-        return address;
+        return instantiateElements(element,"address",Address.class).getFirst();
     }
 
     public Binding getBinding() {
-        return binding;
+        return ctx.getDefinitions().getBindings().stream()
+                .filter(this::matchesTypeAttribute)
+                .findFirst().get();
     }
 
-    public Address getAddress(Node node) {
-        var children = node.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            var child = children.item(i);
-            if (child.getNodeType() == ELEMENT_NODE) {
-                var localName = child.getLocalName();
-                if ("address".equals(localName)) {
-                    return new Address(ctx,child);
-                }
-            }
-        }
-        return null;
-    }
-
-    public Binding getBinding(Node node) {
-        if (!(node instanceof Element port))
-            return null;
-
-        var bindingAttr = port.getAttribute("binding");
-        if (bindingAttr.isEmpty())
-            return null;
-
-        var bindingQName = resolveQName(bindingAttr, port);
-        var bindings = getDefinitions().getElementsByTagNameNS(WSDL11_NS, "binding");
-
-        for (int i = 0; i < bindings.getLength(); i++) {
-            var binding = (Element) bindings.item(i);
-            if (bindingQName.getLocalPart().equals(binding.getAttribute("name"))) {
-                return new Binding(ctx, binding);
-            }
-        }
-        return null;
+    private boolean matchesTypeAttribute(Binding b) {
+        return b.getName().equals(getLocalName(getAttribute("binding")));
     }
 }

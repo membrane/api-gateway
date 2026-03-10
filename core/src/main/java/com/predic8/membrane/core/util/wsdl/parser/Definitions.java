@@ -20,6 +20,7 @@ import org.slf4j.*;
 import org.w3c.dom.*;
 
 import java.util.*;
+import java.util.stream.*;
 
 import static com.predic8.membrane.annot.Constants.*;
 
@@ -36,14 +37,14 @@ public class Definitions extends WSDLElement {
     }
 
     private List<Schema> schemas = new ArrayList<>();
-    private final List<Message> messages = new ArrayList<>();
-    private final List<PortType> portTypes = new ArrayList<>();
-    private final List<Binding> bindings = new ArrayList<>();
-    private final List<Service> services = new ArrayList<>();
+    private List<Message> messages = new ArrayList<>();
+    private List<PortType> portTypes = new ArrayList<>();
+    private List<Binding> bindings = new ArrayList<>();
+    private List<Service> services = new ArrayList<>();
 
     private String targetNamespace;
 
-    private final Set<SOAPVersion> soapVersions = new HashSet<>();
+    private Set<SOAPVersion> soapVersions = new HashSet<>();
 
     private Definitions(Resolver resolver, String location) throws Exception {
         super(new WSDLParserContext(null, resolver, location, new ArrayList<>()), read(resolver, location));
@@ -63,12 +64,14 @@ public class Definitions extends WSDLElement {
     }
 
     private void parse(Element element) {
-        targetNamespace = element.getAttribute("targetNamespace");
+        targetNamespace = getAttribute("targetNamespace");
         schemas = getSchemaElements(element);
         importEmbeddedSchemas();
-        instantiateWSDLChildElements(element, "message", Message.class);
-        instantiateWSDLChildElements(element, "portType", PortType.class);
-        instantiateWSDLChildElements(element, "service", Service.class);
+        messages = instantiateWSDLElements(element, "message", Message.class);
+        portTypes = instantiateWSDLElements(element, "portType", PortType.class);
+        bindings = instantiateWSDLElements(element, "binding", Binding.class);
+        services = instantiateWSDLElements(element, "service", Service.class);
+        soapVersions = bindings.stream().map(b -> b.getSoapVersion()).collect(Collectors.toSet());
     }
 
     /**
@@ -130,7 +133,7 @@ public class Definitions extends WSDLElement {
     }
 
     private List<Schema> getSchemaElements(Element wsdl) {
-        return instantiateXSDChildElements(getTypes(wsdl), "schema", Schema.class);
+        return instantiateXSDElements(getTypes(wsdl), "schema", Schema.class);
     }
 
     private static Node getTypes(Element wsdl) {
