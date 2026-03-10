@@ -85,7 +85,7 @@ public class Operation extends WSDLElement {
                     continue;
                 }
                 ctx.getDefinitions().findMessage(resolveQName(messageAttr, io).getLocalPart())
-                        .ifPresent(m -> result.add(m));
+                        .ifPresent(result::add);
             }
         }
         return result;

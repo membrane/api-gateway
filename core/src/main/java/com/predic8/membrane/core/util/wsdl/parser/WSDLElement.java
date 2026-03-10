@@ -92,8 +92,4 @@ public class WSDLElement {
     protected static boolean isXSDElement(Node node) {
         return node.getNodeType() == ELEMENT_NODE && XSD_NS.equals(node.getNamespaceURI());
     }
-
-    protected boolean hasLocalName(QName qn) {
-        return qn.getLocalPart().equals(name);
-    }
 }

@@ -23,7 +23,6 @@ import org.w3c.dom.*;
 public abstract class AbstractIncludeImport extends WSDLElement {
 
     protected String schemaLocation;
-    protected Schema referencingSchema;
     protected Schema schema;
 
     public AbstractIncludeImport(WSDLParserContext ctx, Node node) {
