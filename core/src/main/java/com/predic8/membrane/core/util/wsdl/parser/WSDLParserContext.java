@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
+import com.predic8.membrane.core.graphql.model.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.wsdl.parser.Binding.*;
 
 import java.util.*;
 
@@ -24,7 +24,7 @@ public class WSDLParserContext {
     private final Definitions definitions;
     private final Resolver resolver;
     private final String basePath;
-    private List<String> visitedLocations;
+    private final List<String> visitedLocations;
 
     public WSDLParserContext(Definitions wsdl, Resolver resolver, String basePath, List<String> visitedLocations) {
         this.definitions = wsdl;

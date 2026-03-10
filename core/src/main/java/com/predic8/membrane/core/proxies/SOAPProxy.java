@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
@@ -82,7 +83,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         configureFromWSDL();
         super.init(); // Must be called last! Otherwise, SSL will not be configured!
 
-        for (Interceptor interceptor : interceptors) {
+        for (var interceptor : interceptors) {
             if (interceptor instanceof WSDLPublisherInterceptor wpi) {
                 wpi.setSoapProxy(this);
             } else if (interceptor instanceof ValidatorInterceptor vi) {
@@ -92,25 +93,10 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     protected void configureFromWSDL() {
-        Definitions defs;
-
-        try {
-             defs = Definitions.parse(resolverMap, wsdl);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        Service service;
-        if (serviceName != null)
-            service = defs.getService(serviceName).orElseThrow(
-                    () -> new ConfigurationException("No service with name '%s' found in WSDL %s".formatted(serviceName, wsdl))
-            );
-        else
-            service = defs.getServices().getFirst();
-
+        var defs = parseWSDL();
+        var service = getService(defs);
         setProxyName(service, defs);
-
-        String location = getLocation(service);
+        var location = getLocation(service);
 
         // Signal to the later processing that the outgoing connection is using TLS
         if (location.startsWith("https")) {
@@ -125,6 +111,28 @@ public class SOAPProxy extends AbstractServiceProxy {
         addWSDLPublisherInterceptor(); // Will be before WebServiceExplorer
         var wsdlInterceptor = addAndGetWSDLInterceptor(); // WSDLInterceptor will be first
         wsdlInterceptor.setPathRewriterOnWSDLInterceptor(key.getPath());
+    }
+
+    private Service getService(Definitions defs) {
+        if (serviceName != null)
+            return defs.getService(serviceName).orElseThrow(
+                    () -> new ConfigurationException("No service with name '%s' found in WSDL %s".formatted(serviceName, wsdl))
+            );
+        return defs.getServices().getFirst();
+    }
+
+    private @NotNull Definitions parseWSDL() {
+        try {
+             return Definitions.parse(resolverMap, wsdl);
+        } catch (Exception e) {
+            throw new ConfigurationException("""
+                    Cannot parse WSDL
+                    
+                    API: %s
+                    WSDL location: %s.
+                    Error. %s
+                    """.formatted( name, wsdl, e.getMessage()));
+        }
     }
 
     private void prepareRouting(String location) {
@@ -150,7 +158,7 @@ public class SOAPProxy extends AbstractServiceProxy {
             return;
 
         var ri = new RewriteInterceptor();
-        ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
+        ri.setMappings(Lists.newArrayList(new Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
         interceptors.addFirst(ri);
     }
 

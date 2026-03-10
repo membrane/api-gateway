@@ -23,7 +23,7 @@ import java.io.*;
 public class WSDLParserUtil {
 
     public static Element parse(InputStream is) throws Exception {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        var dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         return dbf.newDocumentBuilder().parse(is).getDocumentElement();
     }

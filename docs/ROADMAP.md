@@ -4,6 +4,8 @@
 
 - Correct YAML example on GitHub README
 
+
+
 # 7.2.0
 
 - Move SOAP samples from tutorials/transformations to ../soap TB
@@ -52,7 +54,9 @@ PRIO 2:
       - 
 
 PRIO 3:
-
+- WebServiceExplorerInterceptor
+  - Support multiple services, ports, ...
+  - Refactor
 - JMXExporter:
   - Tutorial
   - Example

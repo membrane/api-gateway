@@ -21,11 +21,9 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
-import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.util.wsdl.parser.*;
+import com.predic8.membrane.core.util.wsdl.parser.Message;
 import org.slf4j.*;
 
 import java.io.*;
@@ -51,8 +49,6 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 	private String wsdl;
 	private String portName;
 	private Proxy proxy;
-
-	private com.predic8.membrane.core.util.wsdl.parser.Definitions definitions;
 
 	public WebServiceExplorerInterceptor() {
 		name = "web service explorer";
@@ -93,8 +89,8 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 	private String getClientURL(Exchange exc) {
 		// TODO: move this to some central location
 		try {
-			String uri = exc.getHandler().getContextPath(exc) + exc.getRequest().getUri();
-			String host = exc.getRequest().getHeader().getHost();
+			var uri = exc.getHandler().getContextPath(exc) + exc.getRequest().getUri();
+			var host = exc.getRequest().getHeader().getHost();
 			if (host != null) {
 				if (host.contains(":"))
 					host = host.substring(0, host.indexOf(":"));
@@ -114,13 +110,11 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 	@Mapping("(?!.*operation)([^?]*)")
 	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath, final Exchange exc) throws Exception {
 		try {
-			final String myPath = router.getConfiguration().getUriFactory().create(exc.getRequest().getUri()).getPath();
+			var definitions = Definitions.parse(router.getResolverMap(), wsdl);
 
-			final com.predic8.membrane.core.util.wsdl.parser.Definitions w = getDefinitions();
-
-			final com.predic8.membrane.core.util.wsdl.parser.Service service = w.getServices().getFirst(); // TODO display all services
-			final com.predic8.membrane.core.util.wsdl.parser.Port port = service.getPorts().getFirst();
-			final List<com.predic8.membrane.core.util.wsdl.parser.Port> ports = service.getPorts();
+			var service = definitions.getServices().getFirst(); // TODO display all services
+			var port = service.getPorts().getFirst();
+			var ports = service.getPorts();
 
 			var sw = new StringWriter();
 			new StandardPage(sw, service.getName()) {
@@ -128,21 +122,21 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 				protected void createContent() {
 					h1().text("Service Proxy: " + service.getName()).end();
 					p();
-					text("Target Namespace: " + w.getTargetNamespace());
+					text("Target Namespace: " + definitions.getTargetNamespace());
 					br().end();
 					String wsdlLink = getClientURL(exc) + "?wsdl";
 					text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
 					end();
 
-					for (com.predic8.membrane.core.util.wsdl.parser.PortType pt : ports.stream().map(port1 -> port1.getBinding()).map(b -> b.getPortType()).toList()) {
+					for (com.predic8.membrane.core.util.wsdl.parser.PortType pt : ports.stream().map(Port::getBinding).map(Binding::getPortType).toList()) {
 						h2().text("Port Type: " + pt.getName()).end();
-//						Documentation d = pt.getDocumentation();
+//						Documentation d = pt.getDocumentation(); @TODO
 //						if (d != null) {
 //							p().text("Documentation: " + d).end();
 //						}
 					}
 
-					com.predic8.membrane.core.util.wsdl.parser.Binding binding = port.getBinding();
+					var binding = port.getBinding();
                     createOperationsTable(definitions, binding, binding.getPortType());
 
 					h2().text("Virtual Endpoint").end();
@@ -155,24 +149,24 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 						createEndpointTable(service.getPorts(), ports);
 				}
 
-				private void createOperationsTable(com.predic8.membrane.core.util.wsdl.parser.Definitions w, com.predic8.membrane.core.util.wsdl.parser.Binding binding, com.predic8.membrane.core.util.wsdl.parser.PortType portType) {
+				private void createOperationsTable(Definitions defs, Binding binding, PortType portType) {
 					table().cellspacing("0").cellpadding("0").border(""+1);
 					tr();
 						th().text("Operation").end();
 						th().text("Input").end();
 						th().text("Output").end();
 					end();
-					for (com.predic8.membrane.core.util.wsdl.parser.Operation o : portType.getOperations()) {
+					for (Operation o : portType.getOperations()) {
 						tr();
 						td();
 							text(o.getName());
 						end();
 						td();
-						for (com.predic8.membrane.core.util.wsdl.parser.Part p : o.getInputs().stream().map(i -> i.getPart()).toList())
+						for (Part p : o.getInputs().stream().map(Message::getPart).toList())
 							text(p.getElementQName().toString());
 						end();
 						td();
-						for (com.predic8.membrane.core.util.wsdl.parser.Part p : o.getOutputs().stream().map(i -> i.getPart()).toList())
+						for (Part p : o.getOutputs().stream().map(Message::getPart).toList())
 							text(p.getElementQName().toString());
 						end();
 						end();
@@ -180,7 +174,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 					end();
 				}
 
-				private void createEndpointTable(List<com.predic8.membrane.core.util.wsdl.parser.Port> ports, List<com.predic8.membrane.core.util.wsdl.parser.Port> matchingPorts) {
+				private void createEndpointTable(List<Port> ports, List<Port> matchingPorts) {
 					table().cellspacing("0").cellpadding("0").border(""+1);
 					tr();
 					th().text("Port Name").end();
@@ -208,10 +202,6 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 			log.error("", e);
 			return Response.internalServerError().build();
 		}
-	}
-
-	private com.predic8.membrane.core.util.wsdl.parser.Definitions getDefinitions() throws Exception {
-		return com.predic8.membrane.core.util.wsdl.parser.Definitions.parse(router.getResolverMap(),wsdl);
 	}
 
 	private abstract static class StandardPage extends Html {

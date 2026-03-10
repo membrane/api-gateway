@@ -19,6 +19,7 @@ import org.w3c.dom.*;
 import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.resolveQName;
 import static org.w3c.dom.Node.*;
 
 public class Port extends WSDLElement {
@@ -43,10 +44,8 @@ public class Port extends WSDLElement {
 
     public Address getAddress(Node node) {
         var children = node.getChildNodes();
-
         for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-
+            var child = children.item(i);
             if (child.getNodeType() == ELEMENT_NODE) {
                 var localName = child.getLocalName();
                 if ("address".equals(localName)) {
@@ -61,21 +60,19 @@ public class Port extends WSDLElement {
         if (!(node instanceof Element port))
             return null;
 
-        String bindingAttr = port.getAttribute("binding");
+        var bindingAttr = port.getAttribute("binding");
         if (bindingAttr.isEmpty())
             return null;
 
-        var bindingQName = WSDLParserUtil.resolveQName(bindingAttr, port);
+        var bindingQName = resolveQName(bindingAttr, port);
         var bindings = getDefinitions().getElementsByTagNameNS(WSDL11_NS, "binding");
 
         for (int i = 0; i < bindings.getLength(); i++) {
-            Element binding = (Element) bindings.item(i);
-
+            var binding = (Element) bindings.item(i);
             if (bindingQName.getLocalPart().equals(binding.getAttribute("name"))) {
                 return new Binding(ctx, binding);
             }
         }
-
         return null;
     }
 }

@@ -18,6 +18,8 @@ import org.w3c.dom.*;
 
 import javax.xml.namespace.*;
 
+import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.resolveQName;
+
 public class Part extends WSDLElement {
 
     private final QName element;
@@ -42,12 +44,12 @@ public class Part extends WSDLElement {
             return null;
         }
 
-        String typeAttr = partElement.getAttribute("type");
+        var typeAttr = partElement.getAttribute("type");
         if (typeAttr.isEmpty()) {
             return null;
         }
 
-        return WSDLParserUtil.resolveQName(typeAttr, partElement);
+        return resolveQName(typeAttr, partElement);
     }
 
     private QName getElementQName(Node node) {
@@ -58,7 +60,7 @@ public class Part extends WSDLElement {
         if (elementAttr.isEmpty()) {
             return null;
         }
-        return WSDLParserUtil.resolveQName(elementAttr, element);
+        return resolveQName(elementAttr, element);
     }
 
     @Override

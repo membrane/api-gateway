@@ -118,10 +118,6 @@ public class Relocator {
                 start.getNamespaces());
     }
 
-    public boolean isWsdlFound() {
-        return wsdlFound;
-    }
-
     public Map<QName, String> getRelocatingAttributes() {
         return relocatingAttributes;
     }

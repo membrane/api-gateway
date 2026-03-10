@@ -18,15 +18,13 @@ import org.w3c.dom.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
-
 public class Message extends WSDLElement {
 
-    private final List<Part> parts = new ArrayList<>();
+    private List<Part> parts = new ArrayList<>();
 
     public Message(WSDLParserContext ctx, Node node) {
         super(ctx,node);
-        this.parts.add(getPart(node));
+        this.parts = getParts(node);
         ctx.getDefinitions().getMessages().add(this);
     }
 
@@ -42,19 +40,8 @@ public class Message extends WSDLElement {
         return parts;
     }
 
-    private Part getPart(Node node) {
-        NodeList children = node.getChildNodes();
-
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-
-            if (child.getNodeType() == Node.ELEMENT_NODE
-                && "part".equals(child.getLocalName())
-                && WSDL11_NS.equals(child.getNamespaceURI())) {
-                return new Part(ctx, child);
-            }
-        }
-        return null;
+    private List<Part> getParts(Node node) {
+        return instantiateWSDLChildElements(node, "part", Part.class);
     }
 
     @Override

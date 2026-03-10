@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions.*;
 import org.w3c.dom.*;
 
@@ -22,6 +21,8 @@ import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.DOCUMENT;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 import static org.w3c.dom.Node.*;
 
 public class Binding extends WSDLElement {
@@ -72,9 +73,7 @@ public class Binding extends WSDLElement {
         for (int i = 0; i < children.getLength(); i++) {
             var child = children.item(i);
 
-            if ((child.getNodeType() == ELEMENT_NODE)
-                && "operation".equals(child.getLocalName())
-                && WSDL11_NS.equals(child.getNamespaceURI())) {
+            if (isWSDLElementWithName(child, "operation")) {
                 result.add(new BindingOperation(ctx, child));
             }
 
@@ -82,10 +81,10 @@ public class Binding extends WSDLElement {
                 && "binding".equals(child.getLocalName())) {
                 style = getStyle(child);
                 if (WSDL_SOAP11_NS.equals(child.getNamespaceURI())) {
-                    soapVersion = SOAPVersion.SOAP_11;
+                    soapVersion = SOAP_11;
                     ctx.getDefinitions().addSoapVersion(soapVersion);
                 } else if (WSDL_SOAP12_NS.equals(child.getNamespaceURI())) {
-                    soapVersion = SOAPVersion.SOAP_12;
+                    soapVersion = SOAP_12;
                     ctx.getDefinitions().addSoapVersion(soapVersion);
                 }
             }
@@ -122,8 +121,6 @@ public class Binding extends WSDLElement {
                 return new PortType(ctx, portType);
             }
         }
-
         return null;
     }
-
 }

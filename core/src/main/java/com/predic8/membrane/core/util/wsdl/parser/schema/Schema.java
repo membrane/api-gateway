@@ -19,9 +19,6 @@ import org.w3c.dom.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static org.w3c.dom.Node.*;
-
 public class Schema extends WSDLElement {
 
     private final String targetNamespace;
@@ -92,9 +89,7 @@ public class Schema extends WSDLElement {
         for (int i = 0; i < children.getLength(); i++) {
             var child = children.item(i);
 
-            if (child.getNodeType() == ELEMENT_NODE
-                && "include".equals(child.getLocalName())
-                && XSD_NS.equals(child.getNamespaceURI())) {
+            if (isXSDElementWithName(child, "include")) {
                 new Include(ctx, child, this);
             }
         }
@@ -105,9 +100,7 @@ public class Schema extends WSDLElement {
         for (int i = 0; i < children.getLength(); i++) {
             var child = children.item(i);
 
-            if (child.getNodeType() == ELEMENT_NODE
-                && "import".equals(child.getLocalName())
-                && XSD_NS.equals(child.getNamespaceURI())) {
+            if (isXSDElementWithName(child, "import")) {
                 new Import(ctx, child,this);
             }
         }
@@ -116,13 +109,9 @@ public class Schema extends WSDLElement {
     private List<SchemaElement> getSchemaElements(Element schema) {
         var result = new ArrayList<SchemaElement>();
         var children = schema.getChildNodes();
-
         for (int i = 0; i < children.getLength(); i++) {
             var child = children.item(i);
-
-            if (child.getNodeType() == ELEMENT_NODE
-                && "element".equals(child.getLocalName())
-                && XSD_NS.equals(child.getNamespaceURI())) {
+            if (isXSDElementWithName(child, "element")) {
                 result.add(new SchemaElement(ctx, child));
             }
         }

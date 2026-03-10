@@ -16,20 +16,18 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.wsdl.parser.schema.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
 
 import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.*;
-import static org.w3c.dom.Node.*;
 
 /**
  * WSDL elements register themselves via WSDLParserContext. This is more convenient, e.g. binding is not
  * directly created.
  */
-public class Definitions {
+public class Definitions extends WSDLElement {
 
     private static final Logger log = LoggerFactory.getLogger(Definitions.class);
 
@@ -38,74 +36,55 @@ public class Definitions {
     }
 
     private List<Schema> schemas = new ArrayList<>();
-    private List<Message> messages = new ArrayList<>();
-    private List<PortType> portTypes = new ArrayList<>();
-    private List<Binding> bindings = new ArrayList<>();
-    private List<Service> services = new ArrayList<>();
+    private final List<Message> messages = new ArrayList<>();
+    private final List<PortType> portTypes = new ArrayList<>();
+    private final List<Binding> bindings = new ArrayList<>();
+    private final List<Service> services = new ArrayList<>();
 
     private String targetNamespace;
-    private String name;
 
-    Set<SOAPVersion> soapVersions = new HashSet<>();
+    private final Set<SOAPVersion> soapVersions = new HashSet<>();
 
-    private Definitions() {
+    private Definitions(Resolver resolver, String location) throws Exception {
+        super(new WSDLParserContext(null, resolver, location, new ArrayList<>()), read(resolver, location));
+        ctx = ctx.definitions(this);
+        parse(ctx, this.getElement());
     }
 
-    public void parse(WSDLParserContext ctx, Element element) {
-        targetNamespace = element.getAttribute("targetNamespace");
-        name = getName(element);
-
-        for (var schemaElement : getSchemaElements(element)) {
-            schemas.add(new Schema(ctx, schemaElement));
+    private static Node read(Resolver resolver, String location) throws Exception {
+        try (var is = resolver.resolve(location)) {
+            return WSDLParserUtil.parse(is);
         }
-
-        importEmbeddedSchemas();
-
-        for (var e : getDirectChildElements(element, "service")) {
-            // Registers itself via WSDLParserContext
-            new Service(ctx, e);
-        }
-
-        // Abstract WSDL without binding and service elements
-        if (services.isEmpty()) {
-            for (var e : getDirectChildElements(element, "portType")) {
-                // Registers itself via WSDLParserContext
-                new PortType(ctx, e);
-            }
-        }
-    }
-
-    private static @Nullable String getName(Element element) {
-        var name = element.getAttribute("name");
-        if (name.isEmpty())
-            return null;
-        return name;
-    }
-
-    private void importEmbeddedSchemas() {
-        for (var schema : schemas) {
-            for (var i : schema.getImports()) {
-                if (i.getSchemaLocation() == null || i.getSchemaLocation().isEmpty()) {
-                    var importedSchema = getEmbeddedSchema(i.getNamespace());
-                    log.debug("Importing embedded schema with namespace: {}", i.getNamespace());
-                    i.setSchema(importedSchema);
-                }
-            }
-        }
-    }
-
-    private @Nullable Schema getEmbeddedSchema(String namespace) {
-        return schemas.stream().filter(s -> Objects.equals(s.getTargetNamespace(), namespace))
-                .findFirst().orElse(null);
     }
 
     public static Definitions parse(Resolver resolver, String location) throws Exception {
         log.debug("Parsing WSDL from {}", location);
-        var defs = new Definitions();
-        try (var is = resolver.resolve(location)) {
-            defs.parse(new WSDLParserContext(defs, resolver, location, new ArrayList<>()), WSDLParserUtil.parse(is));
+        return new Definitions(resolver, location);
+    }
+
+    private void parse(WSDLParserContext ctx, Element element) {
+        targetNamespace = element.getAttribute("targetNamespace");
+        schemas = getSchemaElements(element);
+        importEmbeddedSchemas();
+
+        instantiateWSDLChildElements(element, "service", Service.class);
+        if (services.isEmpty()) {
+            instantiateWSDLChildElements(element, "portType", PortType.class);
         }
-        return defs;
+    }
+
+    /**
+     * Go through all embedded schemas and import all embedded schemas that are referenced there
+     */
+    private void importEmbeddedSchemas() {
+        schemas.forEach(s -> s.getImports()
+                .forEach(i -> i.importEmbeddedSchema(this)));
+    }
+
+    public Optional<Schema> getEmbeddedSchema(String namespace) {
+        return schemas.stream()
+                .filter(s -> Objects.equals(s.getTargetNamespace(), namespace))
+                .findFirst();
     }
 
     public List<Schema> getSchemas() {
@@ -140,10 +119,6 @@ public class Definitions {
         return targetNamespace;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public Set<SOAPVersion> getSoapVersions() {
         return soapVersions;
     }
@@ -152,42 +127,11 @@ public class Definitions {
         soapVersions.add(soapVersion);
     }
 
-    private List<Element> getSchemaElements(Element wsdl) {
-        var schemas = new ArrayList<Element>();
-
-        var typesList = wsdl.getElementsByTagNameNS(WSDL11_NS, "types");
-        for (int i = 0; i < typesList.getLength(); i++) {
-            var types = (Element) typesList.item(i);
-            var children = types.getChildNodes();
-
-            for (int j = 0; j < children.getLength(); j++) {
-                var child = children.item(j);
-
-                if ((child.getNodeType() == ELEMENT_NODE)
-                    && "schema".equals(child.getLocalName())
-                    && XSD_NS.equals(child.getNamespaceURI())) {
-                    schemas.add((Element) child);
-                }
-            }
-        }
-        return schemas;
+    private List<Schema> getSchemaElements(Element wsdl) {
+        return instantiateXSDChildElements(getTypes(wsdl), "schema", Schema.class);
     }
 
-    private static List<Element> getDirectChildElements(Element parent, String name) {
-        var result = new ArrayList<Element>();
-        var children = parent.getChildNodes();
-
-        for (int i = 0; i < children.getLength(); i++) {
-            var node = children.item(i);
-            if (node.getNodeType() == ELEMENT_NODE) {
-                var element = (Element) node;
-                if (WSDL11_NS.equals(element.getNamespaceURI()) &&
-                    name.equals(element.getLocalName())) {
-                    result.add(element);
-                }
-            }
-        }
-
-        return result;
+    private static Node getTypes(Element wsdl) {
+        return wsdl.getElementsByTagNameNS(WSDL11_NS, "types").item(0);
     }
 }

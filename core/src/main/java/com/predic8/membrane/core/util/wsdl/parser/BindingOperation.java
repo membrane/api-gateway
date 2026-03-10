@@ -26,7 +26,7 @@ public class BindingOperation extends WSDLElement{
     }
 
     private String getSoapAction(Node node) {
-        Node n = node.getAttributes().getNamedItem("soapAction");
+        var n = node.getAttributes().getNamedItem("soapAction");
         if (n == null)
             return "";
         return n.getNodeValue();

@@ -16,13 +16,19 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import org.w3c.dom.*;
 
+import java.util.*;
+import java.util.function.*;
+
+import static com.predic8.membrane.annot.Constants.*;
+import static org.w3c.dom.Node.*;
+
 public class WSDLElement {
 
-    protected final WSDLParserContext ctx;
+    protected WSDLParserContext ctx;
     protected final Element element;
     protected String name;
 
-    public WSDLElement(WSDLParserContext ctx,Node node) {
+    public WSDLElement(WSDLParserContext ctx, Node node) {
         this.ctx = ctx;
         if (!(node instanceof Element element)) {
             throw new RuntimeException("Not an element: " + node.getClass());
@@ -42,4 +48,43 @@ public class WSDLElement {
         return element.getOwnerDocument().getDocumentElement();
     }
 
+    public Element getElement() {
+        return element;
+    }
+
+    protected <T extends WSDLElement> List<T> instantiateWSDLChildElements(Node node, String name, Class<T> clazz) {
+        return instantiateWSDLChildElementsInternal(node, name, clazz, WSDLElement::isWSDLElementWithName);
+    }
+
+    protected <T extends WSDLElement> List<T> instantiateXSDChildElements(Node node, String name, Class<T> clazz) {
+        return instantiateWSDLChildElementsInternal(node, name, clazz, WSDLElement::isXSDElementWithName);
+    }
+
+    protected <T extends WSDLElement> List<T> instantiateWSDLChildElementsInternal(Node node, String name, Class<T> clazz, BiPredicate<Node, String> elementPredicate) {
+        List<T> result = new ArrayList<>();
+        var children = node.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            var child = children.item(i);
+            if (elementPredicate.test(child, name)) {
+                try {
+                    result.add(clazz.getConstructor(WSDLParserContext.class, Node.class).newInstance(ctx, child));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return result;
+    }
+
+    protected static boolean isWSDLElementWithName(Node child, String name) {
+        return child.getNodeType() == ELEMENT_NODE
+               && name.equals(child.getLocalName())
+               && WSDL11_NS.equals(child.getNamespaceURI());
+    }
+
+    protected static boolean isXSDElementWithName(Node child, String name) {
+        return child.getNodeType() == ELEMENT_NODE
+               && name.equals(child.getLocalName())
+               && XSD_NS.equals(child.getNamespaceURI());
+    }
 }

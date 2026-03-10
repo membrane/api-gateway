@@ -16,11 +16,14 @@ package com.predic8.membrane.core.util.wsdl.parser.schema;
 
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 import org.w3c.dom.*;
 
 import java.util.*;
 
 public class Import extends AbstractIncludeImport {
+
+    private static final Logger log = LoggerFactory.getLogger(Definitions.class);
 
     private final String namespace;
 
@@ -36,6 +39,23 @@ public class Import extends AbstractIncludeImport {
         if (!Objects.equals(schema.getTargetNamespace(), namespace)) {
             throw new WSDLParserException("The namespace {%s} of the import does not match the targetNamespace of the imported schema {%s}.".formatted(namespace, schema.getTargetNamespace()));
         }
+    }
+
+    /**
+     * Imports an import in a schema that is embedded in the WSDL definition.
+     * Function is typically called from Definitions.importEmbeddedSchemas().
+     * @param definitions The WSL that contains the embedded schema.
+     */
+    public void importEmbeddedSchema(Definitions definitions) {
+        if (isSchemaLocationMissing())
+            return;
+
+        log.debug("Importing embedded schema with namespace: {}", namespace);
+        definitions.getEmbeddedSchema(namespace).ifPresent(s -> schema = s);
+    }
+
+    private boolean isSchemaLocationMissing() {
+        return schemaLocation != null && !schemaLocation.isEmpty();
     }
 
     @Override
