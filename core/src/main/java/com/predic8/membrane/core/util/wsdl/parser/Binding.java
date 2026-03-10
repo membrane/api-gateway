@@ -15,21 +15,14 @@
 package com.predic8.membrane.core.util.wsdl.parser;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions.*;
-import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.*;
-import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.*;
 import static com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil.*;
-import static java.util.Optional.empty;
-import static org.w3c.dom.Node.*;
+import static java.util.Optional.*;
 
 public class Binding extends WSDLElement {
-
-    private SOAPVersion soapVersion;
 
     public enum Style {
         RPC, DOCUMENT;
@@ -42,19 +35,24 @@ public class Binding extends WSDLElement {
         }
     }
 
-    private Style style;
+    private SOAPVersion soapVersion;
+
     private final List<BindingOperation> operations;
+    private final BindingStyle bindingStyle;
     private final PortType portType;
 
     public Binding(WSDLParserContext ctx, Node node) {
-        super(ctx,node);
+        super(ctx, node);
         ctx.getDefinitions().getBindings().add(this);
         operations = getBindingOperations(node);
         portType = getPortType(node).orElseThrow(() -> new WSDLParserException("No portType found for binding: " + name));
+        soapVersion = getBindingStyle().getSoapVersion();
+        ctx.getDefinitions().addSoapVersion(soapVersion);
+        bindingStyle = getBindingStyle();
     }
 
     public Style getStyle() {
-        return style;
+        return bindingStyle.getStyle();
     }
 
     public List<BindingOperation> getOperations() {
@@ -70,54 +68,19 @@ public class Binding extends WSDLElement {
     }
 
     private List<BindingOperation> getBindingOperations(Node node) {
-        var result = new ArrayList<BindingOperation>();
-        var children = node.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            var child = children.item(i);
-
-            if (isWSDLElementWithName(child, "operation")) {
-                result.add(new BindingOperation(ctx, child));
-            }
-
-            if (child.getNodeType() == ELEMENT_NODE
-                && "binding".equals(child.getLocalName())) {
-                style = getStyle(child);
-                if (WSDL_SOAP11_NS.equals(child.getNamespaceURI())) {
-                    soapVersion = SOAP_11;
-                    ctx.getDefinitions().addSoapVersion(soapVersion);
-                } else if (WSDL_SOAP12_NS.equals(child.getNamespaceURI())) {
-                    soapVersion = SOAP_12;
-                    ctx.getDefinitions().addSoapVersion(soapVersion);
-                }
-            }
-        }
-        return result;
+        return instantiateWSDLChildElements(node, "operation", BindingOperation.class);
     }
 
-    private static Style getStyle(Node child) {
-        var node = child.getAttributes().getNamedItem("style");
-        if (node == null) {
-            // Style is missing, assume document style.
-            return DOCUMENT;
-        }
-        return Style.fromString(node.getNodeValue());
+    private BindingStyle getBindingStyle() {
+        return instantiateChildElements(element, "binding", BindingStyle.class).getFirst();
     }
 
     private Optional<PortType> getPortType(Node node) {
         if (!(node instanceof Element bindingElement)) {
             return empty();
         }
-        var portTypeQName = resolveQName(getType(bindingElement), bindingElement);
         return ctx.getDefinitions().getPortTypes().stream()
-                .filter(pt -> portTypeQName.getLocalPart().equals(pt.getName()))
+                .filter(pt -> getLocalName(getAttribute("type")).equals(pt.getName()))
                 .findFirst();
-    }
-
-    private @NotNull String getType(Element bindingElement) {
-        var type = bindingElement.getAttribute("type");
-        if (type.isEmpty()) {
-            throw new WSDLParserException("No type attribute found for binding: " + name);
-        }
-        return type;
     }
 }

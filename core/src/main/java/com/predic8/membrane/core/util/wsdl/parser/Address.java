@@ -18,21 +18,11 @@ import org.w3c.dom.*;
 
 public class Address extends WSDLElement {
 
-    private final String location;
-
-    public Address(WSDLParserContext ctx,Node node) {
-        super(ctx,node);
-        location = getLocation(node);
+    public Address(WSDLParserContext ctx, Node node) {
+        super(ctx, node);
     }
 
     public String getLocation() {
-        return location;
-    }
-
-    public String getLocation(Node node) {
-        if (node instanceof Element e) {
-            return e.getAttribute("location");
-        }
-        return null;
+        return getAttribute("location");
     }
 }

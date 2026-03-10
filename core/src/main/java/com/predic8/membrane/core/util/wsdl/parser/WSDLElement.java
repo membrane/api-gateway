@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
+import org.jetbrains.annotations.*;
 import org.w3c.dom.*;
 
-import javax.xml.namespace.*;
 import java.util.*;
 import java.util.function.*;
 
@@ -53,6 +53,10 @@ public class WSDLElement {
         return element;
     }
 
+    protected <T extends WSDLElement> List<T> instantiateChildElements(Node node, String name, Class<T> clazz) {
+        return instantiateWSDLChildElementsInternal(node, name, clazz, WSDLElement::isElementWithName);
+    }
+
     protected <T extends WSDLElement> List<T> instantiateWSDLChildElements(Node node, String name, Class<T> clazz) {
         return instantiateWSDLChildElementsInternal(node, name, clazz, WSDLElement::isWSDLElementWithName);
     }
@@ -77,12 +81,16 @@ public class WSDLElement {
         return result;
     }
 
-    protected static boolean isWSDLElementWithName(Node child, String name) {
-        return isWSDLElement(child) && name.equals(child.getLocalName());
+    protected static boolean isElementWithName(Node node, String name) {
+        return node.getNodeType() == ELEMENT_NODE && name.equals(node.getLocalName());
     }
 
-    protected static boolean isXSDElementWithName(Node child, String name) {
-        return isXSDElement(child) && name.equals(child.getLocalName());
+    protected static boolean isWSDLElementWithName(Node node, String name) {
+        return isWSDLElement(node) && name.equals(node.getLocalName());
+    }
+
+    protected static boolean isXSDElementWithName(Node node, String name) {
+        return isXSDElement(node) && name.equals(node.getLocalName());
     }
 
     protected static boolean isWSDLElement(Node node) {
@@ -91,5 +99,17 @@ public class WSDLElement {
 
     protected static boolean isXSDElement(Node node) {
         return node.getNodeType() == ELEMENT_NODE && XSD_NS.equals(node.getNamespaceURI());
+    }
+
+    protected boolean isWsdlSoap12Element() {
+        return WSDL_SOAP12_NS.equals(element.getNamespaceURI());
+    }
+
+    protected boolean isWsdlSoap11Element() {
+        return WSDL_SOAP11_NS.equals(element.getNamespaceURI());
+    }
+
+    protected @NotNull String getAttribute(String name) {
+        return element.getAttribute(name);
     }
 }

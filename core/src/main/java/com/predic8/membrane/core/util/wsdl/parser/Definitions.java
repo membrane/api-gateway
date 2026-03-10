@@ -32,7 +32,7 @@ public class Definitions extends WSDLElement {
     private static final Logger log = LoggerFactory.getLogger(Definitions.class);
 
     public enum SOAPVersion {
-        SOAP_11, SOAP_12
+        SOAP_11, SOAP_12, UNKNOWN;
     }
 
     private List<Schema> schemas = new ArrayList<>();
@@ -66,7 +66,6 @@ public class Definitions extends WSDLElement {
         targetNamespace = element.getAttribute("targetNamespace");
         schemas = getSchemaElements(element);
         importEmbeddedSchemas();
-
         instantiateWSDLChildElements(element, "message", Message.class);
         instantiateWSDLChildElements(element, "portType", PortType.class);
         instantiateWSDLChildElements(element, "service", Service.class);

@@ -106,7 +106,7 @@ class WSDLParserTest {
     }
 
     @Test
-    void fault() throws Exception{
+    void fault() throws Exception {
         var dn = Definitions.parse(new ResolverMap(),"classpath:/ws/calculator-fault.wsdl");
         var pt = dn.getPortTypes().getFirst();
         var fault = pt.getOperations().getFirst().getFaults().getFirst();
@@ -114,6 +114,10 @@ class WSDLParserTest {
         assertEquals("DivideByZeroFault", fault.getPart().getElementQName().getLocalPart());
     }
 
-
+    @Test
+    void rpcStyle() throws Exception {
+        var dn = Definitions.parse(new ResolverMap(),"classpath:/validation/inline-anytype.wsdl");
+        assertEquals(RPC, dn.getBindings().getFirst().getStyle());
+    }
 
 }

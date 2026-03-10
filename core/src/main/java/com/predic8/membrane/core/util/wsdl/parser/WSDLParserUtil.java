@@ -28,6 +28,17 @@ public class WSDLParserUtil {
         return dbf.newDocumentBuilder().parse(is).getDocumentElement();
     }
 
+    /**
+     *
+     * @param value QName with prefix like tns:MyPortType or just MyPortType
+     * @return
+     */
+    public static String getLocalName(String value) {
+        var pos = value.indexOf(':');
+        if (pos == -1)
+            return value;
+        return value.substring(pos+1);
+    }
 
     public static QName resolveQName(String value, Node context) {
 
