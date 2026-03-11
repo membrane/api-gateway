@@ -34,7 +34,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
-import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
 /**
  * @description <p>
@@ -93,11 +93,6 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 if (!path.contains("://") && !path.startsWith("/")) {
                     path = combine(resource, path);
                 }
-
-                if (!new File(path).exists()) {
-                    throw new ResourceRetrievalException("Could not find resource: " + path);
-                }
-
                 return "./%s?xsd=%s".formatted(URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst()), resolveToNumber(path));
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -105,19 +100,15 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         }
 
         private @NotNull String resolveToNumber(String path) {
-            if (!new File(path).exists()) {
-                throw new RuntimeException("!!!!Could not find resource: " + path);
+            if (pathsReverse.containsKey(path)) {
+                return pathsReverse.get(path).toString();
             }
-            synchronized (paths) {
-                if (paths_reverse.containsKey(path)) {
-                    return paths_reverse.get(path).toString();
-                }
-                int n = paths.size() + 1;
-                paths.put(n, path);
-                paths_reverse.put(path, n);
-                documents_to_process.add(path);
-                return Integer.toString(n);
-            }
+            int n = paths.size() + 1;
+            paths.put(n, path);
+            pathsReverse.put(path, n);
+            documentsToProcess.add(path);
+            return Integer.toString(n);
+
         }
     }
 
@@ -137,10 +128,10 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     private final Map<Integer, String> paths = new HashMap<>();
 
     @GuardedBy("paths")
-    private final Map<String, Integer> paths_reverse = new HashMap<>();
+    private final Map<String, Integer> pathsReverse = new HashMap<>();
 
     @GuardedBy("paths")
-    private final Queue<String> documents_to_process = new LinkedList<>();
+    private final Queue<String> documentsToProcess = new LinkedList<>();
 
     private void processDocuments(Exchange exc) {
         // exc.response is only temporarily used so we can call the WSDLInterceptor
@@ -148,7 +139,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         synchronized (paths) {
             try {
                 while (true) {
-                    var doc = documents_to_process.poll();
+                    var doc = documentsToProcess.poll();
                     if (doc == null)
                         break;
                     log.debug("processing: {}", doc);
@@ -177,9 +168,9 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         this.wsdl = wsdl;
         synchronized (paths) {
             paths.clear();
-            paths_reverse.clear();
-            documents_to_process.clear();
-            documents_to_process.add(wsdl);
+            pathsReverse.clear();
+            documentsToProcess.clear();
+            documentsToProcess.add(wsdl);
         }
     }
 

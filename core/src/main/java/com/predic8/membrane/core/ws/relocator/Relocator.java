@@ -87,15 +87,8 @@ public class Relocator {
         if (!event.isStartElement())
             return event;
 
-        return relocatingAttributes.entrySet().stream()
-                .filter(e -> shouldProcess(e, event))
-                .findFirst()
-                .map(e -> replace(event, e.getValue()))
-                .orElse(event);
-    }
-
-    private boolean shouldProcess(Map.Entry<QName, String> e, XMLEvent event) {
-        return getElementName(event).equals(e.getKey());
+        var attr = relocatingAttributes.get(getElementName(event));
+        return attr != null ? replace(event, attr) : event;
     }
 
     private QName getElementName(XMLEvent event) {

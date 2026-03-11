@@ -40,7 +40,6 @@ public class WSDLIncludeImportTest {
         assertEquals("http://example.com/test", embedded.getTargetNamespace());
         assertEquals(3, embedded.getSchemaElements().size());
         assertEquals(List.of("test", "testResponse", "du"), getElementNames(embedded.getSchemaElements()));
-        System.out.println(embedded.getImports());
         assertEquals(1, embedded.getImports().size());
         var imported = embedded.getImports().getFirst();
         assertEquals("http://example.com/test/data-types", imported.getNamespace());
@@ -90,8 +89,8 @@ public class WSDLIncludeImportTest {
         assertEquals(2, first.getImports().size());
         var firstImport = first.getImports().getFirst();
         assertEquals(List.of("from2"), getElementNames(firstImport.getSchema().getSchemaElements()));
-        var secondImport = first.getImports().getFirst();
-        assertEquals(List.of("from2"), getElementNames(secondImport.getSchema().getSchemaElements()));
+        var secondImport = first.getImports().get(1);
+        assertEquals(List.of("from3"), getElementNames(secondImport.getSchema().getSchemaElements()));
         var second = defs.getSchemas().get(1);
         assertEquals(List.of("from2"), getElementNames(second.getSchemaElements()));
         var third = defs.getSchemas().get(2);

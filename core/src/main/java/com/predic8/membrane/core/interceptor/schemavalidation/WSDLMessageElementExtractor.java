@@ -38,21 +38,24 @@ public class WSDLMessageElementExtractor {
 
     public static Set<QName> getPossibleElements(Definitions definitions, Direction direction, String serviceName) {
         var portTypes = getTypesByStyle(definitions, serviceName);
+        var result = new HashSet<>(getElementQNameForDocumentStyle(direction, portTypes));
+        result.addAll(getElementQNamesForRPCStyle(definitions, direction, portTypes));
+        return result;
+    }
 
-        var operationNamesRPC = portTypes.portTypesRPC().stream().map(PortType::getOperations)
+    private static @NotNull Set<QName> getElementQNamesForRPCStyle(Definitions definitions, Direction direction, PortTypesByStyle portTypes) {
+        return portTypes.portTypesRPC().stream().map(PortType::getOperations)
                 .flatMap(Collection::stream)
                 .filter(op -> !op.getMessagesByDirection(direction).isEmpty())
                 .map(op -> new QName(definitions.getTargetNamespace(), getElementNameRPC(op, direction)))
                 .collect(toSet());
+    }
 
-
-        var namesDocumentStyle = getParts(direction, portTypes.portTypesDocument())
+    private static @NotNull Set<QName> getElementQNameForDocumentStyle(Direction direction, PortTypesByStyle portTypes) {
+        return getParts(direction, portTypes.portTypesDocument())
                 .map(Part::getElementQName)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-
-        namesDocumentStyle.addAll(operationNamesRPC);
-        return namesDocumentStyle;
     }
 
     private static @NotNull PortTypesByStyle getTypesByStyle(Definitions definitions, String serviceName) {
