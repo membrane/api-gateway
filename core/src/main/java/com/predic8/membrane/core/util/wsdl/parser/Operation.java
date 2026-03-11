@@ -58,7 +58,7 @@ public class Operation extends WSDLElement {
         }
 
         public Message getMessage() {
-            return ctx.getDefinitions().findMessage(WSDLParserUtil.getLocalName(getAttribute("message")))
+            return ctx.definitions().findMessage(WSDLParserUtil.getLocalName(getAttribute("message")))
                     .orElseThrow(() -> new WSDLParserException("Message not found: " + getAttribute("message")));
         }
     }

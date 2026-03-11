@@ -139,7 +139,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     }
 
     private boolean isPossibleSOAPElement(Set<QName> elementNames, QName name) {
-        return elementNames.stream().anyMatch(qn -> qn.equals(name));
+        return elementNames.contains(name);
     }
 
     @Override

@@ -57,11 +57,14 @@ public class Binding extends WSDLElement {
     }
 
     private BindingStyle getBindingStyle() {
-        return instantiateChildren( "binding", BindingStyle.class).getFirst();
+        var binding = instantiateChildren("binding", BindingStyle.class);
+        if (binding.isEmpty())
+            throw new WSDLParserException("No bindingStyle found for binding: " + getName());
+        return binding.getFirst();
     }
 
     public PortType getPortType() {
-        return ctx.getDefinitions().getPortTypes().stream()
+        return ctx.definitions().getPortTypes().stream()
                 .filter(pt -> getLocalName(getAttribute("type")).equals(pt.getName()))
                 .findFirst().orElseThrow(() -> new WSDLParserException("No portType found for binding: " + getName()));
     }

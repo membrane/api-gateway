@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.util.wsdl.parser.schema;
 
 import com.predic8.membrane.core.util.wsdl.parser.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
 
@@ -43,14 +42,14 @@ public class Import extends AbstractIncludeImport {
      * @param definitions The WSL that contains the embedded schema.
      */
     public void importEmbeddedSchema(Definitions definitions) {
-        if (isSchemaLocationMissing())
+        if (hasSchemaLocation())
             return;
 
         log.debug("Importing embedded schema with namespace: {}", getNamespace());
         definitions.getEmbeddedSchema(getNamespace()).ifPresent(s -> schema = s);
     }
 
-    private boolean isSchemaLocationMissing() {
+    private boolean hasSchemaLocation() {
         return schemaLocation != null && !schemaLocation.isEmpty();
     }
 

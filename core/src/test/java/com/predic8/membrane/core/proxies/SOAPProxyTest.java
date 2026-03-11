@@ -86,6 +86,14 @@ public class SOAPProxyTest {
     }
 
     @Test
+    void abstractWSDL() throws Exception {
+        proxy.setWsdl("classpath:/ws/abstract-service-no-binding.wsdl");
+        router.add(proxy);
+        assertThrows(ConfigurationException.class,
+                () -> router.start());
+    }
+
+    @Test
     void parseWSDLWithMultipleServicesForAGivenServiceB() throws Exception {
         proxy.setServiceName("CityServiceB");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");

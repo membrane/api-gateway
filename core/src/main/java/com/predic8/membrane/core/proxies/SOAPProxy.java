@@ -116,6 +116,8 @@ public class SOAPProxy extends AbstractServiceProxy {
             return defs.getService(serviceName).orElseThrow(
                     () -> new ConfigurationException("No service with name '%s' found in WSDL %s".formatted(serviceName, wsdl))
             );
+        if (defs.getServices().isEmpty())
+            throw new ConfigurationException("No service element found in WSDL %s".formatted(wsdl));
         return defs.getServices().getFirst();
     }
 

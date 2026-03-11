@@ -40,10 +40,10 @@ public abstract class AbstractIncludeImport extends WSDLElement {
             var resolved = resolve(ctx);
 
             // Check if the schema has already been imported or included
-            if (ctx.getVisitedLocations().contains(resolved))
+            if (ctx.visitedLocations().contains(resolved))
                 return null;
 
-            try (var is = ctx.getResolver().resolve(resolved)) {
+            try (var is = ctx.resolver().resolve(resolved)) {
                 return new Schema(ctx.basePath(resolved), WSDLParserUtil.parse(is));
             }
         } catch (Exception e) {
@@ -52,7 +52,7 @@ public abstract class AbstractIncludeImport extends WSDLElement {
     }
 
     private String resolve(WSDLParserContext ctx) {
-        return URIUtil.normalize(ResolverMap.combine(ctx.getBasePath(), schemaLocation));
+        return URIUtil.normalize(ResolverMap.combine(ctx.basePath(), schemaLocation));
     }
 
     public String getSchemaLocation() {

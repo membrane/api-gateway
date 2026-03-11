@@ -19,11 +19,8 @@ import org.w3c.dom.*;
 
 public class SchemaElement extends WSDLElement {
 
-    WSDLParserContext ctx;
-
     public SchemaElement(WSDLParserContext ctx,Node node) {
         super(ctx,node);
-        this.ctx = ctx;
     }
 
     @Override

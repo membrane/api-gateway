@@ -14,24 +14,12 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import com.predic8.membrane.core.graphql.model.*;
 import com.predic8.membrane.core.resolver.*;
 
 import java.util.*;
 
-public class WSDLParserContext {
-
-    private final Definitions definitions;
-    private final Resolver resolver;
-    private final String basePath;
-    private final List<String> visitedLocations;
-
-    public WSDLParserContext(Definitions wsdl, Resolver resolver, String basePath, List<String> visitedLocations) {
-        this.definitions = wsdl;
-        this.resolver = resolver;
-        this.basePath = basePath;
-        this.visitedLocations = visitedLocations;
-    }
+public record WSDLParserContext(Definitions definitions, Resolver resolver, String basePath,
+                                List<String> visitedLocations) {
 
     public WSDLParserContext definitions(Definitions definitions) {
         return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
@@ -44,21 +32,5 @@ public class WSDLParserContext {
 
     public WSDLParserContext resolver(Resolver resolver) {
         return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
-    }
-
-    public List<String> getVisitedLocations() {
-        return visitedLocations;
-    }
-
-    public Definitions getDefinitions() {
-        return definitions;
-    }
-
-    public Resolver getResolver() {
-        return resolver;
-    }
-
-    public String getBasePath() {
-        return basePath;
     }
 }

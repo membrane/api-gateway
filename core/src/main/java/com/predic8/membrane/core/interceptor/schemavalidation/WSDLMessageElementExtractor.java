@@ -104,7 +104,8 @@ public class WSDLMessageElementExtractor {
         return result.stream().map(PortType::getOperations)
                 .flatMap(Collection::stream)
                 .map(op -> op.getMessagesByDirection(direction))
-                .flatMap(Collection::stream).toList().stream().map(Message::getPart);
+                .flatMap(Collection::stream)
+                .map(Message::getPart);
     }
 
     private record PortTypesByStyle(List<PortType> portTypesRPC, List<PortType> portTypesDocument) {

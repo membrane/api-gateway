@@ -87,7 +87,7 @@ public class WSDLElement {
                 try {
                     result.add(clazz.getConstructor(WSDLParserContext.class, Node.class).newInstance(ctx, child));
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new RuntimeException("Failed to instantiate " + clazz.getSimpleName() + " for element: " + name, e);
                 }
             }
         }
