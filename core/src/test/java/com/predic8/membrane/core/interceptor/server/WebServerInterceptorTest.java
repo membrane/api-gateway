@@ -51,8 +51,8 @@ class WebServerInterceptorTest {
         ws.setGenerateIndex(false);
         ws.handleRequest(exc);
         // No index file is set, and no index page is generated, so throw not found.
-//        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
-        assertEquals(500, exc.getResponse().getStatusCode());
+        // System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
+        assertEquals(404, exc.getResponse().getStatusCode());
     }
 
     @Test
@@ -60,6 +60,11 @@ class WebServerInterceptorTest {
         ws.setGenerateIndex(true);
         ws.handleRequest(exc);
         // No index file is set, but index page is being generated. Body lists the page.html resource.
-        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("page.html"));
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getHeader().getFirstValue("Content-Type").contains("text/html"));
+
+        String body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("<a href=\"./index.html\">index.html</a>"));
+        assertTrue(body.contains("<a href=\"./page.html\">page.html</a>"));
     }
 }
