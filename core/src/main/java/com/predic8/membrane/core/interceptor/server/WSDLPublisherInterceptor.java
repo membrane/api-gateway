@@ -80,7 +80,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
      */
     private final class RelativePathRewriter implements PathRewriter {
         private final Exchange exc;
-        private String resource;
+        private final String resource;
 
         private RelativePathRewriter(Exchange exc, String resource) {
             this.exc = exc;

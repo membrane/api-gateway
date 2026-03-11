@@ -94,10 +94,10 @@ public class WSDLMessageElementExtractor {
     }
 
     private static String getElementNameRPC(Operation operation, Direction direction) {
-        if (direction == INPUT) {
-            return operation.getName();
+        if (direction == OUTPUT) {
+            return operation.getName() + "Response";
         }
-        return operation.getName() + "Response";
+        return operation.getName();
     }
 
     private static @NotNull Stream<Part> getParts(Direction direction, List<PortType> result) {

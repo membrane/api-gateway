@@ -108,7 +108,7 @@ public class WSDLIncludeImportTest {
     }
 
     private static @NotNull List<String> getElementNames(List<SchemaElement> schemaElements) {
-        return schemaElements.stream().map(e -> e.getName()).toList();
+        return schemaElements.stream().map(WSDLElement::getName).toList();
     }
 
     private static @NotNull Definitions getDefinitions(String location) throws Exception {
