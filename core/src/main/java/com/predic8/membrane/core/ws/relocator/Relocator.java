@@ -27,7 +27,7 @@ import java.util.*;
 
 @NotThreadSafe
 public class Relocator {
-    private static final Logger log = LoggerFactory.getLogger(Relocator.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(Relocator.class);
 
     private final XMLEventFactory fac = XMLEventFactory.newInstance();
 

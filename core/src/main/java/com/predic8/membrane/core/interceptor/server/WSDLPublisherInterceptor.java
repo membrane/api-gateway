@@ -21,9 +21,12 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.Relocator.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
+import java.io.*;
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -31,6 +34,7 @@ import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.resolver.ResolverMap.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR;
 
 /**
  * @description <p>
@@ -76,7 +80,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
      */
     private final class RelativePathRewriter implements PathRewriter {
         private final Exchange exc;
-        private final String resource;
+        private String resource;
 
         private RelativePathRewriter(Exchange exc, String resource) {
             this.exc = exc;
@@ -89,29 +93,37 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 if (!path.contains("://") && !path.startsWith("/")) {
                     path = combine(resource, path);
                 }
-                synchronized (paths) {
-                    if (paths_reverse.containsKey(path)) {
-                        path = paths_reverse.get(path).toString();
-                    } else {
-                        int n = paths.size() + 1;
-                        paths.put(n, path);
-                        paths_reverse.put(path, n);
-                        documents_to_process.add(path);
-                        path = Integer.toString(n);
-                    }
+
+                if (!new File(path).exists()) {
+                    throw new ResourceRetrievalException("Could not find resource: " + path);
                 }
-                path = "./" + URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst()) + "?xsd=" + path;
+
+                return "./%s?xsd=%s".formatted(URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst()), resolveToNumber(path));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            return path;
+        }
+
+        private @NotNull String resolveToNumber(String path) {
+            if (!new File(path).exists()) {
+                throw new RuntimeException("!!!!Could not find resource: " + path);
+            }
+            synchronized (paths) {
+                if (paths_reverse.containsKey(path)) {
+                    return paths_reverse.get(path).toString();
+                }
+                int n = paths.size() + 1;
+                paths.put(n, path);
+                paths_reverse.put(path, n);
+                documents_to_process.add(path);
+                return Integer.toString(n);
+            }
         }
     }
 
     @Override
     public void init() {
         super.init();
-
         webServerInterceptor = new WebServerInterceptor();
         webServerInterceptor.init(router);
 
@@ -123,8 +135,10 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
     @GuardedBy("paths")
     private final Map<Integer, String> paths = new HashMap<>();
+
     @GuardedBy("paths")
     private final Map<String, Integer> paths_reverse = new HashMap<>();
+
     @GuardedBy("paths")
     private final Queue<String> documents_to_process = new LinkedList<>();
 
@@ -134,7 +148,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         synchronized (paths) {
             try {
                 while (true) {
-                    String doc = documents_to_process.poll();
+                    var doc = documents_to_process.poll();
                     if (doc == null)
                         break;
                     log.debug("processing: {}", doc);
@@ -203,9 +217,9 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 exc.getResponse().getHeader().setContentType(TEXT_XML);
             }
             if (exc.getRequest().getUri().contains("?xsd=")) {
-                var params = URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+                var params = getParams(exc);
                 if (params.containsKey("xsd")) {
-                    int n = Integer.parseInt(params.get("xsd"));
+                    var n = Integer.parseInt(params.get("xsd"));
                     String path;
                     processDocuments(exc);
                     synchronized (paths) {
@@ -222,7 +236,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             if (resource != null) {
                 var wi = new WSDLInterceptor();
                 wi.setRewriteEndpoint(false);
-                wi.setPathRewriter(new RelativePathRewriter(exc, combine(router.getConfiguration().getBaseLocation(), wsdl)));
+                wi.setPathRewriter(new RelativePathRewriter(exc, combine(router.getConfiguration().getBaseLocation(), resource)));
                 wi.init(router);
                 wi.handleResponse(exc);
                 return RETURN;
@@ -236,6 +250,10 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    private Map<String, String> getParams(Exchange exc) throws URISyntaxException, IOException {
+        return URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, ERROR);
     }
 
     private static boolean isRequestForWSDL(Exchange exc) {

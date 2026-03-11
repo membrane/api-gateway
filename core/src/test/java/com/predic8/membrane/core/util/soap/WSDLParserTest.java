@@ -19,7 +19,6 @@ import com.predic8.membrane.core.util.wsdl.parser.*;
 import com.predic8.membrane.core.util.wsdl.parser.schema.*;
 import org.junit.jupiter.api.*;
 
-import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.*;
@@ -53,7 +52,7 @@ class WSDLParserTest {
         assertEquals("CitySoapBinding", binding.getName());
         assertEquals(DOCUMENT, binding.getStyle());
 
-        assertEquals("https://predic8.de/cities",binding.getBindingOperation("getCity").getSoapAction());
+        assertEquals("https://predic8.de/cities", binding.getBindingOperation("getCity").getSoapAction());
 
 
         var portType = binding.getPortType();
@@ -69,12 +68,12 @@ class WSDLParserTest {
         assertEquals("getCity", getCityPart.getElementQName().getLocalPart());
         assertEquals("https://predic8.de/cities", getCityPart.getElementQName().getNamespaceURI());
 
-        assertEquals(1,definitions.getBindings().size());
+        assertEquals(1, definitions.getBindings().size());
         var binding1 = definitions.getBindings().getFirst();
         assertEquals("CitySoapBinding", binding1.getName());
         assertEquals(DOCUMENT, binding1.getStyle());
 
-        assertEquals(2,definitions.getMessages().size());
+        assertEquals(2, definitions.getMessages().size());
         assertEquals("City", definitions.getMessages().getFirst().getName());
         assertEquals("CityResponse", definitions.getMessages().getLast().getName());
     }
@@ -82,7 +81,7 @@ class WSDLParserTest {
     @Test
     void includeImport() throws Exception {
         var dn = Definitions.parse(new ResolverMap(), "classpath://ws/include/include.wsdl");
-        assertEquals("",dn.getName()); // No name is set
+        assertEquals("", dn.getName()); // No name is set
         assertEquals(1, dn.getSchemas().size());
         var embedded = dn.getSchemas().getFirst();
         assertEquals("http://example.com/test", embedded.getTargetNamespace());
@@ -111,7 +110,7 @@ class WSDLParserTest {
 
     @Test
     void fault() throws Exception {
-        var dn = Definitions.parse(new ResolverMap(),"classpath:/ws/calculator-fault.wsdl");
+        var dn = Definitions.parse(new ResolverMap(), "classpath:/ws/calculator-fault.wsdl");
         var pt = dn.getPortTypes().getFirst();
         var fault = pt.getOperations().getFirst().getFaults().getFirst();
         assertNotNull(fault);
@@ -120,8 +119,79 @@ class WSDLParserTest {
 
     @Test
     void rpcStyle() throws Exception {
-        var dn = Definitions.parse(new ResolverMap(),"classpath:/validation/inline-anytype.wsdl");
+        var dn = Definitions.parse(new ResolverMap(), "classpath:/validation/inline-anytype.wsdl");
         assertEquals(RPC, dn.getBindings().getFirst().getStyle());
+    }
+
+    @Test
+    void soap12() throws Exception {
+        var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/hello-soap12.wsdl");
+
+        assertEquals("HelloService", definitions.getName());
+
+        assertEquals(1, definitions.getSchemas().size());
+        var schema = definitions.getSchemas().getFirst();
+        assertEquals("http://example.com/hello", schema.getTargetNamespace());
+
+        var schemaElements = schema.getSchemaElements();
+        assertEquals(2, schemaElements.size());
+        var schemaElementNames = schemaElements.stream().map(SchemaElement::getName).toList();
+        assertEquals(List.of("sayHello", "sayHelloResponse"), schemaElementNames);
+
+        var services = definitions.getServices();
+        assertEquals(1, services.size());
+        var service = services.getFirst();
+        assertEquals("HelloService", service.getName());
+
+        var ports = service.getPorts();
+        assertEquals(1, ports.size());
+        var port = ports.getFirst();
+        assertEquals("HelloPort", port.getName());
+
+        var address = port.getAddress();
+        assertEquals("http://example.com/hello", address.getLocation());
+
+        var binding = port.getBinding();
+        assertEquals("HelloBinding", binding.getName());
+        assertEquals(DOCUMENT, binding.getStyle());
+
+        assertEquals("sayHello", binding.getBindingOperation("sayHello").getSoapAction());
+
+        var portType = binding.getPortType();
+        assertEquals("HelloPortType", portType.getName());
+
+        var operations = portType.getOperations();
+        assertEquals(1, operations.size());
+
+        var operation = operations.getFirst();
+        assertEquals("sayHello", operation.getName());
+
+        var inputs = operation.getInputs();
+        assertEquals(1, inputs.size());
+
+        var input = inputs.getFirst();
+        var part = input.getMessage().getPart();
+        assertEquals("parameters", part.getName());
+        assertEquals("sayHello", part.getElementQName().getLocalPart());
+        assertEquals("http://example.com/hello", part.getElementQName().getNamespaceURI());
+
+        var outputs = operation.getOutputs();
+        assertEquals(1, outputs.size());
+
+        var output = outputs.getFirst();
+        var outputPart = output.getMessage().getPart();
+        assertEquals("parameters", outputPart.getName());
+        assertEquals("sayHelloResponse", outputPart.getElementQName().getLocalPart());
+        assertEquals("http://example.com/hello", outputPart.getElementQName().getNamespaceURI());
+
+        assertEquals(1, definitions.getBindings().size());
+        var binding1 = definitions.getBindings().getFirst();
+        assertEquals("HelloBinding", binding1.getName());
+        assertEquals(DOCUMENT, binding1.getStyle());
+
+        assertEquals(2, definitions.getMessages().size());
+        assertEquals("SayHelloRequest", definitions.getMessages().getFirst().getName());
+        assertEquals("SayHelloResponse", definitions.getMessages().getLast().getName());
     }
 
 }
