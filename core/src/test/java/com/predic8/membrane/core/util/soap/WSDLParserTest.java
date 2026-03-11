@@ -64,7 +64,7 @@ class WSDLParserTest {
         var inputs = getCityOperation.getInputs();
         assertEquals(1, inputs.size());
         var getCityInput = inputs.getFirst();
-        var getCityPart = getCityInput.getPart();
+        var getCityPart = getCityInput.getMessage().getPart();
         assertEquals("getCity", getCityPart.getName());
         assertEquals("getCity", getCityPart.getElementQName().getLocalPart());
         assertEquals("https://predic8.de/cities", getCityPart.getElementQName().getNamespaceURI());
@@ -82,7 +82,7 @@ class WSDLParserTest {
     @Test
     void includeImport() throws Exception {
         var dn = Definitions.parse(new ResolverMap(), "classpath://ws/include/include.wsdl");
-        assertNull(dn.getName());
+        assertNull(""); // No name is set
         assertEquals(1, dn.getSchemas().size());
         var embedded = dn.getSchemas().getFirst();
         assertEquals("http://example.com/test", embedded.getTargetNamespace());
@@ -115,7 +115,7 @@ class WSDLParserTest {
         var pt = dn.getPortTypes().getFirst();
         var fault = pt.getOperations().getFirst().getFaults().getFirst();
         assertNotNull(fault);
-        assertEquals("DivideByZeroFault", fault.getPart().getElementQName().getLocalPart());
+        assertEquals("DivideByZeroFault", fault.getMessage().getPart().getElementQName().getLocalPart());
     }
 
     @Test

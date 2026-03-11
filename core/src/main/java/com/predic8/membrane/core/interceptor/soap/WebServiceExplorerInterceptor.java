@@ -23,7 +23,6 @@ import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.util.wsdl.parser.*;
-import com.predic8.membrane.core.util.wsdl.parser.Message;
 import org.slf4j.*;
 
 import java.io.*;
@@ -159,6 +158,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 						th().text("Operation").end();
 						th().text("Input").end();
 						th().text("Output").end();
+						th().text("Fault").end();
 					end();
 					for (Operation o : portType.getOperations()) {
 						tr();
@@ -166,11 +166,14 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 							text(o.getName());
 						end();
 						td();
-						for (Part p : o.getInputs().stream().map(Message::getPart).toList())
+						for (Part p : o.getInputs().stream().map(om -> om.getMessage().getPart()).toList())
 							text(p.getElementQName().toString());
 						end();
 						td();
-						for (Part p : o.getOutputs().stream().map(Message::getPart).toList())
+						for (Part p : o.getOutputs().stream().map(om -> om.getMessage().getPart()).toList())
+							text(p.getElementQName().toString());
+						end();
+						for (Part p : o.getFaults().stream().map(om -> om.getMessage().getPart()).toList())
 							text(p.getElementQName().toString());
 						end();
 						end();

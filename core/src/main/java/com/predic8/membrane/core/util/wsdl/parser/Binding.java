@@ -63,6 +63,6 @@ public class Binding extends WSDLElement {
     public PortType getPortType() {
         return ctx.getDefinitions().getPortTypes().stream()
                 .filter(pt -> getLocalName(getAttribute("type")).equals(pt.getName()))
-                .findFirst().orElseThrow(() -> new WSDLParserException("No portType found for binding: " + name));
+                .findFirst().orElseThrow(() -> new WSDLParserException("No portType found for binding: " + getName()));
     }
 }

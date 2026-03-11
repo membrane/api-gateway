@@ -28,7 +28,6 @@ public class WSDLElement {
 
     protected WSDLParserContext ctx;
     protected final Element element;
-    protected String name;
 
     public WSDLElement(WSDLParserContext ctx, Node node) {
         this.ctx = ctx;
@@ -36,14 +35,10 @@ public class WSDLElement {
             throw new RuntimeException("Not an element: " + node.getClass());
         }
         this.element = element;
-        var nameNode = element.getAttributes().getNamedItem("name");
-        if (nameNode != null) {
-            name = nameNode.getNodeValue();
-        }
     }
 
     public String getName() {
-        return name;
+        return getAttribute("name");
     }
 
     public Element getDefinitions() {
@@ -71,7 +66,6 @@ public class WSDLElement {
         return instantiateWSDLElements(element,name,clazz);
     }
 
-
     protected <T extends WSDLElement> List<T> instantiateWSDLElements(Node node, String name, Class<T> clazz) {
         return instantiateElementsInternal(node, name, clazz, WSDLElement::isWSDLElementWithName);
     }
@@ -84,12 +78,12 @@ public class WSDLElement {
         return instantiateElementsInternal(node, name, clazz, WSDLElement::isXSDElementWithName);
     }
 
-    protected <T extends WSDLElement> List<T> instantiateElementsInternal(Node node, String name, Class<T> clazz, BiPredicate<Node, String> elementPredicate) {
-        List<T> result = new ArrayList<>();
+    protected <T extends WSDLElement> List<T> instantiateElementsInternal(Node node, String name, Class<T> clazz, BiPredicate<Node, String> predicate) {
+        var result = new ArrayList<T>();
         var children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             var child = children.item(i);
-            if (elementPredicate.test(child, name)) {
+            if (predicate.test(child, name)) {
                 try {
                     result.add(clazz.getConstructor(WSDLParserContext.class, Node.class).newInstance(ctx, child));
                 } catch (Exception e) {

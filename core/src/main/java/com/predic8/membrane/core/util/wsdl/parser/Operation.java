@@ -18,8 +18,6 @@ import org.w3c.dom.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
-
 public class Operation extends WSDLElement {
 
     public enum Direction {
@@ -31,37 +29,55 @@ public class Operation extends WSDLElement {
     }
 
     public Operation(WSDLParserContext ctx, Node node) {
-        super(ctx,node);
+        super(ctx, node);
     }
 
-    public List<Message> getInputs() {
-        return getMessagesByDirection(INPUT);
+    public List<Input> getInputs() {
+        return instantiateChildren("input", Input.class);
     }
 
-    public List<Message> getOutputs() {
-        return getMessagesByDirection(OUTPUT);
+    public List<Output> getOutputs() {
+        return instantiateChildren("output", Output.class);
     }
 
-    public List<Message> getFaults() {
-        return getMessagesByDirection(FAULT);
+    public List<Fault> getFaults() {
+        return instantiateChildren("fault", Fault.class);
     }
 
     public List<Message> getMessagesByDirection(Direction direction) {
-        var result = new ArrayList<Message>();
-        var children = element.getChildNodes();
+        return switch (direction) {
+            case INPUT -> getInputs().stream().map(Input::getMessage).toList();
+            case OUTPUT -> getOutputs().stream().map(Output::getMessage).toList();
+            case FAULT -> getFaults().stream().map(Fault::getMessage).toList();
+        };
+    }
 
-        for (int i = 0; i < children.getLength(); i++) {
-            var child = children.item(i);
-            if (isWSDLElement(child) && direction.matches(child.getLocalName())) {
-                var io = (Element) child;
-                var messageAttr = io.getAttribute("message");
-                if (messageAttr.isEmpty()) {
-                    continue;
-                }
-                ctx.getDefinitions().findMessage(WSDLParserUtil.resolveQName(messageAttr, io).getLocalPart())
-                        .ifPresent(result::add);
-            }
+    public static abstract class OperationMessage extends WSDLElement {
+        public OperationMessage(WSDLParserContext ctx, Node node) {
+            super(ctx, node);
         }
-        return result;
+
+        public Message getMessage() {
+            return ctx.getDefinitions().findMessage(WSDLParserUtil.getLocalName(getAttribute("message")))
+                    .orElseThrow(() -> new WSDLParserException("Message not found: " + getAttribute("message")));
+        }
+    }
+
+    public static class Input extends OperationMessage {
+        public Input(WSDLParserContext ctx, Node node) {
+            super(ctx, node);
+        }
+    }
+
+    public static class Output extends OperationMessage {
+        public Output(WSDLParserContext ctx, Node node) {
+            super(ctx, node);
+        }
+    }
+
+    public static class Fault extends OperationMessage {
+        public Fault(WSDLParserContext ctx, Node node) {
+            super(ctx, node);
+        }
     }
 }

@@ -21,6 +21,7 @@ import java.util.*;
 
 public class Schema extends WSDLElement {
 
+    // These values are read repeatably so they are stored
     private final List<SchemaElement> schemaElements;
     private final List<Import> imports;
     private final List<Include> includes;

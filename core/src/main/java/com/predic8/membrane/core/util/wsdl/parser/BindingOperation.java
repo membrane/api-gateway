@@ -24,7 +24,7 @@ public class BindingOperation extends WSDLElement{
 
     public String getSoapAction() {
         return  instantiateChild("operation",ProtocolOperation.class).orElseThrow(() ->
-            new WSDLParserException("No operation found for binding operation: " + name)
+            new WSDLParserException("No operation found for binding operation: " + getName())
         ).getSoapAction();
     }
 }

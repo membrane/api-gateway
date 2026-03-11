@@ -20,10 +20,8 @@ import org.slf4j.*;
 import org.w3c.dom.*;
 
 import java.util.*;
-import java.util.stream.*;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.*;
 
 /**
  * WSDL elements register themselves via WSDLParserContext. This is more convenient, e.g. binding is not
@@ -66,12 +64,12 @@ public class Definitions extends WSDLElement {
 
     private void parse(Element element) {
         targetNamespace = getAttribute("targetNamespace");
-        schemas = getSchemaElements(element);
+        schemas = instantiateXSDElements(getTypes().element, "schema", Schema.class);
         importEmbeddedSchemas();
-        messages = instantiateWSDLElements(element, "message", Message.class);
-        portTypes = instantiateWSDLElements(element, "portType", PortType.class);
-        bindings = instantiateWSDLElements(element, "binding", Binding.class);
-        services = instantiateWSDLElements(element, "service", Service.class);
+        messages = instantiateWSDLChildren("message", Message.class);
+        portTypes = instantiateWSDLChildren("portType", PortType.class);
+        bindings = instantiateWSDLChildren( "binding", Binding.class);
+        services = instantiateWSDLChildren( "service", Service.class);
         soapVersions = bindings.stream().map(Binding::getSoapVersion).collect(toSet());
     }
 
@@ -87,6 +85,12 @@ public class Definitions extends WSDLElement {
         return schemas.stream()
                 .filter(s -> Objects.equals(s.getTargetNamespace(), namespace))
                 .findFirst();
+    }
+
+    public Types getTypes() {
+        return instantiateChild("types", Types.class).orElseThrow(() -> {
+            throw new WSDLParserException("No types element found in WSDL");
+        });
     }
 
     public List<Schema> getSchemas() {
@@ -127,13 +131,5 @@ public class Definitions extends WSDLElement {
 
     public Set<SOAPVersion> getSoapVersions() {
         return soapVersions;
-    }
-
-    private List<Schema> getSchemaElements(Element wsdl) {
-        return instantiateXSDElements(getTypes(wsdl), "schema", Schema.class);
-    }
-
-    private static Node getTypes(Element wsdl) {
-        return wsdl.getElementsByTagNameNS(WSDL11_NS, "types").item(0);
     }
 }
