@@ -133,10 +133,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 
 					for (com.predic8.membrane.core.util.wsdl.parser.PortType pt : ports.stream().map(Port::getBinding).map(Binding::getPortType).toList()) {
 						h2().text("Port Type: " + pt.getName()).end();
-//						Documentation d = pt.getDocumentation(); @TODO
-//						if (d != null) {
-//							p().text("Documentation: " + d).end();
-//						}
+						// @TODO show pt.getDocumentation() wsdl:documentation here when it is implemented
 					}
 
 					var binding = port.getBinding();

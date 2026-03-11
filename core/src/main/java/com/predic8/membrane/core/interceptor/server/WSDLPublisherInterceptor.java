@@ -100,15 +100,16 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         }
 
         private @NotNull String resolveToNumber(String path) {
-            if (pathsReverse.containsKey(path)) {
-                return pathsReverse.get(path).toString();
+            synchronized (paths) {
+                if (pathsReverse.containsKey(path)) {
+                    return pathsReverse.get(path).toString();
+                }
+                int n = paths.size() + 1;
+                paths.put(n, path);
+                pathsReverse.put(path, n);
+                documentsToProcess.add(path);
+                return Integer.toString(n);
             }
-            int n = paths.size() + 1;
-            paths.put(n, path);
-            pathsReverse.put(path, n);
-            documentsToProcess.add(path);
-            return Integer.toString(n);
-
         }
     }
 

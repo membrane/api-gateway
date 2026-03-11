@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.annot.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
@@ -24,12 +25,11 @@ import javax.xml.transform.dom.*;
 import java.io.*;
 import java.util.*;
 
+import static com.predic8.membrane.annot.Constants.XMLNS_NS;
+import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static javax.xml.XMLConstants.*;
 
 public final class WSDLSchemaExtractor {
-
-    private static final String XML_SCHEMA_NS = "http://www.w3.org/2001/XMLSchema"; // TODO
-    private static final String XMLNS_NS = XMLConstants.XMLNS_ATTRIBUTE_NS_URI;
 
     private WSDLSchemaExtractor() {
     }
@@ -37,7 +37,7 @@ public final class WSDLSchemaExtractor {
     public static List<Document> getSchemas(Element wsdl) {
         try {
             var result = new ArrayList<Document>();
-            var schemas = wsdl.getElementsByTagNameNS(XML_SCHEMA_NS, "schema");
+            var schemas = wsdl.getElementsByTagNameNS(XSD_NS, "schema");
             for (int i = 0; i < schemas.getLength(); i++) {
                 result.add(extractSchema((Element) schemas.item(i),
                         getNamespaceDeclarations(wsdl)));
@@ -62,7 +62,6 @@ public final class WSDLSchemaExtractor {
 
     private static Document extractSchema(Element originalSchema, List<Attr> definitionNamespaces) throws Exception {
         var fac = DocumentBuilderFactory.newInstance();
-   //     fac.setFeature(FEATURE_SECURE_PROCESSING, true);
         fac.setNamespaceAware(true);
         var builder = fac.newDocumentBuilder();
 
