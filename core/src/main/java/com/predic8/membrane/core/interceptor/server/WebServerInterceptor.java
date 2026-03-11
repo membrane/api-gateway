@@ -128,7 +128,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
         try {
             exc.setTimeReqSent(currentTimeMillis());
-            exc.setResponse(createResponse(router.getResolverMap(), combine(router.getConfiguration().getBaseLocation(), docBase, uri)));
+            exc.setResponse(createResponseInternal(router.getResolverMap(), combine(router.getConfiguration().getBaseLocation(), docBase, uri)));
             exc.setReceived();
             exc.setTimeResReceived(currentTimeMillis());
             return RETURN;
@@ -191,18 +191,15 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
     private boolean tryToReceiveResource(Exchange exc, String uri) {
         for (String i : index) {
-            Response response = createResponse(
-                    router.getResolverMap(),
-                    combine(router.getConfiguration().getBaseLocation(), docBase, uri + i)
-            );
-
-            if (!response.isOk())
-                continue;
-
-            exc.setResponse(response);
-            exc.setReceived();
-            exc.setTimeResReceived(currentTimeMillis());
-            return true;
+            try {
+                Response response = createResponseInternal(router.getResolverMap(), ResolverMap.combine(router.getConfiguration().getBaseLocation(), docBase, uri + i));
+                if (!response.isOk())
+                    continue;
+                exc.setResponse(response);
+                exc.setReceived();
+                exc.setTimeResReceived(currentTimeMillis());
+                return true;
+            } catch (ResourceRetrievalException ignored) {}
         }
         return false;
     }
@@ -248,10 +245,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
     public Response createResponse(ResolverMap rr, String resPath) {
         try {
-            return ok()
-                    .header(createHeaders(getContentType(resPath)))
-                    .body(rr.resolve(resPath), true)
-                    .build();
+            return createResponseInternal(rr, resPath);
         } catch (Exception e) {
             return internal(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Could not resolve file")
@@ -259,6 +253,13 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     .exception(e)
                     .build();
         }
+    }
+
+    private Response createResponseInternal(ResolverMap rr, String resPath) throws ResourceRetrievalException {
+        return ok()
+                .header(createHeaders(getContentType(resPath)))
+                .body(rr.resolve(resPath), true)
+                .build();
     }
 
     public String getDocBase() {
