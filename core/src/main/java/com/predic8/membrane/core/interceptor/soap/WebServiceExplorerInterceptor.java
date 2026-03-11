@@ -173,6 +173,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 						for (Part p : o.getOutputs().stream().map(om -> om.getMessage().getPart()).toList())
 							text(p.getElementQName().toString());
 						end();
+						td();
 						for (Part p : o.getFaults().stream().map(om -> om.getMessage().getPart()).toList())
 							text(p.getElementQName().toString());
 						end();
