@@ -31,7 +31,7 @@ public class Port extends WSDLElement {
     public Binding getBinding() {
         return ctx.getDefinitions().getBindings().stream()
                 .filter(this::matchesTypeAttribute)
-                .findFirst().get();
+                .findFirst().orElseThrow(() -> new WSDLParserException("No binding found for port: " + getName()));
     }
 
     private boolean matchesTypeAttribute(Binding b) {

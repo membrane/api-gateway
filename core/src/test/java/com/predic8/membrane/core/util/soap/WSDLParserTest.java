@@ -82,7 +82,7 @@ class WSDLParserTest {
     @Test
     void includeImport() throws Exception {
         var dn = Definitions.parse(new ResolverMap(), "classpath://ws/include/include.wsdl");
-        assertNull(""); // No name is set
+        assertEquals("",dn.getName()); // No name is set
         assertEquals(1, dn.getSchemas().size());
         var embedded = dn.getSchemas().getFirst();
         assertEquals("http://example.com/test", embedded.getTargetNamespace());

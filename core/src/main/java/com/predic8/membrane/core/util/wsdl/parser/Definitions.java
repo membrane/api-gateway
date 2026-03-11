@@ -48,7 +48,7 @@ public class Definitions extends WSDLElement {
     private Definitions(Resolver resolver, String location) throws Exception {
         super(new WSDLParserContext(null, resolver, location, new ArrayList<>()), read(resolver, location));
         ctx = ctx.definitions(this);
-        parse(this.getElement());
+        parse();
     }
 
     private static Node read(Resolver resolver, String location) throws Exception {
@@ -62,7 +62,7 @@ public class Definitions extends WSDLElement {
         return new Definitions(resolver, location);
     }
 
-    private void parse(Element element) {
+    private void parse() {
         targetNamespace = getAttribute("targetNamespace");
         schemas = instantiateXSDElements(getTypes().element, "schema", Schema.class);
         importEmbeddedSchemas();
@@ -88,9 +88,8 @@ public class Definitions extends WSDLElement {
     }
 
     public Types getTypes() {
-        return instantiateChild("types", Types.class).orElseThrow(() -> {
-            throw new WSDLParserException("No types element found in WSDL");
-        });
+        return instantiateChild("types", Types.class)
+                .orElseThrow(() -> new WSDLParserException("No types element found in WSDL"));
     }
 
     public List<Schema> getSchemas() {
