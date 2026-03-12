@@ -140,16 +140,17 @@ public class URIUtil {
     }
 
     /**
-     * Normalizes the given path or URI. This method handles various formats of paths,
+     * Normalizes the given path or URI and resolves it to an absolute path.
+     * This method handles various formats of paths,
      * including filesystem paths, URIs, and paths with potential Windows drive letters.
      * The normalization involves resolving relative components, such as "." or "..",
      * and ensuring the path conforms to a standardized format.
      *
-     * @param location the path or URI string to normalize. It must not be null or empty.
-     * @return the normalized path or URI as a string.
-     * @throws IllegalArgumentException if the input location is null or empty.
+     * @param location the path or URI string to normalize.
+     * @return the normalized absolute path or URI as a string.
+     * @throws IllegalArgumentException if the input location is null, empty, or contains malformed URI syntax.
      */
-    public static String normalize(String location) {
+    public static String getNormalizedAbsolutePathOrUri(String location) {
         if (location == null || location.isEmpty())
             throw new IllegalArgumentException("location must not be null or empty");
 

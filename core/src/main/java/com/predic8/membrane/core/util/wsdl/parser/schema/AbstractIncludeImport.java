@@ -52,7 +52,7 @@ public abstract class AbstractIncludeImport extends WSDLElement {
     }
 
     private String resolve(WSDLParserContext ctx) {
-        return URIUtil.normalize(ResolverMap.combine(ctx.basePath(), schemaLocation));
+        return URIUtil.getNormalizedAbsolutePathOrUri(ResolverMap.combine(ctx.basePath(), schemaLocation));
     }
 
     public String getSchemaLocation() {

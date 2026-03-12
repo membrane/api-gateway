@@ -215,55 +215,62 @@ public class URIUtilTest {
     class normalize {
         @Test
         void throwsOnNull() {
-            assertThrows(IllegalArgumentException.class, () -> normalize(null));
+            assertThrows(IllegalArgumentException.class, () -> getNormalizedAbsolutePathOrUri(null));
         }
+
 
         @Test
         void throwsOnEmpty() {
-            assertThrows(IllegalArgumentException.class, () -> normalize(""));
+            assertThrows(IllegalArgumentException.class, () -> getNormalizedAbsolutePathOrUri(""));
         }
 
         @Test
         void normalizesRelativeFilesystemPath() {
             var input = "foo/../bar/test.txt";
             var expected = Path.of(input).toAbsolutePath().normalize().toString();
-            assertEquals(expected, normalize(input));
+            assertEquals(expected, getNormalizedAbsolutePathOrUri(input));
         }
 
         @Test
         void normalizesAbsoluteFilesystemPath() {
             var input = Path.of("foo", "..", "bar").toAbsolutePath().toString();
             var expected = Path.of(input).toAbsolutePath().normalize().toString();
-            assertEquals(expected, normalize(input));
+            assertEquals(expected, getNormalizedAbsolutePathOrUri(input));
         }
 
         @Test
         void normalizesFileUri() {
-            assertEquals("file:/test.xml", normalize("file:///tmp/../test.xml"));
+            assertEquals("file:/test.xml", getNormalizedAbsolutePathOrUri("file:///tmp/../test.xml"));
         }
 
         @Test
         void normalizesHttpUri() {
-            assertEquals("http://example.com/b/wsdl.xsd", normalize("http://example.com/a/../b/wsdl.xsd"));
+            assertEquals("http://example.com/b/wsdl.xsd", getNormalizedAbsolutePathOrUri("http://example.com/a/../b/wsdl.xsd"));
         }
+
+        @Test
+        void normalizesHttpUriWithQuery() {
+            assertEquals("http://example.com/b/wsdl.xsd?a=a/../b", getNormalizedAbsolutePathOrUri("http://example.com/a/../b/wsdl.xsd?a=a/../b"));
+        }
+
 
         @Test
         void classpathUri() {
             // The '..' within the path portion normalizes correctly.
-            assertEquals("classpath://authority/xsd/test.xsd", normalize("classpath://authority/schema/../xsd/test.xsd"));
+            assertEquals("classpath://authority/xsd/test.xsd", getNormalizedAbsolutePathOrUri("classpath://authority/schema/../xsd/test.xsd"));
         }
 
         @Test
         void keepsClasspathUri() {
             // The '..' at the start of the path (after authority) cannot traverse above the authority, so it's preserved.
-            assertEquals("classpath://authority/../xsd/test.xsd", normalize("classpath://authority/../xsd/test.xsd"));
+            assertEquals("classpath://authority/../xsd/test.xsd", getNormalizedAbsolutePathOrUri("classpath://authority/../xsd/test.xsd"));
         }
 
         @Test
         void normalizesUnixLikePath() {
             var input = "/tmp/../var/data.xsd";
             var expected = Path.of(input).toAbsolutePath().normalize().toString();
-            assertEquals(expected, normalize(input));
+            assertEquals(expected, getNormalizedAbsolutePathOrUri(input));
         }
 
         @Test
@@ -271,7 +278,7 @@ public class URIUtilTest {
         void handlesWindowsDriveLetterPath() {
             var input = "C:\\temp\\..\\data\\test.xsd";
             var expected = Path.of(input).toAbsolutePath().normalize().toString();
-            assertEquals(expected, normalize(input));
+            assertEquals(expected, getNormalizedAbsolutePathOrUri(input));
         }
 
         @Test
@@ -279,30 +286,30 @@ public class URIUtilTest {
         void handlesWindowsDriveRelativePath() {
             var input = "C:temp\\..\\data\\test.xsd";
             var expected = Path.of(input).toAbsolutePath().normalize().toString();
-            assertEquals(expected, normalize(input));
+            assertEquals(expected, getNormalizedAbsolutePathOrUri(input));
         }
 
         @Test
         void keepsRelativeUriWithQuery() {
-            assertEquals("schema.xsd?version=1", normalize("schema.xsd?version=1")
+            assertEquals("schema.xsd?version=1", getNormalizedAbsolutePathOrUri("schema.xsd?version=1")
             );
         }
 
         @Test
         void keepsRelativeUriWithFragment() {
-            assertEquals("../types.xsd#frag", normalize("../types.xsd#frag")
+            assertEquals("../types.xsd#frag", getNormalizedAbsolutePathOrUri("../types.xsd#frag")
             );
         }
 
         @Test
         void keepsRelativeUriWithQueryAndFragment() {
-            assertEquals("../types.xsd?version=1#frag", normalize("../types.xsd?version=1#frag")
+            assertEquals("../types.xsd?version=1#frag", getNormalizedAbsolutePathOrUri("../types.xsd?version=1#frag")
             );
         }
 
         @Test
         void keepsSchemeRelativeReference() {
-            assertEquals("//example.com/schema.xsd?version=1", normalize("//example.com/schema.xsd?version=1"));
+            assertEquals("//example.com/schema.xsd?version=1", getNormalizedAbsolutePathOrUri("//example.com/schema.xsd?version=1"));
         }
     }
 }

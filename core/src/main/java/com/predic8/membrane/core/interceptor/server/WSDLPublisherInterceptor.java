@@ -234,7 +234,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 return RETURN;
             }
         } catch (NumberFormatException e) {
-            exc.setResponse(HttpUtil.setHTMLErrorResponse(Response.internalServerError(), "Bad parameter format.", ""));
+            exc.setResponse(HttpUtil.setHTMLErrorResponse(Response.badRequest(), "Bad parameter format.", ""));
             return ABORT;
         } catch (ResourceRetrievalException e) {
             exc.setResponse(notFound().build());
