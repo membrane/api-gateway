@@ -123,7 +123,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
             setErrorResponse(exc, "%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements));
             return ABORT;
         }
-        if (message instanceof Response && !isPossibleResponseElement(result.soapElement())) {
+        if (message instanceof Response && !result.isFault() && !isPossibleResponseElement(result.soapElement())) {
             setErrorResponse(exc, "%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), responseElements));
             return ABORT;
         }

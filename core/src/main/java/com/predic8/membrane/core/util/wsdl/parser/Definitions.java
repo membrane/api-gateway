@@ -64,7 +64,10 @@ public class Definitions extends WSDLElement {
 
     private void parse() {
         targetNamespace = getAttribute("targetNamespace");
-        schemas = instantiateXSDElements(getTypes().element, "schema", Schema.class);
+        schemas = instantiateChild("types", Types.class)
+            .map(t -> instantiateXSDElements(t.element, "schema", Schema.class))
+            .orElseGet(ArrayList::new);
+
         importEmbeddedSchemas();
         messages = instantiateWSDLChildren("message", Message.class);
         portTypes = instantiateWSDLChildren("portType", PortType.class);

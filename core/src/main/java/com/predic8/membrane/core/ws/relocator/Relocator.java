@@ -25,6 +25,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import static com.predic8.membrane.core.Constants.*;
+
 @NotThreadSafe
 public class Relocator {
     private static final Logger log = LoggerFactory.getLogger(Relocator.class);
@@ -40,7 +42,9 @@ public class Relocator {
 
     private final Map<QName, String> relocatingAttributes = new HashMap<>();
 
-    public Relocator(OutputStreamWriter osw, String protocol, String host,
+    private boolean wsdlFound;
+
+    public Relocator(Writer osw, String protocol, String host,
                      int port, String contextPath, PathRewriter pathRewriter) throws Exception {
         this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
         this.host = host;
@@ -87,6 +91,12 @@ public class Relocator {
         if (!event.isStartElement())
             return event;
 
+        if (getElementName(event).getNamespaceURI().equals(WSDL_SOAP11_NS)
+            || getElementName(event).getNamespaceURI().equals(WSDL_SOAP11_NS)) {
+            wsdlFound = true;
+        }
+
+
         var attr = relocatingAttributes.get(getElementName(event));
         return attr != null ? replace(event, attr) : event;
     }
@@ -100,6 +110,10 @@ public class Relocator {
         return fac.createStartElement(start.getName(),
                 new ReplaceIterator(fac, attribute, start.getAttributes()),
                 start.getNamespaces());
+    }
+
+    public boolean isWsdlFound() {
+        return wsdlFound;
     }
 
     public Map<QName, String> getRelocatingAttributes() {
