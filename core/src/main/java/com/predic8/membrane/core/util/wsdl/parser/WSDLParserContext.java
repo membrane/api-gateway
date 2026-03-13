@@ -26,8 +26,9 @@ public record WSDLParserContext(Definitions definitions, Resolver resolver, Stri
     }
 
     public WSDLParserContext basePath(String basePath) {
-        visitedLocations.add(basePath);
-        return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
+        var nextVisited = new ArrayList<>(visitedLocations);
+        nextVisited.add(basePath);
+        return new WSDLParserContext(definitions, resolver, basePath, nextVisited);
     }
 
     public WSDLParserContext resolver(Resolver resolver) {
