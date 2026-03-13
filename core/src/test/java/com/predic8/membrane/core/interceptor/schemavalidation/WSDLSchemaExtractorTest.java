@@ -23,8 +23,8 @@ import javax.xml.parsers.*;
 import javax.xml.transform.dom.*;
 import java.io.*;
 
-import static com.predic8.membrane.annot.Constants.WSDL_SOAP11_NS;
-import static com.predic8.membrane.annot.Constants.XSD_NS;
+import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
+import static com.predic8.membrane.core.Constants.XSD_NS;
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLSchemaExtractor.*;
 import static org.junit.jupiter.api.Assertions.*;
 

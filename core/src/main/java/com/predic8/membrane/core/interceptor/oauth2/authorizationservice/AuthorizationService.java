@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -23,7 +24,7 @@ import com.predic8.membrane.core.interceptor.oauth2client.rf.*;
 import com.predic8.membrane.core.interceptor.oauth2client.rf.token.*;
 import com.predic8.membrane.core.interceptor.session.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.ssl.*;
@@ -38,7 +39,6 @@ import javax.annotation.concurrent.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Request.*;
@@ -82,13 +82,13 @@ public abstract class AuthorizationService {
         log = LoggerFactory.getLogger(this.getClass().getName());
 
         if (isUseJWTForClientAuth()) {
-            JWSSigner = new JWSSigner(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getConfiguration().getBaseLocation())),
-                    getSslParser().getKey().getCertificates().getFirst().get(router.getResolverMap(), router.getConfiguration().getBaseLocation()));
+            JWSSigner = new JWSSigner(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getBaseLocation())),
+                    getSslParser().getKey().getCertificates().getFirst().get(router.getResolverMap(), router.getBaseLocation()));
         }
 
-        setHttpClient(router.getHttpClientFactory().createClient(getHttpClientConfiguration()));
+        setHttpClient(router.getHttpClientFactory().createClient(router.getHttpClientConfig()));
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
         this.router = router;
         init();
         if (!supportsDynamicRegistration())
@@ -279,7 +279,7 @@ public abstract class AuthorizationService {
         return doRequest(new Request.Builder()
                 .get(getUserInfoEndpoint())
                 .header("Authorization", tokenType + " " + token)
-                .header("User-Agent", USERAGENT)
+                .header("User-Agent", "Membrane")
                 .header(ACCEPT, APPLICATION_JSON)
                 .buildExchange());
     }
@@ -319,7 +319,7 @@ public abstract class AuthorizationService {
     }
 
     public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
-        url = ResolverMap.combine(URIFactory.DEFAULT_URI_FACTORY, baseLocation, url);
+        url = ResolverMap.combine( baseLocation, url);
         // ask the internal httpClient (might be proxied/authenticated), if HTTP
         if (url.startsWith("http")) {
             var exc = get(url).buildExchange();
@@ -337,7 +337,7 @@ public abstract class AuthorizationService {
                     new Request.Builder().post(getTokenEndpoint(fc))
                             .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                             .header(ACCEPT, APPLICATION_JSON)
-                            .header(USER_AGENT, USERAGENT),
+                            .header(USER_AGENT, "Membrane"),
                     refreshTokenBodyBuilder(refreshToken).scope(wantedScope), fc)
                     .buildExchange());
         } catch (Exception e) {
@@ -358,7 +358,7 @@ public abstract class AuthorizationService {
                             .post(getTokenEndpoint(flowContext))
                             .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                             .header(ACCEPT, APPLICATION_JSON)
-                            .header(USER_AGENT, USERAGENT),
+                            .header(USER_AGENT, "Membrane"),
                     authorizationCodeBodyBuilder(code, verifier).redirectUri(redirectUri), flowContext).buildExchange());
         } catch (Exception e) {
             log.warn("Error contacting OAuth2 Authorization Server during code request: {}", e.getMessage());

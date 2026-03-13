@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.util.wsdl.parser;
 
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.wsdl.parser.schema.*;
 import org.w3c.dom.*;
@@ -7,7 +8,8 @@ import org.w3c.dom.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.Constants.WSDL11_NS;
+import static com.predic8.membrane.core.Constants.XSD_NS;
 import static org.w3c.dom.Node.*;
 
 public class Definitions {

@@ -5,7 +5,7 @@ import org.w3c.dom.*;
 
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.*;
 
 public class WSDLSOAPVersionExtractor {

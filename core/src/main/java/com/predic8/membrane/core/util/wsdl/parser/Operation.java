@@ -6,7 +6,7 @@ import org.w3c.dom.*;
 import javax.xml.namespace.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
 import static org.w3c.dom.Node.*;
 
