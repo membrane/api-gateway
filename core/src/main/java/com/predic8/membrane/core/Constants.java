@@ -17,6 +17,7 @@ package com.predic8.membrane.core;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.rest.*;
 
+import javax.xml.*;
 import javax.xml.namespace.*;
 import java.io.*;
 import java.util.*;
@@ -56,6 +57,10 @@ public class Constants {
 
 	public static final String HTTP_VERSION_11 = "1.1";
 
+	public static final String XMLNS_NS = "http://www.w3.org/2000/xmlns/";
+
+	public static final String WSDL11_NS = "http://schemas.xmlsoap.org/wsdl/";
+
 	public static final String WSDL_SOAP11_NS = "http://schemas.xmlsoap.org/wsdl/soap/";
 	public static final String WSDL_SOAP12_NS = "http://schemas.xmlsoap.org/wsdl/soap12/";
 	public static final String WSDL_HTTP_NS = "http://schemas.xmlsoap.org/wsdl/http/";
@@ -82,7 +87,7 @@ public class Constants {
 					" for documentation and updates.";
 
 	/**
-	 * Used for {@link Request}-to-XML and XML-to-{@link Response} conversions.
+	 * Used for Request-to-XML and XML-to-Response conversions.
 	 * See {@link REST2SOAPInterceptor}.
 	 */
 	public static final String HTTP_NS = "http://membrane-soa.org/schemas/http/v1/";

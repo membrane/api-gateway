@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.json.*;
 import com.predic8.membrane.core.proxies.*;
@@ -27,14 +27,12 @@ import org.slf4j.*;
 import org.springframework.beans.*;
 import org.springframework.context.*;
 
-import java.io.*;
-
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.resolver.ResolverMap.*;
-import static com.predic8.membrane.core.util.TextUtil.linkURL;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.text.TextUtil.*;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -46,7 +44,7 @@ import static com.predic8.membrane.core.util.TextUtil.linkURL;
 @MCElement(name = "validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 
-    private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class);
 
     private String wsdl;
     private String schema;
@@ -67,7 +65,9 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     private ResolverMap resourceResolver;
     private ApplicationContext applicationContext;
 
-    private SchemaMappings schemaMappings = new SchemaMappings();
+    private SchemaMappings schemaMappings;
+
+    private SOAPProxy soapProxy;
 
     public ValidatorInterceptor() {
         name = "validator";
@@ -97,25 +97,25 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if (wsdl != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+            return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
         }
         if (schema != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new XMLSchemaValidator(resourceResolver, combine(getBaseLocation(), schema), createFailureHandler());
+            return new XMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
-            return new JSONYAMLSchemaValidator(resourceResolver, combine(getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
-                setSchemaMappings(schemaMappings.getSchemaMap());
+            return new JSONYAMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
+                if(schemaMappings != null) setSchemaMappings(schemaMappings.getSchemaMap());
             }};
         }
         if (schematron != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
+            return new SchematronValidator(combine(router.getConfiguration().getUriFactory(), getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
         }
 
-        WSDLValidator validator = getWsdlValidatorFromSOAPProxy();
+        var validator = getWsdlValidatorFromSOAPProxy();
         if (validator != null) return validator;
 
         throw new RuntimeException("Validator is not configured properly. <validator> must have an attribute specifying the validator.");
@@ -126,16 +126,14 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     private @Nullable WSDLValidator getWsdlValidatorFromSOAPProxy() {
-        if (router.getParentProxy(this) instanceof SOAPProxy sp) {
-            wsdl = sp.getWsdl();
-            name = "soap validator";
-            return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
-        }
-        return null;
+        if(soapProxy == null) return null;
+        wsdl = soapProxy.getWsdl();
+        name = "soap validator";
+        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
     }
 
     private @Nullable String getBaseLocation() {
-        return router == null ? null : router.getBaseLocation();
+        return router == null ? null : router.getConfiguration().getBaseLocation();
     }
 
     @Override
@@ -153,8 +151,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             if (exc.getMessage(flow).isBodyEmpty())
                 return CONTINUE;
         } catch (ReadingBodyException e) {
-            log.error("Validation failed: {}", e.getMessage());
-            internal(router.isProduction(),getDisplayName())
+            log.error("", e);
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .addSubSee("io")
                     .detail("Could not read message body")
                     .exception(e)
@@ -166,7 +164,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             return validator.validateMessage(exc, flow);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(),getDisplayName())
                     .detail("Error validating message")
                     .addSubSee("generic")
                     .internal("validator", validator.getName())
@@ -343,5 +341,9 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         return schemaMappings;
     }
 
+
+    public void setSoapProxy(SOAPProxy soapProxy) {
+        this.soapProxy = soapProxy;
+    }
 
 }

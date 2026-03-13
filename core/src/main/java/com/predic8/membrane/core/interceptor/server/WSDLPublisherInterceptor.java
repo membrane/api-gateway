@@ -21,29 +21,50 @@ import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.Relocator.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
+import java.io.*;
+import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.resolver.ResolverMap.*;
+import static com.predic8.membrane.core.util.URLParamUtil.DuplicateKeyOrInvalidFormStrategy.*;
 
 /**
  * @description <p>
  * The <i>wsdlPublisher</i> serves WSDL files (and attached XML Schema Documents), if your
  * backend service does not already do so.
  * </p>
- * @topic 5. Web Services with SOAP and WSDL
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   path:
+ *     uri: /material/*
+ *   flow:
+ *     - wsdlPublisher:
+ *         wsdl: /WEB-INF/wsdl/ArticleService.wsdl
+ *     - validator:
+ *         wsdl: /WEB-INF/wsdl/ArticleService.wsdl
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
+ * @topic 6. Web Services with SOAP and WSDL
  */
 @MCElement(name = "wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(WSDLPublisherInterceptor.class);
     private WebServerInterceptor webServerInterceptor;
+
+    private SOAPProxy soapProxy;
+
+    private String wsdl;
 
     public WSDLPublisherInterceptor() {
         name = "wsdl publisher";
@@ -52,9 +73,9 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     /**
      * Note that this class fulfills two purposes:
      * <p>
-     * * During the initial processDocuments() run, the XSDs are enumerated.
+     * During the initial processDocuments() run, the XSDs are enumerated.
      * <p>
-     * * During later runs (as well as the initial run, but that's result is discarded),
+     * During later runs (as well as the initial run, but that result is discarded),
      * the documents are rewritten.
      */
     private final class RelativePathRewriter implements PathRewriter {
@@ -72,31 +93,46 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 if (!path.contains("://") && !path.startsWith("/")) {
                     path = combine(resource, path);
                 }
-                synchronized (paths) {
-                    if (paths_reverse.containsKey(path)) {
-                        path = paths_reverse.get(path).toString();
-                    } else {
-                        int n = paths.size() + 1;
-                        paths.put(n, path);
-                        paths_reverse.put(path, n);
-                        documents_to_process.add(path);
-                        path = Integer.toString(n);
-                    }
-                }
-                path = "./" + URLUtil.getName(router.getUriFactory(), exc.getDestinations().getFirst()) + "?xsd=" + path;
+                return "./%s?xsd=%s".formatted(URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst()), resolveToNumber(path));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            return path;
+        }
+
+        private @NotNull String resolveToNumber(String path) {
+            synchronized (paths) {
+                if (pathsReverse.containsKey(path)) {
+                    return pathsReverse.get(path).toString();
+                }
+                int n = paths.size() + 1;
+                paths.put(n, path);
+                pathsReverse.put(path, n);
+                documentsToProcess.add(path);
+                return Integer.toString(n);
+            }
         }
     }
 
+    @Override
+    public void init() {
+        super.init();
+        webServerInterceptor = new WebServerInterceptor();
+        webServerInterceptor.init(router);
+
+        // inherit wsdl="..." from SoapProxy
+        if (wsdl != null)
+            return;
+        getWSDLFromEmbeddingSOAPProxy();
+    }
+
     @GuardedBy("paths")
-    private final HashMap<Integer, String> paths = new HashMap<>();
+    private final Map<Integer, String> paths = new HashMap<>();
+
     @GuardedBy("paths")
-    private final HashMap<String, Integer> paths_reverse = new HashMap<>();
+    private final Map<String, Integer> pathsReverse = new HashMap<>();
+
     @GuardedBy("paths")
-    private final Queue<String> documents_to_process = new LinkedList<>();
+    private final Queue<String> documentsToProcess = new LinkedList<>();
 
     private void processDocuments(Exchange exc) {
         // exc.response is only temporarily used so we can call the WSDLInterceptor
@@ -104,12 +140,12 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         synchronized (paths) {
             try {
                 while (true) {
-                    String doc = documents_to_process.poll();
+                    var doc = documentsToProcess.poll();
                     if (doc == null)
                         break;
-                    log.debug("WSDLPublisherInterceptor: processing {}", doc);
+                    log.debug("processing: {}", doc);
                     exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), doc));
-                    WSDLInterceptor wi = new WSDLInterceptor();
+                    var wi = new WSDLInterceptor();
                     wi.setRewriteEndpoint(false);
                     wi.setPathRewriter(new RelativePathRewriter(exc, doc));
                     wi.handleResponse(exc);
@@ -119,8 +155,6 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             }
         }
     }
-
-    private String wsdl;
 
     public String getWsdl() {
         return wsdl;
@@ -135,30 +169,18 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         this.wsdl = wsdl;
         synchronized (paths) {
             paths.clear();
-            paths_reverse.clear();
-            documents_to_process.clear();
-            documents_to_process.add(wsdl);
+            pathsReverse.clear();
+            documentsToProcess.clear();
+            documentsToProcess.add(wsdl);
         }
-    }
-
-    @Override
-    public void init() {
-        super.init();
-
-        webServerInterceptor = new WebServerInterceptor();
-        webServerInterceptor.init(router);
-
-        // inherit wsdl="..." from SoapProxy
-        if (wsdl != null)
-            return;
-        getWSDLFromEmbeddingSOAPProxy();
     }
 
     private void getWSDLFromEmbeddingSOAPProxy() {
-        if (router.getParentProxy(this) instanceof SOAPProxy sp) {
-            wsdl = sp.getWsdl();
-            setWsdl(wsdl);
+        if (soapProxy == null) {
+            throw new ConfigurationException("<wsdlPublisher> can only be used within a <soapProxy> or needs to declare <wsdlPublisher wsdl='...'>");
         }
+        wsdl = soapProxy.getWsdl();
+        setWsdl(wsdl);
     }
 
     @Override
@@ -167,7 +189,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.isProduction(),getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .detail("Could not return WSDL document!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -181,15 +203,15 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
         try {
             String resource = null;
-            if (exc.getRequestURI().endsWith("?wsdl") || exc.getRequestURI().endsWith("?WSDL")) {
+            if (isRequestForWSDL(exc)) {
                 processDocuments(exc);
-                exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), resource = combine(router.getBaseLocation(), wsdl)));
+                exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), resource = combine(router.getConfiguration().getBaseLocation(), wsdl)));
                 exc.getResponse().getHeader().setContentType(TEXT_XML);
             }
-            if (exc.getRequestURI().contains("?xsd=")) {
-                Map<String, String> params = URLParamUtil.getParams(router.getUriFactory(), exc, URLParamUtil.DuplicateKeyOrInvalidFormStrategy.ERROR);
+            if (exc.getRequest().getUri().contains("?xsd=")) {
+                var params = getParams(exc);
                 if (params.containsKey("xsd")) {
-                    int n = Integer.parseInt(params.get("xsd"));
+                    var n = Integer.parseInt(params.get("xsd"));
                     String path;
                     processDocuments(exc);
                     synchronized (paths) {
@@ -204,27 +226,39 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 }
             }
             if (resource != null) {
-                WSDLInterceptor wi = new WSDLInterceptor();
+                var wi = new WSDLInterceptor();
                 wi.setRewriteEndpoint(false);
-                wi.setPathRewriter(new RelativePathRewriter(exc, combine(router.getBaseLocation(), wsdl)));
+                wi.setPathRewriter(new RelativePathRewriter(exc, combine(router.getConfiguration().getBaseLocation(), resource)));
                 wi.init(router);
                 wi.handleResponse(exc);
                 return RETURN;
             }
         } catch (NumberFormatException e) {
-            exc.setResponse(HttpUtil.setHTMLErrorResponse(Response.internalServerError(), "Bad parameter format.", ""));
+            exc.setResponse(HttpUtil.setHTMLErrorResponse(Response.badRequest(), "Bad parameter format.", ""));
             return ABORT;
         } catch (ResourceRetrievalException e) {
-            exc.setResponse(Response.notFound().build());
+            exc.setResponse(notFound().build());
             return ABORT;
         }
 
         return CONTINUE;
     }
 
+    private Map<String, String> getParams(Exchange exc) throws URISyntaxException, IOException {
+        return URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, ERROR);
+    }
+
+    private static boolean isRequestForWSDL(Exchange exc) {
+        return exc.getRequest().getUri().endsWith("?wsdl") || exc.getRequest().getUri().endsWith("?WSDL");
+    }
+
     @Override
     public String getShortDescription() {
-        return "Publishes the WSDL at " + wsdl + " under \"?wsdl\" (as well as its dependent schemas under similar URLs).";
+        return "Publishes the WSDL at %s under \"?wsdl\" (as well as its dependent schemas under similar URLs).".formatted(wsdl);
+    }
+
+    public void setSoapProxy(SOAPProxy soapProxy) {
+        this.soapProxy = soapProxy;
     }
 
 }

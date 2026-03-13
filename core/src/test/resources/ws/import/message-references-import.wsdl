@@ -1,0 +1,54 @@
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+             xmlns:tns="http://example.com/cyclic"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             targetNamespace="http://example.com/cyclic"
+             xmlns:m="http://example.com/messages"
+>
+
+    <types>
+        <xs:schema targetNamespace="http://example.com/cyclic"
+                   xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                   elementFormDefault="qualified">
+
+            <xs:import schemaLocation="messages.xsd" namespace="http://example.com/messages"/>
+
+        </xs:schema>
+    </types>
+
+    <message name="GetRequest">
+        <part name="parameters" element="m:get"/>
+    </message>
+
+    <message name="GetResponse">
+        <part name="parameters" element="m:Response"/>
+    </message>
+
+    <portType name="TestPortType">
+        <operation name="get">
+            <input message="tns:GetRequest"/>
+            <output message="tns:GetResponse"/>
+        </operation>
+    </portType>
+
+    <binding name="TestBinding" type="tns:TestPortType">
+        <soap:binding style="document"
+                      transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="test">
+            <soap:operation soapAction="test"/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+        </operation>
+    </binding>
+
+    <service name="TestService">
+        <port name="TestPort" binding="tns:TestBinding">
+            <soap:address location="http://localhost:8080/test"/>
+        </port>
+    </service>
+
+</definitions>

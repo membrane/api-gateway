@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions
+    xmlns="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+    xmlns:tns="http://example.com/hello"
+    targetNamespace="http://example.com/hello"
+    name="HelloService">
+
+  <!-- Types -->
+  <types>
+    <xs:schema targetNamespace="http://example.com/hello"
+               elementFormDefault="qualified">
+
+      <xs:element name="sayHello">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="sayHelloResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="greeting" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+    </xs:schema>
+  </types>
+
+  <!-- Messages -->
+  <message name="SayHelloRequest">
+    <part name="parameters" element="tns:sayHello"/>
+  </message>
+
+  <message name="SayHelloResponse">
+    <part name="parameters" element="tns:sayHelloResponse"/>
+  </message>
+
+  <!-- Port Type -->
+  <portType name="HelloPortType">
+    <operation name="sayHello">
+      <input message="tns:SayHelloRequest"/>
+      <output message="tns:SayHelloResponse"/>
+    </operation>
+  </portType>
+
+  <!-- SOAP 1.2 Binding -->
+  <binding name="HelloBinding" type="tns:HelloPortType">
+    <soap12:binding style="document"
+                    transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <operation name="sayHello">
+      <soap12:operation soapAction="sayHello"/>
+      <input>
+        <soap12:body use="literal"/>
+      </input>
+      <output>
+        <soap12:body use="literal"/>
+      </output>
+    </operation>
+  </binding>
+
+  <!-- Service -->
+  <service name="HelloService">
+    <port name="HelloPort" binding="tns:HelloBinding">
+      <soap12:address location="http://example.com/hello"/>
+    </port>
+  </service>
+
+</definitions>

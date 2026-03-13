@@ -1,0 +1,10 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/test"
+           elementFormDefault="qualified">
+
+  <xs:import namespace="http://example.com/test/data-types" schemaLocation="./shared/xsd/DataTypes.xsd"/>
+
+
+  <xs:element name="du"/>
+
+</xs:schema>

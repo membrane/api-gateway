@@ -89,6 +89,14 @@ public class SOAPProxyTest {
     }
 
     @Test
+    void abstractWSDL() throws Exception {
+        proxy.setWsdl("classpath:/ws/abstract-service-no-binding.wsdl");
+        router.add(proxy);
+        assertThrows(ConfigurationException.class,
+                () -> router.start());
+    }
+
+    @Test
     void parseWSDLWithMultipleServicesForAGivenServiceB() throws Exception {
         proxy.setServiceName("CityServiceB");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
@@ -107,10 +115,13 @@ public class SOAPProxyTest {
     }
 
     @Test
-    void parseWSDLWithMultipleServicesForAWrongService() throws Exception {
+    void parseWSDLWithMultipleServicesForAWrongService() {
         proxy.setServiceName("WrongService");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
-        router.add(proxy);
-        assertThrows(IllegalArgumentException.class, () -> router.init());
+
+        assertThrows(ConfigurationException.class, () -> {
+            router.add(proxy);
+            router.start();
+        });
     }
 }

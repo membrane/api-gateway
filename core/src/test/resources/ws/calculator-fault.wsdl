@@ -1,0 +1,90 @@
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://example.com/calculator"
+             targetNamespace="http://example.com/calculator"
+             name="CalculatorService">
+
+  <types>
+    <xs:schema targetNamespace="http://example.com/calculator"
+               elementFormDefault="qualified">
+
+      <xs:element name="divide">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="a" type="xs:int"/>
+            <xs:element name="b" type="xs:int"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="divideResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="result" type="xs:int"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+      <xs:element name="DivideByZeroFault">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="message" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+
+    </xs:schema>
+  </types>
+
+  <message name="DivideRequest">
+    <part name="parameters" element="tns:divide"/>
+  </message>
+
+  <message name="DivideResponse">
+    <part name="parameters" element="tns:divideResponse"/>
+  </message>
+
+  <message name="DivideByZeroFaultMessage">
+    <part name="fault" element="tns:DivideByZeroFault"/>
+  </message>
+
+  <portType name="CalculatorPortType">
+    <operation name="divide">
+      <input message="tns:DivideRequest"/>
+      <output message="tns:DivideResponse"/>
+      <fault name="DivideByZeroFault"
+             message="tns:DivideByZeroFaultMessage"/>
+    </operation>
+  </portType>
+
+  <binding name="CalculatorBinding" type="tns:CalculatorPortType">
+    <soap:binding style="document"
+                  transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <operation name="divide">
+      <soap:operation soapAction="divide"/>
+
+      <input>
+        <soap:body use="literal"/>
+      </input>
+
+      <output>
+        <soap:body use="literal"/>
+      </output>
+
+      <fault name="DivideByZeroFault">
+        <soap:fault name="DivideByZeroFault" use="literal"/>
+      </fault>
+
+    </operation>
+  </binding>
+
+  <service name="CalculatorService">
+    <port name="CalculatorPort"
+          binding="tns:CalculatorBinding">
+      <soap:address location="http://example.com/calculator"/>
+    </port>
+  </service>
+
+</definitions>

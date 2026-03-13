@@ -36,7 +36,7 @@ public class SOAPFaultTest {
 
 	@Test
 	public void testValidateFaults() {
-		ValidatorInterceptor i = createValidatorInterceptor(false);
+		var i = createValidatorInterceptor(false);
 		Exchange exc = createFaultExchange();
 		assertEquals(ABORT, i.handleResponse(exc));
 		assertContainsNot("secret", exc.getResponse().toString());

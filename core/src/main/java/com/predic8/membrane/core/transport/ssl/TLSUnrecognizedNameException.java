@@ -15,7 +15,7 @@ package com.predic8.membrane.core.transport.ssl;
 
 import java.io.*;
 
-import static groovy.json.StringEscapeUtils.*;
+import static org.apache.commons.text.StringEscapeUtils.*;
 
 public class TLSUnrecognizedNameException extends IOException {
     public TLSUnrecognizedNameException(String hostname) {

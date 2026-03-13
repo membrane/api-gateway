@@ -31,77 +31,100 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SOAPUtilTest {
 
-	private final static String TB_NS = "http://thomas-bayer.com/blz/";
-	private final static String MEMBRANE_NS = "http://membrane-api.io/";
+    private final static String TB_NS = "http://thomas-bayer.com/blz/";
+    private final static String MEMBRANE_NS = "http://membrane-api.io/";
 
-	@Test
-	void faultCheckSpecExample() throws Exception {
-		assertTrue(SOAPUtil.analyseSOAPMessage( new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultFromSpec.xml")).isFault());
-	}
+    @Test
+    void faultCheckSpecExample() throws Exception {
+        assertTrue(SOAPUtil.analyseSOAPMessage(new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultFromSpec.xml")).isFault());
+    }
 
-	@Test
-	void faultCustom() throws Exception {
-		assertTrue(SOAPUtil.analyseSOAPMessage( new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultCustom.xml")).isFault());
-	}
+    @Test
+    void faultCustom() throws Exception {
+        assertTrue(SOAPUtil.analyseSOAPMessage(new XOPReconstitutor(), getMessage("src/test/resources/wsdlValidator/soapFaultCustom.xml")).isFault());
+    }
 
-	@Test
-	void analyseXML() {
-		SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage( new XOPReconstitutor(), getMessageFromString("<foo/>"));
-		assertFalse(result.isSOAP());
-		assertFalse(result.isFault());
-	}
+    @Test
+    void analyseXML() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("<foo/>"));
+        assertFalse(result.isSOAP());
+        assertFalse(result.isFault());
+    }
 
-	@Test
-	void analyseSOAP11() {
-		SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage( new XOPReconstitutor(), getMessageFromString("""
-				<s11:Envelope xmlns:s11= "http://schemas.xmlsoap.org/soap/envelope/" >
-				  <s11:Body>
-					<ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/">
-					  <ns1:blz>66762332</ns1:blz>
-					</ns1:getBank>
-				  </s11:Body>
-				</s11:Envelope>
-				"""));
-		assertTrue(result.isSOAP());
-		assertFalse(result.isFault());
-		assertEquals(SOAP11, result.version());
-		assertEquals(new QName(TB_NS,"getBank"), result.soapElement());
-	}
+    @Test
+    void analyseSOAP11() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11= "http://schemas.xmlsoap.org/soap/envelope/" >
+                  <s11:Body>
+                	<ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/">
+                	  <ns1:blz>66762332</ns1:blz>
+                	</ns1:getBank>
+                  </s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP11, result.version());
+        assertEquals(new QName(TB_NS, "getBank"), result.soapElement());
+    }
 
-	@Test
-	void analyseSOAP12() {
-		SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage( new XOPReconstitutor(), getMessageFromString("""
-				<s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
-				   <s12:Body>
-					  <Bar xmlns="http://membrane-api.io/"/>
-				   </s12:Body>
-				</s12:Envelope>
-				"""));
-		assertTrue(result.isSOAP());
-		assertFalse(result.isFault());
-		assertEquals(SOAP12, result.version());
-		assertEquals(new QName(MEMBRANE_NS,"Bar"), result.soapElement());
-	}
+    @Test
+    void analyseSOAP12() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                   <s12:Body>
+                	  <Bar xmlns="http://membrane-api.io/"/>
+                   </s12:Body>
+                </s12:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP12, result.version());
+        assertEquals(new QName(MEMBRANE_NS, "Bar"), result.soapElement());
+    }
 
-	@Test
-	void analyseFault11() {
-		SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage( new XOPReconstitutor(), getMessageFromString("""
-				<s11:Envelope xmlns:s11= "http://schemas.xmlsoap.org/soap/envelope/" >
-				  <s11:Body>
-					<s11:Fault/>
-				  </s11:Body>
-				</s11:Envelope>
-				"""));
-		assertTrue(result.isSOAP());
-		assertTrue(result.isFault());
-		assertEquals(SOAP11, result.version());
-	}
+    @Test
+    void analyseFault11() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11= "http://schemas.xmlsoap.org/soap/envelope/" >
+                  <s11:Body>
+                	<s11:Fault/>
+                  </s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertTrue(result.isFault());
+        assertEquals(SOAP11, result.version());
+    }
 
-	private Message getMessageFromString(String body) {
-		return ok().contentType(TEXT_XML).body(body).build();
-	}
+    /**
+     * Fault is not namespace prefixed. => Ok
+     */
+    @Test
+    void analyseFault11DifferentNamespace() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <Fault>
+                      <faultcode>Client</faultcode>
+                      <faultstring>WSDL message validation failed</faultstring>
+                      <detail>
+                        <error>Not a valid SOAP message.</error>
+                      </detail>
+                    </Fault>
+                  </soap:Body>
+                </soap:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertTrue(result.isFault());
+        assertEquals(SOAP11, result.version());
+    }
 
-	private Message getMessage(String path) throws Exception {
-		return ok().contentType(TEXT_XML).body(new FileInputStream(path), true).build();
-	}
+    private Message getMessageFromString(String body) {
+        return ok().contentType(TEXT_XML).body(body).build();
+    }
+
+    private Message getMessage(String path) throws Exception {
+        return ok().contentType(TEXT_XML).body(new FileInputStream(path), true).build();
+    }
 }

@@ -84,6 +84,7 @@ public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartS
         .when()
             .get("http://localhost:2000/service")
         .then()
+            .log().ifValidationFails()
             .statusCode(500)
             .body(
                     containsString("<case>d</case>"),
@@ -99,18 +100,17 @@ public class CustomErrorHandlingExampleTest extends AbstractSampleMembraneStartS
                 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cs="https://predic8.de/cities">
                     <s:Body>
                         <cs:getCity>
-                            <name>Verursache SOAP Fault!</name>
+                            <name>Düsseldorf</name>
                         </cs:getCity>
                     </s:Body>
                 </s:Envelope>""".stripIndent())
         .when()
             .post("http://localhost:2000/service")
         .then()
+            .log().ifValidationFails()
             .statusCode(200)
-            .body(
-                    containsString("<case>e</case>"),
-                    containsString("<fault>Not Found</fault>")
-            );
+            .body("error.case", equalTo("e"))
+            .body("error.fault", equalTo("Resource Not Found"));
     }
 
     @Test
