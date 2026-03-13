@@ -21,7 +21,7 @@ import javax.xml.namespace.*;
 import java.util.*;
 import java.util.function.*;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.Constants.*;
 import static org.w3c.dom.Node.*;
 
 public class WSDLElement {

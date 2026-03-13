@@ -25,8 +25,8 @@ import javax.xml.transform.dom.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.XMLNS_NS;
-import static com.predic8.membrane.annot.Constants.XSD_NS;
+import static com.predic8.membrane.core.Constants.XMLNS_NS;
+import static com.predic8.membrane.core.Constants.XSD_NS;
 import static javax.xml.XMLConstants.*;
 
 public final class WSDLSchemaExtractor {

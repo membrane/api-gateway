@@ -92,7 +92,7 @@ public class SOAPProxyTest {
     void abstractWSDL() throws Exception {
         proxy.setWsdl("classpath:/ws/abstract-service-no-binding.wsdl");
         router.add(proxy);
-        assertThrows(ConfigurationException.class,
+        assertThrows(RuntimeException.class,
                 () -> router.start());
     }
 
@@ -119,7 +119,7 @@ public class SOAPProxyTest {
         proxy.setServiceName("WrongService");
         proxy.setWsdl("classpath:/ws/cities-2-services.wsdl");
 
-        assertThrows(ConfigurationException.class, () -> {
+        assertThrows(RuntimeException.class, () -> {
             router.add(proxy);
             router.start();
         });

@@ -32,7 +32,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.util.TextUtil.*;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -97,22 +97,22 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if (wsdl != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+            return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
         }
         if (schema != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new XMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), schema), createFailureHandler());
+            return new XMLSchemaValidator(resourceResolver, combine( getBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
-            return new JSONYAMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
+            return new JSONYAMLSchemaValidator(resourceResolver, combine( getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
                 if(schemaMappings != null) setSchemaMappings(schemaMappings.getSchemaMap());
             }};
         }
         if (schematron != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new SchematronValidator(combine(router.getConfiguration().getUriFactory(), getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
+            return new SchematronValidator(combine(getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
         }
 
         var validator = getWsdlValidatorFromSOAPProxy();
@@ -129,11 +129,11 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if(soapProxy == null) return null;
         wsdl = soapProxy.getWsdl();
         name = "soap validator";
-        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+        return new WSDLValidator(resourceResolver, combine(getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
     }
 
     private @Nullable String getBaseLocation() {
-        return router == null ? null : router.getConfiguration().getBaseLocation();
+        return router == null ? null : router.getBaseLocation();
     }
 
     @Override
@@ -152,7 +152,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
                 return CONTINUE;
         } catch (ReadingBodyException e) {
             log.error("", e);
-            internal(router.getConfiguration().isProduction(),getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .addSubSee("io")
                     .detail("Could not read message body")
                     .exception(e)
@@ -164,7 +164,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             return validator.validateMessage(exc, flow);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.getConfiguration().isProduction(),getDisplayName())
+            internal(router.isProduction(),getDisplayName())
                     .detail("Error validating message")
                     .addSubSee("generic")
                     .internal("validator", validator.getName())

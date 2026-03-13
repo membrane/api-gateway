@@ -93,7 +93,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
                 if (!path.contains("://") && !path.startsWith("/")) {
                     path = combine(resource, path);
                 }
-                return "./%s?xsd=%s".formatted(URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), exc.getDestinations().getFirst()), resolveToNumber(path));
+                return "./%s?xsd=%s".formatted(URLUtil.getName(router.getUriFactory(), exc.getDestinations().getFirst()), resolveToNumber(path));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -189,7 +189,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             return handleRequestInternal(exc);
         } catch (Exception e) {
             log.error("", e);
-            internal(router.getConfiguration().isProduction(), getDisplayName())
+            internal(router.isProduction(), getDisplayName())
                     .detail("Could not return WSDL document!")
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -205,7 +205,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             String resource = null;
             if (isRequestForWSDL(exc)) {
                 processDocuments(exc);
-                exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), resource = combine(router.getConfiguration().getBaseLocation(), wsdl)));
+                exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), resource = combine(router.getBaseLocation(), wsdl)));
                 exc.getResponse().getHeader().setContentType(TEXT_XML);
             }
             if (exc.getRequest().getUri().contains("?xsd=")) {
@@ -228,7 +228,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             if (resource != null) {
                 var wi = new WSDLInterceptor();
                 wi.setRewriteEndpoint(false);
-                wi.setPathRewriter(new RelativePathRewriter(exc, combine(router.getConfiguration().getBaseLocation(), resource)));
+                wi.setPathRewriter(new RelativePathRewriter(exc, combine(router.getBaseLocation(), resource)));
                 wi.init(router);
                 wi.handleResponse(exc);
                 return RETURN;
@@ -245,7 +245,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
     }
 
     private Map<String, String> getParams(Exchange exc) throws URISyntaxException, IOException {
-        return URLParamUtil.getParams(router.getConfiguration().getUriFactory(), exc, ERROR);
+        return URLParamUtil.getParams(router.getUriFactory(), exc, ERROR);
     }
 
     private static boolean isRequestForWSDL(Exchange exc) {

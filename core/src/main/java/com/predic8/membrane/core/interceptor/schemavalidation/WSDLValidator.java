@@ -33,7 +33,7 @@ import javax.xml.transform.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.SoapVersion.*;
+import static com.predic8.membrane.core.Constants.SoapVersion.*;
 import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.*;

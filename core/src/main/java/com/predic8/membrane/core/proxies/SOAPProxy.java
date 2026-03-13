@@ -24,7 +24,7 @@ import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
 import com.predic8.membrane.core.openapi.util.*;
 import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.wsdl.parser.*;
@@ -33,8 +33,11 @@ import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.net.*;
+import java.util.*;
 import java.util.regex.*;
 
+import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
+import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
 import static com.predic8.membrane.core.interceptor.InterceptorUtil.*;
 
 /**
@@ -203,45 +206,6 @@ public class SOAPProxy extends AbstractServiceProxy {
     private void setProxyName(Service service, Definitions definitions) {
         if (StringUtils.isEmpty(name))
             name = StringUtils.isEmpty(service.getName()) ? definitions.getName() : service.getName();
-    }
-
-    public static Port selectPort(List<Port> ports, String portName) {
-        if (portName != null) {
-            for (Port port : ports)
-                if (portName.equals(port.getName()))
-                    return port;
-            throw new IllegalArgumentException("No port with name '" + portName + "' found.");
-        }
-        return getPort(ports);
-    }
-
-    private static Port getPort(List<Port> ports) {
-        Port port = getPortByNamespace(ports, WSDL_SOAP11_NS);
-        if (port == null)
-            port = getPortByNamespace(ports, WSDL_SOAP12_NS);
-        if (port == null)
-            throw new IllegalArgumentException("No SOAP/1.1 or SOAP/1.2 ports found in WSDL.");
-        return port;
-    }
-
-    private static Port getPortByNamespace(List<Port> ports, String namespace) {
-        for (Port port : ports) {
-            try {
-                if (port.getBinding() == null)
-                    continue;
-                if (port.getBinding().getBinding() == null)
-                    continue;
-                AbstractBinding binding = port.getBinding().getBinding();
-                if (!"http://schemas.xmlsoap.org/soap/http".equals(binding.getProperty("transport")))
-                    continue;
-                if (!namespace.equals(((QName) binding.getElementName()).getNamespaceURI()))
-                    continue;
-                return port;
-            } catch (Exception e) {
-                log.warn("Error inspecting WSDL port binding.", e);
-            }
-        }
-        return null;
     }
 
     private int automaticallyAddedInterceptorCount;

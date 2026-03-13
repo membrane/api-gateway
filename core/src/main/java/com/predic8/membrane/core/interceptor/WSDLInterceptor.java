@@ -25,7 +25,7 @@ import javax.xml.namespace.*;
 import java.io.*;
 import java.net.*;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.Constants.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.util.soap.WSDLUtil.*;
 
@@ -74,7 +74,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
                 if (path.contains("://")) {
                     return new URL(new URL(path), keypath).toString();
                 }
-                return rewriteRelativeWsdlPath(path, URLUtil.getNameComponent(router.getConfiguration().getUriFactory(), keypath));
+                return rewriteRelativeWsdlPath(path, URLUtil.getName(router.getUriFactory(), keypath));
             } catch (URISyntaxException | MalformedURLException e) {
                 log.error("Cannot parse URL {} - {}", path, e);
                 throw new RuntimeException(e);
