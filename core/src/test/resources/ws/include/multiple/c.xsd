@@ -1,0 +1,7 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/cyclic"
+           elementFormDefault="qualified">
+
+    <xs:element name="c" type="xs:string"/>
+
+</xs:schema>

@@ -20,8 +20,8 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.multipart.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.schema.Schema;
 import org.slf4j.*;
+import org.w3c.dom.*;
 import org.xml.sax.*;
 
 import javax.xml.transform.*;
@@ -32,10 +32,11 @@ import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
+import static com.predic8.membrane.core.http.Header.*;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
-    private static final Logger log = LoggerFactory.getLogger(XMLSchemaValidator.class.getName());
+
+    private static final Logger log = LoggerFactory.getLogger(XMLSchemaValidator.class);
 
     public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) {
         super(resourceResolver, location, failureHandler);
@@ -48,7 +49,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
     }
 
     @Override
-    protected List<Schema> getSchemas() {
+    protected List<Element> getSchemas() {
         return null; // never gets called
     }
 
@@ -107,11 +108,6 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
                 .internal("validation", convertExceptionsToMap(exceptions))
                 .buildAndSetResponse(exchange);
         exchange.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
-    }
-
-    @Override
-    protected boolean isFault(Message msg) {
-        return false;
     }
 
     @Override

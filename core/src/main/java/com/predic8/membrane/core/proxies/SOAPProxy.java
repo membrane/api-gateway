@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.interceptor.soap.*;
@@ -26,17 +27,15 @@ import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.soap.WSDLUtil;
-import com.predic8.wsdl.*;
+import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.apache.commons.lang3.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 import java.net.*;
-import java.util.*;
 import java.util.regex.*;
 
-import static com.predic8.membrane.core.interceptor.InterceptorUtil.moveToFirstPosition;
+import static com.predic8.membrane.core.interceptor.InterceptorUtil.*;
 
 /**
  * @description <p>
@@ -58,8 +57,6 @@ import static com.predic8.membrane.core.interceptor.InterceptorUtil.moveToFirstP
  */
 @MCElement(name = "soapProxy", topLevel = true, component = false)
 public class SOAPProxy extends AbstractServiceProxy {
-
-    private static final Logger log = LoggerFactory.getLogger(SOAPProxy.class.getName());
 
     // configuration attributes
     protected String wsdl;
@@ -84,7 +81,7 @@ public class SOAPProxy extends AbstractServiceProxy {
         configureFromWSDL();
         super.init(); // Must be called last! Otherwise, SSL will not be configured!
 
-        for (Interceptor interceptor : interceptors) {
+        for (var interceptor : interceptors) {
             if (interceptor instanceof WSDLPublisherInterceptor wpi) {
                 wpi.setSoapProxy(this);
             } else if (interceptor instanceof ValidatorInterceptor vi) {
@@ -94,12 +91,10 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     protected void configureFromWSDL() {
-
-        Definitions definitions = parseWSDLOnly();
-        Service service = getService(definitions);
-        setProxyName(service, definitions);
-
-        String location = getLocation(service);
+        var defs = parseWSDL();
+        var service = getService(defs);
+        setProxyName(service, defs);
+        var location = getLocation(service);
 
         // Signal to the later processing that the outgoing connection is using TLS
         if (location.startsWith("https")) {
@@ -116,19 +111,33 @@ public class SOAPProxy extends AbstractServiceProxy {
         wsdlInterceptor.setPathRewriterOnWSDLInterceptor(key.getPath());
     }
 
-    private Definitions parseWSDLOnly() {
+    private Service getService(Definitions defs) {
+        if (serviceName != null)
+            return defs.getService(serviceName).orElseThrow(
+                    () -> new ConfigurationException("No service with name '%s' found in WSDL %s".formatted(serviceName, wsdl))
+            );
+        if (defs.getServices().isEmpty())
+            throw new ConfigurationException("No service element found in WSDL %s".formatted(wsdl));
+        return defs.getServices().getFirst();
+    }
+
+    private @NotNull Definitions parseWSDL() {
         try {
-            return getWsdlParser().parse(getWsdlParserContext());
+             return Definitions.parse(resolverMap, wsdl);
         } catch (Exception e) {
-            String msg = "Could not parse WSDL from %s.".formatted(getWsdlParserContext().getInput());
-            log.error("{}: {}", msg, e.getMessage());
-            throw new ConfigurationException(msg, e);
+            throw new ConfigurationException("""
+                    Cannot parse WSDL
+                    
+                    API: %s
+                    WSDL location: %s.
+                    Error. %s
+                    """.formatted( name, wsdl, e.getMessage()));
         }
     }
 
     private void prepareRouting(String location) {
         try {
-            URL url = new URL(location);
+            var url = new URL(location);
             setTarget(url); // Set target URL from WSDL location
             if (key.getPath() == null) { // If the config does not contain a path, use the path from the WSDL(address/@location) for the proxy key
                 key.setUsePathPattern(true);
@@ -148,8 +157,8 @@ public class SOAPProxy extends AbstractServiceProxy {
         if (targetPath == null)
             return;
 
-        RewriteInterceptor ri = new RewriteInterceptor();
-        ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
+        var ri = new RewriteInterceptor();
+        ri.setMappings(Lists.newArrayList(new Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
         interceptors.addFirst(ri);
     }
 
@@ -160,51 +169,12 @@ public class SOAPProxy extends AbstractServiceProxy {
         return url.getPath();
     }
 
-    private @NotNull String getLocation(Service service) {
-        String location = getPort(service).getAddress().getLocation();
+    private @NotNull String getLocation(com.predic8.membrane.core.util.wsdl.parser.Service service) {
+        var location = service.getPorts().getFirst().getAddress().getLocation();
 
         if (location == null)
             throw new ConfigurationException("In the WSDL %s, there is no @location defined on the port.".formatted(wsdl));
         return location;
-    }
-
-    private @NotNull Port getPort(Service service) {
-        return selectPort(service.getPorts(), portName);
-    }
-
-    private @NotNull WSDLParserContext getWsdlParserContext() {
-        WSDLParserContext ctx = new WSDLParserContext();
-        ctx.setInput(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsdl));
-        return ctx;
-    }
-
-    private @NotNull WSDLParser getWsdlParser() {
-        WSDLParser wsdlParser = new WSDLParser();
-        wsdlParser.setResourceResolver(resolverMap.toExternalResolver().toExternalResolver());
-        return wsdlParser;
-    }
-
-    private Service getService(Definitions definitions) {
-        List<Service> services = definitions.getServices();
-        if (services.size() == 1)
-            return services.getFirst();
-        if (serviceName == null) {
-            throw new SOAPProxyMultipleServicesException(this, getServiceNames(services));
-        }
-        return getServiceByName(services, serviceName);
-    }
-
-    private Service getServiceByName(List<Service> services, String serviceName) {
-        return services.stream()
-                .filter(s -> s.getName().equals(serviceName))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No service with name %s found in the WSDL. Available services are: %s".formatted(serviceName, getServiceNames(services))));
-    }
-
-    private static @NotNull List<String> getServiceNames(List<Service> services) {
-        return services.stream()
-                .map(WSDLElement::getName)
-                .toList();
     }
 
     private void setTarget(URL url) {
@@ -227,16 +197,6 @@ public class SOAPProxy extends AbstractServiceProxy {
     private void setProxyName(Service service, Definitions definitions) {
         if (StringUtils.isEmpty(name))
             name = StringUtils.isEmpty(service.getName()) ? definitions.getName() : service.getName();
-    }
-
-    public static Port selectPort(List<Port> ports, String portName) {
-        if (portName != null) {
-            for (Port port : ports)
-                if (portName.equals(port.getName()))
-                    return port;
-            throw new IllegalArgumentException("No port with name '" + portName + "' found.");
-        }
-        return WSDLUtil.getPort(ports);
     }
 
     private WSDLInterceptor addAndGetWSDLInterceptor() {

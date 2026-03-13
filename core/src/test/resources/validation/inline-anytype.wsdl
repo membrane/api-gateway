@@ -1,76 +1,68 @@
 <definitions name="HelloService"
-   targetNamespace="http://www.examples.com/wsdl/HelloService.wsdl"
-   xmlns="http://schemas.xmlsoap.org/wsdl/"
-   xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-   xmlns:tns="http://www.examples.com/wsdl/HelloService.wsdl"
-   xmlns:xsd="http://www.w3.org/2001/XMLSchema">
- 
-   <types>
+             targetNamespace="http://www.examples.com/wsdl/HelloService.wsdl"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://www.examples.com/wsdl/HelloService.wsdl"
+             xmlns:ipo="http://www.example.com/IPO"
+>
 
-<!--
-     <import namespace="http://www.example.com/IPO" schemaLocation="schema.xsd"/>
--->
+    <types>
+        <schema targetNamespace="http://www.example.com/IPO"
+                attributeFormDefault="unqualified"
+                elementFormDefault="unqualified"
+                xmlns="http://www.w3.org/2001/XMLSchema">
 
-    <schema targetNamespace="http://www.example.com/IPO"
-                    attributeFormDefault="unqualified"
-                    elementFormDefault="unqualified"
-            xmlns="http://www.w3.org/2001/XMLSchema">
+            <simpleType name="SKU2">
+                <restriction base="string"/>
+            </simpleType>
 
-      <simpleType name="SKU2">
-        <restriction base="string"/>
-      </simpleType>
+            <complexType name="SKU">
+                <complexContent>
+                    <restriction base="anyType"/>
+                </complexContent>
+            </complexType>
+        </schema>
+    </types>
 
-      <complexType name="SKU">
-        <complexContent>
-          <restriction base="anyType"/>
-        </complexContent>
-      </complexType>
+    <message name="SayHelloRequest">
+        <part name="firstName" type="ipo:SKU"/>
+    </message>
 
-   </schema>
+    <message name="SayHelloResponse">
+        <part name="greeting" type="ipo:SKU2"/>
+    </message>
 
-   </types>
+    <portType name="Hello_PortType">
+        <operation name="sayHello">
+            <input message="tns:SayHelloRequest"/>
+            <output message="tns:SayHelloResponse"/>
+        </operation>
+    </portType>
 
-   <message name="SayHelloRequest">
-      <part name="firstName" type="SKU"/>
-   </message>
-	
-   <message name="SayHelloResponse">
-      <part name="greeting" type="string"/>
-   </message>
+    <binding name="Hello_Binding" type="tns:Hello_PortType">
+        <soap:binding style="rpc"
+                      transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="sayHello">
+            <soap:operation soapAction="sayHello"/>
+            <input>
+                <soap:body
+                        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                        namespace="urn:examples:helloservice"
+                        use="encoded"/>
+            </input>
+            <output>
+                <soap:body
+                        encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
+                        namespace="urn:examples:helloservice"
+                        use="encoded"/>
+            </output>
+        </operation>
+    </binding>
 
-   <portType name="Hello_PortType">
-      <operation name="sayHello">
-         <input message="tns:SayHelloRequest"/>
-         <output message="tns:SayHelloResponse"/>
-      </operation>
-   </portType>
-
-   <binding name="Hello_Binding" type="tns:Hello_PortType">
-      <soap:binding style="rpc"
-         transport="http://schemas.xmlsoap.org/soap/http"/>
-      <operation name="sayHello">
-         <soap:operation soapAction="sayHello"/>
-         <input>
-            <soap:body
-               encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
-               namespace="urn:examples:helloservice"
-               use="encoded"/>
-         </input>
-		
-         <output>
-            <soap:body
-               encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"
-               namespace="urn:examples:helloservice"
-               use="encoded"/>
-         </output>
-      </operation>
-   </binding>
-
-   <service name="Hello_Service">
-      <documentation>WSDL File for HelloService</documentation>
-      <port binding="tns:Hello_Binding" name="Hello_Port">
-         <soap:address
-            location="http://www.examples.com/SayHello/" />
-      </port>
-   </service>
+    <service name="Hello_Service">
+        <documentation>WSDL File for HelloService</documentation>
+        <port binding="tns:Hello_Binding" name="Hello_Port">
+            <soap:address location="http://www.examples.com/SayHello/"/>
+        </port>
+    </service>
 </definitions>

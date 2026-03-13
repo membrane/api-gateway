@@ -15,8 +15,9 @@ package com.predic8.membrane.core.util;
 
 import org.jetbrains.annotations.*;
 
-import java.net.URI;
 import java.net.*;
+import java.net.URI;
+import java.nio.file.*;
 import java.util.*;
 import java.util.regex.*;
 
@@ -27,6 +28,7 @@ import static java.util.Optional.*;
 public class URIUtil {
 
     private static final Pattern driveLetterPattern = Pattern.compile("^(\\w)[/:|].*");
+    private static final Pattern URI_SCHEME_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:.*");
 
     /**
      *
@@ -35,11 +37,11 @@ public class URIUtil {
      * @throws URISyntaxException
      */
     public static java.net.URI convertPath2FileURI(String path) throws URISyntaxException {
-        return new URI( addFilePrefix(encodePathCharactersForUri(path)));
+        return new URI(addFilePrefix(encodePathCharactersForUri(path)));
     }
 
     public static String encodePathCharactersForUri(String s) {
-        return s.replaceAll(" ","%20").replace("\\","/");
+        return s.replaceAll(" ", "%20").replace("\\", "/");
     }
 
     private static @NotNull String addFilePrefix(String path) {
@@ -51,8 +53,7 @@ public class URIUtil {
     }
 
     public static String convertPath2FilePathString(String path) {
-        path = addFilePrefix(path);
-        return path.replaceAll(" ","%20").replaceAll("\\\\","/");
+        return encodePathCharactersForUri(addFilePrefix(path));
     }
 
     /**
@@ -102,7 +103,7 @@ public class URIUtil {
     }
 
     static Optional<String> getPossibleDriveLetter(String p) {
-        Matcher m = driveLetterPattern.matcher(p);
+        var m = driveLetterPattern.matcher(p);
         if (m.matches()) {
             return Optional.of(m.group(1));
         }
@@ -136,6 +137,46 @@ public class URIUtil {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Normalizes the given path or URI and resolves it to an absolute path.
+     * This method handles various formats of paths,
+     * including filesystem paths, URIs, and paths with potential Windows drive letters.
+     * The normalization involves resolving relative components, such as "." or "..",
+     * and ensuring the path conforms to a standardized format.
+     *
+     * @param location the path or URI string to normalize.
+     * @return the normalized absolute path or URI as a string.
+     * @throws IllegalArgumentException if the input location is null, empty, or contains malformed URI syntax.
+     */
+    public static String getNormalizedAbsolutePathOrUri(String location) {
+        if (location == null || location.isEmpty())
+            throw new IllegalArgumentException("location must not be null or empty");
+
+        // Windows drive letter path (e.g., C:\foo or C:/foo)
+        if (location.length() >= 2
+            && Character.isLetter(location.charAt(0))
+            && location.charAt(1) == ':') {
+            return normalizeInternal(location);
+        }
+
+        // already absolute URI
+        if (URI_SCHEME_PATTERN.matcher(location).matches()) {
+            return URI.create(location).normalize().toString();
+        }
+
+        // ? (Query String) or # (Fragment) are hints of URLs, not filesystem paths
+        if (location.contains("?") || location.contains("#") || location.startsWith("//")) {
+            return URI.create(location).normalize().toString();
+        }
+
+        // filesystem path
+        return normalizeInternal(location);
+    }
+
+    private static @NotNull String normalizeInternal(String location) {
+        return Path.of(location).toAbsolutePath().normalize().toString();
     }
 
 }

@@ -25,11 +25,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
-
 @NotThreadSafe
 public class Relocator {
-    private static final Logger log = LoggerFactory.getLogger(Relocator.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(Relocator.class);
 
     private final XMLEventFactory fac = XMLEventFactory.newInstance();
 
@@ -41,8 +39,6 @@ public class Relocator {
     private final PathRewriter pathRewriter;
 
     private final Map<QName, String> relocatingAttributes = new HashMap<>();
-
-    private boolean wsdlFound;
 
     public Relocator(OutputStreamWriter osw, String protocol, String host,
                      int port, String contextPath, PathRewriter pathRewriter) throws Exception {
@@ -56,7 +52,7 @@ public class Relocator {
 
     public static String getNewLocation(String addr, String protocol, String host, int port, String contextPath) {
         try {
-            URL oldURL = new URL(addr);
+            var oldURL = new URL(addr);
             if (port == -1) {
                 return new URL(protocol, host, contextPath + oldURL.getFile()).toString();
             }
@@ -87,24 +83,12 @@ public class Relocator {
     }
 
     private XMLEvent process(XMLEventReader parser) throws XMLStreamException {
-        XMLEvent event = parser.nextEvent();
+        var event = parser.nextEvent();
         if (!event.isStartElement())
             return event;
 
-        if (getElementName(event).getNamespaceURI().equals(WSDL_SOAP11_NS)
-            || getElementName(event).getNamespaceURI().equals(WSDL_SOAP12_NS)) {
-            wsdlFound = true;
-        }
-
-        return relocatingAttributes.entrySet().stream()
-                .filter(e -> shouldProcess(e, event))
-                .findFirst()
-                .map(e -> replace(event, e.getValue()))
-                .orElse(event);
-    }
-
-    private boolean shouldProcess(Map.Entry<QName, String> e, XMLEvent event) {
-        return getElementName(event).equals(e.getKey());
+        var attr = relocatingAttributes.get(getElementName(event));
+        return attr != null ? replace(event, attr) : event;
     }
 
     private QName getElementName(XMLEvent event) {
@@ -112,14 +96,10 @@ public class Relocator {
     }
 
     private XMLEvent replace(XMLEvent event, String attribute) {
-        StartElement start = event.asStartElement();
+        var start = event.asStartElement();
         return fac.createStartElement(start.getName(),
                 new ReplaceIterator(fac, attribute, start.getAttributes()),
                 start.getNamespaces());
-    }
-
-    public boolean isWsdlFound() {
-        return wsdlFound;
     }
 
     public Map<QName, String> getRelocatingAttributes() {
@@ -147,9 +127,9 @@ public class Relocator {
         }
 
         public Attribute next() {
-            Attribute atr = attrs.next();
+            var atr = attrs.next();
             if (atr.getName().equals(new QName(replace))) {
-                String value = atr.getValue();
+                var value = atr.getValue();
                 if (pathRewriter != null) {
                     value = pathRewriter.rewrite(value);
                     if (value.startsWith("http"))

@@ -1,4 +1,12 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.1.2.json
+components:
+  ns:
+    xmlConfig:
+      namespaces:
+        - prefix: s11
+          uri: "http://schemas.xmlsoap.org/soap/envelope/"
+
+---
 api:
   port: 2000
   path:
@@ -24,28 +32,25 @@ api:
             test: isXML()
             flow:
               - if:
+                  test: //s11:Fault
                   language: xpath
-                  test: //*[local-name() = 'Fault' and namespace-uri() = 'http://schemas.xmlsoap.org/soap/envelope/']
+                  $ref: "#/components/ns"
                   flow:
                     - template:
                         contentType: application/xml
                         src: |
-                          <error>
+                            <error>
                                 <case>e</case>
                                 <statusCode>${statusCode}</statusCode>
                                 <message>SOAP Fault!</message>
-                                <fault>${property.faultstring}</fault>
+                                <fault>${xpath('//faultstring/text()')}</fault>
                             </error>
-                    - setProperty:
-                        name: faultstring
-                        value: ${//faultstring/text()}
-                        language: xpath
               - if:
                   test: statusCode >= 400
                   flow:
                     - if:
+                        test: not(/s11:Envelope)
                         language: xpath
-                        test: /*[not(local-name() = 'Envelope')]
                         flow:
                           - template:
                               contentType: application/xml
@@ -53,12 +58,8 @@ api:
                                 <error>
                                     <case>d</case>
                                     <statusCode>${statusCode}</statusCode>
-                                    ${property.description}
+                                    ${xpath('/failure/description')}
                                 </error>
-                          - setProperty:
-                              name: description
-                              value: ${/failure/description}
-                              language: xpath
     - abort:
         - if:
             test: header['X-Protection'] != null

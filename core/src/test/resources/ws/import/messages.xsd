@@ -1,0 +1,9 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.com/messages"
+           elementFormDefault="qualified">
+
+    <xs:element name="get" type="xs:string"/>
+
+    <xs:element name="getResponse" type="xs:string"/>
+
+</xs:schema>

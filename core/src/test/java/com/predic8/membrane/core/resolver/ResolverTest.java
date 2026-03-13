@@ -20,8 +20,6 @@ import com.predic8.membrane.core.interceptor.server.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
-import com.predic8.schema.*;
-import com.predic8.wsdl.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.*;
 import org.junit.jupiter.params.provider.*;
@@ -143,29 +141,10 @@ public class ResolverTest {
         assertNotNull(resolverMap.resolve(wsdlLocation));
         for (String relUrl : new String[]{"1.xsd", "./1.xsd", "../resolver/1.xsd", "http://localhost:3029/resolver/1.xsd"}) {
             try {
-                assertNotNull(resolverMap.resolve(ResolverMap.combine(wsdlLocation, relUrl)));
+                assertNotNull(resolverMap.resolve(ResolverMap.combine(URIFactory.DEFAULT_URI_FACTORY, wsdlLocation, relUrl)));
             } catch (Exception e) {
                 throw new RuntimeException("Error during combine(\"" + wsdlLocation + "\", \"" + relUrl + "\"):", e);
             }
-        }
-    }
-
-    @ParameterizedTest
-    @MethodSource("getConfigurations")
-    public void testMembraneSoaModel(BasisUrlType basisUrlType) {
-        if (hit = !setupLocations(basisUrlType))
-            return;
-
-        try {
-            WSDLParserContext ctx = new WSDLParserContext();
-            ctx.setInput(wsdlLocation);
-            WSDLParser wsdlParser = new WSDLParser();
-            wsdlParser.setResourceResolver(resolverMap.toExternalResolver().toExternalResolver());
-            Definitions definitions = wsdlParser.parse(ctx);
-            for (Schema schema : definitions.getSchemas())
-                schema.getElements(); // trigger lazy-loading
-        } catch (Exception e) {
-            throw new RuntimeException("wsdlLocation = " + xsdLocation, e);
         }
     }
 
