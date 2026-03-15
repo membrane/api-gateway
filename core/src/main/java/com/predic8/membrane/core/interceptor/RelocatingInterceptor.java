@@ -95,7 +95,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 		if (host != null)
 			return host;
 
-		String locHost = exc.getOriginalHostHeaderHost();
+		var locHost = exc.getOriginalHostHeaderHost();
 
 		log.debug("host {}",locHost);
 

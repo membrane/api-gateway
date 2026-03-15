@@ -39,7 +39,7 @@ public class WSDLValidatorTest {
 
     @Test
     void invalidRequestElement() throws Exception {
-        Exchange exc = getRequestExchange(soap11("""
+        var exc = getRequestExchange(soap11("""
                     <foo:notInSchema xmlns:foo="http://membrane-api.io/foo"/>
                 """));
 
@@ -108,8 +108,7 @@ public class WSDLValidatorTest {
 
     @Test
     void twoServicesElementOfWrongService() throws Exception {
-
-        Exchange exc = getRequestExchange(soap11("""
+        var exc = getRequestExchange(soap11("""
                 <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a> <!-- Element is not referenced from Service B -->
                 """));
 
@@ -134,12 +133,15 @@ public class WSDLValidatorTest {
 
     @Test
     void skipFaults() throws Exception {
-        Exchange exc = getResponseExchange(soap11("""
+        var exc = getResponseExchange(soap11("""
                 <s11:Fault/>
                 """));
 
-        assertEquals(CONTINUE, createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE));
+
+        Outcome actual = createValidator(CITIES_WSDL, null, true).validateMessage(exc, RESPONSE);
         dumpResonseBody(exc);
+        assertEquals(CONTINUE, actual);
+
     }
 
     @Test
@@ -148,14 +150,14 @@ public class WSDLValidatorTest {
                 <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a>
                 """));
 
-        Outcome outcome = createValidator(MULTIPLE_PORTS_WSDL, "Service", false).validateMessage(exc, REQUEST);
+        Outcome outcome = createValidator(MULTIPLE_PORTS_WSDL, "Service", true).validateMessage(exc, REQUEST);
         dumpResonseBody(exc);
         assertEquals(CONTINUE, outcome);
     }
 
     @Test
     void abstractWsdl() throws Exception {
-        Exchange exc = getRequestExchange(soap11("""
+        var exc = getRequestExchange(soap11("""
                 <ns:a xmlns:ns="https://predic8.de/">Paris</ns:a>
                 """));
 
@@ -168,11 +170,11 @@ public class WSDLValidatorTest {
 
     @Test
     void abstractWsdlNoReferencedRequestElement() throws Exception {
-        Exchange exc = getRequestExchange(soap11("""
+        var exc = getRequestExchange(soap11("""
                 <ns:b xmlns:ns="https://predic8.de/">7</ns:b> <!-- Declared in schema but not used as a SOAP message -->
                 """));
 
-        Outcome outcome = createValidator(ABSTRACT_SERVICE_NO_BINDING_WSDL, null, false).validateMessage(exc, REQUEST);
+        var outcome = createValidator(ABSTRACT_SERVICE_NO_BINDING_WSDL, null, false).validateMessage(exc, REQUEST);
         dumpResonseBody(exc);
         assertEquals(ABORT, outcome);
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("is not a valid request element"));
@@ -212,7 +214,7 @@ public class WSDLValidatorTest {
     }
 
     private static WSDLValidator createValidator(String location, String serviceName, boolean skipFaults) {
-        WSDLValidator validator = new WSDLValidator(new ResolverMap(), location, serviceName, (msg, exc) -> log.info("Validation failure: {}", msg), skipFaults);
+        var validator = new WSDLValidator(new ResolverMap(), location, serviceName, (msg, exc) -> log.info("Validation failure: {}", msg), skipFaults);
         validator.init();
         return validator;
     }

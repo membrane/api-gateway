@@ -321,7 +321,7 @@ public abstract class AuthorizationService {
     }
 
     public InputStream resolve(ResolverMap rm, String baseLocation, String url) throws Exception {
-        url = ResolverMap.combine(baseLocation, url);
+        url = ResolverMap.combine( baseLocation, url);
         // ask the internal httpClient (might be proxied/authenticated), if HTTP
         if (url.startsWith("http"))
             return httpClient.call(Request.get(url).buildExchange()).getResponse().getBodyAsStreamDecoded();

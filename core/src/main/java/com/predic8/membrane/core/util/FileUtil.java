@@ -17,6 +17,7 @@ package com.predic8.membrane.core.util;
 import org.apache.commons.io.*;
 
 import java.io.*;
+import java.net.*;
 
 import static java.util.Objects.*;
 import static java.util.stream.Collectors.*;
@@ -52,5 +53,9 @@ public class FileUtil {
 		if (location == null)
 			return false;
 		return JSON.equalsIgnoreCase(FilenameUtils.getExtension(location));
+	}
+
+	public static String toFileURIString(File f) throws URISyntaxException {
+		return URIUtil.convertPath2FileURI(f.getAbsolutePath()).toString();
 	}
 }

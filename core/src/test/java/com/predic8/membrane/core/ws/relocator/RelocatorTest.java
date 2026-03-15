@@ -20,7 +20,8 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 
 import static java.nio.charset.StandardCharsets.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RelocatorTest {
 
@@ -41,7 +42,6 @@ public class RelocatorTest {
 	void wsdl() throws Exception {
 		relocator.relocate(getFile("/blz-service.wsdl"));
 		assertTrue(relocator.isWsdlFound());
-		System.out.println("os.toString(UTF_8) = " + os.toString(UTF_8));
 	}
 
 	@Test

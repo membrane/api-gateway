@@ -22,9 +22,10 @@ import java.util.Iterator;
 import javax.xml.namespace.*;
 import javax.xml.xpath.*;
 
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.*;
 import org.xml.sax.InputSource;
 
+//@Disabled // Not worth to fix, since WADL isn't supported any more.
 public class RelocatorWADLTest {
 
 	final NamespaceContext nsCtx = new NamespaceContext() {
@@ -65,10 +66,8 @@ public class RelocatorWADLTest {
 	}
 
 	public void testWADLRelocate() throws Exception {
-		InputStreamReader wadl = new InputStreamReader(getClass()
-				.getResourceAsStream("/wadls/search.wadl"));
 
-		relocator.relocate(wadl);
+		relocator.relocate(getClass().getResourceAsStream("/wadls/search.wadl"));
 
 		assertAttribute("//wadl:resources/@base",
 				"http://localhost:3000/search/V1/");

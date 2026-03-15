@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static java.lang.Integer.MAX_VALUE;
@@ -92,8 +93,8 @@ public class LargeBodyTest {
     public void large() throws Exception {
         long len = MAX_VALUE + 1L;
 
-        Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).buildExchange();
-        try (HttpClient hc = new HttpClient(hcc)) {
+        var e = post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).buildExchange();
+        try (var hc = new HttpClient(hcc)) {
             hc.call(e);
         }
         assertTrue(e.getRequest().getBody().wasStreamed());

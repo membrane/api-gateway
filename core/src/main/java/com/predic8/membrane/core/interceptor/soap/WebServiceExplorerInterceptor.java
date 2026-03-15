@@ -15,18 +15,14 @@ package com.predic8.membrane.core.interceptor.soap;
 
 import com.googlecode.jatl.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.wsdl.*;
-import com.predic8.wstool.creator.*;
-import groovy.xml.MarkupBuilder;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.slf4j.*;
 
 import java.io.*;
@@ -35,19 +31,27 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.regex.Pattern.*;
 
+/**
+ * @description Serves an HTML “web service explorer”.
+ */
 @MCElement(name="webServiceExplorer")
 public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
-	private static final Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class);
 
 	private static final Pattern wsdlRequest = compile(".*\\?(wsdl|xsd=.*)", CASE_INSENSITIVE);
 
 	private String wsdl;
 	private String portName;
+
+	/**
+	 * Field is accessed by reflection
+	 */
+	private Proxy proxy;
 
 	public WebServiceExplorerInterceptor() {
 		name = "web service explorer";
@@ -74,7 +78,6 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	@MCAttribute
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
-		this.parsedWSDL = null;
 	}
 
 	public String getPortName() {
@@ -86,69 +89,11 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		this.portName = portName;
 	}
 
-	private volatile Definitions parsedWSDL;
-
-	private Definitions getParsedWSDL() {
-		if (parsedWSDL != null)
-			return parsedWSDL;
-		WSDLParserContext ctx = new WSDLParserContext();
-		ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
-        return parsedWSDL = getWsdlParser().parse(ctx);
-	}
-
-	private @NotNull WSDLParser getWsdlParser() {
-		WSDLParser wsdlParser = new WSDLParser();
-		wsdlParser.setResourceResolver(router.getResolverMap().toExternalResolver().toExternalResolver());
-		return wsdlParser;
-	}
-
-	@Mapping("[^?]*/operation/([^/?]+)/([^/?]+)/([^/?]+)")
-	public Response createOperationResponse(QueryParameter params, String relativeRootPath) {
-		try {
-			final String bindingName = params.getGroup(1);
-			final String portName = params.getGroup(2);
-			final String operationName = params.getGroup(3);
-
-            final Service service = getService(getParsedWSDL());
-
-			StringWriter sw = new StringWriter();
-			new StandardPage(sw, null) {
-				@Override
-				protected void createContent() {
-					h1().text("Service Proxy for " + service.getName());
-					h2().text("Operation: " + operationName).end();
-
-					h3().text("Sample Request").end();
-
-					pre().text(generateSampleRequest(portName, operationName, bindingName, getParsedWSDL())).end();
-				}
-			};
-			return ok(sw.toString()).build();
-		} catch (IllegalArgumentException e) {
-			log.error("", e);
-			return Response.internalServerError().build();
-		}
-	}
-
-	private Service getService(Definitions d) {
-		
-		if (getProxy() instanceof SOAPProxy sp) {
-			String serviceName = sp.getServiceName();
-			if (serviceName != null) {
-				return WSDLUtil.getService(d, serviceName);
-			}
-		}
-		
-		if (d.getServices().size() != 1)
-			throw new IllegalArgumentException("WSDL needs to have exactly one service for SOAPUIInterceptor to work.");
-		return d.getServices().getFirst();
-	}
-
 	private String getClientURL(Exchange exc) {
 		// TODO: move this to some central location
 		try {
-			String uri = exc.getHandler().getContextPath(exc) + exc.getRequestURI();
-			String host = exc.getRequest().getHeader().getHost();
+			var uri = exc.getHandler().getContextPath(exc) + exc.getRequest().getUri();
+			var host = exc.getRequest().getHeader().getHost();
 			if (host != null) {
 				if (host.contains(":"))
 					host = host.substring(0, host.indexOf(":"));
@@ -162,42 +107,37 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		}
 	}
 
+	/**
+	 * Do not remove! Method is called dynamically by @Mapping!
+	 */
 	@Mapping("(?!.*operation)([^?]*)")
 	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath, final Exchange exc) throws Exception {
 		try {
-			final String myPath = router.getUriFactory().create(exc.getRequestURI()).getPath();
+			var definitions = Definitions.parse(router.getResolverMap(), wsdl);
 
-			final Definitions w = getParsedWSDL();
-			final Service service = getService(w);
-			final Port port = SOAPProxy.selectPort(service.getPorts(), portName);
-			final List<Port> ports = getPortsByLocation(service, port);
+			var service = definitions.getServices().getFirst(); // TODO display all services
+			var port = service.getPorts().getFirst();
+			var ports = service.getPorts();
 
-			StringWriter sw = new StringWriter();
+			var sw = new StringWriter();
 			new StandardPage(sw, service.getName()) {
 				@Override
 				protected void createContent() {
 					h1().text("Service Proxy: " + service.getName()).end();
 					p();
-					text("Target Namespace: " + w.getTargetNamespace());
+					text("Target Namespace: " + definitions.getTargetNamespace());
 					br().end();
 					String wsdlLink = getClientURL(exc) + "?wsdl";
 					text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
 					end();
 
-					for (PortType pt : WSDLUtil.getPortTypes(service)) {
+					for (com.predic8.membrane.core.util.wsdl.parser.PortType pt : ports.stream().map(Port::getBinding).map(Binding::getPortType).toList()) {
 						h2().text("Port Type: " + pt.getName()).end();
-						Documentation d = pt.getDocumentation();
-						if (d != null) {
-							p().text("Documentation: " + d).end();
-						}
+						// @TODO show pt.getDocumentation() wsdl:documentation here when it is implemented
 					}
 
-					Binding binding = port.getBinding();
-					List<Operation> bindingOperations = getOperationsByBinding(w, binding);
-					if (bindingOperations.isEmpty())
-						p().text("There are no operations defined.").end();
-					else
-						createOperationsTable(w, bindingOperations, binding, binding.getPortType());
+					var binding = port.getBinding();
+                    createOperationsTable(definitions, binding, binding.getPortType());
 
 					h2().text("Virtual Endpoint").end();
 					p().a().href(getClientURL(exc)).text(getClientURL(exc)).end().end();
@@ -209,30 +149,30 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 						createEndpointTable(service.getPorts(), ports);
 				}
 
-				private void createOperationsTable(Definitions w, List<Operation> bindingOperations, Binding binding, PortType portType) {
+				private void createOperationsTable(Definitions defs, Binding binding, PortType portType) {
 					table().cellspacing("0").cellpadding("0").border(""+1);
 					tr();
-					th().text("Operation").end();
-					th().text("Input").end();
-					th().text("Output").end();
+						th().text("Operation").end();
+						th().text("Input").end();
+						th().text("Output").end();
+						th().text("Fault").end();
 					end();
-					for (Operation o : bindingOperations) {
+					for (Operation o : portType.getOperations()) {
 						tr();
 						td();
-						if ("HTTP".equals(getProtocolVersion(binding))) {
 							text(o.getName());
-						} else {
-							a().href(getLinkForOperation(binding, portType, o, myPath)).text(o.getName()).end();
-						}
 						end();
 						td();
-						for (Part p : o.getInput().getMessage().getParts())
-							text(p.getElement().getName());
-
+						for (Part p : o.getInputs().stream().map(om -> om.getMessage().getPart()).toList())
+							text(p.getElementQName().toString());
 						end();
 						td();
-						for (Part p : o.getOutput().getMessage().getParts())
-							text(p.getElement().getName());
+						for (Part p : o.getOutputs().stream().map(om -> om.getMessage().getPart()).toList())
+							text(p.getElementQName().toString());
+						end();
+						td();
+						for (Part p : o.getFaults().stream().map(om -> om.getMessage().getPart()).toList())
+							text(p.getElementQName().toString());
 						end();
 						end();
 					}
@@ -246,10 +186,10 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 					th().text("Protocol").end();
 					th().text("URL").end();
 					end();
-					for (Port p : ports) {
+					for (com.predic8.membrane.core.util.wsdl.parser.Port p : ports) {
 						tr();
 						td().text(p.getName()).end();
-						td().text(getProtocolVersion(p.getBinding())).end();
+						td().text(p.getBinding().getSoapVersion().name()).end();
 						td().text(p.getAddress().getLocation()).end();
 						td();
 						if (matchingPorts.contains(p))
@@ -267,10 +207,6 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			log.error("", e);
 			return Response.internalServerError().build();
 		}
-	}
-
-	private String getLinkForOperation(Binding binding, PortType portType, Operation o, String path) {
-		return path + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName();
 	}
 
 	private abstract static class StandardPage extends Html {
@@ -307,51 +243,9 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		protected abstract void createContent();
 	}
 
-	private List<Operation> getOperationsByBinding(final Definitions w, Binding binding) {
-		List<Operation> bindingOperations = new ArrayList<>();
-		for (Operation o : w.getOperations())
-			if (binding.getOperation(o.getName()) != null)
-				bindingOperations.add(o);
-		return bindingOperations;
-	}
-
-	private List<Port> getPortsByLocation(Service service, Port port) {
-		String location = port.getAddress().getLocation();
-		if (location == null)
-			throw new IllegalArgumentException("Location not set for port in WSDL.");
-
-		final List<Port> ports = new ArrayList<>();
-		for (Port p : service.getPorts())
-			if (location.equals(p.getAddress().getLocation()))
-				ports.add(p);
-		return ports;
-	}
-
-	private String getProtocolVersion(Binding binding) {
-		String transport = getNamespaceURI(binding);
-		if (WSDL_SOAP11_NS.equals(transport))
-			transport = "SOAP 1.1";
-		if (WSDL_SOAP12_NS.equals(transport))
-			transport = "SOAP 1.2";
-		if (WSDL_HTTP_NS.equals(transport))
-			transport = "HTTP";
-		return transport;
-	}
-
-	private String getNamespaceURI(Binding binding) {
-		return ((javax.xml.namespace.QName) binding.getBinding().getElementName()).getNamespaceURI();
-	}
-
-	private String generateSampleRequest(final String portName, final String operationName,
-			final String bindingName, final Definitions w) {
-		StringWriter writer = new StringWriter();
-		SOARequestCreator creator = new SOARequestCreator(w, new RequestTemplateCreator(), new MarkupBuilder(writer));
-		creator.createRequest(portName, operationName, bindingName);
-		return writer.toString();
-	}
-
 	@Override
 	public String getShortDescription() {
 		return "Displays a graphical UI describing the web service when accessed using GET requests.";
 	}
+
 }
