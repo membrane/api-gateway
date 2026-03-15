@@ -88,7 +88,7 @@ Authenticated requests to '/token' return a signed JWT in which the username fro
 
 This example is intentionally minimal, but it highlights the basic building blocks: authenticate the caller, shape the token payload, and sign the result. From there, you can extend it with additional claims, custom logic, or stricter policies to implement tailored API security flows.
 
-## API Gateway eBook (New Seconded Edition)
+## API Gateway eBook (New Second Edition)
 
 Get the latest version of the *API Gateway eBook*. The **second edition** includes new chapters, improved material, and additional examples across more than 320 pages.
 
