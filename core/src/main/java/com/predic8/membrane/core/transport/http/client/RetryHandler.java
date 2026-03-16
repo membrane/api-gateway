@@ -19,9 +19,11 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.slf4j.*;
 
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
 import java.nio.*;
+import java.security.cert.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.*;
@@ -195,6 +197,11 @@ public class RetryHandler {
         if (e instanceof NoResponseException) {
             log.debug("Server didn't respond to the request.");
             return !isIdempotent(exc.getRequest().getMethod());
+        }
+        if (e instanceof SSLHandshakeException he) {
+            if (he.getCause() instanceof CertificateException ce) {
+                  return true;
+            }
         }
         log.info("Error while attempting to forward request to {}. Reason: {}", dest, e.getMessage());
         logException(exc, attempt, e);
