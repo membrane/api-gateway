@@ -16,6 +16,7 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.wsdl.parser.schema.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
 
@@ -64,13 +65,21 @@ public class Definitions extends WSDLElement {
 
     private void parse() {
         targetNamespace = getAttribute("targetNamespace");
-        schemas = instantiateXSDElements(getTypes().element, "schema", Schema.class);
+        schemas = getSchema();
+
         importEmbeddedSchemas();
         messages = instantiateWSDLChildren("message", Message.class);
         portTypes = instantiateWSDLChildren("portType", PortType.class);
         bindings = instantiateWSDLChildren( "binding", Binding.class);
         services = instantiateWSDLChildren( "service", Service.class);
         soapVersions = bindings.stream().map(Binding::getSoapVersion).collect(toSet());
+    }
+
+    private @NotNull List<Schema> getSchema() {
+        // If there are no types, return an empty list.
+        return instantiateChild("types", Types.class)
+                .map(t -> instantiateXSDElements(t.element, "schema", Schema.class))
+                .orElseGet(ArrayList::new);
     }
 
     /**
