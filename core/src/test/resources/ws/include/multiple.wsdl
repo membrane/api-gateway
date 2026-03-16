@@ -21,11 +21,11 @@
 
             <!-- Wrapped response -->
             <xs:element name="testResponse">
-                    <xs:complexType>
-                        <xs:sequence>
-                            <xs:element ref="tns:a"/>
-                        </xs:sequence>
-                    </xs:complexType>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element ref="tns:a"/>
+                    </xs:sequence>
+                </xs:complexType>
             </xs:element>
 
         </xs:schema>
