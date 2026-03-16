@@ -28,10 +28,11 @@ import java.util.*;
  *  @yaml <pre><code>
  *  components:
  *    my-chain:
- *      - log:
- *          message: chain is invoked
- *      - jsonProtection:
- *          maxDepth: 10
+ *      chain:
+ *        - log:
+ *           message: chain is invoked
+ *        - jsonProtection:
+ *           maxDepth: 10
  *  ---
  *  api:
  *   port: 2000
