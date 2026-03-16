@@ -199,7 +199,7 @@ public class RetryHandler {
             return !isIdempotent(exc.getRequest().getMethod());
         }
         if (e instanceof SSLHandshakeException he) {
-            if (he.getCause() instanceof CertificateException ce) {
+            if (he.getCause() instanceof CertificateException) {
                   return true;
             }
         }
