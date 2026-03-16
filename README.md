@@ -92,7 +92,7 @@ This example is intentionally minimal, but it highlights the basic building bloc
 
 Learn how API Gateways work with real-world examples and insights into Membrane.
 
-![API Gateway eBook Cover](docs/images/api-gateway-ebook-cover.jpg)
+<img src="docs/images/api-gateway-ebook-cover.jpg" alt="API Gateway eBook Cover" width="400">
 
 [Download instantly](https://www.membrane-api.io/ebook/API-Gateway-Handbook-v1.0.0.pdf) — **no registration** required.
 
