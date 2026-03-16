@@ -25,6 +25,21 @@ import java.util.*;
 
 /**
  * @description A Chain groups multiple interceptors into reusable components, reducing redundancy in API configurations.
+ *  @yaml <pre><code>
+ *  components:
+ *    my-chain:
+ *      - log:
+ *          message: chain is invoked
+ *      - jsonProtection:
+ *          maxDepth: 10
+ *  ---
+ *  api:
+ *   port: 2000
+ *   flow:
+ *     - $ref: "#/components/my-chain"
+ *     - return:
+ *         status: 200
+ *  </code></pre>
  */
 @MCElement(name = "chain", noEnvelope = true)
 public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
@@ -53,11 +68,9 @@ public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
     public String getLongDescription() {
         var sb = new StringBuilder();
         sb.append("<ul>");
-        interceptors.forEach(i -> {
-            sb.append("<li>")
-                    .append(i.getDisplayName())
-                    .append("</li>");
-        });
+        interceptors.forEach(i -> sb.append("<li>")
+                .append(i.getDisplayName())
+                .append("</li>"));
         sb.append("</ul>");
         return sb.toString();
     }
