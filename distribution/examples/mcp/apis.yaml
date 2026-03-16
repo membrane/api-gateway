@@ -1,0 +1,35 @@
+api:
+  name: demo-mcp-gateway
+  port: 2000
+  path: /mcp
+  flow:
+    - request:
+        - if:
+            language: SpEL
+            test: "isJSON() and json.method == 'tools/call' and json['params'] != null and json['params']['name'] == 'secretHello'"
+            flow:
+              - template:
+                  contentType: application/json
+                  src: |
+                    {
+                      "jsonrpc": "2.0",
+                      "id": ${json.id},
+                      "result": {
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "Blocked by Membrane gateway: tool secretHello is not allowed"
+                          }
+                        ],
+                        "isError": true
+                      }
+                    }
+              - return:
+                  status: 200
+                  contentType: application/json
+
+    - log: {}
+
+  target:
+    host: localhost
+    port: 8081
