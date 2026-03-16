@@ -1,7 +1,8 @@
 api:
   name: demo-mcp-gateway
   port: 2000
-  path: /mcp
+  path:
+    uri: /mcp
   flow:
     - request:
         - if:
