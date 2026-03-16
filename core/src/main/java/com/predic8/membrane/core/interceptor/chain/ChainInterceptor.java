@@ -39,4 +39,26 @@ public class ChainInterceptor extends AbstractFlowWithChildrenInterceptor {
         return router.getFlowController().invokeResponseHandlers(exc, interceptors);
     }
 
+    @Override
+    public String getDisplayName() {
+        return "chain";
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "Chain of interceptors.";
+    }
+
+    @Override
+    public String getLongDescription() {
+        var sb = new StringBuilder();
+        sb.append("<ul>");
+        interceptors.forEach(i -> {
+            sb.append("<li>")
+                    .append(i.getDisplayName())
+                    .append("</li>");
+        });
+        sb.append("</ul>");
+        return sb.toString();
+    }
 }
