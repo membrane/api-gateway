@@ -72,48 +72,10 @@ This example blocks the execution of one tool at the gateway layer. It does not 
 
 ### 2. Call the allowed tool
 
-Select the `echo` tool and use this input:
-
-```json
-{
-  "text": "Hello from Inspector"
-}
-```
-
-Expected result:
-
-```json
-{
-  "content": [
-    {
-      "type": "text",
-      "text": "Echo from backend: Hello from Inspector"
-    }
-  ],
-  "isError": false
-}
-```
+Select the `echo` tool and set the text to e.g. "Hello".
 
 ### 3. Call the blocked tool
 
-Select the `secretHello` tool and use this input:
+Select the `secretHello` tool and use the same text:
 
-```json
-{
-  "name": "Christian"
-}
-```
-
-Expected result:
-
-```json
-{
-  "content": [
-    {
-      "type": "text",
-      "text": "Blocked by Membrane gateway: tool secretHello is not allowed"
-    }
-  ],
-  "isError": true
-}
-```
+`Blocked by Membrane gateway: tool secretHello is not allowed`
