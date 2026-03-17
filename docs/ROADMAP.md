@@ -1,9 +1,5 @@
 # Membrane Roadmap
 
-# YAML Support
-
-- Correct YAML example on GitHub README
-
 
 
 # 7.2.0
@@ -22,7 +18,8 @@
 # 7.X
 
 PRIO 1:
-
+- Proxy Server Configuration Sample 
+  - explains how to configure a proxy server
 - HotReload for YAML
 - Support for multiple apis.yaml in one folder
   - idea: load apis.yaml last.
@@ -54,6 +51,7 @@ PRIO 2:
       - 
 
 PRIO 3:
+- ReplaceInterceptor: Support Languages, tutorial/transformation
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
   - Refactor

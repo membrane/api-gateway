@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.ProxyAware;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
@@ -44,7 +43,7 @@ import java.util.*;
  */
 @SuppressWarnings("LoggingSimilarMessage")
 @MCElement(name = "oauth2authserver")
-public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor implements ProxyAware {
+public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(OAuth2AuthorizationServerInterceptor.class.getName());
     public static final Set<@NotNull String> SUPPORTED_AUTHORIZATION_GRANTS = Set.of("code", "token", "id_token token");
 
@@ -76,8 +75,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor im
     private SessionFinder sessionFinder = new SessionFinder();
     private WellknownFile wellknownFile = new WellknownFile();
     private ConsentPageFile consentPageFile = new ConsentPageFile();
-
-    private Proxy proxy;
 
     @Override
     public void init() {
@@ -439,10 +436,5 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor im
 
     public String getBasePath() {
         return basePath;
-    }
-
-    @Override
-    public void setProxy(Proxy proxy) {
-        this.proxy = proxy;
     }
 }
