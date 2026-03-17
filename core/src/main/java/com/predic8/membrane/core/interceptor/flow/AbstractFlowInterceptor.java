@@ -40,7 +40,7 @@ public abstract class AbstractFlowInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         for (Interceptor i : interceptors)
-            i.init(router);
+            i.init(router,proxy);
     }
 
     protected static void createProblemDetails(String flow, Interceptor interceptor, Exchange exc, Exception e) {

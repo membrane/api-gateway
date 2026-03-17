@@ -112,8 +112,8 @@ public class AbstractInterceptor implements Interceptor {
 
 	@Override
 	public void init(Router router, Proxy proxy) {
-		init(router);
 		this.proxy = proxy;
+		init(router);
 	}
 
 	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.

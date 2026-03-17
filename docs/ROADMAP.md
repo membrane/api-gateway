@@ -18,7 +18,8 @@
 # 7.X
 
 PRIO 1:
-
+- Proxy Server Configuration Sample 
+  - explains how to configure a proxy server
 - HotReload for YAML
 - Support for multiple apis.yaml in one folder
   - idea: load apis.yaml last.
@@ -50,9 +51,7 @@ PRIO 2:
       - 
 
 PRIO 3:
-- Refactoring:
-  - Remove ProxyAware and use router.getX instead
-- ReplaceInterceptor: Support Languages, tutorial/tansformation
+- ReplaceInterceptor: Support Languages, tutorial/transformation
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
   - Refactor
