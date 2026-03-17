@@ -303,34 +303,4 @@ public class RuleManager {
         }
         return null;
     }
-
-    public synchronized List<Proxy> getRulesBySource(final RuleDefinitionSource source) {
-        return new ArrayList<>() {
-            @Serial
-            private static final long serialVersionUID = 1L;
-
-            {
-                for (int i = 0; i < proxies.size(); i++)
-                    if (ruleSources.get(i) == source)
-                        add(proxies.get(i));
-            }
-
-            @Override
-            public Proxy set(int index, Proxy element) {
-                throw new IllegalStateException("set(int, Rule) is not allowed");
-            }
-
-            @Override
-            public boolean add(Proxy e) {
-                addProxy(e, source);
-                return super.add(e);
-            }
-
-            @Override
-            public void add(int index, Proxy e) {
-                addProxy(e, source);
-                super.add(index, e);
-            }
-        };
-    }
 }

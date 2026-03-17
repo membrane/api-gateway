@@ -1,9 +1,5 @@
 # Membrane Roadmap
 
-# YAML Support
-
-- Correct YAML example on GitHub README
-
 
 
 # 7.2.0
@@ -54,6 +50,9 @@ PRIO 2:
       - 
 
 PRIO 3:
+- Refactoring:
+  - Remove ProxyAware and use router.getX instead
+- ReplaceInterceptor: Support Languages, tutorial/tansformation
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...
   - Refactor
