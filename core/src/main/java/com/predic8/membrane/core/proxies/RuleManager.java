@@ -38,8 +38,6 @@ public class RuleManager {
     private Router router;
 
     protected final List<Proxy> proxies = new Vector<>();
-    private final List<RuleDefinitionSource> ruleSources = new ArrayList<>();
-    private final Set<IRuleChangeListener> listeners = new HashSet<>();
 
     public enum RuleDefinitionSource {
         /**
@@ -77,11 +75,6 @@ public class RuleManager {
         router.getTransport().openPort(proxy);
 
         proxies.add(proxy);
-        ruleSources.add(source);
-
-        for (IRuleChangeListener listener : listeners) {
-            listener.ruleAdded(proxy);
-        }
     }
 
     public synchronized void addProxy(Proxy proxy, RuleDefinitionSource source) {
@@ -89,11 +82,6 @@ public class RuleManager {
             return;
 
         proxies.add(proxy);
-        ruleSources.add(source);
-
-        for (IRuleChangeListener listener : listeners) {
-            listener.ruleAdded(proxy);
-        }
     }
 
     public synchronized void openPorts() throws IOException {
@@ -167,9 +155,6 @@ public class RuleManager {
     }
 
     public void ruleChanged(Proxy proxy) {
-        for (IRuleChangeListener listener : listeners) {
-            listener.ruleUpdated(proxy);
-        }
         getExchangeStore().refreshExchangeStoreListeners();
     }
 
@@ -258,15 +243,7 @@ public class RuleManager {
 
     public synchronized void removeRule(Proxy proxy) {
         getExchangeStore().removeAllExchanges(proxy);
-
-        int i = proxies.indexOf(proxy);
-        proxies.remove(i);
-        ruleSources.remove(i);
-
-        for (IRuleChangeListener listener : listeners) {
-            listener.ruleRemoved(proxy, proxies.size());
-        }
-
+        proxies.remove(proxy);
     }
 
     public synchronized void replaceRule(Proxy proxy, Proxy newProxy) {
@@ -275,13 +252,6 @@ public class RuleManager {
         int i = proxies.indexOf(proxy);
         newProxy.init(router);
         proxies.set(i, newProxy);
-
-        for (IRuleChangeListener listener : listeners) {
-            listener.ruleRemoved(proxy, proxies.size());
-        }
-        for (IRuleChangeListener listener : listeners) {
-            listener.ruleAdded(newProxy);
-        }
     }
 
     public synchronized void removeAllRules() {

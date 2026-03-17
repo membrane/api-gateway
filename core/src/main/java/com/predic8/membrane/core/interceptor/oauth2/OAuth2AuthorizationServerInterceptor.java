@@ -76,8 +76,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private WellknownFile wellknownFile = new WellknownFile();
     private ConsentPageFile consentPageFile = new ConsentPageFile();
 
-    private Proxy proxy;
-
     @Override
     public void init() {
         super.init();
