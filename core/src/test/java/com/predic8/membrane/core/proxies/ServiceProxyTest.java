@@ -29,9 +29,9 @@ class ServiceProxyTest {
     private static Router router;
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         router = new TestRouter();
-        APIProxy proxyWithOutTarget = new APIProxy() {{
+        var proxyWithOutTarget = new APIProxy() {{
             key = new APIProxyKey(2000);
         }};
         router.add(proxyWithOutTarget);
@@ -39,7 +39,7 @@ class ServiceProxyTest {
     }
 
     @AfterAll
-    public static void shutdown() {
+    static void shutdown() {
         router.stop();
     }
 
@@ -54,7 +54,7 @@ class ServiceProxyTest {
             .contentType(APPLICATION_PROBLEM_JSON)
             .body("type", equalTo("https://membrane-api.io/problems/user"))
             .body("detail", Matchers.containsString("/foo"))
-            .body("detail", Matchers.containsString("<target>"));
+            .body("detail", Matchers.containsString("target"));
         // @formatter:on
     }
     

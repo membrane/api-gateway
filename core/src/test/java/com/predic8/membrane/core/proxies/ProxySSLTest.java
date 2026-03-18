@@ -31,23 +31,28 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.core.http.Request.get;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxySSLTest {
     public static Collection<Object[]> data() {
+        // @formatter:off
         return Arrays.asList(new Object[][] {
-                { false, false, 3032, 3033 }, { false, true, 3034, 3035 }, { true, false, 3036, 3037 }, { true, true, 3038, 3039 }
+                //   backend TLS, proxy TLS, backend port, proxy port
+                {          false,     false,         3032,       3033 },
+                {          false,      true,         3034,       3035 },
+                {          true,      false,         3036,       3037 },
+                {          true,       true,         3038,       3039 }
         });
+        // @formatter:on
     }
 
     @ParameterizedTest
     @MethodSource("data")
     void test(boolean backendUsesSSL, boolean proxyUsesSSL, int backendPort, int proxyPort) throws Exception {
-        DefaultRouter backend = createBackend(backendUsesSSL, backendPort);
-
-        AtomicInteger proxyCounter = new AtomicInteger();
-
-        DefaultRouter proxy = createProxy(proxyUsesSSL, proxyPort, proxyCounter);
+        var backend = createBackend(backendUsesSSL, backendPort);
+        var proxyCounter = new AtomicInteger();
+        var proxy = createProxy(proxyUsesSSL, proxyPort, proxyCounter);
 
         testClient(backendUsesSSL, backendPort, createAndConfigureClient(proxyUsesSSL, proxyPort), proxyCounter);
 
@@ -56,9 +61,9 @@ public class ProxySSLTest {
     }
 
     private static @NotNull DefaultRouter createProxy(boolean proxyUsesSSL, int proxyPort, AtomicInteger proxyCounter) throws IOException {
-        DefaultRouter proxy = new DefaultRouter();
+        var proxy = new DefaultRouter();
         proxy.getConfiguration().setHotDeploy(false);
-        ProxyRule rule = new ProxyRule(new ProxyRuleKey(proxyPort));
+        var rule = new ProxyRule(new ProxyRuleKey(proxyPort));
         rule.getFlow().add(new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) {
@@ -76,9 +81,9 @@ public class ProxySSLTest {
 
     private static void testClient(boolean backendUsesSSL, int backendPort, HttpClient hc, AtomicInteger proxyCounter) throws Exception {
         // Step 4: Test client
-        Exchange exc = new Request.Builder().get("http" + (backendUsesSSL ? "s" : "") + "://localhost:" + backendPort + "/foo").buildExchange();
+        var exc = get("http%s://localhost:%d/foo".formatted(backendUsesSSL ? "s" : "", backendPort)).buildExchange();
         if (backendUsesSSL) {
-            SSLParser ssl = new SSLParser();
+            var ssl = new SSLParser();
             ssl.setTrustStore(new TrustStore());
             ssl.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
             ssl.getTrustStore().setPassword("secret");
@@ -93,27 +98,30 @@ public class ProxySSLTest {
 
     private static @NotNull HttpClient createAndConfigureClient(boolean proxyUsesSSL, int proxyPort) {
         // Step 3: configure the client to access the backend through the proxy
-        HttpClientConfiguration httpClientConfiguration = new HttpClientConfiguration();
-        ProxyConfiguration proxyConfiguration = new ProxyConfiguration();
-        proxyConfiguration.setHost("localhost");
-        proxyConfiguration.setPort(proxyPort);
+        var hcc = new HttpClientConfiguration();
+        var pc = new ProxyConfiguration();
+        pc.setHost("localhost");
+        pc.setPort(proxyPort);
         if (proxyUsesSSL) {
-            SSLParser ssl = new SSLParser();
+            var ssl = new SSLParser();
             ssl.setTrustStore(new TrustStore());
             ssl.getTrustStore().setLocation("classpath:/ssl-rsa-pub2.keystore");
             ssl.getTrustStore().setPassword("secret");
             ssl.setEndpointIdentificationAlgorithm(""); // workarond the fact that the certificate was not issued for 'localhost'
-            proxyConfiguration.setSslParser(ssl);
+            pc.setSslParser(ssl);
         }
-        httpClientConfiguration.setProxy(proxyConfiguration);
-        return new HttpClient(httpClientConfiguration);
+        hcc.setProxy(pc);
+        return new HttpClient(hcc);
     }
 
     private static @NotNull DefaultRouter createBackend(boolean backendUsesSSL, int backendPort) throws IOException {
         // Step 1: create the backend
-        DefaultRouter backend = new DefaultRouter();
+        var backend = new DefaultRouter();
         backend.getConfiguration().setHotDeploy(false);
-        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
+        var ruleKey = new ServiceProxyKey(backendPort);
+        ruleKey.setPath("/foo");
+        ruleKey.setUsePathPattern(true);
+        var sp = new ServiceProxy(ruleKey, null, 0);
         if (backendUsesSSL) {
             sp.setSslInboundParser(getSslParser("classpath:/ssl-rsa.keystore"));
         }
@@ -124,7 +132,7 @@ public class ProxySSLTest {
     }
 
     private static @NotNull SSLParser getSslParser(String location) {
-        SSLParser ssl = new SSLParser();
+        var ssl = new SSLParser();
         ssl.setKeyStore(new KeyStore());
         ssl.getKeyStore().setLocation(location);
         ssl.getKeyStore().setKeyPassword("secret");

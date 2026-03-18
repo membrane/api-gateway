@@ -21,10 +21,10 @@ import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.client.protocol.*;
 import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import javax.annotation.*;
-import java.io.*;
+import javax.annotation.Nullable;
 import java.net.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.*;
@@ -74,9 +74,20 @@ public class HttpClient implements AutoCloseable {
     }
 
     private boolean dispatchCall(Exchange exc, String target, int attempt) throws Exception {
-        HostColonPort hcp = initializeRequest(exc, target);
-
-        OutgoingConnectionType outConType = connectionFactory.getConnection(exc, hcp, attempt);
+        setAuthorizationHeader(exc);
+        HostColonPort hcp;
+        OutgoingConnectionType outConType;
+        try {
+            hcp = getHostColonPort(exc, target);
+            outConType = connectionFactory.getConnection(exc, hcp, attempt);
+            setRequestURI(exc.getRequest(), target, outConType.con());
+        } catch (MalformedURLException e) {
+            // @TODO
+            throw new MalformedURLException("""
+                    The exchange's destination URI %s does not start with 'http'. Specify a 'target' within 
+                    the API configuration or make sure the exchanges destinations list contains a valid URI.
+                    """.formatted(target));
+        }
 
         if (configuration.getProxy() != null && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
@@ -93,34 +104,28 @@ public class HttpClient implements AutoCloseable {
         if (upgradedProtocol == null)
             return false;
 
-        log.debug("Upgrading to {}",upgradedProtocol);
+        log.debug("Upgrading to {}", upgradedProtocol);
 
         StreamPump.setupConnectionForwarding(exc, outConType.con(), upgradedProtocol, streamPumpStats);
         outConType.con().setExchange(exc);
         return true;
     }
 
-    HostColonPort initializeRequest(Exchange exc, String dest) throws IOException {
-        setRequestURI(exc.getRequest(), dest);
+    private void setAuthorizationHeader(Exchange exc) {
         if (configuration.getAuthentication() != null)
             exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
+    }
 
-        HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
+    protected @NotNull HostColonPort getHostColonPort(Exchange exc, String dest) throws MalformedURLException {
+        var target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
         if (configuration.isAdjustHostHeader() && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
-            exc.getRequest().getHeader().setHost(target.toString());
+            exc.getRequest().getHeader().setHost(target.toString()); // TODO
         }
         return target;
     }
 
-
     public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
         this.streamPumpStats = streamPumpStats;
-    }
-
-    private static boolean trackNodeStatus(Exchange exc) {
-        if (exc.getProperty(TRACK_NODE_STATUS) instanceof Boolean status)
-            return status;
-        return false;
     }
 
     @Override
@@ -134,18 +139,31 @@ public class HttpClient implements AutoCloseable {
         return connectionFactory;
     }
 
-    void setRequestURI(Request req, String dest) throws MalformedURLException {
+    void setRequestURI(Request req, String dest, @NotNull Connection con) throws MalformedURLException {
+        // Only on none TLS connections
+        if (req.isCONNECTRequest()) {
+            req.setUri(getHostColonPort(dest));
+            return;
+        }
+
         // Use complete URL with protocol and host. The proxy needs to know where to forward
-        if (configuration.getProxy() != null || req.isCONNECTRequest()) {
+        if (configuration.getProxy() != null && !con.getTunneled()) {
             req.setUri(dest);
             return;
         }
         if (!dest.startsWith("http")) {
             throw new MalformedURLException("""
-                    The exchange's destination URI %s does not start with 'http'. Specify a <target> within the API configuration or make sure the exchanges destinations list contains a valid URI.
+                    The exchange's destination URI %s does not start with 'http'. Specify a 'target' within 
+                    the API configuration or make sure the exchanges destinations list contains a valid URI.
                     """.formatted(dest));
         }
         req.setUri(getPathAndQueryString(dest));
+    }
+
+    private static @NotNull String getHostColonPort(String dest) throws MalformedURLException {
+        return dest.startsWith("http")
+                ? HostColonPort.parse(dest).toString()
+                : dest;
     }
 
     /**

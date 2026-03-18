@@ -77,6 +77,8 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	private Exchange exchange;
 	private boolean keepAttachedToExchange;
 
+	private boolean tunneled;
+
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws IOException {
 		return open(host, port, localHost, sslProvider, null, connectTimeout);
 	}
@@ -120,18 +122,18 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 		log.debug("Opened connection on localPort: {}", con.socket.getLocalPort());
 
-		setupStreams(con);
+		con.setupStreams();
 		return con;
 	}
 
-	private static void setupStreams(Connection con) throws IOException {
+	private void setupStreams() throws IOException {
 		if (ByteStreamLogging.isLoggingEnabled()) {
 			String connectionName = chooseNewConnectionName();
-			con.out = new BufferedOutputStream(wrapConnectionOutputStream(con.socket.getOutputStream(), connectionName + " out"), BUFFER_SIZE);
-            con.in = new BufferedInputStream(wrapConnectionInputStream(con.socket.getInputStream(), connectionName + " in"), BUFFER_SIZE);
+			out = new BufferedOutputStream(wrapConnectionOutputStream(socket.getOutputStream(), connectionName + " out"), BUFFER_SIZE);
+            in = new BufferedInputStream(wrapConnectionInputStream(socket.getInputStream(), connectionName + " in"), BUFFER_SIZE);
 		} else {
-			con.out = new BufferedOutputStream(con.socket.getOutputStream(), BUFFER_SIZE);
-			con.in = new BufferedInputStream(con.socket.getInputStream(), BUFFER_SIZE);
+			out = new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE);
+			in = new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE);
 		}
 	}
 
@@ -412,6 +414,8 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 			replyStr = new String(reply, 0, replyLen);
 		}
 
+		tunneled = true;
+
         /* Look for '200 OK' response. Probably, some proxies may return HTTP/1.1 back */
 		if (!replyStr.startsWith("HTTP/1.0 200") && !replyStr.startsWith("HTTP/1.1 200")) {
 			throw new IOException("Unable to tunnel through "
@@ -450,5 +454,9 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	public SSLProvider getSslProvider() {
 		return sslProvider;
+	}
+
+	public boolean getTunneled() {
+		return tunneled;
 	}
 }
