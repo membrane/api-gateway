@@ -27,7 +27,6 @@ import org.slf4j.*;
 import javax.annotation.Nullable;
 import java.net.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 
@@ -84,7 +83,7 @@ public class HttpClient implements AutoCloseable {
         } catch (MalformedURLException e) {
             // @TODO
             throw new MalformedURLException("""
-                    The exchange's destination URI %s does not start with 'http'. Specify a 'target' within 
+                    The exchange's destination URI %s does not start with 'http'. Specify a 'target' within
                     the API configuration or make sure the exchanges destinations list contains a valid URI.
                     """.formatted(target));
         }
@@ -153,7 +152,7 @@ public class HttpClient implements AutoCloseable {
         }
         if (!dest.startsWith("http")) {
             throw new MalformedURLException("""
-                    The exchange's destination URI %s does not start with 'http'. Specify a 'target' within 
+                    The exchange's destination URI %s does not start with 'http'. Specify a 'target' within
                     the API configuration or make sure the exchanges destinations list contains a valid URI.
                     """.formatted(dest));
         }
@@ -170,7 +169,6 @@ public class HttpClient implements AutoCloseable {
      * @param connect If true, do not use TLS even when the URL starts with https
      * @param dest    URL
      * @return HostColonPort
-     * @throws MalformedURLException
      */
     private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException {
         if (connect)

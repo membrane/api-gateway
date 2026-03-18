@@ -43,8 +43,6 @@ public class Exchange extends AbstractExchange {
     public static final String WS_ORIGINAL_EXCHANGE = "membrane.ws.original.exchange";
     public static final String SECURITY_SCHEMES = "membrane.security.schemes";
 
-    private static final Logger log = LoggerFactory.getLogger(Exchange.class.getName());
-
     private AbstractHttpHandler handler;
 
     private String originalHostHeader = "";
