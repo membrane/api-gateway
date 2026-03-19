@@ -33,6 +33,12 @@ public class AbstractInterceptor implements Interceptor {
 
 	protected Router router;
 
+	/**
+	 * The proxy where this interceptor is attached to, no matter how deep in
+	 * nested interceptors it is.
+	 */
+	protected Proxy proxy;
+
 	public AbstractInterceptor() {
 		super();
 	}
@@ -105,12 +111,17 @@ public class AbstractInterceptor implements Interceptor {
 	}
 
 	@Override
-	public void init(Router router, Proxy ignored) {
+	public void init(Router router, Proxy proxy) {
+		this.proxy = proxy;
 		init(router);
 	}
 
 	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
 		return router;
+	}
+
+	public Proxy getProxy() {
+		return proxy;
 	}
 
 	public FlowController getFlowController() {

@@ -15,13 +15,11 @@ package com.predic8.membrane.core.interceptor.soap;
 
 import com.googlecode.jatl.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
 import com.predic8.membrane.core.interceptor.rest.*;
-import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.slf4j.*;
 
@@ -39,7 +37,7 @@ import static java.util.regex.Pattern.*;
  * @description Serves an HTML “web service explorer”.
  */
 @MCElement(name="webServiceExplorer")
-public class WebServiceExplorerInterceptor extends RESTInterceptor implements ProxyAware {
+public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class);
 
@@ -47,11 +45,6 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 
 	private String wsdl;
 	private String portName;
-
-	/**
-	 * Field is accessed by reflection
-	 */
-	private Proxy proxy;
 
 	public WebServiceExplorerInterceptor() {
 		name = "web service explorer";
@@ -246,10 +239,5 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor implements Pr
 	@Override
 	public String getShortDescription() {
 		return "Displays a graphical UI describing the web service when accessed using GET requests.";
-	}
-
-	@Override
-	public void setProxy(Proxy proxy) {
-		this.proxy = proxy;
 	}
 }

@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.ProxyAware;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.stats.*;
@@ -90,10 +89,7 @@ public abstract class AbstractProxy implements Proxy {
         this.router = router;
         try {
             init(); // Extension point for subclasses
-            for (Interceptor i : interceptors) {
-                if(i instanceof ProxyAware pa) {
-                    pa.setProxy(this);
-                }
+            for (var i : interceptors) {
                 i.init(router, this);
             }
             active = true;
