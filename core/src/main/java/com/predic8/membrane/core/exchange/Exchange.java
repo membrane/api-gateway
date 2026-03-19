@@ -37,14 +37,11 @@ public class Exchange extends AbstractExchange {
      * compatibility (i.e. for Java's internal HTTP client).
      */
     public static final String ALLOW_H2 = "membrane.use.h2";
-    public static final String TRACK_NODE_STATUS = "membrane.track.node.status";
     public static final String SSL_CONTEXT = "membrane.ssl.context";
     public static final String OAUTH2 = "membrane.oauth2";
     public static final String SNI_SERVER_NAME = "membrane.sni.server.name";
     public static final String WS_ORIGINAL_EXCHANGE = "membrane.ws.original.exchange";
     public static final String SECURITY_SCHEMES = "membrane.security.schemes";
-
-    private static final Logger log = LoggerFactory.getLogger(Exchange.class.getName());
 
     private AbstractHttpHandler handler;
 

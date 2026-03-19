@@ -14,9 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static com.predic8.membrane.core.exchange.Exchange.TRACK_NODE_STATUS;
-import static java.lang.Boolean.TRUE;
-
 /**
  * Used by the {@link LoadBalancingInterceptor} to track the status of nodes during load balancing.
  *

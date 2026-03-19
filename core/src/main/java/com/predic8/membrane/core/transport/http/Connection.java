@@ -77,6 +77,11 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	private Exchange exchange;
 	private boolean keepAttachedToExchange;
 
+	/**
+	 * If the connection is tunneled through a proxy and the connection to the real backend uses TLS
+	 */
+	private boolean tunneled;
+
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws IOException {
 		return open(host, port, localHost, sslProvider, null, connectTimeout);
 	}
@@ -120,18 +125,18 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 		log.debug("Opened connection on localPort: {}", con.socket.getLocalPort());
 
-		setupStreams(con);
+		con.setupStreams();
 		return con;
 	}
 
-	private static void setupStreams(Connection con) throws IOException {
+	private void setupStreams() throws IOException {
 		if (ByteStreamLogging.isLoggingEnabled()) {
 			String connectionName = chooseNewConnectionName();
-			con.out = new BufferedOutputStream(wrapConnectionOutputStream(con.socket.getOutputStream(), connectionName + " out"), BUFFER_SIZE);
-            con.in = new BufferedInputStream(wrapConnectionInputStream(con.socket.getInputStream(), connectionName + " in"), BUFFER_SIZE);
+			out = new BufferedOutputStream(wrapConnectionOutputStream(socket.getOutputStream(), connectionName + " out"), BUFFER_SIZE);
+            in = new BufferedInputStream(wrapConnectionInputStream(socket.getInputStream(), connectionName + " in"), BUFFER_SIZE);
 		} else {
-			con.out = new BufferedOutputStream(con.socket.getOutputStream(), BUFFER_SIZE);
-			con.in = new BufferedInputStream(con.socket.getInputStream(), BUFFER_SIZE);
+			out = new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE);
+			in = new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE);
 		}
 	}
 
@@ -417,7 +422,8 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 			throw new UnableToTunnelException("Unable to tunnel through %s:%d. Proxy returns '%s'".formatted(proxy.getHost(), proxy.getPort(), replyStr));
 		}
 
-      /* tunneling Handshake was successful! */
+      	/* tunneling Handshake was successful! */
+		tunneled = true;
 	}
 
 	private static @NotNull String getHostString(ProxyConfiguration proxy) {
@@ -425,7 +431,8 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	}
 
 	private static byte @NotNull [] createConnectMessage(ProxyConfiguration proxy, String host, int port) {
-		var msg = "CONNECT %s:%d HTTP/1.0\r\nUser-Agent: %s\r\n%s\r\n".formatted(host, port, USERAGENT, getProxyAuthenticationHeader(proxy));
+		var msg = "CONNECT %s:%d HTTP/1.0\r\nUser-Agent: %s\r\n%s\r\n"
+				.formatted(host, port, USERAGENT, getProxyAuthenticationHeader(proxy));
 		byte[] b;
 		try {
           /*
@@ -449,5 +456,12 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
 	public SSLProvider getSslProvider() {
 		return sslProvider;
+	}
+
+	/**
+	 * @return true If the connection is tunneled through a proxy and the connection to the real backend uses TLS
+	 */
+	public boolean isTunneled() {
+		return tunneled;
 	}
 }
