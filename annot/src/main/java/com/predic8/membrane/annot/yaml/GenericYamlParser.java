@@ -79,9 +79,6 @@ public class GenericYamlParser {
                 continue;
             }
 
-            // Deactivated temporarily to get better error messages
-            //validateAgainstSchema(grammar, jsonNode, jsonLocationMap);
-
             var pc = new ParsingContext<>("", null, grammar, jsonNode, "$", null);
 
             if ("components".equals(getBeanType(pc, jsonNode))) {
@@ -94,20 +91,6 @@ public class GenericYamlParser {
                     "default",
                     randomUUID().toString(),
                     jsonNode));
-        }
-    }
-
-    private static void validateAgainstSchema(Grammar grammar, JsonNode jsonNode, JsonLocationMap jsonLocationMap) throws IOException {
-        // Validate YAML against JSON schema
-        try {
-            validate(grammar, jsonNode);
-        } catch (YamlSchemaValidationException e) {
-            JsonLocation location = jsonLocationMap.getLocationMap().get(
-                    e.getErrors().getFirst().getInstanceNode());
-            throw new IOException("Invalid YAML: %s at line %d, column %d.".formatted(
-                    e.getErrors().getFirst().getMessage(),
-                    location.getLineNr(),
-                    location.getColumnNr()), e);
         }
     }
 
