@@ -74,35 +74,23 @@ public class GenericYamlParser {
      * @throws IOException if schema loading or validation fails
      */
     public GenericYamlParser(Grammar grammar, String yaml) throws IOException {
-        beanDefs.addAll(parseYamlFile(grammar, yaml, null, new ArrayDeque<>(), new int[]{0}));
+        beanDefs.addAll(parseYamlFile(grammar, yaml, IncludeContext.root(), new int[]{0}));
     }
 
-    private static List<BeanDefinition> parseYamlFile(Grammar grammar, String yaml, Path sourceFile, Deque<Path> includeStack, int[] beanIndex) throws IOException {
-        JsonLocationMap jsonLocationMap = new JsonLocationMap();
+    private static List<BeanDefinition> parseYamlFile(Grammar grammar, String yaml, IncludeContext includeContext, int[] beanIndex) throws IOException {
         List<BeanDefinition> defs = new ArrayList<>();
         List<JsonNode> includes = new ArrayList<>();
-        List<JsonNode> config = new ArrayList<>();
+        List<JsonNode> configSnippets = new ArrayList<>();
 
-        for (JsonNode jsonNode : jsonLocationMap.parseWithLocations(yaml)) {
-            if (jsonNode == null || jsonNode.isNull() || jsonNode.isEmpty()) {
-                log.debug(EMPTY_DOCUMENT_WARNING);
-                continue;
-            }
+        collectSnippets(yaml, new JsonLocationMap(), includes, configSnippets);
+        handleIncludes(grammar, includeContext, beanIndex, includes, defs);
+        handleConfigSnippets(grammar, beanIndex, configSnippets, defs);
 
-            if (isIncludeDocument(jsonNode)) {
-                includes.add(jsonNode.get("include"));
-                continue;
-            }
-            config.add(jsonNode);
-        }
+        return defs;
+    }
 
-        for (JsonNode include : includes) {
-            for (String includeEntry : extractIncludeEntries(include)) {
-                defs.addAll(parseIncludedPath(grammar, resolveIncludePath(sourceFile, includeEntry), includeStack, beanIndex));
-            }
-        }
-
-        for (JsonNode jsonNode : config) {
+    private static void handleConfigSnippets(Grammar grammar, int[] beanIndex, List<JsonNode> configSnippets, List<BeanDefinition> defs) {
+        for (JsonNode jsonNode : configSnippets) {
             var pc = new ParsingContext<>("", null, grammar, jsonNode, "$", null);
             String beanType = getBeanType(pc, jsonNode);
 
@@ -117,10 +105,32 @@ public class GenericYamlParser {
                     randomUUID().toString(),
                     jsonNode));
         }
-        return defs;
     }
 
-    private static List<BeanDefinition> parseIncludedPath(Grammar grammar, Path includePath, Deque<Path> includeStack, int[] beanIndex) throws IOException {
+    private static void handleIncludes(Grammar grammar, IncludeContext includeContext, int[] beanIndex, List<JsonNode> includes, List<BeanDefinition> defs) throws IOException {
+        for (JsonNode include : includes) {
+            for (String includeEntry : extractIncludeEntries(include)) {
+                defs.addAll(parseIncludedPath(grammar, includeContext.resolveIncludePath(includeEntry), includeContext, beanIndex));
+            }
+        }
+    }
+
+    private static void collectSnippets(String yaml, JsonLocationMap jsonLocationMap, List<JsonNode> includes, List<JsonNode> config) throws IOException {
+        for (JsonNode jsonNode : jsonLocationMap.parseWithLocations(yaml)) {
+            if (jsonNode == null || jsonNode.isNull() || jsonNode.isEmpty()) {
+                log.debug(EMPTY_DOCUMENT_WARNING);
+                continue;
+            }
+
+            if (isIncludeDocument(jsonNode)) {
+                includes.add(jsonNode.get("include"));
+                continue;
+            }
+            config.add(jsonNode);
+        }
+    }
+
+    private static List<BeanDefinition> parseIncludedPath(Grammar grammar, Path includePath, IncludeContext includeContext, int[] beanIndex) throws IOException {
         if (!Files.exists(includePath))
             throw new IOException("Included path does not exist: " + includePath);
 
@@ -128,25 +138,25 @@ public class GenericYamlParser {
             List<BeanDefinition> res = new ArrayList<>();
             try (var files = Files.list(includePath)) {
                 for (Path file : files.filter(Files::isRegularFile).filter(GenericYamlParser::isApisYaml).toList()) {
-                    res.addAll(parseIncludedFile(grammar, file, includeStack, beanIndex));
+                    res.addAll(parseIncludedFile(grammar, file, includeContext, beanIndex));
                 }
             }
             return res;
         }
 
-        return parseIncludedFile(grammar, includePath, includeStack, beanIndex);
+        return parseIncludedFile(grammar, includePath, includeContext, beanIndex);
     }
 
-    private static List<BeanDefinition> parseIncludedFile(Grammar grammar, Path includeFile, Deque<Path> includeStack, int[] beanIndex) throws IOException {
+    private static List<BeanDefinition> parseIncludedFile(Grammar grammar, Path includeFile, IncludeContext includeContext, int[] beanIndex) throws IOException {
         Path normalizedFile = normalizePath(includeFile);
-        if (includeStack.contains(normalizedFile))
-            throw new IOException("Cyclic include detected: " + formatIncludeCycle(includeStack, normalizedFile));
+        if (includeContext.includeStack().contains(normalizedFile))
+            throw new IOException("Cyclic include detected: " + formatIncludeCycle(includeContext.includeStack(), normalizedFile));
 
-        includeStack.addLast(normalizedFile);
+        includeContext.includeStack().addLast(normalizedFile);
         try {
-            return parseYamlFile(grammar, readString(normalizedFile, UTF_8), normalizedFile, includeStack, beanIndex);
+            return parseYamlFile(grammar, readString(normalizedFile, UTF_8), includeContext.withSourceFile(normalizedFile), beanIndex);
         } finally {
-            includeStack.removeLast();
+            includeContext.includeStack().removeLast();
         }
     }
 
@@ -169,16 +179,6 @@ public class GenericYamlParser {
             includes.add(item.asText());
         }
         return includes;
-    }
-
-    private static Path resolveIncludePath(Path sourceFile, String includeEntry) {
-        Path includePath = Path.of(includeEntry);
-        if (includePath.isAbsolute())
-            return normalizePath(includePath);
-
-        return normalizePath((sourceFile != null && sourceFile.getParent() != null
-                        ? sourceFile.getParent()
-                        : normalizePath(Path.of("."))).resolve(includePath));
     }
 
     private static boolean isApisYaml(Path file) {
@@ -552,5 +552,28 @@ public class GenericYamlParser {
             }
         }
         return convertScalarOrSpel(node, elemType);
+    }
+
+    private record IncludeContext(Path sourceFile, Path basePath, Deque<Path> includeStack) {
+
+        static IncludeContext root() {
+            return new IncludeContext(null, null, new ArrayDeque<>());
+        }
+
+        IncludeContext withSourceFile(Path sourceFile) {
+            return new IncludeContext(sourceFile, basePath, includeStack);
+        }
+
+        Path resolveIncludePath(String includeEntry) {
+            Path includePath = Path.of(includeEntry);
+            if (includePath.isAbsolute())
+                return normalizePath(includePath);
+
+            Path baseDir = basePath != null ? basePath
+                    : sourceFile != null && sourceFile.getParent() != null
+                    ? sourceFile.getParent()
+                    : normalizePath(Path.of("."));
+            return normalizePath(baseDir.resolve(includePath));
+        }
     }
 }
