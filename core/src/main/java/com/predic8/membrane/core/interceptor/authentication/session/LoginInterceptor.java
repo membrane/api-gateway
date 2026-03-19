@@ -14,12 +14,10 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.ProxyAware;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.*;
-import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.util.*;
 import org.slf4j.*;
 
@@ -94,7 +92,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * @topic 3. Security and Validation
  */
 @MCElement(name="login")
-public class LoginInterceptor extends AbstractInterceptor implements ProxyAware {
+public class LoginInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(LoginInterceptor.class.getName());
 
@@ -106,7 +104,6 @@ public class LoginInterceptor extends AbstractInterceptor implements ProxyAware 
 	private SessionManager sessionManager;
 	private AccountBlocker accountBlocker;
 	private LoginDialog loginDialog;
-	private Proxy proxy;
 
 	@Override
 	public void init() {
@@ -297,10 +294,5 @@ public class LoginInterceptor extends AbstractInterceptor implements ProxyAware 
 	@Override
 	public String getDisplayName() {
 		return "login";
-	}
-
-	@Override
-	public void setProxy(Proxy proxy) {
-		this.proxy = proxy;
 	}
 }

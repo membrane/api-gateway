@@ -75,6 +75,12 @@ public interface Interceptor {
 
 	Router getRouter();
 
+	/**
+	 * The proxy where this interceptor is attached to, no matter how deep in
+	 * nested interceptors it is.
+	 */
+	Proxy getProxy();
+
 	void setAppliedFlow(EnumSet<Flow> flow);
 	EnumSet<Flow> getAppliedFlow();
 

@@ -94,7 +94,7 @@ Get the latest version of the *API Gateway eBook*. The **second edition** includ
 
 Learn how API Gateways work through practical scenarios and real-world examples, including insights based on the Membrane API Gateway.
 
-![API Gateway eBook Cover](docs/images/api-gateway-ebook-cover.jpg)
+<img src="docs/images/api-gateway-ebook-cover.jpg" alt="API Gateway eBook Cover" width="400">
 
 [Download](https://www.membrane-api.io/ebook/API-Gateway-Handbook-v2.0.0.pdf) instantly. **No registration** required.
 
