@@ -198,7 +198,6 @@ public class RetryHandler {
         }
         log.info("Error while attempting to forward request to {}. Reason: {}", dest, e.getMessage());
         logException(exc, attempt, e);
-        log.info("", e); // Unknown condition => log stacktrace
         return !isIdempotent(exc.getRequest().getMethod()); // If not sure, do not retry for non idempotent methods
     }
 
@@ -210,13 +209,11 @@ public class RetryHandler {
         if (!log.isDebugEnabled())
             return;
 
-        StringBuilder msg = new StringBuilder();
-        msg.append("try # ");
-        msg.append(attempt);
-        msg.append(" failed\n");
+        var msg = new StringBuilder();
+        msg.append("try # ").append(attempt).append(" failed\n");
 
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            var baos = new ByteArrayOutputStream();
             exc.getRequest().writeStartLine(baos);
             exc.getRequest().getHeader().write(baos);
             msg.append(ISO_8859_1.decode(ByteBuffer.wrap(baos.toByteArray())));

@@ -84,7 +84,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             return RETURN;
         } catch (ConnectException e) {
             String msg = "Target %s is not reachable.".formatted(getDestination(exc));
-            log.warn("{} {}",msg,PROXIES_HINT);
+            log.warn("{} {}", msg, PROXIES_HINT);
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("connect")
                     .status(502)
@@ -100,7 +100,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (UnknownHostException e) {
             String msg = "Target host %s of API %s is unknown. DNS was unable to resolve host name.".formatted(URLUtil.getAuthority(getDestination(exc)), exc.getProxy().getName());
-            log.warn("{} {}",msg,PROXIES_HINT);
+            log.warn("{} {}", msg, PROXIES_HINT);
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("unknown-host")
                     .status(502)
@@ -130,11 +130,19 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .internal("url", exc.getRequest().getUri())
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (UnableToTunnelException e) {
+            internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Network error")
+                    .detail(e.getMessage())
+                    .internal("proxy", exc.getProxy().getName())
+                    .internal("url", exc.getRequest().getUri())
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (Exception e) {
             log.error("", e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .detail("Error sending request to backend.")
                     .exception(e)
-                    .internal("proxy", exc.getProxy().getName())
                     .buildAndSetResponse(exc);
             return ABORT;
         }
