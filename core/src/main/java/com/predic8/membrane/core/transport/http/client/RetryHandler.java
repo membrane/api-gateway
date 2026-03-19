@@ -85,7 +85,7 @@ public class RetryHandler {
         Exception exceptionInLastCall = null;
         double currentDelay = delay;
         for (int attempt = 0; attempt <= retries; attempt++) {
-            String dest = getDestination(exc, attempt);
+            var dest = getDestination(exc, attempt);
             log.debug("Attempt #{} from #{} to {}", attempt, retries + 1, dest);
             try {
                 if (call.execute(exc, dest, attempt)) {

@@ -67,7 +67,7 @@ public class HttpClient implements AutoCloseable {
     }
 
     public void call(Exchange exc) throws Exception {
-        ProtocolHandler ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
+        var ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
         configuration.getRetryHandler().executeWithRetries(exc, this::dispatchCall);
         ph.cleanup(exc);
@@ -113,6 +113,12 @@ public class HttpClient implements AutoCloseable {
             exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
     }
 
+    /**
+     * @param exc Exchange
+     * @param dest URL for normal requests and host:port for CONNECT requests
+     * @return HostColonPort
+     * @throws MalformedURLException
+     */
     protected @NotNull HostColonPort getHostColonPort(Exchange exc, String dest) throws MalformedURLException {
         if (exc.getRequest().isCONNECTRequest())
             return new HostColonPort(false, dest);

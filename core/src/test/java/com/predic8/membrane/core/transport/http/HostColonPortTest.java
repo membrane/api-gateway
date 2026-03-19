@@ -17,7 +17,7 @@ import org.junit.jupiter.api.*;
 
 import java.net.*;
 
-import static com.predic8.membrane.core.transport.http.HostColonPort.parse;
+import static com.predic8.membrane.core.transport.http.HostColonPort.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("HttpUrlsUsage")
@@ -28,7 +28,7 @@ public class HostColonPortTest {
     static final HostColonPort HCP_HTTPS_LOCALHOST = new HostColonPort(true, "localhost", 443);
     static final HostColonPort HCP_HTTPS_LOCALHOST_8443 = new HostColonPort(true, "localhost", 8443);
 
-	static URI uriLocalhost, uriLocalhost8080, uriHttpsLocalhost, uriHttpsLocalhost8443;
+    static URI uriLocalhost, uriLocalhost8080, uriHttpsLocalhost, uriHttpsLocalhost8443;
 
     @BeforeAll
     static void setUp() throws URISyntaxException {
@@ -79,6 +79,15 @@ public class HostColonPortTest {
         assertEquals(uriHttpsLocalhost, HCP_HTTPS_LOCALHOST.toURI());
         assertEquals(uriHttpsLocalhost8443, HCP_HTTPS_LOCALHOST_8443.toURI());
     }
+
+
+    @Test
+    void ipv6() throws URISyntaxException {
+        var hcp = new HostColonPort(false, "[2001:db8::1]:443");
+        assertEquals("[2001:db8::1]", hcp.host());
+        assertEquals(443, hcp.port());
+    }
+
 
     @Nested
     class Parse {

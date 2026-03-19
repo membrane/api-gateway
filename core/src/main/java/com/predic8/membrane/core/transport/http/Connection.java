@@ -78,7 +78,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	private boolean keepAttachedToExchange;
 
 	/**
-	 * If the connection is tunneled through a proxy
+	 * If the connection is tunneled through a proxy and the connection to the real backend uses TLS
 	 */
 	private boolean tunneled;
 
@@ -459,7 +459,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	}
 
 	/**
-	 * @return true If the connection is tunneled through a proxy
+	 * @return true If the connection is tunneled through a proxy and the connection to the real backend uses TLS
 	 */
 	public boolean isTunneled() {
 		return tunneled;
