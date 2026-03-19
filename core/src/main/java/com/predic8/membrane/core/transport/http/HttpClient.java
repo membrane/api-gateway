@@ -126,7 +126,7 @@ public class HttpClient implements AutoCloseable {
             return HostColonPort.parse(dest);
         } catch (MalformedURLException e) {
             throw new MalformedURLException("""
-                    The exchange's destination URI %s does not start with 'http'. Specify a 'target' within
+                    The exchange's destination URI %s is not valid. Specify a 'target' within
                     the API configuration or make sure the exchanges destinations list contains a valid URI.
                     """.formatted(dest));
         }
