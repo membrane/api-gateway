@@ -82,7 +82,7 @@ public class HostColonPortTest {
 
 
     @Test
-    void ipv6() throws URISyntaxException {
+    void ipv6() {
         var hcp = new HostColonPort(false, "[2001:db8::1]:443");
         assertEquals("[2001:db8::1]", hcp.host());
         assertEquals(443, hcp.port());

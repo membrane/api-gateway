@@ -117,7 +117,6 @@ public class HttpClient implements AutoCloseable {
      * @param exc Exchange
      * @param dest URL for normal requests and host:port for CONNECT requests
      * @return HostColonPort
-     * @throws MalformedURLException
      */
     protected @NotNull HostColonPort getHostColonPort(Exchange exc, String dest) throws MalformedURLException {
         if (exc.getRequest().isCONNECTRequest())
