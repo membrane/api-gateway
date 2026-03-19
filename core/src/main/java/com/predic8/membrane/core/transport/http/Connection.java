@@ -419,7 +419,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 
         /* Look for '200 OK' response. Probably, some proxies may return HTTP/1.1 back */
 		if (!replyStr.startsWith("HTTP/1.0 200") && !replyStr.startsWith("HTTP/1.1 200")) {
-			throw new IOException("Unable to tunnel through %s:%d. Proxy returns \"%s\"".formatted(proxy.getHost(), proxy.getPort(), replyStr));
+			throw new UnableToTunnelException("Unable to tunnel through %s:%d. Proxy returns '%s'".formatted(proxy.getHost(), proxy.getPort(), replyStr));
 		}
 
       	/* tunneling Handshake was successful! */
@@ -451,7 +451,7 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	}
 
 	private static @NotNull String getProxyAuthenticationHeader(ProxyConfiguration proxy) {
-		return proxy.isAuthentication() ? ("Proxy-Authorization: " + proxy.getCredentials() + "\r\n") : "";
+		return proxy.isAuthentication() ? ("Proxy-Authorization: %s\r\n".formatted(proxy.getCredentials())) : "";
 	}
 
 	public SSLProvider getSslProvider() {

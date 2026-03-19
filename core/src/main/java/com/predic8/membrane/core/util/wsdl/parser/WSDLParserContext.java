@@ -26,9 +26,10 @@ public record WSDLParserContext(Definitions definitions, Resolver resolver, Stri
     }
 
     public WSDLParserContext basePath(String basePath) {
-        var nextVisited = new ArrayList<>(visitedLocations);
-        nextVisited.add(basePath);
-        return new WSDLParserContext(definitions, resolver, basePath, nextVisited);
+        // visitedLocations is not cloned on purpose. It contains the list of all the
+        // Files that are already included or imported.
+        visitedLocations.add(basePath);
+        return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
     }
 
     public WSDLParserContext resolver(Resolver resolver) {
