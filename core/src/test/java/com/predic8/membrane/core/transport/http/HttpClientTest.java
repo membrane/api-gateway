@@ -33,7 +33,7 @@ class HttpClientTest {
     @Test
     void init() throws Exception {
         var exc = get("/foo").buildExchange();
-        client.adjustHostHeader(exc,  new HostColonPort(false,client.getHostColonPort( "https://example.com")));
+        client.adjustHostHeader(exc,  new HostColonPort(false,HttpClient.getHostColonPort( "https://example.com")));
         assertEquals("example.com:443",exc.getRequest().getHeader().getHost());
     }
 
