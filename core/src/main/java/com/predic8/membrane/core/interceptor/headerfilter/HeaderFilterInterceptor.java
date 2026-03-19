@@ -58,7 +58,7 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
     /**
      * @description Contains a Java regex for <i>including</i> message headers.
      */
-    @MCElement(name = "include", collapsed = true,mixed = true)
+    @MCElement(name = "include", collapsed = true, mixed = true, component = false, id = "headerFilter-include")
     public static class Include extends HeaderFilterRule {
         public Include() {
             super(KEEP);
@@ -68,7 +68,7 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
     /**
      * @description Contains a Java regex for <i>excluding</i> message headers.
      */
-    @MCElement(name = "exclude", collapsed = true,mixed = true  )
+    @MCElement(name = "exclude", collapsed = true, mixed = true, component = false, id = "headerFilter-exclude")
     public static class Exclude extends HeaderFilterRule {
         public Exclude() {
             super(REMOVE);
