@@ -145,7 +145,7 @@ public class GenericYamlParser {
         if (Files.isDirectory(includePath)) {
             List<BeanDefinition> res = new ArrayList<>();
             try (var files = Files.list(includePath)) {
-                for (Path file : files.filter(Files::isRegularFile).filter(GenericYamlParser::isApisYaml).toList()) {
+                for (Path file : files.filter(Files::isRegularFile).filter(GenericYamlParser::isApisYaml).sorted().toList()) {
                     res.addAll(parseIncludedFile(grammar, file, includeContext, beanIndex, includePc));
                 }
             }
