@@ -32,8 +32,8 @@ class HttpClientTest {
 
     @Test
     void init() throws Exception {
-        Exchange exc = get("/foo").buildExchange();
-        client.getHostColonPort(exc,"https://example.com");
+        var exc = get("/foo").buildExchange();
+        client.adjustHostHeader(exc,  new HostColonPort(false,client.getHostColonPort( "https://example.com")));
         assertEquals("example.com:443",exc.getRequest().getHeader().getHost());
     }
 

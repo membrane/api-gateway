@@ -87,7 +87,7 @@ public class ProxySSLTest {
             ssl.setTrustStore(new TrustStore());
             ssl.getTrustStore().setLocation("classpath:/ssl-rsa-pub.keystore");
             ssl.getTrustStore().setPassword("secret");
-            ssl.setEndpointIdentificationAlgorithm(""); // workarond the fact that the certificate was not issued for 'localhost'
+            ssl.setEndpointIdentificationAlgorithm(""); // Workaround the fact that the certificate was not issued for 'localhost'
             exc.setProperty(SSL_CONTEXT, new StaticSSLContext(ssl, new ResolverMap(), null));
         }
         hc.call(exc);

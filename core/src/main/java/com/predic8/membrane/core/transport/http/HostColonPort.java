@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
+import org.jetbrains.annotations.*;
+
 import java.net.*;
 import java.util.regex.*;
 
@@ -52,7 +54,7 @@ public record HostColonPort(boolean useSSL, String host, int port) {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return host + ":" + port;
     }
 

@@ -77,6 +77,9 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	private Exchange exchange;
 	private boolean keepAttachedToExchange;
 
+	/**
+	 * If the connection is tunneled through a proxy
+	 */
 	private boolean tunneled;
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws IOException {
@@ -414,16 +417,13 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 			replyStr = new String(reply, 0, replyLen);
 		}
 
-		tunneled = true;
-
         /* Look for '200 OK' response. Probably, some proxies may return HTTP/1.1 back */
 		if (!replyStr.startsWith("HTTP/1.0 200") && !replyStr.startsWith("HTTP/1.1 200")) {
-			throw new IOException("Unable to tunnel through "
-					+ proxy.getHost() + ":" + proxy.getPort()
-					+ ".  Proxy returns \"" + replyStr + "\"");
+			throw new IOException("Unable to tunnel through %s:%d. Proxy returns \"%s\"".formatted(proxy.getHost(), proxy.getPort(), replyStr));
 		}
 
-      /* tunneling Handshake was successful! */
+      	/* tunneling Handshake was successful! */
+		tunneled = true;
 	}
 
 	private static @NotNull String getHostString(ProxyConfiguration proxy) {
@@ -431,10 +431,8 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 	}
 
 	private static byte @NotNull [] createConnectMessage(ProxyConfiguration proxy, String host, int port) {
-		String msg = "CONNECT " + host + ":" + port + " HTTP/1.0\r\n"
-					 + "User-Agent: " + USERAGENT + "\r\n"
-					 + (proxy.isAuthentication() ? ("Proxy-Authorization: " + proxy.getCredentials() + "\r\n") : "")
-					 + "\r\n";
+		var msg = "CONNECT %s:%d HTTP/1.0\r\nUser-Agent: %s\r\n%s\r\n"
+				.formatted(host, port, USERAGENT, getProxyAuthenticationHeader(proxy));
 		byte[] b;
 		try {
           /*
@@ -452,11 +450,18 @@ public class Connection implements Closeable, MessageObserver, NonRelevantBodyOb
 		return b;
 	}
 
+	private static @NotNull String getProxyAuthenticationHeader(ProxyConfiguration proxy) {
+		return proxy.isAuthentication() ? ("Proxy-Authorization: " + proxy.getCredentials() + "\r\n") : "";
+	}
+
 	public SSLProvider getSslProvider() {
 		return sslProvider;
 	}
 
-	public boolean getTunneled() {
+	/**
+	 * @return true If the connection is tunneled through a proxy
+	 */
+	public boolean isTunneled() {
 		return tunneled;
 	}
 }
