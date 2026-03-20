@@ -22,7 +22,7 @@ configuration:
     adjustHostHeader: true
     useExperimentalHttp2: false
     connection:
-      keepAliveTimeout: 60
+      keepAliveTimeout: 60000
       soTimeout: 30000
       timeout: 10000
 
@@ -45,7 +45,7 @@ configuration:
 # Global plugins are applied to all endpoints.
 # Useful for central authentication, logging, or header manipulation.
 global:
-  # jsonProtection or xmlProtection could be both engaged because they detect the type of the message
+  # jsonProtection and xmlProtection can both be enabled because they detect the message type
   - jsonProtection: {}
   - xmlProtection: {}
   - request:
