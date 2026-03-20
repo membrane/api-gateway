@@ -21,6 +21,15 @@ import com.predic8.membrane.core.interceptor.flow.AbstractFlowWithChildrenInterc
 /**
  * @description The global chain applies plugins to all endpoints, enabling centralized features
  *              such as global user authentication, logging, and other cross-cutting concerns.
+ *
+ * @yaml <pre><code>
+ * global:
+ *   - jsonProtection: {}
+ *   - xmlProtection: {}
+ *   - request:
+ *       - log:
+ *           message: "Path: ${path}"
+ * </code></pre>
  */
 @MCElement(name = "global", excludeFromFlow = true, component = false, topLevel = true, noEnvelope = true)
 public class GlobalInterceptor extends AbstractFlowWithChildrenInterceptor {

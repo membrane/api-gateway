@@ -23,25 +23,25 @@ import static java.nio.charset.StandardCharsets.*;
 import static org.apache.commons.codec.binary.Base64.*;
 
 /**
- * @description Configuration for an outbound HTTP proxy.
- *              Defines the address, optional authentication credentials, and TLS configuration for connecting to a proxy.
- *              Can be used as a child element in &lt;httpClientConfig&gt; to route client connections through a proxy server.
+ * @description <p>Configuration for an outbound HTTP proxy used by the HTTP client.
+ *              </p>
+ *              <p>Defines the proxy endpoint, optional authentication, and TLS settings.
+ *              When configured, all outgoing requests are routed through the proxy.
+ *              </p>
+ *              <p>
+ *              This element is typically used as a child of <code>httpClientConfig</code>.
+ *              </p>
  *
- *              XML Example:
- *              &lt;proxy host="proxy.example.com" port="3128" authentication="true" username="user" password="secret"&gt;
- *                  &lt;ssl keystoreLocation="classpath:proxy-client.jks" keystorePassword="changeit"/&gt;
- *              &lt;/proxy&gt;
- *
- *              YAML (experimental):
- *              proxy:
- *                host: proxy.example.com
- *                port: 3128
- *                authentication: true
- *                username: user
- *                password: secret
- *                ssl:
- *                  keystoreLocation: classpath:proxy-client.jks
- *                  keystorePassword: changeit
+ * @yaml <pre><code>
+ * configuration:
+ *   httpClientConfig:
+ *     proxy:
+ *       host: localhost
+ *       port: 3128
+ *       authentication: true
+ *       username: alice
+ *       password: secret
+ * </code></pre>
  *
  * @topic 4. Transports and Clients
  */
