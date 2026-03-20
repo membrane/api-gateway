@@ -26,7 +26,7 @@ configuration:
   # See: https://www.membrane-api.io/docs/current/proxy-configuration.html
   httpClientConfig:
     adjustHostHeader: true
-    useExperimentalHttp2: true
+    useExperimentalHttp2: false
     connection:
       keepAliveTimeout: 60
       soTimeout: 30000
@@ -60,8 +60,9 @@ global:
 ---
 
 # Reusable plugins and beans that can be referenced elsewhere in the config
-# If a plugin is used in multiple APIs this will make the configuration more readable.api:
-# Typical plugins to declare here are:
+# If a plugin is used in multiple APIs this will make the configuration more readable.
+#
+# Typical components:
 # - Stores for exchanges, API Keys, users, keys, certificates
 # - TLS configurations
 # See: https://www.membrane-api.io/docs/current/components.html
