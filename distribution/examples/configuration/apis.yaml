@@ -1,50 +1,80 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.1.2.json
+#
+# Example for Configuration Structure
+#
+# Reference: https://www.membrane-api.io/docs
 
-# This is an example config demonstrating the basic structure of a Membrane API Gateway configuration.
-# It focuses on the main configuration sections where you can attach your plugins.
-# It also shows how to define reusable components and how to reference them from other sections.
-# For plugin information and more detailed examples, please refer to https://www.membrane-api.io/
----
-
-# Global router settings (use exactly one `configuration` block).
-# Note: changes here require a full gateway restart and are not applied via hotDeploy.
+# Global router settings. Use exactly one `configuration` block.
 configuration:
-  production: true # Reduces the amount of information in error messages to prevent leaking sensitive information
+  production: true # Hides sensitive details in error messages
 
-  # Note: hotDeploy, retryInit and retryInitInterval is currently only available for XML configuration.
-  # YAML support is planned.
-  hotDeploy: true # Whether changes to the configuration should automatically trigger a restart
-  retryInit: true # Whether the router should continue startup if initialisation of a rule failed
-  retryInitInterval: 1000 # Number of milliseconds after which reinitialization should be attempted periodically
+  # Currently available only for XML configuration.
+  hotDeploy: true # Restarts the gateway automatically when the configuration changes
+  retryInit: true # Continues startup if an API fails during initialization
+  retryInitInterval: 1000 # Initialization Retry interval in ms
 
-  jmxRouterName: demo # Sets the JMX name for the router
+  jmxRouterName: demo # JMX name of the router
 
   uriFactory:
-    # Allow non-RFC-compliant characters like {, } in URIs
-    # Attention: This may lead to security vulnerabilities! Use with care!
-    allowIllegalCharacters: true
-    autoEscapeBackslashes: true # Escape backslashes in incoming URIs (\\ -> %5C)
+    # Allow non-RFC-compliant characters like { and } in URIs
+    # Warning: This can introduce security risks and should only be enabled if required.
+    allowIllegalCharacters: false
+
+    # Escape backslashes in incoming URIs (\\ -> %5C)
+    autoEscapeBackslashes: true
+
+  # See: https://www.membrane-api.io/docs/current/proxy-configuration.html
+  httpClientConfig:
+    adjustHostHeader: true
+    useExperimentalHttp2: true
+    connection:
+      keepAliveTimeout: 60
+      soTimeout: 30000
+      timeout: 10000
+
+#    ssl: {} # TLS Configuration
+#    proxy: # Proxy settings for Membrane running behind an upstream proxy
+#      host: localhost
+#      port: 3128
+#      ssl:
+#        keystore:
+#          location: keys.p12
+#          password: secret
+#        truststore:
+#          location: trust.p12
+#          password: secret
+#      authentication: true
+#      username: alice
+#      password: secret
 ---
 
-# Global plugins are applied to all endpoints, enabling centralised features like e.g. global user authentication
+# Global plugins are applied to all endpoints.
+# Useful for central authentication, logging, or header manipulation.
 global:
-  - setHeader: # adds the "foo: bar" header to every request and response
-      name: foo
-      value: bar
+  # jsonProtection or xmlProtection could be both engaged because they detect the type of the message
+  - jsonProtection: {}
+  - xmlProtection: {}
+  - request:
+      - log:
+          message: "Path: ${path}"
 ---
 
-# Define reusable plugins and custom beans that can be referenced elsewhere in the config.
+# Reusable plugins and beans that can be referenced elsewhere in the config
+# If a plugin is used in multiple APIs this will make the configuration more readable.api:
+# Typical plugins to declare here are:
+# - Stores for exchanges, API Keys, users, keys, certificates
+# - TLS configurations
+# See: https://www.membrane-api.io/docs/current/components.html
 components:
-
-  demoComponent: # id for the component
+  my-component: # id for the component
     log: {} # referenceable plugin
+  jmx:
+    bean: # Java Bean
+      # Exposes runtime metrics and management operations via JMX
+      class: com.predic8.membrane.core.jmx.JmxExporter
 
-  jmx: # id for the bean
-    bean:
-      class: com.predic8.membrane.core.jmx.JmxExporter # Exposes runtime metrics and management operations via JMX
-
-  # When only one exchangeStore is defined as a component, it is automatically used for the whole configuration
-  # If you have more than one configured, you have to reference them manually
+  # If exactly one exchangeStore is defined here, it is used automatically.
+  # If multiple exchangeStores are configured, they must be referenced explicitly.
   exchangeStore:
     limitedMemoryExchangeStore:
       maxSize: 100000
@@ -52,19 +82,20 @@ components:
       bodyExceedingMaxSizeStrategy: truncate
 ---
 
-# Internal proxy that can only be invoked by other proxies within the gateway
+# Internal proxy, accessible only from within the gateway.
+# See: https://www.membrane-api.io/docs/current/internal.html
 internal:
-  name: internalProxy # The name used to invoke the internal proxy
+  name: internalProxy # Name used to invoke the internal proxy
   flow:
     - log: {}
   target:
     url: https://api.predic8.de
 ---
 
-# API endpoint configuration
+# Public API endpoint.
 api:
   port: 2000
   flow:
-    - $ref: '#/components/demoComponent' # references the demo component
+    - $ref: '#/components/my-component' # References the reusable component
   target:
-    url: internal://internalProxy # uses the internal proxy as the target
+    url: internal://internalProxy # Routes requests to the internal proxy

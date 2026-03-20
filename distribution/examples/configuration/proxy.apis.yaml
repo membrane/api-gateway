@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.1.2.json
+#
+# Example: Configure Membrane to use an upstream HTTP proxy.
+#
+# Reference: https://www.membrane-api.io/docs/current/proxy-configuration.html
+
+configuration:
+  httpClientConfig:
+    proxy:
+      host: localhost
+      port: 3128
+
+      # Optional: Enable if the proxy requires authentication
+      authentication: false
+      username: alice
+      password: secret
+# Optional: TLS settings for proxies with private or self-signed certificates
+#      ssl: {}
+
+---
+api:
+  port: 2000
+  target:
+    url: https://api.predic8.de

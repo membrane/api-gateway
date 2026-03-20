@@ -22,6 +22,7 @@ import com.predic8.membrane.core.transport.http2.*;
 import com.predic8.membrane.core.transport.ssl.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
 import java.io.*;
@@ -29,6 +30,8 @@ import java.io.*;
 import static com.predic8.membrane.core.exchange.Exchange.*;
 
 public class ConnectionFactory {
+
+    private static final Logger log = LoggerFactory.getLogger(ConnectionFactory.class);
 
     private static final String[] HTTP2_PROTOCOLS = new String[]{"h2"};
     private static final String[] HTTP1_PROTOCOLS = new String[]{};
@@ -52,13 +55,13 @@ public class ConnectionFactory {
 
     public OutgoingConnectionType getConnection(Exchange exc, HostColonPort target, int attempts) throws IOException {
 
-        Connection con = getExchangeAttachedConnection(exc, attempts, target);
+        var con = getExchangeAttachedConnection(exc, attempts, target);
 
         boolean usingHttp2 = false;
 
-        SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
+        var sslProvider = getOutboundSSLProvider(exc, target);
         Http2Client h2c = null;
-        String sniServerName = exc.getProperty(SNI_SERVER_NAME, String.class);
+        var sniServerName = exc.getProperty(SNI_SERVER_NAME, String.class);
 
         if (con == null && config.isUseExperimentalHttp2()) {
             h2c = http2ClientPool.reserveStream(target.host(), target.port(), sslProvider, sniServerName, config.getProxy(), proxySSLContext);
@@ -77,6 +80,7 @@ public class ConnectionFactory {
                 exc.setTargetConnection(con); // TODO Question: HTTP2 Connection is never set to exchange
             con.setKeepAttachedToExchange(usingHttp2 || exc.getRequest().isBindTargetConnectionToIncoming()); // e.g. for NTML
         }
+        log.debug("HTTP/2: {}, ssl: {}, sni: {}",usingHttp2,sslProvider,sniServerName);
         return new OutgoingConnectionType(con, usingHttp2, sslProvider, h2c, sniServerName);
     }
 
