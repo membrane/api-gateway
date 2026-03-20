@@ -7,12 +7,6 @@
 # Global router settings. Use exactly one `configuration` block.
 configuration:
   production: true # Hides sensitive details in error messages
-
-  # Currently available only for XML configuration.
-  hotDeploy: true # Restarts the gateway automatically when the configuration changes
-  retryInit: true # Continues startup if an API fails during initialization
-  retryInitInterval: 1000 # Initialization Retry interval in ms
-
   jmxRouterName: demo # JMX name of the router
 
   uriFactory:
