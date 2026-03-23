@@ -1,0 +1,13 @@
+api:
+  port: 2000
+  path:
+    uri: /nested
+  flow:
+    - template:
+        contentType: application/json
+        src: |
+          {
+            "source": "nested"
+          }
+    - return:
+        status: 200

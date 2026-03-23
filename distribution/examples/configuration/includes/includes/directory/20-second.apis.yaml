@@ -1,0 +1,13 @@
+api:
+  port: 2000
+  path:
+    uri: /from-directory-b
+  flow:
+    - template:
+        contentType: application/json
+        src: |
+          {
+            "source": "from-directory-b"
+          }
+    - return:
+        status: 200

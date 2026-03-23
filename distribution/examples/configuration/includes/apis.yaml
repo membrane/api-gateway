@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.1.2.json
+
+# Demonstrates include list support:
+# - include a single file
+# - include a directory with *.apis.yaml / *.apis.yml files
+# - nested include from an included file
+include:
+  - includes/file.apis.yaml
+  - includes/directory
+
+---
+api:
+  port: 2000
+  path:
+    uri: /root
+  flow:
+    - template:
+        contentType: application/json
+        src: |
+          {
+            "source": "root"
+          }
+    - return:
+        status: 200
