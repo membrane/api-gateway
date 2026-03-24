@@ -19,9 +19,11 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.transport.http.*;
 import org.slf4j.*;
 
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
 import java.nio.*;
+import java.security.cert.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.transport.http.HttpClientStatusEventBus.*;
@@ -85,7 +87,7 @@ public class RetryHandler {
         Exception exceptionInLastCall = null;
         double currentDelay = delay;
         for (int attempt = 0; attempt <= retries; attempt++) {
-            String dest = getDestination(exc, attempt);
+            var dest = getDestination(exc, attempt);
             log.debug("Attempt #{} from #{} to {}", attempt, retries + 1, dest);
             try {
                 if (call.execute(exc, dest, attempt)) {
@@ -196,9 +198,13 @@ public class RetryHandler {
             log.debug("Server didn't respond to the request.");
             return !isIdempotent(exc.getRequest().getMethod());
         }
+        if (e instanceof SSLHandshakeException he) {
+            if (he.getCause() instanceof CertificateException) {
+                  return true;
+            }
+        }
         log.info("Error while attempting to forward request to {}. Reason: {}", dest, e.getMessage());
         logException(exc, attempt, e);
-        log.info("", e); // Unknown condition => log stacktrace
         return !isIdempotent(exc.getRequest().getMethod()); // If not sure, do not retry for non idempotent methods
     }
 
@@ -210,13 +216,11 @@ public class RetryHandler {
         if (!log.isDebugEnabled())
             return;
 
-        StringBuilder msg = new StringBuilder();
-        msg.append("try # ");
-        msg.append(attempt);
-        msg.append(" failed\n");
+        var msg = new StringBuilder();
+        msg.append("try # ").append(attempt).append(" failed\n");
 
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            var baos = new ByteArrayOutputStream();
             exc.getRequest().writeStartLine(baos);
             exc.getRequest().getHeader().write(baos);
             msg.append(ISO_8859_1.decode(ByteBuffer.wrap(baos.toByteArray())));

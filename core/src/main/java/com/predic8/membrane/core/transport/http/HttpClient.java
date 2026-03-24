@@ -21,13 +21,13 @@ import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.http.client.protocol.*;
 import com.predic8.membrane.core.transport.http.streampump.*;
 import com.predic8.membrane.core.util.*;
+import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
-import javax.annotation.*;
+import javax.annotation.Nullable;
 import java.io.*;
 import java.net.*;
 
-import static com.predic8.membrane.core.exchange.Exchange.*;
 import static com.predic8.membrane.core.transport.http.client.protocol.Http2ProtocolHandler.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
 
@@ -67,16 +67,18 @@ public class HttpClient implements AutoCloseable {
     }
 
     public void call(Exchange exc) throws Exception {
-        ProtocolHandler ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
+        var ph = protocolHandlerFactory.getHandler(exc, exc.getRequest().getHeader().getUpgradeProtocol());
         ph.checkUpgradeRequest(exc);
         configuration.getRetryHandler().executeWithRetries(exc, this::dispatchCall);
         ph.cleanup(exc);
     }
 
     private boolean dispatchCall(Exchange exc, String target, int attempt) throws Exception {
-        HostColonPort hcp = initializeRequest(exc, target);
-
-        OutgoingConnectionType outConType = connectionFactory.getConnection(exc, hcp, attempt);
+        setAuthorizationHeader(exc);
+        var hcp = getHostColonPort(exc, target);
+        adjustHostHeader(exc, hcp);
+        var outConType = connectionFactory.getConnection(exc, hcp, attempt);
+        setRequestURI(exc.getRequest(), target, outConType.con());
 
         if (configuration.getProxy() != null && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
@@ -89,38 +91,49 @@ public class HttpClient implements AutoCloseable {
             exc.getNodeStatusTracker().setNodeStatusCode(attempt, exc.getResponse().getStatusCode());
 
         // Check for protocol upgrades
-        String upgradedProtocol = exc.getProperty(UPGRADED_PROTOCOL, String.class);
+        var upgradedProtocol = exc.getProperty(UPGRADED_PROTOCOL, String.class);
         if (upgradedProtocol == null)
             return false;
 
-        log.debug("Upgrading to {}",upgradedProtocol);
+        log.debug("Upgrading to {}", upgradedProtocol);
 
         StreamPump.setupConnectionForwarding(exc, outConType.con(), upgradedProtocol, streamPumpStats);
         outConType.con().setExchange(exc);
         return true;
     }
 
-    HostColonPort initializeRequest(Exchange exc, String dest) throws IOException {
-        setRequestURI(exc.getRequest(), dest);
-        if (configuration.getAuthentication() != null)
-            exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
-
-        HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
+    protected void adjustHostHeader(Exchange exc, HostColonPort target) {
         if (configuration.isAdjustHostHeader() && (exc.getProxy() == null || exc.getProxy().isTargetAdjustHostHeader())) {
             exc.getRequest().getHeader().setHost(target.toString());
         }
-        return target;
     }
 
+    private void setAuthorizationHeader(Exchange exc) {
+        if (configuration.getAuthentication() != null)
+            exc.getRequest().getHeader().setAuthorization(configuration.getAuthentication().getUsername(), configuration.getAuthentication().getPassword());
+    }
+
+    /**
+     * @param exc Exchange
+     * @param dest URL for normal requests and host:port for CONNECT requests
+     * @return HostColonPort
+     */
+    protected @NotNull HostColonPort getHostColonPort(Exchange exc, String dest) throws MalformedURLException {
+        if (exc.getRequest().isCONNECTRequest())
+            return new HostColonPort(false, dest);
+
+        try {
+            return HostColonPort.parse(dest);
+        } catch (MalformedURLException e) {
+            throw new MalformedURLException("""
+                    The exchange's destination URI %s is not valid. Specify a 'target' within
+                    the API configuration or make sure the exchanges destinations list contains a valid URI.
+                    """.formatted(dest));
+        }
+    }
 
     public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
         this.streamPumpStats = streamPumpStats;
-    }
-
-    private static boolean trackNodeStatus(Exchange exc) {
-        if (exc.getProperty(TRACK_NODE_STATUS) instanceof Boolean status)
-            return status;
-        return false;
     }
 
     @Override
@@ -134,30 +147,31 @@ public class HttpClient implements AutoCloseable {
         return connectionFactory;
     }
 
-    void setRequestURI(Request req, String dest) throws MalformedURLException {
+    void setRequestURI(Request req, String dest, @NotNull Connection con) throws MalformedURLException {
+        // Only on none TLS connections
+        if (req.isCONNECTRequest()) {
+            req.setUri(getHostColonPort(dest));
+            return;
+        }
+
         // Use complete URL with protocol and host. The proxy needs to know where to forward
-        if (configuration.getProxy() != null || req.isCONNECTRequest()) {
+        if (configuration.getProxy() != null && !con.isTunneled()) {
             req.setUri(dest);
             return;
         }
         if (!dest.startsWith("http")) {
             throw new MalformedURLException("""
-                    The exchange's destination URI %s does not start with 'http'. Specify a <target> within the API configuration or make sure the exchanges destinations list contains a valid URI.
+                    The exchange's destination URI %s does not start with 'http'. Specify a 'target' within
+                    the API configuration or make sure the exchanges destinations list contains a valid URI.
                     """.formatted(dest));
         }
         req.setUri(getPathAndQueryString(dest));
     }
 
-    /**
-     * @param connect If true, do not use TLS even when the URL starts with https
-     * @param dest    URL
-     * @return HostColonPort
-     * @throws MalformedURLException
-     */
-    private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException {
-        if (connect)
-            return new HostColonPort(false, dest);
-        return HostColonPort.parse(dest);
+    protected static @NotNull String getHostColonPort(String dest) throws MalformedURLException {
+        return dest.startsWith("http")
+                ? HostColonPort.parse(dest).toString()
+                : dest;
     }
 
     // TODO Rewrite all clients to use try with resources and then remove it
