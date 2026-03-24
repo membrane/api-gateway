@@ -16,6 +16,10 @@ package com.predic8.membrane.annot.beanregistry;
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.yaml.*;
 
+import java.nio.file.Path;
+
+import static com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata.empty;
+
 /**
  * Immutable.
  */
@@ -28,6 +32,13 @@ public class BeanDefinition {
     private final String uid;
     private final JsonNode node;
     private final String kind;
+    private final SourceMetadata sourceMetadata;
+
+    public record SourceMetadata(Path basePath, Path sourceFile, Path rootSourceFile) {
+        public static SourceMetadata empty() {
+            return new SourceMetadata(null, null, null);
+        }
+    }
 
     /**
      * Only called from K8S.
@@ -44,6 +55,7 @@ public class BeanDefinition {
             throw new IllegalArgumentException("name is null");
         namespace = metadata.get("namespace").asText();
         uid = metadata.get("uid").asText();
+        sourceMetadata = empty();
     }
 
     public static BeanDefinitionChanged create4Kubernetes(WatchAction action, JsonNode node) {
@@ -51,11 +63,16 @@ public class BeanDefinition {
     }
 
     public BeanDefinition(String kind, String name, String namespace, String uid, JsonNode node) {
+        this(kind, name, namespace, uid, node, empty());
+    }
+
+    public BeanDefinition(String kind, String name, String namespace, String uid, JsonNode node, SourceMetadata sourceMetadata) {
         this.kind = kind;
         this.name = name;
         this.namespace = namespace;
         this.uid = uid;
         this.node = node;
+        this.sourceMetadata = sourceMetadata == null ? empty() : sourceMetadata;
     }
 
     public JsonNode getNode() {
@@ -76,6 +93,10 @@ public class BeanDefinition {
 
     public String getKind() {
         return kind;
+    }
+
+    public SourceMetadata getSourceMetadata() {
+        return sourceMetadata;
     }
 
     public String getScope() {
@@ -107,10 +128,11 @@ public class BeanDefinition {
     public String toString() {
         return "BeanDefinition{" +
                "name='" + name + '\'' +
-               ", namespace='" + namespace + '\'' +
-               ", uid='" + uid + '\'' +
-               ", node=" + node +
-               ", kind='" + kind + '\'' +
-               '}';
+                ", namespace='" + namespace + '\'' +
+                ", uid='" + uid + '\'' +
+                ", node=" + node +
+                ", kind='" + kind + '\'' +
+                ", sourceMetadata=" + sourceMetadata +
+                '}';
     }
 }

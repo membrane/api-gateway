@@ -22,9 +22,11 @@ import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,18 +80,18 @@ public class GenericYamlParser {
         Snippets snippets = collectSnippets(grammar, yaml, new JsonLocationMap());
         List<BeanDefinition> defs = new ArrayList<>();
         defs.addAll(handleIncludes(grammar, includeContext, beanIndex, componentIds, snippets.includes()));
-        defs.addAll(handleConfigSnippets(grammar, beanIndex, componentIds, snippets.configSnippets()));
+        defs.addAll(handleConfigSnippets(grammar, includeContext, beanIndex, componentIds, snippets.configSnippets()));
         return defs;
     }
 
-    private static List<BeanDefinition> handleConfigSnippets(Grammar grammar, int[] beanIndex, Set<String> componentIds, List<JsonNode> configSnippets) {
+    private static List<BeanDefinition> handleConfigSnippets(Grammar grammar, IncludeContext includeContext, int[] beanIndex, Set<String> componentIds, List<JsonNode> configSnippets) {
         List<BeanDefinition> defs = new ArrayList<>();
         for (JsonNode jsonNode : configSnippets) {
             var pc = new ParsingContext<>("", null, grammar, jsonNode, "$", null);
             String beanType = getBeanType(pc, jsonNode);
 
             if ("components".equals(beanType)) {
-                defs.addAll(extractComponentBeanDefinitions(pc.addPath(".components"), jsonNode.get("components"), componentIds));
+                defs.addAll(extractComponentBeanDefinitions(pc.addPath(".components"), jsonNode.get("components"), componentIds, includeContext.sourceMetadata()));
             }
 
             defs.add(new BeanDefinition(
@@ -97,7 +99,8 @@ public class GenericYamlParser {
                     "bean-" + beanIndex[0]++,
                     "default",
                     randomUUID().toString(),
-                    jsonNode));
+                    jsonNode,
+                    includeContext.sourceMetadata()));
         }
         return defs;
     }
@@ -373,7 +376,7 @@ public class GenericYamlParser {
         return configObj;
     }
 
-    private static List<BeanDefinition> extractComponentBeanDefinitions(ParsingContext<?> pc, JsonNode componentsNode, Set<String> componentIds) {
+    private static List<BeanDefinition> extractComponentBeanDefinitions(ParsingContext<?> pc, JsonNode componentsNode, Set<String> componentIds, SourceMetadata sourceMetadata) {
         if (componentsNode == null || componentsNode.isNull())
             return of();
 
@@ -404,7 +407,8 @@ public class GenericYamlParser {
                     componentRef,
                     "default",
                     randomUUID().toString(),
-                    wrapped
+                    wrapped,
+                    sourceMetadata
             ));
         }
         return res;
@@ -589,14 +593,26 @@ public class GenericYamlParser {
 
     private record IncludeEntry(String path, ParsingContext<?> parsingContext) {}
 
-    private record IncludeContext(Path sourceFile, Path basePath, Deque<Path> includeStack) {
+    private record IncludeContext(Path sourceFile, Path basePath, Path rootSourceFile, Deque<Path> includeStack) {
 
         static IncludeContext root(Path sourceFile) {
-            return new IncludeContext(normalizePath(sourceFile), null, new ArrayDeque<>());
+            Path normalizedRootSourceFile = normalizePath(sourceFile);
+            return new IncludeContext(normalizedRootSourceFile, null, normalizedRootSourceFile, new ArrayDeque<>());
         }
 
         IncludeContext withSourceFile(Path sourceFile) {
-            return new IncludeContext(sourceFile, basePath, includeStack);
+            return new IncludeContext(normalizePath(sourceFile), basePath, rootSourceFile, includeStack);
+        }
+
+        SourceMetadata sourceMetadata() {
+            Path normalizedSourceFile = normalizePath(sourceFile);
+            return new SourceMetadata(getBasePath(normalizedSourceFile), normalizedSourceFile, rootSourceFile);
+        }
+
+        private @Nullable Path getBasePath(Path normalizedSourceFile) {
+            return normalizedSourceFile != null && normalizedSourceFile.getParent() != null
+                    ? normalizePath(normalizedSourceFile.getParent())
+                    : normalizePath(basePath);
         }
 
         Path resolveIncludePath(String includeEntry) {
