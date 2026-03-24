@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static java.nio.file.Files.readString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,6 +93,26 @@ class GenericYamlParserIncludeListTest {
     }
 
     @Test
+    void resolves_relative_includes_from_root_file_path() throws Exception {
+        write("root/includes/dependency.apis.yaml", """
+                api:
+                  port: 1250
+                """);
+        Path rootFile = write("root/apis.yaml", """
+                include:
+                  - includes/dependency.apis.yaml
+                ---
+                api:
+                  port: 1300
+                """);
+
+        assertEquals(
+                List.of(1250, 1300),
+                extractPorts(parseDefinitions(readString(rootFile), rootFile))
+        );
+    }
+
+    @Test
     void rejects_cyclic_include_chains() throws Exception {
         write("cycle/b.apis.yaml", """
                 include:
@@ -114,7 +135,11 @@ class GenericYamlParserIncludeListTest {
     }
 
     private List<BeanDefinition> parseDefinitions(String yaml) throws IOException {
-        return new GenericYamlParser(K8S_HELPER, yaml).getBeanDefinitions();
+        return new GenericYamlParser(K8S_HELPER, yaml, null).getBeanDefinitions();
+    }
+
+    private List<BeanDefinition> parseDefinitions(String yaml, Path rootSourceFile) throws IOException {
+        return new GenericYamlParser(K8S_HELPER, yaml, rootSourceFile).getBeanDefinitions();
     }
 
     private List<Integer> extractPorts(List<BeanDefinition> definitions) {

@@ -31,6 +31,7 @@ import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
 import java.nio.charset.*;
+import java.nio.file.Path;
 import java.security.*;
 import java.util.*;
 
@@ -226,7 +227,7 @@ public class RouterCLI {
         router.setRegistry(reg);
         reg.register("router", router);
 
-        getConfigDefinition(reg.parseYamlBeanDefinitions(router.getResolverMap().resolve(location), grammar))
+        getConfigDefinition(reg.parseYamlBeanDefinitions(router.getResolverMap().resolve(location), grammar, Path.of(pathFromFileURI(location))))
                 .ifPresent(configBd -> router.applyConfiguration((Configuration) reg.resolve(configBd.getName())));
 
         reg.finishStaticConfiguration();

@@ -62,19 +62,14 @@ public class GenericYamlParser {
 
     /**
      * Parses one or more YAML documents into bean definitions.
-     * <p>
-     * The input string may contain multiple YAML documents separated by '---'. Each non-empty
-     * document is validated against the schema provided by {@link Grammar} and then
-     * turned into a {@link BeanDefinition}. Validation errors are mapped back to line/column
-     * numbers using {@link JsonLocationMap} to produce helpful error messages.
-     * </p>
      *
-     * @param grammar provides schema location and Java type resolution
-     * @param yaml    the raw YAML content (may contain multi-document stream)
+     * @param grammar        provides schema location and Java type resolution
+     * @param yaml           the raw YAML content (may contain multi-document stream)
+     * @param rootSourceFile optional path to the root YAML file; used to resolve relative includes
      * @throws IOException if schema loading or validation fails
      */
-    public GenericYamlParser(Grammar grammar, String yaml) throws IOException {
-        beanDefs.addAll(parseYamlFile(grammar, yaml, IncludeContext.root(), new int[]{0}));
+    public GenericYamlParser(Grammar grammar, String yaml, Path rootSourceFile) throws IOException {
+        beanDefs.addAll(parseYamlFile(grammar, yaml, IncludeContext.root(rootSourceFile), new int[]{0}));
     }
 
     private static List<BeanDefinition> parseYamlFile(Grammar grammar, String yaml, IncludeContext includeContext, int[] beanIndex) throws IOException {
@@ -231,28 +226,23 @@ public class GenericYamlParser {
     }
 
     /**
-     * Entry point used by the runtime to consume a YAML stream.
-     * <ul>
-     *   <li>Reads the entire stream as UTF-8.</li>
-     *   <li>Splits multi-document YAML ("---" separators).</li>
-     *   <li>Validates each document against the JSON Schema provided by {@code grammar}.</li>
-     *   <li>Emits helpful line/column locations for malformed multi-document input.</li>
-     * </ul>
+     * Parses one or more YAML documents into bean definitions.
      *
-     * @param resource the input stream to parse. The method takes care of closing the stream.
-     * @param grammar  the grammar to use for type resolution and schema location
+     * @param resource       the input stream to parse. The method takes care of closing the stream.
+     * @param grammar        the grammar to use for type resolution and schema location
+     * @param rootSourceFile optional path to the root YAML file
      * @return list of parsed bean definitions
      */
-    public static List<BeanDefinition> parseMembraneResources(@NotNull InputStream resource, Grammar grammar) throws IOException {
+    public static List<BeanDefinition> parseMembraneResources(@NotNull InputStream resource, Grammar grammar, Path rootSourceFile) throws IOException {
         try (resource) {
-            return parseToBeanDefinitions(resource, grammar);
+            return parseToBeanDefinitions(resource, grammar, rootSourceFile);
         } catch (JsonParseException e) {
             throw new IOException("Invalid YAML: multiple configurations must be separated by '---' (at line %d, column %d).".formatted(e.getLocation().getLineNr(), e.getLocation().getColumnNr()), e);
         }
     }
 
-    private static List<BeanDefinition> parseToBeanDefinitions(@NotNull InputStream resource, Grammar grammar) throws IOException {
-        return new GenericYamlParser(grammar, new String(resource.readAllBytes(), UTF_8))
+    private static List<BeanDefinition> parseToBeanDefinitions(@NotNull InputStream resource, Grammar grammar, Path rootSourceFile) throws IOException {
+        return new GenericYamlParser(grammar, new String(resource.readAllBytes(), UTF_8), rootSourceFile)
                 .getBeanDefinitions();
     }
 
@@ -589,8 +579,8 @@ public class GenericYamlParser {
 
     private record IncludeContext(Path sourceFile, Path basePath, Deque<Path> includeStack) {
 
-        static IncludeContext root() {
-            return new IncludeContext(null, null, new ArrayDeque<>());
+        static IncludeContext root(Path sourceFile) {
+            return new IncludeContext(normalizePath(sourceFile), null, new ArrayDeque<>());
         }
 
         IncludeContext withSourceFile(Path sourceFile) {
