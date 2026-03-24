@@ -39,6 +39,8 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static com.predic8.membrane.annot.yaml.MethodSetter.getCollectionElementType;
@@ -69,25 +71,25 @@ public class GenericYamlParser {
      * @throws IOException if schema loading or validation fails
      */
     public GenericYamlParser(Grammar grammar, String yaml, Path rootSourceFile) throws IOException {
-        beanDefs.addAll(parseYamlFile(grammar, yaml, IncludeContext.root(rootSourceFile), new int[]{0}));
+        beanDefs.addAll(parseYamlFile(grammar, yaml, IncludeContext.root(rootSourceFile), new int[]{0}, new HashSet<>()));
     }
 
-    private static List<BeanDefinition> parseYamlFile(Grammar grammar, String yaml, IncludeContext includeContext, int[] beanIndex) throws IOException {
+    private static List<BeanDefinition> parseYamlFile(Grammar grammar, String yaml, IncludeContext includeContext, int[] beanIndex, Set<String> componentIds) throws IOException {
         Snippets snippets = collectSnippets(grammar, yaml, new JsonLocationMap());
         List<BeanDefinition> defs = new ArrayList<>();
-        defs.addAll(handleIncludes(grammar, includeContext, beanIndex, snippets.includes()));
-        defs.addAll(handleConfigSnippets(grammar, beanIndex, snippets.configSnippets()));
+        defs.addAll(handleIncludes(grammar, includeContext, beanIndex, componentIds, snippets.includes()));
+        defs.addAll(handleConfigSnippets(grammar, beanIndex, componentIds, snippets.configSnippets()));
         return defs;
     }
 
-    private static List<BeanDefinition> handleConfigSnippets(Grammar grammar, int[] beanIndex, List<JsonNode> configSnippets) {
+    private static List<BeanDefinition> handleConfigSnippets(Grammar grammar, int[] beanIndex, Set<String> componentIds, List<JsonNode> configSnippets) {
         List<BeanDefinition> defs = new ArrayList<>();
         for (JsonNode jsonNode : configSnippets) {
             var pc = new ParsingContext<>("", null, grammar, jsonNode, "$", null);
             String beanType = getBeanType(pc, jsonNode);
 
             if ("components".equals(beanType)) {
-                defs.addAll(extractComponentBeanDefinitions(pc.addPath(".components"), jsonNode.get("components")));
+                defs.addAll(extractComponentBeanDefinitions(pc.addPath(".components"), jsonNode.get("components"), componentIds));
             }
 
             defs.add(new BeanDefinition(
@@ -100,7 +102,7 @@ public class GenericYamlParser {
         return defs;
     }
 
-    private static List<BeanDefinition> handleIncludes(Grammar grammar, IncludeContext includeContext, int[] beanIndex, List<IncludeSnippet> includes) throws IOException {
+    private static List<BeanDefinition> handleIncludes(Grammar grammar, IncludeContext includeContext, int[] beanIndex, Set<String> componentIds, List<IncludeSnippet> includes) throws IOException {
         List<BeanDefinition> defs = new ArrayList<>();
         for (IncludeSnippet includeSnippet : includes) {
             for (IncludeEntry includeEntry : extractIncludeEntries(includeSnippet)) {
@@ -109,6 +111,7 @@ public class GenericYamlParser {
                         includeContext.resolveIncludePath(includeEntry.path()),
                         includeContext,
                         beanIndex,
+                        componentIds,
                         includeEntry.parsingContext()));
             }
         }
@@ -136,7 +139,7 @@ public class GenericYamlParser {
         return new Snippets(includes, config);
     }
 
-    private static List<BeanDefinition> parseIncludedPath(Grammar grammar, Path includePath, IncludeContext includeContext, int[] beanIndex, ParsingContext<?> includePc) throws IOException {
+    private static List<BeanDefinition> parseIncludedPath(Grammar grammar, Path includePath, IncludeContext includeContext, int[] beanIndex, Set<String> componentIds, ParsingContext<?> includePc) throws IOException {
         if (!Files.exists(includePath))
             throw new ConfigurationParsingException("Included path '%s' does not exist.".formatted(includePath), null, includePc);
 
@@ -144,7 +147,7 @@ public class GenericYamlParser {
             List<BeanDefinition> res = new ArrayList<>();
             try (var files = Files.list(includePath)) {
                 for (Path file : files.filter(Files::isRegularFile).filter(GenericYamlParser::isApisYaml).sorted().toList()) {
-                    res.addAll(parseIncludedFile(grammar, file, includeContext, beanIndex, includePc));
+                    res.addAll(parseIncludedFile(grammar, file, includeContext, beanIndex, componentIds, includePc));
                 }
             }
             return res;
@@ -153,10 +156,10 @@ public class GenericYamlParser {
         if (!Files.isRegularFile(includePath))
             throw new ConfigurationParsingException("Included path '%s' is neither a regular file nor a directory.".formatted(includePath), null, includePc);
 
-        return parseIncludedFile(grammar, includePath, includeContext, beanIndex, includePc);
+        return parseIncludedFile(grammar, includePath, includeContext, beanIndex, componentIds, includePc);
     }
 
-    private static List<BeanDefinition> parseIncludedFile(Grammar grammar, Path includeFile, IncludeContext includeContext, int[] beanIndex, ParsingContext<?> includePc) throws IOException {
+    private static List<BeanDefinition> parseIncludedFile(Grammar grammar, Path includeFile, IncludeContext includeContext, int[] beanIndex, Set<String> componentIds, ParsingContext<?> includePc) throws IOException {
         Path normalizedFile = normalizePath(includeFile);
         if (includeContext.includeStack().contains(normalizedFile))
             throw new ConfigurationParsingException("Cyclic include detected: " + formatIncludeCycle(includeContext.includeStack(), normalizedFile), null, includePc);
@@ -171,7 +174,7 @@ public class GenericYamlParser {
             }
 
             try {
-                return parseYamlFile(grammar, includedYaml, includeContext.withSourceFile(normalizedFile), beanIndex);
+                return parseYamlFile(grammar, includedYaml, includeContext.withSourceFile(normalizedFile), beanIndex, componentIds);
             } catch (JsonParseException e) {
                 throw new ConfigurationParsingException(
                         "Invalid YAML in included file '%s' (at line %d, column %d)."
@@ -370,7 +373,7 @@ public class GenericYamlParser {
         return configObj;
     }
 
-    private static List<BeanDefinition> extractComponentBeanDefinitions(ParsingContext<?> pc, JsonNode componentsNode) {
+    private static List<BeanDefinition> extractComponentBeanDefinitions(ParsingContext<?> pc, JsonNode componentsNode, Set<String> componentIds) {
         if (componentsNode == null || componentsNode.isNull())
             return of();
 
@@ -383,6 +386,10 @@ public class GenericYamlParser {
         while (ids.hasNext()) {
             String id = ids.next();
             JsonNode def = componentsNode.get(id);
+            String componentRef = "#/components/" + id;
+
+            if (!componentIds.add(componentRef))
+                throw new ConfigurationParsingException("Duplicate component id '%s'. Component ids must be unique across all included files.".formatted(componentRef), null, pc.addPath("." + id));
 
             // Each component definition must have exactly one key (the component type)
             ensureSingleKey(pc.addPath("." + id), def);
@@ -394,7 +401,7 @@ public class GenericYamlParser {
 
             res.add(new BeanDefinition(
                     componentKind,
-                    "#/components/" + id,
+                    componentRef,
                     "default",
                     randomUUID().toString(),
                     wrapped

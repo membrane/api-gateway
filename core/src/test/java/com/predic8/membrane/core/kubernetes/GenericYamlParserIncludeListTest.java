@@ -148,6 +148,34 @@ class GenericYamlParserIncludeListTest {
         assertTrue(ex.getMessage().contains("b.apis.yaml"), ex.getMessage());
     }
 
+    @Test
+    void rejects_duplicate_component_ids_across_includes() throws Exception {
+        Path first = write("components/one.apis.yaml", """
+                components:
+                  auth:
+                    basicAuthentication:
+                      fileUserDataProvider:
+                        htpasswdPath: /etc/one.htpasswd
+                """);
+        Path second = write("components/two.apis.yaml", """
+                components:
+                  auth:
+                    basicAuthentication:
+                      fileUserDataProvider:
+                        htpasswdPath: /etc/two.htpasswd
+                """);
+
+        ConfigurationParsingException ex = assertThrows(
+                ConfigurationParsingException.class, () -> parseDefinitions("""
+                        include:
+                          - %s
+                          - %s
+                        """.formatted(yamlPath(first), yamlPath(second)))
+        );
+
+        assertTrue(ex.getMessage().contains("Duplicate component id '#/components/auth'"), ex.getMessage());
+    }
+
     private List<BeanDefinition> parseDefinitions(String yaml) throws IOException {
         return new GenericYamlParser(K8S_HELPER, yaml, null).getBeanDefinitions();
     }
