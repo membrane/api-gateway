@@ -73,18 +73,15 @@ public class GenericYamlParser {
     }
 
     private static List<BeanDefinition> parseYamlFile(Grammar grammar, String yaml, IncludeContext includeContext, int[] beanIndex) throws IOException {
+        Snippets snippets = collectSnippets(grammar, yaml, new JsonLocationMap());
         List<BeanDefinition> defs = new ArrayList<>();
-        List<IncludeSnippet> includes = new ArrayList<>();
-        List<JsonNode> configSnippets = new ArrayList<>();
-
-        collectSnippets(grammar, yaml, new JsonLocationMap(), includes, configSnippets);
-        handleIncludes(grammar, includeContext, beanIndex, includes, defs);
-        handleConfigSnippets(grammar, beanIndex, configSnippets, defs);
-
+        defs.addAll(handleIncludes(grammar, includeContext, beanIndex, snippets.includes()));
+        defs.addAll(handleConfigSnippets(grammar, beanIndex, snippets.configSnippets()));
         return defs;
     }
 
-    private static void handleConfigSnippets(Grammar grammar, int[] beanIndex, List<JsonNode> configSnippets, List<BeanDefinition> defs) {
+    private static List<BeanDefinition> handleConfigSnippets(Grammar grammar, int[] beanIndex, List<JsonNode> configSnippets) {
+        List<BeanDefinition> defs = new ArrayList<>();
         for (JsonNode jsonNode : configSnippets) {
             var pc = new ParsingContext<>("", null, grammar, jsonNode, "$", null);
             String beanType = getBeanType(pc, jsonNode);
@@ -100,9 +97,11 @@ public class GenericYamlParser {
                     randomUUID().toString(),
                     jsonNode));
         }
+        return defs;
     }
 
-    private static void handleIncludes(Grammar grammar, IncludeContext includeContext, int[] beanIndex, List<IncludeSnippet> includes, List<BeanDefinition> defs) throws IOException {
+    private static List<BeanDefinition> handleIncludes(Grammar grammar, IncludeContext includeContext, int[] beanIndex, List<IncludeSnippet> includes) throws IOException {
+        List<BeanDefinition> defs = new ArrayList<>();
         for (IncludeSnippet includeSnippet : includes) {
             for (IncludeEntry includeEntry : extractIncludeEntries(includeSnippet)) {
                 defs.addAll(parseIncludedPath(
@@ -113,9 +112,12 @@ public class GenericYamlParser {
                         includeEntry.parsingContext()));
             }
         }
+        return defs;
     }
 
-    private static void collectSnippets(Grammar grammar, String yaml, JsonLocationMap jsonLocationMap, List<IncludeSnippet> includes, List<JsonNode> config) throws IOException {
+    private static Snippets collectSnippets(Grammar grammar, String yaml, JsonLocationMap jsonLocationMap) throws IOException {
+        List<IncludeSnippet> includes = new ArrayList<>();
+        List<JsonNode> config = new ArrayList<>();
         for (JsonNode jsonNode : jsonLocationMap.parseWithLocations(yaml)) {
             if (jsonNode == null || jsonNode.isNull() || jsonNode.isEmpty()) {
                 log.debug(EMPTY_DOCUMENT_WARNING);
@@ -131,6 +133,7 @@ public class GenericYamlParser {
             }
             config.add(jsonNode);
         }
+        return new Snippets(includes, config);
     }
 
     private static List<BeanDefinition> parseIncludedPath(Grammar grammar, Path includePath, IncludeContext includeContext, int[] beanIndex, ParsingContext<?> includePc) throws IOException {
@@ -572,6 +575,8 @@ public class GenericYamlParser {
         }
         return convertScalarOrSpel(node, elemType);
     }
+
+    private record Snippets(List<IncludeSnippet> includes, List<JsonNode> configSnippets) {}
 
     private record IncludeSnippet(JsonNode node, ParsingContext<?> parsingContext) {}
 
