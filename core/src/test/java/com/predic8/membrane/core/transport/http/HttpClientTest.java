@@ -15,9 +15,10 @@
 package com.predic8.membrane.core.transport.http;
 
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import org.junit.jupiter.api.*;
+import org.mockito.*;
 
+import static com.predic8.membrane.core.http.Request.get;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HttpClientTest {
@@ -31,22 +32,22 @@ class HttpClientTest {
 
     @Test
     void init() throws Exception {
-        Exchange exc = Request.get("/foo").buildExchange();
-        client.initializeRequest(exc,"https://example.com");
+        var exc = get("/foo").buildExchange();
+        client.adjustHostHeader(exc,  new HostColonPort(false,HttpClient.getHostColonPort( "https://example.com")));
         assertEquals("example.com:443",exc.getRequest().getHeader().getHost());
     }
 
     @Test
     void setRequestURISimple() throws Exception {
-        var request = Request.get("/bar").build();
-        client.setRequestURI(request, "https://predic8.de/foo");
+        var request = get("/bar").build();
+        client.setRequestURI(request, "https://predic8.de/foo", Mockito.mock(Connection.class));
         assertEquals("/foo", request.getUri());
     }
 
     @Test
     void setRequestURIWithoutPath() throws Exception {
-        var request = Request.get("/bar").build();
-        client.setRequestURI(request, "https://predic8.de");
+        var request = get("/bar").build();
+        client.setRequestURI(request, "https://predic8.de", Mockito.mock(Connection.class));
         assertEquals("/", request.getUri());
     }
 }

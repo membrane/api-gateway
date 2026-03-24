@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
+import org.jetbrains.annotations.*;
+
 import java.net.*;
 import java.util.regex.*;
 
@@ -20,6 +22,12 @@ public record HostColonPort(boolean useSSL, String host, int port) {
 
     private static final Pattern pattern = Pattern.compile("^(https?)://([^:/#]+)(?::(\\d+))?.*");
 
+    /**
+     *
+     * @param useSSL To compute default ports
+     * @param host Hostname, e.g. api.predic8.de, 127.0.0.1, [3:34:55]
+     * @param port port number
+     */
     public HostColonPort(boolean useSSL, String host, int port) {
         this.useSSL = useSSL;
         this.host = host;
@@ -30,6 +38,11 @@ public record HostColonPort(boolean useSSL, String host, int port) {
         }
     }
 
+    /**
+     *
+     * @param useSSL To compute default ports
+     * @param hostAndPort e.g. api.predic8.de:443
+     */
     public HostColonPort(boolean useSSL, String hostAndPort) {
         this(useSSL, hostPart(hostAndPort), portPart(hostAndPort, useSSL ? 443 : 80));
     }
@@ -52,17 +65,17 @@ public record HostColonPort(boolean useSSL, String host, int port) {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return host + ":" + port;
     }
 
     private static String hostPart(String addr) {
-        var colon = addr.indexOf(":");
+        var colon = addr.lastIndexOf(":");
         return (colon > -1 ? addr.substring(0, colon) : addr);
     }
 
     private static int portPart(String addr, int defaultValue) {
-        var colon = addr.indexOf(":");
+        var colon = addr.lastIndexOf(":");
         return (colon > -1 ? Integer.parseInt(addr.substring(colon + 1)) : defaultValue);
     }
 
