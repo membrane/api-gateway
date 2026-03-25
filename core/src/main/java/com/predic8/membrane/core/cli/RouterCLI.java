@@ -280,18 +280,29 @@ public class RouterCLI {
     }
 
     private static Path getRootSourceFile(String location) {
-        try {
-            URI uri = new URI(location);
-            String scheme = uri.getScheme();
-            if (scheme != null && !"file".equalsIgnoreCase(scheme))
-                return null;
-        } catch (URISyntaxException ignored) {}
+        if (!isWindowsAbsolutePath(location)) {
+            try {
+                URI uri = new URI(location);
+                String scheme = uri.getScheme();
+                if (scheme != null && !"file".equalsIgnoreCase(scheme))
+                    return null;
+            } catch (URISyntaxException ignored) {}
+        }
 
         try {
             return Path.of(pathFromFileURI(location));
         } catch (InvalidPathException ignored) {
             return null;
         }
+    }
+
+    private static boolean isWindowsAbsolutePath(String location) {
+        if (location == null || location.length() < 3) {
+            return false;
+        }
+        return Character.isLetter(location.charAt(0))
+                && location.charAt(1) == ':'
+                && (location.charAt(2) == '/' || location.charAt(2) == '\\');
     }
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) throws IOException {
