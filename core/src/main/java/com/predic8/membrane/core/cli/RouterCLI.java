@@ -37,6 +37,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.*;
@@ -230,7 +231,9 @@ public class RouterCLI {
         router.setRegistry(reg);
         reg.register("router", router);
 
-        getConfigDefinition(reg.parseYamlBeanDefinitions(router.getResolverMap().resolve(location), grammar, getRootSourceFile(location)))
+        List<BeanDefinition> beanDefinitions = reg.parseYamlBeanDefinitions(router.getResolverMap().resolve(location), grammar, getRootSourceFile(location));
+        ensureSingleGlobalDefinition(beanDefinitions);
+        getConfigDefinition(beanDefinitions)
                 .ifPresent(configBd -> router.applyConfiguration((Configuration) reg.resolve(configBd.getName())));
 
         reg.finishStaticConfiguration();
@@ -242,9 +245,38 @@ public class RouterCLI {
     }
 
     private static @NotNull Optional<BeanDefinition> getConfigDefinition(List<BeanDefinition> bds) {
-        return bds.stream()
+        List<BeanDefinition> configurationDefinitions = bds.stream()
                 .filter(bd -> "configuration".equals(bd.getKind()))
-                .findFirst();
+                .toList();
+
+        if (configurationDefinitions.size() > 1) {
+            throw new IllegalStateException("Found multiple 'configuration' definitions (%d). Only one is allowed. Found at: %s"
+                    .formatted(configurationDefinitions.size(), configurationDefinitions.stream()
+                            .map(RouterCLI::formatConfigLocation)
+                            .collect(Collectors.joining(", "))));
+        }
+
+        return configurationDefinitions.stream().findFirst();
+    }
+
+    private static void ensureSingleGlobalDefinition(List<BeanDefinition> bds) {
+        List<BeanDefinition> globalDefinitions = bds.stream()
+                .filter(bd -> "global".equals(bd.getKind()))
+                .toList();
+
+        if (globalDefinitions.size() > 1) {
+            throw new IllegalStateException("Found multiple 'global' definitions (%d). Only one is allowed. Found at: %s"
+                    .formatted(globalDefinitions.size(), globalDefinitions.stream()
+                            .map(RouterCLI::formatConfigLocation)
+                            .collect(Collectors.joining(", "))));
+        }
+    }
+
+    private static String formatConfigLocation(BeanDefinition bd) {
+        if (bd.getSourceMetadata() != null && bd.getSourceMetadata().sourceFile() != null) {
+            return bd.getSourceMetadata().sourceFile().toString();
+        }
+        return bd.getName();
     }
 
     private static Path getRootSourceFile(String location) {
