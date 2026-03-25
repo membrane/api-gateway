@@ -25,7 +25,7 @@ public class ConfigurationIncludesExampleTest extends AbstractSampleMembraneStar
 
     @Override
     protected String getExampleDirName() {
-        return "configuration/includes";
+        return "configuration/include";
     }
 
     @Test
