@@ -175,6 +175,10 @@ public class GenericYamlParser {
         Path normalizedFile = normalizePath(includeFile);
         if (includeContext.includeStack().contains(normalizedFile))
             throw new ConfigurationParsingException("Cyclic include detected: " + formatIncludeCycle(includeContext.includeStack(), normalizedFile), null, includePc);
+        if (includeContext.loadedIncludeFiles().contains(normalizedFile)) {
+            log.debug("Skipping already included file '{}'.", normalizedFile);
+            return of();
+        }
 
         includeContext.includeStack().addLast(normalizedFile);
         try {
@@ -188,7 +192,9 @@ public class GenericYamlParser {
             }
 
             try {
-                return parseYamlFile(grammar, includedYaml, includeContext.withSourceFile(normalizedFile), beanIndex, componentIds);
+                List<BeanDefinition> definitions = parseYamlFile(grammar, includedYaml, includeContext.withSourceFile(normalizedFile), beanIndex, componentIds);
+                includeContext.loadedIncludeFiles().add(normalizedFile);
+                return definitions;
             } catch (JsonParseException e) {
                 ConfigurationParsingException cpe = new ConfigurationParsingException(
                         "Invalid YAML in included file '%s' (at line %d, column %d)."
@@ -636,15 +642,15 @@ public class GenericYamlParser {
 
     private record IncludeEntry(String path, ParsingContext<?> parsingContext) {}
 
-    private record IncludeContext(Path sourceFile, Path basePath, Path rootSourceFile, Deque<Path> includeStack) {
+    private record IncludeContext(Path sourceFile, Path basePath, Path rootSourceFile, Deque<Path> includeStack, Set<Path> loadedIncludeFiles) {
 
         static IncludeContext root(Path sourceFile) {
             Path normalizedRootSourceFile = normalizePath(sourceFile);
-            return new IncludeContext(normalizedRootSourceFile, null, normalizedRootSourceFile, new ArrayDeque<>());
+            return new IncludeContext(normalizedRootSourceFile, null, normalizedRootSourceFile, new ArrayDeque<>(), new HashSet<>());
         }
 
         IncludeContext withSourceFile(Path sourceFile) {
-            return new IncludeContext(normalizePath(sourceFile), basePath, rootSourceFile, includeStack);
+            return new IncludeContext(normalizePath(sourceFile), basePath, rootSourceFile, includeStack, loadedIncludeFiles);
         }
 
         SourceMetadata sourceMetadata() {
