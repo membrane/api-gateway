@@ -79,11 +79,18 @@ public class GenericYamlParser {
     }
 
     private static List<BeanDefinition> parseYamlFile(Grammar grammar, String yaml, IncludeContext includeContext, int[] beanIndex, Set<String> componentIds) throws IOException {
-        Snippets snippets = collectSnippets(grammar, yaml, new JsonLocationMap());
-        List<BeanDefinition> defs = new ArrayList<>();
-        defs.addAll(handleIncludes(grammar, includeContext, beanIndex, componentIds, snippets.includes()));
-        defs.addAll(handleConfigSnippets(grammar, includeContext, beanIndex, componentIds, snippets.configSnippets()));
-        return defs;
+        try {
+            Snippets snippets = collectSnippets(grammar, yaml, new JsonLocationMap());
+            List<BeanDefinition> defs = new ArrayList<>();
+            defs.addAll(handleIncludes(grammar, includeContext, beanIndex, componentIds, snippets.includes()));
+            defs.addAll(handleConfigSnippets(grammar, includeContext, beanIndex, componentIds, snippets.configSnippets()));
+            return defs;
+        } catch (ConfigurationParsingException e) {
+            if (e.getSourceFile() == null && includeContext.sourceFile() != null) {
+                e.setSourceFile(includeContext.sourceFile());
+            }
+            throw e;
+        }
     }
 
     private static List<BeanDefinition> handleConfigSnippets(Grammar grammar, IncludeContext includeContext, int[] beanIndex, Set<String> componentIds, List<JsonNode> configSnippets) {
@@ -175,17 +182,21 @@ public class GenericYamlParser {
             try {
                 includedYaml = readString(normalizedFile, UTF_8);
             } catch (IOException e) {
-                throw new ConfigurationParsingException("Could not read included file '%s'.".formatted(normalizedFile), e, includePc);
+                ConfigurationParsingException cpe = new ConfigurationParsingException("Could not read included file '%s'.".formatted(normalizedFile), e, includePc);
+                cpe.setSourceFile(normalizedFile);
+                throw cpe;
             }
 
             try {
                 return parseYamlFile(grammar, includedYaml, includeContext.withSourceFile(normalizedFile), beanIndex, componentIds);
             } catch (JsonParseException e) {
-                throw new ConfigurationParsingException(
+                ConfigurationParsingException cpe = new ConfigurationParsingException(
                         "Invalid YAML in included file '%s' (at line %d, column %d)."
                                 .formatted(normalizedFile, e.getLocation().getLineNr(), e.getLocation().getColumnNr()),
                         e,
                         includePc);
+                cpe.setSourceFile(normalizedFile);
+                throw cpe;
             }
         } finally {
             includeContext.includeStack().removeLast();
@@ -331,17 +342,35 @@ public class GenericYamlParser {
                 var missingClass = e.getCause().getMessage(); // TODO: Better use ExceptionUtil.getRootCause() but it isn't visible in annot.
                 var msg = "Could not create bean with class: %s\nMissing class: %s\n".formatted(clazz, missingClass);
                 log.error(msg);
-                throw new ConfigurationParsingException(msg); // TODO: Cause we know the reason, shorten output.
+                var cpe = new ConfigurationParsingException(msg); // TODO: Cause we know the reason, shorten output.
+                applyCurrentSourceFileIfMissing(cpe);
+                throw cpe;
             }
-            throw new ConfigurationParsingException(e);
+            var cpe = new ConfigurationParsingException(e);
+            applyCurrentSourceFileIfMissing(cpe);
+            throw cpe;
         } catch (ConfigurationParsingException e) {
+            applyCurrentSourceFileIfMissing(e);
             if (e.getParsingContext() == null)
                 e.setParsingContext(pc);
             throw e;
         } catch (Throwable cause) {
             log.debug("", cause);
-            throw new ConfigurationParsingException(cause);
+            var cpe = new ConfigurationParsingException(cause);
+            applyCurrentSourceFileIfMissing(cpe);
+            throw cpe;
         }
+    }
+
+    private static void applyCurrentSourceFileIfMissing(ConfigurationParsingException e) {
+        if (e.getSourceFile() != null) {
+            return;
+        }
+        BeanDefinition currentBeanDefinition = BeanDefinitionContext.current();
+        if (currentBeanDefinition == null || currentBeanDefinition.getSourceMetadata() == null || currentBeanDefinition.getSourceMetadata().sourceFile() == null) {
+            return;
+        }
+        e.setSourceFile(currentBeanDefinition.getSourceMetadata().sourceFile().toAbsolutePath().normalize());
     }
 
     private static void applyCurrentBeanDefinitionIfPresent(Object bean) {

@@ -97,6 +97,11 @@ public class BeanContainer {
             }
             return created;
         } catch (ConfigurationParsingException e) {
+            if (e.getSourceFile() == null
+                    && definition.getSourceMetadata() != null
+                    && definition.getSourceMetadata().sourceFile() != null) {
+                e.setSourceFile(definition.getSourceMetadata().sourceFile().toAbsolutePath().normalize());
+            }
             throw e;
         }
         catch (Exception e) {

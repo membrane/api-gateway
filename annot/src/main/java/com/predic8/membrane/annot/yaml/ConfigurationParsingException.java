@@ -17,12 +17,15 @@ package com.predic8.membrane.annot.yaml;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.*;
 
+import java.nio.file.Path;
+
 import static com.predic8.membrane.annot.yaml.error.LineYamlErrorRenderer.renderErrorReport;
 
 public class ConfigurationParsingException extends RuntimeException {
 
     private ParsingContext<?> parsingContext;
     private JsonNode wrong;
+    private Path sourceFile;
 
     public ConfigurationParsingException(String message) {
         super(message);
@@ -49,7 +52,7 @@ public class ConfigurationParsingException extends RuntimeException {
      * Returns a complete formatted error report including highlighted YAML.
      */
     public String getFormattedReport() throws JsonProcessingException {
-        return renderErrorReport(this.parsingContext);
+        return renderErrorReport(this.parsingContext, sourceFile);
     }
 
     public JsonNode getWrong() {
@@ -58,5 +61,13 @@ public class ConfigurationParsingException extends RuntimeException {
 
     public void setWrong(JsonNode wrong) {
         this.wrong = wrong;
+    }
+
+    public Path getSourceFile() {
+        return sourceFile;
+    }
+
+    public void setSourceFile(Path sourceFile) {
+        this.sourceFile = sourceFile;
     }
 }

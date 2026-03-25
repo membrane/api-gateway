@@ -23,6 +23,8 @@ import com.jayway.jsonpath.spi.json.*;
 import com.jayway.jsonpath.spi.mapper.*;
 import com.predic8.membrane.annot.yaml.*;
 
+import java.nio.file.Path;
+
 import static com.predic8.membrane.common.TerminalColorsMini.*;
 
 /**
@@ -53,6 +55,10 @@ public class LineYamlErrorRenderer {
      * @return YAML string with ">" prefixes and red color for error lines
      */
     public static String renderErrorReport(ParsingContext pc) throws JsonProcessingException {
+        return renderErrorReport(pc, null);
+    }
+
+    public static String renderErrorReport(ParsingContext pc, Path sourceFile) throws JsonProcessingException {
 
         JsonNode node = pc.getNode();
         String jsonPath = pc.getPath();
@@ -180,16 +186,19 @@ public class LineYamlErrorRenderer {
         String yaml = YAML_MAPPER.writeValueAsString(workingCopy);
 
         // Replace marker with line prefixes
-        return markLinesWithPrefix(yaml);
+        return markLinesWithPrefix(yaml, sourceFile);
     }
 
     /**
      * Marks lines inside the error marker with ">" prefix at the left edge and red color.
      * All lines (marked and unmarked) are indented BASE_INDENT spaces from the left.
      */
-    private static String markLinesWithPrefix(String yaml) {
+    private static String markLinesWithPrefix(String yaml, Path sourceFile) {
         String[] lines = yaml.split("\n");
         StringBuilder result = new StringBuilder();
+
+        if (sourceFile != null)
+            result.append("File: ").append(sourceFile.toAbsolutePath().normalize()).append("\n");
 
         result.append("Config:\n");
 
