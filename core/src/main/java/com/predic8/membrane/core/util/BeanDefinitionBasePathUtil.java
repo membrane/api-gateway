@@ -14,6 +14,7 @@ public final class BeanDefinitionBasePathUtil {
                 return sourceMetadata.basePath().toString();
             }
         }
+        if (router == null) return null;
         return router.getConfiguration().getBaseLocation();
     }
 }
