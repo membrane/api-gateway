@@ -15,6 +15,8 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
@@ -25,7 +27,7 @@ import java.util.*;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 
-public class AbstractInterceptor implements Interceptor {
+public class AbstractInterceptor implements Interceptor, BeanDefinitionAware {
 
 	protected String name = this.getClass().getName();
 
@@ -38,6 +40,8 @@ public class AbstractInterceptor implements Interceptor {
 	 * nested interceptors it is.
 	 */
 	protected Proxy proxy;
+
+	private BeanDefinition beanDefinition;
 
 	public AbstractInterceptor() {
 		super();
@@ -122,6 +126,16 @@ public class AbstractInterceptor implements Interceptor {
 
 	public Proxy getProxy() {
 		return proxy;
+	}
+
+	@Override
+	public void setBeanDefinition(BeanDefinition beanDefinition) {
+		this.beanDefinition = beanDefinition;
+	}
+
+	@Override
+	public BeanDefinition getBeanDefinition() {
+		return beanDefinition;
 	}
 
 	public FlowController getFlowController() {

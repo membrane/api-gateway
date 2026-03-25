@@ -14,6 +14,8 @@
 package com.predic8.membrane.core.proxies;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.stats.*;
@@ -25,7 +27,7 @@ import java.util.*;
 /**
  * Convenience class that implements Proxy.
  */
-public abstract class AbstractProxy implements Proxy {
+public abstract class AbstractProxy implements Proxy, BeanDefinitionAware {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
 
@@ -40,6 +42,7 @@ public abstract class AbstractProxy implements Proxy {
     private String error;
 
     protected Router router;
+    private BeanDefinition beanDefinition;
 
     public AbstractProxy() {
     }
@@ -89,6 +92,7 @@ public abstract class AbstractProxy implements Proxy {
         this.router = router;
         try {
             init(); // Extension point for subclasses
+            assignBeanDefinitionToInterceptors();
             for (var i : interceptors) {
                 i.init(router, this);
             }
@@ -106,6 +110,18 @@ public abstract class AbstractProxy implements Proxy {
      *  Extension point for subclasses
      */
     public void init() {
+    }
+
+    private void assignBeanDefinitionToInterceptors() {
+        if (beanDefinition == null) {
+            return;
+        }
+
+        for (Interceptor interceptor : interceptors) {
+            if (interceptor instanceof BeanDefinitionAware bda && bda.getBeanDefinition() == null) {
+                bda.setBeanDefinition(beanDefinition);
+            }
+        }
     }
 
     public boolean isTargetAdjustHostHeader() {
@@ -136,6 +152,16 @@ public abstract class AbstractProxy implements Proxy {
     @Override
     public RuleStatisticCollector getStatisticCollector() {
         return ruleStatisticCollector;
+    }
+
+    @Override
+    public void setBeanDefinition(BeanDefinition beanDefinition) {
+        this.beanDefinition = beanDefinition;
+    }
+
+    @Override
+    public BeanDefinition getBeanDefinition() {
+        return beanDefinition;
     }
 
     @Override

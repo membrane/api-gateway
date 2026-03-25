@@ -80,20 +80,30 @@ public class BeanContainer {
 
     private synchronized @NotNull Object define(BeanRegistryImplementation registry, Grammar grammar) {
         log.debug("defining bean: {}", definition.getNode());
+        BeanDefinitionContext.push(definition);
         try {
+            Object created;
             if ("bean".equals(definition.getKind())) {
-                return new BeanFactory(registry).create(definition.getNode().path("bean"));
+                created = new BeanFactory(registry).create(definition.getNode().path("bean"));
+            } else {
+                created = GenericYamlParser.readMembraneObject(definition.getKind(),
+                        grammar,
+                        definition.getNode(),
+                        registry);
             }
-            return GenericYamlParser.readMembraneObject(definition.getKind(),
-                    grammar,
-                    definition.getNode(),
-                    registry);
+
+            if (created instanceof BeanDefinitionAware bda) {
+                bda.setBeanDefinition(definition);
+            }
+            return created;
         } catch (ConfigurationParsingException e) {
             throw e;
         }
         catch (Exception e) {
             log.error("Could not instantiate bean: {}", definition.getNode(), e);
             throw new RuntimeException(e);
+        } finally {
+            BeanDefinitionContext.pop();
         }
     }
 

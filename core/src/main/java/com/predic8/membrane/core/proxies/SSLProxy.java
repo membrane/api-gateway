@@ -16,6 +16,8 @@ package com.predic8.membrane.core.proxies;
 
 import com.google.common.base.Objects;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -39,7 +41,7 @@ import static com.predic8.membrane.core.interceptor.FlowController.*;
  * Proxies SSL connections to a target server without decrypting the traffic.
  */
 @MCElement(name = "sslProxy", topLevel = true, component = false)
-public class SSLProxy implements Proxy {
+public class SSLProxy implements Proxy, BeanDefinitionAware {
     private static final Logger log = LoggerFactory.getLogger(SSLProxy.class.getName());
 
     private SSLProxy.Target target;
@@ -47,6 +49,7 @@ public class SSLProxy implements Proxy {
     private final RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
     private boolean useAsDefault = true;
     private List<SSLInterceptor> sslInterceptors = new ArrayList<>();
+    private BeanDefinition beanDefinition;
 
     public ConnectionConfiguration getConnectionConfiguration() {
         return connectionConfiguration;
@@ -218,6 +221,16 @@ public class SSLProxy implements Proxy {
     @Override
     public String getProtocol() {
         return "";
+    }
+
+    @Override
+    public void setBeanDefinition(BeanDefinition beanDefinition) {
+        this.beanDefinition = beanDefinition;
+    }
+
+    @Override
+    public BeanDefinition getBeanDefinition() {
+        return beanDefinition;
     }
 
     // TODO ?

@@ -23,6 +23,8 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionContext;
 import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import org.jetbrains.annotations.NotNull;
@@ -296,6 +298,7 @@ public class GenericYamlParser {
     public static <T> T createAndPopulateNode(ParsingContext<?> pc, Class<T> clazz, JsonNode node) throws ConfigurationParsingException {
         try {
             T configObj = clazz.getConstructor().newInstance();
+            applyCurrentBeanDefinitionIfPresent(configObj);
 
             // when this is a list, we are on a @MCElement(..., noEnvelope=true)
             if (node.isArray()) {
@@ -339,6 +342,17 @@ public class GenericYamlParser {
             log.debug("", cause);
             throw new ConfigurationParsingException(cause);
         }
+    }
+
+    private static void applyCurrentBeanDefinitionIfPresent(Object bean) {
+        if (!(bean instanceof BeanDefinitionAware bda)) {
+            return;
+        }
+        BeanDefinition currentBeanDefinition = BeanDefinitionContext.current();
+        if (currentBeanDefinition == null) {
+            return;
+        }
+        bda.setBeanDefinition(currentBeanDefinition);
     }
 
     private static <T> void populateObjectFields(ParsingContext<?> ctx, Class<T> clazz, JsonNode node, List<Method> required, T configObj) {
