@@ -95,11 +95,20 @@ public class LoginDialog2 {
 
     public void init(Router router) throws Exception {
         String effectiveBaseLocation = locationBaseLocation == null ? router.getConfiguration().getBaseLocation() : locationBaseLocation;
-        wsi.setDocBase(ResolverMap.combine(effectiveBaseLocation, dialogLocation));
+        String resolvedDialogBaseLocation = ResolverMap.combine(effectiveBaseLocation, dialogLocation);
+        wsi.setDocBase(resolvedDialogBaseLocation);
         uriFactory = router.getConfiguration().getUriFactory();
         wsi.init(router);
-        router.getResolverMap().resolve(ResolverMap.combine(effectiveBaseLocation, dialogLocation, "index.html")).close();
+        router.getResolverMap().resolve(ResolverMap.combine(asDirectory(resolvedDialogBaseLocation), "index.html")).close();
 
+    }
+
+    private static String asDirectory(String location) {
+        if (location == null || location.isEmpty())
+            return location;
+        if (location.endsWith("/") || location.endsWith("\\"))
+            return location;
+        return location + "/";
     }
 
     public boolean isLoginRequest(Exchange exc) {

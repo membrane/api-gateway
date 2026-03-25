@@ -90,12 +90,13 @@ public class LoginDialog {
 
 	public void init(Router router) {
 		String effectiveBaseLocation = locationBaseLocation == null ? router.getConfiguration().getBaseLocation() : locationBaseLocation;
-		wsi.setDocBase(ResolverMap.combine(effectiveBaseLocation, dialogLocation));
+		String resolvedDialogBaseLocation = ResolverMap.combine(effectiveBaseLocation, dialogLocation);
+		wsi.setDocBase(resolvedDialogBaseLocation);
 		uriFactory = router.getConfiguration().getUriFactory();
 		wsi.init(router);
         try {
 			// This is only a check if index.html is present
-            router.getResolverMap().resolve(ResolverMap.combine(effectiveBaseLocation, dialogLocation, "index.html")).close();
+            router.getResolverMap().resolve(ResolverMap.combine(asDirectory(resolvedDialogBaseLocation), "index.html")).close();
         } catch (ResourceRetrievalException e) {
             throw new ConfigurationException("""
 					Cannot access index.html at:
@@ -106,6 +107,14 @@ public class LoginDialog {
 			log.error("Cannot access index.html (baseLocation={}, docBase={})" , effectiveBaseLocation, dialogLocation, e);
         }
     }
+
+	private static String asDirectory(String location) {
+		if (location == null || location.isEmpty())
+			return location;
+		if (location.endsWith("/") || location.endsWith("\\"))
+			return location;
+		return location + "/";
+	}
 
 	public boolean isLoginRequest(Exchange exc) {
 		URI uri = uriFactory.createWithoutException(exc.getRequest().getUri());
