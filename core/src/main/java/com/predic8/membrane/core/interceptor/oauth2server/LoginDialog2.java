@@ -44,6 +44,8 @@ import static java.nio.charset.StandardCharsets.*;
 public class LoginDialog2 {
     private static final Logger log = LoggerFactory.getLogger(com.predic8.membrane.core.interceptor.authentication.session.LoginDialog.class.getName());
 
+    private final String dialogLocation;
+    private final String locationBaseLocation;
     private final String path;
     private final String message;
     private final boolean exposeUserCredentialsToSession;
@@ -62,9 +64,12 @@ public class LoginDialog2 {
             SessionManager sessionManager,
             AccountBlocker accountBlocker,
             String dialogLocation,
+            String locationBaseLocation,
             String path,
             boolean exposeUserCredentialsToSession,
             String message) {
+        this.dialogLocation = dialogLocation;
+        this.locationBaseLocation = locationBaseLocation;
         this.path = path;
         this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
         this.userDataProvider = userDataProvider;
@@ -74,13 +79,26 @@ public class LoginDialog2 {
         this.message = message;
 
         wsi = new WebServerInterceptor();
-        wsi.setDocBase(dialogLocation);
+    }
+
+    public LoginDialog2(
+            UserDataProvider userDataProvider,
+            TokenProvider tokenProvider,
+            SessionManager sessionManager,
+            AccountBlocker accountBlocker,
+            String dialogLocation,
+            String path,
+            boolean exposeUserCredentialsToSession,
+            String message) {
+        this(userDataProvider, tokenProvider, sessionManager, accountBlocker, dialogLocation, null, path, exposeUserCredentialsToSession, message);
     }
 
     public void init(Router router) throws Exception {
+        String effectiveBaseLocation = locationBaseLocation == null ? router.getConfiguration().getBaseLocation() : locationBaseLocation;
+        wsi.setDocBase(ResolverMap.combine(effectiveBaseLocation, dialogLocation));
         uriFactory = router.getConfiguration().getUriFactory();
         wsi.init(router);
-        router.getResolverMap().resolve(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsi.getDocBase(), "index.html")).close();
+        router.getResolverMap().resolve(ResolverMap.combine(effectiveBaseLocation, dialogLocation, "index.html")).close();
 
     }
 
