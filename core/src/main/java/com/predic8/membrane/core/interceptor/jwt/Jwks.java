@@ -28,7 +28,6 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.BeanDefinitionBasePathUtil;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.StringList;
 import com.predic8.membrane.core.util.text.TextUtil;
@@ -251,10 +250,6 @@ public class Jwks implements BeanDefinitionAware {
 
         public HttpClientConfiguration getHttpClientConfig() {
             return httpClientConfig;
-        }
-
-        public String getJwk(Router router, ObjectMapper mapper) throws IOException {
-            return getJwk(router, mapper, router.getConfiguration().getBaseLocation());
         }
 
         public String getJwk(Router router, ObjectMapper mapper, String baseLocation) throws IOException {
