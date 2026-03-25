@@ -30,7 +30,10 @@ import org.slf4j.*;
 import org.springframework.beans.factory.xml.*;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.*;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.security.*;
 import java.util.*;
@@ -227,7 +230,7 @@ public class RouterCLI {
         router.setRegistry(reg);
         reg.register("router", router);
 
-        getConfigDefinition(reg.parseYamlBeanDefinitions(router.getResolverMap().resolve(location), grammar, Path.of(pathFromFileURI(location))))
+        getConfigDefinition(reg.parseYamlBeanDefinitions(router.getResolverMap().resolve(location), grammar, getRootSourceFile(location)))
                 .ifPresent(configBd -> router.applyConfiguration((Configuration) reg.resolve(configBd.getName())));
 
         reg.finishStaticConfiguration();
@@ -242,6 +245,21 @@ public class RouterCLI {
         return bds.stream()
                 .filter(bd -> "configuration".equals(bd.getKind()))
                 .findFirst();
+    }
+
+    private static Path getRootSourceFile(String location) {
+        try {
+            URI uri = new URI(location);
+            String scheme = uri.getScheme();
+            if (scheme != null && !"file".equalsIgnoreCase(scheme))
+                return null;
+        } catch (URISyntaxException ignored) {}
+
+        try {
+            return Path.of(pathFromFileURI(location));
+        } catch (InvalidPathException ignored) {
+            return null;
+        }
     }
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) throws IOException {
