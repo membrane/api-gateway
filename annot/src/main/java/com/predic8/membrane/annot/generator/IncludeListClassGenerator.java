@@ -42,19 +42,13 @@ public class IncludeListClassGenerator extends ClassGenerator {
                  * </p>
                  * <p>
                  * Include entries are resolved in the order they are listed. If an entry points to a directory,
-                 * all matching <code>*.apis.yaml</code> / <code>*.apis.yml</code> files in that directory are included.
-                 * For directory includes, no ordering is applied. Includes are resolved recursively and cyclic
-                 * include chains are rejected.
-                 * </p>
-                 * <p>
-                 * Paths used inside included configuration content (for example OpenAPI file locations or other
-                 * referenced resources) are resolved against the base path of the main configuration file.
+                 * all matching <code>*.apis.yaml</code> / <code>*.apis.yml</code> files in that directory are included
+                 * in lexicographical order. Includes are resolved recursively and cyclic include chains are rejected.
                  * </p>
                  * @yaml <pre><code>
                  * include:
-                 *   - "."
-                 *   - apis/demo.apis.yaml
-                 *   - other/apis
+                 *   - ./apis/demo.apis.yaml
+                 *   - ../shared/apis
                  * </code></pre>
                  */
                 @MCElement(name = "include", topLevel = true, noEnvelope = true, component = false)

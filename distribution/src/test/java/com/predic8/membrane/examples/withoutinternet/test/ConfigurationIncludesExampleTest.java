@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
 
 public class ConfigurationIncludesExampleTest extends AbstractSampleMembraneStartStopTestcase {
 
@@ -28,41 +29,31 @@ public class ConfigurationIncludesExampleTest extends AbstractSampleMembraneStar
     }
 
     @Test
-    void includesFromFileAndDirectoryAreLoaded() {
+    void includedApisAreLoaded() {
         // @formatter:off
-        when().get("http://localhost:2000/root")
+        when().get("http://localhost:2000/customers")
         .then()
             .statusCode(200)
-            .body("source", equalTo("root"));
+            .body("count", equalTo(2))
+            .body("customers.id", hasItems("c-1001", "c-1002"))
+            .body("customers.name", hasItems("Alice Johnson", "Bob Miller"));
 
-        when().get("http://localhost:2000/from-file")
+        when().get("http://localhost:2000/orders")
         .then()
             .statusCode(200)
-            .body("source", equalTo("from-file"));
-
-        when().get("http://localhost:2000/nested")
-        .then()
-            .statusCode(200)
-            .body("source", equalTo("nested"));
-
-        when().get("http://localhost:2000/from-directory-a")
-        .then()
-            .statusCode(200)
-            .body("source", equalTo("from-directory-a"));
-
-        when().get("http://localhost:2000/from-directory-b")
-        .then()
-            .statusCode(200)
-            .body("source", equalTo("from-directory-b"));
+            .body("count", equalTo(2))
+            .body("orders.id", hasItems("o-9001", "o-9002"))
+            .body("orders.status", hasItems("processing", "shipped"));
         // @formatter:on
     }
 
     @Test
-    void includeDirectoryIgnoresNonApisYamlFiles() {
+    void fallbackReturnsNotFoundMessage() {
         // @formatter:off
-        when().get("http://localhost:2000/ignored")
+        when().get("http://localhost:2000/does-not-exist")
         .then()
-            .statusCode(404);
+            .statusCode(404)
+            .body("message", equalTo("Not Found!"));
         // @formatter:on
     }
 }

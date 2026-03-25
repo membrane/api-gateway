@@ -4,13 +4,9 @@ This example shows how to split one Membrane configuration with `include`.
 
 What is covered:
 
-- include a single file (`includes/file.apis.yaml`)
-- nested include (`includes/nested/nested.apis.yaml`)
-- include a directory (`includes/directory`). Only `*.apis.yaml` and `*.apis.yml` are loaded 
-
-Important path rule:
-
-- Paths used inside included YAML files (for example OpenAPI `location`, template `src`, or other file-based references) are resolved relative to the main config file you start (`apis.yaml`), not relative to the included file.
+- include two APIs from separate folders
+- each included API uses a template file from its own folder
+- a fallback API in `apis.yaml` that returns `404` with a `notfound` message
 
 Start:
 
@@ -22,12 +18,13 @@ cd examples/configuration/includes
 Try:
 
 ```bash
-curl http://localhost:2000/root
-curl http://localhost:2000/from-file
-curl http://localhost:2000/nested
-curl http://localhost:2000/from-directory-a
-curl http://localhost:2000/from-directory-b
-curl -i http://localhost:2000/ignored
+curl http://localhost:2000/customers
+curl http://localhost:2000/orders
+curl -i http://localhost:2000/does-not-exist
 ```
 
-`/ignored` returns `404` because `ignored.yaml` does not match the include pattern.
+`/does-not-exist` returns `404` with:
+
+```json
+{"message":"notfound"}
+```

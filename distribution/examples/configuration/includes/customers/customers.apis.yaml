@@ -1,13 +1,10 @@
 api:
   port: 2000
   path:
-    uri: /from-directory-b
+    uri: /customers
   flow:
     - template:
         contentType: application/json
-        src: |
-          {
-            "source": "from-directory-b"
-          }
+        location: customers-response.json.template
     - return:
         status: 200
