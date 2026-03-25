@@ -176,6 +176,49 @@ class GenericYamlParserIncludeListTest {
         assertTrue(ex.getMessage().contains("Duplicate component id '#/components/auth'"), ex.getMessage());
     }
 
+    @Test
+    void sourceMetadata() throws Exception {
+        Path nested = write("root/shared/nested.apis.yaml", """
+                api:
+                  port: 4100
+                """);
+        Path included = write("root/includes/middle.apis.yaml", """
+                include:
+                  - ../shared/nested.apis.yaml
+                ---
+                api:
+                  port: 4200
+                """);
+        Path rootFile = write("root/apis.yaml", """
+                include:
+                  - includes/middle.apis.yaml
+                ---
+                api:
+                  port: 4300
+                """);
+
+        List<BeanDefinition> definitions = parseDefinitions(readString(rootFile), rootFile);
+
+        assertSourceMetadata(
+                findByPort(definitions, 4100),
+                nested.getParent(),
+                nested,
+                rootFile
+        );
+        assertSourceMetadata(
+                findByPort(definitions, 4200),
+                included.getParent(),
+                included,
+                rootFile
+        );
+        assertSourceMetadata(
+                findByPort(definitions, 4300),
+                rootFile.getParent(),
+                rootFile,
+                rootFile
+        );
+    }
+
     private List<BeanDefinition> parseDefinitions(String yaml) throws IOException {
         return new GenericYamlParser(K8S_HELPER, yaml, null).getBeanDefinitions();
     }
@@ -196,6 +239,20 @@ class GenericYamlParserIncludeListTest {
         JsonNode portNode = apiNode.get("port");
         assertNotNull(portNode, "Expected 'port' inside api definition: " + definition);
         return portNode.asInt();
+    }
+
+    private BeanDefinition findByPort(List<BeanDefinition> definitions, int port) {
+        return definitions.stream()
+                .filter(definition -> extractPort(definition) == port)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No bean definition with port " + port + " found."));
+    }
+
+    private void assertSourceMetadata(BeanDefinition definition, Path expectedBasePath, Path expectedSourceFile, Path expectedRootSourceFile) {
+        assertNotNull(definition.getSourceMetadata(), "Expected source metadata to be present.");
+        assertEquals(expectedBasePath.toAbsolutePath().normalize(), definition.getSourceMetadata().basePath());
+        assertEquals(expectedSourceFile.toAbsolutePath().normalize(), definition.getSourceMetadata().sourceFile());
+        assertEquals(expectedRootSourceFile.toAbsolutePath().normalize(), definition.getSourceMetadata().rootSourceFile());
     }
 
     private Path write(String relativePath, String content) throws IOException {
