@@ -13,16 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.stats.*;
-import org.apache.commons.lang3.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.InterceptorUtil;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 /**
  * Convenience class that implements Proxy.
@@ -162,6 +169,10 @@ public abstract class AbstractProxy implements Proxy, BeanDefinitionAware {
     @Override
     public BeanDefinition getBeanDefinition() {
         return beanDefinition;
+    }
+
+    protected final String getBeanBaseLocation() {
+        return resolveBaseLocation(this, router);
     }
 
     @Override

@@ -129,7 +129,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         try {
-            xsltTransformer = new XSLTTransformer(xslt, router, getConcurrency());
+            xsltTransformer = new XSLTTransformer(xslt, router, getBeanBaseLocation(), getConcurrency());
         } catch (Exception e) {
             log.debug("", e);
             throw new ConfigurationException("Could not create XSLT transformer from: %s".formatted(xslt), e);

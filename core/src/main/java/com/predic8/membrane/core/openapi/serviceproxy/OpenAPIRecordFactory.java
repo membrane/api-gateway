@@ -47,9 +47,15 @@ public class OpenAPIRecordFactory {
     private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
 
     private final Router router;
+    private final String baseLocation;
 
     public OpenAPIRecordFactory(Router router) {
+        this(router, router.getConfiguration().getBaseLocation());
+    }
+
+    public OpenAPIRecordFactory(Router router, String baseLocation) {
         this.router = router;
+        this.baseLocation = baseLocation;
     }
 
     public Map<String, OpenAPIRecord> create(Collection<OpenAPISpec> specs) {
@@ -177,7 +183,7 @@ public class OpenAPIRecordFactory {
     }
 
     private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
-        return router.getResolverMap().resolve(ResolverMap.combine(router.getConfiguration().getBaseLocation(), location));
+        return router.getResolverMap().resolve(ResolverMap.combine(baseLocation, location));
     }
 
     private OpenAPI parseFileAsOpenAPI(File oaFile) {
@@ -209,7 +215,7 @@ public class OpenAPIRecordFactory {
     }
 
     private String resolve(String filepath) {
-        return ResolverMap.combine(router.getConfiguration().getBaseLocation(), filepath);
+        return ResolverMap.combine(baseLocation, filepath);
     }
 
     private static @NotNull ParseOptions getParseOptions() {

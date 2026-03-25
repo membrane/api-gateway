@@ -36,6 +36,7 @@ import java.net.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.FlowController.*;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 /**
  * Proxies SSL connections to a target server without decrypting the traffic.
@@ -233,6 +234,10 @@ public class SSLProxy implements Proxy, BeanDefinitionAware {
         return beanDefinition;
     }
 
+    private String getBeanBaseLocation() {
+        return resolveBaseLocation(this, router);
+    }
+
     // TODO ?
     private class MyRuleKey implements RuleKey {
         @Override
@@ -332,7 +337,7 @@ public class SSLProxy implements Proxy, BeanDefinitionAware {
     private class ForwardingStaticSSLContext extends StaticSSLContext {
 
         public ForwardingStaticSSLContext() {
-            super(getSSLParser(), SSLProxy.this.router.getResolverMap(), SSLProxy.this.router.getConfiguration().getBaseLocation());
+            super(getSSLParser(), SSLProxy.this.router.getResolverMap(), SSLProxy.this.getBeanBaseLocation());
         }
 
         @Override

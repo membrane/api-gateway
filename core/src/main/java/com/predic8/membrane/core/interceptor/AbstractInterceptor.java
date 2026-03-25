@@ -21,11 +21,13 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.BeanDefinitionBasePathUtil;
 
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 public class AbstractInterceptor implements Interceptor, BeanDefinitionAware {
 
@@ -136,6 +138,10 @@ public class AbstractInterceptor implements Interceptor, BeanDefinitionAware {
 	@Override
 	public BeanDefinition getBeanDefinition() {
 		return beanDefinition;
+	}
+
+	protected final String getBeanBaseLocation() {
+		return resolveBaseLocation(this, router);
 	}
 
 	public FlowController getFlowController() {

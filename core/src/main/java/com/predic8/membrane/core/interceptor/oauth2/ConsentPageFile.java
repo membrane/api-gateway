@@ -15,15 +15,20 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.core.type.*;
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.BeanDefinitionBasePathUtil;
 import org.apache.commons.io.*;
 
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 
-public class ConsentPageFile {
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
+
+public class ConsentPageFile implements BeanDefinitionAware {
 
     public static final String SCOPE_DESCRIPTIONS = "scope_descriptions";
     public static final String CLAIM_DESCRIPTIONS = "claim_descriptions";
@@ -39,6 +44,7 @@ public class ConsentPageFile {
     final ConcurrentHashMap<String,String> scopesToDescriptions = new ConcurrentHashMap<>();
     final ConcurrentHashMap<String,String> claimsToDescriptions = new ConcurrentHashMap<>();
     private Map<String, Object> json;
+    private BeanDefinition beanDefinition;
 
 
     public void init(Router router, String url) throws IOException {
@@ -47,7 +53,7 @@ public class ConsentPageFile {
             createDefaults();
             return;
         }
-        parseFile(getFromUrl(ResolverMap.combine(router.getConfiguration().getBaseLocation(),url)));
+        parseFile(getFromUrl(ResolverMap.combine(resolveBaseLocation(this, router),url)));
     }
 
     private void parseFile(String consentPageFile) throws IOException {
@@ -107,5 +113,15 @@ public class ConsentPageFile {
 
     public void setLogoUrl(String logoUrl) {
         this.logoUrl = logoUrl;
+    }
+
+    @Override
+    public void setBeanDefinition(BeanDefinition beanDefinition) {
+        this.beanDefinition = beanDefinition;
+    }
+
+    @Override
+    public BeanDefinition getBeanDefinition() {
+        return beanDefinition;
     }
 }

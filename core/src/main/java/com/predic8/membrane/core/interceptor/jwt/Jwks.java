@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
@@ -26,10 +28,10 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.BeanDefinitionBasePathUtil;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.StringList;
 import com.predic8.membrane.core.util.text.TextUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.slf4j.Logger;
@@ -40,6 +42,7 @@ import java.io.InputStream;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.jwt.JwtSignInterceptor.DEFAULT_PKEY;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
@@ -51,7 +54,7 @@ import static java.util.stream.Collectors.toMap;
  * JSON Web Key Set, configured <b>either</b> by an explicit list of JWK <b>or</b> by a list of JWK URIs that will be refreshed periodically.
  */
 @MCElement(name="jwks")
-public class Jwks {
+public class Jwks implements BeanDefinitionAware {
 
     public static final String DEFAULT_JWK_WARNING = """
             \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
@@ -66,6 +69,7 @@ public class Jwks {
     List<String> jwksUris = emptyList();
     AuthorizationService authorizationService;
     private Router router;
+    private BeanDefinition beanDefinition;
     private final Runnable refreshJwksTask = () -> {
         try {
             List<Jwk> loaded = loadJwks(true);
@@ -137,7 +141,7 @@ public class Jwks {
 
     private @NotNull RsaJsonWebKey extractRsaJsonWebKey(Jwk jwk) {
         try {
-            var params = mapper.readValue(jwk.getJwk(router, mapper), new TypeReference<Map<String, Object>>() {});
+            var params = mapper.readValue(jwk.getJwk(router, mapper, resolveBaseLocation(this, router)), new TypeReference<Map<String, Object>>() {});
             if (Objects.equals(params.get("p"), DEFAULT_PKEY)) {
                 log.warn(DEFAULT_JWK_WARNING);
                 if (router.getConfiguration().isProduction()) {
@@ -204,7 +208,7 @@ public class Jwks {
 
     private InputStream resolveToken(String uri) throws Exception {
         var resolverMap = router.getResolverMap();
-        var baseLocation = router.getConfiguration().getBaseLocation();
+        var baseLocation = resolveBaseLocation(this, router);
         return authorizationService != null ?
                 authorizationService.resolve(resolverMap, baseLocation, uri) :
                 resolverMap.resolve(ResolverMap.combine(baseLocation, uri));
@@ -250,6 +254,10 @@ public class Jwks {
         }
 
         public String getJwk(Router router, ObjectMapper mapper) throws IOException {
+            return getJwk(router, mapper, router.getConfiguration().getBaseLocation());
+        }
+
+        public String getJwk(Router router, ObjectMapper mapper, String baseLocation) throws IOException {
             ResolverMap rm = router.getResolverMap();
 
             if (httpClientConfig != null) {
@@ -259,7 +267,7 @@ public class Jwks {
                 rm.addSchemaResolver(httpSR);
             }
 
-            String maybeJwk = get(rm, router.getConfiguration().getBaseLocation());
+            String maybeJwk = get(rm, baseLocation);
 
             Map<String,Object> mapped = mapper.readValue(maybeJwk, new TypeReference<>() {});
 
@@ -281,6 +289,16 @@ public class Jwks {
                     })
                     .findFirst().orElseThrow(() -> new RuntimeException("No JWK found for kid '" + kid + "'."));
         }
+    }
+
+    @Override
+    public void setBeanDefinition(BeanDefinition beanDefinition) {
+        this.beanDefinition = beanDefinition;
+    }
+
+    @Override
+    public BeanDefinition getBeanDefinition() {
+        return beanDefinition;
     }
 
     String getLongDescription() {

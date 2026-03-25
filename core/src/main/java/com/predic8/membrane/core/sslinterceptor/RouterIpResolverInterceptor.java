@@ -18,12 +18,14 @@ import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -38,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 /**
  * Checks, whether the exchange's remoteIp is one of the routers.
@@ -47,7 +50,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * This interceptor is helpful in scenarios with multiple redundant routers for inbound HTTP requests.
  */
 @MCElement(id = "sslProxy-routerIpResolver", name = "routerIpResolver", component = false)
-public class RouterIpResolverInterceptor implements SSLInterceptor {
+public class RouterIpResolverInterceptor implements SSLInterceptor, BeanDefinitionAware {
 
     private final Logger log = LoggerFactory.getLogger(RouterIpResolverInterceptor.class);
 
@@ -59,6 +62,7 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
     private SSLContext sslContext;
     private Outcome errorOutcome = Outcome.ABORT;
     private int port;
+    private BeanDefinition beanDefinition;
 
     public String getRouterIps() {
         return String.join(",", routerIps);
@@ -115,7 +119,7 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
     public void init(Router router) {
         httpClient = router.getHttpClientFactory().createClient(httpClientConfiguration);
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), resolveBaseLocation(this, router));
     }
 
     @Override
@@ -150,5 +154,15 @@ public class RouterIpResolverInterceptor implements SSLInterceptor {
             log.error("", e);
             return errorOutcome;
         }
+    }
+
+    @Override
+    public void setBeanDefinition(BeanDefinition beanDefinition) {
+        this.beanDefinition = beanDefinition;
+    }
+
+    @Override
+    public BeanDefinition getBeanDefinition() {
+        return beanDefinition;
     }
 }

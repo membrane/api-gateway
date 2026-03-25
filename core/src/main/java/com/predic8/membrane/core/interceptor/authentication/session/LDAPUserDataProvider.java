@@ -13,40 +13,29 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.regex.Pattern;
-
-import javax.naming.AuthenticationException;
-import javax.naming.CommunicationException;
-import javax.naming.Context;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
-import javax.net.SocketFactory;
-
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.predic8.membrane.annot.Required;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
+import javax.naming.*;
+import javax.naming.directory.*;
+import javax.net.SocketFactory;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.*;
+import java.util.regex.Pattern;
+
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 /**
  * @description A <i>user data provider</i> querying an LDAP server to authorize users and retrieve attributes.
@@ -92,7 +81,7 @@ import com.predic8.membrane.annot.MCElement;
  *              </p>
  */
 @MCElement(name="ldapUserDataProvider", component =false)
-public class LDAPUserDataProvider implements UserDataProvider {
+public class LDAPUserDataProvider implements UserDataProvider, BeanDefinitionAware {
 
 	private static final Logger log = LoggerFactory.getLogger(LDAPUserDataProvider.class.getName());
 
@@ -109,6 +98,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 	HashMap<String, String> attributeMap = new HashMap<>(); // maps LDAP attributes to TokenGenerator attributes
 	AttributeMap map;
 	SSLParser sslParser;
+	private BeanDefinition beanDefinition;
 
 	@MCElement(name="map", component =false, id="ldapUserDataProvider-map", noEnvelope = true)
 	public static class AttributeMap {
@@ -442,7 +432,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		}
 
 		if (sslParser != null)
-			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
+			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), resolveBaseLocation(this, router));
 	}
 
 	public AttributeMap getMap() {
@@ -491,5 +481,15 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			return sslContext.createSocket();
 		}
 
+	}
+
+	@Override
+	public void setBeanDefinition(BeanDefinition beanDefinition) {
+		this.beanDefinition = beanDefinition;
+	}
+
+	@Override
+	public BeanDefinition getBeanDefinition() {
+		return beanDefinition;
 	}
 }

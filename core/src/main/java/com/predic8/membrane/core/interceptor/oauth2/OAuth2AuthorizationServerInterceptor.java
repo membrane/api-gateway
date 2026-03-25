@@ -105,6 +105,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         }
 
         try {
+            if (consentPageFile.getBeanDefinition() == null) {
+                consentPageFile.setBeanDefinition(getBeanDefinition());
+            }
             getConsentPageFile().init(router,getConsentFile());
         } catch (IOException e) {
             throw new ConfigurationException("Could not create Consent Page file.",e);

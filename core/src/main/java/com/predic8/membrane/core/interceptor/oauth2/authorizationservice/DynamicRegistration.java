@@ -14,6 +14,8 @@
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -30,9 +32,10 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 @MCElement(name = "registration")
-public class DynamicRegistration {
+public class DynamicRegistration implements BeanDefinitionAware {
 
     private List<Interceptor> interceptors = new ArrayList<>();
     private SSLParser sslParser;
@@ -40,11 +43,12 @@ public class DynamicRegistration {
     private HttpClient client;
     private HttpClientConfiguration httpClientConfiguration;
     private Router router;
+    private BeanDefinition beanDefinition;
 
     public void init(Router router) {
         this.router = router;
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), resolveBaseLocation(this, router));
         for (Interceptor i : interceptors)
             i.init(router);
         client = router.getHttpClientFactory().createClient(httpClientConfiguration);
@@ -124,5 +128,15 @@ public class DynamicRegistration {
     @MCChildElement(order = 30)
     public void setHttpClientConfiguration(HttpClientConfiguration httpClientConfiguration) {
         this.httpClientConfiguration = httpClientConfiguration;
+    }
+
+    @Override
+    public void setBeanDefinition(BeanDefinition beanDefinition) {
+        this.beanDefinition = beanDefinition;
+    }
+
+    @Override
+    public BeanDefinition getBeanDefinition() {
+        return beanDefinition;
     }
 }

@@ -16,9 +16,12 @@ package com.predic8.membrane.core.interceptor.session;
 import com.bornium.security.oauth2openid.token.*;
 import com.google.common.cache.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.util.BeanDefinitionBasePathUtil;
 import org.jose4j.json.*;
 import org.jose4j.jwk.*;
 import org.jose4j.jwt.*;
@@ -33,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.*;
 
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE;
 
 /**
@@ -40,7 +44,7 @@ import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE;
  * The keywords are "iss","exp","nbf","iat".
  */
 @MCElement(name = "jwtSessionManager")
-public class JwtSessionManager extends SessionManager {
+public class JwtSessionManager extends SessionManager implements BeanDefinitionAware {
 
     private static final Logger log = LoggerFactory.getLogger(JwtSessionManager.class);
 
@@ -58,6 +62,7 @@ public class JwtSessionManager extends SessionManager {
 
     Jwk jwk;
     boolean verbose = false;
+    private BeanDefinition beanDefinition;
 
     public void init(Router router) throws Exception {
         if (validTime == null)
@@ -73,7 +78,7 @@ public class JwtSessionManager extends SessionManager {
                     instances. To solve this, write the JWK into a file and reference it using <jwtSessionManager><jwk location="...">.
                     """, rsaJsonWebKey.toJson(INCLUDE_PRIVATE));
         } else {
-            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation())));
+            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), resolveBaseLocation(this, router))));
         }
 
         idTokenProvider = new IdTokenProvider(rsaJsonWebKey);
@@ -256,6 +261,16 @@ public class JwtSessionManager extends SessionManager {
 
     public Duration getRenewalTime() {
         return renewalTime;
+    }
+
+    @Override
+    public void setBeanDefinition(BeanDefinition beanDefinition) {
+        this.beanDefinition = beanDefinition;
+    }
+
+    @Override
+    public BeanDefinition getBeanDefinition() {
+        return beanDefinition;
     }
 
     public void setRenewalTime(Duration renewalTime) {

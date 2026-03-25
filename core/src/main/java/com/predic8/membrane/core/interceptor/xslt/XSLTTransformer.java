@@ -32,17 +32,17 @@ public class XSLTTransformer {
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final String styleSheet;
 
-	public XSLTTransformer(String styleSheet, final Router router, final int concurrency) throws Exception {
+	public XSLTTransformer(String styleSheet, final Router router, final String baseLocation, final int concurrency) throws Exception {
 		fac = TransformerFactory.newInstance();
 
 		this.styleSheet = styleSheet;
 		log.debug("using {} parallel transformer instances for {}",concurrency, styleSheet);
 		transformers = new ArrayBlockingQueue<>(concurrency);
-		createOneTransformer(router.getResolverMap(), router.getConfiguration().getBaseLocation());
+		createOneTransformer(router.getResolverMap(), baseLocation);
 		Thread.ofVirtual().start(() -> {
 			try {
 				for (int i = 1; i < concurrency; i++)
-					createOneTransformer(router.getResolverMap(), router.getConfiguration().getBaseLocation());
+					createOneTransformer(router.getResolverMap(), baseLocation);
 			} catch (Exception e) {
 				log.error("Error creating XSLT transformer:", e);
 			}
