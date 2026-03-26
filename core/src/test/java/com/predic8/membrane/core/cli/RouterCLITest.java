@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.cli;
 
+import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.test.TestAppender;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Logger;
@@ -21,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
-import static java.lang.Thread.startVirtualThread;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RouterCLITest {
@@ -43,18 +43,14 @@ class RouterCLITest {
         appender.start();
         logger.addAppender(appender);
 
-
-        startVirtualThread(() -> {
-            try {
-                RouterCLI.main(new String[]{"-c", "src/test/resources/configuration/config.apis.yaml"});
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-
+        Router router = null;
         try {
+            router = RouterCLI.initRouterByYAML("src/test/resources/configuration/config.apis.yaml");
             appender.awaitContainsOrThrow("running", Duration.ofSeconds(10));
         } finally {
+            if (router != null) {
+                router.stop();
+            }
             logger.removeAppender(appender);
             appender.stop();
         }
