@@ -1,0 +1,12 @@
+openapi: '3.0.2'
+info:
+  title: Test API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/
+paths:
+  /simple:
+    get:
+      responses:
+        '200':
+          description: OK
