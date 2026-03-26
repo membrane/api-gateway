@@ -44,4 +44,8 @@ public class GlobalInterceptor extends AbstractFlowWithChildrenInterceptor {
         return router.getFlowController().invokeResponseHandlers(exc, interceptors);
     }
 
+    @Override
+    public void handleAbort(Exchange exc) {
+        router.getFlowController().invokeAbortHandlers(exc, interceptors);
+    }
 }
