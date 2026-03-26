@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
+import static java.lang.Thread.startVirtualThread;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RouterCLITest {
@@ -42,15 +43,20 @@ class RouterCLITest {
         appender.start();
         logger.addAppender(appender);
 
-        var t = new Thread(() -> {
+
+        startVirtualThread(() -> {
             try {
                 RouterCLI.main(new String[]{"-c", "src/test/resources/configuration/config.apis.yaml"});
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         });
-        t.start();
 
-       appender.awaitContainsOrThrow("running", Duration.ofSeconds(10));
+        try {
+            appender.awaitContainsOrThrow("running", Duration.ofSeconds(10));
+        } finally {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
     }
 }
