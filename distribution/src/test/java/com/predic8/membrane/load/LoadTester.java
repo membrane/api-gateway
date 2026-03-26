@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.load;
 
+import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.flow.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
@@ -32,8 +33,10 @@ import static org.asynchttpclient.Dsl.*;
  * <p>
  * Results:
  * - 2025-12-11 on MacOS MacBook Pro Apple M1 Max 2021
- * > 20.000 RPS
- * > Max number of concurrent clients = 10,000
+ *   > 20.000 RPS
+ *   > Max number of concurrent clients = 10,000
+ * - 2026-03-24 on MacOS MacBook M2 Pro 2026
+ *   > 40.500 RPS
  * Then the limits of the OS are limiting the number of concurrent connections.
  */
 public class LoadTester {
@@ -48,7 +51,7 @@ public class LoadTester {
      */
     public static final int CONCURRENCY = 200;
 
-    Router r = new DefaultRouter();
+    DefaultRouter r = new DefaultRouter();
 
     public static void main(String[] args) throws Exception {
         var instance = new LoadTester();
@@ -58,6 +61,8 @@ public class LoadTester {
     }
 
     private void startMembrane() throws Exception {
+
+        r.setExchangeStore(new ForgetfulExchangeStore());
 
         var backend = new APIProxy();
         backend.setKey(new APIProxyKey(2010));
@@ -75,20 +80,20 @@ public class LoadTester {
 
 
     private void executeTest() throws InterruptedException, IOException {
-        String url = "http://localhost:2000/";
+        var url = "http://localhost:2000/";
 
-        Semaphore semaphore = new Semaphore(CONCURRENCY);
+        var semaphore = new Semaphore(CONCURRENCY);
 
-        try (AsyncHttpClient client = asyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
+        try (var client = asyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
                 .setConnectTimeout(Duration.ofMillis(60000))
                 .setRequestTimeout(Duration.ofMillis(60000))
                 .setMaxConnections(CONCURRENCY)
                 .setMaxConnectionsPerHost(CONCURRENCY).build()); ExecutorService submitters =
                      Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory())) {
 
-            LongAdder ok = new LongAdder();
-            LongAdder err = new LongAdder();
-            CountDownLatch latch = new CountDownLatch(TOTAL);
+            var ok = new LongAdder();
+            var err = new LongAdder();
+            var latch = new CountDownLatch(TOTAL);
 
             final AtomicInteger minAvailablePermits = new AtomicInteger(CONCURRENCY);
 
