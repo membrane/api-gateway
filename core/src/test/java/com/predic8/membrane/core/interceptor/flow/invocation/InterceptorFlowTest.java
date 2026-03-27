@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.interceptor.flow.invocation;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.interceptor.flow.invocation.FlowTestInterceptors.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -185,5 +185,21 @@ public class InterceptorFlowTest extends AbstractInterceptorFlowTest {
                     Response.ok(message.getBodyAsStringDecoded()+"?GroovyAbort").build();
                     """),
                 ABORT);
+    }
+
+    @Test
+    void abort() throws Exception {
+        assertFlow("<a",ABORT(A),ABORT);
+    }
+
+    @Test
+    void abortResponse() throws Exception {
+        // Correct a response does not enter the response flow.
+        assertFlow(">a?a",A,RESPONSE(ABORT(B)),ABORT);
+    }
+
+    @Test
+    void global() throws Exception {
+        assertFlow(">b?b<a",GLOBAL(ABORT(A),B),ABORT);
     }
 }
