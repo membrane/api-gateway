@@ -171,7 +171,7 @@ public class OpenAPIRecordFactory {
     private static @NotNull String convertPathToFileUriPathIfNeeded(String path) {
         // Convert normal path to file URI path if needed
         if (!path.startsWith("http:") && !path.startsWith("https:") && !path.startsWith("file:")) {
-            path = convertPath2FilePathString(path);
+            return convertPath2FilePathString(path);
         }
         return path;
     }
