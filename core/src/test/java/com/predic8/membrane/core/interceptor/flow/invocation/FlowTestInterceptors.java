@@ -16,16 +16,25 @@
 
 package com.predic8.membrane.core.interceptor.flow.invocation;
 
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.EchoInterceptor;
+import com.predic8.membrane.core.interceptor.GlobalInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.interceptor.flow.choice.*;
-import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.*;
-import com.predic8.membrane.core.interceptor.groovy.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.interceptor.flow.choice.AbstractCaseOtherwise;
+import com.predic8.membrane.core.interceptor.flow.choice.Case;
+import com.predic8.membrane.core.interceptor.flow.choice.ChooseInterceptor;
+import com.predic8.membrane.core.interceptor.flow.choice.Otherwise;
+import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.AbortFlowTestInterceptor;
+import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.ExceptionTestInterceptor;
+import com.predic8.membrane.core.interceptor.flow.invocation.testinterceptors.FlowTestInterceptor;
+import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
+import com.predic8.membrane.core.router.DummyTestRouter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import static java.util.Arrays.*;
+import static java.util.Arrays.asList;
 
 public class FlowTestInterceptors {
 
@@ -97,5 +106,11 @@ public class FlowTestInterceptors {
         AbortInterceptor ai = new AbortInterceptor();
         ai.setFlow(asList(interceptors));
         return ai;
+    }
+
+    public static GlobalInterceptor GLOBAL(Interceptor... interceptors) {
+        var gi = new GlobalInterceptor();
+        gi.setFlow(asList(interceptors));
+        return gi;
     }
 }

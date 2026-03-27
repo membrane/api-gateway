@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.RESPONSE_ABORT_FLOW;
 
 /**
  * @description Plugins are usually applied to requests and responses.
@@ -42,7 +42,7 @@ public class AbortInterceptor extends AbstractFlowWithChildrenInterceptor {
     @Override
     public void handleAbort(Exchange exchange) {
         for (int i = interceptors.size() - 1; i >= 0; i--) {
-            Interceptor interceptor = interceptors.get(i);
+            var interceptor = interceptors.get(i);
             if (interceptor.handlesResponses()) {
                 log.debug("Invoking handleResponse() on {}", interceptor);
                 try {
