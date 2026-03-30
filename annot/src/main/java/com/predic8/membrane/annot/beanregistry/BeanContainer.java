@@ -17,6 +17,7 @@ package com.predic8.membrane.annot.beanregistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.bean.BeanFactory;
 import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.yaml.parsing.GenericYamlParser;
 import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -15,7 +15,7 @@
 package com.predic8.membrane.annot.beanregistry;
 
 import com.predic8.membrane.annot.Grammar;
-import com.predic8.membrane.annot.yaml.GenericYamlParser;
+import com.predic8.membrane.annot.yaml.parsing.GenericYamlParser;
 
 import java.io.IOException;
 import java.io.InputStream;

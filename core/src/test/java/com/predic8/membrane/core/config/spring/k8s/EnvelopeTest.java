@@ -15,7 +15,7 @@
 package com.predic8.membrane.core.config.spring.k8s;
 
 import com.predic8.membrane.annot.beanregistry.*;
-import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.yaml.parsing.GenericYamlParser;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.administration.*;
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.yaml.GenericYamlParser.*;
+import static com.predic8.membrane.annot.yaml.parsing.GenericYamlParser.*;
 import static com.predic8.membrane.core.kubernetes.GenericYamlParserTest.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static org.junit.jupiter.api.Assertions.*;

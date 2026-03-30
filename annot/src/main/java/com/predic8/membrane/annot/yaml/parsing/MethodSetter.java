@@ -12,10 +12,14 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.annot.yaml;
+package com.predic8.membrane.annot.yaml.parsing;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
+import com.predic8.membrane.annot.yaml.McYamlIntrospector;
+import com.predic8.membrane.annot.yaml.ParsingContext;
+import com.predic8.membrane.annot.yaml.WrongEnumConstantException;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
@@ -23,9 +27,9 @@ import javax.lang.model.util.*;
 import java.lang.reflect.*;
 import java.util.*;
 
-import static com.predic8.membrane.annot.yaml.GenericYamlParser.*;
+import static com.predic8.membrane.annot.yaml.parsing.GenericYamlParser.*;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static com.predic8.membrane.annot.yaml.YamlParsingUtils.*;
+import static com.predic8.membrane.annot.yaml.parsing.YamlParsingUtils.*;
 import static java.lang.Boolean.*;
 import static java.lang.Double.*;
 import static java.lang.Integer.*;

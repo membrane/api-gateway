@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.annot.yaml;
+package com.predic8.membrane.annot.yaml.parsing;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +22,9 @@ import com.networknt.schema.SchemaLocation;
 import com.networknt.schema.SchemaRegistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanRegistryAware;
+import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
+import com.predic8.membrane.annot.yaml.ParsingContext;
+import com.predic8.membrane.annot.yaml.YamlSchemaValidationException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.jetbrains.annotations.NotNull;

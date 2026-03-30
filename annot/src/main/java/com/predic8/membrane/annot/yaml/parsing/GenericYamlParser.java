@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.annot.yaml;
+package com.predic8.membrane.annot.yaml.parsing;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,6 +26,7 @@ import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.beanregistry.BeanDefinitionContext;
 import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
+import com.predic8.membrane.annot.yaml.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -46,10 +47,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static com.predic8.membrane.annot.yaml.MethodSetter.getCollectionElementType;
-import static com.predic8.membrane.annot.yaml.MethodSetter.getMethodSetter;
+import static com.predic8.membrane.annot.yaml.parsing.MethodSetter.getCollectionElementType;
+import static com.predic8.membrane.annot.yaml.parsing.MethodSetter.getMethodSetter;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
-import static com.predic8.membrane.annot.yaml.YamlParsingUtils.*;
+import static com.predic8.membrane.annot.yaml.parsing.YamlParsingUtils.*;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.readString;

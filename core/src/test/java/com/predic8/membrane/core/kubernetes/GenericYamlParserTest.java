@@ -16,6 +16,7 @@ import com.fasterxml.jackson.dataformat.yaml.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.yaml.parsing.GenericYamlParser;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.interceptor.authentication.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
