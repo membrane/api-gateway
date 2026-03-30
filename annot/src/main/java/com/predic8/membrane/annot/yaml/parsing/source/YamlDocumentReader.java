@@ -15,10 +15,10 @@
 package com.predic8.membrane.annot.yaml.parsing.source;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.yaml.JsonLocationMap;
 import com.predic8.membrane.annot.yaml.ParsingContext;
-import com.predic8.membrane.annot.yaml.parsing.ParseSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +29,13 @@ import java.util.List;
 public final class YamlDocumentReader {
 
     private static final Logger log = LoggerFactory.getLogger(YamlDocumentReader.class);
+    private final Grammar grammar;
 
-    public List<ResolvedDocument> readDocuments(ParseSession session, SourceMetadata sourceMetadata, String yaml) throws IOException {
+    public YamlDocumentReader(Grammar grammar) {
+        this.grammar = grammar;
+    }
+
+    public List<ResolvedDocument> readDocuments(SourceMetadata sourceMetadata, String yaml) throws IOException {
         List<ResolvedDocument> documents = new ArrayList<>();
         JsonLocationMap jsonLocationMap = new JsonLocationMap();
         for (JsonNode jsonNode : jsonLocationMap.parseWithLocations(yaml)) {
@@ -41,7 +46,7 @@ public final class YamlDocumentReader {
             documents.add(new ResolvedDocument(
                     jsonNode,
                     sourceMetadata,
-                    new ParsingContext<>("", null, session.grammar(), jsonNode, "$", null)
+                    new ParsingContext<>("", null, grammar, jsonNode, "$", null)
             ));
         }
         return documents;

@@ -52,13 +52,12 @@ public class GenericYamlParser {
      * @throws IOException if schema loading or validation fails
      */
     public GenericYamlParser(Grammar grammar, String yaml, Path rootSourceFile) throws IOException {
-        ParseSession session = new ParseSession(grammar, rootSourceFile);
-        IncludeResolver includeResolver = new IncludeResolver(new YamlDocumentReader());
+        IncludeResolver includeResolver = new IncludeResolver(new YamlDocumentReader(grammar));
         BeanDefinitionExtractor definitionExtractor = new BeanDefinitionExtractor(new ComponentDefinitionExtractor());
         SourceMetadata rootSourceMetadata = root(rootSourceFile);
         beanDefs.addAll(definitionExtractor.extract(
-                session,
-                includeResolver.resolve(session, rootSourceMetadata, yaml)));
+                new ParseSession(),
+                includeResolver.resolve(new ParseSession(), rootSourceMetadata, yaml)));
     }
 
     /**

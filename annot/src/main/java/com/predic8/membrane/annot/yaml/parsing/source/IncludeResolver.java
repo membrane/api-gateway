@@ -49,7 +49,7 @@ public final class IncludeResolver {
     public List<ResolvedDocument> resolve(ParseSession session, SourceMetadata sourceMetadata, String yaml) throws IOException {
         try {
             List<ResolvedDocument> documents = new ArrayList<>();
-            for (ResolvedDocument document : documentReader.readDocuments(session, sourceMetadata, yaml)) {
+            for (ResolvedDocument document : documentReader.readDocuments(sourceMetadata, yaml)) {
                 if (document.isIncludeDocument()) {
                     documents.addAll(resolveIncludes(session, document));
                     continue;

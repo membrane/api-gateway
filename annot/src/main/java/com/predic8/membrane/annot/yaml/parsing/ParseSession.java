@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.annot.yaml.parsing;
 
-import com.predic8.membrane.annot.Grammar;
-
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -24,24 +22,12 @@ import java.util.Set;
 
 public final class ParseSession {
 
-    private final Grammar grammar;
-    private final Path rootSourceFile;
     private final Deque<Path> includeStack = new ArrayDeque<>();
     private final Set<Path> loadedIncludeFiles = new HashSet<>();
     private final Set<String> componentIds = new HashSet<>();
     private int beanIndex;
 
-    public ParseSession(Grammar grammar, Path rootSourceFile) {
-        this.grammar = grammar;
-        this.rootSourceFile = normalizePath(rootSourceFile);
-    }
-
-    public Grammar grammar() {
-        return grammar;
-    }
-
-    public Path rootSourceFile() {
-        return rootSourceFile;
+    public ParseSession() {
     }
 
     public Deque<Path> includeStack() {

@@ -49,9 +49,7 @@ public final class SetterResolver {
             }
 
             try {
-                beanClass = ctx.getGrammar().getLocal(ctx.getContext(), key);
-                if (beanClass == null)
-                    beanClass = ctx.getGrammar().getElement(key);
+                beanClass = ctx.findClass(key);
                 if (beanClass != null)
                     setter = getChildSetter(clazz, beanClass);
             } catch (Exception e) {
