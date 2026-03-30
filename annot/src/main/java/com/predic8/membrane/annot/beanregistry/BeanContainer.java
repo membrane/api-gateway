@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.*;
 
+import static com.predic8.membrane.annot.yaml.parsing.GenericYamlParser.readMembraneObject;
+
 public class BeanContainer {
     private static final Logger log = LoggerFactory.getLogger(BeanContainer.class);
 
@@ -87,7 +89,7 @@ public class BeanContainer {
             if ("bean".equals(definition.getKind())) {
                 created = new BeanFactory(registry).create(definition.getNode().path("bean"));
             } else {
-                created = GenericYamlParser.readMembraneObject(definition.getKind(),
+                created = readMembraneObject(definition.getKind(),
                         grammar,
                         definition.getNode(),
                         registry);

@@ -15,7 +15,6 @@
 package com.predic8.membrane.annot.beanregistry;
 
 import com.predic8.membrane.annot.Grammar;
-import com.predic8.membrane.annot.yaml.parsing.GenericYamlParser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +22,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static com.predic8.membrane.annot.yaml.WatchAction.ADDED;
+import static com.predic8.membrane.annot.yaml.parsing.GenericYamlParser.parseMembraneResources;
 
 /**
  * This is the definition side of a {@link BeanRegistryImplementation}. You can start the bean registry
@@ -35,7 +35,7 @@ public interface BeanCollector {
     }
 
     default List<BeanDefinition> parseYamlBeanDefinitions(InputStream yamls, Grammar grammar, Path rootSourceFile) throws IOException {
-        List<BeanDefinition> bds = GenericYamlParser.parseMembraneResources(yamls, grammar, rootSourceFile);
+        List<BeanDefinition> bds = parseMembraneResources(yamls, grammar, rootSourceFile);
         for (BeanDefinition bd : bds) {
             handle(new BeanDefinitionChanged(ADDED, bd), false);
         }

@@ -14,34 +14,34 @@
 
 package com.predic8.membrane.annot.yaml.parsing;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.annot.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.annot.yaml.McYamlIntrospector;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 import com.predic8.membrane.annot.yaml.WrongEnumConstantException;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.yaml.parsing.binding.CollectionBinder;
+import com.predic8.membrane.annot.yaml.parsing.binding.ObjectBinder;
+import com.predic8.membrane.annot.yaml.parsing.binding.ResolvedSetter;
+import com.predic8.membrane.annot.yaml.parsing.binding.ScalarValueConverter;
+import com.predic8.membrane.annot.yaml.parsing.binding.SetterResolver;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.lang.model.util.*;
-import java.lang.reflect.*;
-import java.util.*;
-
-import static com.predic8.membrane.annot.yaml.parsing.GenericYamlParser.*;
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
-import static com.predic8.membrane.annot.yaml.parsing.YamlParsingUtils.*;
-import static java.lang.Boolean.*;
-import static java.lang.Double.*;
-import static java.lang.Integer.*;
-import static java.lang.Long.*;
-import static java.util.Locale.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
+import java.util.Collection;
+import java.util.List;
 
 public class MethodSetter {
 
-    private static final Logger log = LoggerFactory.getLogger(MethodSetter.class);
+    private static final SetterResolver SETTER_RESOLVER = new SetterResolver();
 
     private final Method setter;
     private final Class<?> beanClass;
+    private final ScalarValueConverter scalarValueConverter = new ScalarValueConverter();
 
     public MethodSetter(Method setter, Class<?> beanClass) {
         this.setter = setter;
@@ -57,58 +57,8 @@ public class MethodSetter {
      * @param key   Searches for a setter with this name.
      */
     public static <T> @NotNull MethodSetter getMethodSetter(ParsingContext<?> ctx, Class<T> clazz, String key) {
-        Method setter = findSetterForKey(clazz, key);
-        // MCChildElements which are not lists are directly declared as beans,
-        // their name should be interpreted as an element name
-        if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
-            if (!List.class.isAssignableFrom(setter.getParameterTypes()[0]))
-                setter = null;
-        }
-        Class<?> beanClass = null;
-        if (setter == null) {
-            // if the element ONLY has a MCOtherAttributes and no MCAttributes and no MCChildElement setters, we avoid
-            // global keyword resolution: the keyword will always be a key for MCOtherAttributes
-            if (hasOtherAttributes(clazz) && !hasAttributes(clazz) && !hasChildren(clazz)) {
-                return new MethodSetter(getAnySetter(clazz), null);
-            }
-
-            try {
-                beanClass = ctx.getGrammar().getLocal(ctx.getContext(), key);
-                if (beanClass == null)
-                    beanClass = ctx.getGrammar().getElement(key);
-                if (beanClass != null)
-                    setter = getChildSetter(clazz, beanClass);
-            } catch (Exception e) {
-                throwCantFindException(ctx, clazz, key);
-            }
-            if (setter == null)
-                setter = getAnySetter(clazz);
-            if (beanClass == null && setter == null) {
-                throwCantFindException(ctx, clazz, key);
-            }
-        }
-        return new MethodSetter(setter, beanClass);
-    }
-
-    private static <T> void throwCantFindException(ParsingContext<?> ctx, Class<T> clazz, String key) {
-        log.debug("Can't find method or bean for key '{}' in {}",key, getConfigElementName(clazz));
-        var e = new ConfigurationParsingException("Invalid field '%s' in %s".formatted(key, getConfigElementName(clazz)));
-        e.setParsingContext(ctx.key(key));
-        throw e;
-    }
-
-    private static String getConfigElementName(Class<?> clazz) {
-        MCChildElement childAnnotation = clazz.getAnnotation(MCChildElement.class);
-        if (childAnnotation != null) {
-            return childAnnotation.toString();
-        }
-
-        MCElement mcAnnotation = clazz.getAnnotation(MCElement.class);
-        if (mcAnnotation != null) {
-            return mcAnnotation.name();
-        }
-
-        return clazz.getSimpleName();
+        ResolvedSetter resolvedSetter = SETTER_RESOLVER.resolve(ctx, clazz, key);
+        return new MethodSetter(resolvedSetter.setter(), resolvedSetter.beanType());
     }
 
     public Class<?> getParameterType() {
@@ -129,8 +79,8 @@ public class MethodSetter {
         // Structured objects
         if (McYamlIntrospector.isStructured(setter)) {
             if (beanClass != null)
-                return createAndPopulateNode(ctx.updateContext(key).addPath("." + key), beanClass, node);
-            return createAndPopulateNode(ctx.updateContext(key).addPath("." + key), wanted, node);
+                return ObjectBinder.bind(ctx.updateContext(key).addPath("." + key), beanClass, node);
+            return ObjectBinder.bind(ctx.updateContext(key).addPath("." + key), wanted, node);
         }
 
         return coerceScalarOrReference(ctx, node, key, wanted);
@@ -149,75 +99,7 @@ public class MethodSetter {
      * @throws ConfigurationParsingException If the provided type is unsupported for coercion or other unexpected issues arise.
      */
     Object coerceScalarOrReference(ParsingContext<?> ctx, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
-        assert node != null;
-
-        if (wanted.equals(String.class)) {
-            return node.isTextual() ? resolveSpelValue(node.asText(), String.class) : node.asText();
-        }
-
-        if (wanted.isEnum()) return parseEnum(wanted, node);
-
-        if (node.isTextual()) {
-            return coerceTextual(ctx, node, key, wanted);
-        }
-
-        return coerceNonTextual(ctx, node, key, wanted);
-    }
-
-    private Object coerceTextual(ParsingContext<?> pc, JsonNode node, String key, Class<?> wanted) {
-        final String evaluated = evaluateSpelForString(node, key, node.asText());
-        if (evaluated == null) {
-            var e = new ConfigurationParsingException("SpEL for '%s' evaluated to null, but '%s' expects %s.".formatted(key, key, wanted.getSimpleName()));
-            e.setParsingContext(pc);
-            throw e;
-        }
-        final String value = evaluated.trim();
-
-        if (isBoolean(wanted)) return parseBoolean(value);
-        if (isNumber(wanted)) return parseNumericOrThrow(pc, key, wanted, evaluated, node);
-        if (wanted == Map.class && hasOtherAttributes(setter)) return Map.of(key, evaluated);
-        if (isBeanReference(wanted)) return resolveReference(pc, node, key, wanted);
-        if (isReferenceAttribute(setter)) return pc.getRegistry().resolve(evaluated);
-
-        throw unsupported(wanted, key, node);
-    }
-
-    /**
-     * Evaluates the given SpEL expression against the specified JSON node and returns the result as a string.
-     */
-    private static String evaluateSpelForString(JsonNode node, String key, String value) {
-        try {
-            return (String) resolveSpelValue(value, String.class);
-        } catch (ConfigurationParsingException pe) {
-            throw new ConfigurationParsingException("Invalid SpEL in '%s': %s".formatted(key, pe.getMessage()));
-        }
-    }
-
-    /**
-     * Parses a numeric string value into the desired numeric type and returns the parsed result.
-     * If the input string cannot be converted to the specified type, a {@code ParsingException} is thrown.
-     */
-    private Object parseNumericOrThrow(ParsingContext pc, String key, Class<?> wanted, String value, JsonNode node) {
-        try {
-            if (isInteger(wanted)) return parseInt(value);
-            if (isLong(wanted)) return parseLong(value);
-            if (isDouble(wanted)) return parseDouble(value);
-        } catch (NumberFormatException nfe) {
-            var e = new ConfigurationParsingException("Invalid value for '%s': expected %s, but got '%s'. If you meant SpEL, use \"#{...}\" (e.g. \"#{env('PORT')}\").".formatted(key, wanted.getSimpleName(), value));
-            e.setParsingContext(pc.key(key));
-            throw e;
-        }
-        throw unsupported(wanted, key, node);
-    }
-
-    private Object coerceNonTextual(ParsingContext<?> ctx, JsonNode node, String key, Class<?> wanted) {
-        if (isInteger(wanted)) return node.isInt() ? node.intValue() : parseInt(node.asText());
-        if (isLong(wanted)) return node.isLong() || node.isInt() ? node.longValue() : parseLong(node.asText());
-        if (isDouble(wanted)) return node.isNumber() ? node.doubleValue() : parseDouble(node.asText());
-        if (isBoolean(wanted)) return node.isBoolean() ? node.booleanValue() : parseBoolean(node.asText());
-        if (wanted.equals(Map.class) && hasOtherAttributes(setter)) return Map.of(key, node.asText());
-        if (isReferenceAttribute(setter)) return ctx.getRegistry().resolve(node.asText());
-        throw unsupported(wanted, key, node);
+        return scalarValueConverter.coerceScalarOrReference(ctx, setter, node, key, wanted);
     }
 
     private @Nullable List<Object> getObjectList(ParsingContext<?> ctx, JsonNode node, String key, Class<?> wanted) {
@@ -225,7 +107,7 @@ public class MethodSetter {
             return null;
 
         Class<?> elemType = getCollectionElementType(setter);
-        List<Object> list = parseListIncludingStartEvent(ctx.addPath("." + key), node, elemType);
+        List<Object> list = CollectionBinder.parseListIncludingStartEvent(ctx.addPath("." + key), node, elemType);
         if (elemType != null) {
             for (Object o : list) {
                 if (o == null) continue;
@@ -238,32 +120,6 @@ public class MethodSetter {
         return list;
     }
 
-    private static @NotNull Object resolveReference(ParsingContext ctx, JsonNode node, String key, Class<?> wanted) {
-        String ref = node.asText();
-        final Object resolved;
-        try {
-            resolved = ctx.getRegistry().resolve(ref);
-        } catch (RuntimeException e) {
-            throw new ConfigurationParsingException(e);
-        }
-        if (!wanted.isAssignableFrom(resolved.getClass())) {
-            throw new ConfigurationParsingException(
-                    "Referenced bean '%s' has type '%s' but '%s' expects '%s'."
-                            .formatted(ref, resolved.getClass().getName(), key, wanted.getName())
-            );
-        }
-        return resolved;
-    }
-
-    /**
-     * Mirrors {@link com.predic8.membrane.annot.model.AttributeInfo#analyze(Types)}.
-     */
-    private boolean isBeanReference(Class<?> wanted) {
-        if (wanted == Integer.TYPE || wanted == Long.TYPE || wanted == Float.TYPE || wanted == Double.TYPE || wanted == Boolean.TYPE || wanted == String.class)
-            return false;
-        return !wanted.isEnum();
-    }
-
     public Method getSetter() {
         return setter;
     }
@@ -272,16 +128,7 @@ public class MethodSetter {
         return beanClass;
     }
 
-    private static <E extends Enum<E>> E parseEnum(Class<?> enumClass, JsonNode node) throws WrongEnumConstantException {
-        String value = node.asText().toUpperCase(ROOT);
-        try {
-            return Enum.valueOf((Class<E>) enumClass, value);
-        } catch (IllegalArgumentException e) {
-            throw new WrongEnumConstantException(enumClass, value);
-        }
-    }
-
-    static Class<?> getCollectionElementType(Method setter) {
+    public static Class<?> getCollectionElementType(Method setter) {
         Type t = setter.getGenericParameterTypes()[0];
         if (!(t instanceof ParameterizedType pt)) return null;
         Type arg = pt.getActualTypeArguments()[0];
@@ -293,29 +140,4 @@ public class MethodSetter {
         if (arg instanceof ParameterizedType p2 && p2.getRawType() instanceof Class<?> rc) return rc;
         return null;
     }
-
-    private static boolean isInteger(Class<?> wanted) {
-        return wanted == int.class || wanted == Integer.class;
-    }
-
-    private static boolean isLong(Class<?> wanted) {
-        return wanted == long.class || wanted == Long.class;
-    }
-
-    private static boolean isDouble(Class<?> wanted) {
-        return wanted == double.class || wanted == Double.class;
-    }
-
-    private static boolean isBoolean(Class<?> wanted) {
-        return wanted == boolean.class || wanted == Boolean.class;
-    }
-
-    private static boolean isNumber(Class<?> wanted) {
-        return isInteger(wanted) || isLong(wanted) || isDouble(wanted);
-    }
-
-    private static ConfigurationParsingException unsupported(Class<?> wanted, String key, JsonNode node) {
-        return new ConfigurationParsingException("Unsupported setter type: %s for key '%s' with node type %s".formatted(wanted.getName(), key, node.getNodeType()));
-    }
-
 }

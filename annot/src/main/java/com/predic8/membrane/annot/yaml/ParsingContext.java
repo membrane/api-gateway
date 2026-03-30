@@ -38,6 +38,10 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
         return new ParsingContext(context, registry,grammar,topLevel, this.path + path,key);
     }
 
+    public ParsingContext<?> child(String childContext, String pathSegment) {
+        return new ParsingContext(childContext, registry, grammar, topLevel, path + pathSegment, null);
+    }
+
     public ParsingContext<?> key(String key) {
         return new ParsingContext(context, registry,grammar, topLevel, path,key);
     }
