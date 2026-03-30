@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.core.router.Router;
 
 import java.io.File;
@@ -23,9 +23,19 @@ public final class BeanDefinitionBasePathUtil {
 
     private BeanDefinitionBasePathUtil() {}
 
-    public static String resolveBaseLocation(BeanDefinitionAware bean, Router router) {
-        if (bean != null && bean.getBeanDefinition() != null) {
-            var sourceMetadata = bean.getBeanDefinition().getSourceMetadata();
+    public static String resolveBaseLocation(Object bean, Router router) {
+        if (bean instanceof BeanDefinition beanDefinition) {
+            return resolveBaseLocation(beanDefinition, router);
+        }
+        if (router != null && router.getRegistry() != null) {
+            return resolveBaseLocation(router.getRegistry().getBeanDefinition(bean), router);
+        }
+        return null;
+    }
+
+    public static String resolveBaseLocation(BeanDefinition beanDefinition, Router router) {
+        if (beanDefinition != null) {
+            var sourceMetadata = beanDefinition.getSourceMetadata();
             if (sourceMetadata != null && sourceMetadata.basePath() != null) {
                 return ensureDirectorySemantics(sourceMetadata.basePath().toString());
             }

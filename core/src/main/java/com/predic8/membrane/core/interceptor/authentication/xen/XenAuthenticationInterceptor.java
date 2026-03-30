@@ -16,8 +16,6 @@ package com.predic8.membrane.core.interceptor.authentication.xen;
 import com.bornium.security.oauth2openid.Constants;
 import com.google.common.collect.*;
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -135,7 +133,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
     }
 
     @MCElement(name = "jwtSessionManager", component = false, id = "xenAuthentication-jwtSessionManager")
-    public static class JwtSessionManager implements XenSessionManager, BeanDefinitionAware {
+    public static class JwtSessionManager implements XenSessionManager {
         private String audience;
 
         private Jwk jwk;
@@ -143,7 +141,6 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         private RsaJsonWebKey rsaJsonWebKey;
 
         private final SecureRandom random = new SecureRandom();
-        private BeanDefinition beanDefinition;
 
         public void init(Router router) throws Exception {
             String key = jwk.get(router.getResolverMap(), resolveBaseLocation(this, router));
@@ -233,16 +230,6 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         @MCElement(name="jwk", mixed = true, component = false, id="xenAuthentication-jwtSessionManager-jwk")
         public static class Jwk extends Blob {
 
-        }
-
-        @Override
-        public void setBeanDefinition(BeanDefinition beanDefinition) {
-            this.beanDefinition = beanDefinition;
-        }
-
-        @Override
-        public BeanDefinition getBeanDefinition() {
-            return beanDefinition;
         }
     }
 

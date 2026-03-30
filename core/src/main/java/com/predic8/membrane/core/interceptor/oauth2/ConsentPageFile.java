@@ -13,22 +13,20 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.BeanDefinitionBasePathUtil;
-import org.apache.commons.io.*;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.Router;
+import org.apache.commons.io.IOUtils;
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
-public class ConsentPageFile implements BeanDefinitionAware {
+public class ConsentPageFile {
 
     public static final String SCOPE_DESCRIPTIONS = "scope_descriptions";
     public static final String CLAIM_DESCRIPTIONS = "claim_descriptions";
@@ -44,16 +42,15 @@ public class ConsentPageFile implements BeanDefinitionAware {
     final ConcurrentHashMap<String,String> scopesToDescriptions = new ConcurrentHashMap<>();
     final ConcurrentHashMap<String,String> claimsToDescriptions = new ConcurrentHashMap<>();
     private Map<String, Object> json;
-    private BeanDefinition beanDefinition;
 
 
-    public void init(Router router, String url) throws IOException {
+    public void init(Router router, String url, BeanDefinition beanDefinition) throws IOException {
         resolver = router.getResolverMap();
         if(url == null) {
             createDefaults();
             return;
         }
-        parseFile(getFromUrl(ResolverMap.combine(resolveBaseLocation(this, router),url)));
+        parseFile(getFromUrl(ResolverMap.combine(resolveBaseLocation(beanDefinition, router),url)));
     }
 
     private void parseFile(String consentPageFile) throws IOException {
@@ -113,15 +110,5 @@ public class ConsentPageFile implements BeanDefinitionAware {
 
     public void setLogoUrl(String logoUrl) {
         this.logoUrl = logoUrl;
-    }
-
-    @Override
-    public void setBeanDefinition(BeanDefinition beanDefinition) {
-        this.beanDefinition = beanDefinition;
-    }
-
-    @Override
-    public BeanDefinition getBeanDefinition() {
-        return beanDefinition;
     }
 }

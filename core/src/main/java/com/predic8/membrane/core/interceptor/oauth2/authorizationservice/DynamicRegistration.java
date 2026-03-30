@@ -14,8 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -35,7 +33,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 @MCElement(name = "registration")
-public class DynamicRegistration implements BeanDefinitionAware {
+public class DynamicRegistration {
 
     private List<Interceptor> interceptors = new ArrayList<>();
     private SSLParser sslParser;
@@ -43,7 +41,6 @@ public class DynamicRegistration implements BeanDefinitionAware {
     private HttpClient client;
     private HttpClientConfiguration httpClientConfiguration;
     private Router router;
-    private BeanDefinition beanDefinition;
 
     public void init(Router router) {
         this.router = router;
@@ -130,13 +127,4 @@ public class DynamicRegistration implements BeanDefinitionAware {
         this.httpClientConfiguration = httpClientConfiguration;
     }
 
-    @Override
-    public void setBeanDefinition(BeanDefinition beanDefinition) {
-        this.beanDefinition = beanDefinition;
-    }
-
-    @Override
-    public BeanDefinition getBeanDefinition() {
-        return beanDefinition;
-    }
 }

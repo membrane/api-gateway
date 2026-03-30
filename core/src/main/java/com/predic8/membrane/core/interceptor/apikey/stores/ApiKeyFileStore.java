@@ -14,8 +14,6 @@
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 
@@ -56,11 +54,10 @@ import static java.util.stream.Collectors.*;
  * @topic 3. Security and Validation
  */
 @MCElement(name = "apiKeyFileStore")
-public class ApiKeyFileStore implements ApiKeyStore, BeanDefinitionAware {
+public class ApiKeyFileStore implements ApiKeyStore {
 
     private String location;
     private Map<String, Optional<Set<String>>> scopes;
-    private BeanDefinition beanDefinition;
 
     @Override
     public void init(Router router) {
@@ -130,15 +127,5 @@ public class ApiKeyFileStore implements ApiKeyStore, BeanDefinitionAware {
 
     public String getLocation() {
         return this.location;
-    }
-
-    @Override
-    public void setBeanDefinition(BeanDefinition beanDefinition) {
-        this.beanDefinition = beanDefinition;
-    }
-
-    @Override
-    public BeanDefinition getBeanDefinition() {
-        return beanDefinition;
     }
 }

@@ -15,8 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import com.predic8.membrane.core.router.Router;
@@ -44,7 +42,7 @@ import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveB
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 @MCElement(name = "bearerJwtToken")
-public class BearerJwtTokenGenerator implements TokenGenerator, BeanDefinitionAware {
+public class BearerJwtTokenGenerator implements TokenGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(BearerJwtTokenGenerator.class);
     private final SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
@@ -52,7 +50,6 @@ public class BearerJwtTokenGenerator implements TokenGenerator, BeanDefinitionAw
     private JwtSessionManager.Jwk jwk;
     private long expiration;
     private boolean warningGeneratedKey = true;
-    private BeanDefinition beanDefinition;
 
     public void init(Router router) throws Exception {
         if (jwk == null) {
@@ -192,15 +189,5 @@ public class BearerJwtTokenGenerator implements TokenGenerator, BeanDefinitionAw
     @Override
     public String getJwkIfAvailable() {
         return rsaJsonWebKey.toJson();
-    }
-
-    @Override
-    public void setBeanDefinition(BeanDefinition beanDefinition) {
-        this.beanDefinition = beanDefinition;
-    }
-
-    @Override
-    public BeanDefinition getBeanDefinition() {
-        return beanDefinition;
     }
 }

@@ -17,8 +17,6 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -81,7 +79,7 @@ import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveB
  *              </p>
  */
 @MCElement(name="ldapUserDataProvider", component =false)
-public class LDAPUserDataProvider implements UserDataProvider, BeanDefinitionAware {
+public class LDAPUserDataProvider implements UserDataProvider {
 
 	private static final Logger log = LoggerFactory.getLogger(LDAPUserDataProvider.class.getName());
 
@@ -98,7 +96,6 @@ public class LDAPUserDataProvider implements UserDataProvider, BeanDefinitionAwa
 	HashMap<String, String> attributeMap = new HashMap<>(); // maps LDAP attributes to TokenGenerator attributes
 	AttributeMap map;
 	SSLParser sslParser;
-	private BeanDefinition beanDefinition;
 
 	@MCElement(name="map", component =false, id="ldapUserDataProvider-map", noEnvelope = true)
 	public static class AttributeMap {
@@ -481,15 +478,5 @@ public class LDAPUserDataProvider implements UserDataProvider, BeanDefinitionAwa
 			return sslContext.createSocket();
 		}
 
-	}
-
-	@Override
-	public void setBeanDefinition(BeanDefinition beanDefinition) {
-		this.beanDefinition = beanDefinition;
-	}
-
-	@Override
-	public BeanDefinition getBeanDefinition() {
-		return beanDefinition;
 	}
 }

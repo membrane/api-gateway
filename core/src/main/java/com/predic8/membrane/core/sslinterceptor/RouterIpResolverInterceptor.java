@@ -18,8 +18,6 @@ import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -50,7 +48,7 @@ import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveB
  * This interceptor is helpful in scenarios with multiple redundant routers for inbound HTTP requests.
  */
 @MCElement(id = "sslProxy-routerIpResolver", name = "routerIpResolver", component = false)
-public class RouterIpResolverInterceptor implements SSLInterceptor, BeanDefinitionAware {
+public class RouterIpResolverInterceptor implements SSLInterceptor {
 
     private final Logger log = LoggerFactory.getLogger(RouterIpResolverInterceptor.class);
 
@@ -62,7 +60,6 @@ public class RouterIpResolverInterceptor implements SSLInterceptor, BeanDefiniti
     private SSLContext sslContext;
     private Outcome errorOutcome = Outcome.ABORT;
     private int port;
-    private BeanDefinition beanDefinition;
 
     public String getRouterIps() {
         return String.join(",", routerIps);
@@ -156,13 +153,4 @@ public class RouterIpResolverInterceptor implements SSLInterceptor, BeanDefiniti
         }
     }
 
-    @Override
-    public void setBeanDefinition(BeanDefinition beanDefinition) {
-        this.beanDefinition = beanDefinition;
-    }
-
-    @Override
-    public BeanDefinition getBeanDefinition() {
-        return beanDefinition;
-    }
 }

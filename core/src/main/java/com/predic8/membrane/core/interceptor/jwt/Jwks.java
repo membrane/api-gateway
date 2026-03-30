@@ -19,8 +19,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
@@ -53,7 +51,7 @@ import static java.util.stream.Collectors.toMap;
  * JSON Web Key Set, configured <b>either</b> by an explicit list of JWK <b>or</b> by a list of JWK URIs that will be refreshed periodically.
  */
 @MCElement(name="jwks")
-public class Jwks implements BeanDefinitionAware {
+public class Jwks {
 
     public static final String DEFAULT_JWK_WARNING = """
             \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
@@ -68,7 +66,6 @@ public class Jwks implements BeanDefinitionAware {
     List<String> jwksUris = emptyList();
     AuthorizationService authorizationService;
     private Router router;
-    private BeanDefinition beanDefinition;
     private final Runnable refreshJwksTask = () -> {
         try {
             List<Jwk> loaded = loadJwks(true);
@@ -284,16 +281,6 @@ public class Jwks implements BeanDefinitionAware {
                     })
                     .findFirst().orElseThrow(() -> new RuntimeException("No JWK found for kid '" + kid + "'."));
         }
-    }
-
-    @Override
-    public void setBeanDefinition(BeanDefinition beanDefinition) {
-        this.beanDefinition = beanDefinition;
-    }
-
-    @Override
-    public BeanDefinition getBeanDefinition() {
-        return beanDefinition;
     }
 
     String getLongDescription() {

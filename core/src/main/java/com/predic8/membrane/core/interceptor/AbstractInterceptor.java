@@ -14,22 +14,19 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.BeanDefinitionBasePathUtil;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
 
-import java.util.*;
+import java.util.EnumSet;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
-public class AbstractInterceptor implements Interceptor, BeanDefinitionAware {
+public class AbstractInterceptor implements Interceptor {
 
 	protected String name = this.getClass().getName();
 
@@ -42,8 +39,6 @@ public class AbstractInterceptor implements Interceptor, BeanDefinitionAware {
 	 * nested interceptors it is.
 	 */
 	protected Proxy proxy;
-
-	private BeanDefinition beanDefinition;
 
 	public AbstractInterceptor() {
 		super();
@@ -128,16 +123,6 @@ public class AbstractInterceptor implements Interceptor, BeanDefinitionAware {
 
 	public Proxy getProxy() {
 		return proxy;
-	}
-
-	@Override
-	public void setBeanDefinition(BeanDefinition beanDefinition) {
-		this.beanDefinition = beanDefinition;
-	}
-
-	@Override
-	public BeanDefinition getBeanDefinition() {
-		return beanDefinition;
 	}
 
 	protected final String getBeanBaseLocation() {

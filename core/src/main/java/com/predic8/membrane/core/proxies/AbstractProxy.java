@@ -16,7 +16,6 @@ package com.predic8.membrane.core.proxies;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.InterceptorUtil;
 import com.predic8.membrane.core.router.Router;
@@ -34,7 +33,7 @@ import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveB
 /**
  * Convenience class that implements Proxy.
  */
-public abstract class AbstractProxy implements Proxy, BeanDefinitionAware {
+public abstract class AbstractProxy implements Proxy {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
 
@@ -49,7 +48,6 @@ public abstract class AbstractProxy implements Proxy, BeanDefinitionAware {
     private String error;
 
     protected Router router;
-    private BeanDefinition beanDefinition;
 
     public AbstractProxy() {
     }
@@ -99,7 +97,6 @@ public abstract class AbstractProxy implements Proxy, BeanDefinitionAware {
         this.router = router;
         try {
             init(); // Extension point for subclasses
-            assignBeanDefinitionToInterceptors();
             for (var i : interceptors) {
                 i.init(router, this);
             }
@@ -119,18 +116,6 @@ public abstract class AbstractProxy implements Proxy, BeanDefinitionAware {
     public void init() {
     }
 
-    private void assignBeanDefinitionToInterceptors() {
-        if (beanDefinition == null) {
-            return;
-        }
-
-        for (Interceptor interceptor : interceptors) {
-            if (interceptor instanceof BeanDefinitionAware bda && bda.getBeanDefinition() == null) {
-                bda.setBeanDefinition(beanDefinition);
-            }
-        }
-    }
-
     public boolean isTargetAdjustHostHeader() {
         return false;
     }
@@ -148,6 +133,12 @@ public abstract class AbstractProxy implements Proxy, BeanDefinitionAware {
     @Override
     public AbstractProxy clone() throws CloneNotSupportedException {
         AbstractProxy clone = (AbstractProxy) super.clone();
+        if (router != null && router.getRegistry() != null) {
+            BeanDefinition beanDefinition = router.getRegistry().getBeanDefinition(this);
+            if (beanDefinition != null) {
+                router.getRegistry().rememberBeanDefinition(clone, beanDefinition);
+            }
+        }
         try {
             clone.init(router);
         } catch (Exception e) {
@@ -159,16 +150,6 @@ public abstract class AbstractProxy implements Proxy, BeanDefinitionAware {
     @Override
     public RuleStatisticCollector getStatisticCollector() {
         return ruleStatisticCollector;
-    }
-
-    @Override
-    public void setBeanDefinition(BeanDefinition beanDefinition) {
-        this.beanDefinition = beanDefinition;
-    }
-
-    @Override
-    public BeanDefinition getBeanDefinition() {
-        return beanDefinition;
     }
 
     protected final String getBeanBaseLocation() {

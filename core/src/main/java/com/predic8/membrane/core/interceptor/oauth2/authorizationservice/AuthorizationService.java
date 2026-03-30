@@ -14,8 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.*;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinitionAware;
 import com.predic8.membrane.core.config.security.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -49,7 +47,7 @@ import static com.predic8.membrane.core.interceptor.oauth2.OAuth2TokenBody.*;
 import static com.predic8.membrane.core.interceptor.oauth2client.rf.JsonUtils.isJson;
 import static org.apache.commons.codec.binary.Base64.*;
 
-public abstract class AuthorizationService implements BeanDefinitionAware {
+public abstract class AuthorizationService {
 
     public static final String MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR_DESCRIPTION = "Error contacting the OAuth2 Authorization Server.";
     public static final String MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR = "MEMBRANE_OAUTH2_SERVER_COMMUNICATION_ERROR";
@@ -73,7 +71,6 @@ public abstract class AuthorizationService implements BeanDefinitionAware {
     private boolean useJWTForClientAuth;
     private final LogHelper logHelper = new LogHelper();
     private ClientAuthorization clientAuthorization = ClientAuthorization.CLIENT_SECRET_BASIC;
-    private BeanDefinition beanDefinition;
 
     protected boolean supportsDynamicRegistration = false;
 
@@ -393,16 +390,6 @@ public abstract class AuthorizationService implements BeanDefinitionAware {
 
     protected String getBeanBaseLocation() {
         return BeanDefinitionBasePathUtil.resolveBaseLocation(this, router);
-    }
-
-    @Override
-    public void setBeanDefinition(BeanDefinition beanDefinition) {
-        this.beanDefinition = beanDefinition;
-    }
-
-    @Override
-    public BeanDefinition getBeanDefinition() {
-        return beanDefinition;
     }
 
 }
