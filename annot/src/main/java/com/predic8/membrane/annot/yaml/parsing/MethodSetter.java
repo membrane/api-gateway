@@ -21,17 +21,13 @@ import com.predic8.membrane.annot.yaml.ParsingContext;
 import com.predic8.membrane.annot.yaml.WrongEnumConstantException;
 import com.predic8.membrane.annot.yaml.parsing.binding.CollectionBinder;
 import com.predic8.membrane.annot.yaml.parsing.binding.ObjectBinder;
-import com.predic8.membrane.annot.yaml.parsing.binding.ResolvedSetter;
 import com.predic8.membrane.annot.yaml.parsing.binding.ScalarValueConverter;
 import com.predic8.membrane.annot.yaml.parsing.binding.SetterResolver;
+import com.predic8.membrane.annot.yaml.parsing.binding.SetterResolver.ResolvedSetter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.WildcardType;
+import java.lang.reflect.*;
 import java.util.Collection;
 import java.util.List;
 

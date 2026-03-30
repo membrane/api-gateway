@@ -19,7 +19,7 @@ import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 import com.predic8.membrane.annot.yaml.parsing.ParseSession;
-import com.predic8.membrane.annot.yaml.parsing.source.ResolvedDocument;
+import com.predic8.membrane.annot.yaml.parsing.source.YamlDocumentReader.ResolvedDocument;
 
 import java.util.ArrayList;
 import java.util.List;

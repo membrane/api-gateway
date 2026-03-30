@@ -32,10 +32,6 @@ public final class CollectionBinder {
 
     private static final ReferenceResolver REFERENCE_RESOLVER = new ReferenceResolver();
 
-    public static List<Object> parseListIncludingStartEvent(ParsingContext<?> context, JsonNode node) {
-        return parseListIncludingStartEvent(context, node, null);
-    }
-
     public static List<Object> parseListIncludingStartEvent(ParsingContext<?> pc, JsonNode node, Class<?> elemType) {
         ensureArray(pc, node);
         return parseListExcludingStartEvent(pc, node, elemType);
@@ -64,7 +60,8 @@ public final class CollectionBinder {
         }
 
         if (item.size() == 1) {
-            if (elemType != null && findSetterForKey(elemType, item.fieldNames().next()) != null) {
+            if (elemType != null) {
+                findSetterForKey(elemType, item.fieldNames().next());
                 return parseInlineListItem(ctx, item, elemType);
             }
             return parseMapToObj(ctx, item);

@@ -80,4 +80,6 @@ public final class SetterResolver {
 
         return clazz.getSimpleName();
     }
+
+    public record ResolvedSetter(Method setter, Class<?> beanType) {}
 }

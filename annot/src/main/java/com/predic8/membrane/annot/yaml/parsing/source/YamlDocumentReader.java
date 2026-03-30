@@ -51,4 +51,12 @@ public final class YamlDocumentReader {
         }
         return documents;
     }
+
+
+    public record ResolvedDocument(JsonNode node, SourceMetadata sourceMetadata, ParsingContext<?> parsingContext) {
+
+        public boolean isIncludeDocument() {
+            return node.isObject() && node.size() == 1 && node.has("include");
+        }
+    }
 }

@@ -20,6 +20,7 @@ import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 import com.predic8.membrane.annot.yaml.parsing.ParseSession;
+import com.predic8.membrane.annot.yaml.parsing.source.YamlDocumentReader.ResolvedDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

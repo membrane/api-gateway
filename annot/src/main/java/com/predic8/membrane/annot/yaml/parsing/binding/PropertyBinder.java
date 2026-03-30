@@ -25,6 +25,8 @@ import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.predic8.membrane.annot.yaml.parsing.MethodSetter.getMethodSetter;
+
 public final class PropertyBinder {
 
     private static final Logger log = LoggerFactory.getLogger(PropertyBinder.class);
@@ -36,7 +38,7 @@ public final class PropertyBinder {
                 continue;
 
             try {
-                MethodSetter setter = MethodSetter.getMethodSetter(ctx, clazz, key);
+                MethodSetter setter = getMethodSetter(ctx, clazz, key);
                 required.remove(setter.getSetter());
                 setter.setSetter(configObj, ctx, node, key);
             } catch (ConfigurationParsingException e) {
