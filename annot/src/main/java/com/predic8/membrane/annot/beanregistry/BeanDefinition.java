@@ -34,6 +34,12 @@ public class BeanDefinition {
     private final String kind;
     private final SourceMetadata sourceMetadata;
 
+    /**
+     * Source information for multi-file configurations.
+     * @param basePath the base path of the configuration file of this bean definition
+     * @param sourceFile the configuration file of this bean definition
+     * @param rootSourceFile the root configuration file started by the router
+     */
     public record SourceMetadata(Path basePath, Path sourceFile, Path rootSourceFile) {
         public static SourceMetadata empty() {
             return new SourceMetadata(null, null, null);
@@ -95,6 +101,10 @@ public class BeanDefinition {
         return kind;
     }
 
+    /**
+     * Retrieves the source metadata associated with this bean definition.
+     * @return the {@link SourceMetadata} containing information about the source files for this bean definition.
+     */
     public SourceMetadata getSourceMetadata() {
         return sourceMetadata;
     }
