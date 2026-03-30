@@ -16,6 +16,7 @@ package com.predic8.membrane.annot.yaml.parsing.source;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 import com.predic8.membrane.annot.yaml.parsing.ParseSession;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
+import static com.predic8.membrane.annot.yaml.parsing.source.SourceMetadataSupport.withSourceFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.readString;
 import static java.util.List.of;
@@ -44,10 +46,10 @@ public final class IncludeResolver {
         this.documentReader = documentReader;
     }
 
-    public List<ResolvedDocument> resolve(ParseSession session, SourceContext sourceContext, String yaml) throws IOException {
+    public List<ResolvedDocument> resolve(ParseSession session, SourceMetadata sourceMetadata, String yaml) throws IOException {
         try {
             List<ResolvedDocument> documents = new ArrayList<>();
-            for (ResolvedDocument document : documentReader.readDocuments(session, sourceContext, yaml)) {
+            for (ResolvedDocument document : documentReader.readDocuments(session, sourceMetadata, yaml)) {
                 if (document.isIncludeDocument()) {
                     documents.addAll(resolveIncludes(session, document));
                     continue;
@@ -56,8 +58,8 @@ public final class IncludeResolver {
             }
             return documents;
         } catch (ConfigurationParsingException e) {
-            if (e.getSourceFile() == null && sourceContext.sourceFile() != null) {
-                e.setSourceFile(sourceContext.sourceFile());
+            if (e.getSourceFile() == null && sourceMetadata != null && sourceMetadata.sourceFile() != null) {
+                e.setSourceFile(sourceMetadata.sourceFile());
             }
             throw e;
         }
@@ -68,8 +70,8 @@ public final class IncludeResolver {
         for (IncludeEntry includeEntry : extractIncludeEntries(includeDocument)) {
             documents.addAll(parseIncludedPath(
                     session,
-                    includeDocument.sourceContext().resolveIncludePath(includeEntry.path()),
-                    includeDocument.sourceContext(),
+                    SourceMetadataSupport.resolveIncludePath(includeDocument.sourceMetadata(), includeEntry.path()),
+                    includeDocument.sourceMetadata(),
                     includeEntry.parsingContext()));
         }
         return documents;
@@ -95,7 +97,7 @@ public final class IncludeResolver {
         return includes;
     }
 
-    private List<ResolvedDocument> parseIncludedPath(ParseSession session, Path includePath, SourceContext sourceContext, ParsingContext<?> includePc) throws IOException {
+    private List<ResolvedDocument> parseIncludedPath(ParseSession session, Path includePath, SourceMetadata sourceMetadata, ParsingContext<?> includePc) throws IOException {
         if (!Files.exists(includePath))
             throw new ConfigurationParsingException("Included path '%s' does not exist.".formatted(includePath), null, includePc);
 
@@ -103,7 +105,7 @@ public final class IncludeResolver {
             List<ResolvedDocument> documents = new ArrayList<>();
             try (var files = Files.list(includePath)) {
                 for (Path file : files.filter(Files::isRegularFile).filter(IncludeResolver::isApisYaml).sorted().toList()) {
-                    documents.addAll(parseIncludedFile(session, file, sourceContext, includePc));
+                    documents.addAll(parseIncludedFile(session, file, sourceMetadata, includePc));
                 }
             }
             return documents;
@@ -112,10 +114,10 @@ public final class IncludeResolver {
         if (!Files.isRegularFile(includePath))
             throw new ConfigurationParsingException("Included path '%s' is neither a regular file nor a directory.".formatted(includePath), null, includePc);
 
-        return parseIncludedFile(session, includePath, sourceContext, includePc);
+        return parseIncludedFile(session, includePath, sourceMetadata, includePc);
     }
 
-    private List<ResolvedDocument> parseIncludedFile(ParseSession session, Path includeFile, SourceContext sourceContext, ParsingContext<?> includePc) throws IOException {
+    private List<ResolvedDocument> parseIncludedFile(ParseSession session, Path includeFile, SourceMetadata sourceMetadata, ParsingContext<?> includePc) throws IOException {
         Path normalizedFile = ParseSession.normalizePath(includeFile);
         if (session.includeStack().contains(normalizedFile))
             throw new ConfigurationParsingException("Cyclic include detected: " + formatIncludeCycle(session.includeStack(), normalizedFile), null, includePc);
@@ -136,7 +138,7 @@ public final class IncludeResolver {
             }
 
             try {
-                List<ResolvedDocument> documents = resolve(session, sourceContext.withSourceFile(normalizedFile), includedYaml);
+                List<ResolvedDocument> documents = resolve(session, withSourceFile(sourceMetadata, normalizedFile), includedYaml);
                 session.loadedIncludeFiles().add(normalizedFile);
                 return documents;
             } catch (JsonParseException e) {

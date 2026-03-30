@@ -15,16 +15,12 @@
 package com.predic8.membrane.annot.yaml.parsing.source;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 
-public record ResolvedDocument(JsonNode node, SourceContext sourceContext, ParsingContext<?> parsingContext) {
+public record ResolvedDocument(JsonNode node, SourceMetadata sourceMetadata, ParsingContext<?> parsingContext) {
 
     public boolean isIncludeDocument() {
         return node.isObject() && node.size() == 1 && node.has("include");
-    }
-
-    public BeanDefinition.SourceMetadata sourceMetadata() {
-        return sourceContext.sourceMetadata();
     }
 }

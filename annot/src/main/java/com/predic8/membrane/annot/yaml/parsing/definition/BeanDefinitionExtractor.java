@@ -59,8 +59,8 @@ public final class BeanDefinitionExtractor {
                         jsonNode,
                         document.sourceMetadata()));
             } catch (ConfigurationParsingException e) {
-                if (e.getSourceFile() == null && document.sourceContext().sourceFile() != null) {
-                    e.setSourceFile(document.sourceContext().sourceFile());
+                if (e.getSourceFile() == null && document.sourceMetadata() != null && document.sourceMetadata().sourceFile() != null) {
+                    e.setSourceFile(document.sourceMetadata().sourceFile());
                 }
                 throw e;
             }
