@@ -315,6 +315,10 @@ public class GenericYamlParser {
     public static <T> T createAndPopulateNode(ParsingContext<?> pc, Class<T> clazz, JsonNode node) throws ConfigurationParsingException {
         try {
             T configObj = clazz.getConstructor().newInstance();
+            BeanDefinition currentBeanDefinition = BeanDefinitionContext.current();
+            if (currentBeanDefinition != null) {
+                pc.getRegistry().rememberBeanDefinition(configObj, currentBeanDefinition);
+            }
             applyCurrentBeanDefinitionIfPresent(configObj);
 
             // when this is a list, we are on a @MCElement(..., noEnvelope=true)

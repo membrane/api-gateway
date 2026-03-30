@@ -369,6 +369,16 @@ public class GenericYamlParserTest {
         }
 
         @Override
+        public BeanDefinition getBeanDefinition(Object obj) {
+            return null;
+        }
+
+        @Override
+        public void rememberBeanDefinition(Object bean, BeanDefinition definition) {
+
+        }
+
+        @Override
         public void register(String beanName, Object object) {}
 
         @Override

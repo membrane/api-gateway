@@ -15,7 +15,6 @@ package com.predic8.membrane.annot.beanregistry;
 
 import com.predic8.membrane.annot.*;
 
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.*;
 
@@ -47,6 +46,21 @@ public interface BeanRegistry {
      * @param <T> the bean type
      */
     <T> Optional<T> getBean(String name, Class<T> clazz);
+
+    /**
+     * Retrieves the {@code BeanDefinition} corresponding to the given object.
+     * @param obj the object for which the {@code BeanDefinition} is to be retrieved
+     * @return the {@code BeanDefinition} corresponding to the given object
+     */
+    BeanDefinition getBeanDefinition(Object obj);
+
+    /**
+     * Associates the given bean instance with its {@code BeanDefinition}.
+     *
+     * @param bean the bean instance
+     * @param definition the bean definition
+     */
+    void rememberBeanDefinition(Object bean, BeanDefinition definition);
 
     /**
      * Registers a bean with the specified name.

@@ -95,6 +95,7 @@ public class BeanContainer {
             if (created instanceof BeanDefinitionAware bda) {
                 bda.setBeanDefinition(definition);
             }
+            registry.rememberBeanDefinition(created, definition);
             return created;
         } catch (ConfigurationParsingException e) {
             if (e.getSourceFile() == null
