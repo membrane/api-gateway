@@ -36,8 +36,11 @@ public final class BeanDefinitionBasePathUtil {
     public static String resolveBaseLocation(BeanDefinition beanDefinition, Router router) {
         if (beanDefinition != null) {
             var sourceMetadata = beanDefinition.getSourceMetadata();
-            if (sourceMetadata != null && sourceMetadata.basePath() != null) {
-                return ensureDirectorySemantics(sourceMetadata.basePath().toString());
+            if (sourceMetadata != null && sourceMetadata.sourceFile() != null) {
+                var sourceDirectory = sourceMetadata.sourceFile().getParent();
+                if (sourceDirectory != null) {
+                    return ensureDirectorySemantics(sourceDirectory.toAbsolutePath().normalize().toString());
+                }
             }
         }
         if (router == null) return null;

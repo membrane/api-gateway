@@ -36,13 +36,12 @@ public class BeanDefinition {
 
     /**
      * Source information for multi-file configurations.
-     * @param basePath the base path of the configuration file of this bean definition
      * @param sourceFile the configuration file of this bean definition
      * @param rootSourceFile the root configuration file started by the router
      */
-    public record SourceMetadata(Path basePath, Path sourceFile, Path rootSourceFile) {
+    public record SourceMetadata(Path sourceFile, Path rootSourceFile) {
         public static SourceMetadata empty() {
-            return new SourceMetadata(null, null, null);
+            return new SourceMetadata(null, null);
         }
     }
 

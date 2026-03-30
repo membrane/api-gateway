@@ -27,16 +27,12 @@ public final class SourceMetadataSupport {
 
     public static SourceMetadata root(Path rootSourceFile) {
         Path normalized = normalizePath(rootSourceFile);
-        return new SourceMetadata(
-                determineBasePath(normalized, null),
-                normalized,
-                normalized);
+        return new SourceMetadata(normalized, normalized);
     }
 
     public static SourceMetadata withSourceFile(SourceMetadata metadata, Path sourceFile) {
         Path normalizedSourceFile = normalizePath(sourceFile);
         return new SourceMetadata(
-                determineBasePath(normalizedSourceFile, metadata == null ? null : metadata.basePath()),
                 normalizedSourceFile,
                 metadata == null ? null : metadata.rootSourceFile());
     }
@@ -46,17 +42,11 @@ public final class SourceMetadataSupport {
         if (includePath.isAbsolute())
             return normalizePath(includePath);
 
-        Path baseDir = metadata != null && metadata.basePath() != null
-                ? metadata.basePath()
+        Path baseDir = metadata != null && metadata.sourceFile() != null && metadata.sourceFile().getParent() != null
+                ? normalizePath(metadata.sourceFile().getParent())
                 : metadata != null && metadata.rootSourceFile() != null && metadata.rootSourceFile().getParent() != null
                 ? metadata.rootSourceFile().getParent()
                 : normalizePath(Path.of("."));
         return normalizePath(baseDir.resolve(includePath));
-    }
-
-    private static Path determineBasePath(Path sourceFile, Path fallbackBasePath) {
-        if (sourceFile != null && sourceFile.getParent() != null)
-            return normalizePath(sourceFile.getParent());
-        return normalizePath(fallbackBasePath);
     }
 }

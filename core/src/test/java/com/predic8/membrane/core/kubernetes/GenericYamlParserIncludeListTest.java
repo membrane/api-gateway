@@ -308,11 +308,11 @@ class GenericYamlParserIncludeListTest {
                 .orElseThrow(() -> new AssertionError("No bean definition with port " + port + " found."));
     }
 
-    private void assertSourceMetadata(BeanDefinition definition, Path expectedBasePath, Path expectedSourceFile, Path expectedRootSourceFile) {
+    private void assertSourceMetadata(BeanDefinition definition, Path expectedSourceDirectory, Path expectedSourceFile, Path expectedRootSourceFile) {
         assertNotNull(definition.getSourceMetadata(), "Expected source metadata to be present.");
-        assertEquals(expectedBasePath.toAbsolutePath().normalize(), definition.getSourceMetadata().basePath());
         assertEquals(expectedSourceFile.toAbsolutePath().normalize(), definition.getSourceMetadata().sourceFile());
         assertEquals(expectedRootSourceFile.toAbsolutePath().normalize(), definition.getSourceMetadata().rootSourceFile());
+        assertEquals(expectedSourceDirectory.toAbsolutePath().normalize(), definition.getSourceMetadata().sourceFile().getParent().toAbsolutePath().normalize());
     }
 
     private Path write(String relativePath, String content) throws IOException {
