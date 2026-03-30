@@ -134,6 +134,13 @@ public class BeanDefinition {
         return PROTOTYPE.equals(getScope());
     }
 
+    public String formatConfigLocation() {
+        if (sourceMetadata != null && sourceMetadata.sourceFile() != null) {
+            return sourceMetadata.sourceFile().toString();
+        }
+        return name;
+    }
+
     @Override
     public String toString() {
         return "BeanDefinition{" +

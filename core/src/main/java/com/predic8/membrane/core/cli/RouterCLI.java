@@ -62,6 +62,7 @@ import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMispla
 import static com.predic8.membrane.core.proxies.ApiInfo.logInfosAboutStartedProxies;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
+import static com.predic8.membrane.core.util.OSUtil.isWindowsAbsolutePath;
 import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static java.lang.Integer.parseInt;
@@ -268,7 +269,7 @@ public class RouterCLI {
         if (configurationDefinitions.size() > 1) {
             throw new IllegalStateException("Found multiple 'configuration' definitions (%d). Only one is allowed. Found at: %s"
                     .formatted(configurationDefinitions.size(), configurationDefinitions.stream()
-                            .map(RouterCLI::formatConfigLocation)
+                            .map(BeanDefinition::formatConfigLocation)
                             .collect(Collectors.joining(", "))));
         }
 
@@ -283,16 +284,9 @@ public class RouterCLI {
         if (globalDefinitions.size() > 1) {
             throw new IllegalStateException("Found multiple 'global' definitions (%d). Only one is allowed. Found at: %s"
                     .formatted(globalDefinitions.size(), globalDefinitions.stream()
-                            .map(RouterCLI::formatConfigLocation)
+                            .map(BeanDefinition::formatConfigLocation)
                             .collect(Collectors.joining(", "))));
         }
-    }
-
-    private static String formatConfigLocation(BeanDefinition bd) {
-        if (bd.getSourceMetadata() != null && bd.getSourceMetadata().sourceFile() != null) {
-            return bd.getSourceMetadata().sourceFile().toString();
-        }
-        return bd.getName();
     }
 
     private static Path getRootSourceFile(String location) {
@@ -310,15 +304,6 @@ public class RouterCLI {
         } catch (InvalidPathException ignored) {
             return null;
         }
-    }
-
-    private static boolean isWindowsAbsolutePath(String location) {
-        if (location == null || location.length() < 3) {
-            return false;
-        }
-        return Character.isLetter(location.charAt(0))
-                && location.charAt(1) == ':'
-                && (location.charAt(2) == '/' || location.charAt(2) == '\\');
     }
 
     private static @NotNull APIProxy getApiProxy(MembraneCommandLine commandLine) throws IOException {

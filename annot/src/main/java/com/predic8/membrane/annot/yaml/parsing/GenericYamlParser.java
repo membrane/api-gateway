@@ -26,30 +26,27 @@ import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.beanregistry.BeanDefinitionContext;
 import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
-import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
+import com.predic8.membrane.annot.yaml.JsonLocationMap;
+import com.predic8.membrane.annot.yaml.McYamlIntrospector;
+import com.predic8.membrane.annot.yaml.ParsingContext;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
+import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
+import static com.predic8.membrane.annot.yaml.parsing.IncludeContext.normalizePath;
 import static com.predic8.membrane.annot.yaml.parsing.MethodSetter.getCollectionElementType;
 import static com.predic8.membrane.annot.yaml.parsing.MethodSetter.getMethodSetter;
-import static com.predic8.membrane.annot.yaml.NodeValidationUtils.*;
 import static com.predic8.membrane.annot.yaml.parsing.YamlParsingUtils.*;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -236,12 +233,6 @@ public class GenericYamlParser {
     private static boolean isApisYaml(Path file) {
         String name = file.getFileName().toString().toLowerCase(ROOT);
         return name.endsWith(".apis.yaml") || name.endsWith(".apis.yml");
-    }
-
-    private static Path normalizePath(Path path) {
-        if (path == null)
-            return null;
-        return path.toAbsolutePath().normalize();
     }
 
     private static String formatIncludeCycle(Deque<Path> includeStack, Path repeatedPath) {
@@ -634,38 +625,5 @@ public class GenericYamlParser {
 
     private record IncludeEntry(String path, ParsingContext<?> parsingContext) {}
 
-    private record IncludeContext(Path sourceFile, Path basePath, Path rootSourceFile, Deque<Path> includeStack, Set<Path> loadedIncludeFiles) {
 
-        static IncludeContext root(Path sourceFile) {
-            Path normalizedRootSourceFile = normalizePath(sourceFile);
-            return new IncludeContext(normalizedRootSourceFile, null, normalizedRootSourceFile, new ArrayDeque<>(), new HashSet<>());
-        }
-
-        IncludeContext withSourceFile(Path sourceFile) {
-            return new IncludeContext(normalizePath(sourceFile), basePath, rootSourceFile, includeStack, loadedIncludeFiles);
-        }
-
-        SourceMetadata sourceMetadata() {
-            Path normalizedSourceFile = normalizePath(sourceFile);
-            return new SourceMetadata(getBasePath(normalizedSourceFile), normalizedSourceFile, rootSourceFile);
-        }
-
-        private @Nullable Path getBasePath(Path normalizedSourceFile) {
-            return normalizedSourceFile != null && normalizedSourceFile.getParent() != null
-                    ? normalizePath(normalizedSourceFile.getParent())
-                    : normalizePath(basePath);
-        }
-
-        Path resolveIncludePath(String includeEntry) {
-            Path includePath = Path.of(includeEntry);
-            if (includePath.isAbsolute())
-                return normalizePath(includePath);
-
-            Path baseDir = basePath != null ? basePath
-                    : sourceFile != null && sourceFile.getParent() != null
-                    ? sourceFile.getParent()
-                    : normalizePath(Path.of("."));
-            return normalizePath(baseDir.resolve(includePath));
-        }
-    }
 }
