@@ -23,6 +23,7 @@ import org.junit.jupiter.api.*;
 import java.net.*;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.ensureTrailingSlash;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UriUtilTest {
@@ -55,6 +56,13 @@ public class UriUtilTest {
     @Test
     public void trailingSlashWhenNoSlash() {
         assertEquals("", trimTrailingSlash(""));
+    }
+
+    @Test
+    public void rootTrailingSlash() {
+        assertEquals("/foo/bar/", ensureTrailingSlash("/foo/bar"));
+        assertEquals("/", ensureTrailingSlash("/"));
+        assertEquals("/", ensureTrailingSlash(""));
     }
 
     @Test

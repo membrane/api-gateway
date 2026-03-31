@@ -84,6 +84,17 @@ class APIProxyKeyComplexMatchTest {
         assertEquals(expected, k1.complexMatch(assembleExchange("predic8.de","GET",url, "", 80, "192.168.0.1")));
     }
 
+    @Test
+    void complexMatchServerBasePathWithTrailingSlash() throws URISyntaxException {
+        var key = new APIProxyKey("", "", 80, null, "*", null, true) {{
+            addBasePaths(new ArrayList<>(List.of("/foo/")));
+        }};
+
+        assertTrue(key.complexMatch(new Builder().get("/foo/").buildExchange()));
+        assertTrue(key.complexMatch(new Builder().get("/foo/boo").buildExchange()));
+        assertFalse(key.complexMatch(new Builder().get("/foobar").buildExchange()));
+    }
+
     private static Stream<Arguments> urls() {
         return Stream.of(
                 of("/api-docs",true),

@@ -39,6 +39,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
+import static com.predic8.membrane.core.openapi.util.UriUtil.ensureTrailingSlash;
+import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
 import static com.predic8.membrane.core.util.StringUtil.maskNonPrintableCharacters;
 
 /**
@@ -149,7 +151,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
 
         apiRecords.values().forEach(rec -> {
             for (Server server : rec.api.getServers()) {
-                String path = getUriPath(server);
+                String path = getServerPathPrefix(server);
                 if (paths.containsKey(path)) {
                     List<OpenAPIRecord> l = paths.get(path);
                     // Check if the path is not from the same API. One OpenAPI can have several server.urls with the same path.
@@ -177,9 +179,9 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         });
     }
 
-    private static String getUriPath(Server server) {
+    private static String getServerPathPrefix(Server server) {
         try {
-            return new URIFactory(true).create(server.getUrl()).getPath();
+            return ensureTrailingSlash(new URIFactory(true).create(server.getUrl()).getPath());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -197,7 +199,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
                 url = rec.spec.getRewrite().basePath;
             }
             try {
-                paths.put(UriUtil.getPathFromURL(router.getUriFactory(), url), rec);
+                paths.put(ensureTrailingSlash(getPathFromURL(router.getUriFactory(), url)), rec);
             } catch (URISyntaxException e) {
                 log.error("Cannot parse URL {} Error: {}", url,e.getMessage());
                 throw new RuntimeException("Cannot parse URL %s Error: %s".formatted(url,e.getMessage()),e);
