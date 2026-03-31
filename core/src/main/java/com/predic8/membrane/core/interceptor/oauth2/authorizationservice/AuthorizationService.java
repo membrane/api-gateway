@@ -79,6 +79,7 @@ public abstract class AuthorizationService {
     }
 
     public void init(Router router) throws Exception {
+        this.router = router;
         log = LoggerFactory.getLogger(this.getClass().getName());
         String baseLocation = getBeanBaseLocation();
 
@@ -90,7 +91,6 @@ public abstract class AuthorizationService {
         setHttpClient(router.getHttpClientFactory().createClient(getHttpClientConfiguration()));
         if (sslParser != null)
             sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), baseLocation);
-        this.router = router;
         init();
         if (!supportsDynamicRegistration())
             checkForClientIdAndSecret();
