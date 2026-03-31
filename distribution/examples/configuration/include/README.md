@@ -11,7 +11,7 @@ What is covered:
 Start:
 
 ```bash
-cd examples/configuration/includes
+cd examples/configuration/include
 ./membrane.sh
 ```
 
