@@ -54,10 +54,11 @@ public class GenericYamlParser {
     public GenericYamlParser(Grammar grammar, String yaml, Path rootSourceFile) throws IOException {
         IncludeResolver includeResolver = new IncludeResolver(new YamlDocumentReader(grammar));
         BeanDefinitionExtractor definitionExtractor = new BeanDefinitionExtractor(new ComponentDefinitionExtractor());
+        ParseSession session = new ParseSession();
         SourceMetadata rootSourceMetadata = root(rootSourceFile);
         beanDefs.addAll(definitionExtractor.extract(
-                new ParseSession(),
-                includeResolver.resolve(new ParseSession(), rootSourceMetadata, yaml)));
+                session,
+                includeResolver.resolve(session, rootSourceMetadata, yaml)));
     }
 
     /**
