@@ -29,6 +29,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.fromRequest;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
 import static java.lang.String.*;
 
 public class OpenAPIValidator {
@@ -86,10 +88,15 @@ public class OpenAPIValidator {
             }
         }
 
-        return ValidationErrors.error( ValidationContext.fromRequest(req)
-                .entity(req.getPath())
-                .entityType(PATH)
-                .statusCode(404), format("Path %s is invalid.", req.getPath()));
+        if (res == null) {
+            return error(fromRequest(req)
+                    .entity(req.getPath())
+                    .entityType(PATH)
+                    .statusCode(404), format("Path %s is invalid.", req.getPath()));
+        }
+
+        // Do not validate the path for response
+        return new ValidationErrors();
     }
 
     private ValidationErrors validateMethodsAndParametersIfPathMatches(Request<? extends Body> req, Response<? extends Body> response, String uriTemplate, PathItem pathItem) throws PathDoesNotMatchException {
@@ -97,7 +104,7 @@ public class OpenAPIValidator {
         // Throws exception if path or parameters do not match
         req.parsePathParameters(normalizeUri(basePath + uriTemplate));
 
-        ValidationContext ctx = ValidationContext.fromRequest(req);
+        ValidationContext ctx = fromRequest(req);
 
         ValidationErrors errors = validateMethods(ctx.uriTemplate(uriTemplate), req, response, pathItem);
 

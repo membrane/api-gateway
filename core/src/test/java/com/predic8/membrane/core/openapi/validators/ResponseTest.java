@@ -24,6 +24,7 @@ import org.junit.jupiter.api.*;
 import java.io.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.model.Response.statusCode;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,14 +38,14 @@ protected String getOpenAPIFileName() {
     @Test
     public void validCustomerResponse() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")));
         assertEquals(0,errors.size());
     }
 
     @Test
     public void invalidCustomerResponse() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/invalid-customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), statusCode(200).mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/invalid-customer.json")));
 
 
         assertEquals(3,errors.size());
@@ -62,7 +63,7 @@ protected String getOpenAPIFileName() {
 
         InputStream is = getResourceAsStream("/openapi/messages/customer.json");
 
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(404).json().body(is));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), statusCode(404).json().body(is));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getContext().getValidatedEntityType());
@@ -75,7 +76,7 @@ protected String getOpenAPIFileName() {
 
     @Test
     public void wrongMediaTypeResponse() throws ParseException {
-        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), Response.statusCode(200).mediaType(APPLICATION_XML).body(getResourceAsStream("/openapi/messages/customer.json")));
+        ValidationErrors errors = validator.validateResponse(Request.put().path("/customers"), statusCode(200).mediaType(APPLICATION_XML).body(getResourceAsStream("/openapi/messages/customer.json")));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(MEDIA_TYPE,e.getContext().getValidatedEntityType());
@@ -89,7 +90,7 @@ protected String getOpenAPIFileName() {
      */
     @Test
     public void noContentInResponseSendPayload() throws ParseException {
-        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(200).mediaType(APPLICATION_JSON).body("{}"));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), statusCode(200).mediaType(APPLICATION_JSON).body("{}"));
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals(BODY,e.getContext().getValidatedEntityType());
@@ -101,7 +102,7 @@ protected String getOpenAPIFileName() {
     @Test
     public void statusCodeNotInResponse() throws ParseException {
 
-        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), Response.statusCode(202).mediaType(APPLICATION_JSON).body("{ }"));
+        ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), statusCode(202).mediaType(APPLICATION_JSON).body("{ }"));
         System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
@@ -111,5 +112,11 @@ protected String getOpenAPIFileName() {
         assertEquals(500,e.getContext().getStatusCode());
         assertTrue(e.getMessage().toLowerCase().contains("status"));
         assertTrue(e.getMessage().toLowerCase().contains("but allowed are only"));
+    }
+
+    @Test
+    public void responsePathMismatchDoesNotFailValidation() throws ParseException {
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/does-not-exist"), statusCode(200).mediaType(APPLICATION_JSON).body("{}"));
+        assertEquals(0, errors.size());
     }
 }
