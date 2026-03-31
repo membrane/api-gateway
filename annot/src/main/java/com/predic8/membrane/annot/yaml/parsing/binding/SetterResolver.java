@@ -74,14 +74,9 @@ public final class SetterResolver {
     }
 
     private static String getConfigElementName(Class<?> clazz) {
-        MCChildElement childAnnotation = clazz.getAnnotation(MCChildElement.class);
-        if (childAnnotation != null)
-            return childAnnotation.toString();
-
         MCElement mcAnnotation = clazz.getAnnotation(MCElement.class);
         if (mcAnnotation != null)
             return mcAnnotation.name();
-
         return clazz.getSimpleName();
     }
 
