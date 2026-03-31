@@ -204,7 +204,9 @@ public final class McYamlIntrospector {
         return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
                 .filter(method -> method.isAnnotationPresent(annotation))
-                .findFirst()
+                .reduce((a, b) -> {
+                    throw new IllegalStateException("Multiple annotated setters found on %s for @%s".formatted(clazz.getName(), annotation.getSimpleName()));
+                })
                 .orElse(null);
     }
 
