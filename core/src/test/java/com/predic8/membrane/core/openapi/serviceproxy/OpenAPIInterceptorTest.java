@@ -75,13 +75,19 @@ class OpenAPIInterceptorTest {
     @Test
     void getMatchingBasePathOneServer() {
         exc.getRequest().setUri("/base/v2/foo");
-        assertEquals("/base/v2", interceptor1Server.getMatchingBasePath(exc));
+        assertEquals("/base/v2/", interceptor1Server.getMatchingBasePath(exc));
     }
 
     @Test
     void getMatchingBasePathMultipleServers() {
         exc.getRequest().setUri("/foo/boo");
-        assertEquals("/foo", interceptor3Server.getMatchingBasePath(exc));
+        assertEquals("/foo/", interceptor3Server.getMatchingBasePath(exc));
+    }
+
+    @Test
+    void getMatchingBasePathExactServerPath() {
+        exc.getRequest().setUri("/foo/");
+        assertEquals("/foo/", interceptor3Server.getMatchingBasePath(exc));
     }
 
     @Test
