@@ -117,11 +117,18 @@ public final class ObjectBinder {
         return configObj;
     }
 
+    @SuppressWarnings("ConstantValue")
     private static <T> void applyCollapsedScalar(Class<T> clazz, JsonNode node, T target) {
         Method attributeSetter = findSingleSetterOrNullForAnnotation(clazz, MCAttribute.class);
-        findSingleSetterOrNullForAnnotation(clazz, MCTextContent.class);
+        Method textSetter = findSingleSetterOrNullForAnnotation(clazz, MCTextContent.class);
+        Method scalarSetter = attributeSetter != null ? attributeSetter : textSetter;
 
-        Class<?> paramType = Objects.requireNonNull(attributeSetter).getParameterTypes()[0];
+        if (scalarSetter == null) {
+            throw new ConfigurationParsingException(
+                    "@MCElement(collapsed=true) requires exactly one @MCAttribute or exactly one @MCTextContent.");
+        }
+
+        Class<?> paramType = Objects.requireNonNull(scalarSetter).getParameterTypes()[0];
 
         Object value;
         try {
@@ -131,8 +138,8 @@ public final class ObjectBinder {
         }
 
         try {
-            attributeSetter.setAccessible(true);
-            attributeSetter.invoke(target, value);
+            scalarSetter.setAccessible(true);
+            scalarSetter.invoke(target, value);
         } catch (InvocationTargetException e) {
             throw new ConfigurationParsingException(e.getTargetException());
         } catch (Throwable t) {

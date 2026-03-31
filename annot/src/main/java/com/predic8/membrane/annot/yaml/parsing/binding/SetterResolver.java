@@ -35,9 +35,10 @@ public final class SetterResolver {
 
     private static final Logger log = LoggerFactory.getLogger(SetterResolver.class);
 
+    @SuppressWarnings("ConstantValue")
     public <T> @NotNull ResolvedSetter resolve(ParsingContext<?> ctx, Class<T> clazz, String key) {
         Method setter = findSetterForKey(clazz, key);
-        if (setter.getAnnotation(MCChildElement.class) != null) {
+        if (setter != null && setter.getAnnotation(MCChildElement.class) != null) {
             if (!java.util.List.class.isAssignableFrom(setter.getParameterTypes()[0]))
                 setter = null;
         }
@@ -52,12 +53,15 @@ public final class SetterResolver {
                 beanClass = ctx.findClass(key);
                 if (beanClass != null)
                     setter = getChildSetter(clazz, beanClass);
-            } catch (Exception e) {
-                throwCantFindException(ctx, clazz, key);
+            } catch (RuntimeException e) {
+                throw new ConfigurationParsingException(e.getMessage(), e, ctx.key(key));
             }
 
             if (setter == null)
                 setter = getAnySetter(clazz);
+
+            if (setter == null)
+                throwCantFindException(ctx, clazz, key);
         }
         return new ResolvedSetter(setter, beanClass);
     }

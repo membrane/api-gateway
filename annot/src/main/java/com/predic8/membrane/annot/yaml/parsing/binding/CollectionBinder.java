@@ -23,6 +23,8 @@ import java.util.List;
 
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.findSetterForKey;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.getElementName;
+import static com.predic8.membrane.annot.yaml.McYamlIntrospector.isCollapsed;
+import static com.predic8.membrane.annot.yaml.McYamlIntrospector.isNoEnvelope;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.ensureArray;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.ensureSingleKey;
 import static java.lang.reflect.Modifier.isAbstract;
@@ -60,8 +62,7 @@ public final class CollectionBinder {
         }
 
         if (item.size() == 1) {
-            if (elemType != null) {
-                findSetterForKey(elemType, item.fieldNames().next());
+            if (canUseInlineObjectForm(elemType, item.fieldNames().next())) {
                 return parseInlineListItem(ctx, item, elemType);
             }
             return parseMapToObj(ctx, item);
@@ -97,6 +98,19 @@ public final class CollectionBinder {
         if (elemType.isInterface() || isAbstract(elemType.getModifiers()))
             throw new ConfigurationParsingException("Inline list item form requires a concrete element type, but found: %s.".formatted(elemType.getName()));
         return ObjectBinder.bind(ctx.updateContext(getElementName(elemType)), elemType, node);
+    }
+
+    private static boolean canUseInlineObjectForm(Class<?> elemType, String key) {
+        if (elemType == null)
+            return false;
+        if (isScalarElementType(elemType))
+            return false;
+        if (elemType.isInterface() || isAbstract(elemType.getModifiers()))
+            return false;
+        if (isCollapsed(elemType) || isNoEnvelope(elemType))
+            return false;
+        //noinspection ConstantValue
+        return findSetterForKey(elemType, key) != null;
     }
 
     private static boolean isScalarElementType(Class<?> type) {
