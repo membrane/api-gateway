@@ -16,7 +16,6 @@ package com.predic8.membrane.annot.yaml.parsing.source;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.Grammar;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.yaml.JsonLocationMap;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 import org.slf4j.Logger;

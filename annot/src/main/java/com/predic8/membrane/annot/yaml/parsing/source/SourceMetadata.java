@@ -14,15 +14,20 @@
 
 package com.predic8.membrane.annot.yaml.parsing.source;
 
-import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
-
 import java.nio.file.Path;
 
 import static com.predic8.membrane.annot.yaml.parsing.ParseSession.normalizePath;
 
-public final class SourceMetadataSupport {
+/**
+ * Source information for multi-file configurations.
+ *
+ * @param sourceFile the configuration file of this bean definition
+ * @param rootSourceFile the root configuration file started by the router
+ */
+public record SourceMetadata(Path sourceFile, Path rootSourceFile) {
 
-    private SourceMetadataSupport() {
+    public static SourceMetadata empty() {
+        return new SourceMetadata(null, null);
     }
 
     public static SourceMetadata root(Path rootSourceFile) {

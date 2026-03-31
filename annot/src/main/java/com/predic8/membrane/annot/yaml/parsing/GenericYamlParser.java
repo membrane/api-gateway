@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.beanregistry.BeanDefinition;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.beanregistry.BeanLifecycleManager;
 import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
@@ -26,6 +25,7 @@ import com.predic8.membrane.annot.yaml.parsing.binding.ObjectBinder;
 import com.predic8.membrane.annot.yaml.parsing.definition.BeanDefinitionExtractor;
 import com.predic8.membrane.annot.yaml.parsing.definition.ComponentDefinitionExtractor;
 import com.predic8.membrane.annot.yaml.parsing.source.IncludeResolver;
+import com.predic8.membrane.annot.yaml.parsing.source.SourceMetadata;
 import com.predic8.membrane.annot.yaml.parsing.source.YamlDocumentReader;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.ensureSingleKey;
-import static com.predic8.membrane.annot.yaml.parsing.source.SourceMetadataSupport.root;
+import static com.predic8.membrane.annot.yaml.parsing.source.SourceMetadata.root;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class GenericYamlParser {

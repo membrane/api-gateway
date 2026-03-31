@@ -15,10 +15,9 @@ package com.predic8.membrane.annot.beanregistry;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.yaml.parsing.source.SourceMetadata;
 
-import java.nio.file.Path;
-
-import static com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata.empty;
+import static com.predic8.membrane.annot.yaml.parsing.source.SourceMetadata.empty;
 
 /**
  * Immutable.
@@ -33,17 +32,6 @@ public class BeanDefinition {
     private final JsonNode node;
     private final String kind;
     private final SourceMetadata sourceMetadata;
-
-    /**
-     * Source information for multi-file configurations.
-     * @param sourceFile the configuration file of this bean definition
-     * @param rootSourceFile the root configuration file started by the router
-     */
-    public record SourceMetadata(Path sourceFile, Path rootSourceFile) {
-        public static SourceMetadata empty() {
-            return new SourceMetadata(null, null);
-        }
-    }
 
     /**
      * Only called from K8S.

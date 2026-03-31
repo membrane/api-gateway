@@ -16,7 +16,6 @@ package com.predic8.membrane.annot.yaml.parsing.source;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.predic8.membrane.annot.beanregistry.BeanDefinition.SourceMetadata;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 import com.predic8.membrane.annot.yaml.parsing.ParseSession;
@@ -31,7 +30,8 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-import static com.predic8.membrane.annot.yaml.parsing.source.SourceMetadataSupport.withSourceFile;
+import static com.predic8.membrane.annot.yaml.parsing.source.SourceMetadata.resolveIncludePath;
+import static com.predic8.membrane.annot.yaml.parsing.source.SourceMetadata.withSourceFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.readString;
 import static java.util.List.of;
@@ -71,7 +71,7 @@ public final class IncludeResolver {
         for (IncludeEntry includeEntry : extractIncludeEntries(includeDocument)) {
             documents.addAll(parseIncludedPath(
                     session,
-                    SourceMetadataSupport.resolveIncludePath(includeDocument.sourceMetadata(), includeEntry.path()),
+                    resolveIncludePath(includeDocument.sourceMetadata(), includeEntry.path()),
                     includeDocument.sourceMetadata(),
                     includeEntry.parsingContext()));
         }

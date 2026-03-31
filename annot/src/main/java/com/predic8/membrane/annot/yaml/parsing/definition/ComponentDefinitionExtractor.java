@@ -21,6 +21,7 @@ import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 import com.predic8.membrane.annot.yaml.parsing.ParseSession;
+import com.predic8.membrane.annot.yaml.parsing.source.SourceMetadata;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -32,7 +33,7 @@ import static java.util.UUID.randomUUID;
 
 public final class ComponentDefinitionExtractor {
 
-    public List<BeanDefinition> extract(ParseSession session, ParsingContext<?> pc, JsonNode componentsNode, BeanDefinition.SourceMetadata sourceMetadata) {
+    public List<BeanDefinition> extract(ParseSession session, ParsingContext<?> pc, JsonNode componentsNode, SourceMetadata sourceMetadata) {
         if (componentsNode == null || componentsNode.isNull())
             return of();
 
