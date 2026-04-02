@@ -58,6 +58,13 @@ public class UriUtilTest {
     }
 
     @Test
+    public void rootTrailingSlash() {
+        assertEquals("/foo/bar/", ensureTrailingSlash("/foo/bar"));
+        assertEquals("/", ensureTrailingSlash("/"));
+        assertEquals("/", ensureTrailingSlash(""));
+    }
+
+    @Test
     public void getUrlWithoutPathTest() throws MalformedURLException {
         assertEquals("http://foo",getUrlWithoutPath(new URL("http://foo")));
         assertEquals("http://foo.de",getUrlWithoutPath(new URL("http://foo.de/bar")));

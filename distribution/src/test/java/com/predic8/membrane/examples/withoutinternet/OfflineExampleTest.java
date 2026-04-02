@@ -67,7 +67,7 @@ public class OfflineExampleTest extends AbstractSampleMembraneStartStopTestcase 
     public void shopV2_fruits() {
         // @formatter:off
         when()
-            .get("http://localhost:2000/shop/v2")
+            .get("http://localhost:2000/shop/v2/")
         .then()
             .statusCode(200)
             .body("fruits", contains("apple", "cherry", "pear"))

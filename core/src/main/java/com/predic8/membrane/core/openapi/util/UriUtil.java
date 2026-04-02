@@ -101,4 +101,11 @@ public class UriUtil {
     public static String getPathFromURL(URIFactory factory, String url) throws URISyntaxException {
         return factory.create(url).getPath();
     }
+
+    public static String ensureTrailingSlash(String path) {
+        if (path == null || path.isEmpty()) {
+            return "/";
+        }
+        return path.endsWith("/") ? path : path + "/";
+    }
 }
