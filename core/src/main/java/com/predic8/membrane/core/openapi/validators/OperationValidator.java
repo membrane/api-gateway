@@ -16,17 +16,21 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.parameters.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import com.predic8.membrane.core.openapi.util.MethodNotAllowException;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.parameters.PathParameter;
 
-import java.util.*;
+import java.util.List;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.SECURITY;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.shouldValidate;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static java.lang.String.*;
+import static java.lang.String.format;
 
 public class OperationValidator {
 
@@ -39,9 +43,11 @@ public class OperationValidator {
 
     public ValidationErrors validateOperation(ValidationContext ctx, Request<?> req, Response<?> response, PathItem pathItem) throws MethodNotAllowException {
 
-        Operation operation = getOperation(req.getMethod(), pathItem);
+        var operation = getOperation(req.getMethod(), pathItem);
         if (operation == null)
             throw new MethodNotAllowException();
+        // @TODO Split till here.
+
 
         isMethodDeclaredInAPI(ctx, req.getMethod(), operation);
 
@@ -55,9 +61,8 @@ public class OperationValidator {
                 errors.add(new SecurityValidator(api).validateSecurity(ctx,req, operation));
 
             return errors.add(new RequestBodyValidator(api).validate(ctx.entityType(BODY).entity("REQUEST"), req, operation));
-        } else {
-                return errors.add(new ResponseBodyValidator(api).validate(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
         }
+        return errors.add(new ResponseBodyValidator(api).validate(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
     }
 
     private Operation getOperation(String method, PathItem pi) throws MethodNotAllowException {

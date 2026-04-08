@@ -16,32 +16,38 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.util.ConfigurationException;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.servers.*;
-import jakarta.mail.internet.*;
-import org.slf4j.*;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
+import java.net.URL;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.UriUtil.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.util.Comparator.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
+import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
+import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
 /**
@@ -193,14 +199,25 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return null;
     }
 
-    private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws IOException, ParseException {
+
+    private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws ParseException {
+        // @TODO
+        // Create OpenAPIValidator here.
+        // Split validation in:
+        // - var validator = new OpenAPIValidator(...)
+        // - validator.validateOperation (Call path till validateOperation) // Operation should be stored in the validator
+        // - validateRequest(...)  // operation stored in validator should be used
+        // - Store validator in exchange (key: membrane.openapi.validator)
+        // - validateResponse(...) // operation stored in validator should be used
+
+        // Attention: Consider case: validateRequest = false and validateResponse = true
         if (!shouldValidate(rec.getApi(), REQUESTS))
             return new ValidationErrors();
 
         return new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).validate(getOpenapiValidatorRequest(exc));
     }
 
-    private ValidationErrors validateResponse(OpenAPIRecord rec, Exchange exc) throws IOException, ParseException {
+    private ValidationErrors validateResponse(OpenAPIRecord rec, Exchange exc) throws ParseException {
         ValidationErrors errors = new ValidationErrors();
         if (!shouldValidate(rec.getApi(), RESPONSES))
             return errors;
