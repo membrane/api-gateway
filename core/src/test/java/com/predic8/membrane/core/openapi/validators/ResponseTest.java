@@ -101,9 +101,8 @@ protected String getOpenAPIFileName() {
 
     @Test
     public void statusCodeNotInResponse() throws ParseException {
-
         ValidationErrors errors = validator.validateResponse(Request.post().path("/customers").mediaType(APPLICATION_JSON).body(getResourceAsStream("/openapi/messages/customer.json")), statusCode(202).mediaType(APPLICATION_JSON).body("{ }"));
-        System.out.println("errors = " + errors);
+        //System.out.println("errors = " + errors);
         assertEquals(1,errors.size());
         ValidationError e = errors.get(0);
         assertEquals("POST",e.getContext().getMethod());
@@ -116,7 +115,6 @@ protected String getOpenAPIFileName() {
 
     @Test
     public void responsePathMismatchDoesNotFailValidation() throws ParseException {
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/does-not-exist"), statusCode(200).mediaType(APPLICATION_JSON).body("{}"));
-        assertEquals(0, errors.size());
+        assertEquals(0, validator.validateResponse(Request.get().path("/does-not-exist"), statusCode(200).mediaType(APPLICATION_JSON).body("{}")).size());
     }
 }
