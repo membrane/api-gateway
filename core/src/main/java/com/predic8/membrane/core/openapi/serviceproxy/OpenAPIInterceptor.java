@@ -23,6 +23,8 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.OpenAPIValidator;
+import com.predic8.membrane.core.openapi.OpenAPIValidator.ValidationPlan;
+import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.validators.ValidationErrors;
 import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.util.ConfigurationException;
@@ -47,6 +49,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.empty;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
@@ -59,6 +62,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIInterceptor.class.getName());
     public static final String OPENAPI_RECORD = "OPENAPI_RECORD";
+    public static final String OPENAPI_VALIDATOR = "membrane.openapi.validator";
 
     protected APIProxy apiProxy;
 
@@ -201,27 +205,43 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
 
     private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws ParseException {
-        // @TODO
-        // Create OpenAPIValidator here.
-        // Split validation in:
-        // - var validator = new OpenAPIValidator(...)
-        // - validator.validateOperation (Call path till validateOperation) // Operation should be stored in the validator
-        // - validateRequest(...)  // operation stored in validator should be used
-        // - Store validator in exchange (key: membrane.openapi.validator)
-        // - validateResponse(...) // operation stored in validator should be used
+        var validateRequests = shouldValidate(rec.getApi(), REQUESTS);
+        var validateResponses = shouldValidate(rec.getApi(), RESPONSES);
 
-        // Attention: Consider case: validateRequest = false and validateResponse = true
-        if (!shouldValidate(rec.getApi(), REQUESTS))
-            return new ValidationErrors();
+        if (!validateRequests && !validateResponses) return empty();
 
-        return new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).validate(getOpenapiValidatorRequest(exc));
+        Request<?> request = validateRequests ? getOpenapiValidatorRequest(exc) : getOperationRequest(exc);
+        ValidationPlan validationPlan = getOrCreateValidationPlan(rec, exc, request);
+
+        if (!validateRequests)
+            return empty();
+
+        return validationPlan.validateRequest(request);
     }
 
     private ValidationErrors validateResponse(OpenAPIRecord rec, Exchange exc) throws ParseException {
-        ValidationErrors errors = new ValidationErrors();
         if (!shouldValidate(rec.getApi(), RESPONSES))
-            return errors;
-        return new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
+            return empty();
+
+        ValidationPlan validationPlan = exc.getProperty(OPENAPI_VALIDATOR, ValidationPlan.class);
+        if (validationPlan == null)
+            validationPlan = getOrCreateValidationPlan(rec, exc, getOpenapiValidatorRequest(exc));
+
+        return validationPlan.validateResponse(getOpenapiValidatorResponse(exc));
+    }
+
+    private ValidationPlan getOrCreateValidationPlan(OpenAPIRecord rec, Exchange exc, Request<?> request) {
+        ValidationPlan validationPlan = exc.getProperty(OPENAPI_VALIDATOR, ValidationPlan.class);
+        if (validationPlan != null)
+            return validationPlan;
+
+        validationPlan = new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).prepareValidation(request);
+        exc.setProperty(OPENAPI_VALIDATOR, validationPlan);
+        return validationPlan;
+    }
+
+    private Request<?> getOperationRequest(Exchange exc) {
+        return new Request<>(exc.getRequest().getMethod(), exc.getRequest().getUri());
     }
 
     public boolean validationDetails(OpenAPI api) {

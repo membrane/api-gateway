@@ -19,6 +19,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 import com.predic8.membrane.core.exceptions.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.util.*;
 import org.jetbrains.annotations.*;
@@ -167,6 +168,21 @@ class OpenAPIInterceptorTest {
         Exchange exc = callPut(specCustomers);
         assertEquals("PUT",  getMapFromResponse(exc).get("validation").get("method"));
         testValidationResults(getMapFromResponse(exc), "RESPONSE");
+    }
+
+    @Test
+    void storesValidationPlanForResponseChecks() throws Exception {
+        specCustomers.validateResponses = YES;
+
+        Exchange exc = new Exchange(null);
+        exc.setOriginalRequestUri("/customers");
+        exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        assertNotNull(exc.getProperty(OpenAPIInterceptor.OPENAPI_VALIDATOR, OpenAPIValidator.ValidationPlan.class));
     }
 
     @Test

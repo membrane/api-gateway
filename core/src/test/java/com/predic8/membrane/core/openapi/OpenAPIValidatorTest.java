@@ -65,6 +65,12 @@ class OpenAPIValidatorTest {
     }
 
     @Test
+    void prepareValidationCanBeUsedForRequestValidation() {
+        var validationPlan = validator.prepareValidation(get().path("/customers"));
+        assertEquals(0, validationPlan.validateRequest(get().path("/customers")).size());
+    }
+
+    @Test
     void queryStringArrayExploded() {
         assertEquals(0, validator.validate(get().path("/customers?ids=a&ids=b&ids=c")).size());
     }
