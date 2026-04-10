@@ -224,10 +224,14 @@ public class LineYamlErrorRenderer {
                 // Calculate the actual indentation for this content
                 int actualIndent = markerIndent + (isArrayElement ? 2 : 0);
 
-                // Output the first line with > at the left edge, then BASE_INDENT, then proper indentation
+                // Output the first line with > at the left edge, preserving the list dash for array items.
                 result.append(RED());
                 result.append("> ");
-                result.append(" ".repeat(actualIndent));
+                if (isArrayElement) {
+                    result.append(" ".repeat(markerIndent)).append("- ");
+                } else {
+                    result.append(" ".repeat(actualIndent));
+                }
                 result.append(firstContentTrimmed)
                       .append("\n");
 

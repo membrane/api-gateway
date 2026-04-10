@@ -14,25 +14,32 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.json.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.springframework.beans.*;
-import org.springframework.context.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.schemavalidation.json.JSONYAMLSchemaValidator;
+import com.predic8.membrane.core.interceptor.schemavalidation.json.SchemaMappings;
+import com.predic8.membrane.core.proxies.SOAPProxy;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -86,7 +93,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
             validator = getMessageValidator();
             validator.init();
         } catch (Exception e) {
-            throw new ConfigurationException("Cannot create message validator.", e);
+            throw new ConfigurationException("Cannot create message validator: %s".formatted(e.getMessage()), e);
         }
         name = validator.getName();
         if (skipFaults && wsdl == null)
