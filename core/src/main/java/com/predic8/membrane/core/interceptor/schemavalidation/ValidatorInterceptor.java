@@ -39,6 +39,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
 
 /**
@@ -136,7 +137,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if(soapProxy == null) return null;
         wsdl = soapProxy.getWsdl();
         name = "soap validator";
-        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), resolveBaseLocation(soapProxy, router), wsdl), serviceName, createFailureHandler(), skipFaults);
     }
 
     @Override
