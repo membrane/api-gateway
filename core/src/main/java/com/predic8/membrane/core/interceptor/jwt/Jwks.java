@@ -26,6 +26,7 @@ import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.TextUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +39,7 @@ public class Jwks {
 
     List<Jwk> jwks = new ArrayList<>();
     String jwksUris;
+    HttpClientConfiguration httpClientConfig;
     AuthorizationService authorizationService;
 
     public List<Jwk> getJwks() {
@@ -60,6 +62,20 @@ public class Jwks {
         return this;
     }
 
+    /**
+     * @description Sets the HTTP client configuration.
+     *
+     * @param httpClientConfig the configuration to set for the HTTP client
+     */
+    @MCAttribute
+    public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+        this.httpClientConfig = httpClientConfig;
+    }
+
+    public HttpClientConfiguration getHttpClientConfig() {
+        return httpClientConfig;
+    }
+
     public void init(Router router) {
         if(jwksUris == null || jwksUris.isEmpty())
             return;
@@ -67,7 +83,7 @@ public class Jwks {
         ObjectMapper mapper = new ObjectMapper();
         for (String uri : jwksUris.split(" ")) {
             try {
-                for (Object jwkRaw : parseJwksUriIntoList(router.getResolverMap(), router.getBaseLocation(), mapper, uri)) {
+                for (Object jwkRaw : parseJwksUriIntoList(router, router.getBaseLocation(), mapper, uri)) {
                     Jwk jwk = new Jwk();
                     jwk.setContent(mapper.writeValueAsString(jwkRaw));
                     this.jwks.add(jwk);
@@ -78,11 +94,20 @@ public class Jwks {
         }
     }
 
-    private List parseJwksUriIntoList(ResolverMap resolverMap, String baseLocation, ObjectMapper mapper, String uri) throws Exception {
-        InputStream resolve = authorizationService != null ?
-                authorizationService.resolve(resolverMap, baseLocation, uri) :
-                resolverMap.resolve(ResolverMap.combine(baseLocation, uri));
+    private List parseJwksUriIntoList(Router router, String baseLocation, ObjectMapper mapper, String uri) throws Exception {
+        InputStream resolve =
+                httpClientConfig != null ?
+                createHttpSchemaResolver(router, httpClientConfig).resolve(uri) :
+                authorizationService != null ?
+                authorizationService.resolve(router.getResolverMap(), baseLocation, uri) :
+                router.getResolverMap().resolve(ResolverMap.combine(baseLocation, uri));
         return (List) mapper.readValue(resolve, Map.class).get("keys");
+    }
+
+    private static @NotNull HTTPSchemaResolver createHttpSchemaResolver(Router router, HttpClientConfiguration httpClientConfig1) {
+        HTTPSchemaResolver hsr = new HTTPSchemaResolver(router.getHttpClientFactory());
+        hsr.setHttpClientConfig(httpClientConfig1);
+        return hsr;
     }
 
     public AuthorizationService getAuthorizationService() {
@@ -130,8 +155,7 @@ public class Jwks {
             ResolverMap rm = router.getResolverMap();
 
             if (httpClientConfig != null) {
-                HTTPSchemaResolver httpSR = new HTTPSchemaResolver(router.getHttpClientFactory());
-                httpSR.setHttpClientConfig(httpClientConfig);
+                HTTPSchemaResolver httpSR = createHttpSchemaResolver(router, httpClientConfig);
 
                 rm = rm.clone();
                 rm.addSchemaResolver(httpSR);
