@@ -144,14 +144,9 @@ class OpenAPIInterceptorTest {
 
         specCustomers.validateRequests = YES;
 
-        Map<String,Object> customer = new HashMap<>();
-        customer.put("id","CUST-7");
-        customer.put("age",110);
-        customer.put("foo",110);
-
         Exchange exc = new Exchange(null);
         exc.setOriginalRequestUri("/customers");
-        exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
+        exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
 
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
         interceptor.init(router);
@@ -168,6 +163,60 @@ class OpenAPIInterceptorTest {
         Exchange exc = callPut(specCustomers);
         assertEquals("PUT",  getMapFromResponse(exc).get("validation").get("method"));
         testValidationResults(getMapFromResponse(exc), "RESPONSE");
+    }
+
+    @Test
+    void requestValidationDisabledResponseValidationEnabled() throws Exception {
+        specCustomers.validateResponses = YES;
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        Exchange requestExc = new Exchange(null);
+        requestExc.setOriginalRequestUri("/customers");
+        requestExc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
+
+        assertEquals(CONTINUE, interceptor.handleRequest(requestExc));
+        assertNull(requestExc.getResponse());
+
+        Exchange responseExc = new Exchange(null);
+        responseExc.setOriginalRequestUri("/customers");
+        responseExc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());
+
+        assertEquals(CONTINUE, interceptor.handleRequest(responseExc));
+
+        responseExc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
+
+        assertEquals(RETURN, interceptor.handleResponse(responseExc));
+        assertEquals(500, responseExc.getResponse().getStatusCode());
+        testValidationResults(getMapFromResponse(responseExc), "RESPONSE");
+    }
+
+    @Test
+    void requestValidationEnabledResponseValidationDisabled() throws Exception {
+        specCustomers.validateRequests = YES;
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        Exchange requestExc = new Exchange(null);
+        requestExc.setOriginalRequestUri("/customers");
+        requestExc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
+
+        assertEquals(RETURN, interceptor.handleRequest(requestExc));
+        assertEquals(400, requestExc.getResponse().getStatusCode());
+        testValidationResults(getMapFromResponse(requestExc), "REQUEST");
+
+        Exchange responseExc = new Exchange(null);
+        responseExc.setOriginalRequestUri("/customers");
+        responseExc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());
+
+        assertEquals(CONTINUE, interceptor.handleRequest(responseExc));
+
+        responseExc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
+
+        assertEquals(CONTINUE, interceptor.handleResponse(responseExc));
+        assertEquals(200, responseExc.getResponse().getStatusCode());
     }
 
     @Test
@@ -203,15 +252,18 @@ class OpenAPIInterceptorTest {
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
 
-        Map<String,Object> customer = new HashMap<>();
-        customer.put("id","CUST-7");
-        customer.put("age",110);
-        customer.put("foo",110);
-
-        exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
+        exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
         assertEquals(RETURN, interceptor.handleResponse(exc));
         assertEquals(500,exc.getResponse().getStatusCode());
         return exc;
+    }
+
+    private Map<String, Object> invalidCustomer() {
+        Map<String, Object> customer = new HashMap<>();
+        customer.put("id", "CUST-7");
+        customer.put("age", 110);
+        customer.put("foo", 110);
+        return customer;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
