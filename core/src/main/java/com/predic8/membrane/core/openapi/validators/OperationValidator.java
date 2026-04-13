@@ -71,10 +71,13 @@ public class OperationValidator {
     private static Operation getOperation(String method, PathItem pi) throws MethodNotAllowException {
         return switch (method.toUpperCase()) {
             case "GET" -> pi.getGet();
+            case "HEAD" -> pi.getHead();
+            case "OPTIONS" -> pi.getOptions();
             case "POST" -> pi.getPost();
             case "PUT" -> pi.getPut();
             case "DELETE" -> pi.getDelete();
             case "PATCH" -> pi.getPatch();
+            case "TRACE" -> pi.getTrace();
             default -> throw new MethodNotAllowException();
         };
     }
