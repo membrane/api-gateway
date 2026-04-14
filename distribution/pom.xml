@@ -118,7 +118,7 @@
         <dependency>
             <groupId>org.asynchttpclient</groupId>
             <artifactId>async-http-client</artifactId>
-            <version>3.0.4</version>
+            <version>3.0.9</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
