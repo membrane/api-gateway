@@ -169,7 +169,7 @@ public class OpenAPIValidator {
             return validator.validateResponse(ctx, response);
         }
 
-        public ValidationErrors getOperationResolutionErrors() {
+        public ValidationErrors getErrors() {
             return errors;
         }
     }

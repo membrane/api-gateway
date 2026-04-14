@@ -214,7 +214,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         var validationPlan = getOrCreateValidationPlan(rec, exc, request);
 
         if (!validateRequests)
-            return validationPlan.getOperationResolutionErrors();
+            return validationPlan.getErrors();
 
         return validationPlan.validateRequest(request);
     }
