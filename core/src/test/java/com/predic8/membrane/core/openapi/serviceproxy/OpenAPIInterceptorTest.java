@@ -200,6 +200,41 @@ class OpenAPIInterceptorTest {
     }
 
     @Test
+    void requestValidationDisabledResponseValidationEnabled_wrongPathBlocksRequest() throws Exception {
+        specCustomers.validateResponses = YES;
+
+        Exchange requestExc = new Exchange(null);
+        requestExc.setOriginalRequestUri("/does-not-exist");
+        requestExc.setRequest(new Request.Builder().method("GET").url(new URIFactory(), "/does-not-exist").build());
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        assertEquals(RETURN, interceptor.handleRequest(requestExc));
+        assertEquals(404, requestExc.getResponse().getStatusCode());
+        assertEquals("/does-not-exist", getMapFromResponse(requestExc).get("validation").get("path"));
+        assertTrue(getMapFromResponse(requestExc).get("validation").containsKey("errors"));
+        assertTrue(((Map<?, ?>) getMapFromResponse(requestExc).get("validation").get("errors")).containsKey("REQUEST/PATH"));
+    }
+
+    @Test
+    void requestValidationDisabledResponseValidationEnabled_wrongMethodBlocksRequest() throws Exception {
+        specCustomers.validateResponses = YES;
+
+        Exchange requestExc = new Exchange(null);
+        requestExc.setOriginalRequestUri("/customers");
+        requestExc.setRequest(new Request.Builder().method("PATCH").url(new URIFactory(), "/customers").build());
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        assertEquals(RETURN, interceptor.handleRequest(requestExc));
+        assertEquals(405, requestExc.getResponse().getStatusCode());
+        assertEquals("PATCH", getMapFromResponse(requestExc).get("validation").get("method"));
+        assertTrue(((Map<?, ?>) getMapFromResponse(requestExc).get("validation").get("errors")).containsKey("REQUEST/METHOD"));
+    }
+
+    @Test
     void requestValidationEnabledResponseValidationDisabled() throws Exception {
         specCustomers.validateRequests = YES;
 

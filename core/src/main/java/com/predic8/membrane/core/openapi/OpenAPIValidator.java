@@ -168,6 +168,10 @@ public class OpenAPIValidator {
                 return errors;
             return validator.validateResponse(ctx, response);
         }
+
+        public ValidationErrors getOperationResolutionErrors() {
+            return errors;
+        }
     }
 
     public OpenAPI getApi() {
