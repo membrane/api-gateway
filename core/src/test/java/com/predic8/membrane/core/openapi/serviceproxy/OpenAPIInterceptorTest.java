@@ -16,21 +16,29 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.URIFactory;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.convert2JSON;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getMapFromResponse;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -143,14 +151,9 @@ class OpenAPIInterceptorTest {
 
         specCustomers.validateRequests = YES;
 
-        Map<String,Object> customer = new HashMap<>();
-        customer.put("id","CUST-7");
-        customer.put("age",110);
-        customer.put("foo",110);
-
         Exchange exc = new Exchange(null);
         exc.setOriginalRequestUri("/customers");
-        exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
+        exc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
 
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
         interceptor.init(router);
@@ -167,6 +170,104 @@ class OpenAPIInterceptorTest {
         Exchange exc = callPut(specCustomers);
         assertEquals("PUT",  getMapFromResponse(exc).get("validation").get("method"));
         testValidationResults(getMapFromResponse(exc), "RESPONSE");
+    }
+
+    @Test
+    void requestValidationDisabledResponseValidationEnabled() throws Exception {
+        specCustomers.validateResponses = YES;
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        Exchange requestExc = new Request.Builder().post("/customers").contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).buildExchange();
+
+        assertEquals(CONTINUE, interceptor.handleRequest(requestExc));
+        assertNull(requestExc.getResponse());
+
+
+        Exchange responseExc = new Request.Builder().put("/customers").contentType(APPLICATION_JSON).buildExchange();
+        assertEquals(CONTINUE, interceptor.handleRequest(responseExc));
+
+        responseExc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
+
+        assertEquals(RETURN, interceptor.handleResponse(responseExc));
+        assertEquals(500, responseExc.getResponse().getStatusCode());
+        testValidationResults(getMapFromResponse(responseExc), "RESPONSE");
+    }
+
+    @Test
+    void requestValidationDisabledResponseValidationEnabled_wrongPathBlocksRequest() throws Exception {
+        specCustomers.validateResponses = YES;
+
+        Exchange requestExc = new Request.Builder().get( "/does-not-exist").buildExchange();
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        assertEquals(RETURN, interceptor.handleRequest(requestExc));
+        assertEquals(404, requestExc.getResponse().getStatusCode());
+        assertEquals("/does-not-exist", getMapFromResponse(requestExc).get("validation").get("path"));
+        assertTrue(getMapFromResponse(requestExc).get("validation").containsKey("errors"));
+        assertTrue(((Map<?, ?>) getMapFromResponse(requestExc).get("validation").get("errors")).containsKey("REQUEST/PATH"));
+    }
+
+    @Test
+    void requestValidationDisabledResponseValidationEnabled_wrongMethodBlocksRequest() throws Exception {
+        specCustomers.validateResponses = YES;
+
+        Exchange requestExc = new Exchange(null);
+        requestExc.setOriginalRequestUri("/customers");
+        requestExc.setRequest(new Request.Builder().method("PATCH").url(new URIFactory(), "/customers").build());
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        assertEquals(RETURN, interceptor.handleRequest(requestExc));
+        assertEquals(405, requestExc.getResponse().getStatusCode());
+        assertEquals("PATCH", getMapFromResponse(requestExc).get("validation").get("method"));
+        assertTrue(((Map<?, ?>) getMapFromResponse(requestExc).get("validation").get("errors")).containsKey("REQUEST/METHOD"));
+    }
+
+    @Test
+    void requestValidationEnabledResponseValidationDisabled() throws Exception {
+        specCustomers.validateRequests = YES;
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        Exchange requestExc = new Exchange(null);
+        requestExc.setOriginalRequestUri("/customers");
+        requestExc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
+
+        assertEquals(RETURN, interceptor.handleRequest(requestExc));
+        assertEquals(400, requestExc.getResponse().getStatusCode());
+        testValidationResults(getMapFromResponse(requestExc), "REQUEST");
+
+        Exchange responseExc = new Exchange(null);
+        responseExc.setOriginalRequestUri("/customers");
+        responseExc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());
+
+        assertEquals(CONTINUE, interceptor.handleRequest(responseExc));
+
+        responseExc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
+
+        assertEquals(CONTINUE, interceptor.handleResponse(responseExc));
+        assertEquals(200, responseExc.getResponse().getStatusCode());
+    }
+
+    @Test
+    void storesValidationPlanForResponseChecks() throws Exception {
+        specCustomers.validateResponses = YES;
+
+        Exchange exc = new Exchange(null);
+        exc.setOriginalRequestUri("/customers");
+        exc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());
+
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        assertNotNull(exc.getProperty(OpenAPIInterceptor.OPENAPI_VALIDATOR_CTX_PROPERTY, OpenAPIValidator.ValidationPlan.class));
     }
 
     @Test
@@ -187,15 +288,18 @@ class OpenAPIInterceptorTest {
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
 
-        Map<String,Object> customer = new HashMap<>();
-        customer.put("id","CUST-7");
-        customer.put("age",110);
-        customer.put("foo",110);
-
-        exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(customer)).build());
+        exc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
         assertEquals(RETURN, interceptor.handleResponse(exc));
         assertEquals(500,exc.getResponse().getStatusCode());
         return exc;
+    }
+
+    private Map<String, Object> invalidCustomer() {
+        Map<String, Object> customer = new HashMap<>();
+        customer.put("id", "CUST-7");
+        customer.put("age", 110);
+        customer.put("foo", 110);
+        return customer;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

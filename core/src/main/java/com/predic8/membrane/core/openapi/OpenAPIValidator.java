@@ -16,20 +16,31 @@
 
 package com.predic8.membrane.core.openapi;
 
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.v3.oas.models.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.openapi.model.Body;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
+import com.predic8.membrane.core.openapi.util.MethodNotAllowException;
+import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import com.predic8.membrane.core.openapi.util.UriUtil;
+import com.predic8.membrane.core.openapi.validators.OperationValidator;
+import com.predic8.membrane.core.openapi.validators.ValidationContext;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.URIFactory;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.util.Map;
 
-import static com.predic8.membrane.core.openapi.util.UriUtil.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.fromRequest;
+import static java.lang.String.format;
 
 public class OpenAPIValidator {
 
@@ -68,54 +79,98 @@ public class OpenAPIValidator {
     }
 
     public ValidationErrors validate(Request<? extends Body> request) {
-        return validateMessage(request, null);
+        return prepareValidation(request).validateRequest(request);
     }
 
     public ValidationErrors validateResponse(Request<? extends Body> request, Response<? extends Body> response) {
-        return validateMessage(request, response);
+        return prepareValidation(request).validateResponse(response);
     }
 
-    private ValidationErrors validateMessage(Request<? extends Body> req, Response<? extends Body> res) {
-
+    /**
+     * Prepares a plan to later use it for request or response validation separately.
+     * Must be called for both request and response validation. If there is response but no
+     * request validation the operation must be found first in order to validate against the
+     * proper operation.
+     */
+    public ValidationPlan prepareValidation(Request<? extends Body> request) {
         for (Map.Entry<String, PathItem> path : rec.getApi().getPaths().entrySet()) {
             try {
-                return validateMethodsAndParametersIfPathMatches(req, res, path.getKey(), path.getValue());
+                return prepareValidationForMatchingPath(request, path.getKey(), path.getValue());
             } catch (PathDoesNotMatchException ignored) {
                 // All paths from the OpenAPI that do not match will cause an exception while parsing the path and parameter. Then the next uriTemplate
                 // is tried until we get a match or there is no matching path in the OpenAPI.
             }
         }
 
-        return ValidationErrors.error( ValidationContext.fromRequest(req)
-                .entity(req.getPath())
+        return ValidationPlan.error(ValidationErrors.error(fromRequest(request)
+                .entity(request.getPath())
                 .entityType(PATH)
-                .statusCode(404), format("Path %s is invalid.", req.getPath()));
+                .statusCode(404), format("Path %s is invalid.", request.getPath())));
     }
 
-    private ValidationErrors validateMethodsAndParametersIfPathMatches(Request<? extends Body> req, Response<? extends Body> response, String uriTemplate, PathItem pathItem) throws PathDoesNotMatchException {
+    private ValidationPlan prepareValidationForMatchingPath(Request<? extends Body> request, String uriTemplate, PathItem pathItem) throws PathDoesNotMatchException {
+        String pathTemplate = normalizeUri(basePath + uriTemplate);
+        request.parsePathParameters(pathTemplate);
 
-        // Throws exception if path or parameters do not match
-        req.parsePathParameters(normalizeUri(basePath + uriTemplate));
-
-        ValidationContext ctx = ValidationContext.fromRequest(req);
-
-        ValidationErrors errors = validateMethods(ctx.uriTemplate(uriTemplate), req, response, pathItem);
-
-        // If there is no response it is a request by logic, so we validate the request parameters
-        if (response == null) {
-            errors.add(new PathParametersValidator(rec.getApi()).validatePathParameters(ctx.uriTemplate(uriTemplate), req, pathItem.getParameters()));
-        }
-        return errors;
-    }
-
-    private ValidationErrors validateMethods(ValidationContext ctx, Request<? extends Body> req, Response<? extends Body> response, PathItem pathItem) {
-        ValidationErrors errors = new ValidationErrors();
+        var ctx = fromRequest(request).uriTemplate(uriTemplate);
         try {
-            return errors.add(new OperationValidator(rec.getApi()).validateOperation(ctx, req, response, pathItem));
+            return ValidationPlan.create(pathTemplate, ctx, OperationValidator.create(rec.getApi(), request.getMethod(), pathItem));
         } catch (MethodNotAllowException e) {
-            return errors.add(ctx.statusCode(405)
-                    .entity(req.getMethod())
-                    .entityType(METHOD), format("Method %s is not allowed", req.getMethod()));
+            return ValidationPlan.error(ValidationErrors.error(ctx.statusCode(405)
+                    .entity(request.getMethod())
+                    .entityType(METHOD), format("Method %s is not allowed", request.getMethod())));
+        }
+    }
+
+    public static final class ValidationPlan {
+
+        private final String pathTemplate;
+        private final ValidationContext ctx;
+        private final OperationValidator validator;
+
+        /**
+         * TODO Explain
+         */
+        private final ValidationErrors errors;
+
+        private ValidationPlan(String pathTemplate, ValidationContext ctx, OperationValidator validator, ValidationErrors errors) {
+            this.pathTemplate = pathTemplate;
+            this.ctx = ctx;
+            this.validator = validator;
+            this.errors = errors;
+        }
+
+        private static ValidationPlan create(String pathTemplate, ValidationContext ctx, OperationValidator operationValidator) {
+            return new ValidationPlan(pathTemplate, ctx, operationValidator, ValidationErrors.empty());
+        }
+
+        private static ValidationPlan error(ValidationErrors errors) {
+            return new ValidationPlan(null, null, null, errors);
+        }
+
+        public ValidationErrors validateRequest(Request<? extends Body> request) {
+            // There might be already path and method validation errors.
+            if (errors.hasErrors())
+                return errors;
+
+            try {
+                request.parsePathParameters(pathTemplate);
+            } catch (PathDoesNotMatchException e) {
+                throw new IllegalStateException("ValidationPlan no longer matches request path %s.".formatted(request.getPath()), e);
+            }
+
+            return validator.validateRequest(ctx, request);
+        }
+
+        public ValidationErrors validateResponse(Response<? extends Body> response) {
+            // There might be already path and method validation errors.
+            if (errors.hasErrors())
+                return errors;
+            return validator.validateResponse(ctx, response);
+        }
+
+        public ValidationErrors getErrors() {
+            return errors;
         }
     }
 

@@ -16,32 +16,41 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
+import com.predic8.membrane.core.openapi.OpenAPIValidator.ValidationPlan;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.util.ConfigurationException;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.servers.*;
-import jakarta.mail.internet.*;
-import org.slf4j.*;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
+import java.net.URL;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.UriUtil.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.util.Comparator.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
+import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
+import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.empty;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
 /**
@@ -53,6 +62,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIInterceptor.class.getName());
     public static final String OPENAPI_RECORD = "OPENAPI_RECORD";
+    public static final String OPENAPI_VALIDATOR_CTX_PROPERTY = "membrane.openapi.validator.ctx";
 
     protected APIProxy apiProxy;
 
@@ -193,18 +203,51 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return null;
     }
 
-    private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws IOException, ParseException {
-        if (!shouldValidate(rec.getApi(), REQUESTS))
-            return new ValidationErrors();
 
-        return new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).validate(getOpenapiValidatorRequest(exc));
+    private ValidationErrors validateRequest(OpenAPIRecord rec, Exchange exc) throws ParseException {
+        var validateRequests = shouldValidate(rec.getApi(), REQUESTS);
+        var validateResponses = shouldValidate(rec.getApi(), RESPONSES);
+
+        if (!validateRequests && !validateResponses) return empty();
+
+        Request<?> request = validateRequests ? getOpenapiValidatorRequest(exc) : getOperationRequestOnlyForResponseValidation(exc);
+        var validationPlan = getOrCreateValidationPlan(rec, exc, request);
+
+        if (!validateRequests)
+            return validationPlan.getErrors();
+
+        return validationPlan.validateRequest(request);
     }
 
-    private ValidationErrors validateResponse(OpenAPIRecord rec, Exchange exc) throws IOException, ParseException {
-        ValidationErrors errors = new ValidationErrors();
+    private ValidationErrors validateResponse(OpenAPIRecord rec, Exchange exc) throws ParseException {
         if (!shouldValidate(rec.getApi(), RESPONSES))
-            return errors;
-        return new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
+            return empty();
+
+        ValidationPlan validationPlan = exc.getProperty(OPENAPI_VALIDATOR_CTX_PROPERTY, ValidationPlan.class);
+        if (validationPlan == null)
+            validationPlan = getOrCreateValidationPlan(rec, exc, getOpenapiValidatorRequest(exc));
+
+        return validationPlan.validateResponse(getOpenapiValidatorResponse(exc));
+    }
+
+    private ValidationPlan getOrCreateValidationPlan(OpenAPIRecord rec, Exchange exc, Request<?> request) {
+        var validationPlan = exc.getProperty(OPENAPI_VALIDATOR_CTX_PROPERTY, ValidationPlan.class);
+        if (validationPlan != null)
+            return validationPlan;
+
+        validationPlan = new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).prepareValidation(request);
+
+        // Store the plan in request flow for response validation in the response flow
+        exc.setProperty(OPENAPI_VALIDATOR_CTX_PROPERTY, validationPlan);
+        return validationPlan;
+    }
+
+    /**
+     * Lightweight creation of a Request object for response validation only. In case only the response should be validated,
+     * we need some context.
+     */
+    private Request<?> getOperationRequestOnlyForResponseValidation(Exchange exc) {
+        return new Request<>(exc.getRequest().getMethod(), exc.getRequest().getUri());
     }
 
     public boolean validationDetails(OpenAPI api) {

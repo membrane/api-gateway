@@ -16,84 +16,69 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.parameters.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import com.predic8.membrane.core.openapi.util.MethodNotAllowException;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.parameters.Parameter;
 
-import java.util.*;
+import java.util.List;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.SECURITY;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor.shouldValidate;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 
 public class OperationValidator {
 
     final OpenAPI api;
-    final ValidationErrors errors = new ValidationErrors();
+    final PathItem pathItem;
+    final Operation operation;
 
-    public OperationValidator(OpenAPI api) {
+    private OperationValidator(OpenAPI api, PathItem pathItem, Operation operation) {
         this.api = api;
+        this.pathItem = pathItem;
+        this.operation = operation;
     }
 
-    public ValidationErrors validateOperation(ValidationContext ctx, Request<?> req, Response<?> response, PathItem pathItem) throws MethodNotAllowException {
-
-        Operation operation = getOperation(req.getMethod(), pathItem);
+    public static OperationValidator create(OpenAPI api, String method, PathItem pathItem) throws MethodNotAllowException {
+        var operation = getOperation(method, pathItem);
         if (operation == null)
             throw new MethodNotAllowException();
-
-        isMethodDeclaredInAPI(ctx, req.getMethod(), operation);
-
-        // If there is no response we have to validate the request
-        if (response == null) {
-            validatePathParameters(ctx, req, operation.getParameters());
-
-            errors.add(new QueryParameterValidator(api,pathItem).validate(ctx, req, operation));
-            errors.add(new RequestHeaderParameterValidator(api,pathItem).validateHeaderParameters(ctx, req, operation));
-            if (shouldValidate(api, SECURITY))
-                errors.add(new SecurityValidator(api).validateSecurity(ctx,req, operation));
-
-            return errors.add(new RequestBodyValidator(api).validate(ctx.entityType(BODY).entity("REQUEST"), req, operation));
-        } else {
-                return errors.add(new ResponseBodyValidator(api).validate(ctx.entityType(BODY).entity("RESPONSE"), response, operation));
-        }
+        return new OperationValidator(api, pathItem, operation);
     }
 
-    private Operation getOperation(String method, PathItem pi) throws MethodNotAllowException {
+    public ValidationErrors validateRequest(ValidationContext ctx, Request<?> req) {
+        var errors = new ValidationErrors();
+        errors.add(validatePathParameters(ctx, req, operation.getParameters()));
+        errors.add(new QueryParameterValidator(api, pathItem).validate(ctx, req, operation));
+        errors.add(new RequestHeaderParameterValidator(api, pathItem).validateHeaderParameters(ctx, req, operation));
+        if (shouldValidate(api, SECURITY))
+            errors.add(new SecurityValidator(api).validateSecurity(ctx, req, operation));
+        errors.add(new RequestBodyValidator(api).validate(ctx.entityType(BODY).entity("REQUEST"), req, operation));
+        return errors.add(validatePathParameters(ctx, req, pathItem.getParameters()));
+    }
+
+    public ValidationErrors validateResponse(ValidationContext ctx, Response<?> response) {
+        return new ResponseBodyValidator(api).validate(ctx.entityType(BODY).entity("RESPONSE"), response, operation);
+    }
+
+    private ValidationErrors validatePathParameters(ValidationContext ctx, Request<?> req, List<Parameter> schemaParameters) {
+        return new PathParametersValidator(api).validatePathParameters(ctx, req, schemaParameters);
+    }
+
+    private static Operation getOperation(String method, PathItem pi) throws MethodNotAllowException {
         return switch (method.toUpperCase()) {
             case "GET" -> pi.getGet();
+            case "HEAD" -> pi.getHead();
+            case "OPTIONS" -> pi.getOptions();
             case "POST" -> pi.getPost();
             case "PUT" -> pi.getPut();
             case "DELETE" -> pi.getDelete();
             case "PATCH" -> pi.getPatch();
+            case "TRACE" -> pi.getTrace();
             default -> throw new MethodNotAllowException();
         };
-    }
-
-    private void isMethodDeclaredInAPI(ValidationContext ctx, String method, Object apiMethod) {
-        if (apiMethod == null) {
-            errors.add(new ValidationError(ctx.entity(method).entityType(METHOD).statusCode(405), format("Path %s does not support method %s", ctx.getUriTemplate(), method)));
-        }
-    }
-
-    private void validatePathParameters(ValidationContext ctx, Request<?> req, List<Parameter> schemaParameters) {
-
-        if (schemaParameters == null || req.getPathParameters().isEmpty())
-            return;
-        schemaParameters.stream().filter(this::isPathParameter).forEach(parameter -> {
-            String value = req.getPathParameters().get(parameter.getName());
-            if (value == null) {
-                throw new RuntimeException("Should not happen!");
-            }
-            errors.add(new SchemaValidator(api, parameter.getSchema()).validate(ctx.entityType(PATH_PARAMETER)
-                    .entity(parameter.getName())
-                    .path(req.getPath())
-                    .statusCode(400), value));
-        });
-    }
-
-    private boolean isPathParameter(Parameter p) {
-        return p instanceof PathParameter;
     }
 }

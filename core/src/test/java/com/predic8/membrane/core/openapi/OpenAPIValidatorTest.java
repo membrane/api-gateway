@@ -16,18 +16,21 @@
 
 package com.predic8.membrane.core.openapi;
 
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.util.URIFactory;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.IOException;
 
 import static com.predic8.membrane.core.openapi.model.Request.get;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getResourceAsStream;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class OpenAPIValidatorTest {
 
@@ -62,6 +65,12 @@ class OpenAPIValidatorTest {
         assertEquals(1, errors.size());
         assertEquals(405, errors.get(0).getContext().getStatusCode());
         assertEquals(METHOD, errors.get(0).getContext().getValidatedEntityType());
+    }
+
+    @Test
+    void prepareValidationCanBeUsedForRequestValidation() {
+        var validationPlan = validator.prepareValidation(get().path("/customers"));
+        assertEquals(0, validationPlan.validateRequest(get().path("/customers")).size());
     }
 
     @Test
