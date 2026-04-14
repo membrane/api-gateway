@@ -60,6 +60,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     // configuration attributes
     protected String wsdl;
+    protected String resolvedWsdl;
     protected String portName;
     protected HttpClientConfiguration httpClientConfig;
     protected String serviceName;
@@ -123,16 +124,32 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private @NotNull Definitions parseWSDL() {
         try {
-             return Definitions.parse(resolverMap, wsdl);
+            resolvedWsdl = resolveWsdlLocation();
+            return Definitions.parse(resolverMap, resolvedWsdl);
+        } catch (ResourceRetrievalException e) {
+            try {
+                resolvedWsdl = wsdl;
+                return Definitions.parse(resolverMap, resolvedWsdl);
+            } catch (Exception fallbackException) {
+                throw createWsdlConfigurationException(fallbackException);
+            }
         } catch (Exception e) {
-            throw new ConfigurationException("""
-                    Cannot parse WSDL
-                    
-                    API: %s
-                    WSDL location: %s.
-                    Error. %s
-                    """.formatted( name, wsdl, e.getMessage()));
+            throw createWsdlConfigurationException(e);
         }
+    }
+
+    private ConfigurationException createWsdlConfigurationException(Exception e) {
+        return new ConfigurationException("""
+                Cannot parse WSDL
+                
+                API: %s
+                WSDL location: %s.
+                Error. %s
+                """.formatted(name, wsdl, e.getMessage()));
+    }
+
+    private String resolveWsdlLocation() {
+        return ResolverMap.combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl);
     }
 
     private void prepareRouting(String location) {
@@ -205,7 +222,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private void addWebServiceExplorer() {
         var sui = new WebServiceExplorerInterceptor();
-        sui.setWsdl(wsdl);
+        sui.setWsdl(getResolvedWsdl());
         sui.setPortName(portName);
         interceptors.addFirst(sui);
     }
@@ -215,7 +232,7 @@ public class SOAPProxy extends AbstractServiceProxy {
             return;
 
         var wp = new WSDLPublisherInterceptor();
-        wp.setWsdl(wsdl);
+        wp.setWsdl(getResolvedWsdl());
         wp.init(router);
         interceptors.addFirst(wp);
     }
@@ -228,6 +245,10 @@ public class SOAPProxy extends AbstractServiceProxy {
         return wsdl;
     }
 
+    public String getResolvedWsdl() {
+        return resolvedWsdl != null ? resolvedWsdl : wsdl;
+    }
+
     /**
      * @description The WSDL of the SOAP service.
      * @example <a href="http://predic8.de/my.wsdl">http://predic8.de/my.wsdl</a> <i>or</i> file:my.wsdl
@@ -236,6 +257,7 @@ public class SOAPProxy extends AbstractServiceProxy {
     @MCAttribute
     public void setWsdl(String wsdl) {
         this.wsdl = wsdl;
+        resolvedWsdl = null;
     }
 
     public String getPortName() {
