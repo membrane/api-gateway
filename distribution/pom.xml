@@ -27,7 +27,7 @@
 		<groupId>org.membrane-soa</groupId>
 		<artifactId>service-proxy-parent</artifactId>
 		<relativePath>../pom.xml</relativePath>
-		<version>7.1.4-SNAPSHOT</version>
+		<version>7.1.5-SNAPSHOT</version>
 	</parent>
 
     <dependencies>
@@ -118,7 +118,7 @@
         <dependency>
             <groupId>org.asynchttpclient</groupId>
             <artifactId>async-http-client</artifactId>
-            <version>3.0.4</version>
+            <version>3.0.9</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

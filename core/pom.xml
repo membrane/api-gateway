@@ -23,7 +23,7 @@
         <groupId>org.membrane-soa</groupId>
         <artifactId>service-proxy-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>7.1.4-SNAPSHOT</version>
+        <version>7.1.5-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -336,7 +336,7 @@
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-broker</artifactId>
-            <version>5.19.4</version>
+            <version>5.19.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>
