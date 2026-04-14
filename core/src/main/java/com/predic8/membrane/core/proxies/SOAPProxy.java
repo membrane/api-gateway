@@ -123,7 +123,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private @NotNull Definitions parseWSDL() {
         try {
-             return Definitions.parse(resolverMap, wsdl);
+             return Definitions.parse(resolverMap, resolveWsdlLocation());
         } catch (Exception e) {
             throw new ConfigurationException("""
                     Cannot parse WSDL
@@ -133,6 +133,10 @@ public class SOAPProxy extends AbstractServiceProxy {
                     Error. %s
                     """.formatted( name, wsdl, e.getMessage()));
         }
+    }
+
+    private String resolveWsdlLocation() {
+        return ResolverMap.combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl);
     }
 
     private void prepareRouting(String location) {
@@ -205,7 +209,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 
     private void addWebServiceExplorer() {
         var sui = new WebServiceExplorerInterceptor();
-        sui.setWsdl(wsdl);
+        sui.setWsdl(resolveWsdlLocation());
         sui.setPortName(portName);
         interceptors.addFirst(sui);
     }
@@ -215,7 +219,7 @@ public class SOAPProxy extends AbstractServiceProxy {
             return;
 
         var wp = new WSDLPublisherInterceptor();
-        wp.setWsdl(wsdl);
+        wp.setWsdl(resolveWsdlLocation());
         wp.init(router);
         interceptors.addFirst(wp);
     }

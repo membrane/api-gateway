@@ -18,21 +18,21 @@ import com.predic8.membrane.core.resolver.*;
 
 import java.util.*;
 
-public record WSDLParserContext(Definitions definitions, Resolver resolver, String basePath,
+public record WSDLParserContext(Definitions definitions, Resolver resolver, String documentLocation,
                                 List<String> visitedLocations) {
 
     public WSDLParserContext definitions(Definitions definitions) {
-        return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
+        return new WSDLParserContext(definitions, resolver, documentLocation, visitedLocations);
     }
 
-    public WSDLParserContext basePath(String basePath) {
+    public WSDLParserContext documentLocation(String documentLocation) {
         // visitedLocations is not cloned on purpose. It contains the list of all the
         // Files that are already included or imported.
-        visitedLocations.add(basePath);
-        return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
+        visitedLocations.add(documentLocation);
+        return new WSDLParserContext(definitions, resolver, documentLocation, visitedLocations);
     }
 
     public WSDLParserContext resolver(Resolver resolver) {
-        return new WSDLParserContext(definitions, resolver, basePath, visitedLocations);
+        return new WSDLParserContext(definitions, resolver, documentLocation, visitedLocations);
     }
 }
