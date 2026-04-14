@@ -44,7 +44,7 @@ public abstract class AbstractIncludeImport extends WSDLElement {
                 return null;
 
             try (var is = ctx.resolver().resolve(resolved)) {
-                return new Schema(ctx.documentLocation(resolved), WSDLParserUtil.parse(is));
+                return new Schema(ctx.basePath(resolved), WSDLParserUtil.parse(is));
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -52,7 +52,7 @@ public abstract class AbstractIncludeImport extends WSDLElement {
     }
 
     private String resolve(WSDLParserContext ctx) {
-        return URIUtil.getNormalizedAbsolutePathOrUri(ResolverMap.combine(ctx.documentLocation(), schemaLocation));
+        return URIUtil.getNormalizedAbsolutePathOrUri(ResolverMap.combine(ctx.basePath(), schemaLocation));
     }
 
     public String getSchemaLocation() {
