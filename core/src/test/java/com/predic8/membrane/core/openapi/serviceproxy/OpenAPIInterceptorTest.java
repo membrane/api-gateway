@@ -179,17 +179,13 @@ class OpenAPIInterceptorTest {
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
         interceptor.init(router);
 
-        Exchange requestExc = new Exchange(null);
-        requestExc.setOriginalRequestUri("/customers");
-        requestExc.setRequest(new Request.Builder().method("POST").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
+        Exchange requestExc = new Request.Builder().post("/customers").contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).buildExchange();
 
         assertEquals(CONTINUE, interceptor.handleRequest(requestExc));
         assertNull(requestExc.getResponse());
 
-        Exchange responseExc = new Exchange(null);
-        responseExc.setOriginalRequestUri("/customers");
-        responseExc.setRequest(new Request.Builder().method("PUT").url(new URIFactory(), "/customers").contentType(APPLICATION_JSON).build());
 
+        Exchange responseExc = new Request.Builder().put("/customers").contentType(APPLICATION_JSON).buildExchange();
         assertEquals(CONTINUE, interceptor.handleRequest(responseExc));
 
         responseExc.setResponse(Response.ok().contentType(APPLICATION_JSON).body(convert2JSON(invalidCustomer())).build());
@@ -203,9 +199,7 @@ class OpenAPIInterceptorTest {
     void requestValidationDisabledResponseValidationEnabled_wrongPathBlocksRequest() throws Exception {
         specCustomers.validateResponses = YES;
 
-        Exchange requestExc = new Exchange(null);
-        requestExc.setOriginalRequestUri("/does-not-exist");
-        requestExc.setRequest(new Request.Builder().method("GET").url(new URIFactory(), "/does-not-exist").build());
+        Exchange requestExc = new Request.Builder().get( "/does-not-exist").buildExchange();
 
         OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
         interceptor.init(router);
