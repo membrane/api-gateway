@@ -37,7 +37,6 @@ import java.net.URISyntaxException;
 import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
-import static com.predic8.membrane.core.openapi.validators.OperationValidator.resolve;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.fromRequest;
@@ -87,6 +86,12 @@ public class OpenAPIValidator {
         return prepareValidation(request).validateResponse(response);
     }
 
+    /**
+     * Prepares a plan to later use it for request or response validation separately.
+     * Must be called for both request and response validation. If there is response but no
+     * request validation the operation must be found first in order to validate against the
+     * proper operation.
+     */
     public ValidationPlan prepareValidation(Request<? extends Body> request) {
         for (Map.Entry<String, PathItem> path : rec.getApi().getPaths().entrySet()) {
             try {
@@ -109,7 +114,7 @@ public class OpenAPIValidator {
 
         var ctx = fromRequest(request).uriTemplate(uriTemplate);
         try {
-            return ValidationPlan.resolved(pathTemplate, ctx, resolve(rec.getApi(), request.getMethod(), pathItem));
+            return ValidationPlan.create(pathTemplate, ctx, OperationValidator.create(rec.getApi(), request.getMethod(), pathItem));
         } catch (MethodNotAllowException e) {
             return ValidationPlan.error(ValidationErrors.error(ctx.statusCode(405)
                     .entity(request.getMethod())
@@ -121,17 +126,21 @@ public class OpenAPIValidator {
 
         private final String pathTemplate;
         private final ValidationContext ctx;
-        private final OperationValidator operationValidator;
-        private final ValidationErrors operationErrors;
+        private final OperationValidator validator;
 
-        private ValidationPlan(String pathTemplate, ValidationContext ctx, OperationValidator operationValidator, ValidationErrors operationErrors) {
+        /**
+         * TODO Explain
+         */
+        private final ValidationErrors errors;
+
+        private ValidationPlan(String pathTemplate, ValidationContext ctx, OperationValidator validator, ValidationErrors errors) {
             this.pathTemplate = pathTemplate;
             this.ctx = ctx;
-            this.operationValidator = operationValidator;
-            this.operationErrors = operationErrors;
+            this.validator = validator;
+            this.errors = errors;
         }
 
-        private static ValidationPlan resolved(String pathTemplate, ValidationContext ctx, OperationValidator operationValidator) {
+        private static ValidationPlan create(String pathTemplate, ValidationContext ctx, OperationValidator operationValidator) {
             return new ValidationPlan(pathTemplate, ctx, operationValidator, ValidationErrors.empty());
         }
 
@@ -140,8 +149,9 @@ public class OpenAPIValidator {
         }
 
         public ValidationErrors validateRequest(Request<? extends Body> request) {
-            if (operationErrors.hasErrors())
-                return operationErrors;
+            // There might be already path and method validation errors.
+            if (errors.hasErrors())
+                return errors;
 
             try {
                 request.parsePathParameters(pathTemplate);
@@ -149,13 +159,14 @@ public class OpenAPIValidator {
                 throw new IllegalStateException("ValidationPlan no longer matches request path %s.".formatted(request.getPath()), e);
             }
 
-            return operationValidator.validateRequest(ctx, request);
+            return validator.validateRequest(ctx, request);
         }
 
         public ValidationErrors validateResponse(Response<? extends Body> response) {
-            if (operationErrors.hasErrors())
-                return operationErrors;
-            return operationValidator.validateResponse(ctx, response);
+            // There might be already path and method validation errors.
+            if (errors.hasErrors())
+                return errors;
+            return validator.validateResponse(ctx, response);
         }
     }
 

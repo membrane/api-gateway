@@ -62,7 +62,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIInterceptor.class.getName());
     public static final String OPENAPI_RECORD = "OPENAPI_RECORD";
-    public static final String OPENAPI_VALIDATOR = "membrane.openapi.validator";
+    public static final String OPENAPI_VALIDATOR_CTX_PROPERTY = "membrane.openapi.validator.ctx";
 
     protected APIProxy apiProxy;
 
@@ -210,8 +210,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
         if (!validateRequests && !validateResponses) return empty();
 
-        Request<?> request = validateRequests ? getOpenapiValidatorRequest(exc) : getOperationRequest(exc);
-        ValidationPlan validationPlan = getOrCreateValidationPlan(rec, exc, request);
+        Request<?> request = validateRequests ? getOpenapiValidatorRequest(exc) : getOperationRequestOnlyForResponseValidation(exc);
+        var validationPlan = getOrCreateValidationPlan(rec, exc, request);
 
         if (!validateRequests)
             return empty();
@@ -223,7 +223,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (!shouldValidate(rec.getApi(), RESPONSES))
             return empty();
 
-        ValidationPlan validationPlan = exc.getProperty(OPENAPI_VALIDATOR, ValidationPlan.class);
+        ValidationPlan validationPlan = exc.getProperty(OPENAPI_VALIDATOR_CTX_PROPERTY, ValidationPlan.class);
         if (validationPlan == null)
             validationPlan = getOrCreateValidationPlan(rec, exc, getOpenapiValidatorRequest(exc));
 
@@ -231,16 +231,22 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
     }
 
     private ValidationPlan getOrCreateValidationPlan(OpenAPIRecord rec, Exchange exc, Request<?> request) {
-        ValidationPlan validationPlan = exc.getProperty(OPENAPI_VALIDATOR, ValidationPlan.class);
+        var validationPlan = exc.getProperty(OPENAPI_VALIDATOR_CTX_PROPERTY, ValidationPlan.class);
         if (validationPlan != null)
             return validationPlan;
 
         validationPlan = new OpenAPIValidator(router.getConfiguration().getUriFactory(), rec).prepareValidation(request);
-        exc.setProperty(OPENAPI_VALIDATOR, validationPlan);
+
+        // Store the plan in request flow for response validation in the response flow
+        exc.setProperty(OPENAPI_VALIDATOR_CTX_PROPERTY, validationPlan);
         return validationPlan;
     }
 
-    private Request<?> getOperationRequest(Exchange exc) {
+    /**
+     * Lightweight creation of a Request object for response validation only. In case only the response should be validated,
+     * we need some context.
+     */
+    private Request<?> getOperationRequestOnlyForResponseValidation(Exchange exc) {
         return new Request<>(exc.getRequest().getMethod(), exc.getRequest().getUri());
     }
 

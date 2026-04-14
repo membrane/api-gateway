@@ -16,22 +16,29 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.openapi.OpenAPIValidator;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.URIFactory;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.convert2JSON;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getMapFromResponse;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
@@ -231,7 +238,7 @@ class OpenAPIInterceptorTest {
         interceptor.init(router);
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
-        assertNotNull(exc.getProperty(OpenAPIInterceptor.OPENAPI_VALIDATOR, OpenAPIValidator.ValidationPlan.class));
+        assertNotNull(exc.getProperty(OpenAPIInterceptor.OPENAPI_VALIDATOR_CTX_PROPERTY, OpenAPIValidator.ValidationPlan.class));
     }
 
     @Test

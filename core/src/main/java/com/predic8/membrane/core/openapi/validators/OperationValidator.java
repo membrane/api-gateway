@@ -42,7 +42,7 @@ public class OperationValidator {
         this.operation = operation;
     }
 
-    public static OperationValidator resolve(OpenAPI api, String method, PathItem pathItem) throws MethodNotAllowException {
+    public static OperationValidator create(OpenAPI api, String method, PathItem pathItem) throws MethodNotAllowException {
         var operation = getOperation(method, pathItem);
         if (operation == null)
             throw new MethodNotAllowException();
