@@ -1,0 +1,10 @@
+api:
+  port: 2000
+  path:
+    uri: /customers
+  flow:
+    - template:
+        contentType: application/json
+        location: customers-response.json.template
+    - return:
+        status: 200

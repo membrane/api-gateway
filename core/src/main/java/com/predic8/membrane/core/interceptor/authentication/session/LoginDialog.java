@@ -44,6 +44,8 @@ import static org.apache.commons.text.StringEscapeUtils.*;
 public class LoginDialog {
 	private static final Logger log = LoggerFactory.getLogger(LoginDialog.class.getName());
 
+	private final String dialogLocation;
+	private final String locationBaseLocation;
 	private final String basePath;
 	private final String path;
 	private final String message;
@@ -63,10 +65,13 @@ public class LoginDialog {
 			SessionManager sessionManager,
 			AccountBlocker accountBlocker,
 			String dialogLocation,
+			String locationBaseLocation,
 			String basePath,
 			String path,
 			boolean exposeUserCredentialsToSession,
 			String message) {
+		this.dialogLocation = dialogLocation;
+		this.locationBaseLocation = locationBaseLocation;
 		this.basePath = basePath;
 		this.path = path;
 		if (!basePath.isEmpty())
@@ -81,25 +86,35 @@ public class LoginDialog {
 		this.message = message;
 
 		wsi = new WebServerInterceptor();
-		wsi.setDocBase(dialogLocation);
 	}
 
 	public void init(Router router) {
+		String effectiveBaseLocation = locationBaseLocation == null ? router.getConfiguration().getBaseLocation() : locationBaseLocation;
+		String resolvedDialogBaseLocation = ResolverMap.combine(effectiveBaseLocation, dialogLocation);
+		wsi.setDocBase(resolvedDialogBaseLocation);
 		uriFactory = router.getConfiguration().getUriFactory();
 		wsi.init(router);
         try {
 			// This is only a check if index.html is present
-            router.getResolverMap().resolve(ResolverMap.combine(router.getConfiguration().getBaseLocation(), wsi.getDocBase(), "index.html")).close();
+            router.getResolverMap().resolve(ResolverMap.combine(asDirectory(resolvedDialogBaseLocation), "index.html")).close();
         } catch (ResourceRetrievalException e) {
             throw new ConfigurationException("""
 					Cannot access index.html at:
 					Location base: %s
 					Doc base: %s
-					""".formatted( router.getConfiguration().getBaseLocation(), wsi.getDocBase()),e);
+					""".formatted(effectiveBaseLocation, dialogLocation),e);
         } catch (IOException e) {
-			log.error("Cannot access index.html (baseLocation={}, docBase={})" , router.getConfiguration().getBaseLocation(), wsi.getDocBase(), e);
+			log.error("Cannot access index.html (baseLocation={}, docBase={})" , effectiveBaseLocation, dialogLocation, e);
         }
     }
+
+	private static String asDirectory(String location) {
+		if (location == null || location.isEmpty())
+			return location;
+		if (location.endsWith("/") || location.endsWith("\\"))
+			return location;
+		return location + "/";
+	}
 
 	public boolean isLoginRequest(Exchange exc) {
 		URI uri = uriFactory.createWithoutException(exc.getRequest().getUri());

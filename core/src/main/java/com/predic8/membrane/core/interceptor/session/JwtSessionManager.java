@@ -13,26 +13,39 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.session;
 
-import com.bornium.security.oauth2openid.token.*;
-import com.google.common.cache.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.router.*;
-import org.jose4j.json.*;
-import org.jose4j.jwk.*;
-import org.jose4j.jwt.*;
-import org.jose4j.jwt.consumer.*;
-import org.jose4j.lang.*;
-import org.slf4j.*;
+import com.bornium.security.oauth2openid.token.IdTokenProvider;
+import com.bornium.security.oauth2openid.token.IdTokenVerifier;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.security.Blob;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.router.Router;
+import org.jose4j.json.JsonUtil;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwk.RsaJwkGenerator;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.MalformedClaimException;
+import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import org.jose4j.lang.JoseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.math.*;
-import java.security.*;
-import java.time.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.*;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 import static org.jose4j.jwk.JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE;
 
 /**
@@ -73,7 +86,7 @@ public class JwtSessionManager extends SessionManager {
                     instances. To solve this, write the JWK into a file and reference it using <jwtSessionManager><jwk location="...">.
                     """, rsaJsonWebKey.toJson(INCLUDE_PRIVATE));
         } else {
-            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation())));
+            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), resolveBaseLocation(this, router))));
         }
 
         idTokenProvider = new IdTokenProvider(rsaJsonWebKey);

@@ -38,14 +38,23 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
         return new ParsingContext(context, registry,grammar,topLevel, this.path + path,key);
     }
 
+    public ParsingContext<?> child(String childContext, String pathSegment) {
+        return new ParsingContext(childContext, registry, grammar, topLevel, path + pathSegment, null);
+    }
+
     public ParsingContext<?> key(String key) {
         return new ParsingContext(context, registry,grammar, topLevel, path,key);
     }
 
-    public Class<?> resolveClass(String key) {
+    public Class<?> findClass(String key) {
         Class<?> clazz = grammar.getLocal(context, key);
         if (clazz == null)
             clazz = grammar.getElement(key);
+        return clazz;
+    }
+
+    public Class<?> resolveClass(String key) {
+        Class<?> clazz = findClass(key);
         if (clazz == null) {
             log.debug("Did not find class for key '{}'", key);
             var e = new ConfigurationParsingException("Unknown configuration element '%s'.".formatted(key));
@@ -73,10 +82,6 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
 
     public String getPath() {
         return path;
-    }
-
-    public Grammar getGrammar() {
-        return grammar;
     }
 
     @Override

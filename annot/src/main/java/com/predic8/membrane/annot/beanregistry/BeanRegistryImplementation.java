@@ -27,6 +27,9 @@ import java.util.concurrent.*;
 import java.util.function.*;
 
 import static com.predic8.membrane.annot.yaml.WatchAction.*;
+import static java.util.Collections.synchronizedMap;
+import static java.util.Collections.synchronizedSet;
+import static java.util.UUID.randomUUID;
 
 /**
  * TODO:
@@ -53,8 +56,11 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
     // uid -> bean container
     private final Map<String, BeanContainer> bcs = new ConcurrentHashMap<>(); // Order is not critical. Order is determined by uidsToActivate
 
+    // TODO optimize this for dynamic changes
+    private final Map<Object, BeanDefinition> beanDefinitions = synchronizedMap(new IdentityHashMap<>());
+
     @GuardedBy("uidsToActivate")
-    private final Set<UidAction> uidsToActivate = Collections.synchronizedSet(new LinkedHashSet<>()); // keeps order
+    private final Set<UidAction> uidsToActivate = synchronizedSet(new LinkedHashSet<>()); // keeps order
 
     /**
      * Protects the initialization of beans, which are unique per class.
@@ -193,19 +199,29 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
                 .map(clazz::cast);
     }
 
+    @Override
+    public @Nullable BeanDefinition getBeanDefinition(Object obj) {
+        if (obj == null) return null;
+
+        if (obj instanceof BeanDefinition beanDefinition)
+            return beanDefinition;
+
+        return beanDefinitions.get(obj);
+    }
+
     public void register(String beanName, Object bean) {
         if (bean == null)
             throw new IllegalArgumentException("bean must not be null");
 
-        var uuid = UUID.randomUUID().toString();
-        handleBeanContainerChange(ADDED, new BeanContainer(
-                new BeanDefinition(
-                        "component",
-                        computeBeanName(beanName, uuid),
-                        null,
-                        uuid,
-                        null),
-                bean));
+        var uuid = randomUUID().toString();
+        BeanDefinition definition = new BeanDefinition(
+                "component",
+                computeBeanName(beanName, uuid),
+                null,
+                uuid,
+                null);
+        rememberBeanDefinition(bean, definition);
+        handleBeanContainerChange(ADDED, new BeanContainer(definition, bean));
         singletonBeans.put(uuid, bean);
         // the return value of 'put' is ignored, since bean registration with
         // random keys should not yield duplicates anyway.
@@ -247,6 +263,14 @@ public class BeanRegistryImplementation implements BeanRegistry, BeanCollector, 
                 log.error("Could not invoke preDestroy method of {}: {}", pc.bean, e.getMessage());
             }
         });
+    }
+
+    @Override
+    public void rememberBeanDefinition(Object bean, BeanDefinition definition) {
+        if (bean == null || definition == null)
+            return;
+
+        beanDefinitions.put(bean, definition);
     }
 
     /**

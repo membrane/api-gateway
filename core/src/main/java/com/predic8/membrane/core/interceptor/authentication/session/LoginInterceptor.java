@@ -122,7 +122,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 			sessionManager = new SessionManager();
 		sessionManager.init(router);
 		userDataProvider.init(router);
-		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, getBasePath(), path, exposeUserCredentialsToSession, message);
+		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, getBeanBaseLocation(), getBasePath(), path, exposeUserCredentialsToSession, message);
 
 		try {
 			loginDialog.init(router);

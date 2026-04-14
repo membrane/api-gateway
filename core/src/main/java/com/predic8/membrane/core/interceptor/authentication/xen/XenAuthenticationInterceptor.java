@@ -36,6 +36,8 @@ import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
+
 @MCElement(name = "xenAuthentication")
 public class XenAuthenticationInterceptor extends AbstractInterceptor {
 
@@ -141,7 +143,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         private final SecureRandom random = new SecureRandom();
 
         public void init(Router router) throws Exception {
-            String key = jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation());
+            String key = jwk.get(router.getResolverMap(), resolveBaseLocation(this, router));
             if (key == null || key.isEmpty())
                 rsaJsonWebKey = generateKey();
             else

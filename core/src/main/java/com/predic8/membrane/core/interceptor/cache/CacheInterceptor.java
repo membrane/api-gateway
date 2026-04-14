@@ -24,8 +24,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.Router;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +34,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -69,6 +69,10 @@ public class CacheInterceptor extends AbstractInterceptor {
 	public static abstract class Store {
 		public void init(Router router) {}
 
+		public void init(Router router, String baseLocation) {
+			init(router);
+		}
+
 		public abstract Node get(String url);
 		public abstract void put(String url, Node node);
 	}
@@ -102,8 +106,8 @@ public class CacheInterceptor extends AbstractInterceptor {
 		}
 
 		@Override
-		public void init(Router router) {
-			dir = ResolverMap.combine(router.getConfiguration().getBaseLocation(), dir);
+		public void init(Router router, String baseLocation) {
+			dir = combine(baseLocation, dir);
 			File d = new File(dir);
 			if (!d.exists())
 				if (!d.mkdirs())
@@ -158,7 +162,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 	@Override
 	public void init() {
 		super.init();
-		store.init(router);
+		store.init(router, getBeanBaseLocation());
 	}
 
 	/*

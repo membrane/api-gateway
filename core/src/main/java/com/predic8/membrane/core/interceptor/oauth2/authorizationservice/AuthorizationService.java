@@ -27,6 +27,7 @@ import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.transport.http.client.*;
 import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.core.util.BeanDefinitionBasePathUtil;
 import jakarta.mail.internet.*;
 import org.jose4j.jwt.*;
 import org.jose4j.lang.*;
@@ -78,17 +79,18 @@ public abstract class AuthorizationService {
     }
 
     public void init(Router router) throws Exception {
+        this.router = router;
         log = LoggerFactory.getLogger(this.getClass().getName());
+        String baseLocation = getBeanBaseLocation();
 
         if (isUseJWTForClientAuth()) {
-            JWSSigner = new JWSSigner(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), router.getConfiguration().getBaseLocation())),
-                    getSslParser().getKey().getCertificates().getFirst().get(router.getResolverMap(), router.getConfiguration().getBaseLocation()));
+            JWSSigner = new JWSSigner(PEMSupport.getInstance().parseKey(getSslParser().getKey().getPrivate().get(router.getResolverMap(), baseLocation)),
+                    getSslParser().getKey().getCertificates().getFirst().get(router.getResolverMap(), baseLocation));
         }
 
         setHttpClient(router.getHttpClientFactory().createClient(getHttpClientConfiguration()));
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
-        this.router = router;
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), baseLocation);
         init();
         if (!supportsDynamicRegistration())
             checkForClientIdAndSecret();
@@ -384,6 +386,10 @@ public abstract class AuthorizationService {
             throw new RuntimeException("Token response is no JSON.");
         }
         return response;
+    }
+
+    protected String getBeanBaseLocation() {
+        return BeanDefinitionBasePathUtil.resolveBaseLocation(this, router);
     }
 
 }

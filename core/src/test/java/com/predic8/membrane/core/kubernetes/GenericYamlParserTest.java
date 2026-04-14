@@ -16,6 +16,7 @@ import com.fasterxml.jackson.dataformat.yaml.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.beanregistry.*;
 import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.yaml.parsing.GenericYamlParser;
 import com.predic8.membrane.core.config.spring.*;
 import com.predic8.membrane.core.interceptor.authentication.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
@@ -366,6 +367,16 @@ public class GenericYamlParserTest {
         @Override
         public <T> Optional<T> getBean(String beanName, Class<T> clazz) {
             return Optional.empty();
+        }
+
+        @Override
+        public BeanDefinition getBeanDefinition(Object obj) {
+            return null;
+        }
+
+        @Override
+        public void rememberBeanDefinition(Object bean, BeanDefinition definition) {
+
         }
 
         @Override

@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.stream.*;
 
 import static com.predic8.membrane.core.interceptor.apikey.ApiKeyUtils.*;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 import static java.util.Arrays.*;
 import static java.util.Optional.of;
 import static java.util.Optional.*;
@@ -61,7 +62,7 @@ public class ApiKeyFileStore implements ApiKeyStore {
     @Override
     public void init(Router router) {
         try {
-            scopes = readKeyData(readFile(location, router.getResolverMap(), router.getConfiguration().getBaseLocation()));
+            scopes = readKeyData(readFile(location, router.getResolverMap(), resolveBaseLocation(this, router)));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

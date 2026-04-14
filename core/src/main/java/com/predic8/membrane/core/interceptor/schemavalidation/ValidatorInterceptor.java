@@ -39,6 +39,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
 
 /**
@@ -104,22 +105,22 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if (wsdl != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
+            return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
         }
         if (schema != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new XMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), schema), createFailureHandler());
+            return new XMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), schema), createFailureHandler());
         }
         if (jsonSchema != null) {
-            return new JSONYAMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
+            return new JSONYAMLSchemaValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), jsonSchema), createFailureHandler(), schemaVersion) {{
                 if(schemaMappings != null) setSchemaMappings(schemaMappings.getSchemaMap());
             }};
         }
         if (schematron != null) {
             if (schemaMappings != null)
                 logIgnoringRefSchemas();
-            return new SchematronValidator(combine(router.getConfiguration().getUriFactory(), getBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
+            return new SchematronValidator(combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), schematron), createFailureHandler(), router, applicationContext);
         }
 
         var validator = getWsdlValidatorFromSOAPProxy();
@@ -136,11 +137,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         if(soapProxy == null) return null;
         wsdl = soapProxy.getWsdl();
         name = "soap validator";
-        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), getBaseLocation(), wsdl), serviceName, createFailureHandler(), skipFaults);
-    }
-
-    private @Nullable String getBaseLocation() {
-        return router == null ? null : router.getConfiguration().getBaseLocation();
+        return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), resolveBaseLocation(soapProxy, router), wsdl), serviceName, createFailureHandler(), skipFaults);
     }
 
     @Override

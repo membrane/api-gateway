@@ -1,0 +1,10 @@
+api:
+  port: 2000
+  path:
+    uri: /orders
+  flow:
+    - template:
+        contentType: application/json
+        location: orders-response.json.template
+    - return:
+        status: 200

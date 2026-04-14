@@ -233,7 +233,7 @@ public abstract class AbstractScriptInterceptor extends AbstractInterceptor {
         if (src != null && !src.isBlank())
             return src;
         if (location != null && !location.isBlank()) {
-            try (InputStream is = router.getResolverMap().resolve(combine(router.getConfiguration().getBaseLocation(), location))) {
+            try (InputStream is = router.getResolverMap().resolve(combine(getBeanBaseLocation(), location))) {
                 return IOUtils.toString(is, UTF_8);
             } catch (Exception e) {
                 throw new ConfigurationException("Could not read script from %s".formatted(location), e);

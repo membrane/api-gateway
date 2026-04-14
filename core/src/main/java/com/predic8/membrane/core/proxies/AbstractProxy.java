@@ -13,14 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.stats.*;
-import org.apache.commons.lang3.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.InterceptorUtil;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 /**
  * Convenience class that implements Proxy.
@@ -125,6 +133,12 @@ public abstract class AbstractProxy implements Proxy {
     @Override
     public AbstractProxy clone() throws CloneNotSupportedException {
         AbstractProxy clone = (AbstractProxy) super.clone();
+        if (router != null && router.getRegistry() != null) {
+            BeanDefinition beanDefinition = router.getRegistry().getBeanDefinition(this);
+            if (beanDefinition != null) {
+                router.getRegistry().rememberBeanDefinition(clone, beanDefinition);
+            }
+        }
         try {
             clone.init(router);
         } catch (Exception e) {
@@ -136,6 +150,10 @@ public abstract class AbstractProxy implements Proxy {
     @Override
     public RuleStatisticCollector getStatisticCollector() {
         return ruleStatisticCollector;
+    }
+
+    protected final String getBeanBaseLocation() {
+        return resolveBaseLocation(this, router);
     }
 
     @Override

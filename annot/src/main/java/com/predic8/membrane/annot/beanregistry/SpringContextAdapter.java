@@ -67,6 +67,16 @@ public class SpringContextAdapter implements BeanRegistry {
     }
 
     @Override
+    public BeanDefinition getBeanDefinition(Object obj) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void rememberBeanDefinition(Object bean, BeanDefinition definition) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void register(String beanName, Object bean) {
         throw new UnsupportedOperationException();
     }

@@ -50,7 +50,7 @@ public class MicrosoftEntraIDAuthorizationService extends AuthorizationService {
     public void init() throws Exception {
         parseSrc(resolve(
                 router.getResolverMap(),
-                router.getConfiguration().getBaseLocation(),
+                getBeanBaseLocation(),
                 getWellKnownUrl("https://login.microsoftonline.com/" + tenantId + "/v2.0/")));
         adjustScope();
         prepareClaimsForLoginUrl();

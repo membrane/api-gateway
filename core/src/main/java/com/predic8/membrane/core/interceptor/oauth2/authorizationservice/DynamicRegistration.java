@@ -30,6 +30,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.exchange.Exchange.SSL_CONTEXT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 @MCElement(name = "registration")
 public class DynamicRegistration {
@@ -44,7 +45,7 @@ public class DynamicRegistration {
     public void init(Router router) {
         this.router = router;
         if (sslParser != null)
-            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), resolveBaseLocation(this, router));
         for (Interceptor i : interceptors)
             i.init(router);
         client = router.getHttpClientFactory().createClient(httpClientConfiguration);
@@ -125,4 +126,5 @@ public class DynamicRegistration {
     public void setHttpClientConfiguration(HttpClientConfiguration httpClientConfiguration) {
         this.httpClientConfiguration = httpClientConfiguration;
     }
+
 }

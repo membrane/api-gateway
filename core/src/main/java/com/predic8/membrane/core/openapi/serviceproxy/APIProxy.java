@@ -121,7 +121,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         if (specs.isEmpty())
             return;
 
-        apiRecords = new OpenAPIRecordFactory(router).create(specs);
+        apiRecords = new OpenAPIRecordFactory(router, getBeanBaseLocation()).create(specs);
 
         checkForDuplicatePaths();
 

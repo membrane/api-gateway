@@ -12,14 +12,16 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.annot.yaml;
+package com.predic8.membrane.annot.yaml.parsing;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.annot.util.*;
+import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
+import com.predic8.membrane.annot.yaml.ParsingContext;
 import org.junit.jupiter.api.*;
 
-import static com.predic8.membrane.annot.yaml.MethodSetter.*;
+import static com.predic8.membrane.annot.yaml.parsing.MethodSetter.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

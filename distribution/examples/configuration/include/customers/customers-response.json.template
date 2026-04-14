@@ -1,0 +1,15 @@
+{
+  "count": 2,
+  "customers": [
+    {
+      "id": "c-1001",
+      "name": "Alice Johnson",
+      "tier": "gold"
+    },
+    {
+      "id": "c-1002",
+      "name": "Bob Miller",
+      "tier": "silver"
+    }
+  ]
+}

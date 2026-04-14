@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.authentication.session.*;
@@ -105,7 +106,8 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         }
 
         try {
-            getConsentPageFile().init(router,getConsentFile());
+            BeanDefinition beanDefinition = router.getRegistry() != null ? router.getRegistry().getBeanDefinition(this) : null;
+            consentPageFile.init(router, getConsentFile(), beanDefinition);
         } catch (IOException e) {
             throw new ConfigurationException("Could not create Consent Page file.",e);
         }

@@ -47,4 +47,16 @@ public class OSUtil {
         return s.replaceAll("\\\\", "/");
     }
 
+    public static boolean isWindowsAbsolutePath(String location) {
+        if (location == null || location.length() < 3) {
+            return false;
+        }
+        if (location.startsWith("\\\\") || location.startsWith("//")) {
+            return true;
+        }
+        return Character.isLetter(location.charAt(0))
+                && location.charAt(1) == ':'
+                && (location.charAt(2) == '/' || location.charAt(2) == '\\');
+    }
+
 }

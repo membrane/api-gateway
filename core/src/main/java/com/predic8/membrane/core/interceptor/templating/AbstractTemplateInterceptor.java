@@ -125,7 +125,7 @@ public abstract class AbstractTemplateInterceptor extends AbstractInterceptor {
     }
 
     private String readFromLocation() {
-        try (InputStream is = getRouter().getResolverMap().resolve(combine(getRouter().getConfiguration().getBaseLocation(), location))) {
+        try (InputStream is = getRouter().getResolverMap().resolve(combine(getBeanBaseLocation(), location))) {
             return IOUtils.toString(is, charset); // TODO Encoding
         } catch (Exception e) {
             throw new ConfigurationException("Could not read template from %s".formatted( location), e);

@@ -16,13 +16,30 @@ package com.predic8.membrane.core.util;
 
 import org.junit.jupiter.api.*;
 
+import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
+import static com.predic8.membrane.core.util.OSUtil.isWindowsAbsolutePath;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OSUtilTest {
 
     @Test
-    void fixBackslashes() {
-        assertEquals("a/b",OSUtil.fixBackslashes("a\\b"));
-        assertEquals("a//b",OSUtil.fixBackslashes("a\\\\b"));
+    void backslashesFix() {
+        assertEquals("a/b", fixBackslashes("a\\b"));
+        assertEquals("a//b", fixBackslashes("a\\\\b"));
+    }
+
+    @Test
+    void windowsAbsolutePath() {
+        assertFalse(isWindowsAbsolutePath(null));
+        assertFalse(isWindowsAbsolutePath(""));
+        assertFalse(isWindowsAbsolutePath("C:"));
+
+        assertTrue(isWindowsAbsolutePath("C:\\temp"));
+        assertTrue(isWindowsAbsolutePath("C:/temp"));
+        assertTrue(isWindowsAbsolutePath("\\\\server\\share"));
+        assertTrue(isWindowsAbsolutePath("//server/share"));
+
+        assertFalse(isWindowsAbsolutePath("/tmp"));
+        assertFalse(isWindowsAbsolutePath("relative\\path"));
     }
 }

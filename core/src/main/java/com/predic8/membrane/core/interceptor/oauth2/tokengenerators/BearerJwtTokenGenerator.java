@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.Router;
 import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -38,6 +38,7 @@ import java.security.SecureRandom;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 @MCElement(name = "bearerJwtToken")
@@ -59,7 +60,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
                                 "reference it using <bearerJwtToken><jwk location=\"...\">.",
                         rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         } else {
-            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getConfiguration().getBaseLocation())));
+            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), resolveBaseLocation(this, router))));
         }
     }
 

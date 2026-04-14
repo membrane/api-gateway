@@ -13,15 +13,18 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
-import org.apache.commons.io.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.Router;
+import org.apache.commons.io.IOUtils;
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 public class ConsentPageFile {
 
@@ -41,13 +44,13 @@ public class ConsentPageFile {
     private Map<String, Object> json;
 
 
-    public void init(Router router, String url) throws IOException {
+    public void init(Router router, String url, BeanDefinition beanDefinition) throws IOException {
         resolver = router.getResolverMap();
         if(url == null) {
             createDefaults();
             return;
         }
-        parseFile(getFromUrl(ResolverMap.combine(router.getConfiguration().getBaseLocation(),url)));
+        parseFile(getFromUrl(ResolverMap.combine(resolveBaseLocation(beanDefinition, router),url)));
     }
 
     private void parseFile(String consentPageFile) throws IOException {

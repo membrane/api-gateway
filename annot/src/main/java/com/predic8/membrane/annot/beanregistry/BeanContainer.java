@@ -17,11 +17,14 @@ package com.predic8.membrane.annot.beanregistry;
 import com.predic8.membrane.annot.Grammar;
 import com.predic8.membrane.annot.bean.BeanFactory;
 import com.predic8.membrane.annot.yaml.*;
+import com.predic8.membrane.annot.yaml.parsing.GenericYamlParser;
 import org.jetbrains.annotations.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.*;
+
+import static com.predic8.membrane.annot.yaml.parsing.GenericYamlParser.readMembraneObject;
 
 public class BeanContainer {
     private static final Logger log = LoggerFactory.getLogger(BeanContainer.class);
@@ -80,20 +83,33 @@ public class BeanContainer {
 
     private synchronized @NotNull Object define(BeanRegistryImplementation registry, Grammar grammar) {
         log.debug("defining bean: {}", definition.getNode());
+        BeanDefinitionContext.push(definition);
         try {
+            Object created;
             if ("bean".equals(definition.getKind())) {
-                return new BeanFactory(registry).create(definition.getNode().path("bean"));
+                created = new BeanFactory(registry).create(definition.getNode().path("bean"));
+            } else {
+                created = readMembraneObject(definition.getKind(),
+                        grammar,
+                        definition.getNode(),
+                        registry);
             }
-            return GenericYamlParser.readMembraneObject(definition.getKind(),
-                    grammar,
-                    definition.getNode(),
-                    registry);
+
+            registry.rememberBeanDefinition(created, definition);
+            return created;
         } catch (ConfigurationParsingException e) {
+            if (e.getSourceFile() == null
+                    && definition.getSourceMetadata() != null
+                    && definition.getSourceMetadata().sourceFile() != null) {
+                e.setSourceFile(definition.getSourceMetadata().sourceFile().toAbsolutePath().normalize());
+            }
             throw e;
         }
         catch (Exception e) {
             log.error("Could not instantiate bean: {}", definition.getNode(), e);
             throw new RuntimeException(e);
+        } finally {
+            BeanDefinitionContext.pop();
         }
     }
 

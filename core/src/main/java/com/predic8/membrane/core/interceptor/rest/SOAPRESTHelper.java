@@ -39,7 +39,7 @@ abstract class SOAPRESTHelper extends AbstractInterceptor {
 		XSLTTransformer t = xsltTransformers.get(key);
 		if (t == null) {
 			int concurrency = 2 * Runtime.getRuntime().availableProcessors();
-			t = new XSLTTransformer(ss, router, concurrency);
+			t = new XSLTTransformer(ss, router, getBeanBaseLocation(), concurrency);
 			XSLTTransformer t2 = xsltTransformers.putIfAbsent(key, t);
 			if (t2 != null)
 				return t2;

@@ -14,16 +14,17 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.router.Router;
 
-import java.util.*;
+import java.util.EnumSet;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveBaseLocation;
 
 public class AbstractInterceptor implements Interceptor {
 
@@ -122,6 +123,10 @@ public class AbstractInterceptor implements Interceptor {
 
 	public Proxy getProxy() {
 		return proxy;
+	}
+
+	protected final String getBeanBaseLocation() {
+		return resolveBaseLocation(this, router);
 	}
 
 	public FlowController getFlowController() {

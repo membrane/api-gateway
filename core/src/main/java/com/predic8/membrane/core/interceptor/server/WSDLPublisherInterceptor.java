@@ -205,7 +205,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             String resource = null;
             if (isRequestForWSDL(exc)) {
                 processDocuments(exc);
-                exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), resource = combine(router.getConfiguration().getBaseLocation(), wsdl)));
+                exc.setResponse(webServerInterceptor.createResponse(router.getResolverMap(), resource = combine(getBeanBaseLocation(), wsdl)));
                 exc.getResponse().getHeader().setContentType(TEXT_XML);
             }
             if (exc.getRequest().getUri().contains("?xsd=")) {
@@ -228,7 +228,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
             if (resource != null) {
                 var wi = new WSDLInterceptor();
                 wi.setRewriteEndpoint(false);
-                wi.setPathRewriter(new RelativePathRewriter(exc, combine(router.getConfiguration().getBaseLocation(), resource)));
+                wi.setPathRewriter(new RelativePathRewriter(exc, combine(getBeanBaseLocation(), resource)));
                 wi.init(router);
                 wi.handleResponse(exc);
                 return RETURN;

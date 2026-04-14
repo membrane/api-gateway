@@ -17,6 +17,7 @@ package com.predic8.membrane.annot.yaml;
 import com.predic8.membrane.annot.*;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -197,6 +198,16 @@ public final class McYamlIntrospector {
     public static boolean isCollapsed(Class<?> clazz) {
         MCElement el = clazz.getAnnotation(MCElement.class);
         return el != null && el.collapsed();
+    }
+
+    public static Method findSingleSetterOrNullForAnnotation(Class<?> clazz, Class<? extends Annotation> annotation) {
+        return stream(clazz.getMethods())
+                .filter(McYamlIntrospector::isSetter)
+                .filter(method -> method.isAnnotationPresent(annotation))
+                .reduce((a, b) -> {
+                    throw new IllegalStateException("Multiple annotated setters found on %s for @%s".formatted(clazz.getName(), annotation.getSimpleName()));
+                })
+                .orElse(null);
     }
 
 }

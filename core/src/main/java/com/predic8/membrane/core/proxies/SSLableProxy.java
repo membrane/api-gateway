@@ -126,8 +126,8 @@ public class SSLableProxy extends AbstractProxy {
 
 	private @NotNull SSLContext generateSslInboundContext() {
 		if (sslInboundParser.getKeyGenerator() != null)
-			return new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
-		return new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getConfiguration().getBaseLocation());
+			return new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), getBeanBaseLocation());
+		return new StaticSSLContext(sslInboundParser, router.getResolverMap(), getBeanBaseLocation());
 	}
 
 }
