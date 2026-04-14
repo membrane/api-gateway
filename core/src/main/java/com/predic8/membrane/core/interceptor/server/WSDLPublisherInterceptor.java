@@ -179,7 +179,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
         if (soapProxy == null) {
             throw new ConfigurationException("<wsdlPublisher> can only be used within a <soapProxy> or needs to declare <wsdlPublisher wsdl='...'>");
         }
-        wsdl = soapProxy.getWsdl();
+        wsdl = soapProxy.getResolvedWsdl();
         setWsdl(wsdl);
     }
 

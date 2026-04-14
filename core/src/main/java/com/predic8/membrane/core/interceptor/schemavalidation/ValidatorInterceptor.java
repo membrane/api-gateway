@@ -135,7 +135,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 
     private @Nullable WSDLValidator getWsdlValidatorFromSOAPProxy() {
         if(soapProxy == null) return null;
-        wsdl = soapProxy.getWsdl();
+        wsdl = soapProxy.getResolvedWsdl();
         name = "soap validator";
         return new WSDLValidator(resourceResolver, combine(router.getConfiguration().getUriFactory(), resolveBaseLocation(soapProxy, router), wsdl), serviceName, createFailureHandler(), skipFaults);
     }
