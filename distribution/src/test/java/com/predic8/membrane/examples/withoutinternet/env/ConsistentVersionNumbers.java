@@ -70,6 +70,7 @@ public class ConsistentVersionNumbers {
 	public static final Option RELEASE = Option.builder("release").desc("Release version").hasArg().argName("x.y.z").build();
 
 	private static final Pattern CONSTANTS_VERSION_PATTERN = Pattern.compile("(\\s*String version = \")(\\d+.\\d+)(\";.*)");
+	private static final Pattern CONSTANTS_JSON_SCHEMA_VERSION_PATTERN = Pattern.compile("(\\s*String jsonSchemaVersion = \")([^\"]+)(\";.*)");
 	private static final Pattern RPM_SPEC_VERSION_PATTERN = Pattern.compile("(Version:\\s+)(\\S+)(.*)");
 	private static final Pattern HELP_REFERENCE_VERSION_PATTERN = Pattern.compile("(path.replace\\(\"%VERSION%\", \")([^\"]*)(\"\\))");
 	private static final Pattern YAML_SCHEMA_VERSION_PATTERN = Pattern.compile("(\\s*#\\s*yaml-language-server:\\s*\\$schema=https://www\\.membrane-api\\.io/v)(\\d+\\.\\d+(?:\\.\\d+)?)(\\.json\\b.*)");
@@ -155,6 +156,7 @@ public class ConsistentVersionNumbers {
 	private static void handleConstants(File file, VersionTransformer versionTransformer) throws Exception {
 		//		String version = "5.1"; // fallback
 		handleByRegex(file, versionTransformer, CONSTANTS_VERSION_PATTERN, v -> "%d.%d".formatted(v.getMajor(), v.getMinor()));
+		handleByRegex(file, versionTransformer, CONSTANTS_JSON_SCHEMA_VERSION_PATTERN, Semver::getValue);
 	}
 
 	private static void handleRpmSpec(File file, VersionTransformer versionTransformer) throws Exception {

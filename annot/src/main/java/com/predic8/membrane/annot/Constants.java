@@ -36,22 +36,27 @@ public class Constants {
 	public static final byte[] CRLF_BYTES = { 13, 10 };
 
 	public static final String VERSION;
+	public static final String JSON_SCHEMA_VERSION;
 
 	static {
 		String version = "7.2"; // fallback
+		String jsonSchemaVersion = "7.2"; // fallback
 		try {
 			Properties p = new Properties(); // Production
 			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa/service-proxy-core/pom.properties"));
 			version = p.getProperty("version");
+			jsonSchemaVersion = version;
 		} catch (Exception e) {
 			try {
 				Properties p = new Properties(); // Development
 				p.load(new FileInputStream("target/maven-archiver/pom.properties"));
-				version = p.getProperty("version") + " - DEVELOPMENT";
+				jsonSchemaVersion = p.getProperty("version");
+				version = jsonSchemaVersion + " - DEVELOPMENT";
 			} catch (Exception ignored) {
 			}
 		}
 		VERSION = version;
+		JSON_SCHEMA_VERSION = jsonSchemaVersion;
 	}
 
 	public static final String ISO_8859_1 = "ISO-8859-1";
