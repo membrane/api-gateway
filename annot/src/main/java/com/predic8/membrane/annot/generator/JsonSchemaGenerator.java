@@ -29,7 +29,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.VERSION;
+import static com.predic8.membrane.annot.Constants.JSON_SCHEMA_VERSION;
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
@@ -71,7 +71,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private void assemble(Model m, MainInfo main) throws IOException {
         // Reset so multiple calls would be possible
         flowDefCreated = false;
-        schema = schema("membrane").version(VERSION);
+        schema = schema("membrane").version(JSON_SCHEMA_VERSION);
         noEnvelopeParserSourceByDefName.clear();
 
         addParserDefinitions(m, main);
