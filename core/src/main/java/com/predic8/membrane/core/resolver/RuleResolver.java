@@ -96,9 +96,10 @@ public class RuleResolver implements SchemaResolver {
     }
 
     private static @NotNull String getPathAndQuery(URI uri) {
-        if (uri.getQuery().isEmpty())
+        String query = uri.getQuery();
+        if (query == null || query.isEmpty())
             return uri.getPath();
-        return uri.getPath() + "?" + uri.getQuery();
+        return uri.getPath() + "?" + query;
     }
 
     protected static String getRuleName(String url) {
