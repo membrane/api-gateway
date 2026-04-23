@@ -165,7 +165,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return proxy;
     }
 
-    private MCPToolsListResponse toolsList(JSONRPCRequest request) throws IOException {
+    private MCPToolsListResponse toolsList(JSONRPCRequest request) {
         log.debug("Tools list");
         return MCPToolsListResponse.from(MCPToolsList.from(request))
                 .withTool(new MCPToolsListResponse.Tool(
