@@ -1,7 +1,7 @@
 package com.predic8.membrane.core.interceptor.mcp;
 
-import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -9,8 +9,11 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import com.predic8.membrane.core.mcp.*;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.SOAPProxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.predic8.membrane.annot.Constants.VERSION;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
@@ -37,29 +41,8 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-
         try {
-            var request = JSONRPCRequest.parse(exc.getRequest().getBodyAsStreamDecoded());
-
-            MCPResponse<?> mcpResponse = null;
-            Response response;
-            if (request.getMethod().equals("initialize")) {
-                mcpResponse = initialize(exc, request);
-            } else if (request.getMethod().equals("notifications/initialized")) {
-                // Do nothing
-            } else if (request.getMethod().equals("tools/list")) {
-                mcpResponse = toolsList(exc, request);
-            } else if (request.getMethod().equals("tools/call")) {
-                mcpResponse = toolsCall(exc, request);
-            } else {
-                System.out.println("Unknown MCP Request: " + request);
-            }
-            if (mcpResponse == null) {
-                response = Response.noContent().build();
-            } else {
-                response = ok().contentType(APPLICATION_JSON).body(mcpResponse.toJson()).build();
-            }
-            exc.setResponse(response);
+            exc.setResponse(createResponse(processMCPRequest(JSONRPCRequest.parse(exc.getRequest().getBodyAsStreamDecoded()))));
             return RETURN;
 
         } catch (IOException e) {
@@ -67,118 +50,145 @@ public class MembraneMCPServer extends AbstractInterceptor {
         }
     }
 
-    private MCPResponse toolsCall(Exchange exc, JSONRPCRequest request) throws IOException {
+    private static Response createResponse(MCPResponse<?> mcpResponse) throws IOException {
+        if (mcpResponse == null) {
+            return Response.noContent().build();
+        }
+        return ok().contentType(APPLICATION_JSON).body(mcpResponse.toJson()).build();
+    }
+
+    private @Nullable MCPResponse<?> processMCPRequest(JSONRPCRequest request) throws IOException {
+        switch (request.getMethod()) {
+            case "initialize" -> {
+                return initialize(request);
+            }
+            case "notifications/initialized" -> {
+                log.debug("MCP Client is ready");
+                return null;
+            }
+            case "tools/list" -> {
+                return toolsList(request);
+            }
+            case "tools/call" -> {
+                return toolsCall(request);
+            }
+            default -> log.info("Unknown MCP Request: {}",request);
+        }
+        return null;
+    }
+
+    private MCPToolsCallResponse toolsCall(JSONRPCRequest request) {
         var req = MCPToolsCall.from(request);
 
         log.debug("Received MCP tools call: {}", req);
 
-        if (req.getName().equals("listProxies")) {
-            return listProxies(req);
-        } else if (req.getName().equals("getExchanges")) {
-            return getExchanges(req);
-        } else if (req.getName().equals("getStatistics")) {
-            getRouter().getStatistics();
-        } else {
-            log.info("Unknown tools call: " + req.getName());
+        switch (req.getName()) {
+            case "listProxies" -> {
+                return listProxies(req);
+            }
+            case "getExchanges" -> {
+                return getExchanges(req);
+            }
+            case "getStatistics" -> getRouter().getStatistics();
+            default -> log.info("Unknown tools call: " + req.getName());
         }
 
         return null;
     }
 
     private MCPToolsCallResponse getExchanges(MCPToolsCall req) {
-        var exchangesRes = getRouter().getExchangeStore().getAllExchangesAsList().stream().map(e -> {
+        return MCPToolsCallResponse.from(req)
+                .withJson(Map.of("exchanges", getRouter().getExchangeStore()
+                        .getAllExchangesAsList().stream()
+                        .map(MembraneMCPServer::getExchangeDescription)
+                        .filter(Objects::nonNull).toList()));
+    }
 
-            if (e.getResponse() == null)
-                return null;
+    private static @Nullable HashMap<String, Object> getExchangeDescription(AbstractExchange e) {
+        if (e.getResponse() == null)
+            return null;
 
-            var exc = new HashMap<String, Object>();
-            exc.put("id", e.getId());
-            var request = new HashMap<String, Object>();
-            var response = new HashMap<String, Object>();
+        var exc = new HashMap<String, Object>();
+        exc.put("id", e.getId());
+        var request = new HashMap<String, Object>();
+        var response = new HashMap<String, Object>();
 
-            request.put("method", e.getRequest().getMethod());
-            request.put("path", e.getRequest().getUri());
-            request.put("body", e.getRequest().getBodyAsStringDecoded());
-            request.put("headers",e.getRequest().getHeader());
+        request.put("method", e.getRequest().getMethod());
+        request.put("path", e.getRequest().getUri());
+        request.put("body", e.getRequest().getBodyAsStringDecoded());
+        request.put("headers", e.getRequest().getHeader());
 
-            exc.put("request", request);
-            exc.put("response", response);
-            return exc;
-        }).filter(Objects::nonNull).toList();
-
-        return MCPToolsCallResponse.from(req).withJson(Map.of("exchanges", exchangesRes));
+        exc.put("request", request);
+        exc.put("response", response);
+        return exc;
     }
 
     private MCPToolsCallResponse listProxies(MCPToolsCall req) {
-        var proxies = getRouter().getRuleManager().getRules();
-
-        var proxiesDesc = proxies.stream().map(p -> {
-            var proxy = new HashMap<String, Object>();
-            proxy.put("name", p.getName());
-
-            String type;
-            switch (p) {
-                case APIProxy ap -> {
-                    type = "API";
-                    //     proxy.put("openapi", ap.getOpenapi());
-                }
-                case ServiceProxy s -> {
-                    type = "serviceProxy";
-                }
-                case SOAPProxy sp -> {
-                    type = "soapProxy";
-                    proxy.put("wsdl", sp.getWsdl());
-                    proxy.put("serviceName", sp.getServiceName());
-                }
-                default -> {
-                    type = "unknown";
-                }
-            }
-
-            var interceptors = p.getFlow().stream().map(i -> {
-                Map<String, String> interceptor = new HashMap();
-                interceptor.put("name", i.getDisplayName());
-                return interceptor;
-            }).toList();
-
-            proxy.put("statistics", getRouter().getExchangeStore().getStatistics(p.getKey()));
-
-            proxy.put("interceptors", interceptors);
-            proxy.put("type", type);
-            proxy.put("rule", p.getKey().toString());
-            return proxy;
-        }).toList();
-
-        return MCPToolsCallResponse.from(req).withJson(Map.of("proxies", proxiesDesc));
+        return MCPToolsCallResponse.from(req)
+                .withJson(Map.of("proxies", getRouter().getRuleManager().getRules().stream().map(this::getProxyDescription).toList()));
     }
 
-    private MCPResponse toolsList(Exchange exc, JSONRPCRequest request) throws IOException {
+    private @NotNull HashMap<String, Object> getProxyDescription(Proxy p) {
+        var proxy = new HashMap<String, Object>();
+        proxy.put("name", p.getName());
+
+        String type;
+        switch (p) {
+            case APIProxy ap -> {
+                type = "API";
+                //     proxy.put("openapi", ap.getOpenapi());
+            }
+            case ServiceProxy s -> {
+                type = "serviceProxy";
+            }
+            case SOAPProxy sp -> {
+                type = "soapProxy";
+                proxy.put("wsdl", sp.getWsdl());
+                proxy.put("serviceName", sp.getServiceName());
+            }
+            default -> {
+                type = "unknown";
+            }
+        }
+
+        var interceptors = p.getFlow().stream().map(i -> {
+            Map<String, String> interceptor = new HashMap<>();
+            interceptor.put("name", i.getDisplayName());
+            return interceptor;
+        }).toList();
+
+        proxy.put("statistics", getRouter().getExchangeStore().getStatistics(p.getKey()));
+
+        proxy.put("interceptors", interceptors);
+        proxy.put("type", type);
+        proxy.put("rule", p.getKey().toString());
+        return proxy;
+    }
+
+    private MCPToolsListResponse toolsList(JSONRPCRequest request) throws IOException {
         log.debug("Tools list");
-        var req = MCPToolsList.from(request);
-        var resp = MCPToolsListResponse.from(req)
+        return MCPToolsListResponse.from(MCPToolsList.from(request))
                 .withTool(new MCPToolsListResponse.Tool(
                         "listProxies",
                         "Lists all the proxies, e.g. API, soapProxy", Map.of("type", "object")))
                 .withTool(new MCPToolsListResponse.Tool("getExchanges", "Gets the last 100 HTTP exchanges", Map.of("type", "object")));
 
-//                        Map.of("type", "object",
+        //                        Map.of("type", "object",
 //                                "properties", Map.of("query", Map.of("type", "string")),
 //                                "required", List.of("query"))));
-        return resp;
+
     }
 
-    private MCPResponse<?> initialize(Exchange exc, JSONRPCRequest request) throws IOException {
-        var initialize = new MCPInitialize(request);
+    private MCPInitializeResponse initialize(JSONRPCRequest request) throws IOException {
+        return new MCPInitializeResponse(new MCPInitialize(request))
+                .withCapabilities(getCapabilities())
+                .withServerInfo("Membrane", VERSION);
+    }
 
-        log.debug("initialize: " + initialize);
-
-        var response = new MCPInitializeResponse(initialize);
-
+    private static @NotNull HashMap<String, Object> getCapabilities() {
         var capabilities = new HashMap<String, Object>();
         capabilities.put("tools", Map.of("lastExchanges", false));
-        response.withCapabilities(capabilities)
-                .withServerInfo("Membrane", Constants.VERSION);
-        return response;
+        return capabilities;
     }
 
     @Override
