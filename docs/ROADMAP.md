@@ -14,6 +14,8 @@ PRIO 1:
   - @coderabbitai look through the code base for usages of these variables and suggest documentation 
 
 PRIO 2:
+- Remove MemoryExchangeStore
+  - It was used only by Membrane Monitor
 - jsonRPCProtection:
   - maxBatchSize = 0,1 -> No Batch, n = n-Batches
   - allow/block list for methods
