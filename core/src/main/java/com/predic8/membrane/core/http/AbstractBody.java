@@ -25,7 +25,7 @@ import java.util.List;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * A HTTP message body (request or response), as it is received or constructed
+ * An HTTP message body (request or response), as it is received or constructed
  * internally by Membrane.
  * <p>
  * (Sending a body is handled by one of the {@link AbstractBodyTransferer}s.)
@@ -233,6 +233,11 @@ public abstract class AbstractBody {
 		return read;
 	}
 
+	/**
+	 * Mutates the ArrayList observers without synchronization. Callers must only invoke
+	 * it from the thread that owns the Body.
+	 * @param observer MessageObserver to add
+	 */
 	public void addObserver(MessageObserver observer) {
 		if (read) {
 			observer.bodyComplete(this);
