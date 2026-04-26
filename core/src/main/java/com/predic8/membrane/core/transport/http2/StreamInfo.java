@@ -226,7 +226,7 @@ public class StreamInfo {
         protected void writeStreamed(AbstractBodyTransferer out) {
             chunks.clear();
             while (true) {
-                DataFrame df = null;
+                DataFrame df;
                 try {
                     df = removeDataFrame();
                 } catch (IOException e) {
@@ -256,10 +256,10 @@ public class StreamInfo {
         }
 
         @Override
-        protected byte[] getRawLocal() throws IOException {
+        protected byte[] getRawLocal() {
             if (chunks.isEmpty()) {
-                log.debug("size of chunks list: " + chunks.size() + "  " + hashCode());
-                log.debug("chunks size is: " + chunks.size() + " at time: " + System.currentTimeMillis());
+                log.debug("size of chunks list: %d  %d".formatted(chunks.size(), hashCode()));
+                log.debug("chunks size is: %d at time: %d".formatted(chunks.size(), System.currentTimeMillis()));
                 return new byte[0];
             }
 

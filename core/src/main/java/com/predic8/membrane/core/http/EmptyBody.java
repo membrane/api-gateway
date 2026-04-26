@@ -29,17 +29,17 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	protected void readLocal() throws IOException {
+	protected void readLocal() {
 		//ignore
 	}
 
 	@Override
-	protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
+	protected void writeAlreadyRead(AbstractBodyTransferer out) {
 		//ignore
 	}
 
 	@Override
-	protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
+	protected void writeNotRead(AbstractBodyTransferer out) {
 		//ignore
 	}
 
@@ -49,7 +49,7 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	protected byte[] getRawLocal() throws IOException {
+	protected byte[] getRawLocal() {
 		return new byte[0];
 	}
 

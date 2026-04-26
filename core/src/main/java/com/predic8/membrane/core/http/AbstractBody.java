@@ -100,7 +100,7 @@ public abstract class AbstractBody {
 	/**
 	 * Returns the body's content as a byte[] representation.
 	 * <p>
-	 * For example, {@link #getContent()} might return a byte representation of
+	 * For example, getContent() might return a byte representation of
 	 *
 	 * <pre>
 	 * Wikipedia in
@@ -113,7 +113,7 @@ public abstract class AbstractBody {
 	 * ), the example above is taken from there.
 	 * <p>
 	 * Please note that a new array is allocated when calling
-	 * {@link #getContent()}. If you do not need the body as one single byte[],
+	 * getContent(). If you do not need the body as one single byte[],
 	 * you should therefore use {@link #getContentAsStream()} instead.
 	 */
 	public byte[] getContent() {

@@ -193,7 +193,7 @@ public class Body extends AbstractBody {
 	}
 
 	@Override
-	protected byte[] getRawLocal() throws IOException {
+	protected byte[] getRawLocal() {
 		if (chunks.isEmpty()) {
 			log.debug("Chunks list is empty: {}", hashCode());
 			log.debug("At time: {}", currentTimeMillis());

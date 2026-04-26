@@ -195,7 +195,7 @@ public class Http2ExchangeHandler implements Runnable {
         exchange.collectStatistics();
     }
 
-    public static void writeMessageBody(final int streamId, final StreamInfo streamInfo, final FrameSender sender, final Settings peerSettings, final PeerFlowControl peerFlowControl, Message res) throws IOException {
+    public static void writeMessageBody(final int streamId, final StreamInfo streamInfo, final FrameSender sender, final Settings peerSettings, final PeerFlowControl peerFlowControl, Message res) {
         res.getBody().write(new AbstractBodyTransferer() {
             @Override
             public void write(byte[] content, int i, int length) {
