@@ -21,7 +21,7 @@ import java.io.IOException;
  * <p>
  * An implementation might realize "chunking", for example.
  */
-public abstract class AbstractBodyTransferrer {
+public abstract class AbstractBodyTransferer {
 
 	public abstract void write(byte[] content, int i, int length) throws IOException;
 	public abstract void write(Chunk chunk) throws IOException;

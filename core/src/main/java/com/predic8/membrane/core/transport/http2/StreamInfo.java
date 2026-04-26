@@ -196,14 +196,14 @@ public class StreamInfo {
         }
 
         @Override
-        protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
+        protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
             if (getLength() > 0)
                 out.write(getContent(), 0, getLength());
             out.finish(trailer);
         }
 
         @Override
-        protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
+        protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
             chunks.clear();
             while (true) {
                 DataFrame df = removeDataFrame();
@@ -223,7 +223,7 @@ public class StreamInfo {
         }
 
         @Override
-        protected void writeStreamed(AbstractBodyTransferrer out) {
+        protected void writeStreamed(AbstractBodyTransferer out) {
             chunks.clear();
             while (true) {
                 DataFrame df = null;
