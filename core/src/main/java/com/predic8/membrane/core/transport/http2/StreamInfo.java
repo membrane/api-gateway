@@ -258,8 +258,7 @@ public class StreamInfo {
         @Override
         protected byte[] getRawLocal() {
             if (chunks.isEmpty()) {
-                log.debug("size of chunks list: %d  %d".formatted(chunks.size(), hashCode()));
-                log.debug("chunks size is: %d at time: %d".formatted(chunks.size(), System.currentTimeMillis()));
+                log.debug("Chunks list is empty (hash={})", hashCode());
                 return new byte[0];
             }
 
