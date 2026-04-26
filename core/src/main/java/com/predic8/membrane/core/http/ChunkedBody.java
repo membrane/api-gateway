@@ -273,7 +273,7 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    protected byte[] getRawLocal() throws IOException {
+    protected byte[] getRawLocal() {
         byte[] raw = new byte[getRawLength()];
         int destPos = 0;
         for (Chunk chunk : chunks) {
