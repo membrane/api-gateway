@@ -30,7 +30,6 @@ import java.io.InputStream;
 import static com.predic8.membrane.core.http.Header.*;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Thread.sleep;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.now;
@@ -46,7 +45,7 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
     private static final Logger log = LoggerFactory.getLogger(ServerSentEventsDemoStreamInterceptor.class);
 
     private int intervalSeconds = 1;
-    private int totalEvents = MAX_VALUE;
+    private int totalEvents = 3600; // 1 hour
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -58,7 +57,6 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
         var r = ok().build();
         r.getHeader().setContentType("text/event-stream; charset=utf-8");
         r.getHeader().add(CACHE_CONTROL, "no-cache");
-        r.getHeader().setConnection("close");
         r.getHeader().add(TRANSFER_ENCODING, "chunked");
         r.getHeader().removeFields(CONTENT_LENGTH);
         r.setBody(new StreamingBody());
@@ -88,7 +86,7 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
 
                     log.info("Sending event: {}", i);
 
-                    transferer.write(new Chunk(msg.getBytes()));
+                    transferer.write(new Chunk(msg.getBytes(UTF_8)));
 
                     //noinspection BusyWait
                     sleep(intervalSeconds * 1000L);
@@ -117,7 +115,7 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
 
         @Override
         public InputStream getContentAsStream() throws ReadingBodyException {
-            throw new ReadingBodyException("Streaming body does not support getContentAsStream()");
+            throw new ReadingBodyException("Streaming body does not support getContentAsStream(). Probably there is an interceptor that reads the body. Take it out or do not use 'sseDemoStream'.");
         }
 
         @Override

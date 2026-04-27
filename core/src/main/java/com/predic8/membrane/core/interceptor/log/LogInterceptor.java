@@ -120,9 +120,9 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
         }
 
         // Accessing a stream message would block
-        if (msg.isStream()) {
+        if (flow == RESPONSE && msg.isStream()) {
             // Log each chunk as it arrives
-            exc.getResponse().getBody().addObserver(new AbstractMessageObserver() {
+            msg.getBody().addObserver(new AbstractMessageObserver() {
                 @Override
                 public void bodyChunk(Chunk chunk) {
                     writeLog("Stream Event: " + chunk.toString());
