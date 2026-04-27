@@ -1,16 +1,23 @@
 package com.predic8.membrane.core.jsonrpc;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Objects;
+
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ResponseKind.ERROR;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ResponseKind.SUCCESS;
 
 /**
  * Represents a JSON-RPC 2.0 response as defined by https://www.jsonrpc.org/specification.
@@ -42,8 +49,8 @@ import java.util.Objects;
  *
  * <p>Standard error codes are provided as constants, e.g. {@link #ERR_PARSE_ERROR}.</p>
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"jsonrpc", "id", "result", "error"})
+@JsonSerialize(using = JSONRPCResponse.Serializer.class)
 public class JSONRPCResponse {
 
     /** JSON-RPC protocol version — always {@code "2.0"}. */
@@ -73,11 +80,6 @@ public class JSONRPCResponse {
 
     /**
      * Present on success responses; absent (null) on error responses.
-     *
-     * <p>Note: per spec, {@code result} may legitimately be JSON {@code null}.
-     * In that case serialisation will omit the field due to {@code @JsonInclude(NON_NULL)}.
-     * If an explicit JSON {@code null} result must be preserved on the wire, wrap the
-     * value before passing it to {@link #success(Object, Object)}.</p>
      */
     @JsonProperty("result")
     private Object result;
@@ -86,15 +88,20 @@ public class JSONRPCResponse {
     @JsonProperty("error")
     private Error error;
 
+    /** Distinguishes between a success response carrying {@code result} and an error response carrying {@code error}. */
+    @JsonIgnore
+    private ResponseKind responseKind;
+
     // ---------- Constructors ----------
 
     /** No-arg constructor for Jackson deserialization. */
     public JSONRPCResponse() {}
 
-    private JSONRPCResponse(Object id, Object result, Error error) {
+    private JSONRPCResponse(Object id, Object result, Error error, ResponseKind responseKind) {
         this.id = id;
         this.result = result;
         this.error = error;
+        this.responseKind = responseKind;
     }
 
     // ---------- Static factories ----------
@@ -106,7 +113,7 @@ public class JSONRPCResponse {
      * @param result the result value (any JSON-serialisable object, including null)
      */
     public static JSONRPCResponse success(Object id, Object result) {
-        return new JSONRPCResponse(id, result, null);
+        return new JSONRPCResponse(id, result, null, SUCCESS);
     }
 
     /**
@@ -117,7 +124,7 @@ public class JSONRPCResponse {
      */
     public static JSONRPCResponse from(JSONRPCRequest request, Object result) {
         Objects.requireNonNull(request, "request must not be null");
-        return new JSONRPCResponse(request.getId(), result, null);
+        return new JSONRPCResponse(request.getId(), result, null, SUCCESS);
     }
 
     /**
@@ -128,7 +135,7 @@ public class JSONRPCResponse {
      * @param message a human-readable error description
      */
     public static JSONRPCResponse error(Object id, int code, String message) {
-        return new JSONRPCResponse(id, null, new Error(code, message, null));
+        return new JSONRPCResponse(id, null, new Error(code, message, null), ERROR);
     }
 
     /**
@@ -140,7 +147,7 @@ public class JSONRPCResponse {
      * @param data    optional additional error information (any JSON-serialisable object)
      */
     public static JSONRPCResponse error(Object id, int code, String message, Object data) {
-        return new JSONRPCResponse(id, null, new Error(code, message, data));
+        return new JSONRPCResponse(id, null, new Error(code, message, data), ERROR);
     }
 
     /**
@@ -152,7 +159,7 @@ public class JSONRPCResponse {
      */
     public static JSONRPCResponse errorFor(JSONRPCRequest request, int code, String message) {
         Objects.requireNonNull(request, "request must not be null");
-        return new JSONRPCResponse(request.getId(), null, new Error(code, message, null));
+        return new JSONRPCResponse(request.getId(), null, new Error(code, message, null), ERROR);
     }
 
     // ---------- Parsing ----------
@@ -215,13 +222,13 @@ public class JSONRPCResponse {
 
         if (hasResult) {
             JsonNode resultNode = root.get("result");
-            resp.result = resultNode.isNull() ? null : OM.convertValue(resultNode, Object.class);
+            resp.setResult(resultNode.isNull() ? null : OM.convertValue(resultNode, Object.class));
         } else {
             JsonNode errorNode = root.get("error");
             if (!errorNode.isObject()) {
                 throw new IOException("Invalid JSON-RPC response: 'error' must be a JSON object");
             }
-            resp.error = Error.fromNode(errorNode);
+            resp.setError(Error.fromNode(errorNode));
         }
 
         return resp;
@@ -242,13 +249,21 @@ public class JSONRPCResponse {
     /** Returns {@code true} if this is a success response (no {@code error} member). */
     @JsonIgnore
     public boolean isSuccess() {
-        return error == null;
+        return getResponseKind() == SUCCESS;
     }
 
     /** Returns {@code true} if this is an error response. */
     @JsonIgnore
     public boolean isError() {
-        return error != null;
+        return getResponseKind() == ERROR;
+    }
+
+    @JsonIgnore
+    public ResponseKind getResponseKind() {
+        if (responseKind != null) {
+            return responseKind;
+        }
+        return error != null ? ERROR : SUCCESS;
     }
 
     /** Convenience accessor — returns the id as String, or null. */
@@ -281,7 +296,8 @@ public class JSONRPCResponse {
 
     public void setResult(Object result) {
         this.result = result;
-        if (result != null) this.error = null;
+        this.error = null;
+        this.responseKind = SUCCESS;
     }
 
     public Error getError() {
@@ -290,7 +306,8 @@ public class JSONRPCResponse {
 
     public void setError(Error error) {
         this.error = error;
-        if (error != null) this.result = null;
+        this.result = null;
+        this.responseKind = ERROR;
     }
 
     // ---------- Object overrides ----------
@@ -302,12 +319,13 @@ public class JSONRPCResponse {
         return Objects.equals(jsonrpc, that.jsonrpc)
                 && Objects.equals(id, that.id)
                 && Objects.equals(result, that.result)
-                && Objects.equals(error, that.error);
+                && Objects.equals(error, that.error)
+                && getResponseKind() == that.getResponseKind();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jsonrpc, id, result, error);
+        return Objects.hash(jsonrpc, id, result, error, getResponseKind());
     }
 
     @Override
@@ -317,6 +335,41 @@ public class JSONRPCResponse {
                 ", id=" + id +
                 (error == null ? ", result=" + result : ", error=" + error) +
                 '}';
+    }
+
+    public enum ResponseKind {
+        SUCCESS,
+        ERROR
+    }
+
+    static final class Serializer extends StdSerializer<JSONRPCResponse> {
+
+        Serializer() {
+            super(JSONRPCResponse.class);
+        }
+
+        @Override
+        public void serialize(JSONRPCResponse value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("jsonrpc", value.jsonrpc);
+
+            if (value.id == null) {
+                gen.writeNullField("id");
+            } else {
+                gen.writeFieldName("id");
+                provider.defaultSerializeValue(value.id, gen);
+            }
+
+            if (value.getResponseKind() == SUCCESS) {
+                gen.writeFieldName("result");
+                provider.defaultSerializeValue(value.result, gen);
+            } else {
+                gen.writeFieldName("error");
+                provider.defaultSerializeValue(value.error, gen);
+            }
+
+            gen.writeEndObject();
+        }
     }
 
     // ---------- Nested type: Error ----------
