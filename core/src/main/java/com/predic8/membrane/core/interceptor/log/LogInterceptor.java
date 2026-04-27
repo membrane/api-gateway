@@ -126,7 +126,7 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             msg.getBody().addObserver(new AbstractMessageObserver() {
                 @Override
                 public void bodyChunk(Chunk chunk) {
-                    writeLog("Stream Event: " + chunk.toString());
+                    writeLog("%s %s Stream Event: %s".formatted(flow, label, chunk));
                 }
             });
             return;
