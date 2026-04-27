@@ -41,6 +41,7 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 public class MembraneMCPServer extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(MembraneMCPServer.class);
+    private static final int MAX_EXCHANGES = 100;
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -150,9 +151,11 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private MCPToolsCallResponse getExchanges(MCPToolsCall req) {
+        var exchanges = getRouter().getExchangeStore().getAllExchangesAsList();
+        int start = Math.max(0, exchanges.size() - MAX_EXCHANGES);
+
         return MCPToolsCallResponse.from(req)
-                .withJson(Map.of("exchanges", getRouter().getExchangeStore()
-                        .getAllExchangesAsList().stream()
+                .withJson(Map.of("exchanges", exchanges.subList(start, exchanges.size()).stream()
                         .map(MembraneMCPServer::getExchangeDescription)
                         .filter(Objects::nonNull).toList()));
     }
