@@ -25,4 +25,8 @@ public class ReadingBodyException extends RuntimeException {
     public ReadingBodyException(Exception e) {
         super(e);
     }
+
+    public ReadingBodyException(String message) {
+        super(message);
+    }
 }

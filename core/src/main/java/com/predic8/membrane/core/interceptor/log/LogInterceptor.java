@@ -14,22 +14,25 @@
 
 package com.predic8.membrane.core.interceptor.log;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.AbstractMessageObserver;
+import com.predic8.membrane.core.http.Chunk;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
 
-import java.io.*;
+import java.io.IOException;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.log.LogInterceptor.Level.INFO;
-import static com.predic8.membrane.core.util.ExceptionUtil.*;
+import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 import static com.predic8.membrane.core.util.text.TerminalColors.*;
-import static org.slf4j.LoggerFactory.*;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * @description Logs request and response messages. The messages will appear either on the console or in
@@ -100,10 +103,10 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
 
         writeLog("==== %s %s ===".formatted(flow, label));
 
-        Message msg = exc.getMessage(flow);
-
+        var msg = exc.getMessage(flow);
         if (msg == null)
             return;
+
         writeLog(filter.maskStartLine(msg));
 
         writeLog(dumpHeader(msg));
@@ -115,6 +118,19 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             writeLog("Error accessing body: " + e.getMessage());
             return;
         }
+
+        // Accessing a stream message would block
+        if (msg.isStream()) {
+            // Log each chunk as it arrives
+            exc.getResponse().getBody().addObserver(new AbstractMessageObserver() {
+                @Override
+                public void bodyChunk(Chunk chunk) {
+                    writeLog("Stream Event: " + chunk.toString());
+                }
+            });
+            return;
+        }
+
         writeLog(dumpBody(msg));
     }
 
