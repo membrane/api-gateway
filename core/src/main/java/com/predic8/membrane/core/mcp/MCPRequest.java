@@ -44,6 +44,10 @@ public abstract class MCPRequest {
                     "Expected JSON-RPC method '" + expectedMethod
                     + "' but got '" + request.getMethod() + "'");
         }
+        if (request.isNotification()) {
+            throw new IllegalArgumentException(
+                    "'" + expectedMethod + "' must be a request with an 'id', not a notification");
+        }
 
         this.id = request.getId();
     }
