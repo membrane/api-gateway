@@ -135,11 +135,18 @@ public class MembraneMCPServer extends AbstractInterceptor {
             case "getExchanges" -> {
                 return getExchanges(req);
             }
-            case "getStatistics" -> getRouter().getStatistics();
+            case "getStatistics" -> {
+                return getStatistics(req);
+            }
             default -> log.info("Unknown tools call: " + req.getName());
         }
 
         return null;
+    }
+
+    private MCPToolsCallResponse getStatistics(MCPToolsCall req) {
+        return MCPToolsCallResponse.from(req)
+                .withJson(getRouter().getStatistics());
     }
 
     private MCPToolsCallResponse getExchanges(MCPToolsCall req) {
@@ -217,7 +224,8 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 .withTool(new MCPToolsListResponse.Tool(
                         "listProxies",
                         "Lists all the proxies, e.g. API, soapProxy", Map.of("type", "object")))
-                .withTool(new MCPToolsListResponse.Tool("getExchanges", "Gets the last 100 HTTP exchanges", Map.of("type", "object")));
+                .withTool(new MCPToolsListResponse.Tool("getExchanges", "Gets the last 100 HTTP exchanges", Map.of("type", "object")))
+                .withTool(new MCPToolsListResponse.Tool("getStatistics", "Gets Membrane runtime statistics", Map.of("type", "object")));
 
         //                        Map.of("type", "object",
 //                                "properties", Map.of("query", Map.of("type", "string")),
