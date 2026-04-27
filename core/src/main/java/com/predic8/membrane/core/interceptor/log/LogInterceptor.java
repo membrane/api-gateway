@@ -119,8 +119,9 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
             return;
         }
 
-        // Accessing a stream message would block
-        if (flow == RESPONSE && msg.isStream()) {
+        // Accessing a stream message directly would block
+        // Logs request and response streams.
+        if (msg.isStream()) {
             // Log each chunk as it arrives
             msg.getBody().addObserver(new AbstractMessageObserver() {
                 @Override
