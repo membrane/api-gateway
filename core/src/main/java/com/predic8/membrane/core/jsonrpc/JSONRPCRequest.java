@@ -3,9 +3,11 @@ package com.predic8.membrane.core.jsonrpc;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,8 +38,11 @@ public class JSONRPCRequest {
     private String jsonrpc = JSONRPC_VERSION;
 
     /** May be String, Number, or null. */
-    @JsonProperty("id")
     private Object id;
+
+    /** Distinguishes a missing {@code id} from an explicit {@code "id": null}. */
+    @JsonIgnore
+    private boolean idPresent;
 
     @JsonProperty("method")
     private String method;
@@ -53,13 +58,21 @@ public class JSONRPCRequest {
     public JSONRPCRequest() {}
 
     public JSONRPCRequest(Object id, String method, Map<String, Object> paramsMap) {
-        this.id = id;
+        this(id, true, method, paramsMap);
+    }
+
+    public JSONRPCRequest(Object id, String method, List<Object> paramsList) {
+        this(id, true, method, paramsList);
+    }
+
+    public JSONRPCRequest(Object id, boolean idPresent, String method, Map<String, Object> paramsMap) {
+        setId(id, idPresent);
         this.method = Objects.requireNonNull(method, "method must not be null");
         this.paramsMap = paramsMap;
     }
 
-    public JSONRPCRequest(Object id, String method, List<Object> paramsList) {
-        this.id = id;
+    public JSONRPCRequest(Object id, boolean idPresent, String method, List<Object> paramsList) {
+        setId(id, idPresent);
         this.method = Objects.requireNonNull(method, "method must not be null");
         this.paramsList = paramsList;
     }
@@ -95,14 +108,16 @@ public class JSONRPCRequest {
         }
         req.method = methodNode.asText();
 
-        JsonNode idNode = root.get("id");
-        if (idNode != null && !idNode.isNull()) {
-            if (idNode.isTextual()) {
-                req.id = idNode.asText();
+        if (root.has("id")) {
+            JsonNode idNode = root.get("id");
+            if (idNode == null || idNode.isNull()) {
+                req.setId(null, true);
+            } else if (idNode.isTextual()) {
+                req.setId(idNode.asText(), true);
             } else if (idNode.isIntegralNumber()) {
-                req.id = idNode.longValue();
+                req.setId(idNode.longValue(), true);
             } else if (idNode.isNumber()) {
-                req.id = idNode.numberValue();
+                req.setId(idNode.numberValue(), true);
             } else {
                 throw new IOException("Invalid JSON-RPC request: 'id' must be string, number, or null");
             }
@@ -133,18 +148,43 @@ public class JSONRPCRequest {
     }
 
     public String toJson() throws IOException {
-        return OM.writeValueAsString(this);
+        return OM.writeValueAsString(toNode());
     }
 
     public void writeTo(OutputStream os) throws IOException {
-        OM.writeValue(os, this);
+        OM.writeValue(os, toNode());
+    }
+
+    private ObjectNode toNode() {
+        ObjectNode root = OM.createObjectNode();
+
+        if (jsonrpc != null) {
+            root.put("jsonrpc", jsonrpc);
+        }
+        if (idPresent) {
+            if (id == null) {
+                root.putNull("id");
+            } else {
+                root.set("id", OM.valueToTree(id));
+            }
+        }
+        if (method != null) {
+            root.put("method", method);
+        }
+        if (paramsMap != null) {
+            root.set("params", OM.valueToTree(paramsMap));
+        } else if (paramsList != null) {
+            root.set("params", OM.valueToTree(paramsList));
+        }
+
+        return root;
     }
 
     // ---------- Convenience ----------
 
     @JsonIgnore
     public boolean isNotification() {
-        return id == null;
+        return !idPresent;
     }
 
     @JsonIgnore
@@ -171,14 +211,25 @@ public class JSONRPCRequest {
         return id;
     }
 
+    @JsonIgnore
+    public boolean isIdPresent() {
+        return idPresent;
+    }
+
     /** Convenience accessor preserving backwards compatibility — returns the id as String, or null. */
     @JsonIgnore
     public String getIdAsString() {
         return id == null ? null : id.toString();
     }
 
+    @JsonSetter("id")
     public void setId(Object id) {
-        this.id = id;
+        setId(id, true);
+    }
+
+    public void setId(Object id, boolean present) {
+        this.id = present ? id : null;
+        this.idPresent = present;
     }
 
     public String getMethod() {
@@ -214,6 +265,7 @@ public class JSONRPCRequest {
         if (this == o) return true;
         if (!(o instanceof JSONRPCRequest that)) return false;
         return Objects.equals(jsonrpc, that.jsonrpc)
+                && idPresent == that.idPresent
                 && Objects.equals(id, that.id)
                 && Objects.equals(method, that.method)
                 && Objects.equals(paramsMap, that.paramsMap)
@@ -222,14 +274,14 @@ public class JSONRPCRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jsonrpc, id, method, paramsMap, paramsList);
+        return Objects.hash(jsonrpc, id, idPresent, method, paramsMap, paramsList);
     }
 
     @Override
     public String toString() {
         return "JSONRPCRequest{" +
                 "jsonrpc='" + jsonrpc + '\'' +
-                ", id=" + id +
+                ", id=" + (idPresent ? id : "<absent>") +
                 ", method='" + method + '\'' +
                 ", params=" + (paramsMap != null ? paramsMap : paramsList) +
                 '}';

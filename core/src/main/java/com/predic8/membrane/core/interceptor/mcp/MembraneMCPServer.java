@@ -116,7 +116,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
             }
             default -> {
                 log.info("Unknown MCP Request: {}", request);
-                if (request.getId() != null) {
+                if (!request.isNotification()) {
                     return error(request.getId(), ERR_METHOD_NOT_FOUND, "Method not found");
                 }
             }
