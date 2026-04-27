@@ -367,7 +367,7 @@ public abstract class Message {
 	/**
 	 * Tries to use the messages header to get the encoding to build a Charset.
 	 * Uses default of TextUtil if not possible
-	 * @return
+	 * @return Charset of the message or default charset if not found in header
 	 */
 	public Charset getCharsetOrDefault() {
 		return getCharset(header.getCharset());
@@ -406,7 +406,7 @@ public abstract class Message {
 
 	/**
 	 * Checks if the message is a stream of events or notifications instead of a contained message.
-	 * @return
+	 * @return true if the message is a stream, false if it is a contained message.
 	 */
 	public boolean isStream() {
 		var contentType = getHeader().getContentType();
