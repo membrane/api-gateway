@@ -56,9 +56,9 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 return RETURN;
             }
 
-            MCPResponse<?> mcpResponse;
+            JSONRPCResponse rpcResponse;
             try {
-                mcpResponse = processMCPRequest(request);
+                rpcResponse = processMCPRequest(request);
             } catch (IllegalArgumentException e) {
                 exc.setResponse(createResponse(createErrorResponse(exc, request, JSONRPCResponse.ERR_INVALID_PARAMS, "Invalid params", e)));
                 return RETURN;
@@ -66,7 +66,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 exc.setResponse(createResponse(createErrorResponse(exc, request, ERR_INTERNAL_ERROR, "Internal error", e)));
                 return RETURN;
             }
-            exc.setResponse(createResponse(mcpResponse));
+            exc.setResponse(createResponse(rpcResponse));
             return RETURN;
 
         } catch (IOException e) {
@@ -80,7 +80,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
         } else {
             log.info("Rejected MCP request {} {}: {}", exc.getRequest().getMethod(), exc.getRequest().getUri(), e.getMessage());
         }
-        return JSONRPCResponse.error(request == null ? null : request.getId(), code, message, e.getMessage());
+        return error(request == null ? null : request.getId(), code, message, e.getMessage());
     }
 
     private static Response createResponse(MCPResponse<?> mcpResponse) throws IOException {
@@ -90,26 +90,35 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return createResponse(mcpResponse.toRpcResponse());
     }
 
-    private static Response createResponse(JSONRPCResponse rpcResponse) throws IOException {
+    private static Response createResponse(@Nullable JSONRPCResponse rpcResponse) throws IOException {
+        if (rpcResponse == null) {
+            return Response.noContent().build();
+        }
         return ok().contentType(APPLICATION_JSON).body(rpcResponse.toJson()).build();
     }
 
-    private @Nullable MCPResponse<?> processMCPRequest(JSONRPCRequest request) throws IOException {
+    private @Nullable JSONRPCResponse processMCPRequest(JSONRPCRequest request) throws IOException {
         switch (request.getMethod()) {
             case "initialize" -> {
-                return initialize(request);
+                return initialize(request).toRpcResponse();
             }
             case "notifications/initialized" -> {
                 log.debug("MCP Client is ready");
                 return null;
             }
             case "tools/list" -> {
-                return toolsList(request);
+                return toolsList(request).toRpcResponse();
             }
             case "tools/call" -> {
-                return toolsCall(request);
+                var response = toolsCall(request);
+                return response == null ? null : response.toRpcResponse();
             }
-            default -> log.info("Unknown MCP Request: {}",request);
+            default -> {
+                log.info("Unknown MCP Request: {}", request);
+                if (request.getId() != null) {
+                    return error(request.getId(), ERR_METHOD_NOT_FOUND, "Method not found");
+                }
+            }
         }
         return null;
     }
