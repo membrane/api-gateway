@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.mcp;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -7,6 +8,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
+import com.predic8.membrane.core.jsonrpc.JSONRPCResponse;
 import com.predic8.membrane.core.mcp.*;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.Proxy;
@@ -26,6 +28,7 @@ import static com.predic8.membrane.annot.Constants.VERSION;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 
 /**
  * @description MCP Server for Membrane. It allows to query Membrane's internal state and operation from an LLM
@@ -42,7 +45,28 @@ public class MembraneMCPServer extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
-            exc.setResponse(createResponse(processMCPRequest(JSONRPCRequest.parse(exc.getRequest().getBodyAsStreamDecoded()))));
+            JSONRPCRequest request;
+            try {
+                request = JSONRPCRequest.parse(exc.getRequest().getBodyAsStreamDecoded());
+            } catch (JsonProcessingException e) {
+                exc.setResponse(createResponse(createErrorResponse(exc, null, ERR_PARSE_ERROR, "Parse error", e)));
+                return RETURN;
+            } catch (IOException e) {
+                exc.setResponse(createResponse(createErrorResponse(exc, null, ERR_INVALID_REQUEST, "Invalid Request", e)));
+                return RETURN;
+            }
+
+            MCPResponse<?> mcpResponse;
+            try {
+                mcpResponse = processMCPRequest(request);
+            } catch (IllegalArgumentException e) {
+                exc.setResponse(createResponse(createErrorResponse(exc, request, JSONRPCResponse.ERR_INVALID_PARAMS, "Invalid params", e)));
+                return RETURN;
+            } catch (Exception e) {
+                exc.setResponse(createResponse(createErrorResponse(exc, request, ERR_INTERNAL_ERROR, "Internal error", e)));
+                return RETURN;
+            }
+            exc.setResponse(createResponse(mcpResponse));
             return RETURN;
 
         } catch (IOException e) {
@@ -50,11 +74,24 @@ public class MembraneMCPServer extends AbstractInterceptor {
         }
     }
 
+    private JSONRPCResponse createErrorResponse(Exchange exc, @Nullable JSONRPCRequest request, int code, String message, Exception e) {
+        if (code == ERR_INTERNAL_ERROR) {
+            log.warn("Failed to handle MCP request {} {}.", exc.getRequest().getMethod(), exc.getRequest().getUri(), e);
+        } else {
+            log.info("Rejected MCP request {} {}: {}", exc.getRequest().getMethod(), exc.getRequest().getUri(), e.getMessage());
+        }
+        return JSONRPCResponse.error(request == null ? null : request.getId(), code, message, e.getMessage());
+    }
+
     private static Response createResponse(MCPResponse<?> mcpResponse) throws IOException {
         if (mcpResponse == null) {
             return Response.noContent().build();
         }
-        return ok().contentType(APPLICATION_JSON).body(mcpResponse.toJson()).build();
+        return createResponse(mcpResponse.toRpcResponse());
+    }
+
+    private static Response createResponse(JSONRPCResponse rpcResponse) throws IOException {
+        return ok().contentType(APPLICATION_JSON).body(rpcResponse.toJson()).build();
     }
 
     private @Nullable MCPResponse<?> processMCPRequest(JSONRPCRequest request) throws IOException {
