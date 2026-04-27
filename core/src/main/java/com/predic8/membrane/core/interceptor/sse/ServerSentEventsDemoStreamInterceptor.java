@@ -36,8 +36,7 @@ import static java.time.Instant.now;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
- * Interceptor that transforms responses into Server-Sent Events (SSE) streams,
- * sending data every second.
+ * Demo interceptor that creates a Server-Sent Events (SSE) stream.
  */
 @MCElement(name = "sseDemoStream")
 public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
@@ -91,16 +90,21 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
                     //noinspection BusyWait
                     sleep(intervalSeconds * 1000L);
                 }
-
-                transferer.write(new Chunk(":stream-end\n\n".getBytes(UTF_8)));
-                transferer.finish(null);
             } catch (InterruptedException e) {
                 log.info("Streaming interrupted", e);
                 Thread.currentThread().interrupt();
                 throw new RuntimeException("Stream interrupted", e);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.debug("SSE client disconnected.", e);
+            } finally {
+                try {
+                    // Closing the response terminates the SSE stream.
+                    transferer.finish(null);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
         }
 
         @Override
@@ -110,7 +114,7 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
 
         @Override
         protected byte[] getRawLocal() {
-            return new byte[0];
+            throw new ReadingBodyException("Streaming body cannot be materialized.");
         }
 
         @Override
