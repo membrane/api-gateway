@@ -101,7 +101,7 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
                     // Closing the response terminates the SSE stream.
                     transferer.finish(null);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    log.debug("", e);
                 }
             }
 
