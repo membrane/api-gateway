@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *   <li>Port 2001 /stream: SSE demo stream (10 events, 1 s interval)</li>
  *   <li>Port 2001 /*: SSE debugger HTML page</li>
  * </ul>
+ *
  */
 public class ServerSentEventsTutorialTest extends AbstractMiscTutorialTest {
 
@@ -65,6 +66,9 @@ public class ServerSentEventsTutorialTest extends AbstractMiscTutorialTest {
     /**
      * A request to /stream via the proxy (port 2000) must return
      * Content-Type text/event-stream with HTTP 200.
+     *
+     * Test is written using the Java HTTP client because RESTAssured does not support SSE.
+     *
      */
     @Test
     void sseProxyReturnsEventStreamContentType() throws Exception {
@@ -91,6 +95,8 @@ public class ServerSentEventsTutorialTest extends AbstractMiscTutorialTest {
     /**
      * Reading the SSE stream through the proxy must deliver properly formatted
      * SSE events containing an id, an event name ("tick"), and a JSON data payload.
+     *
+     * Test is written using the Java HTTP client because RESTAssured does not support SSE.
      */
     @Test
     void sseProxyStreamsWellFormedEvents() throws Exception {
@@ -131,6 +137,8 @@ public class ServerSentEventsTutorialTest extends AbstractMiscTutorialTest {
     /**
      * The log interceptor in the proxy must write SSE-related information to the console.
      * We wait for the log line that Membrane emits when it forwards the first SSE request.
+     *
+     * Test is written using the Java HTTP client because RESTAssured does not support SSE.
      */
     @Test
     void proxyLogsRequest() throws Exception {
