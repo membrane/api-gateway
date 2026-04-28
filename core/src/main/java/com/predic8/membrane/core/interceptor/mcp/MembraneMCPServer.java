@@ -244,7 +244,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private static @NotNull HashMap<String, Object> getCapabilities() {
         var capabilities = new HashMap<String, Object>();
-        capabilities.put("tools", Map.of("lastExchanges", false));
+        capabilities.put("tools", Map.of("listChanged", false));
         return capabilities;
     }
 
