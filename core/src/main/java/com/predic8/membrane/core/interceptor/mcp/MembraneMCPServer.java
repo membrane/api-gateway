@@ -98,7 +98,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return ok().contentType(APPLICATION_JSON).body(rpcResponse.toJson()).build();
     }
 
-    private @Nullable JSONRPCResponse processMCPRequest(JSONRPCRequest request) throws IOException {
+    private @Nullable JSONRPCResponse processMCPRequest(JSONRPCRequest request) {
         switch (request.getMethod()) {
             case "initialize" -> {
                 return initialize(request).toRpcResponse();
@@ -236,7 +236,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     }
 
-    private MCPInitializeResponse initialize(JSONRPCRequest request) throws IOException {
+    private MCPInitializeResponse initialize(JSONRPCRequest request) {
         return new MCPInitializeResponse(new MCPInitialize(request))
                 .withCapabilities(getCapabilities())
                 .withServerInfo("Membrane", VERSION);
