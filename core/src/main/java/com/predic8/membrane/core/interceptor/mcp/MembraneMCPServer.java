@@ -174,6 +174,10 @@ public class MembraneMCPServer extends AbstractInterceptor {
         request.put("body", e.getRequest().getBodyAsStringDecoded());
         request.put("headers", e.getRequest().getHeader());
 
+        response.put("status", e.getResponse().getStatusCode());
+        response.put("body", e.getResponse().getBodyAsStringDecoded());
+        response.put("headers", e.getResponse().getHeader());
+
         exc.put("request", request);
         exc.put("response", response);
         return exc;
