@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Typed response for the MCP {@code tools/list} method.
  *
@@ -101,14 +103,14 @@ public class MCPToolsListResponse extends MCPResponse<MCPToolsListResponse.Resul
 
     /** Adds a single tool to the result. */
     public MCPToolsListResponse withTool(Tool tool) {
-        Objects.requireNonNull(tool, "tool must not be null");
+        requireNonNull(tool, "tool must not be null");
         getResult().tools.add(tool);
         return this;
     }
 
     /** Adds multiple tools to the result. */
     public MCPToolsListResponse withTools(List<Tool> tools) {
-        Objects.requireNonNull(tools, "tools must not be null");
+        requireNonNull(tools, "tools must not be null");
         getResult().tools.addAll(tools);
         return this;
     }
@@ -212,19 +214,19 @@ public class MCPToolsListResponse extends MCPResponse<MCPToolsListResponse.Resul
          * @param inputSchema JSON Schema object for the tool's parameters (required)
          */
         public Tool(String name, String description, Map<String, Object> inputSchema) {
-            this.name = Objects.requireNonNull(name, "name must not be null");
+            this.name = requireNonNull(name, "name must not be null");
             this.description = description;
-            this.inputSchema = inputSchema;
+            this.inputSchema = requireNonNull(inputSchema, "inputSchema must not be null");
         }
 
         public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
+        public void setName(String name) { this.name = requireNonNull(name, "name must not be null"); }
 
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
 
         public Map<String, Object> getInputSchema() { return inputSchema; }
-        public void setInputSchema(Map<String, Object> inputSchema) { this.inputSchema = inputSchema; }
+        public void setInputSchema(Map<String, Object> inputSchema) { this.inputSchema = requireNonNull(inputSchema, "inputSchema must not be null"); }
 
         @Override
         public boolean equals(Object o) {
