@@ -198,13 +198,13 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 type = "API";
                 //     proxy.put("openapi", ap.getOpenapi());
             }
-            case ServiceProxy s -> {
-                type = "serviceProxy";
-            }
             case SOAPProxy sp -> {
                 type = "soapProxy";
                 proxy.put("wsdl", sp.getWsdl());
                 proxy.put("serviceName", sp.getServiceName());
+            }
+            case ServiceProxy s -> {
+                type = "serviceProxy";
             }
             default -> {
                 type = "unknown";
