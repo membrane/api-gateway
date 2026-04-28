@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSE Stream Debugger</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        #status { padding: 10px; margin: 10px 0; border-radius: 5px; font-weight: bold; }
+        #status.connecting { background: #ffeb3b; }
+        #status.connected { background: #4caf50; color: white; }
+        #status.error { background: #f44336; color: white; }
+        #messages { border: 1px solid #ccc; padding: 10px; min-height: 200px; max-height: 400px; overflow-y: auto; background: white; }
+        .message { padding: 8px; border-bottom: 1px solid #eee; }
+    </style>
+</head>
+<body>
+<h1>SSE Stream Debugger</h1>
+<div id="status">⏳ Connecting...</div>
+<div id="url" style="color: #666; margin: 10px 0;">URL: <strong id="urltext">/stream</strong></div>
+<div id="messages"></div>
+
+<script>
+    const url = '/stream';
+    const statusEl = document.getElementById('status');
+    const messagesEl = document.getElementById('messages');
+
+    console.log('🔌 [START] Connecting to:', url);
+    statusEl.textContent = '⏳ Connecting to ' + url;
+    statusEl.className = 'connecting';
+
+    try {
+        const eventSource = new EventSource(url);
+
+        eventSource.onopen = () => {
+            console.log('✅ [OPEN] Connection established successfully!');
+            statusEl.textContent = '✅ Connected - waiting for events';
+            statusEl.className = 'connected';
+            addMessage('Connection established!');
+        };
+
+        eventSource.addEventListener('tick', (e) => {
+            console.log('📨 [EVENT] Raw:', e.data);
+            try {
+                const data = JSON.parse(e.data);
+                console.log('[EVENT] Parsed:', data);
+                addMessage('📨 ' + JSON.stringify(data, null, 2));
+            } catch (err) {
+                console.log('📨 [EVENT] Not JSON, raw text:', e.data);
+                addMessage('📨 ' + e.data);
+            }
+        });
+
+        eventSource.addEventListener('message', (e) => {
+            console.log('💬 [MESSAGE] Raw:', e.data);
+            try {
+                const data = JSON.parse(e.data);
+                console.log('💬 [MESSAGE] Parsed:', data);
+                addMessage('💬 ' + JSON.stringify(data, null, 2));
+            } catch (err) {
+                console.log('💬 [MESSAGE] Not JSON, raw text:', e.data);
+                addMessage('💬 ' + e.data);
+            }
+        });
+
+        eventSource.onerror = (err) => {
+            console.error('❌ [ERROR] EventSource error:', err);
+            console.error('ReadyState:', eventSource.readyState);
+            console.error('Error details:', JSON.stringify(err));
+            statusEl.textContent = '❌ Error (ReadyState: ' + eventSource.readyState + ')';
+            statusEl.className = 'error';
+            addMessage('❌ Error: Connection lost');
+        };
+
+    } catch (e) {
+        console.error('🔥 [EXCEPTION] Error creating EventSource:', e);
+        statusEl.textContent = '🔥 Exception: ' + e.message;
+        statusEl.className = 'error';
+        addMessage('Exception: ' + e.message);
+    }
+
+    function addMessage(text) {
+        const msg = document.createElement('div');
+        msg.className = 'message';
+        msg.textContent = '[' + new Date().toLocaleTimeString() + '] ' + text;
+        messagesEl.appendChild(msg);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    window.addEventListener('error', (e) => {
+        console.error('🔥 [WINDOW ERROR]', e.message);
+        addMessage('🔥 Window Error: ' + e.message);
+    });
+
+    console.log('✓ SSE Debugger script loaded');
+    addMessage('Script loaded - open browser console (F12) for debugging');
+</script>
+</body>
+</html>
