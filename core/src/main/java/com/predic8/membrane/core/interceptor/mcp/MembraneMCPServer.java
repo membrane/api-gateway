@@ -61,10 +61,10 @@ public class MembraneMCPServer extends AbstractInterceptor {
             try {
                 rpcResponse = processMCPRequest(request);
             } catch (IllegalArgumentException e) {
-                exc.setResponse(createResponse(createErrorResponse(exc, request, JSONRPCResponse.ERR_INVALID_PARAMS, "Invalid params", e)));
+                exc.setResponse(createResponse(createProcessingErrorResponse(exc, request, JSONRPCResponse.ERR_INVALID_PARAMS, "Invalid params", e)));
                 return RETURN;
             } catch (Exception e) {
-                exc.setResponse(createResponse(createErrorResponse(exc, request, ERR_INTERNAL_ERROR, "Internal error", e)));
+                exc.setResponse(createResponse(createProcessingErrorResponse(exc, request, ERR_INTERNAL_ERROR, "Internal error", e)));
                 return RETURN;
             }
             exc.setResponse(createResponse(rpcResponse));
@@ -84,11 +84,16 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return error(request == null ? null : request.getId(), code, message, e.getMessage());
     }
 
-    private static Response createResponse(MCPResponse<?> mcpResponse) throws IOException {
-        if (mcpResponse == null) {
-            return Response.noContent().build();
+    private @Nullable JSONRPCResponse createProcessingErrorResponse(Exchange exc, JSONRPCRequest request, int code, String message, Exception e) {
+        if (request.isNotification()) {
+            if (code == ERR_INTERNAL_ERROR) {
+                log.warn("Failed to handle MCP notification {} {}.", exc.getRequest().getMethod(), exc.getRequest().getUri(), e);
+            } else {
+                log.info("Rejected MCP notification {} {}: {}", exc.getRequest().getMethod(), exc.getRequest().getUri(), e.getMessage());
+            }
+            return null;
         }
-        return createResponse(mcpResponse.toRpcResponse());
+        return createErrorResponse(exc, request, code, message, e);
     }
 
     private static Response createResponse(@Nullable JSONRPCResponse rpcResponse) throws IOException {
@@ -104,6 +109,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 return initialize(request).toRpcResponse();
             }
             case "notifications/initialized" -> {
+                MCPInitialized.from(request);
                 log.debug("MCP Client is ready");
                 return null;
             }
