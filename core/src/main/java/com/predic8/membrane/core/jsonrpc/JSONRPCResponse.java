@@ -5,10 +5,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import java.io.IOException;
@@ -16,38 +17,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Objects;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ResponseKind.ERROR;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ResponseKind.SUCCESS;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCUtil.*;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Represents a JSON-RPC 2.0 response as defined by https://www.jsonrpc.org/specification.
  *
- * <p>A response is either a <em>success</em> or an <em>error</em> — the two are
- * mutually exclusive:</p>
- * <ul>
- *   <li>Success: {@code result} is present, {@code error} is absent.</li>
- *   <li>Error:   {@code error} is present, {@code result} is absent.</li>
- * </ul>
- *
- * <p>Wire format (success):</p>
- * <pre>{@code
- * { "jsonrpc": "2.0", "id": 1, "result": { ... } }
- * }</pre>
- *
- * <p>Wire format (error):</p>
- * <pre>{@code
- * { "jsonrpc": "2.0", "id": 1, "error": { "code": -32600, "message": "...", "data": ... } }
- * }</pre>
- *
- * <p>The {@code id} member mirrors the {@code id} of the originating request.
- * It MUST be {@code null} if the id could not be determined (e.g. parse error).</p>
- *
- * <p>Use the static factories {@link #success(Object, Object)} and
- * {@link #error(Object, int, String)} (or {@link #error(Object, int, String, Object)})
- * to construct instances. Use {@link #from(JSONRPCRequest, Object)} to build a
- * success response that echoes the id of an existing {@link JSONRPCRequest}.</p>
- *
- * <p>Standard error codes are provided as constants, e.g. {@link #ERR_PARSE_ERROR}.</p>
+ * <p>A response is either a success carrying {@code result} or an error carrying
+ * {@code error}. The {@code id} mirrors the originating request and is
+ * {@code null} when the request id could not be determined.</p>
  */
 @JsonPropertyOrder({"jsonrpc", "id", "result", "error"})
 @JsonSerialize(using = JSONRPCResponse.Serializer.class)
@@ -86,25 +67,21 @@ public class JSONRPCResponse {
 
     /** Present on error responses; absent (null) on success responses. */
     @JsonProperty("error")
-    private Error error;
+    private JSONRPCError error;
 
-    /** Distinguishes between a success response carrying {@code result} and an error response carrying {@code error}. */
     @JsonIgnore
     private ResponseKind responseKind;
 
-    // ---------- Constructors ----------
-
-    /** No-arg constructor for Jackson deserialization. */
     public JSONRPCResponse() {}
 
-    private JSONRPCResponse(Object id, Object result, Error error, ResponseKind responseKind) {
-        this.id = id;
-        this.result = result;
-        this.error = error;
-        this.responseKind = responseKind;
+    private JSONRPCResponse(Object id, Object result, JSONRPCError error, ResponseKind responseKind) {
+        setId(id);
+        if (responseKind == SUCCESS) {
+            setResult(result);
+            return;
+        }
+        setError(error);
     }
-
-    // ---------- Static factories ----------
 
     /**
      * Creates a success response with the given {@code id} and {@code result}.
@@ -123,8 +100,7 @@ public class JSONRPCResponse {
      * @param result  the result value
      */
     public static JSONRPCResponse from(JSONRPCRequest request, Object result) {
-        Objects.requireNonNull(request, "request must not be null");
-        return new JSONRPCResponse(request.getId(), result, null, SUCCESS);
+        return new JSONRPCResponse(requireResponseId(request), result, null, SUCCESS);
     }
 
     /**
@@ -135,7 +111,7 @@ public class JSONRPCResponse {
      * @param message a human-readable error description
      */
     public static JSONRPCResponse error(Object id, int code, String message) {
-        return new JSONRPCResponse(id, null, new Error(code, message, null), ERROR);
+        return new JSONRPCResponse(id, null, new JSONRPCError(code, message, null), ERROR);
     }
 
     /**
@@ -147,22 +123,9 @@ public class JSONRPCResponse {
      * @param data    optional additional error information (any JSON-serialisable object)
      */
     public static JSONRPCResponse error(Object id, int code, String message, Object data) {
-        return new JSONRPCResponse(id, null, new Error(code, message, data), ERROR);
+        return new JSONRPCResponse(id, null, new JSONRPCError(code, message, data), ERROR);
     }
 
-    /**
-     * Creates an error response that echoes the id of the originating {@link JSONRPCRequest}.
-     *
-     * @param request the request to reply to
-     * @param code    the JSON-RPC error code (see {@code ERR_*} constants)
-     * @param message a human-readable error description
-     */
-    public static JSONRPCResponse errorFor(JSONRPCRequest request, int code, String message) {
-        Objects.requireNonNull(request, "request must not be null");
-        return new JSONRPCResponse(request.getId(), null, new Error(code, message, null), ERROR);
-    }
-
-    // ---------- Parsing ----------
 
     /**
      * Parses a JSON-RPC 2.0 response from the given {@link InputStream}.
@@ -170,7 +133,7 @@ public class JSONRPCResponse {
      * @throws IOException if the JSON is malformed or violates the JSON-RPC 2.0 structure
      */
     public static JSONRPCResponse parse(InputStream is) throws IOException {
-        Objects.requireNonNull(is, "input stream must not be null");
+        requireNonNull(is, "input stream must not be null");
         return fromNode(OM.readTree(is));
     }
 
@@ -180,7 +143,7 @@ public class JSONRPCResponse {
      * @throws IOException if the JSON is malformed or violates the JSON-RPC 2.0 structure
      */
     public static JSONRPCResponse parse(String json) throws IOException {
-        Objects.requireNonNull(json, "json must not be null");
+        requireNonNull(json, "json must not be null");
         return fromNode(OM.readTree(json));
     }
 
@@ -191,24 +154,14 @@ public class JSONRPCResponse {
 
         JSONRPCResponse resp = new JSONRPCResponse();
 
-        JsonNode versionNode = root.get("jsonrpc");
-        resp.jsonrpc = versionNode != null && !versionNode.isNull() ? versionNode.asText() : null;
-        if (!JSONRPC_VERSION.equals(resp.jsonrpc)) {
-            throw new IOException("Unsupported or missing jsonrpc version: " + resp.jsonrpc);
+        resp.jsonrpc = parseVersion(root, "response");
+
+        if (!root.has("id")) {
+            throw new IOException("Invalid JSON-RPC response: 'id' is required");
         }
 
         JsonNode idNode = root.get("id");
-        if (idNode != null && !idNode.isNull()) {
-            if (idNode.isTextual()) {
-                resp.id = idNode.asText();
-            } else if (idNode.isIntegralNumber()) {
-                resp.id = idNode.longValue();
-            } else if (idNode.isNumber()) {
-                resp.id = idNode.numberValue();
-            } else {
-                throw new IOException("Invalid JSON-RPC response: 'id' must be string, number, or null");
-            }
-        }
+        resp.setId(parseId(idNode, "response"));
 
         boolean hasResult = root.has("result");
         boolean hasError  = root.has("error");
@@ -228,31 +181,25 @@ public class JSONRPCResponse {
             if (!errorNode.isObject()) {
                 throw new IOException("Invalid JSON-RPC response: 'error' must be a JSON object");
             }
-            resp.setError(Error.fromNode(errorNode));
+            resp.setError(JSONRPCError.fromNode(errorNode));
         }
 
         return resp;
     }
 
-    // ---------- Serialization ----------
-
     public String toJson() throws IOException {
-        return OM.writeValueAsString(this);
+        return OM.writeValueAsString(toNode());
     }
 
     public void writeTo(OutputStream os) throws IOException {
-        OM.writeValue(os, this);
+        OM.writeValue(os, toNode());
     }
 
-    // ---------- Convenience ----------
-
-    /** Returns {@code true} if this is a success response (no {@code error} member). */
     @JsonIgnore
     public boolean isSuccess() {
         return getResponseKind() == SUCCESS;
     }
 
-    /** Returns {@code true} if this is an error response. */
     @JsonIgnore
     public boolean isError() {
         return getResponseKind() == ERROR;
@@ -263,22 +210,18 @@ public class JSONRPCResponse {
         if (responseKind != null) {
             return responseKind;
         }
-        return error != null ? ERROR : SUCCESS;
+        if (error != null) {
+            return ERROR;
+        }
+        throw new IllegalStateException("response kind is undefined until either result or error is set");
     }
-
-    /** Convenience accessor — returns the id as String, or null. */
-    @JsonIgnore
-    public String getIdAsString() {
-        return id == null ? null : id.toString();
-    }
-
-    // ---------- Getters / setters ----------
 
     public String getJsonrpc() {
         return jsonrpc;
     }
 
     public void setJsonrpc(String jsonrpc) {
+        validateVersion(jsonrpc);
         this.jsonrpc = jsonrpc;
     }
 
@@ -287,7 +230,7 @@ public class JSONRPCResponse {
     }
 
     public void setId(Object id) {
-        this.id = id;
+        this.id = normalizeId(id);
     }
 
     public Object getResult() {
@@ -300,14 +243,61 @@ public class JSONRPCResponse {
         this.responseKind = SUCCESS;
     }
 
-    public Error getError() {
-        return error;
-    }
-
-    public void setError(Error error) {
-        this.error = error;
+    public void setError(JSONRPCError error) {
+        this.error = requireNonNull(error, "error must not be null");
         this.result = null;
         this.responseKind = ERROR;
+    }
+
+    private ObjectNode toNode() {
+        validate();
+
+        ObjectNode root = OM.createObjectNode();
+        root.put("jsonrpc", jsonrpc);
+
+        if (id == null) {
+            root.putNull("id");
+        } else {
+            root.set("id", OM.valueToTree(id));
+        }
+
+        if (responseKind == SUCCESS) {
+            root.set("result", OM.valueToTree(result));
+        } else {
+            root.set("error", OM.valueToTree(error));
+        }
+
+        return root;
+    }
+
+    private void validate() {
+        validateVersion(jsonrpc);
+        id = normalizeId(id);
+
+        ResponseKind kind = responseKind != null ? responseKind : (error != null ? ERROR : null);
+        if (kind == null) {
+            throw new IllegalStateException("response kind is undefined until either result or error is set");
+        }
+        if (kind == SUCCESS) {
+            if (error != null) {
+                throw new IllegalStateException("success response must not contain error");
+            }
+        } else {
+            if (error == null) {
+                throw new IllegalStateException("error response must contain error");
+            }
+            if (result != null) {
+                throw new IllegalStateException("error response must not contain result");
+            }
+        }
+    }
+
+    private static Object requireResponseId(JSONRPCRequest request) {
+        requireNonNull(request, "request must not be null");
+        if (request.isNotification()) {
+            throw new IllegalArgumentException("cannot create a JSON-RPC response for a notification");
+        }
+        return request.getId();
     }
 
     // ---------- Object overrides ----------
@@ -350,41 +340,13 @@ public class JSONRPCResponse {
 
         @Override
         public void serialize(JSONRPCResponse value, JsonGenerator gen, SerializerProvider provider) throws IOException {
-            gen.writeStartObject();
-            gen.writeStringField("jsonrpc", value.jsonrpc);
-
-            if (value.id == null) {
-                gen.writeNullField("id");
-            } else {
-                gen.writeFieldName("id");
-                provider.defaultSerializeValue(value.id, gen);
-            }
-
-            if (value.getResponseKind() == SUCCESS) {
-                gen.writeFieldName("result");
-                provider.defaultSerializeValue(value.result, gen);
-            } else {
-                gen.writeFieldName("error");
-                provider.defaultSerializeValue(value.error, gen);
-            }
-
-            gen.writeEndObject();
+            provider.defaultSerializeValue(value.toNode(), gen);
         }
     }
 
-    // ---------- Nested type: Error ----------
-
-    /**
-     * Represents the JSON-RPC 2.0 {@code error} member.
-     *
-     * <p>Wire format:</p>
-     * <pre>{@code
-     * { "code": -32600, "message": "Invalid Request", "data": { ... } }
-     * }</pre>
-     */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(NON_NULL)
     @JsonPropertyOrder({"code", "message", "data"})
-    public static final class Error {
+    public static class JSONRPCError {
 
         @JsonProperty("code")
         private int code;
@@ -396,21 +358,13 @@ public class JSONRPCResponse {
         @JsonProperty("data")
         private Object data;
 
-        /** No-arg constructor for Jackson deserialization. */
-        public Error() {}
-
-        public Error(int code, String message) {
+        public JSONRPCError(int code, String message, Object data) {
             this.code = code;
-            this.message = Objects.requireNonNull(message, "message must not be null");
-        }
-
-        public Error(int code, String message, Object data) {
-            this.code = code;
-            this.message = Objects.requireNonNull(message, "message must not be null");
+            setMessage(message);
             this.data = data;
         }
 
-        private static Error fromNode(JsonNode node) throws IOException {
+        private static JSONRPCError fromNode(JsonNode node) throws IOException {
             JsonNode codeNode = node.get("code");
             if (codeNode == null || !codeNode.isIntegralNumber()) {
                 throw new IOException("Invalid JSON-RPC error: 'code' must be an integer");
@@ -422,9 +376,9 @@ public class JSONRPCResponse {
             Object data = null;
             JsonNode dataNode = node.get("data");
             if (dataNode != null && !dataNode.isNull()) {
-                data = new ObjectMapper().convertValue(dataNode, Object.class);
+                data = OM.convertValue(dataNode, Object.class);
             }
-            return new Error(codeNode.intValue(), messageNode.asText(), data);
+            return new JSONRPCError(codeNode.intValue(), messageNode.asText(), data);
         }
 
         public int getCode() {
@@ -440,7 +394,7 @@ public class JSONRPCResponse {
         }
 
         public void setMessage(String message) {
-            this.message = message;
+            this.message = requireNonNull(message, "message must not be null");
         }
 
         public Object getData() {
@@ -454,7 +408,7 @@ public class JSONRPCResponse {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Error that)) return false;
+            if (!(o instanceof JSONRPCError that)) return false;
             return code == that.code
                     && Objects.equals(message, that.message)
                     && Objects.equals(data, that.data);
@@ -467,8 +421,9 @@ public class JSONRPCResponse {
 
         @Override
         public String toString() {
-            return "Error{code=" + code + ", message='" + message + "'" +
+            return "JSONRPCError{code=" + code + ", message='" + message + "'" +
                     (data != null ? ", data=" + data : "") + "}";
         }
     }
+
 }
