@@ -7,7 +7,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import com.predic8.membrane.core.jsonrpc.JSONRPCResponse;
 import com.predic8.membrane.core.mcp.*;
@@ -24,9 +23,12 @@ import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.VERSION;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.http.Request.METHOD_POST;
+import static com.predic8.membrane.core.http.Response.accepted;
+import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.*;
+import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.INITIALIZED;
+import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.READY;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 
@@ -76,7 +78,10 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private Response handleHttpRequest(Exchange exc) throws IOException {
         if (!exc.getRequest().isPOSTRequest()) {
-            return methodNotAllowed().build();
+            return statusCode(405)
+                    .header("Allow", METHOD_POST)
+                    .bodyEmpty()
+                    .build();
         }
 
         JSONRPCRequest request;
