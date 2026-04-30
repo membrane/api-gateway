@@ -6,12 +6,10 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
 
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Header.PROXY_AUTHORIZATION;
 import static java.util.Locale.ROOT;
 
 public final class McpPayloadSanitizer {
