@@ -7,6 +7,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import com.predic8.membrane.core.jsonrpc.JSONRPCResponse;
 import com.predic8.membrane.core.mcp.*;
@@ -14,24 +15,23 @@ import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.proxies.SOAPProxy;
 import com.predic8.membrane.core.proxies.ServiceProxy;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.VERSION;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
-import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.http.Response.*;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.*;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 
 /**
- * @description MCP Server for Membrane. It allows to query Membrane's internal state and operation from an LLM
+ * @description MCP Server for Membrane. It allows querying Membrane's internal state and operation from an LLM
  * Ask the LLM questions like:
  * - What APIs are deployed?
  * - Is the Membrane instance healthy?
@@ -40,226 +40,356 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 @MCElement(name = "membraneMCPServer")
 public class MembraneMCPServer extends AbstractInterceptor {
 
+    static final String SUPPORTED_PROTOCOL_VERSION = "2025-03-26";
+
     private static final Logger log = LoggerFactory.getLogger(MembraneMCPServer.class);
+
     private static final int MAX_EXCHANGES = 100;
+
+    private static final Map<String, Object> EMPTY_OBJECT_SCHEMA = Map.of(
+            "type", "object",
+            "properties", Map.of(),
+            "additionalProperties", false
+    );
+    private static final Map<String, Object> GET_EXCHANGES_SCHEMA = Map.of(
+            "type", "object",
+            "properties", Map.of(
+                    "limit", Map.of("type", "integer", "minimum", 1, "maximum", MAX_EXCHANGES),
+                    "includeBodies", Map.of("type", "boolean")
+            ),
+            "additionalProperties", false
+    );
+
+    private final McpSessionContext sessionContext = new McpSessionContext();
+    private final McpPayloadSanitizer payloadSanitizer = new McpPayloadSanitizer();
+    private final McpToolRegistry toolRegistry = buildToolRegistry();
 
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
-            JSONRPCRequest request;
-            try {
-                request = JSONRPCRequest.parse(exc.getRequest().getBodyAsStreamDecoded());
-            } catch (JsonProcessingException e) {
-                exc.setResponse(createResponse(createErrorResponse(exc, null, ERR_PARSE_ERROR, "Parse error", e)));
-                return RETURN;
-            } catch (IOException e) {
-                exc.setResponse(createResponse(createErrorResponse(exc, null, ERR_INVALID_REQUEST, "Invalid Request", e)));
-                return RETURN;
-            }
-
-            JSONRPCResponse rpcResponse;
-            try {
-                rpcResponse = processMCPRequest(request);
-            } catch (IllegalArgumentException e) {
-                exc.setResponse(createResponse(createProcessingErrorResponse(exc, request, JSONRPCResponse.ERR_INVALID_PARAMS, "Invalid params", e)));
-                return RETURN;
-            } catch (Exception e) {
-                exc.setResponse(createResponse(createProcessingErrorResponse(exc, request, ERR_INTERNAL_ERROR, "Internal error", e)));
-                return RETURN;
-            }
-            exc.setResponse(createResponse(rpcResponse));
+            exc.setResponse(handleHttpRequest(exc));
             return RETURN;
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private JSONRPCResponse createErrorResponse(Exchange exc, @Nullable JSONRPCRequest request, int code, String message, Exception e) {
-        if (code == ERR_INTERNAL_ERROR) {
-            log.warn("Failed to handle MCP request {} {}.", exc.getRequest().getMethod(), exc.getRequest().getUri(), e);
-        } else {
-            log.info("Rejected MCP request {} {}: {}", exc.getRequest().getMethod(), exc.getRequest().getUri(), e.getMessage());
-        }
-        return error(request == null ? null : request.getId(), code, message, e.getMessage());
-    }
-
-    private @Nullable JSONRPCResponse createProcessingErrorResponse(Exchange exc, JSONRPCRequest request, int code, String message, Exception e) {
-        if (request.isNotification()) {
-            if (code == ERR_INTERNAL_ERROR) {
-                log.warn("Failed to handle MCP notification {} {}.", exc.getRequest().getMethod(), exc.getRequest().getUri(), e);
-            } else {
-                log.info("Rejected MCP notification {} {}: {}", exc.getRequest().getMethod(), exc.getRequest().getUri(), e.getMessage());
-            }
-            return null;
-        }
-        return createErrorResponse(exc, request, code, message, e);
-    }
-
-    private static Response createResponse(@Nullable JSONRPCResponse rpcResponse) throws IOException {
-        if (rpcResponse == null) {
-            return Response.noContent().build();
-        }
-        return ok().contentType(APPLICATION_JSON).body(rpcResponse.toJson()).build();
-    }
-
-    private @Nullable JSONRPCResponse processMCPRequest(JSONRPCRequest request) {
-        switch (request.getMethod()) {
-            case "initialize" -> {
-                return initialize(request).toRpcResponse();
-            }
-            case "notifications/initialized" -> {
-                MCPInitialized.from(request);
-                log.debug("MCP Client is ready");
-                return null;
-            }
-            case "tools/list" -> {
-                return toolsList(request).toRpcResponse();
-            }
-            case "tools/call" -> {
-                var response = toolsCall(request);
-                return response == null ? null : response.toRpcResponse();
-            }
-            default -> {
-                log.info("Unknown MCP Request: {}", request);
-                if (!request.isNotification()) {
-                    return error(request.getId(), ERR_METHOD_NOT_FOUND, "Method not found");
-                }
-            }
-        }
-        return null;
-    }
-
-    private MCPToolsCallResponse toolsCall(JSONRPCRequest request) {
-        var req = MCPToolsCall.from(request);
-
-        log.debug("Received MCP tools call: {}", req);
-
-        switch (req.getName()) {
-            case "listProxies" -> {
-                return listProxies(req);
-            }
-            case "getExchanges" -> {
-                return getExchanges(req);
-            }
-            case "getStatistics" -> {
-                return getStatistics(req);
-            }
-            default -> log.info("Unknown tools call: " + req.getName());
+    private Response handleHttpRequest(Exchange exc) throws IOException {
+        if (!exc.getRequest().isPOSTRequest()) {
+            return methodNotAllowed().build();
         }
 
-        return null;
+        JSONRPCRequest request;
+        try {
+            request = parse(exc.getRequest().getBodyAsStreamDecoded());
+        } catch (JsonProcessingException e) {
+            return createResponse(badRequest(exc, null, ERR_PARSE_ERROR, "Parse error", e));
+        } catch (IOException e) {
+            return createResponse(badRequest(exc, null, ERR_INVALID_REQUEST, "Invalid request", e));
+        }
+
+        try {
+            return createResponse(processMcpRequest(request, exc));
+        } catch (IllegalArgumentException e) {
+            return createResponse(badRequest(exc, request, ERR_INVALID_PARAMS, "Invalid params", e));
+        } catch (Exception e) {
+            return createResponse(internalError(exc, request, e));
+        }
     }
 
-    private MCPToolsCallResponse getStatistics(MCPToolsCall req) {
-        return MCPToolsCallResponse.from(req)
+    private McpHttpResult processMcpRequest(JSONRPCRequest request, Exchange exc) throws Exception {
+        return switch (request.getMethod()) {
+            case MCPInitialize.METHOD -> processInitialize(request);
+            case MCPInitialized.METHOD -> processInitializedNotification(request);
+            case MCPPing.METHOD -> processPing(request);
+            case MCPToolsList.METHOD -> processToolsList(request);
+            case MCPToolsCall.METHOD -> processToolsCall(request, exc);
+            default -> protocolError(request, ERR_METHOD_NOT_FOUND, "Method not found");
+        };
+    }
+
+    private McpHttpResult processInitialize(JSONRPCRequest request) {
+        MCPInitialize initialize = MCPInitialize.from(request);
+        if (!SUPPORTED_PROTOCOL_VERSION.equals(initialize.getProtocolVersion())) {
+            return protocolError(
+                    request,
+                    ERR_INVALID_PARAMS,
+                    "Unsupported protocol version: " + initialize.getProtocolVersion()
+            );
+        }
+        if (!sessionContext.initialize(SUPPORTED_PROTOCOL_VERSION, initialize.getClientInfo())) {
+            return protocolError(request, ERR_INVALID_REQUEST, "'initialize' must be the first MCP request");
+        }
+
+        return httpOk(new MCPInitializeResponse(initialize)
+                .withProtocolVersion(SUPPORTED_PROTOCOL_VERSION)
+                .withCapabilities(getCapabilities())
+                .withServerInfo("Membrane", VERSION)
+                .toRpcResponse());
+    }
+
+    private McpHttpResult processInitializedNotification(JSONRPCRequest request) {
+        MCPInitialized.from(request);
+        if (!sessionContext.markReady()) {
+            return protocolError(
+                    request,
+                    ERR_INVALID_REQUEST,
+                    "'notifications/initialized' is only allowed after a successful 'initialize'"
+            );
+        }
+        log.debug("MCP client is ready");
+        return acceptedNotification();
+    }
+
+    private McpHttpResult processPing(JSONRPCRequest request) {
+        MCPPing.from(request);
+        if (!sessionContext.isIn(INITIALIZED, READY)) {
+            return protocolError(request, ERR_INVALID_REQUEST, "'ping' is only allowed after 'initialize'");
+        }
+        return httpOk(success(request.getId(), Map.of()));
+    }
+
+    private McpHttpResult processToolsList(JSONRPCRequest request) {
+        MCPToolsList toolsList = MCPToolsList.from(request);
+        if (!sessionContext.isIn(READY)) {
+            return protocolError(request, ERR_INVALID_REQUEST, "'tools/list' requires a completed MCP handshake");
+        }
+
+        return httpOk(MCPToolsListResponse.from(toolsList)
+                .withTools(toolRegistry.list().stream().map(McpToolDefinition::toTool).toList())
+                .toRpcResponse());
+    }
+
+    private McpHttpResult processToolsCall(JSONRPCRequest request, Exchange exc) throws Exception {
+        MCPToolsCall call = MCPToolsCall.from(request);
+        if (!sessionContext.isIn(READY)) {
+            return protocolError(request, ERR_INVALID_REQUEST, "'tools/call' requires a completed MCP handshake");
+        }
+
+        McpToolDefinition tool = toolRegistry.find(call.getName());
+        if (tool == null) {
+            return protocolError(request, ERR_INVALID_PARAMS, "Unknown tool: " + call.getName());
+        }
+
+        try {
+            return httpOk(tool.handler().handle(call, exc).toRpcResponse());
+        } catch (IllegalArgumentException e) {
+            return httpOk(MCPToolsCallResponse.toolError(call, e.getMessage()).toRpcResponse());
+        }
+    }
+
+    private McpToolRegistry buildToolRegistry() {
+        return new McpToolRegistry()
+                .register(new McpToolDefinition(
+                        "listProxies",
+                        "Lists configured proxies and selected runtime metadata",
+                        EMPTY_OBJECT_SCHEMA,
+                        this::listProxies
+                ))
+                .register(new McpToolDefinition(
+                        "getExchanges",
+                        "Gets recent HTTP exchanges with sanitized headers and optional bodies",
+                        GET_EXCHANGES_SCHEMA,
+                        this::getExchanges
+                ))
+                .register(new McpToolDefinition(
+                        "getStatistics",
+                        "Gets Membrane runtime statistics",
+                        EMPTY_OBJECT_SCHEMA,
+                        this::getStatistics
+                ));
+    }
+
+    private MCPToolsCallResponse listProxies(MCPToolsCall call, Exchange exc) {
+        rejectUnexpectedArguments(call, Set.of());
+        return MCPToolsCallResponse.from(call)
+                .withJson(Map.of(
+                        "proxies",
+                        getRouter().getRuleManager().getRules().stream()
+                                .map(this::getProxyDescription)
+                                .toList()
+                ));
+    }
+
+    private MCPToolsCallResponse getStatistics(MCPToolsCall call, Exchange exc) {
+        rejectUnexpectedArguments(call, Set.of());
+        return MCPToolsCallResponse.from(call)
                 .withJson(getRouter().getStatistics());
     }
 
-    private MCPToolsCallResponse getExchanges(MCPToolsCall req) {
-        var exchanges = getRouter().getExchangeStore().getAllExchangesAsList();
-        int start = Math.max(0, exchanges.size() - MAX_EXCHANGES);
+    private MCPToolsCallResponse getExchanges(MCPToolsCall call, Exchange exc) {
+        rejectUnexpectedArguments(call, Set.of("limit", "includeBodies"));
 
-        return MCPToolsCallResponse.from(req)
-                .withJson(Map.of("exchanges", exchanges.subList(start, exchanges.size()).stream()
-                        .map(MembraneMCPServer::getExchangeDescription)
-                        .filter(Objects::nonNull).toList()));
+        int limit = getOptionalIntArgument(call, "limit", MAX_EXCHANGES, 1, MAX_EXCHANGES);
+        boolean includeBodies = getOptionalBooleanArgument(call, "includeBodies", false);
+
+        List<AbstractExchange> exchanges = Optional.ofNullable(getRouter().getExchangeStore().getAllExchangesAsList())
+                .orElse(List.of());
+        int start = Math.max(0, exchanges.size() - limit);
+
+        return MCPToolsCallResponse.from(call)
+                .withJson(Map.of(
+                        "exchanges",
+                        exchanges.subList(start, exchanges.size()).stream()
+                                .map(exchange -> describeExchange(exchange, includeBodies))
+                                .filter(Objects::nonNull)
+                                .toList()
+                ));
     }
 
-    private static @Nullable HashMap<String, Object> getExchangeDescription(AbstractExchange e) {
-        if (e.getResponse() == null)
+    private @Nullable Map<String, Object> describeExchange(AbstractExchange exchange, boolean includeBodies) {
+        if (exchange.getResponse() == null) {
             return null;
-
-        var exc = new HashMap<String, Object>();
-        exc.put("id", e.getId());
-        var request = new HashMap<String, Object>();
-        var response = new HashMap<String, Object>();
-
-        request.put("method", e.getRequest().getMethod());
-        request.put("path", e.getRequest().getUri());
-        request.put("body", e.getRequest().getBodyAsStringDecoded());
-        request.put("headers", e.getRequest().getHeader());
-
-        response.put("status", e.getResponse().getStatusCode());
-        response.put("body", e.getResponse().getBodyAsStringDecoded());
-        response.put("headers", e.getResponse().getHeader());
-
-        exc.put("request", request);
-        exc.put("response", response);
-        return exc;
-    }
-
-    private MCPToolsCallResponse listProxies(MCPToolsCall req) {
-        return MCPToolsCallResponse.from(req)
-                .withJson(Map.of("proxies", getRouter().getRuleManager().getRules().stream().map(this::getProxyDescription).toList()));
-    }
-
-    private @NotNull HashMap<String, Object> getProxyDescription(Proxy p) {
-        var proxy = new HashMap<String, Object>();
-        proxy.put("name", p.getName());
-
-        String type;
-        switch (p) {
-            case APIProxy ap -> {
-                type = "API";
-                //     proxy.put("openapi", ap.getOpenapi());
-            }
-            case SOAPProxy sp -> {
-                type = "soapProxy";
-                proxy.put("wsdl", sp.getWsdl());
-                proxy.put("serviceName", sp.getServiceName());
-            }
-            case ServiceProxy s -> {
-                type = "serviceProxy";
-            }
-            default -> {
-                type = "unknown";
-            }
         }
 
-        var interceptors = p.getFlow().stream().map(i -> {
-            Map<String, String> interceptor = new HashMap<>();
-            interceptor.put("name", i.getDisplayName());
-            return interceptor;
-        }).toList();
+        var description = new LinkedHashMap<String, Object>();
+        description.put("id", exchange.getId());
 
-        proxy.put("statistics", getRouter().getExchangeStore().getStatistics(p.getKey()));
+        var request = new LinkedHashMap<String, Object>();
+        request.put("method", exchange.getRequest().getMethod());
+        request.put("path", exchange.getRequest().getUri());
+        request.put("headers", payloadSanitizer.sanitizeHeaders(exchange.getRequest().getHeader()));
+        if (includeBodies) {
+            request.put("body", payloadSanitizer.sanitizeBody(exchange.getRequest()));
+        }
 
-        proxy.put("interceptors", interceptors);
-        proxy.put("type", type);
-        proxy.put("rule", p.getKey().toString());
-        return proxy;
+        var response = new LinkedHashMap<String, Object>();
+        response.put("status", exchange.getResponse().getStatusCode());
+        response.put("headers", payloadSanitizer.sanitizeHeaders(exchange.getResponse().getHeader()));
+        if (includeBodies) {
+            response.put("body", payloadSanitizer.sanitizeBody(exchange.getResponse()));
+        }
+
+        description.put("request", request);
+        description.put("response", response);
+        return description;
     }
 
-    private MCPToolsListResponse toolsList(JSONRPCRequest request) {
-        log.debug("Tools list");
-        return MCPToolsListResponse.from(MCPToolsList.from(request))
-                .withTool(new MCPToolsListResponse.Tool(
-                        "listProxies",
-                        "Lists all the proxies, e.g. API, soapProxy", Map.of("type", "object")))
-                .withTool(new MCPToolsListResponse.Tool("getExchanges", "Gets the last 100 HTTP exchanges", Map.of("type", "object")))
-                .withTool(new MCPToolsListResponse.Tool("getStatistics", "Gets Membrane runtime statistics", Map.of("type", "object")));
+    private Map<String, Object> getProxyDescription(Proxy proxy) {
+        var description = new LinkedHashMap<String, Object>();
+        description.put("name", proxy.getName());
 
-        //                        Map.of("type", "object",
-//                                "properties", Map.of("query", Map.of("type", "string")),
-//                                "required", List.of("query"))));
+        String type;
+        switch (proxy) {
+            case APIProxy ignored -> type = "API";
+            case SOAPProxy soapProxy -> {
+                type = "soapProxy";
+                description.put("wsdl", soapProxy.getWsdl());
+                description.put("serviceName", soapProxy.getServiceName());
+            }
+            case ServiceProxy ignored -> type = "serviceProxy";
+            default -> type = "unknown";
+        }
 
+        description.put("type", type);
+        description.put("rule", proxy.getKey().toString());
+        description.put("interceptors", proxy.getFlow().stream()
+                .map(interceptor -> Map.of("name", interceptor.getDisplayName()))
+                .toList());
+        description.put("statistics", getRouter().getExchangeStore().getStatistics(proxy.getKey()));
+        return description;
     }
 
-    private MCPInitializeResponse initialize(JSONRPCRequest request) {
-        return new MCPInitializeResponse(new MCPInitialize(request))
-                .withCapabilities(getCapabilities())
-                .withServerInfo("Membrane", VERSION);
+    private static int getOptionalIntArgument(MCPToolsCall call, String name, int defaultValue, int minimum, int maximum) {
+        Object value = call.getArgument(name);
+        if (value == null) {
+            return defaultValue;
+        }
+        if (!(value instanceof Number number) || number.doubleValue() != Math.rint(number.doubleValue())) {
+            throw new IllegalArgumentException("Tool argument '" + name + "' must be an integer");
+        }
+        int parsed = number.intValue();
+        if (parsed < minimum || parsed > maximum) {
+            throw new IllegalArgumentException(
+                    "Tool argument '" + name + "' must be between " + minimum + " and " + maximum
+            );
+        }
+        return parsed;
     }
 
-    private static @NotNull HashMap<String, Object> getCapabilities() {
-        var capabilities = new HashMap<String, Object>();
-        capabilities.put("tools", Map.of("listChanged", false));
-        return capabilities;
+    private static boolean getOptionalBooleanArgument(MCPToolsCall call, String name, boolean defaultValue) {
+        Object value = call.getArgument(name);
+        if (value == null) {
+            return defaultValue;
+        }
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        throw new IllegalArgumentException("Tool argument '" + name + "' must be a boolean");
+    }
+
+    private static void rejectUnexpectedArguments(MCPToolsCall call, Set<String> allowed) {
+        for (String argumentName : call.getArguments().keySet()) {
+            if (!allowed.contains(argumentName)) {
+                throw new IllegalArgumentException("Unexpected tool argument: " + argumentName);
+            }
+        }
+    }
+
+    private McpHttpResult badRequest(Exchange exc, @Nullable JSONRPCRequest request, int code, String message, Exception exception) {
+        log.info("Rejected MCP request {} {}: {}", exc.getRequest().getMethod(), exc.getRequest().getUri(), exception.getMessage());
+        return new McpHttpResult(400, error(responseId(request), code, message, exception.getMessage()));
+    }
+
+    private McpHttpResult internalError(Exchange exc, @Nullable JSONRPCRequest request, Exception exception) {
+        log.warn("Failed to handle MCP request {} {}.", exc.getRequest().getMethod(), exc.getRequest().getUri(), exception);
+        return new McpHttpResult(
+                request != null && request.isNotification() ? 500 : 200,
+                error(responseId(request), ERR_INTERNAL_ERROR, "Internal error", exception.getMessage())
+        );
+    }
+
+    private McpHttpResult protocolError(JSONRPCRequest request, int code, String message) {
+        return protocolError(request, code, message, null);
+    }
+
+    private McpHttpResult protocolError(JSONRPCRequest request, int code, String message, @Nullable Object data) {
+        return new McpHttpResult(
+                request.isNotification() ? 400 : 200,
+                data == null ? error(responseId(request), code, message) : error(responseId(request), code, message, data)
+        );
+    }
+
+    private static Object responseId(@Nullable JSONRPCRequest request) {
+        if (request == null || request.isNotification()) {
+            return null;
+        }
+        return request.getId();
+    }
+
+    private static McpHttpResult httpOk(JSONRPCResponse response) {
+        return new McpHttpResult(200, response);
+    }
+
+    private static McpHttpResult acceptedNotification() {
+        return new McpHttpResult(202, null);
+    }
+
+    private static Response createResponse(McpHttpResult result) throws IOException {
+        if (result.body() == null) {
+            if (result.status() == 202) {
+                return accepted().build();
+            }
+            return statusCode(result.status()).bodyEmpty().build();
+        }
+        return statusCode(result.status())
+                .contentType(APPLICATION_JSON)
+                .body(result.body().toJson())
+                .build();
+    }
+
+    private static Map<String, Object> getCapabilities() {
+        return Map.of("tools", Map.of("listChanged", false));
     }
 
     @Override
     public String getDisplayName() {
         return "Membrane MCP Server";
+    }
+
+    record McpHttpResult(
+            int status,
+            @Nullable JSONRPCResponse body
+    ) {
     }
 }
