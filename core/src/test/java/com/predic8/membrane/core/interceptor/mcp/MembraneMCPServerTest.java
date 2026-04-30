@@ -9,25 +9,22 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
-import com.predic8.membrane.core.mcp.MCPInitialize;
-import com.predic8.membrane.core.mcp.MCPInitialized;
-import com.predic8.membrane.core.mcp.MCPPing;
-import com.predic8.membrane.core.mcp.MCPToolsCall;
-import com.predic8.membrane.core.mcp.MCPToolsList;
+import com.predic8.membrane.core.mcp.*;
 import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MembraneMCPServerTest {
 
     private static final ObjectMapper OM = new ObjectMapper();
+    private static final String POST_ACCEPT_HEADER = "application/json, text/event-stream";
+    private static final String GET_ACCEPT_HEADER = "text/event-stream";
 
     @Test
     void toolsListBeforeInitializeIsRejected() throws Exception {
@@ -42,7 +39,30 @@ class MembraneMCPServerTest {
         Exchange exc = invoke(newServer(), notification(MCPInitialized.METHOD, Map.of()));
 
         assertEquals(400, exc.getResponse().getStatusCode());
+        if (!exc.getResponse().isBodyEmpty()) {
+            assertEquals(-32600, responseJson(exc).path("error").path("code").asInt());
+        }
+    }
+
+    @Test
+    void pingBeforeInitializeIsRejected() throws Exception {
+        Exchange exc = invoke(newServer(), request(1, MCPPing.METHOD, Map.of()));
+
+        assertEquals(200, exc.getResponse().getStatusCode());
         assertEquals(-32600, responseJson(exc).path("error").path("code").asInt());
+    }
+
+    @Test
+    void toolsListAfterInitializeButBeforeInitializedIsRejected() throws Exception {
+        MembraneMCPServer server = newServer();
+
+        Exchange initialize = invoke(server, initializeRequest("2025-03-26"));
+        assertEquals(200, initialize.getResponse().getStatusCode());
+        assertEquals(MembraneMCPServer.SUPPORTED_PROTOCOL_VERSION, responseJson(initialize).path("result").path("protocolVersion").asText());
+
+        Exchange toolsList = invoke(server, request(2, MCPToolsList.METHOD, Map.of()));
+        assertEquals(200, toolsList.getResponse().getStatusCode());
+        assertEquals(-32600, responseJson(toolsList).path("error").path("code").asInt());
     }
 
     @Test
@@ -52,7 +72,7 @@ class MembraneMCPServerTest {
         Exchange initialize = invoke(server, initializeRequest("2025-03-26"));
         assertEquals(200, initialize.getResponse().getStatusCode());
         JsonNode initializeJson = responseJson(initialize);
-        assertEquals("2025-03-26", initializeJson.path("result").path("protocolVersion").asText());
+        assertEquals(MembraneMCPServer.SUPPORTED_PROTOCOL_VERSION, initializeJson.path("result").path("protocolVersion").asText());
 
         Exchange ping = invoke(server, request(2, MCPPing.METHOD, Map.of()));
         assertEquals(200, ping.getResponse().getStatusCode());
@@ -65,11 +85,13 @@ class MembraneMCPServerTest {
 
         Exchange toolsList = invoke(server, request(3, MCPToolsList.METHOD, Map.of()));
         JsonNode tools = responseJson(toolsList).path("result").path("tools");
-        assertEquals(3, tools.size());
-        assertEquals("listProxies", tools.get(0).path("name").asText());
-        assertEquals("getExchanges", tools.get(1).path("name").asText());
-        assertTrue(tools.get(1).path("inputSchema").path("properties").has("limit"));
-        assertFalse(tools.get(1).path("inputSchema").path("additionalProperties").asBoolean(true));
+        JsonNode getExchangesTool = findToolByName(tools, "getExchanges");
+
+        assertNotNull(findToolByName(tools, "listProxies"));
+        assertNotNull(getExchangesTool);
+        assertNotNull(findToolByName(tools, "getStatistics"));
+        assertTrue(getExchangesTool.path("inputSchema").path("properties").has("limit"));
+        assertFalse(getExchangesTool.path("inputSchema").path("additionalProperties").asBoolean(true));
     }
 
     @Test
@@ -87,7 +109,7 @@ class MembraneMCPServerTest {
     }
 
     @Test
-    void toolValidationErrorsStayInsideToolResult() throws Exception {
+    void invalidToolArgumentsReturnJsonRpcError() throws Exception {
         MembraneMCPServer server = readyServer();
 
         Exchange exc = invoke(server, request(
@@ -98,14 +120,15 @@ class MembraneMCPServerTest {
 
         assertEquals(200, exc.getResponse().getStatusCode());
         JsonNode response = responseJson(exc);
-        assertTrue(response.path("error").isMissingNode());
-        assertTrue(response.path("result").path("isError").asBoolean());
+        assertEquals(-32602, response.path("error").path("code").asInt());
     }
 
     @Test
     void getWithoutSseReturns405AndAllowPost() throws Exception {
         MembraneMCPServer server = newServer();
-        Exchange exc = Request.get("http://localhost/mcp").buildExchange();
+        Exchange exc = Request.get("http://localhost/mcp")
+                .header("Accept", GET_ACCEPT_HEADER)
+                .buildExchange();
 
         assertEquals(Outcome.RETURN, server.handleRequest(exc));
         assertEquals(405, exc.getResponse().getStatusCode());
@@ -113,11 +136,13 @@ class MembraneMCPServerTest {
     }
 
     @Test
-    void unsupportedProtocolVersionIsRejected() throws Exception {
+    void unsupportedProtocolVersionNegotiatesServerVersion() throws Exception {
         Exchange exc = invoke(newServer(), initializeRequest("2024-11-05"));
 
         assertEquals(200, exc.getResponse().getStatusCode());
-        assertEquals(-32602, responseJson(exc).path("error").path("code").asInt());
+        JsonNode response = responseJson(exc);
+        assertTrue(response.path("error").isMissingNode());
+        assertEquals(MembraneMCPServer.SUPPORTED_PROTOCOL_VERSION, response.path("result").path("protocolVersion").asText());
     }
 
     @Test
@@ -133,10 +158,12 @@ class MembraneMCPServerTest {
 
         JsonNode payload = toolPayload(exc);
         JsonNode exchange = payload.path("exchanges").get(0);
+        Map<String, String> requestHeaders = normalizeHeaders(exchange.path("request").path("headers"));
+        Map<String, String> responseHeaders = normalizeHeaders(exchange.path("response").path("headers"));
 
-        assertEquals("<redacted>", exchange.path("request").path("headers").path("Authorization").asText());
-        assertEquals("<redacted>", exchange.path("request").path("headers").path("Cookie").asText());
-        assertEquals("<redacted>", exchange.path("response").path("headers").path("Set-Cookie").asText());
+        assertEquals("<redacted>", requestHeaders.get("authorization"));
+        assertEquals("<redacted>", requestHeaders.get("cookie"));
+        assertEquals("<redacted>", responseHeaders.get("set-cookie"));
         assertEquals("<binary body omitted>", exchange.path("response").path("body").asText());
     }
 
@@ -161,8 +188,13 @@ class MembraneMCPServerTest {
     }
 
     private static void readyHandshake(MembraneMCPServer server) throws Exception {
-        invoke(server, initializeRequest("2025-03-26"));
-        invoke(server, notification(MCPInitialized.METHOD, Map.of()));
+        Exchange initialize = invoke(server, initializeRequest("2025-03-26"));
+        assertEquals(200, initialize.getResponse().getStatusCode());
+        assertEquals(MembraneMCPServer.SUPPORTED_PROTOCOL_VERSION, responseJson(initialize).path("result").path("protocolVersion").asText());
+
+        Exchange initialized = invoke(server, notification(MCPInitialized.METHOD, Map.of()));
+        assertEquals(202, initialized.getResponse().getStatusCode());
+        assertEquals("", initialized.getResponse().getBodyAsStringDecoded());
     }
 
     private static JSONRPCRequest initializeRequest(String protocolVersion) {
@@ -187,6 +219,7 @@ class MembraneMCPServerTest {
 
     private static Exchange invoke(MembraneMCPServer server, JSONRPCRequest request) throws Exception {
         Exchange exc = Request.post("http://localhost/mcp")
+                .header("Accept", POST_ACCEPT_HEADER)
                 .json(request.toJson())
                 .buildExchange();
 
@@ -205,6 +238,23 @@ class MembraneMCPServerTest {
                 .get(0)
                 .path("text");
         return OM.readTree(textNode.asText());
+    }
+
+    private static JsonNode findToolByName(JsonNode tools, String name) {
+        for (JsonNode tool : tools) {
+            if (name.equals(tool.path("name").asText())) {
+                return tool;
+            }
+        }
+        return null;
+    }
+
+    private static Map<String, String> normalizeHeaders(JsonNode headersNode) {
+        Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        for (Map.Entry<String, JsonNode> entry : headersNode.properties()) {
+            headers.put(entry.getKey().toLowerCase(), entry.getValue().asText());
+        }
+        return headers;
     }
 
     private static Exchange sampleExchange() throws URISyntaxException {

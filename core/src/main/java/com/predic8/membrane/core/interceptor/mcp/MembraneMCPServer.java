@@ -115,13 +115,6 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult processInitialize(JSONRPCRequest request) {
         MCPInitialize initialize = MCPInitialize.from(request);
-        if (!SUPPORTED_PROTOCOL_VERSION.equals(initialize.getProtocolVersion())) {
-            return protocolError(
-                    request,
-                    ERR_INVALID_PARAMS,
-                    "Unsupported protocol version: " + initialize.getProtocolVersion()
-            );
-        }
         if (!sessionContext.initialize(SUPPORTED_PROTOCOL_VERSION, initialize.getClientInfo())) {
             return protocolError(request, ERR_INVALID_REQUEST, "'initialize' must be the first MCP request");
         }
@@ -178,6 +171,8 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
         try {
             return httpOk(tool.handler().handle(call, exc).toRpcResponse());
+        } catch (InvalidToolArgumentsException e) {
+            return protocolError(request, ERR_INVALID_PARAMS, e.getMessage());
         } catch (IllegalArgumentException e) {
             return httpOk(MCPToolsCallResponse.toolError(call, e.getMessage()).toRpcResponse());
         }
@@ -301,11 +296,11 @@ public class MembraneMCPServer extends AbstractInterceptor {
             return defaultValue;
         }
         if (!(value instanceof Number number) || number.doubleValue() != Math.rint(number.doubleValue())) {
-            throw new IllegalArgumentException("Tool argument '" + name + "' must be an integer");
+            throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be an integer");
         }
         int parsed = number.intValue();
         if (parsed < minimum || parsed > maximum) {
-            throw new IllegalArgumentException(
+            throw new InvalidToolArgumentsException(
                     "Tool argument '" + name + "' must be between " + minimum + " and " + maximum
             );
         }
@@ -320,13 +315,13 @@ public class MembraneMCPServer extends AbstractInterceptor {
         if (value instanceof Boolean bool) {
             return bool;
         }
-        throw new IllegalArgumentException("Tool argument '" + name + "' must be a boolean");
+        throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be a boolean");
     }
 
     private static void rejectUnexpectedArguments(MCPToolsCall call, Set<String> allowed) {
         for (String argumentName : call.getArguments().keySet()) {
             if (!allowed.contains(argumentName)) {
-                throw new IllegalArgumentException("Unexpected tool argument: " + argumentName);
+                throw new InvalidToolArgumentsException("Unexpected tool argument: " + argumentName);
             }
         }
     }
@@ -396,5 +391,11 @@ public class MembraneMCPServer extends AbstractInterceptor {
             int status,
             @Nullable JSONRPCResponse body
     ) {
+    }
+
+    private static final class InvalidToolArgumentsException extends IllegalArgumentException {
+        private InvalidToolArgumentsException(String message) {
+            super(message);
+        }
     }
 }
