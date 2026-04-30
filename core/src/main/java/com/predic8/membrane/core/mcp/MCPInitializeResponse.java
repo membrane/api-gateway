@@ -50,10 +50,10 @@ public class MCPInitializeResponse extends MCPResponse<MCPInitializeResponse.Res
 
     /**
      * Creates a response from an already-parsed {@link MCPInitialize} request.
-     * Echoes the request's {@code id} and pre-populates {@code protocolVersion}.
+     * Echoes the request's {@code id}.
      */
     public MCPInitializeResponse(MCPInitialize request) {
-        super(request.getId(), initialResult(request.getProtocolVersion()));
+        super(request.getId(), new Result());
     }
 
     /**
@@ -74,12 +74,6 @@ public class MCPInitializeResponse extends MCPResponse<MCPInitializeResponse.Res
     /** Static factory equivalent to {@link #MCPInitializeResponse(MCPInitialize)}. */
     public static MCPInitializeResponse from(MCPInitialize request) {
         return new MCPInitializeResponse(request);
-    }
-
-    private static Result initialResult(String protocolVersion) {
-        Result r = new Result();
-        r.setProtocolVersion(protocolVersion);
-        return r;
     }
 
     // ---------- Builder-style helpers ----------

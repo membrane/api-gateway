@@ -2,7 +2,6 @@ package com.predic8.membrane.core.mcp;
 
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
@@ -40,16 +39,14 @@ public class MCPInitialize extends MCPRequest {
 
         Map<String, Object> params = request.getParamsMap();
         this.protocolVersion = requireString(params, "protocolVersion");
-        this.capabilities = asMap(params.get("capabilities"));
-        this.clientInfo = ClientInfo.from(asMap(params.get("clientInfo")));
+        this.capabilities = asMap(params, "capabilities");
+        this.clientInfo = ClientInfo.from(asMap(params, "clientInfo"));
     }
 
     /** Static factory equivalent to {@link #MCPInitialize(JSONRPCRequest)}. */
     public static MCPInitialize from(JSONRPCRequest request) {
         return new MCPInitialize(request);
     }
-
-    // ---------- Accessors ----------
 
     public String getProtocolVersion() {
         return protocolVersion;
@@ -63,7 +60,6 @@ public class MCPInitialize extends MCPRequest {
         return clientInfo;
     }
 
-    // ---------- Helpers ----------
 
     private static String requireString(Map<String, Object> params, String key) {
         Object v = params.get(key);
@@ -75,10 +71,12 @@ public class MCPInitialize extends MCPRequest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> asMap(Object value) {
-        if (value == null) return Collections.emptyMap();
-        if (value instanceof Map<?, ?> m) return (Map<String, Object>) m;
-        throw new IllegalArgumentException("Expected JSON object, got: " + value.getClass().getSimpleName());
+    private static Map<String, Object> asMap(Map<String, Object> params, String key) {
+        Object value = params.get(key);
+        if (value instanceof Map<?, ?> m) {
+            return (Map<String, Object>) m;
+        }
+        throw new IllegalArgumentException("MCP 'initialize' params: '" + key + "' must be a JSON object");
     }
 
     @Override
@@ -91,8 +89,6 @@ public class MCPInitialize extends MCPRequest {
                 '}';
     }
 
-    // ---------- Nested types ----------
-
     /** Identification of the connecting MCP client. */
     public static final class ClientInfo {
         private final String name;
@@ -104,12 +100,7 @@ public class MCPInitialize extends MCPRequest {
         }
 
         static ClientInfo from(Map<String, Object> map) {
-            if (map == null || map.isEmpty()) return new ClientInfo(null, null);
-            Object name = map.get("name");
-            Object version = map.get("version");
-            return new ClientInfo(
-                    name == null ? null : name.toString(),
-                    version == null ? null : version.toString());
+            return new ClientInfo(requireString(map, "name"),requireString(map, "version"));
         }
 
         public String getName() {

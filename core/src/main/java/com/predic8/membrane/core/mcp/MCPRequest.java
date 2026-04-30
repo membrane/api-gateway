@@ -4,6 +4,8 @@ import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 
 import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Abstract base class for all MCP requests (JSON-RPC calls that carry an {@code id}
  * and expect a response).
@@ -36,8 +38,8 @@ public abstract class MCPRequest {
      * @throws IllegalArgumentException if the method name does not match
      */
     protected MCPRequest(JSONRPCRequest request, String expectedMethod) {
-        Objects.requireNonNull(request, "request must not be null");
-        Objects.requireNonNull(expectedMethod, "expectedMethod must not be null");
+        requireNonNull(request, "request must not be null");
+        requireNonNull(expectedMethod, "expectedMethod must not be null");
 
         if (!expectedMethod.equals(request.getMethod())) {
             throw new IllegalArgumentException(
