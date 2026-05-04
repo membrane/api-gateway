@@ -95,6 +95,6 @@ public class MCPToolsCall extends MCPRequest {
 
     @Override
     public String toString() {
-        return "MCPToolsCall{id=" + getId() + ", name='" + name + "', arguments=" + arguments + "}";
+        return "MCPToolsCall{id=" + getId() + ", name='" + name + "', argumentKeys=" + arguments.keySet() + "}";
     }
 }
