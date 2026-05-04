@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.predic8.membrane.annot.Constants.VERSION;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -40,6 +41,7 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 public class MembraneMCPServer extends AbstractInterceptor {
 
     static final String SUPPORTED_PROTOCOL_VERSION = "2025-03-26";
+    static final String SESSION_HEADER = "Mcp-Session-Id";
 
     private static final Logger log = LoggerFactory.getLogger(MembraneMCPServer.class);
 
@@ -59,7 +61,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
             "additionalProperties", false
     );
 
-    private final McpSessionContext sessionContext = new McpSessionContext();
+    private final Map<String, McpSessionContext> sessionContexts = new ConcurrentHashMap<>();
     private final McpPayloadSanitizer payloadSanitizer = new McpPayloadSanitizer();
     private final McpToolRegistry toolRegistry = buildToolRegistry();
 
@@ -101,30 +103,41 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult processMcpRequest(JSONRPCRequest request, Exchange exc) throws Exception {
         return switch (request.getMethod()) {
-            case MCPInitialize.METHOD -> processInitialize(request);
-            case MCPInitialized.METHOD -> processInitializedNotification(request);
-            case MCPPing.METHOD -> processPing(request);
-            case MCPToolsList.METHOD -> processToolsList(request);
+            case MCPInitialize.METHOD -> processInitialize(request, exc);
+            case MCPInitialized.METHOD -> processInitializedNotification(request, exc);
+            case MCPPing.METHOD -> processPing(request, exc);
+            case MCPToolsList.METHOD -> processToolsList(request, exc);
             case MCPToolsCall.METHOD -> processToolsCall(request, exc);
             default -> protocolError(request, ERR_METHOD_NOT_FOUND, "Method not found");
         };
     }
 
-    private McpHttpResult processInitialize(JSONRPCRequest request) {
+    private McpHttpResult processInitialize(JSONRPCRequest request, Exchange exc) {
         MCPInitialize initialize = MCPInitialize.from(request);
+        if (getSessionId(exc) != null) {
+            return protocolError(request, ERR_INVALID_REQUEST, "'initialize' must not include '" + SESSION_HEADER + "'");
+        }
+
+        String sessionId = UUID.randomUUID().toString();
+        McpSessionContext sessionContext = new McpSessionContext();
         if (!sessionContext.initialize(SUPPORTED_PROTOCOL_VERSION, initialize.getClientInfo())) {
             return protocolError(request, ERR_INVALID_REQUEST, "'initialize' must be the first MCP request");
         }
+        sessionContexts.put(sessionId, sessionContext);
 
         return httpOk(new MCPInitializeResponse(initialize)
                 .withProtocolVersion(SUPPORTED_PROTOCOL_VERSION)
                 .withCapabilities(getCapabilities())
                 .withServerInfo("Membrane", VERSION)
-                .toRpcResponse());
+                .toRpcResponse(), Map.of(SESSION_HEADER, sessionId));
     }
 
-    private McpHttpResult processInitializedNotification(JSONRPCRequest request) {
+    private McpHttpResult processInitializedNotification(JSONRPCRequest request, Exchange exc) {
         MCPInitialized.from(request);
+        McpSessionContext sessionContext = requireSession(request, exc);
+        if (sessionContext == null) {
+            return missingOrInvalidSession(request, exc);
+        }
         if (!sessionContext.markReady()) {
             return protocolError(
                     request,
@@ -136,16 +149,24 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return acceptedNotification();
     }
 
-    private McpHttpResult processPing(JSONRPCRequest request) {
+    private McpHttpResult processPing(JSONRPCRequest request, Exchange exc) {
         MCPPing.from(request);
+        McpSessionContext sessionContext = requireSession(request, exc);
+        if (sessionContext == null) {
+            return missingOrInvalidSession(request, exc);
+        }
         if (!sessionContext.isIn(INITIALIZED, READY)) {
             return protocolError(request, ERR_INVALID_REQUEST, "'ping' is only allowed after 'initialize'");
         }
         return httpOk(success(request.getId(), Map.of()));
     }
 
-    private McpHttpResult processToolsList(JSONRPCRequest request) {
+    private McpHttpResult processToolsList(JSONRPCRequest request, Exchange exc) {
         MCPToolsList toolsList = MCPToolsList.from(request);
+        McpSessionContext sessionContext = requireSession(request, exc);
+        if (sessionContext == null) {
+            return missingOrInvalidSession(request, exc);
+        }
         if (!sessionContext.isIn(READY)) {
             return protocolError(request, ERR_INVALID_REQUEST, "'tools/list' requires a completed MCP handshake");
         }
@@ -157,6 +178,10 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult processToolsCall(JSONRPCRequest request, Exchange exc) throws Exception {
         MCPToolsCall call = MCPToolsCall.from(request);
+        McpSessionContext sessionContext = requireSession(request, exc);
+        if (sessionContext == null) {
+            return missingOrInvalidSession(request, exc);
+        }
         if (!sessionContext.isIn(READY)) {
             return protocolError(request, ERR_INVALID_REQUEST, "'tools/call' requires a completed MCP handshake");
         }
@@ -239,14 +264,15 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult badRequest(Exchange exc, @Nullable JSONRPCRequest request, int code, String message, Exception exception) {
         log.info("Rejected MCP request {} {}: {}", exc.getRequest().getMethod(), exc.getRequest().getUri(), exception.getMessage());
-        return new McpHttpResult(400, error(responseId(request), code, message, exception.getMessage()));
+        return new McpHttpResult(400, error(responseId(request), code, message, exception.getMessage()), Map.of());
     }
 
     private McpHttpResult internalError(Exchange exc, @Nullable JSONRPCRequest request, Exception exception) {
         log.warn("Failed to handle MCP request {} {}.", exc.getRequest().getMethod(), exc.getRequest().getUri(), exception);
         return new McpHttpResult(
                 request != null && request.isNotification() ? 500 : 200,
-                error(responseId(request), ERR_INTERNAL_ERROR, "Internal error", exception.getMessage())
+                error(responseId(request), ERR_INTERNAL_ERROR, "Internal error", exception.getMessage()),
+                Map.of()
         );
     }
 
@@ -257,8 +283,37 @@ public class MembraneMCPServer extends AbstractInterceptor {
     private McpHttpResult protocolError(JSONRPCRequest request, int code, String message, @Nullable Object data) {
         return new McpHttpResult(
                 request.isNotification() ? 400 : 200,
-                data == null ? error(responseId(request), code, message) : error(responseId(request), code, message, data)
+                data == null ? error(responseId(request), code, message) : error(responseId(request), code, message, data),
+                Map.of()
         );
+    }
+
+    private @Nullable McpSessionContext requireSession(JSONRPCRequest request, Exchange exc) {
+        String sessionId = getSessionId(exc);
+        if (sessionId == null) {
+            return null;
+        }
+        return sessionContexts.get(sessionId);
+    }
+
+    private McpHttpResult missingOrInvalidSession(JSONRPCRequest request, Exchange exc) {
+        String sessionId = getSessionId(exc);
+        if (sessionId == null) {
+            return new McpHttpResult(
+                    400,
+                    error(responseId(request), ERR_INVALID_REQUEST, "'" + SESSION_HEADER + "' header is required"),
+                    Map.of()
+            );
+        }
+        return new McpHttpResult(
+                404,
+                error(responseId(request), ERR_INVALID_REQUEST, "Unknown MCP session"),
+                Map.of()
+        );
+    }
+
+    private @Nullable String getSessionId(Exchange exc) {
+        return exc.getRequest().getHeader().getFirstValue(SESSION_HEADER);
     }
 
     private static Object responseId(@Nullable JSONRPCRequest request) {
@@ -269,11 +324,15 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private static McpHttpResult httpOk(JSONRPCResponse response) {
-        return new McpHttpResult(200, response);
+        return httpOk(response, Map.of());
+    }
+
+    private static McpHttpResult httpOk(JSONRPCResponse response, Map<String, String> headers) {
+        return new McpHttpResult(200, response, headers);
     }
 
     private static McpHttpResult acceptedNotification() {
-        return new McpHttpResult(202, null);
+        return new McpHttpResult(202, null, Map.of());
     }
 
     private static Response createResponse(McpHttpResult result) throws IOException {
@@ -283,10 +342,12 @@ public class MembraneMCPServer extends AbstractInterceptor {
             }
             return statusCode(result.status()).bodyEmpty().build();
         }
-        return statusCode(result.status())
-                .contentType(APPLICATION_JSON)
-                .body(result.body().toJson())
-                .build();
+        Response.ResponseBuilder builder = statusCode(result.status())
+                .contentType(APPLICATION_JSON);
+        for (Map.Entry<String, String> header : result.headers().entrySet()) {
+            builder.header(header.getKey(), header.getValue());
+        }
+        return builder.body(result.body().toJson()).build();
     }
 
     private static Map<String, Object> getCapabilities() {
@@ -300,7 +361,8 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     record McpHttpResult(
             int status,
-            @Nullable JSONRPCResponse body
+            @Nullable JSONRPCResponse body,
+            Map<String, String> headers
     ) {
     }
 }

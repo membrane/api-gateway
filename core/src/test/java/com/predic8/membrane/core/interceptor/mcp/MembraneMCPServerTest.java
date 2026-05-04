@@ -30,7 +30,7 @@ class MembraneMCPServerTest {
     void toolsListBeforeInitializeIsRejected() throws Exception {
         Exchange exc = invoke(newServer(), request(1, MCPToolsList.METHOD, Map.of()));
 
-        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals(400, exc.getResponse().getStatusCode());
         assertEquals(-32600, responseJson(exc).path("error").path("code").asInt());
     }
 
@@ -48,7 +48,7 @@ class MembraneMCPServerTest {
     void pingBeforeInitializeIsRejected() throws Exception {
         Exchange exc = invoke(newServer(), request(1, MCPPing.METHOD, Map.of()));
 
-        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals(400, exc.getResponse().getStatusCode());
         assertEquals(-32600, responseJson(exc).path("error").path("code").asInt());
     }
 
@@ -59,8 +59,9 @@ class MembraneMCPServerTest {
         Exchange initialize = invoke(server, initializeRequest("2025-03-26"));
         assertEquals(200, initialize.getResponse().getStatusCode());
         assertEquals(MembraneMCPServer.SUPPORTED_PROTOCOL_VERSION, responseJson(initialize).path("result").path("protocolVersion").asText());
+        String sessionId = sessionId(initialize);
 
-        Exchange toolsList = invoke(server, request(2, MCPToolsList.METHOD, Map.of()));
+        Exchange toolsList = invoke(server, request(2, MCPToolsList.METHOD, Map.of()), sessionId);
         assertEquals(200, toolsList.getResponse().getStatusCode());
         assertEquals(-32600, responseJson(toolsList).path("error").path("code").asInt());
     }
@@ -73,17 +74,18 @@ class MembraneMCPServerTest {
         assertEquals(200, initialize.getResponse().getStatusCode());
         JsonNode initializeJson = responseJson(initialize);
         assertEquals(MembraneMCPServer.SUPPORTED_PROTOCOL_VERSION, initializeJson.path("result").path("protocolVersion").asText());
+        String sessionId = sessionId(initialize);
 
-        Exchange ping = invoke(server, request(2, MCPPing.METHOD, Map.of()));
+        Exchange ping = invoke(server, request(2, MCPPing.METHOD, Map.of()), sessionId);
         assertEquals(200, ping.getResponse().getStatusCode());
         assertTrue(responseJson(ping).path("result").isObject());
         assertEquals(0, responseJson(ping).path("result").size());
 
-        Exchange initialized = invoke(server, notification(MCPInitialized.METHOD, Map.of()));
+        Exchange initialized = invoke(server, notification(MCPInitialized.METHOD, Map.of()), sessionId);
         assertEquals(202, initialized.getResponse().getStatusCode());
         assertEquals("", initialized.getResponse().getBodyAsStringDecoded());
 
-        Exchange toolsList = invoke(server, request(3, MCPToolsList.METHOD, Map.of()));
+        Exchange toolsList = invoke(server, request(3, MCPToolsList.METHOD, Map.of()), sessionId);
         JsonNode tools = responseJson(toolsList).path("result").path("tools");
         JsonNode getExchangesTool = findToolByName(tools, "getExchanges");
 
@@ -95,14 +97,38 @@ class MembraneMCPServerTest {
     }
 
     @Test
-    void unknownToolReturnsJsonRpcError() throws Exception {
-        MembraneMCPServer server = readyServer();
+    void initializeCreatesIndependentSessions() throws Exception {
+        MembraneMCPServer server = newServer();
 
-        Exchange exc = invoke(server, request(
+        Exchange firstInitialize = invoke(server, initializeRequest("2025-03-26"));
+        Exchange secondInitialize = invoke(server, initializeRequest("2025-03-26"));
+
+        assertEquals(200, firstInitialize.getResponse().getStatusCode());
+        assertEquals(200, secondInitialize.getResponse().getStatusCode());
+        assertNotEquals(sessionId(firstInitialize), sessionId(secondInitialize));
+    }
+
+    @Test
+    void toolsListWithoutSessionHeaderIsRejectedEvenAfterInitialize() throws Exception {
+        MembraneMCPServer server = newServer();
+
+        Exchange initialize = invoke(server, initializeRequest("2025-03-26"));
+        assertEquals(200, initialize.getResponse().getStatusCode());
+
+        Exchange toolsList = invoke(server, request(2, MCPToolsList.METHOD, Map.of()));
+        assertEquals(400, toolsList.getResponse().getStatusCode());
+        assertEquals(-32600, responseJson(toolsList).path("error").path("code").asInt());
+    }
+
+    @Test
+    void unknownToolReturnsJsonRpcError() throws Exception {
+        ReadyServer server = readyServer();
+
+        Exchange exc = invoke(server.server(), request(
                 2,
                 MCPToolsCall.METHOD,
                 Map.of("name", "doesNotExist", "arguments", Map.of())
-        ));
+        ), server.sessionId());
 
         assertEquals(200, exc.getResponse().getStatusCode());
         assertEquals(-32602, responseJson(exc).path("error").path("code").asInt());
@@ -110,13 +136,13 @@ class MembraneMCPServerTest {
 
     @Test
     void invalidToolArgumentsReturnJsonRpcError() throws Exception {
-        MembraneMCPServer server = readyServer();
+        ReadyServer server = readyServer();
 
-        Exchange exc = invoke(server, request(
+        Exchange exc = invoke(server.server(), request(
                 2,
                 MCPToolsCall.METHOD,
                 Map.of("name", "getExchanges", "arguments", Map.of("limit", 0))
-        ));
+        ), server.sessionId());
 
         assertEquals(200, exc.getResponse().getStatusCode());
         JsonNode response = responseJson(exc);
@@ -148,13 +174,13 @@ class MembraneMCPServerTest {
     @Test
     void getExchangesRedactsSensitiveHeadersAndOmitsBinaryBodies() throws Exception {
         MembraneMCPServer server = newServer(new StubExchangeStore(List.of(sampleExchange())));
-        readyHandshake(server);
+        String sessionId = readyHandshake(server);
 
         Exchange exc = invoke(server, request(
                 2,
                 MCPToolsCall.METHOD,
                 Map.of("name", "getExchanges", "arguments", Map.of("limit", 1, "includeBodies", true))
-        ));
+        ), sessionId);
 
         JsonNode payload = toolPayload(exc);
         JsonNode exchange = payload.path("exchanges").get(0);
@@ -181,20 +207,22 @@ class MembraneMCPServerTest {
         return server;
     }
 
-    private static MembraneMCPServer readyServer() throws Exception {
+    private static ReadyServer readyServer() throws Exception {
         MembraneMCPServer server = newServer();
-        readyHandshake(server);
-        return server;
+        return new ReadyServer(server, readyHandshake(server));
     }
 
-    private static void readyHandshake(MembraneMCPServer server) throws Exception {
+    private static String readyHandshake(MembraneMCPServer server) throws Exception {
         Exchange initialize = invoke(server, initializeRequest("2025-03-26"));
         assertEquals(200, initialize.getResponse().getStatusCode());
         assertEquals(MembraneMCPServer.SUPPORTED_PROTOCOL_VERSION, responseJson(initialize).path("result").path("protocolVersion").asText());
+        String sessionId = sessionId(initialize);
+        assertNotNull(sessionId);
 
-        Exchange initialized = invoke(server, notification(MCPInitialized.METHOD, Map.of()));
+        Exchange initialized = invoke(server, notification(MCPInitialized.METHOD, Map.of()), sessionId);
         assertEquals(202, initialized.getResponse().getStatusCode());
         assertEquals("", initialized.getResponse().getBodyAsStringDecoded());
+        return sessionId;
     }
 
     private static JSONRPCRequest initializeRequest(String protocolVersion) {
@@ -218,13 +246,25 @@ class MembraneMCPServerTest {
     }
 
     private static Exchange invoke(MembraneMCPServer server, JSONRPCRequest request) throws Exception {
-        Exchange exc = Request.post("http://localhost/mcp")
-                .header("Accept", POST_ACCEPT_HEADER)
+        return invoke(server, request, null);
+    }
+
+    private static Exchange invoke(MembraneMCPServer server, JSONRPCRequest request, String sessionId) throws Exception {
+        Request.Builder builder = Request.post("http://localhost/mcp")
+                .header("Accept", POST_ACCEPT_HEADER);
+        if (sessionId != null) {
+            builder.header(MembraneMCPServer.SESSION_HEADER, sessionId);
+        }
+        Exchange exc = builder
                 .json(request.toJson())
                 .buildExchange();
 
         assertEquals(Outcome.RETURN, server.handleRequest(exc));
         return exc;
+    }
+
+    private static String sessionId(Exchange exc) {
+        return exc.getResponse().getHeader().getFirstValue(MembraneMCPServer.SESSION_HEADER);
     }
 
     private static JsonNode responseJson(Exchange exc) throws Exception {
@@ -284,5 +324,8 @@ class MembraneMCPServerTest {
         public List<AbstractExchange> getAllExchangesAsList() {
             return exchanges;
         }
+    }
+
+    private record ReadyServer(MembraneMCPServer server, String sessionId) {
     }
 }
