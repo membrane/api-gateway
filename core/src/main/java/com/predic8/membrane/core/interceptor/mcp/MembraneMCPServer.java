@@ -7,13 +7,10 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.mcp.MCPUtil.InvalidToolArgumentsException;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import com.predic8.membrane.core.jsonrpc.JSONRPCResponse;
 import com.predic8.membrane.core.mcp.*;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.proxies.SOAPProxy;
-import com.predic8.membrane.core.proxies.ServiceProxy;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -201,27 +198,30 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private MCPToolsCallResponse listProxies(MCPToolsCall call, Exchange exc) {
-        rejectUnexpectedArguments(call, Set.of());
+        MCPUtil.rejectUnexpectedArguments(call, Set.of());
         return MCPToolsCallResponse.from(call)
                 .withJson(Map.of(
                         "proxies",
                         getRouter().getRuleManager().getRules().stream()
-                                .map(this::getProxyDescription)
+                                .map(proxy -> MCPUtil.describeProxy(
+                                        proxy,
+                                        getRouter().getExchangeStore().getStatistics(proxy.getKey())
+                                ))
                                 .toList()
                 ));
     }
 
     private MCPToolsCallResponse getStatistics(MCPToolsCall call, Exchange exc) {
-        rejectUnexpectedArguments(call, Set.of());
+        MCPUtil.rejectUnexpectedArguments(call, Set.of());
         return MCPToolsCallResponse.from(call)
                 .withJson(getRouter().getStatistics());
     }
 
     private MCPToolsCallResponse getExchanges(MCPToolsCall call, Exchange exc) {
-        rejectUnexpectedArguments(call, Set.of("limit", "includeBodies"));
+        MCPUtil.rejectUnexpectedArguments(call, Set.of("limit", "includeBodies"));
 
-        int limit = getOptionalIntArgument(call, "limit", MAX_EXCHANGES, 1, MAX_EXCHANGES);
-        boolean includeBodies = getOptionalBooleanArgument(call, "includeBodies", false);
+        int limit = MCPUtil.getOptionalIntArgument(call, "limit", MAX_EXCHANGES, 1, MAX_EXCHANGES);
+        boolean includeBodies = MCPUtil.getOptionalBooleanArgument(call, "includeBodies", false);
 
         List<AbstractExchange> exchanges = Optional.ofNullable(getRouter().getExchangeStore().getAllExchangesAsList())
                 .orElse(List.of());
@@ -231,99 +231,10 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 .withJson(Map.of(
                         "exchanges",
                         exchanges.subList(start, exchanges.size()).stream()
-                                .map(exchange -> describeExchange(exchange, includeBodies))
+                                .map(exchange -> MCPUtil.describeExchange(exchange, includeBodies, payloadSanitizer))
                                 .filter(Objects::nonNull)
                                 .toList()
                 ));
-    }
-
-    private @Nullable Map<String, Object> describeExchange(AbstractExchange exchange, boolean includeBodies) {
-        if (exchange.getResponse() == null) {
-            return null;
-        }
-
-        var description = new LinkedHashMap<String, Object>();
-        description.put("id", exchange.getId());
-
-        var request = new LinkedHashMap<String, Object>();
-        request.put("method", exchange.getRequest().getMethod());
-        request.put("path", exchange.getRequest().getUri());
-        request.put("headers", payloadSanitizer.sanitizeHeaders(exchange.getRequest().getHeader()));
-        if (includeBodies) {
-            request.put("body", payloadSanitizer.sanitizeBody(exchange.getRequest()));
-        }
-
-        var response = new LinkedHashMap<String, Object>();
-        response.put("status", exchange.getResponse().getStatusCode());
-        response.put("headers", payloadSanitizer.sanitizeHeaders(exchange.getResponse().getHeader()));
-        if (includeBodies) {
-            response.put("body", payloadSanitizer.sanitizeBody(exchange.getResponse()));
-        }
-
-        description.put("request", request);
-        description.put("response", response);
-        return description;
-    }
-
-    private Map<String, Object> getProxyDescription(Proxy proxy) {
-        var description = new LinkedHashMap<String, Object>();
-        description.put("name", proxy.getName());
-
-        String type;
-        switch (proxy) {
-            case APIProxy ignored -> type = "API";
-            case SOAPProxy soapProxy -> {
-                type = "soapProxy";
-                description.put("wsdl", soapProxy.getWsdl());
-                description.put("serviceName", soapProxy.getServiceName());
-            }
-            case ServiceProxy ignored -> type = "serviceProxy";
-            default -> type = "unknown";
-        }
-
-        description.put("type", type);
-        description.put("rule", proxy.getKey().toString());
-        description.put("interceptors", proxy.getFlow().stream()
-                .map(interceptor -> Map.of("name", interceptor.getDisplayName()))
-                .toList());
-        description.put("statistics", getRouter().getExchangeStore().getStatistics(proxy.getKey()));
-        return description;
-    }
-
-    private static int getOptionalIntArgument(MCPToolsCall call, String name, int defaultValue, int minimum, int maximum) {
-        Object value = call.getArgument(name);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (!(value instanceof Number number) || number.doubleValue() != Math.rint(number.doubleValue())) {
-            throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be an integer");
-        }
-        int parsed = number.intValue();
-        if (parsed < minimum || parsed > maximum) {
-            throw new InvalidToolArgumentsException(
-                    "Tool argument '" + name + "' must be between " + minimum + " and " + maximum
-            );
-        }
-        return parsed;
-    }
-
-    private static boolean getOptionalBooleanArgument(MCPToolsCall call, String name, boolean defaultValue) {
-        Object value = call.getArgument(name);
-        if (value == null) {
-            return defaultValue;
-        }
-        if (value instanceof Boolean bool) {
-            return bool;
-        }
-        throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be a boolean");
-    }
-
-    private static void rejectUnexpectedArguments(MCPToolsCall call, Set<String> allowed) {
-        for (String argumentName : call.getArguments().keySet()) {
-            if (!allowed.contains(argumentName)) {
-                throw new InvalidToolArgumentsException("Unexpected tool argument: " + argumentName);
-            }
-        }
     }
 
     private McpHttpResult badRequest(Exchange exc, @Nullable JSONRPCRequest request, int code, String message, Exception exception) {
@@ -391,11 +302,5 @@ public class MembraneMCPServer extends AbstractInterceptor {
             int status,
             @Nullable JSONRPCResponse body
     ) {
-    }
-
-    private static final class InvalidToolArgumentsException extends IllegalArgumentException {
-        private InvalidToolArgumentsException(String message) {
-            super(message);
-        }
     }
 }
