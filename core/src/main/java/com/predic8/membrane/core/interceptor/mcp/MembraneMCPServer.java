@@ -272,6 +272,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     /**
      * @description Maximum number of exchanges that can be returned by the getExchanges MCP tool.
+     * @default 100
      */
     @MCAttribute
     public void setMaxExchanges(int maxExchanges) {
