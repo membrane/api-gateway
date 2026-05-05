@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.1.3.json
+#
+# Tutorial: Server-Sent Events (SSE)
+#
+# Shows hot to proxy an SSE stream.
+#
+# 1.) Open the SEE debugger in the browser
+#     http://localhost:2000
+#
+#    Observe the SSE stream in the browser.
+#    After 10 events, the stream ends. The debugger page shows a
+#    "Connection lost" message and attempts to reconnect.
+#
+# 2.) Check the events in the log
+
+# Proxy for SSE streams
+api:
+  port: 2000
+  flow:
+    # Use only interceptors that do not access the response body.
+    # Otherwise, the request can appear to freeze until the stream ends.
+    # The log interceptor is an exception because it can log SSE events.
+    - log: {}
+  target:
+    host: localhost
+    port: 2001
+
+---
+# SSE stream server mock
+api:
+  port: 2001
+  path:
+    uri: /stream
+  flow:
+    # Creates a stream of SSE events.
+    - sseDemoStream:
+        # Start over after 10 events.
+        totalEvents: 10
+
+---
+# Serve SSE debugger page
+api:
+  port: 2001
+  flow:
+    - template:
+        contentType: text/html
+        location: sse-debugger.html
+    - return:
+        status: 200

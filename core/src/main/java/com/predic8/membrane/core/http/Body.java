@@ -14,19 +14,19 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-
-import static java.lang.System.currentTimeMillis;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
  * "Transfer-Encoding: chunked" is set on the input.
  * <p>
  * The "Transfer-Encoding" of the output is not determined by this class hierarchy, but by
- * {@link AbstractBodyTransferrer} and its subclasses.
+ * {@link AbstractBodyTransferer} and its subclasses.
  * <p>
  * The caller is responsible to adjust the header accordingly,
  * e.g. the fields Transfer-Encoding and Content-Length.
@@ -123,14 +123,14 @@ public class Body extends AbstractBody {
 	}
 
 	@Override
-	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
+	protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
 		if (getLength() > 0)
 			out.write(getContent(), 0, getLength());
 		out.finish(null);
 	}
 
 	@Override
-	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
+	protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
 		byte[] buffer = new byte[BUFFER_SIZE];
 
 		long totalLength = 0;
@@ -152,7 +152,7 @@ public class Body extends AbstractBody {
 	}
 
 	@Override
-	protected void writeStreamed(AbstractBodyTransferrer out) {
+	protected void writeStreamed(AbstractBodyTransferer out) {
 		byte[] buffer = new byte[BUFFER_SIZE];
 
 		long totalLength = 0;
@@ -191,10 +191,9 @@ public class Body extends AbstractBody {
 	}
 
 	@Override
-	protected byte[] getRawLocal() throws IOException {
+	protected byte[] getRawLocal() {
 		if (chunks.isEmpty()) {
 			log.debug("Chunks list is empty: {}", hashCode());
-			log.debug("At time: {}", currentTimeMillis());
 			return new byte[0];
 		}
 		return getContent();

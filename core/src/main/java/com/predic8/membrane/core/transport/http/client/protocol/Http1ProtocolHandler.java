@@ -14,29 +14,35 @@
 
 package com.predic8.membrane.core.transport.http.client.protocol;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.ConnectionFactory.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.transport.http.ConnectionFactory;
+import com.predic8.membrane.core.transport.http.ConnectionFactory.OutgoingConnectionType;
+import com.predic8.membrane.core.transport.http.HostColonPort;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.Util;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
-import org.slf4j.*;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.exchange.Exchange.*;
+import static com.predic8.membrane.annot.Constants.NOT_APPLICABLE;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exchange.Exchange.ALLOW_TCP;
+import static com.predic8.membrane.core.exchange.Exchange.ALLOW_WEBSOCKET;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.http.Request.METHOD_CONNECT;
+import static com.predic8.membrane.core.http.Response.fromStream;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.transport.http.MessageTracer.trace;
-import static com.predic8.membrane.core.transport.http.client.protocol.TcpProtocolHandler.*;
-import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.*;
-import static java.lang.Boolean.*;
-import static java.lang.System.*;
+import static com.predic8.membrane.core.transport.http.client.protocol.TcpProtocolHandler.TCP;
+import static com.predic8.membrane.core.transport.http.client.protocol.WebSocketProtocolHandler.WEBSOCKET;
+import static java.lang.Boolean.TRUE;
+import static java.lang.System.currentTimeMillis;
 
 public class Http1ProtocolHandler extends AbstractProtocolHandler {
 
@@ -148,7 +154,7 @@ public class Http1ProtocolHandler extends AbstractProtocolHandler {
         response.read(c.in, !exchange.getRequest().isHEADRequest());
     }
 
-    private static @NotNull AbstractBodyTransferrer getBodyTransferer(Exchange exchange, Connection c) {
+    private static @NotNull AbstractBodyTransferer getBodyTransferer(Exchange exchange, Connection c) {
         return exchange.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferer(c.out) : new PlainBodyTransferer(c.out);
     }
 

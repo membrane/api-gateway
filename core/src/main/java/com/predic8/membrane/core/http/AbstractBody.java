@@ -14,18 +14,21 @@
 
 package com.predic8.membrane.core.http;
 
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * A HTTP message body (request or response), as it is received or constructed
+ * An HTTP message body (request or response), as it is received or constructed
  * internally by Membrane.
  * <p>
- * (Sending a body is handled by one of the {@link AbstractBodyTransferrer}s.)
+ * (Sending a body is handled by one of the {@link AbstractBodyTransferer}s.)
  * <p>
  * To read a body, use the concrete implementation {@link ChunkedBody} (iff
  * "Transfer-Encoding: chunked" is used) or {@link Body} (iff not). To construct
@@ -97,7 +100,7 @@ public abstract class AbstractBody {
 	/**
 	 * Returns the body's content as a byte[] representation.
 	 * <p>
-	 * For example, {@link #getContent()} might return a byte representation of
+	 * For example, getContent() might return a byte representation of
 	 *
 	 * <pre>
 	 * Wikipedia in
@@ -110,7 +113,7 @@ public abstract class AbstractBody {
 	 * ), the example above is taken from there.
 	 * <p>
 	 * Please note that a new array is allocated when calling
-	 * {@link #getContent()}. If you do not need the body as one single byte[],
+	 * getContent(). If you do not need the body as one single byte[],
 	 * you should therefore use {@link #getContentAsStream()} instead.
 	 */
 	public byte[] getContent() {
@@ -132,7 +135,7 @@ public abstract class AbstractBody {
 		return new BodyInputStream(chunks);
 	}
 
-	public void write(AbstractBodyTransferrer out, boolean retainCopy) {
+	public void write(AbstractBodyTransferer out, boolean retainCopy) {
 		try {
 			if (!read && !retainCopy) {
 				if (wasStreamed)
@@ -150,14 +153,14 @@ public abstract class AbstractBody {
 		}
 	}
 
-	protected abstract void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException;
+	protected abstract void writeAlreadyRead(AbstractBodyTransferer out) throws IOException;
 
-	protected abstract void writeNotRead(AbstractBodyTransferrer out) throws IOException;
+	protected abstract void writeNotRead(AbstractBodyTransferer out) throws IOException;
 
 	/**
 	 * Is called when there are no observers that need to read the body. Streams the body without reading it
 	 */
-	protected abstract void writeStreamed(AbstractBodyTransferrer out);
+	protected abstract void writeStreamed(AbstractBodyTransferer out);
 
 	/**
 	 * Warning: Calling this method will trigger reading the body from the client, disabling "streaming".
@@ -230,7 +233,12 @@ public abstract class AbstractBody {
 		return read;
 	}
 
-	void addObserver(MessageObserver observer) {
+	/**
+	 * Mutates the ArrayList observers without synchronization. Callers must only invoke
+	 * it from the thread that owns the Body.
+	 * @param observer MessageObserver to add
+	 */
+	public void addObserver(MessageObserver observer) {
 		if (read) {
 			observer.bodyComplete(this);
 			return;

@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,21 +11,16 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.http;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
+package com.predic8.membrane.tutorials.misc;
 
-/**
- * Used to send a message body.
- * <p>
- * An implementation might realize "chunking", for example.
- */
-public abstract class AbstractBodyTransferrer {
+import com.predic8.membrane.tutorials.AbstractMembraneTutorialTest;
 
-	public abstract void write(byte[] content, int i, int length) throws IOException;
-	public abstract void write(Chunk chunk) throws IOException;
+public abstract class AbstractMiscTutorialTest extends AbstractMembraneTutorialTest {
 
-	public abstract void finish(@Nullable Header header) throws IOException;
+    @Override
+    protected String getTutorialDir() {
+        return "misc";
+    }
 
 }
