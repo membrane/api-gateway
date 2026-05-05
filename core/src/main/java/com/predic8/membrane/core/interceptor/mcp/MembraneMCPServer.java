@@ -26,6 +26,7 @@ import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.http.Response.accepted;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.*;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.INITIALIZED;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.READY;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
@@ -203,7 +204,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 ))
                 .register(new McpToolDefinition(
                         "getExchanges",
-                        "Gets recent HTTP exchanges with sanitized headers and optional bodies",
+                        "Gets recent HTTP exchanges with sanitized headers, optional bodies, and request filters",
                         getExchangesSchema(),
                         this::getExchanges
                 ))
@@ -216,7 +217,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private MCPToolsCallResponse listProxies(MCPToolsCall call, Exchange exc) {
-        MCPUtil.rejectUnexpectedArguments(call, Set.of());
+        rejectUnexpectedArguments(call, Set.of());
         return MCPToolsCallResponse.from(call)
                 .withJson(Map.of(
                         "proxies",
@@ -230,29 +231,33 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private MCPToolsCallResponse getStatistics(MCPToolsCall call, Exchange exc) {
-        MCPUtil.rejectUnexpectedArguments(call, Set.of());
+        rejectUnexpectedArguments(call, Set.of());
         return MCPToolsCallResponse.from(call)
                 .withJson(getRouter().getStatistics());
     }
 
     private MCPToolsCallResponse getExchanges(MCPToolsCall call, Exchange exc) {
-        MCPUtil.rejectUnexpectedArguments(call, Set.of("limit", "includeBodies"));
+        rejectUnexpectedArguments(call, Set.of("limit", "includeBodies", "host", "port", "pathPattern", "path"));
 
-        int limit = MCPUtil.getOptionalIntArgument(call, "limit", maxExchanges, 1, maxExchanges);
-        boolean includeBodies = MCPUtil.getOptionalBooleanArgument(call, "includeBodies", false);
-
-        List<AbstractExchange> exchanges = Optional.ofNullable(getRouter().getExchangeStore().getAllExchangesAsList())
-                .orElse(List.of());
-        int start = Math.max(0, exchanges.size() - limit);
+        List<AbstractExchange> filteredExchanges = Optional.ofNullable(getRouter().getExchangeStore().getAllExchangesAsList())
+                .orElse(List.of())
+                .stream()
+                .filter(exchange -> ExchangeUtils.matchesExchangeFilter(exchange, getOptionalStringArgument(call, "host"), getOptionalPort(call), getOptionalStringArgument(call, "pathPattern")))
+                .toList();
+        List<AbstractExchange> exchanges = filteredExchanges.subList(Math.max(0, filteredExchanges.size() - getOptionalIntArgument(call, "limit", maxExchanges, 1, maxExchanges)), filteredExchanges.size());
 
         return MCPToolsCallResponse.from(call)
                 .withJson(Map.of(
                         "exchanges",
-                        exchanges.subList(start, exchanges.size()).stream()
-                                .map(exchange -> MCPUtil.describeExchange(exchange, includeBodies, payloadSanitizer))
+                        exchanges.stream()
+                                .map(exchange -> MCPUtil.describeExchange(exchange, MCPUtil.getOptionalBooleanArgument(call, "includeBodies", false), payloadSanitizer))
                                 .filter(Objects::nonNull)
                                 .toList()
                 ));
+    }
+
+    private static @Nullable Integer getOptionalPort(MCPToolsCall call) {
+        return call.getArgument("port") == null ? null : getOptionalIntArgument(call, "port", -1, 1, 65535);
     }
 
     private Map<String, Object> getExchangesSchema() {
@@ -260,7 +265,10 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 "type", "object",
                 "properties", Map.of(
                         "limit", Map.of("type", "integer", "minimum", 1, "maximum", maxExchanges),
-                        "includeBodies", Map.of("type", "boolean")
+                        "includeBodies", Map.of("type", "boolean"),
+                        "host", Map.of("type", "string"),
+                        "port", Map.of("type", "integer", "minimum", 1, "maximum", 65535),
+                        "pathPattern", Map.of("type", "string", "description", "Matches by prefix or regex")
                 ),
                 "additionalProperties", false
         );
