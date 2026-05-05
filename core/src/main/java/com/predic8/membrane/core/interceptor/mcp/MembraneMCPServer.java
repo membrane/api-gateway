@@ -237,7 +237,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private MCPToolsCallResponse getExchanges(MCPToolsCall call, Exchange exc) {
-        rejectUnexpectedArguments(call, Set.of("limit", "includeBodies", "host", "port", "pathPattern", "path"));
+        rejectUnexpectedArguments(call, Set.of("limit", "includeBodies", "host", "port", "pathPattern"));
 
         List<AbstractExchange> filteredExchanges = Optional.ofNullable(getRouter().getExchangeStore().getAllExchangesAsList())
                 .orElse(List.of())
