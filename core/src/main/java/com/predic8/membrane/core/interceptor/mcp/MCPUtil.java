@@ -98,6 +98,22 @@ public final class MCPUtil {
         throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be a boolean");
     }
 
+    public static @Nullable String getOptionalStringArgument(MCPToolsCall call, String name) {
+        Object value = call.getArgument(name);
+        if (value == null) {
+            return null;
+        }
+        if (!(value instanceof String text)) {
+            throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be a string");
+        }
+
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) {
+            throw new InvalidToolArgumentsException("Tool argument '" + name + "' must not be blank");
+        }
+        return trimmed;
+    }
+
     public static void rejectUnexpectedArguments(MCPToolsCall call, Set<String> allowed) {
         for (String argumentName : call.getArguments().keySet()) {
             if (!allowed.contains(argumentName)) {
