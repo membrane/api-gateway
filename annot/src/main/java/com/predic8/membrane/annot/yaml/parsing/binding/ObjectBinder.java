@@ -33,11 +33,7 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
 
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.findRequiredSetters;
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.findSingleSetterOrNullForAnnotation;
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.getSingleChildSetter;
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.isCollapsed;
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.isNoEnvelope;
+import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.ensureMappingStart;
 
 public final class ObjectBinder {
@@ -49,7 +45,8 @@ public final class ObjectBinder {
 
     public static <T> T bind(ParsingContext<?> pc, Class<T> clazz, JsonNode node) throws ConfigurationParsingException {
         try {
-            T configObj = clazz.getConstructor().newInstance();
+            T configObj = instantiate(clazz);
+
             BeanDefinition currentBeanDefinition = BeanDefinitionContext.current();
             if (currentBeanDefinition != null && pc.getRegistry() != null) {
                 pc.getRegistry().rememberBeanDefinition(configObj, currentBeanDefinition);
@@ -99,6 +96,14 @@ public final class ObjectBinder {
             var cpe = new ConfigurationParsingException(cause);
             applyCurrentSourceFileIfMissing(cpe);
             throw cpe;
+        }
+    }
+
+    private static <T> @NotNull T instantiate(Class<T> clazz) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+        try {
+            return clazz.getConstructor().newInstance();
+        } catch (NoSuchMethodException e) {
+            throw new ConfigurationParsingException("Class %s does not have a public no-arg constructor.".formatted(clazz.getName()));
         }
     }
 
