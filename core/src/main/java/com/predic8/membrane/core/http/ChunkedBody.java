@@ -14,17 +14,21 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.ByteUtil;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.ChunkedBodyTransferer.*;
+import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
+import static com.predic8.membrane.core.http.ChunkedBodyTransferer.ZERO;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
-import static java.lang.Long.*;
-import static java.nio.charset.StandardCharsets.*;
+import static java.lang.Long.toHexString;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Reads the body with "Transfer-Encoding: chunked".
@@ -121,7 +125,7 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    public void write(AbstractBodyTransferrer out, boolean retainCopy) {
+    public void write(AbstractBodyTransferer out, boolean retainCopy) {
         try {
             if (bodyObserved && !bodyComplete)
                 ByteUtil.readStream(getContentAsStream());
@@ -204,7 +208,7 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
+    protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
         log.debug("writeNotReadChunked");
         int chunkSize;
         while ((chunkSize = readChunkSize(inputStream)) > 0) {
@@ -224,7 +228,7 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    protected void writeStreamed(AbstractBodyTransferrer out) {
+    protected void writeStreamed(AbstractBodyTransferer out) {
         log.debug("writeStreamed");
         int chunkSize;
         try {
@@ -255,7 +259,7 @@ public class ChunkedBody extends AbstractBody {
         markAsRead();
     }
 
-    protected int getRawLength() throws IOException {
+    protected int getRawLength() {
         if (chunks.isEmpty())
             return 0;
         int length = getLength();
@@ -269,7 +273,7 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    protected byte[] getRawLocal() throws IOException {
+    protected byte[] getRawLocal() {
         byte[] raw = new byte[getRawLength()];
         int destPos = 0;
         for (Chunk chunk : chunks) {
@@ -296,7 +300,7 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
+    protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
         if (getLength() > 0)
             for (Chunk chunk : chunks) {
                 out.write(chunk);

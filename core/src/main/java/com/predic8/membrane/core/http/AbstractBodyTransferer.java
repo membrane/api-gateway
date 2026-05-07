@@ -1,4 +1,4 @@
-/* Copyright 2025 predic8 GmbH, www.predic8.com
+/* Copyright 2012 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,20 +11,21 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.membrane.core.http;
 
-/**
- * Indicates that an error occurred while reading the body of a message.
- * The 'message' should already be enough to indicate the error.
- * (No need to use {@link com.predic8.membrane.core.util.ExceptionUtil#concatMessageAndCauseMessages(Throwable)}.)
- */
-public class ReadingBodyException extends RuntimeException {
-    public ReadingBodyException(Exception e) {
-        super(e);
-    }
+import javax.annotation.Nullable;
+import java.io.IOException;
 
-    public ReadingBodyException(String message) {
-        super(message);
-    }
+/**
+ * Used to send a message body.
+ * <p>
+ * An implementation might realize "chunking", for example.
+ */
+public abstract class AbstractBodyTransferer {
+
+	public abstract void write(byte[] content, int i, int length) throws IOException;
+	public abstract void write(Chunk chunk) throws IOException;
+
+	public abstract void finish(@Nullable Header header) throws IOException;
+
 }

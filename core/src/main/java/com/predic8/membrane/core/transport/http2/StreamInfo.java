@@ -196,14 +196,14 @@ public class StreamInfo {
         }
 
         @Override
-        protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
+        protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
             if (getLength() > 0)
                 out.write(getContent(), 0, getLength());
             out.finish(trailer);
         }
 
         @Override
-        protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
+        protected void writeNotRead(AbstractBodyTransferer out) throws IOException {
             chunks.clear();
             while (true) {
                 DataFrame df = removeDataFrame();
@@ -223,10 +223,10 @@ public class StreamInfo {
         }
 
         @Override
-        protected void writeStreamed(AbstractBodyTransferrer out) {
+        protected void writeStreamed(AbstractBodyTransferer out) {
             chunks.clear();
             while (true) {
-                DataFrame df = null;
+                DataFrame df;
                 try {
                     df = removeDataFrame();
                 } catch (IOException e) {
@@ -256,10 +256,9 @@ public class StreamInfo {
         }
 
         @Override
-        protected byte[] getRawLocal() throws IOException {
+        protected byte[] getRawLocal() {
             if (chunks.isEmpty()) {
-                log.debug("size of chunks list: " + chunks.size() + "  " + hashCode());
-                log.debug("chunks size is: " + chunks.size() + " at time: " + System.currentTimeMillis());
+                log.debug("Chunks list is empty (hash={})", hashCode());
                 return new byte[0];
             }
 

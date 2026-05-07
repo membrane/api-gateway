@@ -16,14 +16,14 @@ package com.predic8.membrane.core.exchangestore;
 
 public interface ClientStatistics {
 
-	public int getCount();
+	int getCount();
 
-	public String getClient();
+	String getClient();
 
-	public long getMinDuration();
+	long getMinDuration();
 
-	public long getMaxDuration();
+	long getMaxDuration();
 
-	public long getAvgDuration();
+	long getAvgDuration();
 
 }
