@@ -59,8 +59,4 @@ public abstract class AbstractSecurityScheme implements SecurityScheme {
         return scopes;
     }
 
-    @Override
-    public String getPrincipal() {
-        return null;
-    }
 }

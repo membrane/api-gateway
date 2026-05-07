@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 
-@MCElement(name="simpleStore",component = false, noEnvelope = false, id="simple-ai-api-store")
+@MCElement(name="simpleStore",component = false, id="simple-ai-api-store")
 public class SimpleAiApiStore implements AiApiStore {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleAiApiStore.class);

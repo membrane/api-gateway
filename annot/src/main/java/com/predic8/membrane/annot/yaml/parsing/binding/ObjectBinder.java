@@ -122,7 +122,6 @@ public final class ObjectBinder {
         return configObj;
     }
 
-    @SuppressWarnings("ConstantValue")
     private static <T> void applyCollapsedScalar(Class<T> clazz, JsonNode node, T target) {
         Method attributeSetter = findSingleSetterOrNullForAnnotation(clazz, MCAttribute.class);
         Method textSetter = findSingleSetterOrNullForAnnotation(clazz, MCTextContent.class);

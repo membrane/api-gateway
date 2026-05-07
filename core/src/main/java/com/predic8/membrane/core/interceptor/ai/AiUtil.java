@@ -11,15 +11,15 @@ public class AiUtil {
     /**
      * Estimates the number of tokens in a given text.
      * The calculation assumes an average token length of 4 characters.
-     *
+     * <p></p>
      * Content	Approximation
      * English prose	chars / 4
      * German/French	chars / 3.5
      * JSON/XML/code	chars / 2.5–3
      * Chinese/Japanese	very different
-     *
+     * <p></p>
      * For API gateways, quotas, billing alerts, or rate limiting, approximate counting is often sufficient.
-     *
+     * <p></p>
      * @param text the input string whose tokens are to be estimated
      * @return the estimated number of tokens, rounded up to the nearest integer
      */
