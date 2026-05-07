@@ -24,7 +24,7 @@ public class AiApiLimit {
     @GuardedBy("lock")
     private Instant nextReset;
 
-    private AtomicLong tokens = new AtomicLong(0);
+    private final AtomicLong tokens = new AtomicLong(0);
 
     public long checkLimit() {
         Instant now = now();
