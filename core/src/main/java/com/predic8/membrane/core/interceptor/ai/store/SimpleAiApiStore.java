@@ -5,6 +5,7 @@ import com.predic8.membrane.annot.MCElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,7 +14,7 @@ public class SimpleAiApiStore implements AiApiStore {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleAiApiStore.class);
 
-    private List<AiApiUser> users;
+    private List<AiApiUser> users = new ArrayList<>();
     private AiApiLimit limit = new AiApiLimit();
 
     @Override

@@ -12,7 +12,7 @@ public class JDBCAiApiUsageStore extends AbstractJdbcSupport implements AiApiSto
 
     private static final String CREATE_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS ai_api_usage (
-                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, // @TODO  GENERATED ALWAYS AS IDENTITY  is PostgreSQL specific
                 username VARCHAR(255) NOT NULL,
                 input_tokens INT NOT NULL,
                 output_tokens INT NOT NULL,

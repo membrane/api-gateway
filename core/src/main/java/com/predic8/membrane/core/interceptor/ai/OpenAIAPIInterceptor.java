@@ -51,13 +51,14 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
         var header = exc.getRequest().getHeader();
 
         if (store != null) {
-            var user = store.getUser(extractBearerToken(header));
-            log.debug("User: {}", user);
-            if (user.isEmpty()) {
+            var opt = store.getUser(extractBearerToken(header));
+            if (opt.isEmpty()) {
                 exc.setResponse(authenticationFailed());
                 return RETURN;
             }
-            var remaining = store.checkLimit(user.get());
+            var user = opt.get();
+            log.debug("User: {}", user);
+            var remaining = store.checkLimit(user);
             if (remaining <= 0) {
                 exc.setResponse(tokenLimitExceeded());
                 return RETURN;
@@ -117,20 +118,22 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
 
         var json = getJson(exc, RESPONSE);
 
-        // Error from AI API
-        if (!json.get("error").isNull()) {
+        // Pass error from AI API to client
+        if (json.get("error") != null && !json.get("error").isNull()) {
             return CONTINUE;
         }
-        store.store(exc.getProperty(MEMBRANE_AI_USERTOKEN, String.class), getUsage(json));
+        if (store != null) {
+            store.store(exc.getProperty(MEMBRANE_AI_USERTOKEN, String.class), getUsage(json));
+        }
         return CONTINUE;
     }
 
     private Usage getUsage(ObjectNode json) {
-        var usage = json.get("usage");
-        if (usage == null) {
+        var usage = json.path("usage");
+        if (usage.isNull()) {
             return new Usage(0, 0, 0);
         }
-        return new Usage(usage.get("input_tokens").asInt(), usage.get("output_tokens").asInt(), usage.get("total_tokens").asInt());
+        return new Usage(usage.path("input_tokens").asInt(), usage.path("output_tokens").asInt(), usage.path("total_tokens").asInt());
     }
 
 
@@ -145,7 +148,7 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
     }
 
     public AiApiStore getAiStore() {
-        return null;
+        return store;
     }
 
     @MCChildElement(allowForeign = true)

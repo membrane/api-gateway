@@ -5,7 +5,9 @@ import com.predic8.membrane.annot.MCElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.time.Instant.now;
 
@@ -16,25 +18,31 @@ public class AiApiLimit {
 
     private int maxTokens;
     private int period;
-    private Instant nextReset;
-    private long tokens;
 
-    public AiApiLimit() {
-        nextReset = now().plusSeconds(period);
-    }
+    private final Object lock = new Object();
+
+    @GuardedBy("lock")
+    private Instant nextReset;
+
+    private AtomicLong tokens = new AtomicLong(0);
 
     public long checkLimit() {
-        if (now().isAfter(nextReset)) {
-            tokens = 0;
-            nextReset = now().plusSeconds(period);
-            log.debug("Resetting AI API usage limit.");
+        Instant now = now();
+
+        if (now.isAfter(nextReset)) {
+            synchronized (lock) {
+                tokens.set(0);
+                nextReset = now.plusSeconds(period);
+                log.debug("Resetting AI API usage limit.");
+            }
         }
-        return maxTokens - tokens;
+
+        return maxTokens - tokens.get();
     }
 
     public void addTokens(long tokens) {
         log.debug("Adding {} tokens to AI API usage limit.", tokens);
-        this.tokens += tokens;
+        this.tokens.addAndGet(tokens);
     }
 
     public int getMaxTokens() {
@@ -53,5 +61,6 @@ public class AiApiLimit {
     @MCAttribute
     public void setPeriod(int period) {
         this.period = period;
+        nextReset = now().plusSeconds(period);
     }
 }

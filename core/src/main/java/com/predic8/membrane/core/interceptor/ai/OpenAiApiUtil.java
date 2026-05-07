@@ -23,7 +23,7 @@ public class OpenAiApiUtil {
     }
 
     public static Response contextLengthExceeded(int maxTokens, int estimatedTokens) {
-        return badRequest().json(createJson(new ErrorBody(
+        return badRequest().json(createJson(new ErrorEnvelope(new ErrorBody(
                 """
                         This model's maximum context length is %d tokens.
                         Your request contains approximately %d tokens.
@@ -31,7 +31,7 @@ public class OpenAiApiUtil {
                 "invalid_request_error",
                 "input",
                 "context_length_exceeded"
-        ))).build();
+        )))).build();
     }
 
     public static Response tokenLimitExceeded() {
