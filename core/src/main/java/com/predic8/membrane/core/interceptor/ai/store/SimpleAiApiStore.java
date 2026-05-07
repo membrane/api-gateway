@@ -15,7 +15,7 @@ public class SimpleAiApiStore implements AiApiStore {
     private static final Logger log = LoggerFactory.getLogger(SimpleAiApiStore.class);
 
     private List<AiApiUser> users = new ArrayList<>();
-    private AiApiLimit limit = new AiApiLimit();
+    private AiApiLimit limit = new NoAiApiLimit();
 
     @Override
     public void store(String user, Usage usage) {

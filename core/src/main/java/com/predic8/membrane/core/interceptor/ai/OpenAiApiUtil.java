@@ -3,6 +3,8 @@ package com.predic8.membrane.core.interceptor.ai;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.http.Response;
 
+import java.util.Collection;
+
 import static com.predic8.membrane.core.http.Header.WWW_AUTHENTICATE;
 import static com.predic8.membrane.core.http.Response.badRequest;
 import static com.predic8.membrane.core.http.Response.unauthorized;
@@ -10,6 +12,18 @@ import static com.predic8.membrane.core.http.Response.unauthorized;
 public class OpenAiApiUtil {
 
     private static final ObjectMapper om = new ObjectMapper();
+
+    public static Response modelNotAllowed(String model, Collection<String> allowedModels) {
+        return badRequest().json(createJson(new ErrorEnvelope(
+                new ErrorBody(
+                        "Model '%s' is not allowed. Allowed models: %s."
+                                .formatted(model, String.join(", ", allowedModels)),
+                        "invalid_request_error",
+                        null,
+                        "model_not_allowed"
+                )
+        ))).build();
+    }
 
     public static Response authenticationFailed() {
         return unauthorized().header(WWW_AUTHENTICATE, "Bearer").json(createJson(new ErrorEnvelope(
@@ -22,7 +36,7 @@ public class OpenAiApiUtil {
         ))).build();
     }
 
-    public static Response contextLengthExceeded(int maxTokens, int estimatedTokens) {
+    public static Response contextLengthExceeded(long maxTokens, long estimatedTokens) {
         return badRequest().json(createJson(new ErrorEnvelope(new ErrorBody(
                 """
                         This model's maximum context length is %d tokens.

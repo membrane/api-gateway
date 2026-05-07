@@ -4,6 +4,10 @@ import com.predic8.membrane.core.router.Router;
 
 import java.util.Optional;
 
+/**
+ * @TODO
+ * - Store .status, .error, .model, .stop_reason
+ */
 public interface AiApiStore {
 
     default void init(Router router) {

@@ -9,23 +9,22 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.ai.provider.AiProvider;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiStore;
 import com.predic8.membrane.core.interceptor.ai.store.Usage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.interceptor.ai.AiUtil.estimateTokens;
-import static com.predic8.membrane.core.interceptor.ai.AiUtil.extractBearerToken;
 import static com.predic8.membrane.core.interceptor.ai.OpenAiApiUtil.*;
 
-@MCElement(name = "openAI")
+@MCElement(name = "aiGateway")
 public class OpenAIAPIInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAIAPIInterceptor.class);
@@ -35,9 +34,13 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
 
     private static final ObjectMapper om = new ObjectMapper();
 
+    private AiProvider provider;
+
     private String apiKey;
     private int maxOutputTokens;
     private int maxInputTokens;
+    private List<String> models;
+
     private AiApiStore store;
 
     @Override
@@ -51,7 +54,7 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
         var header = exc.getRequest().getHeader();
 
         if (store != null) {
-            var opt = store.getUser(extractBearerToken(header));
+            var opt = store.getUser(provider.getApiKey(header));
             if (opt.isEmpty()) {
                 exc.setResponse(authenticationFailed());
                 return RETURN;
@@ -66,8 +69,7 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
             exc.setProperty(MEMBRANE_AI_USERTOKEN, user);
         }
 
-        header.removeFields(AUTHORIZATION);
-        header.add(AUTHORIZATION, "Bearer " + apiKey);
+        provider.setApiKey(header,apiKey);
 
         var json = getJson(exc, REQUEST);
 
@@ -78,18 +80,27 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
         if (maxInputTokens != 0) {
             var input = json.get("input");
             if (input != null) {
-                var estimated = estimateTokens(input.asText());
+                var estimated = provider.estimateInputTokens(json);
                 if (estimated > maxInputTokens) {
                     exc.setResponse(contextLengthExceeded(maxInputTokens, estimated));
                     return RETURN;
                 }
             }
         }
-        setJsonResponse(exc, json);
+
+        if (models != null) {
+            var model = json.path("model").asText();
+            if (!models.contains(model)) {
+                exc.setResponse(modelNotAllowed(model, models));
+                return RETURN;
+            }
+        }
+
+        setJsonRequest(exc, json);
         return CONTINUE;
     }
 
-    private static void setJsonResponse(Exchange exc, ObjectNode json) {
+    private static void setJsonRequest(Exchange exc, ObjectNode json) {
         try {
             exc.getRequest().setBodyContent(om.writeValueAsBytes(json));
         } catch (JsonProcessingException e) {
@@ -136,8 +147,6 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
         return new Usage(usage.path("input_tokens").asInt(), usage.path("output_tokens").asInt(), usage.path("total_tokens").asInt());
     }
 
-
-
     public String getApiKey() {
         return apiKey;
     }
@@ -151,7 +160,7 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
         return store;
     }
 
-    @MCChildElement(allowForeign = true)
+    @MCChildElement(allowForeign = true, order = 10)
     public void setAiStore(AiApiStore store) {
         this.store = store;
     }
@@ -177,5 +186,23 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setMaxInputTokens(int maxInputTokens) {
         this.maxInputTokens = maxInputTokens;
+    }
+
+    public List<String> getModels() {
+        return models;
+    }
+
+    @MCAttribute
+    public void setModels(List<String> models) {
+        this.models = models;
+    }
+
+    public AiProvider getProvider() {
+        return provider;
+    }
+
+    @MCChildElement(allowForeign = true, order = 0)
+    public void setProvider(AiProvider provider) {
+        this.provider = provider;
     }
 }

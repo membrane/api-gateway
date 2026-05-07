@@ -29,7 +29,7 @@ public class AiApiLimit {
     public long checkLimit() {
         Instant now = now();
 
-        if (now.isAfter(nextReset)) {
+        if (nextReset == null || now.isAfter(nextReset)) {
             synchronized (lock) {
                 tokens.set(0);
                 nextReset = now.plusSeconds(period);
