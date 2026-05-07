@@ -29,32 +29,32 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	protected void readLocal() throws IOException {
+	protected void readLocal() {
 		//ignore
 	}
 
 	@Override
-	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
+	protected void writeAlreadyRead(AbstractBodyTransferer out) {
 		//ignore
 	}
 
 	@Override
-	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
+	protected void writeNotRead(AbstractBodyTransferer out) {
 		//ignore
 	}
 
 	@Override
-	protected void writeStreamed(AbstractBodyTransferrer out) {
+	protected void writeStreamed(AbstractBodyTransferer out) {
 		//ignore
 	}
 
 	@Override
-	protected byte[] getRawLocal() throws IOException {
+	protected byte[] getRawLocal() {
 		return new byte[0];
 	}
 
 	@Override
-	public void write(AbstractBodyTransferrer out, boolean retainCopy) {
+	public void write(AbstractBodyTransferer out, boolean retainCopy) {
 		try {
 			out.finish(null);
 		} catch (IOException e) {

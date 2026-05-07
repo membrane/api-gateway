@@ -15,11 +15,12 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.annot.Constants;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class ChunkedBodyTransferer extends AbstractBodyTransferrer {
+public class ChunkedBodyTransferer extends AbstractBodyTransferer {
 	final OutputStream out;
 
 	public ChunkedBodyTransferer(OutputStream out) {

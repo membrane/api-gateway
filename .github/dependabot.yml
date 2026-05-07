@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/"
+    target-branch: "master"
+    open-pull-requests-limit: 0
+    schedule:
+      interval: "daily"
+  
+  - package-ecosystem: "maven"
+    directory: "/"
+    target-branch: "6.X"
+    open-pull-requests-limit: 0
+    schedule:
+      interval: "daily"
