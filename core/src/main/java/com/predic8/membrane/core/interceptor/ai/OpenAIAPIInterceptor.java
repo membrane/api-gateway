@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.ai.OpenAiApiUtil.*;
@@ -44,7 +45,18 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
 
-        var aiReq = provider.getAiApiRequest(exc);
+        AiApiRequest aiReq;
+        try {
+            aiReq = provider.getAiApiRequest(exc);
+        } catch (Exception e) {
+            user(router.getConfiguration().isProduction(),"AI Gateway")
+                    .title("Invalid request")
+                    .detail("Error parsing request: " + e.getMessage())
+                    .buildAndSetResponse(exc);
+            return RETURN;
+        }
+
+        var inputTokens = aiReq.estimateInputTokens();
 
         if (store != null) {
             var opt = store.getUser(aiReq.getApiKey());
@@ -54,7 +66,7 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
             }
             var user = opt.get();
             log.debug("User: {}", user);
-            var remaining = store.checkLimit(user);
+            var remaining = store.checkLimit(user,inputTokens,maxOutputTokens);
             if (remaining <= 0) {
                 exc.setResponse(tokenLimitExceeded());
                 return RETURN;
@@ -69,9 +81,8 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
         }
 
         if (maxInputTokens != 0) {
-            var estimated = aiReq.estimateInputTokens();
-            if (estimated > maxInputTokens) {
-                exc.setResponse(contextLengthExceeded(maxInputTokens, estimated));
+            if (inputTokens > maxInputTokens) {
+                exc.setResponse(contextLengthExceeded(maxInputTokens, inputTokens));
                 return RETURN;
             }
         }

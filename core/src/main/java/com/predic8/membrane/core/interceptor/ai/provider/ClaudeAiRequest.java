@@ -14,7 +14,7 @@ public class ClaudeAiRequest extends AbstractAiApiRequest {
     @Override
     public long estimateInputTokens() {
         // System prompt
-        int tokens = json.path("system").asText().length() / 4;
+        long tokens = json.path("system").asText().length() / 4;
 
         // Messages
         for (var message : json.path("messages")) {

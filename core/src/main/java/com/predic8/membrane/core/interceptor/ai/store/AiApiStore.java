@@ -17,6 +17,11 @@ public interface AiApiStore {
 
     Optional<AiApiUser> getUser(String token);
 
-    long checkLimit(AiApiUser user);
+    /**
+     * Checks if the user has enough tokens to make the request.
+     * @param user
+     * @return
+     */
+    long checkLimit(AiApiUser user, long inputTokens, long outputTokens);
 }
 

@@ -56,7 +56,7 @@ public class JDBCAiApiUsageStore extends AbstractJdbcSupport implements AiApiSto
     }
 
     @Override
-    public long checkLimit(AiApiUser user) {
+    public long checkLimit(AiApiUser user, long inputTokens, long outputTokens) {
         return 0;
     }
 

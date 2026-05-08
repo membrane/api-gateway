@@ -29,11 +29,11 @@ public class SimpleAiApiStore implements AiApiStore {
     }
 
     @Override
-    public long checkLimit(AiApiUser user) {
+    public long checkLimit(AiApiUser user, long inputTokens, long outputTokens) {
         if (user == null)
             return 0; // anonymous user gets no tokens
 
-        return limit.checkLimit();
+        return limit.checkLimit(inputTokens + outputTokens);
     }
 
     @MCChildElement(allowForeign = true,order = 10)

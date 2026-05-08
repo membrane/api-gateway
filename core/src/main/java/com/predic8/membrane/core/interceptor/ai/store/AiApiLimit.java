@@ -26,7 +26,14 @@ public class AiApiLimit {
 
     private final AtomicLong tokens = new AtomicLong(0);
 
-    public long checkLimit() {
+    /**
+     * Checks if the user has enough tokens to make the request.
+     * If there aren't enough tokens for the request, 0 or a negative number is returned.
+     *
+     * @param tokensForNextRequest
+     * @return Estimated remaining tokens after this call.
+     */
+    public long checkLimit(long tokensForNextRequest) {
         Instant now = now();
 
         if (nextReset == null || now.isAfter(nextReset)) {
@@ -37,7 +44,7 @@ public class AiApiLimit {
             }
         }
 
-        return maxTokens - tokens.get();
+        return maxTokens - tokens.get() - tokensForNextRequest;
     }
 
     public void addTokens(long tokens) {

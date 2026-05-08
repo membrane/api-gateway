@@ -16,7 +16,7 @@ public abstract class AbstractAiApiRequest implements AiApiRequest {
 
     public AbstractAiApiRequest(Exchange exchange) {
         this.exchange = exchange;
-        json = JsonUtil.getJsonObject(exchange.getRequest());
+        json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("No JSON object request."));
     }
 
     @Override

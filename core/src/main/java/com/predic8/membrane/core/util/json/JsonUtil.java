@@ -20,14 +20,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.http.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Optional;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static java.util.Optional.empty;
 
 public class JsonUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(JsonUtil.class);
+
 
     private static final ObjectMapper om = new ObjectMapper();
 
@@ -86,15 +93,17 @@ public class JsonUtil {
         return FACTORY.textNode(value);
     }
 
-    public static ObjectNode getJsonObject(Message msg) {
+    public static Optional<ObjectNode> getJsonObject(Message msg) {
         try {
-            if (om.readTree(msg.getBodyAsStreamDecoded()) instanceof ObjectNode on) {
-                return on;
+            JsonNode jsonNode = om.readTree(msg.getBodyAsStreamDecoded());
+            if (jsonNode instanceof ObjectNode on) {
+                return Optional.of(on);
             }
-            throw new RuntimeException("Expected JSON Object");
+            log.debug("Expected JSON Object but got: {}",jsonNode.getNodeType());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.debug("Error reading JSON: {}", e.getMessage());
         }
+        return empty();
     }
 
     public static void setJsonBody(Message msg, ObjectNode json) {

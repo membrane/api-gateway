@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.ai;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.ai.store.Usage;
@@ -13,7 +14,7 @@ public abstract class AbstractAiApiResponse implements AiApiResponse {
 
     public AbstractAiApiResponse(Exchange exchange) {
         this.exchange = exchange;
-        json = JsonUtil.getJsonObject(exchange.getResponse());
+        json = JsonUtil.getJsonObject(exchange.getResponse()).orElse(JsonNodeFactory.instance.objectNode().put("error", "No JSON object response from model."));
     }
 
     @Override
