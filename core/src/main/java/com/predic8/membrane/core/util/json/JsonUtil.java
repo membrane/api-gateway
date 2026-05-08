@@ -23,6 +23,7 @@ import com.predic8.membrane.core.http.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Optional;
@@ -92,9 +93,9 @@ public class JsonUtil {
         return FACTORY.textNode(value);
     }
 
-    public static Optional<ObjectNode> getJsonObject(Message msg) {
+    public static Optional<ObjectNode> getJsonObject(String s) {
         try {
-            var node = om.readTree(msg.getBodyAsStreamDecoded());
+            var node = om.readTree(s);
             if (node instanceof ObjectNode on) {
                 return Optional.of(on);
             }
@@ -104,6 +105,25 @@ public class JsonUtil {
         }
         return empty();
     }
+
+
+    public static Optional<ObjectNode> getJsonObject(Message msg) {
+       return getJsonObjectFromSteam(msg.getBodyAsStreamDecoded());
+    }
+
+    private static Optional<ObjectNode> getJsonObjectFromSteam(InputStream obj) {
+        try {
+            var node = om.readTree(obj);
+            if (node instanceof ObjectNode on) {
+                return Optional.of(on);
+            }
+            log.debug("Expected JSON Object but got: {}",node.getNodeType());
+        } catch (Exception e) {
+            log.debug("Error reading JSON: {}", e.getMessage());
+        }
+        return empty();
+    }
+
 
     public static void setJsonBody(Message msg, ObjectNode json) {
         try {

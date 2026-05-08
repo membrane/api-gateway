@@ -4,11 +4,15 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.AbstractMessageObserver;
+import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.ai.provider.AiProvider;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiStore;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiUser;
+import com.predic8.membrane.core.util.SSEUtil;
+import com.predic8.membrane.core.util.json.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +60,12 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
             return RETURN;
         }
 
-        var inputTokens = aiReq.estimateInputTokens();
+        if (!exc.getRequest().isPOSTRequest()) {
+            aiReq.setApiKey(apiKey);
+            return CONTINUE;
+        }
+
+        long inputTokens = 0;
 
         if (store != null) {
             var opt = store.getUser(aiReq.getApiKey());
@@ -66,10 +75,13 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
             }
             var user = opt.get();
             log.debug("User: {}", user);
-            var remaining = store.checkLimit(user,inputTokens,maxOutputTokens);
-            if (remaining <= 0) {
-                exc.setResponse(tokenLimitExceeded());
-                return RETURN;
+            if (exc.getRequest().isPOSTRequest()) {
+                inputTokens = aiReq.estimateInputTokens();
+                var remaining = store.checkLimit(user, inputTokens, maxOutputTokens);
+                if (remaining <= 0) {
+                    exc.setResponse(tokenLimitExceeded());
+                    return RETURN;
+                }
             }
             exc.setProperty(MEMBRANE_AI_USER, user);
         }
@@ -101,6 +113,28 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
+
+        var msg = exc.getResponse();
+
+        if (msg.isStream()) {
+            // Inspect each chunk as it arrives
+            msg.getBody().addObserver(new AbstractMessageObserver() {
+                @Override
+                public void bodyChunk(Chunk chunk) {
+                    var event = SSEUtil.parseSSEvent(chunk);
+                    if (event == null) {
+                        return;
+                    }
+                    log.debug("SSE name: {}", event.name());
+                    if (OpenAiApiUtil.terminalEvent(event)) {
+                        var jo = JsonUtil.getJsonObject(event.data());
+                        if (jo.isPresent()) {
+                            log.debug("Usage: {}", jo.get().get("usage"));
+                        }
+                    }
+                }
+            });
+        }
 
         var aiRes = provider.getAiApiResponse(exc);
 

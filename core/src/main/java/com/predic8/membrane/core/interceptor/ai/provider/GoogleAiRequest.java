@@ -106,7 +106,7 @@ public class GoogleAiRequest extends AbstractAiApiRequest {
 
     @Override
     public void setMaxOutputTokens(int maxOutputTokens) {
-        getGenerationConfig().put("maxOutputTokens", maxOutputTokens);
+        getGenerationConfig().put("max_output_tokens", maxOutputTokens);
     }
 
     private ObjectNode getGenerationConfig() {

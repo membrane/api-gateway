@@ -8,6 +8,13 @@ public class OpenAiAiRequest extends AbstractAiApiRequest {
 
     public OpenAiAiRequest(Exchange exchange) {
         super(exchange);
+
+        // Make sure that when streaming is enabled, the usage is included in the response.
+        if (json.path("stream").asBoolean(false)) {
+            if (isChatCompletionsRequest(exchange)) {
+                json.putObject("stream_options").put("include_usage", true);
+            }
+        }
     }
 
     @Override
@@ -26,6 +33,13 @@ public class OpenAiAiRequest extends AbstractAiApiRequest {
 
         // safety margin for JSON structure and tokenizer variance
         return Math.max(1, Math.round(chars / 4.0 * 1.15));
+    }
+
+    @Override
+    public void setMaxOutputTokens(int maxOutputTokens) {
+        // OpenAI deprecated max_tokens for newer models (o1, o3, gpt-5.x) in
+        // favor of max_completion_tokens. Older models still accept max_tokens.
+        json.put("max_output_tokens", maxOutputTokens);
     }
 
     private long estimateChatCompletitions() {
@@ -83,5 +97,9 @@ public class OpenAiAiRequest extends AbstractAiApiRequest {
             return 0;
         }
         return node.toString().length();
+    }
+
+    private boolean isChatCompletionsRequest(Exchange exchange) {
+        return exchange.getRequest().getUri().contains("/chat/completions");
     }
 }

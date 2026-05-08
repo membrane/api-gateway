@@ -9,25 +9,20 @@ import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 public abstract class AbstractAiApiRequest implements AiApiRequest {
 
     public static final String BEARER_PREFIX = "Bearer";
-    private static final String MAX_OUTPUT_TOKENS = "max_output_tokens";
 
     protected final Exchange exchange;
     protected ObjectNode json;
 
     public AbstractAiApiRequest(Exchange exchange) {
         this.exchange = exchange;
-        json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("No JSON object request."));
+        if (exchange.getRequest().isJSON())
+            json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("No JSON object request."));
     }
 
     @Override
     public void setApiKey(String apiKey) {
         exchange.getRequest().getHeader().removeFields(AUTHORIZATION);
         exchange.getRequest().getHeader().add(AUTHORIZATION, "Bearer " + apiKey);
-    }
-
-    @Override
-    public void setMaxOutputTokens(int maxOutputTokens) {
-        json.put(MAX_OUTPUT_TOKENS, maxOutputTokens);
     }
 
     @Override

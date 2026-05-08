@@ -11,6 +11,10 @@ public class ClaudeAiRequest extends AbstractAiApiRequest {
         super(exchange);
     }
 
+    public void setMaxOutputTokens(int maxOutputTokens) {
+        json.put("max_tokens", maxOutputTokens);
+    }
+
     @Override
     public long estimateInputTokens() {
         // System prompt
