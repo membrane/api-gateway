@@ -30,7 +30,7 @@ public class AiApiLimit {
      * Checks if the user has enough tokens to make the request.
      * If there aren't enough tokens for the request, 0 or a negative number is returned.
      *
-     * @param tokensForNextRequest
+     * @param tokensForNextRequest Estimation of the number of tokens that will be used for the next request.
      * @return Estimated remaining tokens after this call.
      */
     public long checkLimit(long tokensForNextRequest) {
