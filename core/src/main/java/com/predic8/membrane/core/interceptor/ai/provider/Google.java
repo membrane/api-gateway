@@ -5,16 +5,16 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.ai.AiApiRequest;
 import com.predic8.membrane.core.interceptor.ai.AiApiResponse;
 
-@MCElement( name="openai")
-public class OpenAI implements AiProvider{
+@MCElement( name="google",id = "google-ai-provider")
+public class Google implements AiProvider {
 
     @Override
     public AiApiRequest getAiApiRequest(Exchange exchange) {
-        return new OpenAiAiRequest(exchange);
+        return new GoogleAiRequest(exchange);
     }
 
     @Override
     public AiApiResponse getAiApiResponse(Exchange request) {
-        return new OpenAiAiResponse(request);
+        return new GoogleAiResponse(request);
     }
 }

@@ -14,12 +14,22 @@
 
 package com.predic8.membrane.core.util.json;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.http.Message;
 
-import java.math.*;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 
 public class JsonUtil {
+
+    private static final ObjectMapper om = new ObjectMapper();
 
     private static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
 
@@ -74,5 +84,27 @@ public class JsonUtil {
         } catch (NumberFormatException ignore) { /* fall through */ }
 
         return FACTORY.textNode(value);
+    }
+
+    public static ObjectNode getJsonObject(Message msg) {
+        try {
+            if (om.readTree(msg.getBodyAsStreamDecoded()) instanceof ObjectNode on) {
+                return on;
+            }
+            throw new RuntimeException("Expected JSON Object");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void setJsonBody(Message msg, ObjectNode json) {
+        try {
+            if (!msg.isJSON()) {
+                msg.getHeader().setContentType(APPLICATION_JSON);
+            }
+            msg.setBodyContent(om.writeValueAsBytes(json));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

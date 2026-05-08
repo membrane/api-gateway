@@ -26,4 +26,9 @@ public class AiApiUser {
     public void setToken(String token) {
         this.token = token;
     }
+
+    @Override
+    public String toString() {
+        return "user(name: %s)".formatted(name);
+    }
 }

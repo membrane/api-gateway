@@ -18,8 +18,8 @@ public class SimpleAiApiStore implements AiApiStore {
     private AiApiLimit limit = new NoAiApiLimit();
 
     @Override
-    public void store(String user, Usage usage) {
-        log.info("User: {} Usage: {}", user, usage);
+    public void store(AiApiUser user, Usage usage) {
+        log.info("User: {} Usage: {}", user.getName(), usage);
         limit.addTokens(usage.totalTokens());
     }
 
@@ -30,6 +30,9 @@ public class SimpleAiApiStore implements AiApiStore {
 
     @Override
     public long checkLimit(AiApiUser user) {
+        if (user == null)
+            return 0; // anonymous user gets no tokens
+
         return limit.checkLimit();
     }
 

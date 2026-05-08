@@ -1,8 +1,5 @@
 package com.predic8.membrane.core.interceptor.ai;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -11,28 +8,23 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.ai.provider.AiProvider;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiStore;
-import com.predic8.membrane.core.interceptor.ai.store.Usage;
+import com.predic8.membrane.core.interceptor.ai.store.AiApiUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.ai.OpenAiApiUtil.*;
+import static com.predic8.membrane.core.util.json.JsonUtil.setJsonBody;
 
 @MCElement(name = "aiGateway")
 public class OpenAIAPIInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAIAPIInterceptor.class);
 
-    public static final String MEMBRANE_AI_USERTOKEN = "membrane.ai.usertoken";
-    public static final String MAX_OUTPUT_TOKENS = "max_output_tokens";
-
-    private static final ObjectMapper om = new ObjectMapper();
+    public static final String MEMBRANE_AI_USER = "membrane.ai.user";
 
     private AiProvider provider;
 
@@ -51,10 +43,11 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        var header = exc.getRequest().getHeader();
+
+        var aiReq = provider.getAiApiRequest(exc);
 
         if (store != null) {
-            var opt = store.getUser(provider.getApiKey(header));
+            var opt = store.getUser(aiReq.getApiKey());
             if (opt.isEmpty()) {
                 exc.setResponse(authenticationFailed());
                 return RETURN;
@@ -66,85 +59,47 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
                 exc.setResponse(tokenLimitExceeded());
                 return RETURN;
             }
-            exc.setProperty(MEMBRANE_AI_USERTOKEN, user);
+            exc.setProperty(MEMBRANE_AI_USER, user);
         }
 
-        provider.setApiKey(header,apiKey);
-
-        var json = getJson(exc, REQUEST);
+        aiReq.setApiKey(apiKey);
 
         if (maxOutputTokens != 0) {
-            json.put(MAX_OUTPUT_TOKENS, maxOutputTokens);
+            aiReq.setMaxOutputTokens(maxOutputTokens);
         }
 
         if (maxInputTokens != 0) {
-            var input = json.get("input");
-            if (input != null) {
-                var estimated = provider.estimateInputTokens(json);
-                if (estimated > maxInputTokens) {
-                    exc.setResponse(contextLengthExceeded(maxInputTokens, estimated));
-                    return RETURN;
-                }
+            var estimated = aiReq.estimateInputTokens();
+            if (estimated > maxInputTokens) {
+                exc.setResponse(contextLengthExceeded(maxInputTokens, estimated));
+                return RETURN;
             }
         }
 
         if (models != null) {
-            var model = json.path("model").asText();
+            var model = aiReq.getModel();
             if (!models.contains(model)) {
                 exc.setResponse(modelNotAllowed(model, models));
                 return RETURN;
             }
         }
 
-        setJsonRequest(exc, json);
+        setJsonBody(exc.getRequest(), aiReq.getJson());
         return CONTINUE;
-    }
-
-    private static void setJsonRequest(Exchange exc, ObjectNode json) {
-        try {
-            exc.getRequest().setBodyContent(om.writeValueAsBytes(json));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static ObjectNode getJson(Exchange exc, Flow flow) {
-        try {
-            if (om.readTree(exc.getMessage(flow).getBodyAsStreamDecoded()) instanceof ObjectNode on) {
-                return on;
-            }
-            throw new RuntimeException("Expected JSON Object");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        var response = exc.getResponse();
-        if (!response.isJSON()) {
-            log.debug("Response is not JSON");
-            return CONTINUE;
-        }
 
-        var json = getJson(exc, RESPONSE);
+        var aiRes = provider.getAiApiResponse(exc);
 
-        // Pass error from AI API to client
-        if (json.get("error") != null && !json.get("error").isNull()) {
-            return CONTINUE;
-        }
+        if (aiRes.isError())
+            return CONTINUE; // pass error from AI API to client
+
         if (store != null) {
-            store.store(exc.getProperty(MEMBRANE_AI_USERTOKEN, String.class), getUsage(json));
+            store.store(exc.getProperty(MEMBRANE_AI_USER, AiApiUser.class), aiRes.getUsage());
         }
         return CONTINUE;
-    }
-
-    private Usage getUsage(ObjectNode json) {
-        var usage = json.path("usage");
-        if (usage.isNull()) {
-            return new Usage(0, 0, 0);
-        }
-        return new Usage(usage.path("input_tokens").asInt(), usage.path("output_tokens").asInt(), usage.path("total_tokens").asInt());
     }
 
     public String getApiKey() {
@@ -201,7 +156,7 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
         return provider;
     }
 
-    @MCChildElement(allowForeign = true, order = 0)
+    @MCChildElement(allowForeign = true)
     public void setProvider(AiProvider provider) {
         this.provider = provider;
     }

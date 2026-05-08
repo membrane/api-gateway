@@ -13,7 +13,7 @@ public interface AiApiStore {
     default void init(Router router) {
     }
 
-    void store(String user, Usage usage);
+    void store(AiApiUser user, Usage usage);
 
     Optional<AiApiUser> getUser(String token);
 

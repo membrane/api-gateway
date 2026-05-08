@@ -37,9 +37,9 @@ public class JDBCAiApiUsageStore extends AbstractJdbcSupport implements AiApiSto
     }
 
     @Override
-    public void store(String user, com.predic8.membrane.core.interceptor.ai.store.Usage usage) {
+    public void store(AiApiUser user, com.predic8.membrane.core.interceptor.ai.store.Usage usage) {
         try (var connection = getConnection(); var ps = connection.prepareStatement(INSERT_SQL)) {
-            ps.setString(1, user);
+            ps.setString(1, user.getName());
             ps.setInt(2, usage.inputTokens());
             ps.setInt(3, usage.outputTokens());
             ps.setInt(4, usage.totalTokens());
