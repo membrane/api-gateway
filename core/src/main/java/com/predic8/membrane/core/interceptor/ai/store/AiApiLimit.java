@@ -34,10 +34,9 @@ public class AiApiLimit {
      * @return Estimated remaining tokens after this call.
      */
     public long checkLimit(long tokensForNextRequest) {
-        Instant now = now();
-
-        if (nextReset == null || now.isAfter(nextReset)) {
-            synchronized (lock) {
+        synchronized (lock) {
+            Instant now = now();
+            if (nextReset == null || now.isAfter(nextReset)) {
                 tokens.set(0);
                 nextReset = now.plusSeconds(period);
                 log.debug("Resetting AI API usage limit.");
@@ -48,8 +47,10 @@ public class AiApiLimit {
     }
 
     public void addTokens(long tokens) {
-        log.debug("Adding {} tokens to AI API usage limit.", tokens);
-        this.tokens.addAndGet(tokens);
+        synchronized (lock) {
+            log.debug("Adding {} tokens to AI API usage limit.", tokens);
+            this.tokens.addAndGet(tokens);
+        }
     }
 
     public int getMaxTokens() {
@@ -67,7 +68,9 @@ public class AiApiLimit {
 
     @MCAttribute
     public void setPeriod(int period) {
-        this.period = period;
-        nextReset = now().plusSeconds(period);
+        synchronized (lock) {
+            this.period = period;
+            nextReset = now().plusSeconds(period);
+        }
     }
 }

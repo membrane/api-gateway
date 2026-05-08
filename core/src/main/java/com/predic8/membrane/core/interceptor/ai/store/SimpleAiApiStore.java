@@ -19,7 +19,7 @@ public class SimpleAiApiStore implements AiApiStore {
 
     @Override
     public void store(AiApiUser user, Usage usage) {
-        log.info("User: {} Usage: {}", user.getName(), usage);
+        log.debug("Usage: {}", usage);
         limit.addTokens(usage.totalTokens());
     }
 
