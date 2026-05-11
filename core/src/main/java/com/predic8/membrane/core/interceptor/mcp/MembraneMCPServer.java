@@ -253,12 +253,11 @@ public class MembraneMCPServer extends AbstractInterceptor {
         String pathPattern = getOptionalStringArgument(call, "pathPattern");
         int limit = getOptionalIntArgument(call, "limit", maxExchanges, 1, maxExchanges);
         boolean includeBodies = getOptionalBooleanArgument(call, "includeBodies", false);
-        boolean hasMaxResponseSize = call.getArgument("maxResponseSize") != null;
-        int maxResponseSize = hasMaxResponseSize ? getOptionalSizeArgument(call, "maxResponseSize", -1, 1, MAX_VALUE) : -1;
+        Integer maxResponseSize = getOptionalMaxResponseSize(call);
 
         List<AbstractExchange> exchanges = getRecentMatchingExchanges(host, port, pathPattern, limit);
 
-        if (!hasMaxResponseSize) {
+        if (maxResponseSize == null) {
             return MCPToolsCallResponse.from(call)
                     .withJson(Map.of(
                             "exchanges",
@@ -277,8 +276,8 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return call.getArgument("port") == null ? null : getOptionalIntArgument(call, "port", -1, 1, 65535);
     }
 
-    private static @Nullable Integer getOptionalPort(MCPToolsCall call) {
-        return call.getArgument("port") == null ? null : getOptionalIntArgument(call, "port", -1, 1, 65535);
+    private static @Nullable Integer getOptionalMaxResponseSize(MCPToolsCall call) {
+        return call.getArgument("maxResponseSize") == null ? null : getOptionalSizeArgument(call, "maxResponseSize", -1, 1, MAX_VALUE);
     }
 
     private Map<String, Object> getExchangesSchema() {
@@ -315,13 +314,14 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private String buildLimitedExchangesPayload(MCPToolsCall call, List<AbstractExchange> exchanges, boolean includeBodies, int maxResponseSize) {
-        TextResponseEnvelope envelope = createTextResponseEnvelope(call);
+        int fixedBytes = createTextResponseEnvelope(call).fixedBytes();
         int payloadBytes = escapedJsonStringContentSize(EXCHANGES_PAYLOAD_PREFIX) + escapedJsonStringContentSize(EXCHANGES_PAYLOAD_SUFFIX);
         int separatorBytes = escapedJsonStringContentSize(EXCHANGES_PAYLOAD_SEPARATOR);
+        int minimumResponseSize = fixedBytes + payloadBytes;
 
-        if (envelope.fixedBytes() + payloadBytes > maxResponseSize) {
+        if (minimumResponseSize > maxResponseSize) {
             throw new InvalidToolArgumentsException(
-                    "Tool argument 'maxResponseSize' is too small to fit even an empty JSON-RPC response"
+                    "Tool argument 'maxResponseSize' must be at least " + minimumResponseSize + " bytes"
             );
         }
 
@@ -333,7 +333,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
             }
 
             int additionalBytes = escapedJsonStringContentSize(exchangeJson) + (serializedExchanges.isEmpty() ? 0 : separatorBytes);
-            if (envelope.fixedBytes() + payloadBytes + additionalBytes > maxResponseSize) {
+            if (fixedBytes + payloadBytes + additionalBytes > maxResponseSize) {
                 break;
             }
 
