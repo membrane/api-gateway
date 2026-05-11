@@ -133,26 +133,27 @@ final class ExchangeToolSupport {
 
     MCPToolsCallResponse buildSizedPageResponse(MCPToolsCall call, ExchangePage page, boolean includeBodies, int maxResponseSize) {
         TextResponseEnvelope responseEnvelope = measureTextResponseEnvelope(call);
-        int prefixBytes = measureEscapedJsonStringContentSize(EXCHANGES_PAYLOAD_PREFIX);
-        int separatorBytes = measureEscapedJsonStringContentSize(EXCHANGES_PAYLOAD_SEPARATOR);
-        int minimumResponseSize = responseEnvelope.fixedBytes() + prefixBytes + measureExchangePageSuffixBytes(false, null);
+        long maxResponseSizeLimit = maxResponseSize;
+        long prefixBytes = measureEscapedJsonStringContentSize(EXCHANGES_PAYLOAD_PREFIX);
+        long separatorBytes = measureEscapedJsonStringContentSize(EXCHANGES_PAYLOAD_SEPARATOR);
+        long minimumResponseSize = responseEnvelope.fixedBytes() + prefixBytes + measureExchangePageSuffixBytes(false, null);
 
-        if (minimumResponseSize > maxResponseSize) throw new InvalidToolArgumentsException("Tool argument '" + ARG_MAX_RESPONSE_SIZE + "' must be at least " + minimumResponseSize + " bytes");
+        if (minimumResponseSize > maxResponseSizeLimit) throw new InvalidToolArgumentsException("Tool argument '" + ARG_MAX_RESPONSE_SIZE + "' must be at least " + minimumResponseSize + " bytes");
 
         List<Map<String, Object>> describedExchanges = new ArrayList<>();
-        int exchangesBytes = 0;
+        long exchangesBytes = 0;
         for (int i = page.exchanges().size() - 1; i >= 0; i--) {
             Map<String, Object> description = describeExchangeOrThrow(page.exchanges().get(i), includeBodies);
-            int additionalExchangeBytes = measureExchangeBytes(description, describedExchanges.isEmpty(), separatorBytes);
+            long additionalExchangeBytes = measureExchangeBytes(description, describedExchanges.isEmpty(), separatorBytes);
 
             boolean hasMore = page.hasMore() || i > 0;
             Integer candidateNextOffset = nextOffset(page.offset(), describedExchanges.size() + 1, hasMore);
-            int trackedSize = responseEnvelope.fixedBytes()
+            long trackedSize = responseEnvelope.fixedBytes()
                     + prefixBytes
                     + exchangesBytes
                     + additionalExchangeBytes
                     + measureExchangePageSuffixBytes(hasMore, candidateNextOffset);
-            if (trackedSize > maxResponseSize) {
+            if (trackedSize > maxResponseSizeLimit) {
                 if (describedExchanges.isEmpty()) {
                     throw new InvalidToolArgumentsException("Tool argument '" + ARG_MAX_RESPONSE_SIZE + "' must be at least " + trackedSize + " bytes to return the next exchange page");
                 }
@@ -205,7 +206,7 @@ final class ExchangeToolSupport {
         return hasMore ? offset + returnedCount : null;
     }
 
-    private int measureExchangeBytes(Map<String, Object> description, boolean firstExchange, int separatorBytes) {
+    private long measureExchangeBytes(Map<String, Object> description, boolean firstExchange, long separatorBytes) {
         return measureEscapedJsonStringContentSize(serializeJson(description)) + (firstExchange ? 0 : separatorBytes);
     }
 
@@ -229,7 +230,7 @@ final class ExchangeToolSupport {
         }
     }
 
-    private int measureExchangePageSuffixBytes(boolean hasMore, @Nullable Integer nextOffset) {
+    private long measureExchangePageSuffixBytes(boolean hasMore, @Nullable Integer nextOffset) {
         return measureEscapedJsonStringContentSize(buildExchangePageSuffix(hasMore, nextOffset));
     }
 
@@ -245,7 +246,7 @@ final class ExchangeToolSupport {
         }
     }
 
-    private int measureEscapedJsonStringContentSize(String value) {
+    private long measureEscapedJsonStringContentSize(String value) {
         try {
             return OM.writeValueAsBytes(value).length - 2;
         } catch (JsonProcessingException e) {
@@ -253,7 +254,7 @@ final class ExchangeToolSupport {
         }
     }
 
-    private static int utf8Size(String value) {
+    private static long utf8Size(String value) {
         return value.getBytes(StandardCharsets.UTF_8).length;
     }
 
@@ -279,8 +280,8 @@ final class ExchangeToolSupport {
     record ExchangePage(List<AbstractExchange> exchanges, boolean hasMore, int offset) {
     }
 
-    private record TextResponseEnvelope(int prefixBytes, int suffixBytes) {
-        private int fixedBytes() {
+    private record TextResponseEnvelope(long prefixBytes, long suffixBytes) {
+        private long fixedBytes() {
             return prefixBytes + suffixBytes;
         }
     }
