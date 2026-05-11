@@ -277,6 +277,10 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return call.getArgument("port") == null ? null : getOptionalIntArgument(call, "port", -1, 1, 65535);
     }
 
+    private static @Nullable Integer getOptionalPort(MCPToolsCall call) {
+        return call.getArgument("port") == null ? null : getOptionalIntArgument(call, "port", -1, 1, 65535);
+    }
+
     private Map<String, Object> getExchangesSchema() {
         return Map.of(
                 "type", "object",
