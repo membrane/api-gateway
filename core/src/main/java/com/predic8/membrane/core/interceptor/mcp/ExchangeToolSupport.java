@@ -1,0 +1,288 @@
+package com.predic8.membrane.core.interceptor.mcp;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.interceptor.mcp.MCPUtil.InvalidToolArgumentsException;
+import com.predic8.membrane.core.mcp.MCPToolsCall;
+import com.predic8.membrane.core.mcp.MCPToolsCallResponse;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+
+import static com.predic8.membrane.core.interceptor.mcp.ExchangeUtils.matchesExchangeFilter;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalBooleanArgument;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalIntArgument;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalSizeArgument;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalStringArgument;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.rejectUnexpectedArguments;
+import static java.lang.Integer.MAX_VALUE;
+
+final class ExchangeToolSupport {
+
+    static final String ARG_LIMIT = "limit";
+    static final String ARG_OFFSET = "offset";
+    static final String ARG_INCLUDE_BODIES = "includeBodies";
+    static final String ARG_HOST = "host";
+    static final String ARG_PORT = "port";
+    static final String ARG_PATH_PATTERN = "pathPattern";
+    static final String ARG_MAX_RESPONSE_SIZE = "maxResponseSize";
+
+    private static final String EXCHANGES_PAYLOAD_PREFIX = "{\"exchanges\":[";
+    private static final String EXCHANGES_PAYLOAD_SEPARATOR = ",";
+    private static final ObjectMapper OM = new ObjectMapper();
+
+    private final McpPayloadSanitizer payloadSanitizer;
+
+    ExchangeToolSupport(McpPayloadSanitizer payloadSanitizer) {
+        this.payloadSanitizer = payloadSanitizer;
+    }
+
+    ExchangeQuery parseQuery(MCPToolsCall call, int maxExchanges) {
+        rejectUnexpectedArguments(call, Set.of(
+                ARG_LIMIT,
+                ARG_OFFSET,
+                ARG_INCLUDE_BODIES,
+                ARG_HOST,
+                ARG_PORT,
+                ARG_PATH_PATTERN,
+                ARG_MAX_RESPONSE_SIZE
+        ));
+
+        return new ExchangeQuery(
+                getOptionalStringArgument(call, ARG_HOST),
+                getOptionalPort(call),
+                getOptionalStringArgument(call, ARG_PATH_PATTERN),
+                getOptionalIntArgument(call, ARG_OFFSET, 0, 0, MAX_VALUE),
+                getOptionalIntArgument(call, ARG_LIMIT, maxExchanges, 1, maxExchanges),
+                getOptionalBooleanArgument(call, ARG_INCLUDE_BODIES, false),
+                getOptionalMaxResponseSize(call)
+        );
+    }
+
+    Map<String, Object> getExchangesSchema(int maxExchanges) {
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        ARG_LIMIT, Map.of("type", "integer", "minimum", 1, "maximum", maxExchanges),
+                        ARG_OFFSET, Map.of(
+                                "type", "integer",
+                                "minimum", 0,
+                                "description", "Number of newest matching exchanges to skip before collecting the page"
+                        ),
+                        ARG_INCLUDE_BODIES, Map.of("type", "boolean"),
+                        ARG_HOST, Map.of("type", "string"),
+                        ARG_PORT, Map.of("type", "integer", "minimum", 1, "maximum", 65535),
+                        ARG_PATH_PATTERN, Map.of("type", "string", "description", "Matches by prefix or regex"),
+                        ARG_MAX_RESPONSE_SIZE, Map.of(
+                                "type", "integer",
+                                "minimum", 1,
+                                "description", "Maximum size in bytes of the final JSON-RPC response body returned by this tool"
+                        )
+                ),
+                "additionalProperties", false
+        );
+    }
+
+    ExchangePage findPage(@Nullable List<AbstractExchange> allExchanges, ExchangeQuery query) {
+        List<AbstractExchange> exchanges = allExchanges == null ? List.of() : allExchanges;
+        List<AbstractExchange> page = new ArrayList<>(query.limit());
+        int skipped = 0;
+        boolean hasMore = false;
+
+        for (int i = exchanges.size() - 1; i >= 0; i--) {
+            AbstractExchange exchange = exchanges.get(i);
+            if (exchange.getResponse() == null) {
+                continue;
+            }
+            if (!matchesExchangeFilter(exchange, query.host(), query.port(), query.pathPattern())) {
+                continue;
+            }
+            if (skipped < query.offset()) {
+                skipped++;
+                continue;
+            }
+            if (page.size() < query.limit()) {
+                page.addFirst(exchange);
+                continue;
+            }
+
+            hasMore = true;
+            break;
+        }
+
+        return new ExchangePage(page, hasMore, query.offset());
+    }
+
+    MCPToolsCallResponse buildFullPageResponse(MCPToolsCall call, ExchangePage page, boolean includeBodies) {
+        return createExchangePageResponse(
+                call,
+                describeExchanges(page.exchanges(), includeBodies),
+                page.hasMore(),
+                nextOffset(page.offset(), page.exchanges().size(), page.hasMore())
+        );
+    }
+
+    MCPToolsCallResponse buildSizedPageResponse(MCPToolsCall call, ExchangePage page, boolean includeBodies, int maxResponseSize) {
+        TextResponseEnvelope responseEnvelope = measureTextResponseEnvelope(call);
+        int prefixBytes = measureEscapedJsonStringContentSize(EXCHANGES_PAYLOAD_PREFIX);
+        int separatorBytes = measureEscapedJsonStringContentSize(EXCHANGES_PAYLOAD_SEPARATOR);
+        int minimumResponseSize = responseEnvelope.fixedBytes() + prefixBytes + measureExchangePageSuffixBytes(false, null);
+
+        if (minimumResponseSize > maxResponseSize) throw new InvalidToolArgumentsException("Tool argument '" + ARG_MAX_RESPONSE_SIZE + "' must be at least " + minimumResponseSize + " bytes");
+
+        List<Map<String, Object>> describedExchanges = new ArrayList<>();
+        int exchangesBytes = 0;
+        for (int i = page.exchanges().size() - 1; i >= 0; i--) {
+            Map<String, Object> description = describeExchangeOrThrow(page.exchanges().get(i), includeBodies);
+            int additionalExchangeBytes = measureExchangeBytes(description, describedExchanges.isEmpty(), separatorBytes);
+
+            boolean hasMore = page.hasMore() || i > 0;
+            Integer candidateNextOffset = nextOffset(page.offset(), describedExchanges.size() + 1, hasMore);
+            int trackedSize = responseEnvelope.fixedBytes()
+                    + prefixBytes
+                    + exchangesBytes
+                    + additionalExchangeBytes
+                    + measureExchangePageSuffixBytes(hasMore, candidateNextOffset);
+            if (trackedSize > maxResponseSize) {
+                if (describedExchanges.isEmpty()) {
+                    throw new InvalidToolArgumentsException("Tool argument '" + ARG_MAX_RESPONSE_SIZE + "' must be at least " + trackedSize + " bytes to return the next exchange page");
+                }
+                break;
+            }
+
+            describedExchanges.addFirst(description);
+            exchangesBytes += additionalExchangeBytes;
+        }
+
+        boolean hasMore = page.hasMore() || describedExchanges.size() < page.exchanges().size();
+        return createExchangePageResponse(
+                call,
+                describedExchanges,
+                hasMore,
+                nextOffset(page.offset(), describedExchanges.size(), hasMore)
+        );
+    }
+
+    private List<Map<String, Object>> describeExchanges(List<AbstractExchange> exchanges, boolean includeBodies) {
+        return exchanges.stream()
+                .map(exchange -> MCPUtil.describeExchange(exchange, includeBodies, payloadSanitizer))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private Map<String, Object> describeExchangeOrThrow(AbstractExchange exchange, boolean includeBodies) {
+        Map<String, Object> description = MCPUtil.describeExchange(exchange, includeBodies, payloadSanitizer);
+        if (description == null) {
+            throw new IllegalStateException("Expected exchange response data to be present for paging");
+        }
+        return description;
+    }
+
+    private MCPToolsCallResponse createExchangePageResponse(MCPToolsCall call, List<Map<String, Object>> exchanges, boolean hasMore, @Nullable Integer nextOffset) {
+        return MCPToolsCallResponse.from(call)
+                .withJson(buildExchangePagePayload(exchanges, hasMore, nextOffset));
+    }
+
+    private Map<String, Object> buildExchangePagePayload(List<Map<String, Object>> exchanges, boolean hasMore, @Nullable Integer nextOffset) {
+        LinkedHashMap<String, Object> payload = new LinkedHashMap<>();
+        payload.put("exchanges", exchanges);
+        payload.put("hasMore", hasMore);
+        if (nextOffset != null) {
+            payload.put("nextOffset", nextOffset);
+        }
+        return payload;
+    }
+
+    private @Nullable Integer nextOffset(int offset, int returnedCount, boolean hasMore) {
+        return hasMore ? offset + returnedCount : null;
+    }
+
+    private int measureExchangeBytes(Map<String, Object> description, boolean firstExchange, int separatorBytes) {
+        return measureEscapedJsonStringContentSize(serializeJson(description)) + (firstExchange ? 0 : separatorBytes);
+    }
+
+    // Measure the fixed JSON-RPC/MCP wrapper once with a placeholder so the byte limit
+    // applies to the final serialized response body, not just the unescaped payload text.
+    private TextResponseEnvelope measureTextResponseEnvelope(MCPToolsCall call) {
+        String marker = "__MEMBRANE_MCP_TEXT_PLACEHOLDER_" + UUID.randomUUID() + "__";
+        try {
+            String responseJson = MCPToolsCallResponse.from(call).withText(marker).toJson();
+            int markerIndex = responseJson.indexOf(marker);
+            if (markerIndex < 0) {
+                throw new IllegalStateException("Could not locate placeholder marker in serialized MCP response");
+            }
+
+            return new TextResponseEnvelope(
+                    utf8Size(responseJson.substring(0, markerIndex)),
+                    utf8Size(responseJson.substring(markerIndex + marker.length()))
+            );
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize MCP response envelope", e);
+        }
+    }
+
+    private int measureExchangePageSuffixBytes(boolean hasMore, @Nullable Integer nextOffset) {
+        return measureEscapedJsonStringContentSize(buildExchangePageSuffix(hasMore, nextOffset));
+    }
+
+    private String buildExchangePageSuffix(boolean hasMore, @Nullable Integer nextOffset) {
+        return "],\"hasMore\":" + hasMore + (nextOffset == null ? "" : ",\"nextOffset\":" + nextOffset) + "}";
+    }
+
+    private String serializeJson(Object value) {
+        try {
+            return OM.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize JSON value", e);
+        }
+    }
+
+    private int measureEscapedJsonStringContentSize(String value) {
+        try {
+            return OM.writeValueAsBytes(value).length - 2;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize JSON string content", e);
+        }
+    }
+
+    private static int utf8Size(String value) {
+        return value.getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    private static @Nullable Integer getOptionalPort(MCPToolsCall call) {
+        return call.getArgument(ARG_PORT) == null ? null : getOptionalIntArgument(call, ARG_PORT, -1, 1, 65535);
+    }
+
+    private static @Nullable Integer getOptionalMaxResponseSize(MCPToolsCall call) {
+        return call.getArgument(ARG_MAX_RESPONSE_SIZE) == null ? null : getOptionalSizeArgument(call, ARG_MAX_RESPONSE_SIZE, -1, 1, MAX_VALUE);
+    }
+
+    record ExchangeQuery(
+            @Nullable String host,
+            @Nullable Integer port,
+            @Nullable String pathPattern,
+            int offset,
+            int limit,
+            boolean includeBodies,
+            @Nullable Integer maxResponseSize
+    ) {
+    }
+
+    record ExchangePage(List<AbstractExchange> exchanges, boolean hasMore, int offset) {
+    }
+
+    private record TextResponseEnvelope(int prefixBytes, int suffixBytes) {
+        private int fixedBytes() {
+            return prefixBytes + suffixBytes;
+        }
+    }
+}
