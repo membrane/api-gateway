@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -29,16 +30,17 @@ public class OrchestrationTutorialTest extends AbstractOrchestrationTutorialTest
     }
 
     @Test
-    void latestProduct_isReturned() {
+    void latestProductCopy_isCreatedWithFixedPrice() {
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/products/latest")
+            .post("http://localhost:2000/products/latest/copy")
         .then()
-            .statusCode(200)
+            .statusCode(201)
             .body("id", notNullValue())
             .body("name", notNullValue())
-            .body("price", greaterThan(0f));
+            .body("price", equalTo(5))
+            .body("name", containsString("Copy"));
         // @formatter:on
     }
 

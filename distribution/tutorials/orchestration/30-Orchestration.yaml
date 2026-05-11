@@ -2,26 +2,30 @@
 #
 # Tutorial: Orchestration
 #
-# Shows how to create an API that combines two backend calls into one API.
-# 1) Fetch the newest product id from the fruitshop product list.
-# 2) Use that id to fetch full product details.
+# Shows how to create an API that combines multiple backend calls into one API.
+# 1) Fetch the newest product from fruitshop.
+# 2) Create a new product with a copy of this product and a fixed price of 5.
 #
 # Try:
-#    curl localhost:2000/products/latest
+#    curl -X POST localhost:2000/products/latest/copy
 
 api:
   port: 2000
   path:
-    uri: /products/latest
+    uri: /products/latest/copy
   flow:
     - request:
         - call:
             url: https://api.predic8.de/shop/v2/products?sort=id&order=desc&limit=1
-        - setProperty:
-            name: id
-            value: ${$.products[0].id}
-            language: jsonpath
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "name": ${jsonPath('$.products[0].name') + ' Copy'},
+                "price": 5
+              }
         - call:
-            url: https://api.predic8.de/shop/v2/products/${properties.id}
+            method: POST
+            url: https://api.predic8.de/shop/v2/products
     - return:
-        status: 200
+        status: 201
