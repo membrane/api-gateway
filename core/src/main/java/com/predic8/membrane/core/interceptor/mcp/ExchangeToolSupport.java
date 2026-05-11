@@ -35,8 +35,6 @@ final class ExchangeToolSupport {
     static final String ARG_PATH_PATTERN = "pathPattern";
     static final String ARG_MAX_RESPONSE_SIZE = "maxResponseSize";
 
-    private static final String EXCHANGES_PAYLOAD_PREFIX = "{\"exchanges\":[";
-    private static final String EXCHANGES_PAYLOAD_SEPARATOR = ",";
     private static final ObjectMapper OM = new ObjectMapper();
 
     private final McpPayloadSanitizer payloadSanitizer;
@@ -134,8 +132,8 @@ final class ExchangeToolSupport {
     MCPToolsCallResponse buildSizedPageResponse(MCPToolsCall call, ExchangePage page, boolean includeBodies, int maxResponseSize) {
         TextResponseEnvelope responseEnvelope = measureTextResponseEnvelope(call);
         long maxResponseSizeLimit = maxResponseSize;
-        long prefixBytes = measureEscapedJsonStringContentSize(EXCHANGES_PAYLOAD_PREFIX);
-        long separatorBytes = measureEscapedJsonStringContentSize(EXCHANGES_PAYLOAD_SEPARATOR);
+        long prefixBytes = measureEscapedJsonStringContentSize("{\"exchanges\":[");
+        long separatorBytes = measureEscapedJsonStringContentSize(",");
         long minimumResponseSize = responseEnvelope.fixedBytes() + prefixBytes + measureExchangePageSuffixBytes(false, null);
 
         if (minimumResponseSize > maxResponseSizeLimit) throw new InvalidToolArgumentsException("Tool argument '" + ARG_MAX_RESPONSE_SIZE + "' must be at least " + minimumResponseSize + " bytes");
