@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.mcp;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -49,6 +50,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
     static final String SESSION_HEADER = "Mcp-Session-Id";
 
     private static final Logger log = LoggerFactory.getLogger(MembraneMCPServer.class);
+    private static final ObjectMapper OM = new ObjectMapper();
 
     private static final int DEFAULT_MAX_EXCHANGES = 100;
 
@@ -324,35 +326,37 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private MCPToolsCallResponse buildLimitedExchangesResponse(MCPToolsCall call, ExchangePage page, boolean includeBodies, int maxResponseSize) {
-        MCPToolsCallResponse emptyResponse = createExchangePageResponse(call, List.of(), false, null);
-        int minimumResponseSize = responseSize(emptyResponse);
+        TextResponseEnvelope responseEnvelope = createTextResponseEnvelope(call);
+        int prefixBytes = escapedJsonStringContentSize("{\"exchanges\":[");
+        int separatorBytes = escapedJsonStringContentSize(",");
+        int minimumResponseSize = responseEnvelope.fixedBytes() + prefixBytes + exchangePageSuffixBytes(false, null);
 
-        if (minimumResponseSize > maxResponseSize) {
-            throw new InvalidToolArgumentsException(
-                    "Tool argument 'maxResponseSize' must be at least " + minimumResponseSize + " bytes"
-            );
-        }
+        if (minimumResponseSize > maxResponseSize) throw new InvalidToolArgumentsException("Tool argument 'maxResponseSize' must be at least " + minimumResponseSize + " bytes");
 
         List<Map<String, Object>> describedExchanges = new ArrayList<>();
+        int exchangesBytes = 0;
         for (int i = page.exchanges().size() - 1; i >= 0; i--) {
-            describedExchanges.addFirst(requireExchangeDescription(page.exchanges().get(i), includeBodies));
+            Map<String, Object> description = requireExchangeDescription(page.exchanges().get(i), includeBodies);
+            int additionalExchangeBytes = escapedJsonStringContentSize(serializeJson(description)) + (describedExchanges.isEmpty() ? 0 : separatorBytes);
 
             boolean hasMore = page.hasMore() || i > 0;
-            MCPToolsCallResponse candidate = createExchangePageResponse(
-                    call,
-                    describedExchanges,
-                    hasMore,
-                    nextOffset(page.offset(), describedExchanges.size(), hasMore)
-            );
-            if (responseSize(candidate) > maxResponseSize) {
-                describedExchanges.removeFirst();
+            Integer candidateNextOffset = nextOffset(page.offset(), describedExchanges.size() + 1, hasMore);
+            int trackedSize = responseEnvelope.fixedBytes()
+                    + prefixBytes
+                    + exchangesBytes
+                    + additionalExchangeBytes
+                    + exchangePageSuffixBytes(hasMore, candidateNextOffset);
+            if (trackedSize > maxResponseSize) {
                 if (describedExchanges.isEmpty()) {
                     throw new InvalidToolArgumentsException(
-                            "Tool argument 'maxResponseSize' must be at least " + responseSize(candidate) + " bytes to return the next exchange page"
+                            "Tool argument 'maxResponseSize' must be at least " + trackedSize + " bytes to return the next exchange page"
                     );
                 }
                 break;
             }
+
+            describedExchanges.addFirst(description);
+            exchangesBytes += additionalExchangeBytes;
         }
 
         return createExchangePageResponse(
@@ -393,16 +397,58 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return description;
     }
 
-    private int responseSize(MCPToolsCallResponse response) {
+    // Measure the fixed JSON-RPC/MCP wrapper once with a placeholder so the byte limit
+    // applies to the final serialized response body, not just the unescaped payload text.
+    private TextResponseEnvelope createTextResponseEnvelope(MCPToolsCall call) {
+        String marker = "__MEMBRANE_MCP_TEXT_PLACEHOLDER_" + UUID.randomUUID() + "__";
         try {
-            return utf8Size(response.toJson());
+            String responseJson = MCPToolsCallResponse.from(call).withText(marker).toJson();
+            int markerIndex = responseJson.indexOf(marker);
+            if (markerIndex < 0) {
+                throw new IllegalStateException("Could not locate placeholder marker in serialized MCP response");
+            }
+
+            return new TextResponseEnvelope(
+                    utf8Size(responseJson.substring(0, markerIndex)),
+                    utf8Size(responseJson.substring(markerIndex + marker.length()))
+            );
         } catch (IOException e) {
-            throw new RuntimeException("Failed to serialize MCP exchange page response", e);
+            throw new RuntimeException("Failed to serialize MCP response envelope", e);
+        }
+    }
+
+    private int exchangePageSuffixBytes(boolean hasMore, @Nullable Integer nextOffset) {
+        return escapedJsonStringContentSize(buildExchangePageSuffix(hasMore, nextOffset));
+    }
+
+    private String buildExchangePageSuffix(boolean hasMore, @Nullable Integer nextOffset) {
+        return "],\"hasMore\":" + hasMore + (nextOffset == null ? "" : ",\"nextOffset\":" + nextOffset) + "}";
+    }
+
+    private String serializeJson(Object value) {
+        try {
+            return OM.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize JSON value", e);
         }
     }
 
     private static int utf8Size(String value) {
         return value.getBytes(StandardCharsets.UTF_8).length;
+    }
+
+    private int escapedJsonStringContentSize(String value) {
+        try {
+            return OM.writeValueAsBytes(value).length - 2;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize JSON string content", e);
+        }
+    }
+
+    private record TextResponseEnvelope(int prefixBytes, int suffixBytes) {
+        private int fixedBytes() {
+            return prefixBytes + suffixBytes;
+        }
     }
 
     private record ExchangePage(List<AbstractExchange> exchanges, boolean hasMore, int offset) {
