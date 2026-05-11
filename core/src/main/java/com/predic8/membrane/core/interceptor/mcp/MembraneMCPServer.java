@@ -132,11 +132,12 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult processInitializedNotification(JSONRPCRequest request, Exchange exc) {
         MCPInitialized.from(request);
-        SessionLookup sessionLookup = requireSession(request, exc);
-        if (sessionLookup.error() != null) {
-            return sessionLookup.error();
+        String sessionId = getSessionId(exc);
+        McpSessionContext sessionContext = sessionManager.get(sessionId);
+        if (sessionContext == null) {
+            return missingOrInvalidSession(request, sessionId);
         }
-        if (!sessionManager.markReady(getSessionId(exc))) {
+        if (!sessionContext.markReady()) {
             return protocolError(
                     request,
                     ERR_INVALID_REQUEST,
@@ -149,18 +150,18 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult processPing(JSONRPCRequest request, Exchange exc) {
         MCPPing.from(request);
-        SessionLookup sessionLookup = requireSession(request, exc, "'ping' is only allowed after 'initialize'", INITIALIZED, READY);
-        if (sessionLookup.error() != null) {
-            return sessionLookup.error();
+        McpHttpResult error = validateSession(request, exc, "'ping' is only allowed after 'initialize'", INITIALIZED, READY);
+        if (error != null) {
+            return error;
         }
         return httpOk(success(request.getId(), Map.of()));
     }
 
     private McpHttpResult processToolsList(JSONRPCRequest request, Exchange exc) {
         MCPToolsList toolsList = MCPToolsList.from(request);
-        SessionLookup sessionLookup = requireReadySession(request, exc, "tools/list");
-        if (sessionLookup.error() != null) {
-            return sessionLookup.error();
+        McpHttpResult error = validateReadySession(request, exc, "tools/list");
+        if (error != null) {
+            return error;
         }
 
         return httpOk(MCPToolsListResponse.from(toolsList)
@@ -170,9 +171,9 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult processToolsCall(JSONRPCRequest request, Exchange exc) throws Exception {
         MCPToolsCall call = MCPToolsCall.from(request);
-        SessionLookup sessionLookup = requireReadySession(request, exc, "tools/call");
-        if (sessionLookup.error() != null) {
-            return sessionLookup.error();
+        McpHttpResult error = validateReadySession(request, exc, "tools/call");
+        if (error != null) {
+            return error;
         }
 
         McpToolDefinition tool = toolRegistry.find(call.getName());
@@ -260,32 +261,20 @@ public class MembraneMCPServer extends AbstractInterceptor {
         toolRegistry = buildToolRegistry();
     }
 
-    private SessionLookup requireReadySession(JSONRPCRequest request, Exchange exc, String methodName) {
-        return requireSession(request, exc, "'" + methodName + "' requires a completed MCP handshake", READY);
+    private @Nullable McpHttpResult validateReadySession(JSONRPCRequest request, Exchange exc, String methodName) {
+        return validateSession(request, exc, "'" + methodName + "' requires a completed MCP handshake", READY);
     }
 
-    private SessionLookup requireSession(JSONRPCRequest request, Exchange exc, String invalidStateMessage, McpSessionContext.McpSessionState... allowedStates) {
-        SessionLookup sessionLookup = requireSession(request, exc);
-        if (sessionLookup.error() != null) {
-            return sessionLookup;
-        }
-        McpSessionContext sessionContext = sessionLookup.context();
-        if (sessionContext == null) {
-            return new SessionLookup(null, missingOrInvalidSession(request, getSessionId(exc)));
-        }
-        if (!sessionContext.isIn(allowedStates)) {
-            return new SessionLookup(null, protocolError(request, ERR_INVALID_REQUEST, invalidStateMessage));
-        }
-        return sessionLookup;
-    }
-
-    private SessionLookup requireSession(JSONRPCRequest request, Exchange exc) {
+    private @Nullable McpHttpResult validateSession(JSONRPCRequest request, Exchange exc, String invalidStateMessage, McpSessionContext.McpSessionState... allowedStates) {
         String sessionId = getSessionId(exc);
         McpSessionContext sessionContext = sessionManager.get(sessionId);
         if (sessionContext == null) {
-            return new SessionLookup(null, missingOrInvalidSession(request, sessionId));
+            return missingOrInvalidSession(request, sessionId);
         }
-        return new SessionLookup(sessionContext, null);
+        if (!sessionContext.isIn(allowedStates)) {
+            return protocolError(request, ERR_INVALID_REQUEST, invalidStateMessage);
+        }
+        return null;
     }
 
     private McpHttpResult badRequest(Exchange exc, @Nullable JSONRPCRequest request, int code, String message, Exception exception) {
@@ -374,9 +363,6 @@ public class MembraneMCPServer extends AbstractInterceptor {
     @Override
     public String getDisplayName() {
         return "Membrane MCP Server";
-    }
-
-    private record SessionLookup(@Nullable McpSessionContext context, @Nullable McpHttpResult error) {
     }
 
     record McpHttpResult(

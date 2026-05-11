@@ -56,22 +56,6 @@ final class McpSessionManager {
         return entry.context();
     }
 
-    boolean markReady(@Nullable String sessionId) {
-        long now = now();
-        cleanupExpiredSessions(now);
-
-        if (sessionId == null) {
-            return false;
-        }
-
-        SessionEntry entry = sessions.get(sessionId);
-        if (entry == null) {
-            return false;
-        }
-        entry.touch(now);
-        return entry.context().markReady();
-    }
-
     private void cleanupExpiredSessions(long now) {
         long oldestAllowedAccess = now - sessionTtlMillis;
         sessions.entrySet().removeIf(entry -> entry.getValue().lastAccessedAt() < oldestAllowedAccess);

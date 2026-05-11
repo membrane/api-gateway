@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -123,11 +122,12 @@ final class ExchangeToolSupport {
     }
 
     MCPToolsCallResponse buildFullPageResponse(MCPToolsCall call, ExchangePage page, boolean includeBodies) {
+        List<Map<String, Object>> describedExchanges = describeExchanges(page.exchanges(), includeBodies);
         return createExchangePageResponse(
                 call,
-                describeExchanges(page.exchanges(), includeBodies),
+                describedExchanges,
                 page.hasMore(),
-                nextOffset(page.offset(), page.exchanges().size(), page.hasMore())
+                nextOffset(page.offset(), describedExchanges.size(), page.hasMore())
         );
     }
 
@@ -174,8 +174,7 @@ final class ExchangeToolSupport {
 
     private List<Map<String, Object>> describeExchanges(List<AbstractExchange> exchanges, boolean includeBodies) {
         return exchanges.stream()
-                .map(exchange -> MCPUtil.describeExchange(exchange, includeBodies, payloadSanitizer))
-                .filter(Objects::nonNull)
+                .map(exchange -> describeExchangeOrThrow(exchange, includeBodies))
                 .toList();
     }
 
