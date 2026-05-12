@@ -14,17 +14,24 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.MessageUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.charset.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.*;
-import static com.predic8.membrane.core.util.ContentTypeDetector.*;
+import static com.predic8.membrane.core.util.ContentTypeDetector.EffectiveContentType.HTML;
+import static com.predic8.membrane.core.util.ContentTypeDetector.detectEffectiveContentType;
 import static com.predic8.membrane.core.util.text.TextUtil.getCharset;
 
 /**
@@ -360,7 +367,7 @@ public abstract class Message {
 	/**
 	 * Tries to use the messages header to get the encoding to build a Charset.
 	 * Uses default of TextUtil if not possible
-	 * @return
+	 * @return Charset of the message or default charset if not found in header
 	 */
 	public Charset getCharsetOrDefault() {
 		return getCharset(header.getCharset());
@@ -395,6 +402,21 @@ public abstract class Message {
 
 	public void setReleased(boolean released) {
 		this.released = released;
+	}
+
+	/**
+	 * Checks if the message is a stream of events or notifications instead of a contained message.
+	 * @return true if the message is a stream, false if it is a contained message.
+	 */
+	public boolean isStream() {
+		var contentType = getHeader().getContentType();
+		if (contentType == null)
+			return false;
+		var lt = contentType.toLowerCase();
+		return lt.contains("event-stream") ||
+				lt.contains("ndjson") ||
+				lt.contains("jsonlines") ||
+				lt.contains("stream+json");
 	}
 
     public boolean containsObserver(MessageObserver obs){

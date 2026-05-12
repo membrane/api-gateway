@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.interceptor.mcp;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -25,6 +26,8 @@ import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.http.Response.accepted;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.mcp.ExchangeUtils.matchesExchangeFilter;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.*;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.INITIALIZED;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.READY;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
@@ -45,25 +48,17 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(MembraneMCPServer.class);
 
-    private static final int MAX_EXCHANGES = 100;
+    private static final int DEFAULT_MAX_EXCHANGES = 100;
 
     private static final Map<String, Object> EMPTY_OBJECT_SCHEMA = Map.of(
             "type", "object",
             "properties", Map.of(),
             "additionalProperties", false
     );
-    private static final Map<String, Object> GET_EXCHANGES_SCHEMA = Map.of(
-            "type", "object",
-            "properties", Map.of(
-                    "limit", Map.of("type", "integer", "minimum", 1, "maximum", MAX_EXCHANGES),
-                    "includeBodies", Map.of("type", "boolean")
-            ),
-            "additionalProperties", false
-    );
-
     private final Map<String, McpSessionContext> sessionContexts = new ConcurrentHashMap<>();
     private final McpPayloadSanitizer payloadSanitizer = new McpPayloadSanitizer();
-    private final McpToolRegistry toolRegistry = buildToolRegistry();
+    private int maxExchanges = DEFAULT_MAX_EXCHANGES;
+    private McpToolRegistry toolRegistry = buildToolRegistry();
 
     @Override
     public Outcome handleRequest(Exchange exc) {
@@ -210,8 +205,8 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 ))
                 .register(new McpToolDefinition(
                         "getExchanges",
-                        "Gets recent HTTP exchanges with sanitized headers and optional bodies",
-                        GET_EXCHANGES_SCHEMA,
+                        "Gets recent HTTP exchanges with sanitized headers, optional bodies, and request filters",
+                        getExchangesSchema(),
                         this::getExchanges
                 ))
                 .register(new McpToolDefinition(
@@ -223,7 +218,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private MCPToolsCallResponse listProxies(MCPToolsCall call, Exchange exc) {
-        MCPUtil.rejectUnexpectedArguments(call, Set.of());
+        rejectUnexpectedArguments(call, Set.of());
         return MCPToolsCallResponse.from(call)
                 .withJson(Map.of(
                         "proxies",
@@ -237,29 +232,71 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private MCPToolsCallResponse getStatistics(MCPToolsCall call, Exchange exc) {
-        MCPUtil.rejectUnexpectedArguments(call, Set.of());
+        rejectUnexpectedArguments(call, Set.of());
         return MCPToolsCallResponse.from(call)
                 .withJson(getRouter().getStatistics());
     }
 
     private MCPToolsCallResponse getExchanges(MCPToolsCall call, Exchange exc) {
-        MCPUtil.rejectUnexpectedArguments(call, Set.of("limit", "includeBodies"));
+        rejectUnexpectedArguments(call, Set.of("limit", "includeBodies", "host", "port", "pathPattern"));
 
-        int limit = MCPUtil.getOptionalIntArgument(call, "limit", MAX_EXCHANGES, 1, MAX_EXCHANGES);
-        boolean includeBodies = MCPUtil.getOptionalBooleanArgument(call, "includeBodies", false);
+        // do not inline: args must be validated fist
+        String host = getOptionalStringArgument(call, "host");
+        Integer port = getOptionalPort(call);
+        String pathPattern = getOptionalStringArgument(call, "pathPattern");
+        int limit = getOptionalIntArgument(call, "limit", maxExchanges, 1, maxExchanges);
+        boolean includeBodies = getOptionalBooleanArgument(call, "includeBodies", false);
 
-        List<AbstractExchange> exchanges = Optional.ofNullable(getRouter().getExchangeStore().getAllExchangesAsList())
-                .orElse(List.of());
-        int start = Math.max(0, exchanges.size() - limit);
+        List<AbstractExchange> filteredExchanges = Optional.ofNullable(getRouter().getExchangeStore().getAllExchangesAsList())
+                .orElse(List.of())
+                .stream()
+                .filter(exchange -> matchesExchangeFilter(exchange, host, port, pathPattern))
+                .toList();
+        List<AbstractExchange> exchanges = filteredExchanges.subList(Math.max(0, filteredExchanges.size() - limit), filteredExchanges.size());
 
         return MCPToolsCallResponse.from(call)
                 .withJson(Map.of(
                         "exchanges",
-                        exchanges.subList(start, exchanges.size()).stream()
+                        exchanges.stream()
                                 .map(exchange -> MCPUtil.describeExchange(exchange, includeBodies, payloadSanitizer))
                                 .filter(Objects::nonNull)
                                 .toList()
                 ));
+    }
+
+    private static @Nullable Integer getOptionalPort(MCPToolsCall call) {
+        return call.getArgument("port") == null ? null : getOptionalIntArgument(call, "port", -1, 1, 65535);
+    }
+
+    private Map<String, Object> getExchangesSchema() {
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "limit", Map.of("type", "integer", "minimum", 1, "maximum", maxExchanges),
+                        "includeBodies", Map.of("type", "boolean"),
+                        "host", Map.of("type", "string"),
+                        "port", Map.of("type", "integer", "minimum", 1, "maximum", 65535),
+                        "pathPattern", Map.of("type", "string", "description", "Matches by prefix or regex")
+                ),
+                "additionalProperties", false
+        );
+    }
+
+    public int getMaxExchanges() {
+        return maxExchanges;
+    }
+
+    /**
+     * @description Maximum number of exchanges that can be returned by the getExchanges MCP tool.
+     * @default 100
+     */
+    @MCAttribute
+    public void setMaxExchanges(int maxExchanges) {
+        if (maxExchanges < 1) {
+            throw new IllegalArgumentException("maxExchanges must be >= 1");
+        }
+        this.maxExchanges = maxExchanges;
+        toolRegistry = buildToolRegistry();
     }
 
     private McpHttpResult badRequest(Exchange exc, @Nullable JSONRPCRequest request, int code, String message, Exception exception) {

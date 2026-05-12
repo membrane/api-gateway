@@ -16,7 +16,7 @@ package com.predic8.membrane.core.http;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class PlainBodyTransferer extends AbstractBodyTransferrer {
+public class PlainBodyTransferer extends AbstractBodyTransferer {
 	final OutputStream out;
 
 	public PlainBodyTransferer(OutputStream out) {
