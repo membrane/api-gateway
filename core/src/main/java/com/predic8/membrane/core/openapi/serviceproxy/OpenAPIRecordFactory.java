@@ -280,10 +280,7 @@ public class OpenAPIRecordFactory {
     }
 
     private File[] getOpenAPIFiles(String directoryName) {
-        String resolvedDirectoryName = resolve(directoryName);
-        File dir = resolvedDirectoryName.startsWith("file:")
-                ? new File(pathFromFileURI(resolvedDirectoryName))
-                : new File(resolvedDirectoryName);
+        File dir = new File(pathFromFileURI(resolve(directoryName)));
         if (!dir.exists() || !dir.isDirectory()) {
             throw new ConfigurationException(format("Cannot open directory %s. Please check the OpenAPI configuration of your API.", dir.getAbsolutePath()));
         }
