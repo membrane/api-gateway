@@ -92,6 +92,17 @@ public final class MCPUtil {
         return validateIntRange(name, number.longValue(), minimum, maximum);
     }
 
+    public static long getRequiredLongArgument(MCPToolsCall call, String name) {
+        Object value = call.getArgument(name);
+        if (value == null) {
+            throw new InvalidToolArgumentsException("Tool argument '" + name + "' is required");
+        }
+        if (!(value instanceof Number number) || number.doubleValue() != Math.rint(number.doubleValue())) {
+            throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be an integer");
+        }
+        return number.longValue();
+    }
+
     public static boolean getOptionalBooleanArgument(MCPToolsCall call, String name, boolean defaultValue) {
         Object value = call.getArgument(name);
         if (value == null) {

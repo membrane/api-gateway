@@ -205,6 +205,12 @@ public class MembraneMCPServer extends AbstractInterceptor {
                         this::getExchanges
                 ))
                 .register(new McpToolDefinition(
+                        "getExchange",
+                        "Gets a single HTTP exchange by id with sanitized headers and optional bodies",
+                        exchangeToolSupport.getExchangeSchema(),
+                        this::getExchange
+                ))
+                .register(new McpToolDefinition(
                         "getStatistics",
                         "Gets Membrane runtime statistics",
                         EMPTY_OBJECT_SCHEMA,
@@ -242,6 +248,16 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return query.maxResponseSize() == null
                 ? exchangeToolSupport.buildFullPageResponse(call, page, query.includeBodies())
                 : exchangeToolSupport.buildSizedPageResponse(call, page, query.includeBodies(), query.maxResponseSize());
+    }
+
+    private MCPToolsCallResponse getExchange(MCPToolsCall call, Exchange exc) {
+        ExchangeToolSupport.ExchangeLookupQuery query = exchangeToolSupport.parseLookupQuery(call);
+        return exchangeToolSupport.buildSingleExchangeResponse(
+                call,
+                query.id(),
+                getRouter().getExchangeStore().getExchangeById(query.id()),
+                query.includeBodies()
+        );
     }
 
     public int getMaxExchanges() {

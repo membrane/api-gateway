@@ -22,11 +22,13 @@ import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalBoole
 import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalIntArgument;
 import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalSizeArgument;
 import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalStringArgument;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getRequiredLongArgument;
 import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.rejectUnexpectedArguments;
 import static java.lang.Integer.MAX_VALUE;
 
 final class ExchangeToolSupport {
 
+    static final String ARG_ID = "id";
     static final String ARG_LIMIT = "limit";
     static final String ARG_OFFSET = "offset";
     static final String ARG_INCLUDE_BODIES = "includeBodies";
@@ -65,6 +67,18 @@ final class ExchangeToolSupport {
         );
     }
 
+    ExchangeLookupQuery parseLookupQuery(MCPToolsCall call) {
+        rejectUnexpectedArguments(call, Set.of(
+                ARG_ID,
+                ARG_INCLUDE_BODIES
+        ));
+
+        return new ExchangeLookupQuery(
+                getRequiredLongArgument(call, ARG_ID),
+                getOptionalBooleanArgument(call, ARG_INCLUDE_BODIES, false)
+        );
+    }
+
     Map<String, Object> getExchangesSchema(int maxExchanges) {
         return Map.of(
                 "type", "object",
@@ -85,6 +99,18 @@ final class ExchangeToolSupport {
                                 "description", "Maximum size in bytes of the final JSON-RPC response body returned by this tool"
                         )
                 ),
+                "additionalProperties", false
+        );
+    }
+
+    Map<String, Object> getExchangeSchema() {
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        ARG_ID, Map.of("type", "integer", "description", "Exchange id"),
+                        ARG_INCLUDE_BODIES, Map.of("type", "boolean")
+                ),
+                "required", List.of(ARG_ID),
                 "additionalProperties", false
         );
     }
@@ -169,6 +195,20 @@ final class ExchangeToolSupport {
                 hasMore,
                 nextOffset(page.offset(), describedExchanges.size(), hasMore)
         );
+    }
+
+    MCPToolsCallResponse buildSingleExchangeResponse(MCPToolsCall call, long exchangeId, @Nullable AbstractExchange exchange, boolean includeBodies) {
+        if (exchange == null) {
+            return MCPToolsCallResponse.toolError(call, "Exchange with id " + exchangeId + " was not found");
+        }
+
+        Map<String, Object> description = MCPUtil.describeExchange(exchange, includeBodies, payloadSanitizer);
+        if (description == null) {
+            return MCPToolsCallResponse.toolError(call, "Exchange with id " + exchangeId + " has no response yet");
+        }
+
+        return MCPToolsCallResponse.from(call)
+                .withJson(Map.of("exchange", description));
     }
 
     private List<Map<String, Object>> describeExchanges(List<AbstractExchange> exchanges, boolean includeBodies) {
@@ -273,6 +313,9 @@ final class ExchangeToolSupport {
             boolean includeBodies,
             @Nullable Integer maxResponseSize
     ) {
+    }
+
+    record ExchangeLookupQuery(long id, boolean includeBodies) {
     }
 
     record ExchangePage(List<AbstractExchange> exchanges, boolean hasMore, int offset) {
