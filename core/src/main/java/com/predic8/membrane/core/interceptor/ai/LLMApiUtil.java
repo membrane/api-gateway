@@ -2,7 +2,6 @@ package com.predic8.membrane.core.interceptor.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.util.http.SSEParser;
 
 import java.util.Collection;
 
@@ -13,15 +12,6 @@ import static com.predic8.membrane.core.http.Response.unauthorized;
 public class LLMApiUtil {
 
     private static final ObjectMapper om = new ObjectMapper();
-
-    /**
-     * Checks if the SSE Event is a terminal event.
-     * @param event SSE Event
-     * @return
-     */
-    public static boolean terminalEvent(SSEParser.SSEEvent event) {
-       return "response.completed".equals(event.name()) || "response.incomplete".equals(event.name());
-    }
 
     public static Response modelNotAllowed(String model, Collection<String> allowedModels) {
         return badRequest().json(createJson(new ErrorEnvelope(
