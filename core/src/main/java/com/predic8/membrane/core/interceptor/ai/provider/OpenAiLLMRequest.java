@@ -2,11 +2,11 @@ package com.predic8.membrane.core.interceptor.ai.provider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.ai.AbstractAiApiRequest;
+import com.predic8.membrane.core.interceptor.ai.AbstractLLMRequest;
 
-public class OpenAiAiRequest extends AbstractAiApiRequest {
+public class OpenAiLLMRequest extends AbstractLLMRequest {
 
-    public OpenAiAiRequest(Exchange exchange) {
+    public OpenAiLLMRequest(Exchange exchange) {
         super(exchange);
 
         // Make sure that when streaming is enabled, the usage is included in the response.

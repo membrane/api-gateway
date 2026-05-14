@@ -6,14 +6,14 @@ import com.predic8.membrane.core.util.json.JsonUtil;
 
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 
-public abstract class AbstractAiApiRequest implements AiApiRequest {
+public abstract class AbstractLLMRequest implements LLMRequest {
 
     public static final String BEARER_PREFIX = "Bearer";
 
     protected final Exchange exchange;
     protected ObjectNode json;
 
-    public AbstractAiApiRequest(Exchange exchange) {
+    public AbstractLLMRequest(Exchange exchange) {
         this.exchange = exchange;
         if (exchange.getRequest().isJSON())
             json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("No JSON object request."));

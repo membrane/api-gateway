@@ -3,13 +3,13 @@ package com.predic8.membrane.core.interceptor.ai.provider;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.ai.AbstractAiApiRequest;
+import com.predic8.membrane.core.interceptor.ai.AbstractLLMRequest;
 
-public class GoogleAiRequest extends AbstractAiApiRequest {
+public class GoogleLLMRequest extends AbstractLLMRequest {
 
     public static final String X_GOOG_API_KEY = "x-goog-api-key";
 
-    public GoogleAiRequest(Exchange exchange) {
+    public GoogleLLMRequest(Exchange exchange) {
         super(exchange);
     }
 

@@ -4,15 +4,11 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.AbstractMessageObserver;
-import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.ai.provider.AiProvider;
+import com.predic8.membrane.core.interceptor.ai.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiStore;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiUser;
-import com.predic8.membrane.core.util.SSEUtil;
-import com.predic8.membrane.core.util.json.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,17 +17,17 @@ import java.util.List;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.interceptor.ai.OpenAiApiUtil.*;
+import static com.predic8.membrane.core.interceptor.ai.LLMApiUtil.*;
 import static com.predic8.membrane.core.util.json.JsonUtil.setJsonBody;
 
 @MCElement(name = "aiGateway")
-public class OpenAIAPIInterceptor extends AbstractInterceptor {
+public class LLMGatewayInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenAIAPIInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(LLMGatewayInterceptor.class);
 
     public static final String MEMBRANE_AI_USER = "membrane.ai.user";
 
-    private AiProvider provider;
+    private LLMProvider provider;
 
     private String apiKey;
     private int maxOutputTokens;
@@ -49,9 +45,9 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
 
-        AiApiRequest aiReq;
+        LLMRequest aiReq;
         try {
-            aiReq = provider.getAiApiRequest(exc);
+            aiReq = provider.getLLMRequest(exc);
         } catch (Exception e) {
             user(router.getConfiguration().isProduction(),"AI Gateway")
                     .title("Invalid request")
@@ -114,36 +110,13 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleResponse(Exchange exc) {
 
-        var msg = exc.getResponse();
+        var aiRes = provider.getLLMResponse(exc, res -> {
+            System.out.println("Usage: " + res.getUsage());
+            if (store != null) {
+                store.store(exc.getProperty(MEMBRANE_AI_USER, AiApiUser.class), res.getUsage());
+            }
+        });
 
-        if (msg.isStream()) {
-            // Inspect each chunk as it arrives
-            msg.getBody().addObserver(new AbstractMessageObserver() {
-                @Override
-                public void bodyChunk(Chunk chunk) {
-                    var event = SSEUtil.parseSSEvent(chunk);
-                    if (event == null) {
-                        return;
-                    }
-                    log.debug("SSE name: {}", event.name());
-                    if (OpenAiApiUtil.terminalEvent(event)) {
-                        var jo = JsonUtil.getJsonObject(event.data());
-                        if (jo.isPresent()) {
-                            log.debug("Usage: {}", jo.get().get("usage"));
-                        }
-                    }
-                }
-            });
-        }
-
-        var aiRes = provider.getAiApiResponse(exc);
-
-        if (aiRes.isError())
-            return CONTINUE; // pass error from AI API to client
-
-        if (store != null) {
-            store.store(exc.getProperty(MEMBRANE_AI_USER, AiApiUser.class), aiRes.getUsage());
-        }
         return CONTINUE;
     }
 
@@ -197,12 +170,12 @@ public class OpenAIAPIInterceptor extends AbstractInterceptor {
         this.models = models;
     }
 
-    public AiProvider getProvider() {
+    public LLMProvider getProvider() {
         return provider;
     }
 
     @MCChildElement(allowForeign = true)
-    public void setProvider(AiProvider provider) {
+    public void setProvider(LLMProvider provider) {
         this.provider = provider;
     }
 }

@@ -2,7 +2,7 @@ package com.predic8.membrane.core.interceptor.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.util.SSEUtil;
+import com.predic8.membrane.core.util.http.SSEParser;
 
 import java.util.Collection;
 
@@ -10,7 +10,7 @@ import static com.predic8.membrane.core.http.Header.WWW_AUTHENTICATE;
 import static com.predic8.membrane.core.http.Response.badRequest;
 import static com.predic8.membrane.core.http.Response.unauthorized;
 
-public class OpenAiApiUtil {
+public class LLMApiUtil {
 
     private static final ObjectMapper om = new ObjectMapper();
 
@@ -19,7 +19,7 @@ public class OpenAiApiUtil {
      * @param event SSE Event
      * @return
      */
-    public static boolean terminalEvent(SSEUtil.SSEvent event) {
+    public static boolean terminalEvent(SSEParser.SSEEvent event) {
        return "response.completed".equals(event.name()) || "response.incomplete".equals(event.name());
     }
 

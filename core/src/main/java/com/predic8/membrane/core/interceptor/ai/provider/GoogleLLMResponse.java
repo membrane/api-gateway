@@ -1,13 +1,16 @@
 package com.predic8.membrane.core.interceptor.ai.provider;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.ai.AbstractAiApiResponse;
+import com.predic8.membrane.core.interceptor.ai.AbstractLLMResponse;
+import com.predic8.membrane.core.interceptor.ai.LLMResponse;
 import com.predic8.membrane.core.interceptor.ai.store.Usage;
 
-public class GoogleAiResponse extends AbstractAiApiResponse {
+import java.util.function.Consumer;
 
-    public GoogleAiResponse(Exchange exchange) {
-        super(exchange);
+public class GoogleLLMResponse extends AbstractLLMResponse {
+
+    public GoogleLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
+        super(exchange, postProcessor);
     }
 
     @Override

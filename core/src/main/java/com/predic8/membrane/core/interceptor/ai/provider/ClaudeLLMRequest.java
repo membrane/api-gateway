@@ -1,13 +1,13 @@
 package com.predic8.membrane.core.interceptor.ai.provider;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.ai.AbstractAiApiRequest;
+import com.predic8.membrane.core.interceptor.ai.AbstractLLMRequest;
 
-public class ClaudeAiRequest extends AbstractAiApiRequest {
+public class ClaudeLLMRequest extends AbstractLLMRequest {
 
     public static final String X_API_KEY = "x-api-key";
 
-    public ClaudeAiRequest(Exchange exchange) {
+    public ClaudeLLMRequest(Exchange exchange) {
         super(exchange);
     }
 
