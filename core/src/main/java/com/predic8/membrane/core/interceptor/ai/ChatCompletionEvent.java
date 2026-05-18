@@ -13,13 +13,6 @@ public class ChatCompletionEvent extends AbstractLLMEvent {
 
         parseChoices(json);
 
-        var usage = json.path("usage");
-        if (!usage.isNull()) {
-            var inputTokens = usage.get("prompt_tokens").asInt();
-            var outputTokens = usage.get("completion_tokens").asInt();
-            var totalTokens = usage.get("total_tokens").asInt();
-            System.out.println("------------------------------totalTokens = " + totalTokens);
-        }
     }
 
 

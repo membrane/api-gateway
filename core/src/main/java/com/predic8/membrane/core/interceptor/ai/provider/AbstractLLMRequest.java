@@ -32,7 +32,13 @@ public abstract class AbstractLLMRequest extends AbstractLLMMessage implements L
         var tools = getToolsNode();
         if (tools == null)
             return emptyList();
-        return tools.valueStream().map(n -> n.get("name").asText()).toList();
+        return tools.valueStream().map(n -> {
+            // Chat completion
+            if (n.has("function")) {
+                return n.get("function").get("name").asText();
+            }
+            return n.get("name").asText();
+        }).toList();
     }
 
     private ArrayNode getToolsNode() {

@@ -17,7 +17,7 @@ public class ClaudeLLMResponse extends AbstractLLMResponse {
 
     private Usage usage;
 
-    private StringBuffer inputJson = new StringBuffer();
+    private final StringBuffer inputJson = new StringBuffer();
 
     private String tool;
 
