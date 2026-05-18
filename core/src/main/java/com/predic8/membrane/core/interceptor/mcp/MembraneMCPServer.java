@@ -32,6 +32,7 @@ import static com.predic8.membrane.core.http.Response.accepted;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.rejectUnexpectedArguments;
+import static com.predic8.membrane.core.interceptor.mcp.McpSchemaBuilder.object;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.INITIALIZED;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.READY;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
@@ -58,11 +59,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(MembraneMCPServer.class);
     private static final int DEFAULT_MAX_EXCHANGES = 100;
-    private static final Map<String, Object> EMPTY_OBJECT_SCHEMA = Map.of(
-            "type", "object",
-            "properties", Map.of(),
-            "additionalProperties", false
-    );
+    private static final Map<String, Object> EMPTY_OBJECT_SCHEMA = object().additionalProperties(false).build();
 
     private final McpSessionManager sessionManager = new McpSessionManager();
     private final ExchangeToolSupport exchangeToolSupport = new ExchangeToolSupport(new McpPayloadSanitizer());

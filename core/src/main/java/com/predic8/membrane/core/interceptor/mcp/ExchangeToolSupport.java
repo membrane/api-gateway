@@ -24,6 +24,8 @@ import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalSizeA
 import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getOptionalStringArgument;
 import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.getRequiredLongArgument;
 import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.rejectUnexpectedArguments;
+import static com.predic8.membrane.core.interceptor.mcp.McpSchemaBuilder.integer;
+import static com.predic8.membrane.core.interceptor.mcp.McpSchemaBuilder.string;
 import static java.lang.Integer.MAX_VALUE;
 
 final class ExchangeToolSupport {
@@ -80,39 +82,25 @@ final class ExchangeToolSupport {
     }
 
     Map<String, Object> getExchangesSchema(int maxExchanges) {
-        return Map.of(
-                "type", "object",
-                "properties", Map.of(
-                        ARG_LIMIT, Map.of("type", "integer", "minimum", 1, "maximum", maxExchanges),
-                        ARG_OFFSET, Map.of(
-                                "type", "integer",
-                                "minimum", 0,
-                                "description", "Number of newest matching exchanges to skip before collecting the page"
-                        ),
-                        ARG_INCLUDE_BODIES, Map.of("type", "boolean"),
-                        ARG_HOST, Map.of("type", "string"),
-                        ARG_PORT, Map.of("type", "integer", "minimum", 1, "maximum", 65535),
-                        ARG_PATH_PATTERN, Map.of("type", "string", "description", "Matches by prefix or regex"),
-                        ARG_MAX_RESPONSE_SIZE, Map.of(
-                                "type", "integer",
-                                "minimum", 1,
-                                "description", "Maximum size in bytes of the final JSON-RPC response body returned by this tool"
-                        )
-                ),
-                "additionalProperties", false
-        );
+        return McpSchemaBuilder.object()
+                .property(ARG_LIMIT, integer().minimum(1).maximum(maxExchanges))
+                .property(ARG_OFFSET, integer().minimum(0).description("Number of newest matching exchanges to skip before collecting the page"))
+                .property(ARG_INCLUDE_BODIES, McpSchemaBuilder.bool())
+                .property(ARG_HOST, string())
+                .property(ARG_PORT, integer().minimum(1).maximum(65535))
+                .property(ARG_PATH_PATTERN, string().description("Matches by prefix or regex"))
+                .property(ARG_MAX_RESPONSE_SIZE, integer().minimum(1).description("Maximum size in bytes of the final JSON-RPC response body returned by this tool"))
+                .additionalProperties(false)
+                .build();
     }
 
     Map<String, Object> getExchangeSchema() {
-        return Map.of(
-                "type", "object",
-                "properties", Map.of(
-                        ARG_ID, Map.of("type", "integer", "description", "Exchange id"),
-                        ARG_INCLUDE_BODIES, Map.of("type", "boolean")
-                ),
-                "required", List.of(ARG_ID),
-                "additionalProperties", false
-        );
+        return McpSchemaBuilder.object()
+                .property(ARG_ID, integer().description("Exchange id"))
+                .property(ARG_INCLUDE_BODIES, McpSchemaBuilder.bool())
+                .required(ARG_ID)
+                .additionalProperties(false)
+                .build();
     }
 
     ExchangePage findPage(@Nullable List<AbstractExchange> allExchanges, ExchangeQuery query) {
