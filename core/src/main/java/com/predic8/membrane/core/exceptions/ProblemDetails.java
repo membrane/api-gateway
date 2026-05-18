@@ -31,6 +31,8 @@ import static com.predic8.membrane.core.exceptions.ProblemDetailsXML.createXMLCo
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
 import static com.predic8.membrane.core.http.Response.statusCode;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
@@ -369,6 +371,12 @@ public class ProblemDetails {
      * If a user error (4XX) occurs in the response flow, convert error code to 500.
      */
     private int correctStatusCodeForResponse(Exchange exc, int status) {
+        if (flow == REQUEST)
+            return status;
+        if (flow == RESPONSE && status >= 400 && status < 500)
+            return 500;
+
+        // flow is not set. If there is already a response, it is probably the response flow.
         if (exc != null && exc.getResponse() != null && status >= 400 && status < 500)
             return 500;
         return status;
