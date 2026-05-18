@@ -31,9 +31,9 @@ import static java.util.EnumSet.*;
 import static org.apache.commons.text.StringEscapeUtils.*;
 
 /**
- * @description Validates a JWT on requests (signature via JWKS, required exp/sub) and exposes claims in exchange properties ("jwt").
- * @yaml
- * <pre><code>
+ * @description Validates a JWT on requests (signature via JWKS, required
+ * exp/sub) and exposes claims in exchange properties ("jwt").
+ * @yaml  <pre><code>
  *  jwtAuth:
  *    expectedAud: my-audience
  *    expectedTid: 67c859d3-0cd4-4a99-86db-088bed1a9601
@@ -65,7 +65,6 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     String expectedAud;
     String expectedTid;
 
-
     public JwtAuthInterceptor() {
         name = "jwt checker.";
         setAppliedFlow(of(REQUEST));
@@ -74,8 +73,9 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        if(jwtRetriever == null)
-            jwtRetriever = new HeaderJwtRetriever("Authorization","Bearer");
+        if (jwtRetriever == null) {
+            jwtRetriever = new HeaderJwtRetriever("Authorization", "Bearer");
+        }
 
         jwks.init(router);
     }
@@ -101,12 +101,14 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (InvalidJwtException e) {
+            log.error("JWT validation failed: {}", e.getMessage(), e);
             ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
-                    .detail(ERROR_VALIDATION_FAILED)
+                    .detail(e.getMessage())
                     .addSubSee(ERROR_VALIDATION_FAILED_ID)
                     .stacktrace(false)
                     .status(400)
                     .buildAndSetResponse(exc);
+
             return RETURN;
         } catch (Exception e) {
             ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
@@ -120,8 +122,9 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     }
 
     public Outcome handleJwt(Exchange exc, String jwt) throws JWTException, JsonProcessingException, InvalidJwtException {
-        if (jwt == null)
+        if (jwt == null) {
             throw new JWTException(ERROR_JWT_NOT_FOUND, ERROR_JWT_NOT_FOUND_ID);
+        }
 
         var decodedJwt = new JsonWebToken(jwt);
         var kid = decodedJwt.getHeader().kid();
@@ -132,7 +135,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
         Map<String, Object> jwtClaims = createValidator(key).processToClaims(jwt).getClaimsMap();
 
-        exc.getProperties().put("jwt",jwtClaims);
+        exc.getProperties().put("jwt", jwtClaims);
 
         new JWTSecurityScheme(jwtClaims).add(exc);
 
@@ -146,17 +149,19 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                 .setRequireSubject()
                 .setVerificationKey(key.getRsaPublicKey());
 
-        if (acceptAnyAud())
-            jwtConsumerBuilder.setSkipDefaultAudienceValidation();
-        else {
-            if (expectedAud != null && !expectedAud.isEmpty())
+        if (acceptAnyAud()) {
+            jwtConsumerBuilder.setSkipDefaultAudienceValidation(); 
+        }else {
+            if (expectedAud != null && !expectedAud.isEmpty()) {
                 jwtConsumerBuilder
                         .setExpectedAudience(expectedAud);
+            }
         }
 
-        if (expectedTid != null && !expectedTid.isEmpty())
+        if (expectedTid != null && !expectedTid.isEmpty()) {
             jwtConsumerBuilder
                     .registerValidator(new TidValidator(expectedTid));
+        }
 
         return jwtConsumerBuilder.build();
     }
@@ -193,8 +198,11 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
     /**
      * @description
-     * <p>Expected audience ('aud') value of the token.</p>
-     * <p>Use "any!!" to allow any audience value. This is strongly discouraged.</p>
+     * <p>
+     * Expected audience ('aud') value of the token.</p>
+     * <p>
+     * Use "any!!" to allow any audience value. This is strongly
+     * discouraged.</p>
      */
     @MCAttribute
     public void setExpectedAud(String expectedAud) {
@@ -203,7 +211,8 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
     /**
      * @description
-     * <p>Expected tenant ID ('tid') value of the token.</p>
+     * <p>
+     * Expected tenant ID ('tid') value of the token.</p>
      * @default not set
      * @example 67c869d3-0cd4-4a99-86db-088bed1a9601
      */
@@ -219,11 +228,11 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
     @Override
     public String getLongDescription() {
-        return "Checks for a valid JWT.<br/>" +
-                (acceptAnyAud() ?
-                        "Accepts any value for the <font style=\"font-family: monospace\">aud</font> field. <b>THIS IS STRONGLY DISCOURAGED!</b><br/>" :
-                        "Accepts <font style=\"font-family: monospace\">" + escapeHtml4(expectedAud) + "</font> as valid value for the <font style=\"font-family: monospace\">aud</font> payload entry.<br/>") +
-                (jwks != null ? "Validates the JWT signature against " + jwks.getLongDescription() + " ." : "");
+        return "Checks for a valid JWT.<br/>"
+                + (acceptAnyAud()
+                        ? "Accepts any value for the <font style=\"font-family: monospace\">aud</font> field. <b>THIS IS STRONGLY DISCOURAGED!</b><br/>"
+                        : "Accepts <font style=\"font-family: monospace\">" + escapeHtml4(expectedAud) + "</font> as valid value for the <font style=\"font-family: monospace\">aud</font> payload entry.<br/>")
+                + (jwks != null ? "Validates the JWT signature against " + jwks.getLongDescription() + " ." : "");
     }
 
 }
