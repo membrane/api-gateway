@@ -11,23 +11,32 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetailsXML.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.util.ExceptionUtil.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Locale.*;
-import static java.util.UUID.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetailsXML.createXMLContent;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN_UTF8;
+import static com.predic8.membrane.core.http.Response.statusCode;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Locale.ROOT;
+import static java.util.UUID.randomUUID;
 
 
 /**
@@ -344,7 +353,7 @@ public class ProblemDetails {
     }
 
     private Response createContent(Map<String, Object> root, Exchange exchange) {
-        Response.ResponseBuilder builder = statusCode(status);
+        var builder = statusCode(correctStatusCodeForResponse(exchange,status));
         try {
             if (exchange != null && (acceptXML(exchange) || exchange.getRequest().isXML())) {
                 createXMLContent(root, builder);
@@ -356,6 +365,21 @@ public class ProblemDetails {
             builder.contentType(TEXT_PLAIN_UTF8);
         }
         return builder.build();
+    }
+
+    /**
+     * If a user error (4XX) occurs in the response flow, convert error code to 500.
+     */
+    private int correctStatusCodeForResponse(Exchange exc, int status) {
+        if (flow == REQUEST)
+            return status;
+        if (flow == RESPONSE && status >= 400 && status < 500)
+            return 500;
+
+        // flow is not set. If there is already a response, it is probably the response flow.
+        if (exc != null && exc.getResponse() != null && status >= 400 && status < 500)
+            return 500;
+        return status;
     }
 
     private boolean acceptXML(Exchange exchange) {

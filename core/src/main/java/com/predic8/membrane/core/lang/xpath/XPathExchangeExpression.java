@@ -14,23 +14,31 @@
 
 package com.predic8.membrane.core.lang.xpath;
 
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.xml.*;
-import com.predic8.membrane.core.util.xml.parser.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.lang.AbstractExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.xml.XMLUtil;
+import com.predic8.membrane.core.util.xml.XPathUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import com.predic8.membrane.core.util.xml.parser.XmlParser;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.NodeList;
 
-import javax.xml.namespace.*;
-import javax.xml.xpath.*;
+import javax.xml.namespace.QName;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathEvaluationResult;
+import javax.xml.xpath.XPathExpressionException;
 
-import static com.predic8.membrane.core.util.text.StringUtil.*;
-import static javax.xml.xpath.XPathConstants.*;
+import static com.predic8.membrane.core.util.text.StringUtil.tail;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static javax.xml.xpath.XPathConstants.NODESET;
 
 public class XPathExchangeExpression extends AbstractExchangeExpression {
 
@@ -116,14 +124,16 @@ public class XPathExchangeExpression extends AbstractExchangeExpression {
             }
         } catch (RuntimeException e) {
             // Parser errors may escape as unchecked exceptions.
-            if (causeMessageContains(e, "not allowed in prolog")) {
+            // Matches: prolog and Prolog
+            if (causeMessageContains(e, "rolog")) {
                 throw new ExchangeExpressionException(expression, e, "Content not allowed in prolog of XML input.")
                         .detail("There are extra characters before the XML declaration <?xml ... ?>")
                         .body(truncateAfter(msg.getBodyAsStringDecoded(), 50))
                         .excludeException();
             }
 
-            if (causeMessageContains(e, "is not allowed in trailing section")) {
+            // Matches: Content and content
+            if (causeMessageContains(e, "ontent")) {
                 throw new ExchangeExpressionException(expression, e, "Content not allowed in trailing section of XML input.")
                         .detail("There are extra characters after the XML root element (after the final closing tag like </root>).")
                         .body(tail(msg.getBodyAsStringDecoded(), 50))
