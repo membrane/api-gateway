@@ -83,6 +83,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             exc.setProperty(MEMBRANE_AI_USER, user);
         }
 
+        // TODO if no apiKey in config => use key from client
         aiReq.setApiKey(apiKey);
 
         if (maxOutputTokens != 0) {
