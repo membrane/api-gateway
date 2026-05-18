@@ -1,13 +1,17 @@
-package com.predic8.membrane.core.interceptor.ai.provider;
+package com.predic8.membrane.core.interceptor.ai.provider.openai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.ai.AbstractLLMRequest;
+import com.predic8.membrane.core.interceptor.ai.provider.AbstractLLMRequest;
 
 public class OpenAiLLMRequest extends AbstractLLMRequest {
 
     public OpenAiLLMRequest(Exchange exchange) {
         super(exchange);
+
+        if (json == null) {
+            return;
+        }
 
         // Make sure that when streaming is enabled, the usage is included in the response.
         if (json.path("stream").asBoolean(false)) {
@@ -39,7 +43,12 @@ public class OpenAiLLMRequest extends AbstractLLMRequest {
     public void setMaxOutputTokens(int maxOutputTokens) {
         // OpenAI deprecated max_tokens for newer models (o1, o3, gpt-5.x) in
         // favor of max_completion_tokens. Older models still accept max_tokens.
-        json.put("max_output_tokens", maxOutputTokens);
+        if (api == API.NORMAL) {
+            json.put("max_output_tokens", maxOutputTokens);
+        }
+        if (api == API.COMPLETIONS) {
+            json.put("max_completion_tokens", maxOutputTokens);
+        }
     }
 
     private long estimateChatCompletitions() {

@@ -1,22 +1,46 @@
-package com.predic8.membrane.core.interceptor.ai;
+package com.predic8.membrane.core.interceptor.ai.provider;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.json.JsonUtil;
 
-import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import java.util.List;
 
-public abstract class AbstractLLMRequest implements LLMRequest {
+import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
+import static java.util.Collections.emptyList;
+
+public abstract class AbstractLLMRequest extends AbstractLLMMessage implements LLMRequest {
 
     public static final String BEARER_PREFIX = "Bearer";
 
-    protected final Exchange exchange;
     protected ObjectNode json;
 
     public AbstractLLMRequest(Exchange exchange) {
-        this.exchange = exchange;
-        if (exchange.getRequest().isJSON())
+        super(exchange);
+
+        if (exchange.getRequest().isJSON()) {
             json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("No JSON object request."));
+
+            if (json.path("tools").isArray()) {
+                //System.out.println("Tools: " + json.path("tools"));
+            }
+        }
+    }
+
+    public List<String> getTools() {
+        var tools = getToolsNode();
+        if (tools == null)
+            return emptyList();
+        return tools.valueStream().map(n -> n.get("name").asText()).toList();
+    }
+
+    private ArrayNode getToolsNode() {
+        if (json == null)
+            return null;
+        if (json.path("tools").isArray())
+            return (ArrayNode) json.path("tools");
+        return null;
     }
 
     @Override

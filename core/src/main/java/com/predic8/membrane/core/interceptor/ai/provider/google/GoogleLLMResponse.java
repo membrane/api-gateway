@@ -1,10 +1,12 @@
-package com.predic8.membrane.core.interceptor.ai.provider;
+package com.predic8.membrane.core.interceptor.ai.provider.google;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.ai.AbstractLLMResponse;
-import com.predic8.membrane.core.interceptor.ai.LLMResponse;
+import com.predic8.membrane.core.interceptor.ai.provider.AbstractLLMResponse;
+import com.predic8.membrane.core.interceptor.ai.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.ai.store.Usage;
+import com.predic8.membrane.core.util.http.SSEParser;
 
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class GoogleLLMResponse extends AbstractLLMResponse {
@@ -26,5 +28,15 @@ public class GoogleLLMResponse extends AbstractLLMResponse {
                 outputTokens,
                 totalTokens
         );
+    }
+
+    @Override
+    public Set<String> getTerminalEvents() {
+        return Set.of("response.completed","response.incompleted");
+    }
+
+    @Override
+    public void process(SSEParser.SSEEvent event) {
+
     }
 }

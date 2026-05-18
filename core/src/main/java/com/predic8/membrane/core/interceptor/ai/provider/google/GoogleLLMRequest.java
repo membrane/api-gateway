@@ -1,9 +1,9 @@
-package com.predic8.membrane.core.interceptor.ai.provider;
+package com.predic8.membrane.core.interceptor.ai.provider.google;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.ai.AbstractLLMRequest;
+import com.predic8.membrane.core.interceptor.ai.provider.AbstractLLMRequest;
 
 public class GoogleLLMRequest extends AbstractLLMRequest {
 

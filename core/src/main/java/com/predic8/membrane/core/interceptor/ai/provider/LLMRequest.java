@@ -1,6 +1,8 @@
-package com.predic8.membrane.core.interceptor.ai;
+package com.predic8.membrane.core.interceptor.ai.provider;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import java.util.List;
 
 public interface LLMRequest {
 
@@ -15,5 +17,7 @@ public interface LLMRequest {
     long estimateInputTokens();
 
     ObjectNode getJson();
+
+    List<String> getTools();
 
 }

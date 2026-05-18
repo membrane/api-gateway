@@ -7,6 +7,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.ai.provider.LLMProvider;
+import com.predic8.membrane.core.interceptor.ai.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiStore;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiUser;
 import org.slf4j.Logger;
@@ -103,6 +104,8 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             }
         }
 
+        log.debug("Tools: {}", aiReq.getTools());
+
         setJsonBody(exc.getRequest(), aiReq.getJson());
         return CONTINUE;
     }
@@ -111,7 +114,6 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     public Outcome handleResponse(Exchange exc) {
 
         var aiRes = provider.getLLMResponse(exc, res -> {
-            System.out.println("Usage: " + res.getUsage());
             if (store != null) {
                 store.store(exc.getProperty(MEMBRANE_AI_USER, AiApiUser.class), res.getUsage());
             }

@@ -3,13 +3,15 @@ package com.predic8.membrane.core.util.http;
 import com.predic8.membrane.core.http.Chunk;
 import org.junit.jupiter.api.Test;
 
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class SSEParserTest {
 
     @Test
     void parsesSingleEvent() {
-        var parser = new SSEParser("done");
+        var parser = new SSEParser(Set.of("done"));
 
         assertFalse(parser.parse(chunk("""
                 event: message
@@ -27,7 +29,7 @@ class SSEParserTest {
 
     @Test
     void parsesMultilineData() {
-        var parser = new SSEParser("done");
+        var parser = new SSEParser(Set.of("done"));
 
         parser.parse(chunk("""
                 event: message
@@ -41,7 +43,7 @@ class SSEParserTest {
 
     @Test
     void parsesEventSplitAcrossChunks() {
-        var parser = new SSEParser("done");
+        var parser = new SSEParser(Set.of("done"));
 
         assertFalse(parser.parse(chunk("""
                 event: mes""")));
@@ -63,7 +65,7 @@ class SSEParserTest {
 
     @Test
     void returnsTrueWhenTerminalEventIsFound() {
-        var parser = new SSEParser("done");
+        var parser = new SSEParser(Set.of("done"));
 
         assertTrue(parser.parse(chunk("""
                 event: done
@@ -80,7 +82,7 @@ class SSEParserTest {
 
     @Test
     void ignoresChunksAfterTerminalEvent() {
-        var parser = new SSEParser("done");
+        var parser = new SSEParser(Set.of("done"));
 
         assertTrue(parser.parse(chunk("""
                 event: done
@@ -100,7 +102,7 @@ class SSEParserTest {
 
     @Test
     void ignoresCommentsAndUnknownFields() {
-        var parser = new SSEParser("done");
+        var parser = new SSEParser(Set.of("done"));
 
         parser.parse(chunk("""
                 : comment
@@ -119,7 +121,7 @@ class SSEParserTest {
 
     @Test
     void supportsCrLfLineEndings() {
-        var parser = new SSEParser("done");
+        var parser = new SSEParser(Set.of("done"));
 
         parser.parse(chunk("event: message\r\ndata: hello\r\n\r\n"));
 
@@ -131,7 +133,7 @@ class SSEParserTest {
 
     @Test
     void returnsUnmodifiableEventsList() {
-        var parser = new SSEParser("done");
+        var parser = new SSEParser(Set.of("done"));
 
         parser.parse(chunk("""
                 event: message

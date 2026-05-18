@@ -1,6 +1,11 @@
 package com.predic8.membrane.core.util.http;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.http.Chunk;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,6 +13,8 @@ import java.util.Optional;
 import java.util.Set;
 
 public final class SSEParser {
+
+    private static final Logger log = LoggerFactory.getLogger(SSEParser.class);
 
     private final Set<String> terminalEventNames;
     private final StringBuilder buffer = new StringBuilder();
@@ -19,14 +26,16 @@ public final class SSEParser {
 
     private boolean terminalFound;
 
-    public SSEParser(String... terminalEventNames) {
-        this.terminalEventNames = Set.of(terminalEventNames);
+    public SSEParser(Set<String> terminalEventNames) {
+        this.terminalEventNames = terminalEventNames;
     }
 
     public boolean parse(Chunk chunk) {
         if (terminalFound) {
             return true;
         }
+
+        log.debug("Parsing SSE chunk: {}", chunk);
 
         buffer.append(chunk.toString());
 
@@ -41,7 +50,7 @@ public final class SSEParser {
                 if (event != null) {
                     events.add(event);
 
-                    if (terminalEventNames.contains(event.name())) {
+                    if ((event.name() != null && terminalEventNames.contains(event.name())) || "[DONE]".equals(event.data())) {
                         terminalFound = true;
                         return true;
                     }
@@ -136,5 +145,18 @@ public final class SSEParser {
         return line;
     }
 
-    public record SSEEvent(String name, String data) {}
+    public record SSEEvent(String name, String data) {
+
+        private static final ObjectMapper om = new ObjectMapper();
+
+        public ObjectNode json() {
+            try {
+                return (ObjectNode) om.readTree(data);
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+    }
+
 }

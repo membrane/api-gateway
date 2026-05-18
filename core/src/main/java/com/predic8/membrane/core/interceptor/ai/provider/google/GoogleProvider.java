@@ -1,9 +1,10 @@
-package com.predic8.membrane.core.interceptor.ai.provider;
+package com.predic8.membrane.core.interceptor.ai.provider.google;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.ai.LLMRequest;
-import com.predic8.membrane.core.interceptor.ai.LLMResponse;
+import com.predic8.membrane.core.interceptor.ai.provider.LLMProvider;
+import com.predic8.membrane.core.interceptor.ai.provider.LLMRequest;
+import com.predic8.membrane.core.interceptor.ai.provider.LLMResponse;
 
 import java.util.function.Consumer;
 
