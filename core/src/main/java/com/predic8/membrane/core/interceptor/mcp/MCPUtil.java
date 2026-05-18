@@ -78,13 +78,29 @@ public final class MCPUtil {
         if (!(value instanceof Number number) || number.doubleValue() != Math.rint(number.doubleValue())) {
             throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be an integer");
         }
-        int parsed = number.intValue();
-        if (parsed < minimum || parsed > maximum) {
-            throw new InvalidToolArgumentsException(
-                    "Tool argument '" + name + "' must be between " + minimum + " and " + maximum
-            );
+        return validateIntRange(name, number.longValue(), minimum, maximum);
+    }
+
+    public static int getOptionalSizeArgument(MCPToolsCall call, String name, int defaultValue, int minimum, int maximum) {
+        Object value = call.getArgument(name);
+        if (value == null) {
+            return defaultValue;
         }
-        return parsed;
+        if (!(value instanceof Number number) || number.doubleValue() != Math.rint(number.doubleValue())) {
+            throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be an integer number of bytes");
+        }
+        return validateIntRange(name, number.longValue(), minimum, maximum);
+    }
+
+    public static long getRequiredLongArgument(MCPToolsCall call, String name) {
+        Object value = call.getArgument(name);
+        if (value == null) {
+            throw new InvalidToolArgumentsException("Tool argument '" + name + "' is required");
+        }
+        if (!(value instanceof Number number) || number.doubleValue() != Math.rint(number.doubleValue())) {
+            throw new InvalidToolArgumentsException("Tool argument '" + name + "' must be an integer");
+        }
+        return number.longValue();
     }
 
     public static boolean getOptionalBooleanArgument(MCPToolsCall call, String name, boolean defaultValue) {
@@ -122,8 +138,17 @@ public final class MCPUtil {
         }
     }
 
+    private static int validateIntRange(String name, long parsed, int minimum, int maximum) {
+        if (parsed < minimum || parsed > maximum) {
+            throw new InvalidToolArgumentsException(
+                    "Tool argument '" + name + "' must be between " + minimum + " and " + maximum
+            );
+        }
+        return (int) parsed;
+    }
+
     public static final class InvalidToolArgumentsException extends IllegalArgumentException {
-        private InvalidToolArgumentsException(String message) {
+        InvalidToolArgumentsException(String message) {
             super(message);
         }
     }
