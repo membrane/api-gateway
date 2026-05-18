@@ -83,14 +83,14 @@ public class OpenAPIPublisherInterceptorTest {
         assertNotNull(interceptor.apis.get("references-response-test-v1-0"));
     }
 
-    final static List<String> uiParameters() {
+    static List<String> uiParameters() {
         return new ArrayList<>() {{
             add(UI_OLD);
             add(OpenAPIPublisherInterceptor.PATH_UI);
         }};
     }
 
-    final static List<String> metaParameters() {
+    static List<String> metaParameters() {
         return new ArrayList<>() {{
             add(META_OLD);
             add(OpenAPIPublisherInterceptor.PATH);
