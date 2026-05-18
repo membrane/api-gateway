@@ -32,6 +32,7 @@ import static com.predic8.membrane.core.http.Response.accepted;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.rejectUnexpectedArguments;
+import static com.predic8.membrane.core.interceptor.mcp.McpSchemaBuilder.object;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.INITIALIZED;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.READY;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
@@ -58,11 +59,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(MembraneMCPServer.class);
     private static final int DEFAULT_MAX_EXCHANGES = 100;
-    private static final Map<String, Object> EMPTY_OBJECT_SCHEMA = Map.of(
-            "type", "object",
-            "properties", Map.of(),
-            "additionalProperties", false
-    );
+    private static final Map<String, Object> EMPTY_OBJECT_SCHEMA = object().additionalProperties(false).build();
 
     private final McpSessionManager sessionManager = new McpSessionManager();
     private final ExchangeToolSupport exchangeToolSupport = new ExchangeToolSupport(new McpPayloadSanitizer());
@@ -205,6 +202,12 @@ public class MembraneMCPServer extends AbstractInterceptor {
                         this::getExchanges
                 ))
                 .register(new McpToolDefinition(
+                        "getExchange",
+                        "Gets a single HTTP exchange by id with sanitized headers and optional bodies",
+                        exchangeToolSupport.getExchangeSchema(),
+                        this::getExchange
+                ))
+                .register(new McpToolDefinition(
                         "getStatistics",
                         "Gets Membrane runtime statistics",
                         EMPTY_OBJECT_SCHEMA,
@@ -242,6 +245,16 @@ public class MembraneMCPServer extends AbstractInterceptor {
         return query.maxResponseSize() == null
                 ? exchangeToolSupport.buildFullPageResponse(call, page, query.includeBodies())
                 : exchangeToolSupport.buildSizedPageResponse(call, page, query.includeBodies(), query.maxResponseSize());
+    }
+
+    private MCPToolsCallResponse getExchange(MCPToolsCall call, Exchange exc) {
+        ExchangeToolSupport.ExchangeLookupQuery query = exchangeToolSupport.parseLookupQuery(call);
+        return exchangeToolSupport.buildSingleExchangeResponse(
+                call,
+                query.id(),
+                getRouter().getExchangeStore().getExchangeById(query.id()),
+                query.includeBodies()
+        );
     }
 
     public int getMaxExchanges() {
