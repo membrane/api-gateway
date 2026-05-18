@@ -13,29 +13,33 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.transform.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.stream.StreamSource;
+import java.util.Map;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
-import static com.predic8.membrane.core.util.text.StringUtil.*;
-import static com.predic8.membrane.core.util.text.TextUtil.*;
+import static com.predic8.membrane.core.util.text.StringUtil.tail;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
+import static com.predic8.membrane.core.util.text.TextUtil.removeFinalChar;
 
 /**
  * @description <p>
@@ -75,7 +79,8 @@ public class XSLTInterceptor extends AbstractInterceptor {
         } catch (TransformerException e) {
             log.debug("", e);
             var cause = getRootCause(e);
-            if (cause.getMessage() != null && cause.getMessage().contains("not allowed in prolog")) {
+            // rolog matches Prolog and prolog
+            if (cause.getMessage() != null && cause.getMessage().contains("rolog")) {
                 user(router.getConfiguration().isProduction(), getDisplayName())
                         .title("Content not allowed in prolog of XML input.")
                         .detail("Check for extra characters before the XML declaration <?xml ... ?>")

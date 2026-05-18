@@ -14,21 +14,30 @@
 package com.predic8.membrane.core.interceptor.xml;
 
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import org.apache.commons.io.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.router.DefaultRouter;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.charset.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -93,6 +102,14 @@ public class Xml2JsonInterceptorTest {
     void validTestxml2jsonResponse() throws Exception {
         assertEquals(UMLAUTS,
                 getJsonRootFromStream(processThroughInterceptorResponse(loadResource("/xml/content-utf-8-encoding-utf-8.xml"))).get("bar").get("futf").asText());
+    }
+
+    @Test
+    void statusCodeOfResponseError() throws URISyntaxException {
+        var exc = get("/foo").buildExchange();
+        exc.setResponse(Response.ok().contentType(TEXT_XML).body("<unclosed>").build());
+        interceptor.handleResponse(exc);
+        assertEquals(500, exc.getResponse().getStatusCode());
     }
 
     private JsonNode getJsonRootFromStream(InputStream stream) throws IOException {
