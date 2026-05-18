@@ -3,22 +3,27 @@ package com.predic8.membrane.core.interceptor.mcp;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.mcp.MCPUtil.InvalidToolArgumentsException;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import com.predic8.membrane.core.jsonrpc.JSONRPCResponse;
-import com.predic8.membrane.core.mcp.*;
+import com.predic8.membrane.core.mcp.MCPInitialize;
+import com.predic8.membrane.core.mcp.MCPInitializeResponse;
+import com.predic8.membrane.core.mcp.MCPInitialized;
+import com.predic8.membrane.core.mcp.MCPPing;
+import com.predic8.membrane.core.mcp.MCPToolsCall;
+import com.predic8.membrane.core.mcp.MCPToolsCallResponse;
+import com.predic8.membrane.core.mcp.MCPToolsList;
+import com.predic8.membrane.core.mcp.MCPToolsListResponse;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import static com.predic8.membrane.annot.Constants.VERSION;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -26,12 +31,18 @@ import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.http.Response.accepted;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.interceptor.mcp.ExchangeUtils.matchesExchangeFilter;
-import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.*;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.rejectUnexpectedArguments;
+import static com.predic8.membrane.core.interceptor.mcp.McpSchemaBuilder.object;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.INITIALIZED;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.READY;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INTERNAL_ERROR;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_PARAMS;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_METHOD_NOT_FOUND;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_PARSE_ERROR;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.error;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.success;
 
 /**
  * @description MCP Server for Membrane. It allows querying Membrane's internal state and operation from an LLM
@@ -47,30 +58,25 @@ public class MembraneMCPServer extends AbstractInterceptor {
     static final String SESSION_HEADER = "Mcp-Session-Id";
 
     private static final Logger log = LoggerFactory.getLogger(MembraneMCPServer.class);
-
     private static final int DEFAULT_MAX_EXCHANGES = 100;
+    private static final Map<String, Object> EMPTY_OBJECT_SCHEMA = object().additionalProperties(false).build();
 
-    private static final Map<String, Object> EMPTY_OBJECT_SCHEMA = Map.of(
-            "type", "object",
-            "properties", Map.of(),
-            "additionalProperties", false
-    );
-    private final Map<String, McpSessionContext> sessionContexts = new ConcurrentHashMap<>();
-    private final McpPayloadSanitizer payloadSanitizer = new McpPayloadSanitizer();
+    private final McpSessionManager sessionManager = new McpSessionManager();
+    private final ExchangeToolSupport exchangeToolSupport = new ExchangeToolSupport(new McpPayloadSanitizer());
     private int maxExchanges = DEFAULT_MAX_EXCHANGES;
     private McpToolRegistry toolRegistry = buildToolRegistry();
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
+    public com.predic8.membrane.core.interceptor.Outcome handleRequest(Exchange exc) {
         try {
-            exc.setResponse(handleHttpRequest(exc));
+            exc.setResponse(handlePostJsonRpcRequest(exc));
             return RETURN;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Response handleHttpRequest(Exchange exc) throws IOException {
+    private Response handlePostJsonRpcRequest(Exchange exc) throws IOException {
         if (!exc.getRequest().isPOSTRequest()) {
             return statusCode(405)
                     .header("Allow", METHOD_POST)
@@ -88,7 +94,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
         }
 
         try {
-            return createResponse(processMcpRequest(request, exc));
+            return createResponse(dispatchMcpRequest(request, exc));
         } catch (IllegalArgumentException e) {
             return createResponse(badRequest(exc, request, ERR_INVALID_PARAMS, "Invalid params", e));
         } catch (Exception e) {
@@ -96,7 +102,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
         }
     }
 
-    private McpHttpResult processMcpRequest(JSONRPCRequest request, Exchange exc) throws Exception {
+    private McpHttpResult dispatchMcpRequest(JSONRPCRequest request, Exchange exc) throws Exception {
         return switch (request.getMethod()) {
             case MCPInitialize.METHOD -> processInitialize(request, exc);
             case MCPInitialized.METHOD -> processInitializedNotification(request, exc);
@@ -113,13 +119,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
             return protocolError(request, ERR_INVALID_REQUEST, "'initialize' must not include '" + SESSION_HEADER + "'");
         }
 
-        String sessionId = UUID.randomUUID().toString();
-        McpSessionContext sessionContext = new McpSessionContext();
-        if (!sessionContext.initialize(SUPPORTED_PROTOCOL_VERSION, initialize.getClientInfo())) {
-            return protocolError(request, ERR_INVALID_REQUEST, "'initialize' must be the first MCP request");
-        }
-        sessionContexts.put(sessionId, sessionContext);
-
+        String sessionId = sessionManager.createSession(initialize, SUPPORTED_PROTOCOL_VERSION);
         return httpOk(new MCPInitializeResponse(initialize)
                 .withProtocolVersion(SUPPORTED_PROTOCOL_VERSION)
                 .withCapabilities(getCapabilities())
@@ -129,9 +129,10 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult processInitializedNotification(JSONRPCRequest request, Exchange exc) {
         MCPInitialized.from(request);
-        McpSessionContext sessionContext = requireSession(request, exc);
+        String sessionId = getSessionId(exc);
+        McpSessionContext sessionContext = sessionManager.get(sessionId);
         if (sessionContext == null) {
-            return missingOrInvalidSession(request, exc);
+            return missingOrInvalidSession(request, sessionId);
         }
         if (!sessionContext.markReady()) {
             return protocolError(
@@ -146,24 +147,18 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult processPing(JSONRPCRequest request, Exchange exc) {
         MCPPing.from(request);
-        McpSessionContext sessionContext = requireSession(request, exc);
-        if (sessionContext == null) {
-            return missingOrInvalidSession(request, exc);
-        }
-        if (!sessionContext.isIn(INITIALIZED, READY)) {
-            return protocolError(request, ERR_INVALID_REQUEST, "'ping' is only allowed after 'initialize'");
+        McpHttpResult error = validateSession(request, exc, "'ping' is only allowed after 'initialize'", INITIALIZED, READY);
+        if (error != null) {
+            return error;
         }
         return httpOk(success(request.getId(), Map.of()));
     }
 
     private McpHttpResult processToolsList(JSONRPCRequest request, Exchange exc) {
         MCPToolsList toolsList = MCPToolsList.from(request);
-        McpSessionContext sessionContext = requireSession(request, exc);
-        if (sessionContext == null) {
-            return missingOrInvalidSession(request, exc);
-        }
-        if (!sessionContext.isIn(READY)) {
-            return protocolError(request, ERR_INVALID_REQUEST, "'tools/list' requires a completed MCP handshake");
+        McpHttpResult error = validateReadySession(request, exc, "tools/list");
+        if (error != null) {
+            return error;
         }
 
         return httpOk(MCPToolsListResponse.from(toolsList)
@@ -173,12 +168,9 @@ public class MembraneMCPServer extends AbstractInterceptor {
 
     private McpHttpResult processToolsCall(JSONRPCRequest request, Exchange exc) throws Exception {
         MCPToolsCall call = MCPToolsCall.from(request);
-        McpSessionContext sessionContext = requireSession(request, exc);
-        if (sessionContext == null) {
-            return missingOrInvalidSession(request, exc);
-        }
-        if (!sessionContext.isIn(READY)) {
-            return protocolError(request, ERR_INVALID_REQUEST, "'tools/call' requires a completed MCP handshake");
+        McpHttpResult error = validateReadySession(request, exc, "tools/call");
+        if (error != null) {
+            return error;
         }
 
         McpToolDefinition tool = toolRegistry.find(call.getName());
@@ -205,9 +197,15 @@ public class MembraneMCPServer extends AbstractInterceptor {
                 ))
                 .register(new McpToolDefinition(
                         "getExchanges",
-                        "Gets recent HTTP exchanges with sanitized headers, optional bodies, and request filters",
-                        getExchangesSchema(),
+                        "Gets recent HTTP exchanges with sanitized headers, optional bodies, request filters, and offsets for follow-up calls",
+                        exchangeToolSupport.getExchangesSchema(maxExchanges),
                         this::getExchanges
+                ))
+                .register(new McpToolDefinition(
+                        "getExchange",
+                        "Gets a single HTTP exchange by id with sanitized headers and optional bodies",
+                        exchangeToolSupport.getExchangeSchema(),
+                        this::getExchange
                 ))
                 .register(new McpToolDefinition(
                         "getStatistics",
@@ -238,47 +236,24 @@ public class MembraneMCPServer extends AbstractInterceptor {
     }
 
     private MCPToolsCallResponse getExchanges(MCPToolsCall call, Exchange exc) {
-        rejectUnexpectedArguments(call, Set.of("limit", "includeBodies", "host", "port", "pathPattern"));
+        ExchangeToolSupport.ExchangeQuery query = exchangeToolSupport.parseQuery(call, maxExchanges);
+        ExchangeToolSupport.ExchangePage page = exchangeToolSupport.findPage(
+                getRouter().getExchangeStore().getAllExchangesAsList(),
+                query
+        );
 
-        // do not inline: args must be validated fist
-        String host = getOptionalStringArgument(call, "host");
-        Integer port = getOptionalPort(call);
-        String pathPattern = getOptionalStringArgument(call, "pathPattern");
-        int limit = getOptionalIntArgument(call, "limit", maxExchanges, 1, maxExchanges);
-        boolean includeBodies = getOptionalBooleanArgument(call, "includeBodies", false);
-
-        List<AbstractExchange> filteredExchanges = Optional.ofNullable(getRouter().getExchangeStore().getAllExchangesAsList())
-                .orElse(List.of())
-                .stream()
-                .filter(exchange -> matchesExchangeFilter(exchange, host, port, pathPattern))
-                .toList();
-        List<AbstractExchange> exchanges = filteredExchanges.subList(Math.max(0, filteredExchanges.size() - limit), filteredExchanges.size());
-
-        return MCPToolsCallResponse.from(call)
-                .withJson(Map.of(
-                        "exchanges",
-                        exchanges.stream()
-                                .map(exchange -> MCPUtil.describeExchange(exchange, includeBodies, payloadSanitizer))
-                                .filter(Objects::nonNull)
-                                .toList()
-                ));
+        return query.maxResponseSize() == null
+                ? exchangeToolSupport.buildFullPageResponse(call, page, query.includeBodies())
+                : exchangeToolSupport.buildSizedPageResponse(call, page, query.includeBodies(), query.maxResponseSize());
     }
 
-    private static @Nullable Integer getOptionalPort(MCPToolsCall call) {
-        return call.getArgument("port") == null ? null : getOptionalIntArgument(call, "port", -1, 1, 65535);
-    }
-
-    private Map<String, Object> getExchangesSchema() {
-        return Map.of(
-                "type", "object",
-                "properties", Map.of(
-                        "limit", Map.of("type", "integer", "minimum", 1, "maximum", maxExchanges),
-                        "includeBodies", Map.of("type", "boolean"),
-                        "host", Map.of("type", "string"),
-                        "port", Map.of("type", "integer", "minimum", 1, "maximum", 65535),
-                        "pathPattern", Map.of("type", "string", "description", "Matches by prefix or regex")
-                ),
-                "additionalProperties", false
+    private MCPToolsCallResponse getExchange(MCPToolsCall call, Exchange exc) {
+        ExchangeToolSupport.ExchangeLookupQuery query = exchangeToolSupport.parseLookupQuery(call);
+        return exchangeToolSupport.buildSingleExchangeResponse(
+                call,
+                query.id(),
+                getRouter().getExchangeStore().getExchangeById(query.id()),
+                query.includeBodies()
         );
     }
 
@@ -297,6 +272,22 @@ public class MembraneMCPServer extends AbstractInterceptor {
         }
         this.maxExchanges = maxExchanges;
         toolRegistry = buildToolRegistry();
+    }
+
+    private @Nullable McpHttpResult validateReadySession(JSONRPCRequest request, Exchange exc, String methodName) {
+        return validateSession(request, exc, "'" + methodName + "' requires a completed MCP handshake", READY);
+    }
+
+    private @Nullable McpHttpResult validateSession(JSONRPCRequest request, Exchange exc, String invalidStateMessage, McpSessionContext.McpSessionState... allowedStates) {
+        String sessionId = getSessionId(exc);
+        McpSessionContext sessionContext = sessionManager.get(sessionId);
+        if (sessionContext == null) {
+            return missingOrInvalidSession(request, sessionId);
+        }
+        if (!sessionContext.isIn(allowedStates)) {
+            return protocolError(request, ERR_INVALID_REQUEST, invalidStateMessage);
+        }
+        return null;
     }
 
     private McpHttpResult badRequest(Exchange exc, @Nullable JSONRPCRequest request, int code, String message, Exception exception) {
@@ -325,16 +316,7 @@ public class MembraneMCPServer extends AbstractInterceptor {
         );
     }
 
-    private @Nullable McpSessionContext requireSession(JSONRPCRequest request, Exchange exc) {
-        String sessionId = getSessionId(exc);
-        if (sessionId == null) {
-            return null;
-        }
-        return sessionContexts.get(sessionId);
-    }
-
-    private McpHttpResult missingOrInvalidSession(JSONRPCRequest request, Exchange exc) {
-        String sessionId = getSessionId(exc);
+    private McpHttpResult missingOrInvalidSession(JSONRPCRequest request, @Nullable String sessionId) {
         if (sessionId == null) {
             return new McpHttpResult(
                     400,
