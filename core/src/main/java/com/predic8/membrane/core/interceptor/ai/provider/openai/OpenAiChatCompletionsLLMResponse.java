@@ -45,6 +45,6 @@ public class OpenAiChatCompletionsLLMResponse extends AbstractLLMResponse {
     public void process(SSEParser.SSEEvent e) {
         log.debug("Data: {}", e.data());
         var event = AbstractLLMEvent.create(e);
-        System.out.println(event);
+        log.debug("Event: {}", event);
     }
 }

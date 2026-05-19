@@ -47,6 +47,6 @@ public class OpenAiLLMResponsesAPIResponse extends AbstractLLMResponse {
         log.debug("Event: {}", e.name());
         log.debug("Data: {}", e.data());
         var event = AbstractLLMEvent.create(e);
-        System.out.println(event);
+        log.debug("Event: {}", event);
     }
 }
