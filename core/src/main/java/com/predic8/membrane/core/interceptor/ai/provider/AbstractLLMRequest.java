@@ -33,6 +33,13 @@ public abstract class AbstractLLMRequest extends AbstractLLMMessage implements L
         if (tools == null)
             return emptyList();
         return tools.valueStream().map(n -> {
+            String type;
+            if (n.has("type")) {
+                type = n.get("type").asText();
+                if (!"function".equals(type))
+                    return null;
+            }
+
             // Chat completion
             if (n.has("function")) {
                 return n.get("function").get("name").asText();

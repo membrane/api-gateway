@@ -17,7 +17,14 @@ public class OpenAIProvider implements LLMProvider {
     }
 
     @Override
-    public LLMResponse getLLMResponse(Exchange request, Consumer<LLMResponse> postProcessor) {
-        return new OpenAiLLMResponse(request, postProcessor);
+    public LLMResponse getLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
+        if (isResponsesApi(exchange)) {
+            return new OpenAiLLMResponsesAPIResponse(exchange,postProcessor);
+        }
+        return new OpenAiChatCompletionsLLMResponse(exchange, postProcessor);
+    }
+
+    static boolean isResponsesApi(Exchange exchange) {
+        return exchange.getRequest().getUri().startsWith("/v1/responses");
     }
 }

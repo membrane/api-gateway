@@ -27,7 +27,10 @@ public class MessageDelta {
             md.cacheCreationInputTokens = u.path("cache_creation_input_tokens").asInt(0);
             md.cacheReadInputTokens = u.path("cache_read_input_tokens").asInt(0);
 
-            md.usage = new Usage(md.inputTokens, md.outputTokens, md.inputTokens + md.outputTokens);
+            // Cache tokens (cache_creation_input_tokens and cache_read_input_tokens) are billable according to Claude's pricing model
+            int effectiveInputTokens = md.inputTokens + md.cacheCreationInputTokens + md.cacheReadInputTokens;
+            md.usage = new Usage(effectiveInputTokens,md.outputTokens, effectiveInputTokens + md.outputTokens);
+
         }
 
         return md;

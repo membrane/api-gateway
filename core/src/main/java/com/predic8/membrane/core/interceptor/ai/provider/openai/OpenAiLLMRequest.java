@@ -16,7 +16,8 @@ public class OpenAiLLMRequest extends AbstractLLMRequest {
         // Make sure that when streaming is enabled, the usage is included in the response.
         if (json.path("stream").asBoolean(false)) {
             if (isChatCompletionsRequest(exchange)) {
-                json.putObject("stream_options").put("include_usage", true);
+                var streamOptions = json.withObject("/stream_options");
+                streamOptions.put("include_usage", true);
             }
         }
     }

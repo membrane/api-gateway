@@ -74,8 +74,11 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             log.debug("User: {}", user);
             if (exc.getRequest().isPOSTRequest()) {
                 inputTokens = aiReq.estimateInputTokens();
+                log.debug("Estimated input tokens: {}", inputTokens);
                 var remaining = store.checkLimit(user, inputTokens, maxOutputTokens);
+                log.debug("Remaining tokens: {}", remaining);
                 if (remaining <= 0) {
+                    log.info("Token limit exceeded: {}/{}", inputTokens, maxOutputTokens);
                     exc.setResponse(tokenLimitExceeded());
                     return RETURN;
                 }
@@ -143,7 +146,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
     @Override
     public String getDisplayName() {
-        return "OpenAI API";
+        return "LLM Gateway";
     }
 
     public int getMaxOutputTokens() {

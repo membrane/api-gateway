@@ -26,9 +26,9 @@ public class ResponsesApiEvent extends AbstractLLMEvent {
                 ObjectNode on = (ObjectNode) item;
 
                 if ("function_call".equals(on.path("type").asText())) {
-                    log.info("Function call: {} with {}",
+                    log.info("Function call: {} with {} params",
                             on.path("name").asText(),
-                            on.path("arguments").asText());
+                            on.path("arguments").size());
                 }
             }
         }
