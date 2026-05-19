@@ -2,35 +2,30 @@
 #
 # Tutorial: Orchestration
 #
-# Shows how to create an API that combines two backend calls into one API.
-# 1) Fetch a book by id.
-# 2) Use the author key from the book payload to fetch the author.
+# Shows how to create an API that combines multiple backend calls into one API.
+# 1) Fetch the newest product from fruitshop.
+# 2) Create a new product with a copy of this product and a fixed price of 5.
 #
 # Try:
-#    curl localhost:2000/books/OL29474405M
-#    curl localhost:2000/books/OL26333978M
+#    curl -X POST localhost:2000/products/latest/copy
 
 api:
   port: 2000
   path:
-    uri: /books/{id}
+    uri: /products/latest/copy
   flow:
     - request:
         - call:
-            url: https://openlibrary.org/books/${pathParam.id}.json
-        - setProperty:
-            name: title
-            value: ${$.title}
-            language: jsonpath
-        - call:
-            url: https://openlibrary.org${$.authors[0].key}.json
-            language: jsonpath
+            url: https://api.predic8.de/shop/v2/products?sort=id&order=desc&limit=1
         - template:
             contentType: application/json
             src: |
               {
-                "title": ${property.title},
-                "author": ${jsonPath('$.name')}
+                "name": ${jsonPath('$.products[0].name') + ' Copy'},
+                "price": 5
               }
+        - call:
+            method: POST
+            url: https://api.predic8.de/shop/v2/products
     - return:
-        status: 200
+        status: 201
