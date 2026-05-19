@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.json.JsonUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -11,6 +13,8 @@ import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static java.util.Collections.emptyList;
 
 public abstract class AbstractLLMRequest extends AbstractLLMMessage implements LLMRequest {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractLLMRequest.class);
 
     public static final String BEARER_PREFIX = "Bearer";
 
@@ -21,10 +25,9 @@ public abstract class AbstractLLMRequest extends AbstractLLMMessage implements L
 
         if (exchange.getRequest().isJSON()) {
             json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("No JSON object request."));
-
-            if (json.path("tools").isArray()) {
-                //System.out.println("Tools: " + json.path("tools"));
-            }
+        } else {
+            log.info("Request is not JSON:");
+            throw new RuntimeException("Request is not JSON.");
         }
     }
 
