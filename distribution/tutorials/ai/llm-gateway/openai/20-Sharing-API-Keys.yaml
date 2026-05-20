@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.2.1.json
 #
-# Tutorial: Sharing LLM API Keys
+# Tutorial: Sharing LLM API Keys (OpenAI)
 #
 # Replace <<API_KEY>> with your OpenAI API key.
 #

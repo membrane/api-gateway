@@ -86,7 +86,9 @@ public class SimpleAiApiStore implements AiApiStore {
     }
 
     public List<AiApiUser> getUsers() {
-        return users;
+        synchronized (lock) {
+            return users;
+        }
     }
 
     public long getLimitResetPeriod() {

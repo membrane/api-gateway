@@ -12,7 +12,7 @@ public class OpenAiErrorCreator extends AbstractLLMErrorCreator {
 
     @Override
     public Response invalidRequestError(String message) {
-        return Response.badRequest().json(envelope(message, "invalid_request_error", null, "bad_request")).build();
+        return badRequest().json(envelope(message, "invalid_request_error", null, "bad_request")).build();
     }
 
     public Response tokenLimitExceeded(long tokenRequired, long tokenRemaining, long tokenResetInSeconds) {
@@ -40,7 +40,7 @@ public class OpenAiErrorCreator extends AbstractLLMErrorCreator {
                         "invalid_authentication")).build();
     }
 
-    public Response contextLengthExceeded(long maxTokens, long estimatedTokens) {
+    public Response inputTokensExceeded(long maxTokens, long estimatedTokens) {
         return badRequest().json(envelope(
                 """
                         This model's maximum context length is %d tokens.

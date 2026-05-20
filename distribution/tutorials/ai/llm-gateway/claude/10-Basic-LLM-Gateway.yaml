@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.1.json
+#
+# Tutorial: Basic LLM Gateway (Antropic Claude)
+#
+# Replace <<API_KEY>> with your OpenAI API key.
+#
+# 1. Hello World
+#     curl -v -H "Content-Type: application/json" -H "x-api-key: <<API_KEY>>" -H "anthropic-version: 2023-06-01" -d @simple.json http://localhost:2000/v1/messages
+#     Check the response and the Membrane logs.
+#
+# 2. Exceed the input token limit
+#     curl -H "Content-Type: application/json" -H "Authorization: Bearer <<API_KEY>>" -d @max-input.json http://localhost:2000/v1/responses
+#     Returns an error because the request exceeds maxInputTokens.
+#
+# 3. Exceed the output token limit
+#    curl -H "Content-Type: application/json" -H "Authorization: Bearer <<API_KEY>>" -d @max-output.json http://localhost:2000/v1/responses
+#    Check the Membrane log for limiting max tokens to 200
+
+api:
+  port: 2000
+  flow:
+    - llmGateway:
+        claude: {}
+        maxInputTokens: 100
+        maxOutputTokens: 200
+  target:
+    url: https://api.anthropic.com

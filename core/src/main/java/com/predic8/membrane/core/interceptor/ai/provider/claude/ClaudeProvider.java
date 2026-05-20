@@ -28,6 +28,6 @@ public class ClaudeProvider implements LLMProvider {
 
     @Override
     public LLMErrorCreator getErrorCreator() {
-        return null;
+        return new ClaudeErrorCreator();
     }
 }

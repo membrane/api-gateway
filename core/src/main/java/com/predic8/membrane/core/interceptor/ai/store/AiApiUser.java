@@ -13,7 +13,7 @@ public class AiApiUser {
     private String name;
     private String apiKey;
 
-    private long tokens = MAX_VALUE;
+    private long tokens = 0;
 
     private final AtomicLong tokensUsedInPeriod = new AtomicLong();
 
@@ -35,7 +35,7 @@ public class AiApiUser {
      * @return The estimated number of tokens that the user has left after this request
      */
     public long checkLimit(long tokensNeededForRequest) {
-        if (tokens == MAX_VALUE)
+        if (tokens == 0)
             return MAX_VALUE;
         return this.tokens - tokensUsedInPeriod.get() - tokensNeededForRequest;
     }

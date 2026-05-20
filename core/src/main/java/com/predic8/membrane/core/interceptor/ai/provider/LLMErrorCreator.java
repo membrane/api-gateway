@@ -14,5 +14,11 @@ public interface LLMErrorCreator {
 
     Response authenticationFailed();
 
-    Response contextLengthExceeded(long maxTokens, long estimatedTokens);
+    /**
+     *
+     * @param maxTokens
+     * @param estimatedTokens
+     * @return
+     */
+    Response inputTokensExceeded(long maxTokens, long estimatedTokens);
 }

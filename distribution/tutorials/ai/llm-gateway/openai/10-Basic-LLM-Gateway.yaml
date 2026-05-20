@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.1.json
+#
+# Tutorial: Basic LLM Gateway (OpenAI)
+#
+# Replace <<API_KEY>> with your OpenAI API key.
+#
+# 1. Hello World
+#     curl -H "Content-Type: application/json" -H "Authorization: Bearer <<API_KEY>>" -d @simple.json http://localhost:2000/v1/responses
+#
+# 2. Exceed the input token limit
+#     curl -H "Content-Type: application/json" -H "Authorization: Bearer <<API_KEY>>" -d @max-input.json http://localhost:2000/v1/responses
+#     Returns an error because the request exceeds maxInputTokens.
+#
+# 3. Exceed the output token limit
+#     curl -H "Content-Type: application/json" -H "Authorization: Bearer <<API_KEY>>" -d @max-output.json http://localhost:2000/v1/responses
+#     Check the max_output_tokens field in the response and the Membrane log
+
+api:
+  port: 2000
+  flow:
+    - llmGateway:
+        openai: {}
+        maxInputTokens: 100
+        maxOutputTokens: 200
+  target:
+    url: https://api.openai.com

@@ -116,7 +116,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         if (maxInputTokens != 0) {
             if (inputTokens > maxInputTokens) {
                 log.info("Input tokens {} exceed the limit of {}.", inputTokens, maxInputTokens);
-                exc.setResponse(errorCreator.contextLengthExceeded(maxInputTokens, inputTokens));
+                exc.setResponse(errorCreator.inputTokensExceeded(maxInputTokens, inputTokens));
                 return RETURN;
             }
         }

@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.ai.provider.claude;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.ai.provider.AbstractLLMResponse;
 import com.predic8.membrane.core.interceptor.ai.provider.LLMResponse;
@@ -57,9 +58,30 @@ public class ClaudeLLMResponse extends AbstractLLMResponse {
         }
     }
 
+    Usage extractUsage() {
+
+        var usage = json.path("usage");
+
+        var inputTokens = getInputTokens(usage);
+        var outputTokens = getOutputTokens(usage);
+        var totalTokens = inputTokens + outputTokens;
+        return new Usage(inputTokens, outputTokens, totalTokens);
+
+    }
+
+    protected static int getOutputTokens(JsonNode usage) {
+        return usage.path("output_tokens").asInt(0);
+    }
+
+    protected static int getInputTokens(JsonNode usage) {
+        return usage.path("input_tokens").asInt(0);
+    }
+
     @Override
     public Usage getUsage() {
-        return usage;
+        if (usage != null)
+            return usage;
+        return usage = extractUsage();
     }
 
 }
