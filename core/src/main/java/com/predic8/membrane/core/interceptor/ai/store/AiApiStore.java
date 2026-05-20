@@ -19,8 +19,8 @@ public interface AiApiStore {
 
     /**
      * Checks if the user has enough tokens to make the request.
-     * @param user
-     * @return
+     * @param user The user to check
+     * @return Estimated number of tokens that the user has left after this request
      */
     long checkLimit(AiApiUser user, long inputTokens, long outputTokens);
 

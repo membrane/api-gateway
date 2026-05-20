@@ -13,8 +13,12 @@ public class AiApiUser {
 
     private long tokens;
 
-    private AtomicLong tokensUsedInPeriod = new AtomicLong();
+    private final AtomicLong tokensUsedInPeriod = new AtomicLong();
 
+    /**
+     * Updates the store with the number of tokens used in this call
+     * @param usage The number of tokens used
+     */
     public void addTokensUsedInPeriod(Usage usage) {
         tokensUsedInPeriod.addAndGet(usage.totalTokens());
     }
@@ -23,10 +27,11 @@ public class AiApiUser {
         tokensUsedInPeriod.set(0);
     }
 
-    public long getTokensUsedInPeriod() {
-        return tokensUsedInPeriod.get();
-    }
-
+    /**
+     * Checks if the user has enough tokens to make the request.
+     * @param tokensNeededForRequest The number of tokens that the user needs to make the request
+     * @return The estimated number of tokens that the user has left after this request
+     */
     public long checkLimit(long tokensNeededForRequest) {
         return this.tokens - tokensUsedInPeriod.get() - tokensNeededForRequest;
     }

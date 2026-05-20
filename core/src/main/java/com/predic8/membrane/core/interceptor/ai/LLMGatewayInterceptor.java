@@ -164,8 +164,8 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @param apiKey
      * @description API key for the LLM provider. Specify here the API key from OpenAI or Anthropic.
+     * @param apiKey LLM provider API key
      */
     @MCAttribute
     public void setApiKey(String apiKey) {
@@ -197,9 +197,9 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @param maxOutputTokens
      * @description Maximum number of tokens the LLM should use to generate a response. This is just a hint that the gateway
      * sends to the LLM provider. The provider may use a different limit.
+     * @param maxOutputTokens Maximum number of tokens the LLM should use to generate a response.
      * @default 0 (unlimited)
      */
     @MCAttribute
@@ -212,9 +212,9 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @param maxInputTokens
      * @description Restricts token usage for the input. The size of the input is estimated by gateway based on the request size.
      * Actual token usage may be deviate from this value.
+     * @param maxInputTokens Maximum number of tokens that a request can use.
      */
     @MCAttribute
     public void setMaxInputTokens(int maxInputTokens) {
@@ -227,8 +227,8 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
     /**
      * @desciption Restricts the models that can be used by the gateway.
-     * @param models
      * @default null (no restriction)
+     * @param models List of models that can be used by the gateway.
      */
     @MCAttribute
     public void setModels(List<String> models) {

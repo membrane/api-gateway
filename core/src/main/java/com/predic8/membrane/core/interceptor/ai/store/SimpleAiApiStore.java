@@ -54,9 +54,9 @@ public class SimpleAiApiStore implements AiApiStore {
         synchronized (lock) {
             var now = now();
             if (nextReset == null || now.isAfter(nextReset)) {
-
                 nextReset = now.plusSeconds(limitResetPeriod);
                 log.info("Resetting AI API token usage limit.");
+                users.forEach(AiApiUser::resetTokensUsedInPeriod);
             }
         }
 
