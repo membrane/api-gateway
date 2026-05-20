@@ -31,21 +31,16 @@ public class OpenAiLLMChatCompletionsRequest extends AbstractOpenAiLLMRequest {
         var tools = getToolsNode();
         if (tools == null)
             return emptyList();
-        return tools.valueStream().map(n -> {
-            String type;
-            if (n.has("type")) {
-                type = n.get("type").asText();
-                if (!"function".equals(type))
-                    return null;
-            }
-
-            return n.get("function").get("name").asText();
-        }).toList();
+        return tools.valueStream()
+                .filter(n -> "function".equals(n.path("type").asText("")))
+                .map(n -> n.path("function").path("name").asText(""))
+                .filter(name -> !name.isEmpty())
+                .toList();
     }
 
     @Override
     public long getRequestedMaxOutputTokens() {
-        return json.path("max_tokens").asLong(0);
+        return json.path("max_completion_tokens").asLong(0);
     }
 
 }

@@ -7,7 +7,9 @@ import com.predic8.membrane.annot.MCElement;
 public class AiApiUser {
 
     private String name;
-    private String token;
+    private String apiKey;
+
+    private long tokens;
 
     public String getName() {
         return name;
@@ -22,13 +24,33 @@ public class AiApiUser {
         this.name = name;
     }
 
-    public String getToken() {
-        return token;
+    public String getApiKey() {
+        return apiKey;
     }
 
+    /**
+     * @description API key to authenticate the user at the llm gateway
+     * @default (not set)
+     * @param apikey to authenticate the user
+     */
     @MCAttribute()
-    public void setToken(String token) {
-        this.token = token;
+    public void setApiKey(String apikey) {
+        this.apiKey = apikey;
+    }
+
+
+    public long getTokens() {
+        return tokens;
+    }
+
+    /**
+     * @description Number of tokens that the user has available within the current period.
+     * @default 0 (no limit)
+     * @param tokens available tokens
+     */
+    @MCAttribute
+    public void setTokens(long tokens) {
+        this.tokens = tokens;
     }
 
     @Override

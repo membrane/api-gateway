@@ -9,6 +9,7 @@ import javax.annotation.concurrent.GuardedBy;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.lang.Long.MAX_VALUE;
 import static java.time.Instant.now;
 
 /**
@@ -19,7 +20,7 @@ public class AiApiLimit {
 
     private static final Logger log = LoggerFactory.getLogger(AiApiLimit.class);
 
-    private int maxTokens;
+    private long maxTokens = MAX_VALUE;
     private int period;
 
     private final Object lock = new Object();
@@ -37,6 +38,9 @@ public class AiApiLimit {
      * @return Estimated remaining tokens after this call.
      */
     public long checkLimit(long tokensForNextRequest) {
+        if (maxTokens == MAX_VALUE) {
+            return MAX_VALUE;
+        }
         synchronized (lock) {
             Instant now = now();
             if (nextReset == null || now.isAfter(nextReset)) {
@@ -56,17 +60,17 @@ public class AiApiLimit {
         }
     }
 
-    public int getMaxTokens() {
+    public long getMaxTokens() {
         return maxTokens;
     }
 
     /**
      * @description Maximum number of tokens that can be used within a period.
-     * @default 0 (no limit)
+     * @default MAX_VALUE (no limit)
      * @param maxTokens Maximum number of tokens
      */
     @MCAttribute
-    public void setMaxTokens(int maxTokens) {
+    public void setMaxTokens(long maxTokens) {
         this.maxTokens = maxTokens;
     }
 

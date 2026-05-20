@@ -93,9 +93,16 @@ public class JsonUtil {
         return FACTORY.textNode(value);
     }
 
-    public static Optional<ObjectNode> getJsonObject(String s) {
+    /**
+     * Get JSON object from message body.
+     * The caller must deal with the possibility that the body is not a JSON object or
+     * there are parsing errors.
+     * @param jsonString String with a JSON body
+     * @return JSON object or empty if the body is not a JSON object or there are parsing errors
+     */
+    public static Optional<ObjectNode> getJsonObject(String jsonString) {
         try {
-            var node = om.readTree(s);
+            var node = om.readTree(jsonString);
             if (node instanceof ObjectNode on) {
                 return Optional.of(on);
             }
@@ -106,7 +113,13 @@ public class JsonUtil {
         return empty();
     }
 
-
+    /**
+     * Get JSON object from message body.
+     * The caller must deal with the possibility that the body is not a JSON object or
+     * there are parsing errors.
+     * @param msg With a JSON body
+     * @return JSON object or empty if the body is not a JSON object or there are parsing errors
+     */
     public static Optional<ObjectNode> getJsonObject(Message msg) {
        return getJsonObjectFromSteam(msg.getBodyAsStreamDecoded());
     }
@@ -117,9 +130,9 @@ public class JsonUtil {
             if (node instanceof ObjectNode on) {
                 return Optional.of(on);
             }
-            log.info("Expected JSON Object but got: {}",node.getNodeType());
+            log.debug("Expected JSON Object but got: {}",node.getNodeType());
         } catch (Exception e) {
-            log.info("Error reading JSON: {}", e.getMessage());
+            log.debug("Error reading JSON: {}", e.getMessage());
         }
         return empty();
     }

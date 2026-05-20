@@ -16,15 +16,11 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
         var tools = getToolsNode();
         if (tools == null)
             return emptyList();
-        return tools.valueStream().map(n -> {
-            String type;
-            if (n.has("type")) {
-                type = n.get("type").asText();
-                if (!"function".equals(type))
-                    return null;
-            }
-            return n.get("name").asText();
-        }).toList();
+        return tools.valueStream()
+                .filter(n -> "function".equals(n.path("type").asText("")))
+                .map(n -> n.path("name").asText(""))
+                .filter(name -> !name.isEmpty())
+                .toList();
     }
 
     @Override
@@ -36,6 +32,6 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
 
     @Override
     public void setMaxOutputTokens(int maxOutputTokens) {
-            json.put("max_output_tokens", maxOutputTokens);
+        json.put("max_output_tokens", maxOutputTokens);
     }
 }

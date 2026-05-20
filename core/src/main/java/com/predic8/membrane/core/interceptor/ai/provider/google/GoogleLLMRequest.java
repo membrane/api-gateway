@@ -113,7 +113,7 @@ public class GoogleLLMRequest extends AbstractLLMRequest {
 
     @Override
     public void setMaxOutputTokens(int maxOutputTokens) {
-        getGenerationConfig().put("max_output_tokens", maxOutputTokens);
+        getGenerationConfig().put("maxOutputTokens", maxOutputTokens);
     }
 
     private ObjectNode getGenerationConfig() {

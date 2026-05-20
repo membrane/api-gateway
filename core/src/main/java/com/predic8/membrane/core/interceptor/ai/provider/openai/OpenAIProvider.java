@@ -15,12 +15,9 @@ import java.util.function.Consumer;
 @MCElement( name="openai")
 public class OpenAIProvider implements LLMProvider {
 
-    boolean isResponsesAPI;
-
     @Override
     public LLMRequest getLLMRequest(Exchange exchange) {
-        isResponsesAPI = isResponsesApi(exchange);
-        if (isResponsesAPI) {
+        if (isResponsesApi(exchange)) {
             return new OpenAiLLMResponsesRequest(exchange);
         }
 
@@ -29,7 +26,7 @@ public class OpenAIProvider implements LLMProvider {
 
     @Override
     public LLMResponse getLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
-        if (isResponsesAPI) {
+        if (isResponsesApi(exchange)) {
             return new OpenAiLLMResponsesResponse(exchange,postProcessor);
         }
         return new OpenAiChatCompletionsLLMResponse(exchange, postProcessor);

@@ -108,7 +108,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             aiReq.setApiKey(apiKey);
         }
 
-        log.debug("max-tokens from client: {}", aiReq.getModel());
+        log.debug("Requested model: {}", aiReq.getModel());
 
         var requestedMaxOutputTokens = aiReq.getRequestedMaxOutputTokens();
 
@@ -224,8 +224,8 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
+     * @desciption Restricts the models that can be used by the gateway.
      * @param models
-     * @desciptions Restricts the models that can be used by the gateway.
      * @default null (no restriction)
      */
     @MCAttribute
