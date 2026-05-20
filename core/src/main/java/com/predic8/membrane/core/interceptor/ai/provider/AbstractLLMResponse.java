@@ -64,7 +64,7 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
         });
     }
 
-    protected void processTerminalEvent(SSEParser.SSEEvent terminal) {};
+    protected void processTerminalEvent(SSEParser.SSEEvent terminal) {}
 
     @Override
     public boolean isError() {
