@@ -21,7 +21,20 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.ai.LLMApiUtil.*;
 import static com.predic8.membrane.core.util.json.JsonUtil.setJsonBody;
 
-@MCElement(name = "aiGateway")
+/*
+ * @description <p>
+ * API Gateway for Large Language Models (LLMs).
+ * </p>
+ * <b>Features:</b>
+ * <ul>
+ *   <li>Sharing an API key between multiple users</li>
+ *   <li>Enforcing token limits</li>
+ *   <li>Logging LLM usage</li>
+ * </ul>
+ * </p>
+ * @topic 10. AI
+ */
+@MCElement(name = "llmGateway")
 public class LLMGatewayInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(LLMGatewayInterceptor.class);
@@ -50,7 +63,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         try {
             aiReq = provider.getLLMRequest(exc);
         } catch (Exception e) {
-            user(router.getConfiguration().isProduction(),"AI Gateway")
+            user(router.getConfiguration().isProduction(), "AI Gateway")
                     .title("Invalid request")
                     .detail("Error parsing request: " + e.getMessage())
                     .buildAndSetResponse(exc);
@@ -62,19 +75,22 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        long inputTokens = 0;
-
+        AiApiUser user = null;
         if (store != null) {
             var opt = store.getUser(aiReq.getApiKey());
             if (opt.isEmpty()) {
                 exc.setResponse(authenticationFailed());
                 return RETURN;
             }
-            var user = opt.get();
+            user = opt.get();
             log.debug("User: {}", user);
-            if (exc.getRequest().isPOSTRequest()) {
-                inputTokens = aiReq.estimateInputTokens();
-                log.debug("Estimated input tokens: {}", inputTokens);
+        }
+
+        long inputTokens = 0;
+        if (exc.getRequest().isPOSTRequest()) {
+            inputTokens = aiReq.estimateInputTokens();
+            log.debug("Estimated input tokens: {}", inputTokens);
+            if (store != null) {
                 var remaining = store.checkLimit(user, inputTokens, maxOutputTokens);
                 log.debug("Remaining tokens: {}", remaining);
                 if (remaining <= 0) {
@@ -83,18 +99,27 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
                     return RETURN;
                 }
             }
-            exc.setProperty(MEMBRANE_AI_USER, user);
+        }
+        exc.setProperty(MEMBRANE_AI_USER, user);
+
+
+        // If APIKey is specified, use that for the LLM. Overwrites keys from the client
+        if (apiKey != null) {
+            aiReq.setApiKey(apiKey);
         }
 
-        // TODO if no apiKey in config => use key from client
-        aiReq.setApiKey(apiKey);
+        log.debug("max-tokens from client: {}", aiReq.getModel());
 
-        if (maxOutputTokens != 0) {
+        var requestedMaxOutputTokens = aiReq.getRequestedMaxOutputTokens();
+
+        if (maxOutputTokens != 0 && requestedMaxOutputTokens > maxOutputTokens) {
+            log.info("Requested max. output tokens {} exceed the limit. Setting limit to {}.",requestedMaxOutputTokens, maxOutputTokens);
             aiReq.setMaxOutputTokens(maxOutputTokens);
         }
 
         if (maxInputTokens != 0) {
             if (inputTokens > maxInputTokens) {
+                log.info("Input tokens {} exceed the limit of {}.",inputTokens, maxInputTokens);
                 exc.setResponse(contextLengthExceeded(maxInputTokens, inputTokens));
                 return RETURN;
             }
@@ -108,7 +133,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             }
         }
 
-        log.debug("Tools: {}", aiReq.getTools());
+        log.debug("Agent provides the tools: {}", aiReq.getTools());
 
         setJsonBody(exc.getRequest(), aiReq.getJson());
         return CONTINUE;
@@ -117,9 +142,15 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleResponse(Exchange exc) {
 
-        var aiRes = provider.getLLMResponse(exc, res -> {
+        provider.getLLMResponse(exc, res -> {
+            var user = exc.getProperty(MEMBRANE_AI_USER, AiApiUser.class);
+            if (log.isInfoEnabled() && user != null) {
+                log.debug("Token usage of user {}: {}", user, res.getUsage());
+            } else {
+                log.info("Token usage: {}", res.getUsage());
+            }
             if (store != null) {
-                store.store(exc.getProperty(MEMBRANE_AI_USER, AiApiUser.class), res.getUsage());
+                store.store(user, res.getUsage());
             }
         });
 
@@ -130,6 +161,10 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         return apiKey;
     }
 
+    /**
+     * @param apiKey
+     * @description API key for the LLM provider. Specify here the API key from OpenAI or Anthropic.
+     */
     @MCAttribute
     public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
@@ -139,6 +174,12 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         return store;
     }
 
+    /**
+     * @param store Store for API keys and usage statistics
+     * @description The LLM Gateway can operate stateless and statefully. For stateful operation, specify an AiApiStore.
+     * A store is needed for user authentication at the gateway.
+     * The gateway will use the store to enforce token limits and log usage statistics.
+     */
     @MCChildElement(allowForeign = true, order = 10)
     public void setAiStore(AiApiStore store) {
         this.store = store;
@@ -153,6 +194,12 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         return maxOutputTokens;
     }
 
+    /**
+     * @param maxOutputTokens
+     * @description Maximum number of tokens the LLM should use to generate a response. This is just a hint that the gateway
+     * sends to the LLM provider. The provider may use a different limit.
+     * @default 0 (unlimited)
+     */
     @MCAttribute
     public void setMaxOutputTokens(int maxOutputTokens) {
         this.maxOutputTokens = maxOutputTokens;
@@ -162,6 +209,11 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         return maxInputTokens;
     }
 
+    /**
+     * @param maxInputTokens
+     * @description Restricts token usage for the input. The size of the input is estimated by gateway based on the request size.
+     * Actual token usage may be deviate from this value.
+     */
     @MCAttribute
     public void setMaxInputTokens(int maxInputTokens) {
         this.maxInputTokens = maxInputTokens;
@@ -171,6 +223,11 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         return models;
     }
 
+    /**
+     * @param models
+     * @desciptions Restricts the models that can be used by the gateway.
+     * @default null (no restriction)
+     */
     @MCAttribute
     public void setModels(List<String> models) {
         this.models = models;
@@ -180,6 +237,11 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         return provider;
     }
 
+    /**
+     * @param provider The LLM provider to use.
+     * @description The LLM provider to use. Currently, OpenAI, Anthropic and Gemini are supported.
+     * The provider determines the API used to talk to the LLM. The provider can be different as long as the API is supported.
+     */
     @MCChildElement(allowForeign = true)
     public void setProvider(LLMProvider provider) {
         this.provider = provider;

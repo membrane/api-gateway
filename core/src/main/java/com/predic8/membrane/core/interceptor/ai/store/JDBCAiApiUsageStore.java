@@ -7,12 +7,16 @@ import com.predic8.membrane.core.util.jdbc.AbstractJdbcSupport;
 import java.sql.SQLException;
 import java.util.Optional;
 
+/**
+ * @description Stores AI API usage in a database (experimental).
+ */
 @MCElement(name = "jdbcAiApiUsageStore")
 public class JDBCAiApiUsageStore extends AbstractJdbcSupport implements AiApiStore {
 
+    // @TODO  GENERATED ALWAYS AS IDENTITY  is PostgreSQL specific
     private static final String CREATE_TABLE_SQL = """
             CREATE TABLE IF NOT EXISTS ai_api_usage (
-                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, // @TODO  GENERATED ALWAYS AS IDENTITY  is PostgreSQL specific
+                id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, 
                 username VARCHAR(255) NOT NULL,
                 input_tokens INT NOT NULL,
                 output_tokens INT NOT NULL,

@@ -77,6 +77,11 @@ public class ClaudeLLMRequest extends AbstractLLMRequest {
     }
 
     @Override
+    public long getRequestedMaxOutputTokens() {
+        return json.path("max_tokens").asLong(0);
+    }
+
+    @Override
     public String getApiKey() {
         return exchange.getRequest().getHeader().getFirstValue(X_API_KEY);
     }

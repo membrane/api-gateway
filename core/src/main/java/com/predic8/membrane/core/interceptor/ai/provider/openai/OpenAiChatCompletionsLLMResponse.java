@@ -42,6 +42,11 @@ public class OpenAiChatCompletionsLLMResponse extends AbstractLLMResponse {
     }
 
     @Override
+    protected void processTerminalEvent(SSEParser.SSEEvent terminal) {
+        postProcessor.accept(OpenAiChatCompletionsLLMResponse.this);
+    }
+
+    @Override
     public void process(SSEParser.SSEEvent e) {
         log.debug("Data: {}", e.data());
         var event = AbstractLLMEvent.create(e);

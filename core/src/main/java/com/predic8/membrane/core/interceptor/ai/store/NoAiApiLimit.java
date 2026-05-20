@@ -1,5 +1,8 @@
 package com.predic8.membrane.core.interceptor.ai.store;
 
+/**
+ * @description Store that does not limit the number of AI API calls (experimental).
+ */
 public class NoAiApiLimit extends AiApiLimit{
 
     @Override

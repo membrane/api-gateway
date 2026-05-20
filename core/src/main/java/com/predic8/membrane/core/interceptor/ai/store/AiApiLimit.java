@@ -11,6 +11,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.time.Instant.now;
 
+/**
+ * @description Limits the number of tokens that can be used for a specific API.
+ */
 @MCElement(name = "limit", component = false, id = "ai-api-limit")
 public class AiApiLimit {
 
@@ -57,6 +60,11 @@ public class AiApiLimit {
         return maxTokens;
     }
 
+    /**
+     * @description Maximum number of tokens that can be used within a period.
+     * @default 0 (no limit)
+     * @param maxTokens Maximum number of tokens
+     */
     @MCAttribute
     public void setMaxTokens(int maxTokens) {
         this.maxTokens = maxTokens;
@@ -66,6 +74,11 @@ public class AiApiLimit {
         return period;
     }
 
+    /**
+     * @description Period after which the token limit resets.
+     * @default 0 (no limit)
+     * @param period in seconds
+     */
     @MCAttribute
     public void setPeriod(int period) {
         synchronized (lock) {

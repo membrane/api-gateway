@@ -20,15 +20,19 @@ public class ResponsesApiEvent extends AbstractLLMEvent {
 
         if ("response.output_item.done".equals(type)) {
 
-            JsonNode item = json.path("item");
+            var item = json.path("item");
 
             if (item.isObject()) {
-                ObjectNode on = (ObjectNode) item;
+                var on = (ObjectNode) item;
 
                 if ("function_call".equals(on.path("type").asText())) {
-                    log.info("Function call: {} with {} params",
-                            on.path("name").asText(),
-                            on.path("arguments").size());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Function call: {} with params {}",
+                                on.path("name").asText(),
+                                on.path("arguments").asText());
+                    } else {
+                        log.info("Function call: {}", on.path("name"));
+                    }
                 }
             }
         }
@@ -37,5 +41,12 @@ public class ResponsesApiEvent extends AbstractLLMEvent {
     @Override
     public String getType() {
         return type;
+    }
+
+    @Override
+    public String toString() {
+        return "ResponsesApiEvent{" +
+                "type='" + type + '\'' +
+                '}';
     }
 }

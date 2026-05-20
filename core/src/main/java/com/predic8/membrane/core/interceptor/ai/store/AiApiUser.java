@@ -13,6 +13,10 @@ public class AiApiUser {
         return name;
     }
 
+    /**
+     * @description Name of the API user, group or cost center.
+     * @param name of the user
+     */
     @MCAttribute()
     public void setName(String name) {
         this.name = name;

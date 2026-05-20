@@ -7,10 +7,10 @@ import com.predic8.membrane.core.util.json.JsonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
-import static java.util.Collections.emptyList;
 
 public abstract class AbstractLLMRequest extends AbstractLLMMessage implements LLMRequest {
 
@@ -24,7 +24,7 @@ public abstract class AbstractLLMRequest extends AbstractLLMMessage implements L
         super(exchange);
 
         if (exchange.getRequest().isJSON()) {
-            json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("No JSON object request."));
+            json = JsonUtil.getJsonObject(exchange.getRequest()).orElseThrow(() -> new RuntimeException("Cannot parse input as JSON message."));
         } else {
             log.info("Request is not JSON:");
             throw new RuntimeException("Request is not JSON.");
@@ -32,26 +32,10 @@ public abstract class AbstractLLMRequest extends AbstractLLMMessage implements L
     }
 
     public List<String> getTools() {
-        var tools = getToolsNode();
-        if (tools == null)
-            return emptyList();
-        return tools.valueStream().map(n -> {
-            String type;
-            if (n.has("type")) {
-                type = n.get("type").asText();
-                if (!"function".equals(type))
-                    return null;
-            }
-
-            // Chat completion
-            if (n.has("function")) {
-                return n.get("function").get("name").asText();
-            }
-            return n.get("name").asText();
-        }).toList();
+       return Collections.emptyList();
     }
 
-    private ArrayNode getToolsNode() {
+    protected ArrayNode getToolsNode() {
         if (json == null)
             return null;
         if (json.path("tools").isArray())

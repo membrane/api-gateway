@@ -50,6 +50,13 @@ public class GoogleLLMRequest extends AbstractLLMRequest {
         exchange.getRequest().getHeader().add(X_GOOG_API_KEY, apiKey);
     }
 
+    @Override
+    public long getRequestedMaxOutputTokens() {
+        return json.path("generationConfig")
+                .path("maxOutputTokens")
+                .asLong(0);
+    }
+
     public long estimateInputTokens() {
         if (json == null || json.isNull()) {
             return 0;

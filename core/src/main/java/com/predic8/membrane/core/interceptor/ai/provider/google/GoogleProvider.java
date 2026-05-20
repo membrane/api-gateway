@@ -8,6 +8,10 @@ import com.predic8.membrane.core.interceptor.ai.provider.LLMResponse;
 
 import java.util.function.Consumer;
 
+/**
+ * @description Google AI provider configuration
+ * Use to configure a LLM gateway to use the Google LLM API
+ */
 @MCElement( name="google",id = "google-ai-provider")
 public class GoogleProvider implements LLMProvider {
 

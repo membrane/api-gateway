@@ -59,19 +59,12 @@ public abstract class AbstractLLMResponse extends AbstractLLMMessage implements 
         events.forEach(this::process);
 
         terminal.ifPresent(event -> {
-            // Terminal of old chat completion API
-            if ("[DONE]".equals(event.data())) {
-                postProcessor.accept(AbstractLLMResponse.this);
-                return;
-            }
-            json = JsonUtil.getJsonObject(event.data())
-                    .orElse(JsonNodeFactory.instance.objectNode()
-                            .put("error", "No JSON object response from model."));
-
-            // All is read, call postProcessor
+            processTerminalEvent(event);
             postProcessor.accept(AbstractLLMResponse.this);
         });
     }
+
+    protected void processTerminalEvent(SSEParser.SSEEvent terminal) {};
 
     @Override
     public boolean isError() {

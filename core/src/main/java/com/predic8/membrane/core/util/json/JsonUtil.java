@@ -117,9 +117,9 @@ public class JsonUtil {
             if (node instanceof ObjectNode on) {
                 return Optional.of(on);
             }
-            log.debug("Expected JSON Object but got: {}",node.getNodeType());
+            log.info("Expected JSON Object but got: {}",node.getNodeType());
         } catch (Exception e) {
-            log.debug("Error reading JSON: {}", e.getMessage());
+            log.info("Error reading JSON: {}", e.getMessage());
         }
         return empty();
     }

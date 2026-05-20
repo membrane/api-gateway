@@ -12,6 +12,12 @@ public interface LLMRequest {
 
     void setApiKey(String apiKey);
 
+    /**
+     * The max number of tokens that the model is allowed to generate as specified by the client.
+     * @return The max number of tokens that the model is allowed to generate.
+     */
+    long getRequestedMaxOutputTokens();
+
     void setMaxOutputTokens(int maxOutputTokens);
 
     long estimateInputTokens();

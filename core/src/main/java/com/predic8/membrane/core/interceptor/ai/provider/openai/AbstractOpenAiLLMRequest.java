@@ -4,22 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.ai.provider.AbstractLLMRequest;
 
-public class OpenAiLLMRequest extends AbstractLLMRequest {
+public abstract class AbstractOpenAiLLMRequest extends AbstractLLMRequest {
 
-    public OpenAiLLMRequest(Exchange exchange) {
+    public AbstractOpenAiLLMRequest(Exchange exchange) {
         super(exchange);
-
-        if (json == null) {
-            return;
-        }
-
-        // Make sure that when streaming is enabled, the usage is included in the response.
-        if (json.path("stream").asBoolean(false)) {
-            if (isChatCompletionsRequest(exchange)) {
-                var streamOptions = json.withObject("/stream_options");
-                streamOptions.put("include_usage", true);
-            }
-        }
     }
 
     @Override
@@ -38,18 +26,6 @@ public class OpenAiLLMRequest extends AbstractLLMRequest {
 
         // safety margin for JSON structure and tokenizer variance
         return Math.max(1, Math.round(chars / 4.0 * 1.15));
-    }
-
-    @Override
-    public void setMaxOutputTokens(int maxOutputTokens) {
-        // OpenAI deprecated max_tokens for newer models (o1, o3, gpt-5.x) in
-        // favor of max_completion_tokens. Older models still accept max_tokens.
-        if (api == API.NORMAL) {
-            json.put("max_output_tokens", maxOutputTokens);
-        }
-        if (api == API.COMPLETIONS) {
-            json.put("max_completion_tokens", maxOutputTokens);
-        }
     }
 
     private long estimateChatCompletitions() {
@@ -107,9 +83,5 @@ public class OpenAiLLMRequest extends AbstractLLMRequest {
             return 0;
         }
         return node.toString().length();
-    }
-
-    private boolean isChatCompletionsRequest(Exchange exchange) {
-        return exchange.getRequest().getUri().contains("/chat/completions");
     }
 }

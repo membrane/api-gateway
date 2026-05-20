@@ -9,6 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * @description Simple store for the LLM Gateway that stores limits in memory. Users and keys can
+ * be configured in the configuration file.
+ */
 @MCElement(name="simpleStore",component = false, id="simple-ai-api-store")
 public class SimpleAiApiStore implements AiApiStore {
 
@@ -17,9 +21,12 @@ public class SimpleAiApiStore implements AiApiStore {
     private List<AiApiUser> users = new ArrayList<>();
     private AiApiLimit limit = new NoAiApiLimit();
 
+    private boolean logUsage = true;
+
     @Override
     public void store(AiApiUser user, Usage usage) {
-        log.debug("Usage: {}", usage);
+        if (logUsage)
+            log.info("user: {} {}",user.getName(),usage.toString());
         limit.addTokens(usage.totalTokens());
     }
 
@@ -36,6 +43,10 @@ public class SimpleAiApiStore implements AiApiStore {
         return limit.checkLimit(inputTokens + outputTokens);
     }
 
+    /**
+     * List of users that can be used for authentication.
+     * @param users User list
+     */
     @MCChildElement(allowForeign = true,order = 10)
     public void setUsers(List<AiApiUser> users) {
         this.users = users;
@@ -49,9 +60,22 @@ public class SimpleAiApiStore implements AiApiStore {
         return limit;
     }
 
+    /**
+     * @description The limit of tokens that can be used for each user.
+     * @default 0 (no limit)
+     * @param limit
+     */
     @MCChildElement(allowForeign = true)
     public void setLimit(AiApiLimit limit) {
         this.limit = limit;
+    }
+
+    public boolean isLogUsage() {
+        return logUsage;
+    }
+
+    public void setLogUsage(boolean logUsage) {
+        this.logUsage = logUsage;
     }
 }
 

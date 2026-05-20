@@ -8,6 +8,10 @@ import com.predic8.membrane.core.interceptor.ai.provider.LLMResponse;
 
 import java.util.function.Consumer;
 
+/**
+ * @description Anthroic Claude provider configuration
+ * Use to configure a LLM gateway to use the anthropic API
+ */
 @MCElement( name="claude")
 public class ClaudeProvider implements LLMProvider {
 
