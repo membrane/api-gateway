@@ -10,6 +10,11 @@ import static com.predic8.membrane.core.http.Response.*;
 
 public class OpenAiErrorCreator extends AbstractLLMErrorCreator {
 
+    @Override
+    public Response invalidRequestError(String message) {
+        return Response.badRequest().json(envelope(message, "invalid_request_error", null, "bad_request")).build();
+    }
+
     public Response tokenLimitExceeded(long tokenRequired, long tokenRemaining, long tokenResetInSeconds) {
         return statusCode(429).json(envelope(
                                 "Token rate limit exceeded. Request requires %d tokens but only %d remain. Please wait %d seconds before retrying.".formatted(tokenRequired, tokenRemaining, tokenResetInSeconds),

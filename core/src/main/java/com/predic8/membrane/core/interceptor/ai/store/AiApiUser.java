@@ -5,13 +5,15 @@ import com.predic8.membrane.annot.MCElement;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import static java.lang.Long.MAX_VALUE;
+
 @MCElement(name = "users", component = false, id="ai-api-users")
 public class AiApiUser {
 
     private String name;
     private String apiKey;
 
-    private long tokens;
+    private long tokens = MAX_VALUE;
 
     private final AtomicLong tokensUsedInPeriod = new AtomicLong();
 
@@ -33,6 +35,8 @@ public class AiApiUser {
      * @return The estimated number of tokens that the user has left after this request
      */
     public long checkLimit(long tokensNeededForRequest) {
+        if (tokens == MAX_VALUE)
+            return MAX_VALUE;
         return this.tokens - tokensUsedInPeriod.get() - tokensNeededForRequest;
     }
 

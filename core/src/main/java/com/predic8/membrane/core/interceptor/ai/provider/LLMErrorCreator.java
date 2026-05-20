@@ -6,6 +6,8 @@ import java.util.Collection;
 
 public interface LLMErrorCreator {
 
+    Response invalidRequestError(String message);
+
     Response tokenLimitExceeded(long tokenRequired, long tokenRemaining, long tokenResetInSeconds);
 
     Response modelNotAllowed(String model, Collection<String> allowedModels);

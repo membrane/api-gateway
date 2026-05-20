@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,7 +23,8 @@ public class SimpleAiApiStore implements AiApiStore {
 
     private static final Logger log = LoggerFactory.getLogger(SimpleAiApiStore.class);
 
-    private List<AiApiUser> users = new ArrayList<>();
+    @GuardedBy("lock")
+    private List<AiApiUser> users = Collections.emptyList();
 
     private boolean logUsage = true;
 
@@ -43,7 +44,9 @@ public class SimpleAiApiStore implements AiApiStore {
 
     @Override
     public Optional<AiApiUser> getUser(String token) {
-        return users.stream().filter(u -> u.getApiKey().equals(token)).findFirst();
+        synchronized (lock) {
+            return users.stream().filter(u -> u.getApiKey().equals(token)).findFirst();
+        }
     }
 
     @Override
@@ -77,7 +80,9 @@ public class SimpleAiApiStore implements AiApiStore {
      */
     @MCChildElement(allowForeign = true,order = 10)
     public void setUsers(List<AiApiUser> users) {
-        this.users = users;
+        synchronized (lock) {
+            this.users = users;
+        }
     }
 
     public List<AiApiUser> getUsers() {
