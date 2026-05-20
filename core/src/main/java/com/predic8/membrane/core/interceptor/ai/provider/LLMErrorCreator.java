@@ -16,9 +16,9 @@ public interface LLMErrorCreator {
 
     /**
      *
-     * @param maxTokens
-     * @param estimatedTokens
-     * @return
+     * @param maxTokens as configured
+     * @param estimatedTokens estimated number of input tokens
+     * @return Response error response
      */
     Response inputTokensExceeded(long maxTokens, long estimatedTokens);
 }
