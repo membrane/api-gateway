@@ -8,5 +8,6 @@ public interface LLMProvider {
 
     LLMRequest getLLMRequest(Exchange request);
     LLMResponse getLLMResponse(Exchange request, Consumer<LLMResponse> postProcessor);
+    LLMErrorCreator getErrorCreator();
 
 }

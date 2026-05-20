@@ -6,6 +6,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.ai.provider.LLMErrorCreator;
 import com.predic8.membrane.core.interceptor.ai.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.ai.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiStore;
@@ -18,7 +19,6 @@ import java.util.List;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.interceptor.ai.LLMApiUtil.*;
 import static com.predic8.membrane.core.util.json.JsonUtil.setJsonBody;
 
 /*
@@ -42,6 +42,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     public static final String MEMBRANE_AI_USER = "membrane.ai.user";
 
     private LLMProvider provider;
+    private LLMErrorCreator errorCreator;
 
     private String apiKey;
     private int maxOutputTokens;
@@ -52,6 +53,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() {
+        errorCreator = provider.getErrorCreator();
         if (store != null)
             store.init(router);
     }
@@ -79,7 +81,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         if (store != null) {
             var opt = store.getUser(aiReq.getApiKey());
             if (opt.isEmpty()) {
-                exc.setResponse(authenticationFailed());
+                exc.setResponse(errorCreator.authenticationFailed());
                 return RETURN;
             }
             user = opt.get();
@@ -92,10 +94,10 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             log.debug("Estimated input tokens: {}", inputTokens);
             if (store != null) {
                 var remaining = store.checkLimit(user, inputTokens, maxOutputTokens);
-                log.debug("Remaining tokens: {}", remaining);
+                log.debug("User {} has {} remaining tokens left", user, remaining);
                 if (remaining <= 0) {
-                    log.info("Token limit exceeded: {}/{}", inputTokens, maxOutputTokens);
-                    exc.setResponse(tokenLimitExceeded());
+                    log.info("Token limit exceeded. Remaining: {} input: {} maxOutput: {}",remaining, inputTokens, maxOutputTokens);
+                    exc.setResponse(errorCreator.tokenLimitExceeded(inputTokens+maxOutputTokens, remaining, store.getRemainingResetTime()));
                     return RETURN;
                 }
             }
@@ -112,7 +114,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         var requestedMaxOutputTokens = aiReq.getRequestedMaxOutputTokens();
 
-        if (maxOutputTokens != 0 && requestedMaxOutputTokens > maxOutputTokens) {
+        if (maxOutputTokens != 0 && (requestedMaxOutputTokens == -1 || requestedMaxOutputTokens > maxOutputTokens)) {
             log.info("Requested max. output tokens {} exceed the limit. Setting limit to {}.",requestedMaxOutputTokens, maxOutputTokens);
             aiReq.setMaxOutputTokens(maxOutputTokens);
         }
@@ -120,7 +122,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         if (maxInputTokens != 0) {
             if (inputTokens > maxInputTokens) {
                 log.info("Input tokens {} exceed the limit of {}.",inputTokens, maxInputTokens);
-                exc.setResponse(contextLengthExceeded(maxInputTokens, inputTokens));
+                exc.setResponse(errorCreator.contextLengthExceeded(maxInputTokens, inputTokens));
                 return RETURN;
             }
         }
@@ -128,7 +130,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         if (models != null) {
             var model = aiReq.getModel();
             if (!models.contains(model)) {
-                exc.setResponse(modelNotAllowed(model, models));
+                exc.setResponse(errorCreator.modelNotAllowed(model, models));
                 return RETURN;
             }
         }

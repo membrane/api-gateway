@@ -3,6 +3,8 @@ package com.predic8.membrane.core.interceptor.ai.store;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 @MCElement(name = "users", component = false, id="ai-api-users")
 public class AiApiUser {
 
@@ -10,6 +12,24 @@ public class AiApiUser {
     private String apiKey;
 
     private long tokens;
+
+    private AtomicLong tokensUsedInPeriod = new AtomicLong();
+
+    public void addTokensUsedInPeriod(Usage usage) {
+        tokensUsedInPeriod.addAndGet(usage.totalTokens());
+    }
+
+    public void resetTokensUsedInPeriod() {
+        tokensUsedInPeriod.set(0);
+    }
+
+    public long getTokensUsedInPeriod() {
+        return tokensUsedInPeriod.get();
+    }
+
+    public long checkLimit(long tokensNeededForRequest) {
+        return this.tokens - tokensUsedInPeriod.get() - tokensNeededForRequest;
+    }
 
     public String getName() {
         return name;

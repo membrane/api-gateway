@@ -27,7 +27,7 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
     public long getRequestedMaxOutputTokens() {
         if (json.has("max_output_tokens"))
             return json.get("max_output_tokens").asLong();
-        return 0;
+        return -1;
     }
 
     @Override

@@ -23,5 +23,7 @@ public interface AiApiStore {
      * @return
      */
     long checkLimit(AiApiUser user, long inputTokens, long outputTokens);
+
+    long getRemainingResetTime();
 }
 

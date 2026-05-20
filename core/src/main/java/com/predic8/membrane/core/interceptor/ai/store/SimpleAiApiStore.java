@@ -1,13 +1,18 @@
 package com.predic8.membrane.core.interceptor.ai.store;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.concurrent.GuardedBy;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static java.time.Instant.now;
 
 /**
  * @description Simple store for the LLM Gateway that stores limits in memory. Users and keys can
@@ -19,20 +24,26 @@ public class SimpleAiApiStore implements AiApiStore {
     private static final Logger log = LoggerFactory.getLogger(SimpleAiApiStore.class);
 
     private List<AiApiUser> users = new ArrayList<>();
-    private AiApiLimit limit = new NoAiApiLimit();
 
     private boolean logUsage = true;
+
+    private final Object lock = new Object();
+
+    @GuardedBy("lock")
+    private Instant nextReset;
+
+    private long limitResetPeriod = 60;
 
     @Override
     public void store(AiApiUser user, Usage usage) {
         if (logUsage)
             log.info("user: {} {}",user.getName(),usage.toString());
-        limit.addTokens(usage.totalTokens());
+        user.addTokensUsedInPeriod(usage);
     }
 
     @Override
     public Optional<AiApiUser> getUser(String token) {
-        return users.stream().filter(u -> u.getToken().equals(token)).findFirst();
+        return users.stream().filter(u -> u.getApiKey().equals(token)).findFirst();
     }
 
     @Override
@@ -40,8 +51,25 @@ public class SimpleAiApiStore implements AiApiStore {
         if (user == null)
             return 0; // anonymous user gets no tokens
 
-        return limit.checkLimit(inputTokens + outputTokens);
+        synchronized (lock) {
+            var now = now();
+            if (nextReset == null || now.isAfter(nextReset)) {
+
+                nextReset = now.plusSeconds(limitResetPeriod);
+                log.info("Resetting AI API token usage limit.");
+            }
+        }
+
+        return user.checkLimit(inputTokens + outputTokens);
     }
+
+    @Override
+    public long getRemainingResetTime() {
+        synchronized (lock) {
+            return nextReset == null ? 0 : (nextReset.toEpochMilli() - now().toEpochMilli()) / 1000;
+        }
+    }
+
 
     /**
      * List of users that can be used for authentication.
@@ -56,18 +84,17 @@ public class SimpleAiApiStore implements AiApiStore {
         return users;
     }
 
-    public AiApiLimit getLimit() {
-        return limit;
+    public long getLimitResetPeriod() {
+        return limitResetPeriod;
     }
 
     /**
-     * @description The limit of tokens that can be used for each user.
-     * @default 0 (no limit)
-     * @param limit
+     * @description The period in seconds after which the token limit is reset.
+     * @param limitResetPeriod in seconds, e.g. 3600 for 1 hour
      */
-    @MCChildElement(allowForeign = true)
-    public void setLimit(AiApiLimit limit) {
-        this.limit = limit;
+    @MCAttribute
+    public void setLimitResetPeriod(long limitResetPeriod) {
+        this.limitResetPeriod = limitResetPeriod;
     }
 
     public boolean isLogUsage() {

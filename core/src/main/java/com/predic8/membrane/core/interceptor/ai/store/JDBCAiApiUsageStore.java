@@ -64,6 +64,11 @@ public class JDBCAiApiUsageStore extends AbstractJdbcSupport implements AiApiSto
         return 0;
     }
 
+    @Override
+    public long getRemainingResetTime() {
+        return 0;
+    }
+
     private void createTablesIfNotExist() {
         try (var connection = getConnection(); var ps = connection.prepareStatement(CREATE_TABLE_SQL)) {
             ps.executeUpdate();
