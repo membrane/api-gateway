@@ -21,6 +21,8 @@ public class GoogleErrorCreator extends AbstractLLMErrorCreator {
                                        long tokenRemaining,
                                        long tokenResetInSeconds) {
 
+        var visibleRemaining = Math.max(0, tokenRemaining);
+
         return statusCode(429).json(
                 envelope(
                         429,
@@ -29,7 +31,7 @@ public class GoogleErrorCreator extends AbstractLLMErrorCreator {
                         Request requires %d tokens but only %d remain.
                         Retry after %d seconds.
                         """
-                                .formatted(tokenRequired, tokenRemaining, tokenResetInSeconds)
+                                .formatted(tokenRequired, visibleRemaining, tokenResetInSeconds)
                                 .trim(),
                         "RESOURCE_EXHAUSTED"
                 )

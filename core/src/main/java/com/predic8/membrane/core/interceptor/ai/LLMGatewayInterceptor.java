@@ -11,6 +11,7 @@ import com.predic8.membrane.core.interceptor.ai.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.ai.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiStore;
 import com.predic8.membrane.core.interceptor.ai.store.AiApiUser;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +56,11 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         errorCreator = provider.getErrorCreator();
         if (store != null)
             store.init(router);
+
+        // Check if the replacement markers are still there
+        if (apiKey.contains("<<") && apiKey.contains(">>")) {
+            throw new ConfigurationException("The configuration contains the replacement marker %s. Substitute it with the API key of the model.".formatted(apiKey));
+        }
     }
 
     @Override
@@ -69,7 +75,8 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         }
 
         if (!exc.getRequest().isPOSTRequest()) {
-            aiReq.setApiKey(apiKey);
+            if (apiKey != null)
+                aiReq.setApiKey(apiKey);
             return CONTINUE;
         }
 
@@ -90,7 +97,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         // Check store limits
         if (store != null) {
-            var effectiveMaxTokens = Math.min(aiReq.getRequestedMaxOutputTokens(), maxOutputTokens);
+            var effectiveMaxTokens = computeEffectiveMaxOutputTokens(aiReq.getRequestedMaxOutputTokens(), maxOutputTokens);
             var remaining = store.checkLimit(user, inputTokens, effectiveMaxTokens);
             log.debug("User {} has {} remaining tokens left", user, remaining);
             if (remaining <= 0) {
@@ -109,9 +116,14 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         var requestedMaxOutputTokens = aiReq.getRequestedMaxOutputTokens();
 
-        if (maxOutputTokens != 0 && (requestedMaxOutputTokens == -1 || requestedMaxOutputTokens > maxOutputTokens)) {
-            log.info("Requested max. output tokens {} exceed the limit. Setting limit to {}.", requestedMaxOutputTokens, maxOutputTokens);
-            aiReq.setMaxOutputTokens(maxOutputTokens);
+        if (maxOutputTokens > 0) {
+            if (requestedMaxOutputTokens == -1) {
+                log.info("No max. output requested. Setting limit to {}.", maxOutputTokens);
+                aiReq.setMaxOutputTokens(maxOutputTokens);
+            } else if (requestedMaxOutputTokens > maxOutputTokens) {
+                log.info("Requested max. output tokens {} exceed the limit. Setting limit to {}.", requestedMaxOutputTokens, maxOutputTokens);
+                aiReq.setMaxOutputTokens(maxOutputTokens);
+            }
         }
 
         if (maxInputTokens != 0) {
@@ -134,6 +146,12 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         setJsonBody(exc.getRequest(), aiReq.getJson());
         return CONTINUE;
+    }
+
+    long computeEffectiveMaxOutputTokens(long requestedMaxOutputTokens, long maxOutputTokens) {
+        if (requestedMaxOutputTokens <= 0)
+            return maxOutputTokens;
+        return Math.min(requestedMaxOutputTokens, maxOutputTokens);
     }
 
     @Override

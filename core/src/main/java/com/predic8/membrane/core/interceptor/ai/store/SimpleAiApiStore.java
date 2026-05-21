@@ -87,7 +87,7 @@ public class SimpleAiApiStore implements AiApiStore {
 
     public List<AiApiUser> getUsers() {
         synchronized (lock) {
-            return users;
+            return List.copyOf(users);
         }
     }
 

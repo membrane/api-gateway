@@ -24,7 +24,7 @@
 #
 # 5. Requested Max. Output Tokens Exceeded
 #     curl -v -H "Content-Type: application/json" -H "x-goog-api-key: abc123" -d @max-output.json http://localhost:2000/v1beta/models/gemini-2.5-flash:generateContent
-#     Check Membrane log: totalTokens should not exceed 200 even it was requested in max-output.json
+#     Check Membrane log: totalTokens should not exceed 200 even though it was requested in max-output.json
 
 api:
   port: 2000
