@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.mcp;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.interceptor.mcp.MCPUtil.*;
 import com.predic8.membrane.core.mcp.MCPToolsCall;
 import com.predic8.membrane.core.mcp.MCPToolsCallResponse;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.mcp.ExchangeUtils.matchesExchangeFilter;
+import static com.predic8.membrane.core.interceptor.mcp.MCPUtil.*;
 import static com.predic8.membrane.core.interceptor.mcp.McpSchemaBuilder.integer;
 import static com.predic8.membrane.core.interceptor.mcp.McpSchemaBuilder.string;
 import static java.lang.Integer.MAX_VALUE;

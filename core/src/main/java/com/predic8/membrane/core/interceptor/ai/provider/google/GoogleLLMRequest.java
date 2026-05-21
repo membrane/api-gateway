@@ -34,7 +34,12 @@ public class GoogleLLMRequest extends AbstractLLMRequest {
 
         var modelPart = uri.substring(modelsIndex + "/models/".length());
 
+        // Support both ':' and URL-encoded '%3A' / '%3a' as separator before the action suffix
+        // (e.g. ':generateContent' or '%3AgenerateContent').
         int colonIndex = modelPart.indexOf(':');
+        if (colonIndex < 0) {
+            colonIndex = modelPart.toLowerCase().indexOf("%3a");
+        }
         if (colonIndex >= 0) {
             return modelPart.substring(0, colonIndex);
         }
