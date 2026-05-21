@@ -4,7 +4,7 @@
   "messages": [
     {
       "role": "user",
-      "content": "What is your name?"
+      "content": "Explain in detail who you are?"
     }
   ]
 }

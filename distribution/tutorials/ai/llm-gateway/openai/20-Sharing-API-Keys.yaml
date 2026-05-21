@@ -2,12 +2,12 @@
 #
 # Tutorial: Sharing LLM API Keys (OpenAI)
 #
-# Replace <<API_KEY>> with your OpenAI API key.
+# Replace <<Replace with your API_KEY>> with your OpenAI API key.
 #
 # Requests:
 #
 # 1. Hello AI
-#     curl -H "Content-Type: application/json" -H "Authorization: Bearer abc123" -d @simple.json http://localhost:2000/v1/responses
+#     curl -v -H "Content-Type: application/json" -H "Authorization: Bearer abc123" -d @simple.json http://localhost:2000/v1/responses
 #     Check: Successful response
 #
 # 2. Token Limit Exceeded
@@ -30,8 +30,7 @@ api:
   port: 2000
   flow:
     - llmGateway:
-        # Replace <<API_KEY>> with your OpenAI API key
-        apiKey: <<API_KEY>>
+        apiKey: <<Replace with your API_KEY>>
         # Limits per request
         maxInputTokens: 100
         maxOutputTokens: 200

@@ -20,7 +20,9 @@ public class GoogleLLMResponse extends AbstractLLMResponse {
         var usage = json.path("usageMetadata");
 
         int inputTokens = usage.path("promptTokenCount").asInt(0);
-        int outputTokens = usage.path("candidatesTokenCount").asInt(0);
+        int thoughtsTokens = usage.path("thoughtsTokenCount").asInt(0);
+        int candidatesTokenCount = usage.path("candidatesTokenCount").asInt(0);
+        int outputTokens = thoughtsTokens + candidatesTokenCount;
         int totalTokens = usage.path("totalTokenCount").asInt(inputTokens + outputTokens);
 
         return new Usage(

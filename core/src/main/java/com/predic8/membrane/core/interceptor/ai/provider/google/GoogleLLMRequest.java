@@ -7,6 +7,9 @@ import com.predic8.membrane.core.interceptor.ai.provider.AbstractLLMRequest;
 
 public class GoogleLLMRequest extends AbstractLLMRequest {
 
+    /**
+     * x-goog-api-key is correct it is not google
+     */
     public static final String X_GOOG_API_KEY = "x-goog-api-key";
 
     public GoogleLLMRequest(Exchange exchange) {

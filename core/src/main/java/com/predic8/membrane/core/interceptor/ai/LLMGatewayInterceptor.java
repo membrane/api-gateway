@@ -90,11 +90,12 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         // Check store limits
         if (store != null) {
-            var remaining = store.checkLimit(user, inputTokens, maxOutputTokens);
+            var effectiveMaxTokens = Math.min(aiReq.getRequestedMaxOutputTokens(), maxOutputTokens);
+            var remaining = store.checkLimit(user, inputTokens, effectiveMaxTokens);
             log.debug("User {} has {} remaining tokens left", user, remaining);
             if (remaining <= 0) {
-                log.info("Token limit exceeded. Remaining: {} input: {} maxOutput: {}", remaining, inputTokens, maxOutputTokens);
-                exc.setResponse(errorCreator.tokenLimitExceeded(inputTokens + maxOutputTokens, remaining, store.getRemainingResetTime()));
+                log.info("Token limit exceeded. Remaining: {} input: {} maxOutput: {}", remaining, inputTokens, effectiveMaxTokens);
+                exc.setResponse(errorCreator.tokenLimitExceeded(inputTokens + effectiveMaxTokens, remaining, store.getRemainingResetTime()));
                 return RETURN;
             }
         }

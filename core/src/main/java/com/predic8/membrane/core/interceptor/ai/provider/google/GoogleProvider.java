@@ -28,6 +28,6 @@ public class GoogleProvider implements LLMProvider {
 
     @Override
     public LLMErrorCreator getErrorCreator() {
-        return null;
+        return new GoogleErrorCreator();
     }
 }

@@ -9,11 +9,11 @@
 #     Check the response and the Membrane logs.
 #
 # 2. Exceed the input token limit
-#     curl -H "Content-Type: application/json" -H "Authorization: Bearer <<API_KEY>>" -d @max-input.json http://localhost:2000/v1/responses
+#     curl -H "Content-Type: application/json" -H "Authorization: Bearer <<API_KEY>>" -d @max-input.json http://localhost:2000/v1/messages
 #     Returns an error because the request exceeds maxInputTokens.
 #
 # 3. Exceed the output token limit
-#    curl -H "Content-Type: application/json" -H "Authorization: Bearer <<API_KEY>>" -d @max-output.json http://localhost:2000/v1/responses
+#    curl -H "Content-Type: application/json" -H "Authorization: Bearer <<API_KEY>>" -d @max-output.json http://localhost:2000/v1/messages
 #    Check the Membrane log for limiting max tokens to 200
 
 api:
