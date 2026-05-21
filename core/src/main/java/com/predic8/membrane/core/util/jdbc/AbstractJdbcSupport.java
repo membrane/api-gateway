@@ -14,12 +14,16 @@
 
 package com.predic8.membrane.core.util.jdbc;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
 
-import javax.sql.*;
-import java.util.*;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Map;
+
+import static com.predic8.membrane.core.util.ExceptionUtil.getRootCause;
 
 public abstract class AbstractJdbcSupport {
 
@@ -51,6 +55,19 @@ public abstract class AbstractJdbcSupport {
     public void init(Router router) {
         this.router = router;
         getDatasourceIfNull();
+    }
+
+    // @TODO make subclasses use this method
+    public Connection getConnection() {
+        try {
+            return datasource.getConnection();
+        } catch (SQLException e) {
+            var root = getRootCause(e);
+            if (root instanceof ClassNotFoundException) {
+                throw new ConfigurationException("JDBC driver not found. Please add the JDBC driver to the classpath: " + root.getMessage());
+            }
+            throw new RuntimeException(e);
+        }
     }
 
     private void getDatasourceIfNull() {

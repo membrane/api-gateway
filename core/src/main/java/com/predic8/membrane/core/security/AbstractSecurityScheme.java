@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.security;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 
 import java.util.*;
 
@@ -58,4 +58,5 @@ public abstract class AbstractSecurityScheme implements SecurityScheme {
     public Set<String> getScopes() {
         return scopes;
     }
+
 }

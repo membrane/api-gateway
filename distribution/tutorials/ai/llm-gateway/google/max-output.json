@@ -1,0 +1,14 @@
+{
+  "contents": [
+    {
+      "parts": [
+        {
+          "text": "Explain in detail who you are?"
+        }
+      ]
+    }
+  ],
+  "generationConfig": {
+    "maxOutputTokens": 500
+  }
+}

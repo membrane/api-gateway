@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.1.json
+#
+# Tutorial: Basic LLM Gateway (Google Gemini)
+#
+# Replace <<API_KEY>> with your Google API key.
+#
+# 1. Hello World
+#     curl -v -H "Content-Type: application/json" -H "x-goog-api-key: <<API_KEY>>" -d @simple.json http://localhost:2000/v1beta/models/gemini-2.5-flash:generateContent
+#     Check the response and the Membrane logs.
+#
+# 2. Exceed the input token limit
+#     curl -v -H "Content-Type: application/json" -H "x-goog-api-key: <<API_KEY>>" -d @max-input.json http://localhost:2000/v1beta/models/gemini-2.5-flash:generateContent
+#     Returns an error because the request exceeds maxInputTokens.
+#
+# 3. Exceed the output token limit
+#     curl -v -H "Content-Type: application/json" -H "x-goog-api-key: <<API_KEY>>" -d @max-output.json http://localhost:2000/v1beta/models/gemini-2.5-flash:generateContent
+#     Check the Membrane log for limiting max tokens to 200
+
+api:
+  port: 2000
+  flow:
+    - llmGateway:
+        google: {}
+        maxInputTokens: 100
+        maxOutputTokens: 200
+  target:
+    url: https://generativelanguage.googleapis.com
