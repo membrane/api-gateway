@@ -1,5 +1,62 @@
 # Architecture Decision Log
 
+## ADR-005 Log Levels
+
+Status: PROPOSED
+Date: 2026-05-18
+
+## Context
+
+Log events should be logged with an appropriate level.
+
+## Idea
+
+FATAL:
+- Meaning: The application cannot continue running. Immediate shutdown or unusable state.
+
+ERROR:
+- Meaning: A serious problem occurred, but the server can still run.
+- Examples:
+  - Unhandled exception during a request
+  - Invalid configuration
+  - Database cannot be reached
+
+WARN:
+- Meaning: Something unexpected or undesirable happened, but processing can continue.
+- Examples:
+  - Backend service is not available
+  - TLS errors with backend service
+  - Scripting Error in Groovy, Templates, SpEL
+
+INFO:
+- Meaning: Important normal operational events.
+- Examples:
+  - Startup
+  - Shutdown
+  - JWT token validation failed
+  - Password validation failed
+  - JSON, OpenAPI, XML validation failed
+  - Connection errors between client and Membrane, e.g. Socket closed
+  - Wrong Content-Type for json2xml transformation
+
+DEBUG:
+- Meaning: Detailed technical information for troubleshooting.
+- Examples:
+  - HTTP request and response headers
+  - Processing steps
+
+TRACE:
+- Meaning: Extremely detailed internal execution flow.
+- Examples:
+  - Complete dumps of HTTP messages
+  - Bytes sent and received
+  - Can contain sensitive information (do not use in production!)
+
+Do not Log:
+- 404 Not Found
+
+
+
 ## ADR-004 Logging
 
 Status: PROPOSED
@@ -14,6 +71,7 @@ Date: 2026-01-29
   - ACL failed
   - ...
 - Make it easier to explore Membrane and make it work
+- Membrane ships with INFO level for development
 - Set root level to WARN for production
 
 ## ADR-003 Access to beans with Router 
