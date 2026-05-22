@@ -3,6 +3,7 @@ setlocal EnableExtensions EnableDelayedExpansion
 
 if "%FRUIT_BASE%"=="" set FRUIT_BASE=http://localhost:3000
 if "%APIBIN_BASE%"=="" set APIBIN_BASE=http://localhost:3001
+if "%ATTACK_BASE%"=="" set ATTACK_BASE=http://localhost:3002
 
 if "%~1"=="" (
   set ROUNDS=20
@@ -18,6 +19,11 @@ for /L %%i in (1,1,%ROUNDS%) do (
   call :request GET "%APIBIN_BASE%/analyze?round=%%i&delay=50"
   call :request GET "%APIBIN_BASE%/faker?profile=order&count=2&locale=de-DE&seed=%%i"
   call :request POST "%APIBIN_BASE%/echo" "hello apibin round %%i"
+  call :request GET "%ATTACK_BASE%/wp-login.php"
+  call :request GET "%ATTACK_BASE%/xmlrpc.php"
+  call :request GET "%ATTACK_BASE%/wp-admin/install.php"
+  call :request GET "%ATTACK_BASE%/.env"
+  call :request GET "%ATTACK_BASE%/phpinfo.php"
 )
 
 exit /b 0

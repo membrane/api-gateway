@@ -22,6 +22,9 @@
 #    Windows:
 #      generate-traffic.cmd 20
 #
+#    The script also sends a few typical WordPress/PHP probe requests to a
+#    local endpoint on port 3002 that always responds with 404.
+#
 # 3.) Configure Claude Desktop as described in README.md.
 #
 # 4.) Ask the AI client to inspect recent exchanges.
@@ -69,3 +72,12 @@ api:
   name: ApiBin-Demo
   target:
     url: https://apibin.io/
+
+---
+# Simulates common background probe traffic such as WordPress/PHP scans.
+api:
+  port: 3002
+  name: 404 Fallback
+  flow:
+    - return:
+        status: 404

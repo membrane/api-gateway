@@ -3,6 +3,7 @@ set -eu
 
 FRUIT_BASE="${FRUIT_BASE:-http://localhost:3000}"
 APIBIN_BASE="${APIBIN_BASE:-http://localhost:3001}"
+ATTACK_BASE="${ATTACK_BASE:-http://localhost:3002}"
 ROUNDS="${1:-20}"
 
 request() {
@@ -32,6 +33,11 @@ while [ "$i" -le "$ROUNDS" ]; do
   request GET  "$APIBIN_BASE/analyze?round=$i&delay=50"
   request GET  "$APIBIN_BASE/faker?profile=order&count=2&locale=de-DE&seed=$i"
   request POST "$APIBIN_BASE/echo" "hello apibin round $i"
+  request GET  "$ATTACK_BASE/wp-login.php"
+  request GET  "$ATTACK_BASE/xmlrpc.php"
+  request GET  "$ATTACK_BASE/wp-admin/install.php"
+  request GET  "$ATTACK_BASE/.env"
+  request GET  "$ATTACK_BASE/phpinfo.php"
 
   i=$((i + 1))
 done
