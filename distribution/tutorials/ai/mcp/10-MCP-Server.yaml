@@ -1,0 +1,24 @@
+# Exposes the Membrane MCP server directly on http://localhost:2000.
+# Claude Desktop connects to this endpoint through mcp-remote.
+api:
+  port: 2000
+  name: MCP-Server
+  flow:
+    - membraneMCPServer:
+        # Keep enough recent exchanges so the AI can inspect traffic generated
+        # through the demo APIs below.
+        maxExchanges: 10000
+
+---
+api:
+  port: 3000
+  name: Fruit-Shop-Demo
+  target:
+    url: https://api.predic8.de/shop/v2/
+
+---
+api:
+  port: 3001
+  name: ApiBin-Demo
+  target:
+    url: https://apibin.io/

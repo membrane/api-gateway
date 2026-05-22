@@ -1,0 +1,46 @@
+# Claude Desktop still connects to http://localhost:2000.
+# This local proxy adds the API key before forwarding requests to the protected MCP server.
+api:
+  port: 2000
+  name: MCP-Proxy
+  flow:
+    - setHeader:
+        name: Authorization
+        value: apikey 12345
+  target:
+    url: http://localhost:8080/mcp
+
+---
+# The real MCP server is protected by the apiKey interceptor.
+# The expected header value is: Authorization: apikey 12345
+api:
+  port: 8080
+  name: MCP-Server-Protected
+  path:
+    uri: /mcp
+  flow:
+    - apiKey:
+        stores:
+          - simple:
+              - secret:
+                  value: apikey 12345
+        extractors:
+          - header: Authorization
+    - membraneMCPServer:
+        # Keep enough recent exchanges so the AI can inspect traffic generated
+        # through the demo APIs below.
+        maxExchanges: 10000
+
+---
+api:
+  port: 3000
+  name: Fruit-Shop-Demo
+  target:
+    url: https://api.predic8.de/shop/v2/
+
+---
+api:
+  port: 3001
+  name: ApiBin-Demo
+  target:
+    url: https://apibin.io/
