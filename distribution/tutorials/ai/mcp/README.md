@@ -1,27 +1,33 @@
-# Membrane MCP Server Example
+# Membrane API Gateway Tutorial - MCP
 
-Start one of the example configs:
+This tutorial shows how to expose Membrane API Gateway as an MCP server for AI clients.
+It covers:
 
-- `10-MCP-Server.yaml` exposes the MCP server directly.
-- `20-MCP-Server-Protected.yaml` protects the MCP server with an API key and uses a local proxy for Claude Desktop.
+- running a local MCP server
+- inspecting recent API traffic through MCP
+- protecting the MCP endpoint with an API key
+- forwarding Claude Desktop traffic through a local proxy
 
-Generate some traffic first:
+To begin, open [10-MCP-Server.yaml](10-MCP-Server.yaml) and follow the instructions in the file.
+Then continue with [20-MCP-Server-Protected.yaml](20-MCP-Server-Protected.yaml).
+
+If you want to inspect API traffic from Claude Desktop, generate a few sample requests first:
+
+Linux/macOS:
 
 ```bash
 ./generate-traffic.sh 20
 ```
-On Windows:
+
+Windows:
 
 ```shell
 generate-traffic.cmd 20
 ```
 
-# Setup MCP for Claude Desktop
+## Claude Desktop Setup
 
-1. Open Claude Desktop
-2. Open `Settings` -> `Developer`
-3. Under `Local MCP servers` click on `Edit Config`
-4. Open `claude_desktop_config.json` and paste the following:
+Open `Settings` -> `Developer`, edit `claude_desktop_config.json`, and add:
 
 ```json
 {
@@ -42,4 +48,3 @@ generate-traffic.cmd 20
   }
 }
 ```
-

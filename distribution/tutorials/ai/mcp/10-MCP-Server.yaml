@@ -1,12 +1,34 @@
-# Exposes the Membrane MCP server directly on http://localhost:2000.
-# Claude Desktop connects to this endpoint through mcp-remote.
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.1.json
+#
+# Tutorial: MCP Server
+#
+# This configuration exposes the Membrane MCP server directly on
+# http://localhost:2000 and starts two demo APIs that generate traffic
+# the AI client can inspect through MCP.
+#
+# 1.) Start Membrane:
+#
+#    Linux/Mac:
+#      ./membrane.sh -c 10-MCP-Server.yaml
+#    Windows:
+#      membrane.cmd -c 10-MCP-Server.yaml
+#
+# 2.) Generate some demo traffic in a second terminal:
+#
+#    Linux/Mac:
+#      ./generate-traffic.sh 20
+#    Windows:
+#      generate-traffic.cmd 20
+#
+# 3.) Configure Claude Desktop as described in README.md.
+#
+# 4.) Ask the AI client to inspect recent exchanges or list the available APIs.
+
 api:
   port: 2000
   name: MCP-Server
   flow:
     - membraneMCPServer:
-        # Keep enough recent exchanges so the AI can inspect traffic generated
-        # through the demo APIs below.
         maxExchanges: 10000
 
 ---

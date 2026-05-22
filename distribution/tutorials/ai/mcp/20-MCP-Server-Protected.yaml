@@ -1,5 +1,32 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.1.json
+#
+# Tutorial: Protected MCP Server
+#
 # Claude Desktop still connects to http://localhost:2000.
-# This local proxy adds the API key before forwarding requests to the protected MCP server.
+# A local proxy adds the API key before forwarding requests to the
+# protected MCP server at http://localhost:8080/mcp.
+#
+# 1.) Start Membrane:
+#
+#    Linux/Mac:
+#      ./membrane.sh -c 20-MCP-Server-Protected.yaml
+#    Windows:
+#      membrane.cmd -c 20-MCP-Server-Protected.yaml
+#
+# 2.) Generate some demo traffic in a second terminal:
+#
+#    Linux/Mac:
+#      ./generate-traffic.sh 20
+#    Windows:
+#      generate-traffic.cmd 20
+#
+# 3.) Configure Claude Desktop as described in README.md.
+#
+# 4.) Ask the AI client to inspect recent exchanges.
+#
+# The client talks to the local proxy on port 2000.
+# The protected MCP endpoint remains hidden behind the API key interceptor.
+
 api:
   port: 2000
   name: MCP-Proxy
@@ -27,8 +54,6 @@ api:
         extractors:
           - header: Authorization
     - membraneMCPServer:
-        # Keep enough recent exchanges so the AI can inspect traffic generated
-        # through the demo APIs below.
         maxExchanges: 10000
 
 ---

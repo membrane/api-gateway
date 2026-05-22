@@ -25,6 +25,11 @@ If your APIs use XML as input or output, this tutorial provides useful configura
 Learn how to use Membrane in more advanced scenarios. Topics include path rewriting, scripting, conditions and more.
 
 
+## [AI / MCP](ai/mcp)
+
+Expose Membrane as an MCP server for AI clients, inspect recent API traffic, and protect the MCP endpoint with an API key.
+
+
 ## [SOAP Web Services (Legacy)](soap)
 
 If you need to integrate legacy SOAP Web Services, this tutorial provides examples and practical guidance.
@@ -43,4 +48,3 @@ If you have questions, feedback or run into any issues, we’re happy to help.
 You can also join the Membrane discussions on GitHub:
 
 https://github.com/membrane/api-gateway/discussions
-
