@@ -5,8 +5,10 @@ It covers:
 
 - running a local MCP server
 - inspecting recent API traffic through MCP
-- protecting the MCP endpoint with an API key
-- forwarding Claude Desktop traffic through a local proxy
+
+To begin, open [10-MCP-Server.yaml](10-MCP-Server.yaml) and follow the instructions in the file.
+
+If you want to protect the MCP endpoint, put the `membraneMCPServer` behind an `apiKey` interceptor and expose it only through the network path you actually want clients to use. If the client should keep talking to a simple local URL, you can also place a small local proxy in front of the protected MCP endpoint and let that proxy add the required authentication details.
 
 ## Claude Desktop Setup
 

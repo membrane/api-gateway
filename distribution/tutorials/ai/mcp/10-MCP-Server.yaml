@@ -20,12 +20,15 @@
 #    Windows:
 #      generate-traffic.cmd 20
 #
-#    The script also sends a few typical WordPress/PHP probe requests to a
-#    local endpoint on port 3002 that always responds with 404.
+#    The script also sends a few typical WordPress/PHP probe requests.
 #
 # 3.) Configure Claude Desktop as described in README.md.
 #
 # 4.) Ask the AI client to inspect recent exchanges or list the available APIs.
+#    Example prompts:
+#    - List the available APIs exposed by this Membrane MCP server.
+#    - Show me the most recent exchanges and summarize what happened.
+#    - Which endpoints received the most requests in the recent traffic?
 
 api:
   port: 2000
@@ -37,22 +40,15 @@ api:
 ---
 api:
   port: 3000
-  name: Fruit-Shop-Demo
+  name: Fruitshop
+  path:
+    uri: /shop/v2/
   target:
-    url: https://api.predic8.de/shop/v2/
+    url: https://api.predic8.de
 
 ---
 api:
   port: 3001
-  name: ApiBin-Demo
+  name: ApiBin
   target:
     url: https://apibin.io/
-
----
-# Simulates common background probe traffic such as WordPress/PHP scans.
-api:
-  port: 3002
-  name: 404 Fallback
-  flow:
-    - return:
-        status: 404

@@ -1,9 +1,9 @@
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
-if "%FRUIT_BASE%"=="" set FRUIT_BASE=http://localhost:3000
+if "%FRUIT_BASE%"=="" set FRUIT_BASE=http://localhost:3000/shop/v2
 if "%APIBIN_BASE%"=="" set APIBIN_BASE=http://localhost:3001
-if "%ATTACK_BASE%"=="" set ATTACK_BASE=http://localhost:3002
+if "%ATTACK_BASE%"=="" set ATTACK_BASE=http://localhost:3000
 
 if "%~1"=="" (
   set ROUNDS=20

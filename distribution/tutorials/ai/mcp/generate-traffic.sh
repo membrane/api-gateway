@@ -1,9 +1,9 @@
 #!/usr/bin/env sh
 set -eu
 
-FRUIT_BASE="${FRUIT_BASE:-http://localhost:3000}"
+FRUIT_BASE="${FRUIT_BASE:-http://localhost:3000/shop/v2}"
 APIBIN_BASE="${APIBIN_BASE:-http://localhost:3001}"
-ATTACK_BASE="${ATTACK_BASE:-http://localhost:3002}"
+ATTACK_BASE="${ATTACK_BASE:-http://localhost:3000}"
 ROUNDS="${1:-20}"
 
 request() {
