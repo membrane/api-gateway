@@ -15,37 +15,84 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.chain.ChainInterceptor;
+import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
+import com.predic8.membrane.core.interceptor.flow.IfInterceptor;
+import com.predic8.membrane.core.interceptor.flow.choice.AbstractCaseOtherwise;
+import com.predic8.membrane.core.interceptor.flow.choice.ChooseInterceptor;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.Router;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class BalancerUtil {
 
+	/**
+	 * The various getFlow() methods only expose the direct child flow of an interceptor.
+	 * Branching interceptors such as if/else and choose/case keep additional flow lists
+	 * outside of getFlow(), so those branches must be added explicitly while walking the flow tree.
+	 */
 	private static Stream<List<Interceptor>> allFlows(Router router) {
-		return Stream.of(
-				router.getRuleManager()
-						.getRules()
-						.stream()
-						.map(Proxy::getFlow),
+		Set<Interceptor> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+		return Stream.concat(ruleFlows(router), globalFlows(router))
+				.flatMap(flow -> allFlows(flow, visited));
+	}
+
+	private static Stream<List<Interceptor>> ruleFlows(Router router) {
+		return router.getRuleManager()
+				.getRules()
+				.stream()
+				.map(Proxy::getFlow);
+	}
+
+	private static Stream<List<Interceptor>> globalFlows(Router router) {
+		return Optional.ofNullable(router.getRegistry())
+				.stream()
+				.flatMap(registry -> registry.getBean(GlobalInterceptor.class).stream())
+				.map(GlobalInterceptor::getFlow);
+	}
+
+	private static Stream<List<Interceptor>> allFlows(List<Interceptor> flow, Set<Interceptor> visited) {
+		if (flow == null) {
+			return Stream.empty();
+		}
+		return Stream.concat(
+				Stream.of(flow),
+				flow.stream().flatMap(interceptor -> childFlows(interceptor, visited))
+		);
+	}
+
+	private static Stream<List<Interceptor>> childFlows(Interceptor interceptor, Set<Interceptor> visited) {
+		if (interceptor == null || !visited.add(interceptor)) {
+			return Stream.empty();
+		}
+		return directChildFlows(interceptor)
+				.flatMap(flow -> allFlows(flow, visited));
+	}
+
+	private static Stream<List<Interceptor>> directChildFlows(Interceptor interceptor) {
+		if (interceptor instanceof ChooseInterceptor chooseInterceptor) {
+			return chooseInterceptor.getChoices().stream()
+					.map(AbstractCaseOtherwise::getFlow);
+		}
+		if (interceptor instanceof IfInterceptor ifInterceptor) {
+			return Stream.of(ifInterceptor.getFlow(), ifInterceptor.getElseInterceptor());
+		}
+		if (interceptor instanceof AbstractFlowInterceptor flowInterceptor) {
+			return Stream.of(flowInterceptor.getFlow());
+		}
+		return Stream.empty();
+	}
+
+	private static Stream<Balancer> balancerBeans(Router router) {
+		return Stream.concat(
 				Optional.ofNullable(router.getRegistry())
 						.stream()
-						.flatMap(registry -> registry.getBeans(ChainInterceptor.class).stream())
-						.map(ChainInterceptor::getFlow),
+						.flatMap(registry -> registry.getBeans(Balancer.class).stream()),
 				Optional.ofNullable(router.getBeanFactory())
-						.map(ctx -> ctx.getBeansOfType(ChainInterceptor.class)
-								.values()
-								.stream()
-								.map(ChainInterceptor::getFlow))
-						.orElseGet(Stream::empty),
-				Optional.ofNullable(router.getRegistry())
-						.stream()
-						.flatMap(registry -> registry.getBean(GlobalInterceptor.class).stream())
-						.map(GlobalInterceptor::getFlow)
-		).flatMap(Function.identity());
+						.map(ctx -> ctx.getBeansOfType(Balancer.class).values().stream())
+						.orElseGet(Stream::empty)
+		).distinct();
 	}
 
 	public static List<LoadBalancingInterceptor> collectBalancers(Router router) {
@@ -62,16 +109,7 @@ public class BalancerUtil {
 		return Stream.concat(
 				collectBalancers(router).stream()
 						.flatMap(lbi -> lbi.getClusterManager().getClusters().stream()),
-				Stream.concat(
-						Optional.ofNullable(router.getRegistry())
-								.stream()
-								.flatMap(registry -> registry.getBeans(Balancer.class).stream())
-								.flatMap(b -> b.getClusters().stream()),
-						Optional.ofNullable(router.getBeanFactory())
-								.map(ctx -> ctx.getBeansOfType(Balancer.class).values().stream()
-										.flatMap(b -> b.getClusters().stream()))
-								.orElseGet(Stream::empty)
-				)
+				balancerBeans(router).flatMap(b -> b.getClusters().stream())
 		).distinct().toList();
 	}
 
@@ -91,15 +129,7 @@ public class BalancerUtil {
 	}
 
 	public static boolean hasLoadBalancing(Router router) {
-		for (Proxy r : router.getRuleManager().getRules()) {
-			List<Interceptor> interceptors = r.getFlow();
-			if (interceptors == null)
-				continue;
-			for (Interceptor i : interceptors)
-				if (i instanceof LoadBalancingInterceptor)
-					return true;
-		}
-		return false;
+		return !collectBalancers(router).isEmpty();
 	}
 
 	public static void up(Router router, String balancerName, String cName, String host, int port) {
