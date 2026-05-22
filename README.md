@@ -11,7 +11,7 @@
 
 Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy Web Services**, easily extended with powerful plugins.
 
-Based on the Java platform, Membrane integrates smoothly with major enterprise technologies. Load tests show that Java provides an excellent foundation for high performance and scalability. On a 2021 MacBook Pro, Membrane handles more than 20,000 requests per second, supports up to 10,000 concurrent clients, and can host over 100,000 APIs on a single instance.
+Based on the Java platform, Membrane integrates smoothly with major enterprise technologies. Load tests show that Java provides an excellent foundation for high performance and scalability. On a MacBook Pro, Membrane handles more than 40,000 requests per second, supports up to 20,000 concurrent clients, and can host over 100,000 APIs on a single instance.
 
 The examples below demonstrate how to address a wide range of API Gateway requirements using simple configurations. Version **7.0.0 or newer** is required.
 
@@ -98,7 +98,19 @@ Learn how API Gateways work through practical scenarios and real-world examples,
 
 [Download](https://www.membrane-api.io/ebook/API-Gateway-Handbook-v2.0.0.pdf) instantly. **No registration** required.
 
-## Features
+## Next Community Tech Talk: OpenAPI Validation
+
+Join the next [API Gateway Community Tech Talk](https://www.membrane-api.io//user-meeting/) on June 24, 2026 at 17:00 CET Berlin (16:00 UTC).
+
+Planned topics:
+
+- OpenAPI based request and response validation
+- Best practices for OpenAPI design
+- Tooling with Spectral and Vacuum
+
+Exchange experiences with other Membrane users and discuss API architectures directly with Membrane developers.
+
+## Membrane API Gateway Features
 
 ### **OpenAPI**
 
