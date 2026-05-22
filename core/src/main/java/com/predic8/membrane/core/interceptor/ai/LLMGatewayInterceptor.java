@@ -53,12 +53,13 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() {
+        super.init();
         errorCreator = provider.getErrorCreator();
         if (store != null)
             store.init(router);
 
         // Check if the replacement markers are still there
-        if (apiKey.contains("<<") && apiKey.contains(">>")) {
+        if (apiKey != null && apiKey.contains("<<") && apiKey.contains(">>")) {
             throw new ConfigurationException("The configuration contains the replacement marker %s. Substitute it with the API key of the model.".formatted(apiKey));
         }
     }

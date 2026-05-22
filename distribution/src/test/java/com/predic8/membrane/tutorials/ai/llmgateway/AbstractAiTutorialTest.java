@@ -29,6 +29,8 @@ import org.junit.jupiter.api.BeforeEach;
 
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+
 /**
  * Base class for AI tutorial tests. Starts a local Membrane mock of the upstream LLM API
  * so tests run without a real API key and without network access to the LLM provider.
@@ -103,10 +105,18 @@ public abstract class AbstractAiTutorialTest extends DistributionExtractingTestc
         return "x-api-key";
     }
 
+    /**
+     * Content-Type the mock LLM server sends back. Defaults to {@code "application/json"}
+     * for regular responses. Override to {@code "text/event-stream"} in streaming test classes.
+     */
+    protected String mockContentType() {
+        return APPLICATION_JSON;
+    }
+
     private void startMockLlmApi() throws Exception {
         var si = new StaticInterceptor();
         si.setSrc(mockResponse());
-        si.setContentType("application/json");
+        si.setContentType(mockContentType());
 
         var sp = new ServiceProxy(new ServiceProxyKey(MOCK_LLM_PORT), null, 0);
         sp.getFlow().add(new BodyCaptureInterceptor(
