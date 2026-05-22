@@ -110,7 +110,7 @@ public class SharingApiKeysOpenAiTutorialTest extends AbstractOpenAiTutorialTest
         // @formatter:on
 
         assertThat(lastRequestApiKey, not(equalTo("Bearer " + ALICE)));
-        assertThat(lastRequestApiKey, equalTo("Bearer <<Replace with your API_KEY>>"));
+        assertThat(lastRequestApiKey, equalTo("Bearer " + TEST_API_KEY));
     }
 
     @Test

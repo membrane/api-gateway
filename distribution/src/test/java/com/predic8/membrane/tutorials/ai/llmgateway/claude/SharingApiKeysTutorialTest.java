@@ -120,7 +120,7 @@ public class SharingApiKeysTutorialTest extends AbstractAiTutorialTest {
         // @formatter:on
 
         assertThat(lastRequestApiKey, not(equalTo(ALICE)));
-        assertThat(lastRequestApiKey, equalTo("<<Replace with your API_KEY>>"));
+        assertThat(lastRequestApiKey, equalTo(TEST_API_KEY));
     }
 
     @Test

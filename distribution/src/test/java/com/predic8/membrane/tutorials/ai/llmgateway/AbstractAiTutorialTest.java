@@ -47,6 +47,13 @@ public abstract class AbstractAiTutorialTest extends DistributionExtractingTestc
 
     protected static final int MOCK_LLM_PORT = 3100;
 
+    /**
+     * Value substituted for the {@code <<Replace with your API_KEY>>} placeholder in tutorial
+     * YAMLs before Membrane starts. Tests that verify upstream key-substitution assert against
+     * this constant instead of the raw placeholder text.
+     */
+    protected static final String TEST_API_KEY = "test-upstream-key";
+
     protected Process2 process;
     protected volatile String lastRequestBody;
     protected volatile String lastRequestApiKey;
@@ -74,6 +81,7 @@ public abstract class AbstractAiTutorialTest extends DistributionExtractingTestc
     void startGateway() throws Exception {
         startMockLlmApi();
         replaceInFile2(getTutorialYaml(), getUpstreamApiUrl(), mockApiUrl());
+        replaceInFile2(getTutorialYaml(), "<<Replace with your API_KEY>>", TEST_API_KEY);
         process = startServiceProxyScript();
     }
 
