@@ -124,6 +124,18 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
+    void readsDirectoryRelativeToBaseLocation() {
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setDir("paths");
+
+        Map<String, OpenAPIRecord> recs = factory.create(singletonList(spec));
+
+        assertEquals(3, recs.size());
+        assertTrue(recs.containsKey("api-b-path-foo-v1-0"));
+        assertTrue(recs.keySet().stream().anyMatch(id -> id.startsWith("api-a-path-foo-v1-0")));
+    }
+
+    @Test
     void getUniqueIdNoCollision() {
         assertEquals("customers-api-v1-0", factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), null)));
     }
