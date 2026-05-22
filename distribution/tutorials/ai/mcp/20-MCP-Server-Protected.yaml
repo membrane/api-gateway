@@ -2,9 +2,11 @@
 #
 # Tutorial: Protected MCP Server
 #
-# Claude Desktop still connects to http://localhost:2000.
-# A local proxy adds the API key before forwarding requests to the
-# protected MCP server at http://localhost:8080/mcp.
+# This setup keeps the real MCP server protected with an API key while Claude
+# Desktop still talks to a simple local endpoint on http://localhost:2000. The
+# local proxy adds the Authorization header and forwards the request to the
+# actual MCP server on http://localhost:8080/mcp, so the client setup stays
+# simple and the protected endpoint is never exposed without authentication.
 #
 # 1.) Start Membrane:
 #
@@ -23,9 +25,7 @@
 # 3.) Configure Claude Desktop as described in README.md.
 #
 # 4.) Ask the AI client to inspect recent exchanges.
-#
-# The client talks to the local proxy on port 2000.
-# The protected MCP endpoint remains hidden behind the API key interceptor.
+#    From the client perspective, it still uses port 2000.
 
 api:
   port: 2000
@@ -38,8 +38,8 @@ api:
     url: http://localhost:8080/mcp
 
 ---
-# The real MCP server is protected by the apiKey interceptor.
-# The expected header value is: Authorization: apikey 12345
+# This is the real MCP endpoint. It accepts only requests with
+# Authorization: apikey 12345.
 api:
   port: 8080
   name: MCP-Server-Protected
