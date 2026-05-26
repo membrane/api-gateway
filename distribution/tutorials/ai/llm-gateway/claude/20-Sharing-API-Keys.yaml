@@ -32,14 +32,14 @@ api:
     - llmGateway:
         claude: {}
         apiKey: <<Replace with your API_KEY>>
-        # Limits per request
-        maxInputTokens: 100
-        maxOutputTokens: 200
         policies:
-          models:
-            - claude-sonnet-4-0
-            - claude-opus-4-0
-            - claude-haiku-3-5
+            # Limits per request
+            maxInputTokens: 100
+            maxOutputTokens: 200
+            models:
+              - claude-sonnet-4-0
+              - claude-opus-4-0
+              - claude-haiku-3-5
         simpleStore:
           # User-facing API keys for the LLM Gateway
           users:

@@ -20,7 +20,8 @@ api:
   flow:
     - llmGateway:
         openai: {}
-        maxInputTokens: 100
-        maxOutputTokens: 200
+        policies:
+          maxInputTokens: 100
+          maxOutputTokens: 200
   target:
     url: https://api.openai.com

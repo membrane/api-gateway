@@ -57,8 +57,6 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     private LLMErrorCreator errorCreator;
 
     private String apiKey;
-    private int maxOutputTokens;
-    private int maxInputTokens;
 
     private Policies policies = new Policies();
 
@@ -111,7 +109,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         // Check store limits
         if (store != null) {
-            var effectiveMaxTokens = computeEffectiveMaxOutputTokens(aiReq.getRequestedMaxOutputTokens(), maxOutputTokens);
+            var effectiveMaxTokens = computeEffectiveMaxOutputTokens(aiReq.getRequestedMaxOutputTokens(), policies.getMaxOutputTokens());
             var remaining = store.checkLimit(user, inputTokens, effectiveMaxTokens);
             log.debug("User {} has {} remaining tokens left", user, remaining);
             if (remaining <= 0) {
@@ -130,20 +128,20 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         var requestedMaxOutputTokens = aiReq.getRequestedMaxOutputTokens();
 
-        if (maxOutputTokens > 0) {
+        if (policies.getMaxOutputTokens() > 0) {
             if (requestedMaxOutputTokens <= 0) {
-                log.info("No max. output requested. Setting limit to {}.", maxOutputTokens);
-                aiReq.setMaxOutputTokens(maxOutputTokens);
-            } else if (requestedMaxOutputTokens > maxOutputTokens) {
-                log.info("Requested max. output tokens {} exceed the limit. Setting limit to {}.", requestedMaxOutputTokens, maxOutputTokens);
-                aiReq.setMaxOutputTokens(maxOutputTokens);
+                log.info("No max. output requested. Setting limit to {}.", policies.getMaxOutputTokens());
+                aiReq.setMaxOutputTokens(policies.getMaxOutputTokens());
+            } else if (requestedMaxOutputTokens > policies.getMaxOutputTokens()) {
+                log.info("Requested max. output tokens {} exceed the limit. Setting limit to {}.", requestedMaxOutputTokens, policies.getMaxOutputTokens());
+                aiReq.setMaxOutputTokens(policies.getMaxOutputTokens());
             }
         }
 
-        if (maxInputTokens != 0) {
-            if (inputTokens > maxInputTokens) {
-                log.info("Input tokens {} exceed the limit of {}.", inputTokens, maxInputTokens);
-                exc.setResponse(errorCreator.inputTokensExceeded(maxInputTokens, inputTokens));
+        if (policies.getMaxInputTokens() != 0) {
+            if (inputTokens > policies.getMaxInputTokens()) {
+                log.info("Input tokens {} exceed the limit of {}.", inputTokens, policies.getMaxInputTokens());
+                exc.setResponse(errorCreator.inputTokensExceeded(policies.getMaxInputTokens(), inputTokens));
                 return RETURN;
             }
         }
@@ -213,36 +211,6 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     public String getDisplayName() {
         return "LLM Gateway";
     }
-
-    public int getMaxOutputTokens() {
-        return maxOutputTokens;
-    }
-
-    /**
-     * @param maxOutputTokens Maximum number of tokens the LLM should use to generate a response.
-     * @description Maximum number of tokens the LLM should use to generate a response. This is just a hint that the gateway
-     * sends to the LLM provider. The provider may use a different limit.
-     * @default 0 (unlimited)
-     */
-    @MCAttribute
-    public void setMaxOutputTokens(int maxOutputTokens) {
-        this.maxOutputTokens = maxOutputTokens;
-    }
-
-    public int getMaxInputTokens() {
-        return maxInputTokens;
-    }
-
-    /**
-     * @param maxInputTokens Maximum number of tokens that a request can use.
-     * @description Restricts token usage for the input. The size of the input is estimated by gateway based on the request size.
-     * Actual token usage may be deviate from this value.
-     */
-    @MCAttribute
-    public void setMaxInputTokens(int maxInputTokens) {
-        this.maxInputTokens = maxInputTokens;
-    }
-
 
     public LLMProvider getProvider() {
         return provider;

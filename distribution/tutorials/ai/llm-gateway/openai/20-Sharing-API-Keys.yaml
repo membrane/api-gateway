@@ -31,10 +31,10 @@ api:
   flow:
     - llmGateway:
         apiKey: <<Replace with your API_KEY>>
-        # Limits per request
-        maxInputTokens: 100
-        maxOutputTokens: 200
         policies:
+          # Limits per request
+          maxInputTokens: 100
+          maxOutputTokens: 200
           models:
             - gpt-5.4
             - gpt-5-nano

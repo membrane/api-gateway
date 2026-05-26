@@ -21,7 +21,8 @@ api:
   flow:
     - llmGateway:
         google: {}
-        maxInputTokens: 100
-        maxOutputTokens: 200
+        policies:
+          maxInputTokens: 100
+          maxOutputTokens: 200
   target:
     url: https://generativelanguage.googleapis.com
