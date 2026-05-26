@@ -35,12 +35,13 @@ api:
         # Limits per request
         maxInputTokens: 100
         maxOutputTokens: 200
-        models:
-          - gemini-2.5-pro
-          - gemini-2.5-flash
-          - gemini-2.5-flash-lite
-          - gemini-2.0-flash
-          - gemini-2.0-flash-lite
+        policies:
+          models:
+            - gemini-2.5-pro
+            - gemini-2.5-flash
+            - gemini-2.5-flash-lite
+            - gemini-2.0-flash
+            - gemini-2.0-flash-lite
         simpleStore:
           # User-facing API keys for the LLM Gateway
           users:

@@ -34,10 +34,11 @@ api:
         # Limits per request
         maxInputTokens: 100
         maxOutputTokens: 200
-        models:
-          - gpt-5.4
-          - gpt-5-nano
-          - gpt-5-mini
+        policies:
+          models:
+            - gpt-5.4
+            - gpt-5-nano
+            - gpt-5-mini
         openai: {}
         simpleStore:
           # User-facing API keys for the LLM Gateway
