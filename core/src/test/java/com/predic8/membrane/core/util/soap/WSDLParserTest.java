@@ -23,8 +23,7 @@ import java.util.List;
 
 import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.DOCUMENT;
 import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.RPC;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class WSDLParserTest {
 
@@ -213,6 +212,7 @@ class WSDLParserTest {
         assertEquals(2, definitions.getMessages().size());
         var msg = definitions.getMessages().stream().filter(m -> "CityResponse".equals(m.getName())).findFirst().get();
         assertEquals(0, msg.getParts().size());
+        assertNull(msg.getPart());
         assertEquals("CityResponse", msg.getName());
     }
 }
