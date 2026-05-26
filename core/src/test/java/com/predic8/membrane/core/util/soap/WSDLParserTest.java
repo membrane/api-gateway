@@ -200,8 +200,8 @@ class WSDLParserTest {
      * Message without a part
      * <wsdl:message name="CityResponse">
      * </wsdl:message>
-     * @throws Exception
      */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
     void emptyMessage() throws Exception {
         var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/special/empty-message.wsdl");

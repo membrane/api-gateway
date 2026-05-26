@@ -26,7 +26,7 @@ public class Message extends WSDLElement {
 
     /**
      * Document style only uses one part.
-     * @return
+     * @return first part or null if no part is defined.
      */
     public Part getPart() {
         if (getParts().isEmpty()) {
