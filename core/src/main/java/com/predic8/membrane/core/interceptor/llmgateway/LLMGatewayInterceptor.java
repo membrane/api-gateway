@@ -131,7 +131,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         var requestedMaxOutputTokens = aiReq.getRequestedMaxOutputTokens();
 
         if (maxOutputTokens > 0) {
-            if (requestedMaxOutputTokens == -1) {
+            if (requestedMaxOutputTokens <= 0) {
                 log.info("No max. output requested. Setting limit to {}.", maxOutputTokens);
                 aiReq.setMaxOutputTokens(maxOutputTokens);
             } else if (requestedMaxOutputTokens > maxOutputTokens) {
