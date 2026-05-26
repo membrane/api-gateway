@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Node;
 
-import java.util.*;
+import java.util.List;
 
 public class Message extends WSDLElement {
 
@@ -26,9 +26,12 @@ public class Message extends WSDLElement {
 
     /**
      * Document style only uses one part.
-     * @return
+     * @return first part or null if no part is defined.
      */
     public Part getPart() {
+        if (getParts().isEmpty()) {
+            return null;
+        }
         return getParts().getFirst();
     }
 
