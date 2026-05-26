@@ -14,15 +14,17 @@
 
 package com.predic8.membrane.core.util.soap;
 
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.wsdl.parser.*;
-import com.predic8.membrane.core.util.wsdl.parser.schema.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.schema.SchemaElement;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
 
-import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.DOCUMENT;
+import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.RPC;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class WSDLParserTest {
 
@@ -194,4 +196,23 @@ class WSDLParserTest {
         assertEquals("SayHelloResponse", definitions.getMessages().getLast().getName());
     }
 
+    /**
+     * Message without a part
+     * <wsdl:message name="CityResponse">
+     * </wsdl:message>
+     * @throws Exception
+     */
+    @Test
+    void emptyMessage() throws Exception {
+        var definitions = Definitions.parse(new ResolverMap(), "classpath:/ws/special/empty-message.wsdl");
+        var schema = definitions.getSchemas().getFirst();
+        var schemaElements = schema.getSchemaElements();
+        var schemaElementNames = schemaElements.stream().map(SchemaElement::getName).toList();
+        assertEquals(List.of("getCity"), schemaElementNames);
+
+        assertEquals(2, definitions.getMessages().size());
+        var msg = definitions.getMessages().stream().filter(m -> "CityResponse".equals(m.getName())).findFirst().get();
+        assertEquals(0, msg.getParts().size());
+        assertEquals("CityResponse", msg.getName());
+    }
 }
