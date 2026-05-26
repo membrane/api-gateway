@@ -14,28 +14,36 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.validation.*;
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.annot.Constants.XSD_NS;
+import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidator {
 
@@ -78,7 +86,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         var exceptions = new ArrayList<Exception>();
         var preliminaryError = getPreliminaryError(xopr, msg);
         if (preliminaryError == null) {
-            List<Validator> vals = validators.take();
+            var vals = validators.take();
             try {
                 // the message must be valid for one schema embedded into WSDL
                 for (var validator : vals) {
