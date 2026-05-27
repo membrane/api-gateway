@@ -62,8 +62,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
+import static com.predic8.membrane.annot.Constants.VERSION;
+import static com.predic8.membrane.core.proxies.ApiInfo.logInfosAboutStartedProxies;
 import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.util.DLPUtil.displayTraceWarning;
+import static com.predic8.membrane.core.util.text.TerminalColors.BRIGHT_CYAN;
+import static com.predic8.membrane.core.util.text.TerminalColors.RESET;
 
 /*
  * Responsibilities:
@@ -503,6 +508,8 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
             resetForYamlReload();
             YamlRouterBootstrap.loadIntoRouter(this, location);
             start();
+            logInfosAboutStartedProxies(getRuleManager());
+            log.info("{}{} {} up and running!{}", BRIGHT_CYAN(), PRODUCT_NAME, VERSION, RESET());
             log.info("YAML configuration reloaded successfully.");
             return true;
         } catch (Exception e) {
