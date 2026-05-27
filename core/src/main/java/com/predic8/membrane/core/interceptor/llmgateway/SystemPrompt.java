@@ -18,10 +18,9 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 public class SystemPrompt {
 
     private static final Logger log = LoggerFactory.getLogger(SystemPrompt.class);
-    public static final String INSTRUCTIONS = "instructions";
 
-    enum Action {
-        REJECT, REMOVE, OVERWRITE, APPEND, PREPEND
+    public enum Action {
+        REMOVE, OVERWRITE, APPEND, PREPEND
     }
 
     private Action action;

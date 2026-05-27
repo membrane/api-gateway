@@ -51,5 +51,20 @@ class AbstractLLMRequestTest {
         public String getSystemPrompt() {
             return null;
         }
+
+        @Override
+        public boolean isChatCompletion() {
+            return false;
+        }
+
+        @Override
+        public void setSystemPrompt(String systemPrompt) {
+
+        }
+
+        @Override
+        public void removeSystemPrompt() {
+
+        }
     }
 }
