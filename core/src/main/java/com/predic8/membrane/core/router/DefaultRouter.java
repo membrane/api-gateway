@@ -38,7 +38,6 @@ import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.router.hotdeploy.DefaultHotDeployer;
 import com.predic8.membrane.core.router.hotdeploy.HotDeployer;
-import com.predic8.membrane.core.router.hotdeploy.NullHotDeployer;
 import com.predic8.membrane.core.transport.PortOccupiedException;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -56,8 +55,12 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 import javax.annotation.concurrent.GuardedBy;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.util.DLPUtil.displayTraceWarning;
@@ -111,6 +114,9 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     @GuardedBy("lock")
     private boolean initialized;
 
+    @GuardedBy("lock")
+    private boolean reloading;
+
     /**
      * HotDeployer for changes on the configuration file.
      * Not synchronized, since only modified during initialization
@@ -118,6 +124,9 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     private HotDeployer hotDeployer = new DefaultHotDeployer();
 
     private RuleReinitializer reinitializer;
+
+    private String yamlConfigurationLocation;
+    private List<File> yamlTrackedFiles = List.of();
 
     public DefaultRouter() {
         log.debug("Creating new router.");
@@ -299,12 +308,16 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::stop);
         hotDeployer.stop();
 
-         if (mainComponents.getTransport() != null)
+        if (reinitializer != null)
+            reinitializer.stop();
+        if (mainComponents.getTransport() != null)
             mainComponents.getTransport().closeAll();
         mainComponents.getTimerManager().shutdown();
+        closeRegistryIfSupported();
 
         synchronized (lock) {
             running = false;
+            reloading = false;
             lock.notifyAll();
         }
     }
@@ -347,7 +360,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
      */
     public void waitFor() {
         synchronized (lock) {
-            while (running) {
+            while (running || reloading) {
                 try {
                     lock.wait();
                 } catch (InterruptedException ignored) {
@@ -430,7 +443,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     public void applyConfiguration(Configuration configuration) {
-        hotDeployer = configuration.isHotDeploy() ? new DefaultHotDeployer() : new NullHotDeployer();
+        hotDeployer.setEnabled(configuration.isHotDeploy());
         this.configuration = configuration;
     }
 
@@ -452,6 +465,84 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     public RuleReinitializer getReinitializer() {
         return reinitializer;
+    }
+
+    public synchronized void setYamlConfiguration(String yamlConfigurationLocation, List<Path> trackedFiles) {
+        this.yamlConfigurationLocation = yamlConfigurationLocation;
+        this.yamlTrackedFiles = trackedFiles.stream()
+                .map(Path::toFile)
+                .toList();
+    }
+
+    public synchronized String getYamlConfigurationLocation() {
+        return yamlConfigurationLocation;
+    }
+
+    public synchronized List<File> getYamlTrackedFiles() {
+        return new ArrayList<>(yamlTrackedFiles);
+    }
+
+    public boolean reloadYamlConfiguration() {
+        String location;
+        synchronized (lock) {
+            if (reloading) {
+                return false;
+            }
+            reloading = true;
+            location = yamlConfigurationLocation;
+            lock.notifyAll();
+        }
+
+        try {
+            if (location == null || location.isBlank()) {
+                throw new IllegalStateException("No YAML configuration location is known.");
+            }
+
+            log.info("Reloading YAML configuration from {}.", location);
+            shutdownForYamlReload();
+            resetForYamlReload();
+            YamlRouterBootstrap.loadIntoRouter(this, location);
+            start();
+            log.info("YAML configuration reloaded successfully.");
+            return true;
+        } catch (Exception e) {
+            log.error("Could not reload YAML configuration.", e);
+            return false;
+        } finally {
+            synchronized (lock) {
+                reloading = false;
+                lock.notifyAll();
+            }
+        }
+    }
+
+    private void shutdownForYamlReload() {
+        getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::stop);
+
+        if (reinitializer != null)
+            reinitializer.stop();
+        if (mainComponents.getTransport() != null)
+            mainComponents.getTransport().closeAll();
+        mainComponents.getTimerManager().shutdown();
+        closeRegistryIfSupported();
+
+        synchronized (lock) {
+            running = false;
+            lock.notifyAll();
+        }
+    }
+
+    private void resetForYamlReload() {
+        mainComponents = new DefaultMainComponents(this);
+        configuration = new Configuration();
+        initialized = false;
+        reinitializer = null;
+    }
+
+    private void closeRegistryIfSupported() {
+        if (getRegistry() instanceof BeanRegistryImplementation beanRegistry) {
+            beanRegistry.close();
+        }
     }
 
     private static void handleOpenAPIParsingException(OpenAPIParsingException e) {

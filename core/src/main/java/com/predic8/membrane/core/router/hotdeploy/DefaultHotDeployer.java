@@ -26,11 +26,12 @@ public class DefaultHotDeployer implements HotDeployer {
     private static final Logger log = LoggerFactory.getLogger(DefaultHotDeployer.class.getName());
 
     @GuardedBy("lock")
-    private HotDeploymentThread hdt;
+    private Thread hdt;
 
     private DefaultRouter router;
 
     private final Object lock = new Object();
+    private boolean enabled = true;
 
     @Override
     public void start(@NotNull DefaultRouter defaultRouter) {
@@ -41,8 +42,19 @@ public class DefaultHotDeployer implements HotDeployer {
     private void startInternal() {
         // Prevent multiple threads from starting hot deployment at the same time.
         synchronized (lock) {
+            if (!enabled) {
+                return;
+            }
+
             if (hdt != null) {
-                log.warn("Hot deployment already started.");
+                if (!hdt.isAlive()) {
+                    hdt = null;
+                } else {
+                    return;
+                }
+            }
+
+            if (router == null) {
                 return;
             }
 
@@ -54,13 +66,20 @@ public class DefaultHotDeployer implements HotDeployer {
                             """);
                     return;
                 }
-                hdt = new HotDeploymentThread(router.getRef());
-                hdt.setFiles(tac.getFiles());
+                HotDeploymentThread hotDeploymentThread = new HotDeploymentThread(router.getRef());
+                hotDeploymentThread.setFiles(tac.getFiles());
+                hdt = hotDeploymentThread;
+                hotDeploymentThread.start();
+                return;
+            }
+
+            if (router.getYamlConfigurationLocation() != null && !router.getYamlTrackedFiles().isEmpty()) {
+                hdt = new YamlHotDeploymentThread(router, this);
                 hdt.start();
                 return;
             }
 
-            log.debug("Hot deployment is not yet supported for the YAML configuration.");
+            log.debug("Hot deployment skipped because no local YAML files are known.");
         }
     }
 
@@ -70,22 +89,32 @@ public class DefaultHotDeployer implements HotDeployer {
             if (hdt == null)
                 return;
 
-            router.getReinitializer().stop();
-            hdt.stopASAP();
+            if (router != null && router.getReinitializer() != null) {
+                router.getReinitializer().stop();
+            }
+
+            if (hdt instanceof HotDeploymentThread hotDeploymentThread) {
+                hotDeploymentThread.stopASAP();
+            } else if (hdt instanceof YamlHotDeploymentThread yamlHotDeploymentThread) {
+                yamlHotDeploymentThread.stopASAP();
+            } else {
+                hdt.interrupt();
+            }
             hdt = null;
         }
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        if (enabled && router != null)
+        this.enabled = enabled;
+
+        if (enabled && router != null) {
             startInternal();
-        else
-            stop();
+        }
     }
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 }
