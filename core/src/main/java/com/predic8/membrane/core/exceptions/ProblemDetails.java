@@ -353,7 +353,9 @@ public class ProblemDetails {
     }
 
     private Response createContent(Map<String, Object> root, Exchange exchange) {
-        var builder = statusCode(correctStatusCodeForResponse(exchange,status));
+        var effectiveStatus = correctStatusCodeForResponse(exchange, status);
+        root.put(STATUS, effectiveStatus);   // keep body in sync with HTTP status
+        var builder = statusCode(effectiveStatus);
         try {
             if (exchange != null && (acceptXML(exchange) || exchange.getRequest().isXML())) {
                 createXMLContent(root, builder);
