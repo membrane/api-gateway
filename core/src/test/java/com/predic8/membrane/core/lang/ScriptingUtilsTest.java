@@ -49,9 +49,12 @@ class ScriptingUtilsTest {
 
         @Test
         void number() throws URISyntaxException {
-            assertInstanceOf(
-                    Integer.class,
-                    createBinding("7").get("json")
+            assertEquals(
+                    7,
+                    assertInstanceOf(
+                            Integer.class,
+                            createBinding("7").get("json")
+                    )
             );
         }
 
