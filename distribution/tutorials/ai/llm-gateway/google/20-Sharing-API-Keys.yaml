@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.1.json
+#
+# Tutorial: Sharing LLM API Keys (Google Gemini)
+#
+# Replace <<Replace with your API_KEY>> with your Gemini API key.
+#
+# Requests:
+#
+# 1. Hello AI
+#     curl -v -H "Content-Type: application/json" -H "x-goog-api-key: abc123" -d @simple.json http://localhost:2000/v1beta/models/gemini-2.5-flash:generateContent
+#     Check: Successful response
+#
+# 2. Token Limit Exceeded
+#     Repeat the previous request until you receive: 429 Token Limit Exceeded
+#     User alice is blocked after the limit is exceeded. Bob should still be able to send requests.
+#
+# 3. Wrong Model
+#     curl -v -H "Content-Type: application/json" -H "x-goog-api-key: abc123" -d @simple.json http://localhost:2000/v1beta/models/gpt-5:generateContent
+#     Check: Error response
+#
+# 4. Max. Input Tokens Exceeded
+#     curl -v -H "Content-Type: application/json" -H "x-goog-api-key: abc123" -d @max-input.json http://localhost:2000/v1beta/models/gemini-2.5-flash:generateContent
+#     Check: Error response
+#
+# 5. Requested Max. Output Tokens Exceeded
+#     curl -v -H "Content-Type: application/json" -H "x-goog-api-key: abc123" -d @max-output.json http://localhost:2000/v1beta/models/gemini-2.5-flash:generateContent
+#     Check Membrane log: totalTokens should not exceed 200 even though it was requested in max-output.json
+
+api:
+  port: 2000
+  flow:
+    - llmGateway:
+        google: {}
+        apiKey: <<Replace with your API_KEY>>
+        policies:
+          # Limits per request
+          maxInputTokens: 100
+          maxOutputTokens: 200
+          models:
+            - gemini-2.5-pro
+            - gemini-2.5-flash
+            - gemini-2.5-flash-lite
+            - gemini-2.0-flash
+            - gemini-2.0-flash-lite
+        simpleStore:
+          # User-facing API keys for the LLM Gateway
+          users:
+            - name: alice
+              apiKey: abc123
+              tokens: 500 # Token limit for alice
+            - name: bob
+              apiKey: qwertz
+              tokens: 10000
+          # Time in seconds after which the token limit is reset
+          limitResetPeriod: 60
+  target:
+    url: https://generativelanguage.googleapis.com
