@@ -11,6 +11,7 @@ import java.util.Map;
 
 import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -21,25 +22,40 @@ class ScriptingUtilsTest {
 
         @Test
         void map() throws URISyntaxException {
-            assertInstanceOf(Map.class, createBinding("""
-                    {"foo":1}""").get("json"));
+            assertEquals(
+                    Map.of("foo", 1),
+                    assertInstanceOf(Map.class, createBinding("""
+                            {"foo":1}""").get("json"))
+            );
         }
 
         @Test
         void array() throws URISyntaxException {
-            assertInstanceOf(List.class, createBinding("[1,2,3]").get("json"));
+            assertEquals(
+                    List.of(1, 2, 3),
+                    assertInstanceOf(List.class, createBinding("[1,2,3]").get("json"))
+            );
         }
 
         @Test
         void string() throws URISyntaxException {
-            assertInstanceOf(String.class, createBinding("""
-                    "foo"
-                    """).get("json"));
+            assertEquals(
+                    "foo",
+                    assertInstanceOf(String.class, createBinding("""
+                            "foo"
+                            """).get("json"))
+            );
         }
 
         @Test
         void number() throws URISyntaxException {
-            assertInstanceOf(Integer.class, createBinding("7").get("json"));
+            assertEquals(
+                    7,
+                    assertInstanceOf(
+                            Integer.class,
+                            createBinding("7").get("json")
+                    )
+            );
         }
 
         private static @NotNull Map<String, Object> createBinding(String json) throws URISyntaxException {
