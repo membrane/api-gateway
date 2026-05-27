@@ -106,7 +106,7 @@ public class HttpTimeoutTest {
             Exchange exc = get("http://localhost:3023").buildExchange();
             client.call(exc);
 
-            assertEquals(500, exc.getResponse().getStatusCode());
+            assertEquals(504, exc.getResponse().getStatusCode());
         }
 
         watch.stop();

@@ -16,25 +16,29 @@
 
 package com.predic8.membrane.core.lang;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.lang.groovy.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.text.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderMap;
+import com.predic8.membrane.core.http.LazyCookieMap;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.lang.groovy.GroovyBuiltInFunctions;
+import com.predic8.membrane.core.lang.groovy.PathParametersMap;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.util.PathDoesNotMatchException;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.text.SerializationFunction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.function.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static java.util.Collections.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.util.URLParamUtil.getParams;
+import static java.util.Collections.emptyMap;
 
 public class ScriptingUtils {
 
@@ -92,9 +96,9 @@ public class ScriptingUtils {
             if (includeJsonObject) {
                 try {
                     log.debug("Parsing body as JSON for scripting plugins");
-                    params.put("json", om.readValue(readInputStream(msg.getBodyAsStreamDecoded()), Map.class));
+                    params.put("json", om.readValue(readInputStream(msg.getBodyAsStreamDecoded()), Object.class));
                 } catch (Exception e) {
-                    log.warn("Can't parse body as JSON", e);
+                    log.info("Can't parse body as JSON: {}", e.getMessage());
                 }
             }
         }

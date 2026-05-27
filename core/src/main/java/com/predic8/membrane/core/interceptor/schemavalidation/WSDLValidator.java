@@ -14,33 +14,38 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.wsdl.parser.Definitions.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
 
-import javax.xml.namespace.*;
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.namespace.QName;
+import javax.xml.transform.Source;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static com.predic8.membrane.annot.Constants.SoapVersion.*;
+import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
+import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
 import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.getPossibleRequestElements;
-import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.*;
+import static com.predic8.membrane.core.interceptor.schemavalidation.WSDLMessageElementExtractor.getPossibleResponseElements;
+import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Client;
 import static com.predic8.membrane.core.util.SOAPUtil.*;
-import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.*;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 
 public class WSDLValidator extends AbstractXMLSchemaValidator {
 
@@ -95,6 +100,12 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     @Override
     public Outcome validateMessage(Exchange exc, Interceptor.Flow flow) throws Exception {
         var message = exc.getMessage(flow);
+
+        if (flow == Interceptor.Flow.RESPONSE && message.isBodyEmpty() ) {
+            log.info("Skipping validation of empty response.");
+            return CONTINUE;
+        }
+
         var result = analyseSOAPMessage(xopr, message);
 
         if (!result.isSOAP()) {
@@ -119,11 +130,11 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
             }
         }
 
-        if (message instanceof Request && !isPossibleRequestElement(result.soapElement())) {
+        if (flow == Interceptor.Flow.REQUEST && !isPossibleRequestElement(result.soapElement())) {
             setErrorResponse(exc, "%s is not a valid request element. Possible elements are %s".formatted(result.soapElement(), requestElements));
             return ABORT;
         }
-        if (message instanceof Response && !result.isFault() && !isPossibleResponseElement(result.soapElement())) {
+        if (flow == Interceptor.Flow.RESPONSE && !result.isFault() && !isPossibleResponseElement(result.soapElement())) {
             setErrorResponse(exc, "%s is not a valid response element. Possible elements are %s".formatted(result.soapElement(), responseElements));
             return ABORT;
         }

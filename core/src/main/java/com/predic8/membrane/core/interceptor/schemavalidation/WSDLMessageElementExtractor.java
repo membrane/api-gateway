@@ -15,16 +15,18 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.core.util.wsdl.parser.*;
-import com.predic8.membrane.core.util.wsdl.parser.Operation.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.util.wsdl.parser.Operation.Direction;
+import org.jetbrains.annotations.NotNull;
 
-import javax.xml.namespace.*;
+import javax.xml.namespace.QName;
 import java.util.*;
-import java.util.stream.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.*;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
-import static java.util.stream.Collectors.*;
+import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.RPC;
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
+import static java.util.stream.Collectors.toSet;
 
 public class WSDLMessageElementExtractor {
 
@@ -108,7 +110,8 @@ public class WSDLMessageElementExtractor {
                 .flatMap(Collection::stream)
                 .map(op -> op.getMessagesByDirection(direction))
                 .flatMap(Collection::stream)
-                .map(Message::getPart);
+                .map(Message::getPart)
+                .filter(Objects::nonNull); // Message can have no parts.
     }
 
     private record PortTypesByStyle(List<PortType> portTypesRPC, List<PortType> portTypesDocument) {
