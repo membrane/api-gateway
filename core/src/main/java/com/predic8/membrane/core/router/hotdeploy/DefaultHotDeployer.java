@@ -31,7 +31,7 @@ public class DefaultHotDeployer implements HotDeployer {
     private DefaultRouter router;
 
     private final Object lock = new Object();
-    private boolean enabled = true;
+    private volatile boolean enabled = true;
 
     @Override
     public void start(@NotNull DefaultRouter defaultRouter) {
