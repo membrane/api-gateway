@@ -146,7 +146,7 @@ public class Xml2JsonInterceptor extends AbstractInterceptor {
             log.info(msg, e);
             log.debug("", e);
         }
-        internal(router.getConfiguration().isProduction(), getDisplayName()).flow(flow).status(flow == REQUEST ? 400 : 500)
+        internal(router.getConfiguration().isProduction(), getDisplayName()).flow(flow).status(400)
                 .detail(msg)
                 .exception(e)
                 .topLevel("charset-from-header", exc.getMessage(flow).getHeader().getCharset())

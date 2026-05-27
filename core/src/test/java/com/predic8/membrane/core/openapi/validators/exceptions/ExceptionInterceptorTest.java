@@ -16,20 +16,26 @@
 
 package com.predic8.membrane.core.openapi.validators.exceptions;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.openapi.validators.security.*;
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
-import org.springframework.http.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIInterceptor;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.openapi.validators.security.AbstractSecurityValidatorTest;
+import com.predic8.membrane.core.router.Router;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 
 public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
 
@@ -58,7 +64,7 @@ public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
     @Test
     void unknownType() throws Exception {
         Exchange exc = new Request.Builder().get("/unknown-type").buildExchange();
-        exc.setResponse(Response.ok().body("{}").contentType(MediaType.APPLICATION_JSON.toString()).build());
+        exc.setResponse(ok().body("{}").contentType(APPLICATION_JSON.toString()).build());
         exc.setOriginalRequestUri("/unknown-type");
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
@@ -68,14 +74,14 @@ public class ExceptionInterceptorTest extends AbstractSecurityValidatorTest {
 
     @Test
     void nowhere() throws Exception {
-        Exchange exc = new Request.Builder().get("/nowhere").buildExchange();
-        exc.setResponse(Response.ok().body("{}").contentType(MediaType.APPLICATION_JSON.toString()).build());
+        var exc = get("/nowhere").buildExchange();
+        exc.setResponse(ok().body("{}").contentType(APPLICATION_JSON.toString()).build());
         exc.setOriginalRequestUri("/nowhere");
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
         assertEquals(RETURN, interceptor.handleResponse(exc));
 
-        assertEquals(400,exc.getResponse().getStatusCode());
+        assertEquals(500,exc.getResponse().getStatusCode());
         JsonNode json = om.readTree(exc.getResponse().getBodyAsStream());
         assertEquals("https://membrane-api.io/problems/user/openapi",json.get("type").asText());
     }
