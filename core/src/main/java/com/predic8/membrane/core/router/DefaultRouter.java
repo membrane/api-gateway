@@ -554,10 +554,12 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     private void resetForYamlReload() {
-        mainComponents = new DefaultMainComponents(this);
-        configuration = new Configuration();
-        initialized = false;
-        reinitializer = null;
+        synchronized (lock) {
+            mainComponents = new DefaultMainComponents(this);
+            configuration = new Configuration();
+            initialized = false;
+            reinitializer = null;
+        }
     }
 
     private void validateYamlConfiguration(String location) throws Exception {
