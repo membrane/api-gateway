@@ -58,7 +58,9 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
     private String apiKey;
 
-    private Policies policies = new Policies();
+    private Policies policies = new NullPolicies();
+
+    private SystemPrompt systemPrompt;
 
     private AiApiStore store;
 
@@ -66,6 +68,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         errorCreator = provider.getErrorCreator();
+        policies.init(errorCreator);
         if (store != null)
             store.init(router);
 
@@ -126,35 +129,17 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
 
         log.debug("Requested model: {}", aiReq.getModel());
 
-        var requestedMaxOutputTokens = aiReq.getRequestedMaxOutputTokens();
-
-        if (policies.getMaxOutputTokens() > 0) {
-            if (requestedMaxOutputTokens <= 0) {
-                log.info("No max. output requested. Setting limit to {}.", policies.getMaxOutputTokens());
-                aiReq.setMaxOutputTokens(policies.getMaxOutputTokens());
-            } else if (requestedMaxOutputTokens > policies.getMaxOutputTokens()) {
-                log.info("Requested max. output tokens {} exceed the limit. Setting limit to {}.", requestedMaxOutputTokens, policies.getMaxOutputTokens());
-                aiReq.setMaxOutputTokens(policies.getMaxOutputTokens());
-            }
+        var outcome = policies.handleRequest(aiReq,exc);
+        if (outcome != CONTINUE) {
+            return outcome;
         }
 
-        if (policies.getMaxInputTokens() != 0) {
-            if (inputTokens > policies.getMaxInputTokens()) {
-                log.info("Input tokens {} exceed the limit of {}.", inputTokens, policies.getMaxInputTokens());
-                exc.setResponse(errorCreator.inputTokensExceeded(policies.getMaxInputTokens(), inputTokens));
-                return RETURN;
+        if (systemPrompt != null) {
+            outcome = systemPrompt.handleRequest(aiReq,exc);
+            if (outcome != CONTINUE) {
+                return outcome;
             }
         }
-
-        if (policies.getModels() != null) {
-            var model = aiReq.getModel();
-            if (!policies.getModels().contains(model)) {
-                exc.setResponse(errorCreator.modelNotAllowed(model, policies.getModels()));
-                return RETURN;
-            }
-        }
-
-        log.debug("Agent provides the tools: {}", aiReq.getTools());
 
         setJsonBody(exc.getRequest(), aiReq.getJson());
         return CONTINUE;
@@ -237,5 +222,14 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 20)
     public void setPolicies(Policies policies) {
         this.policies = policies;
+    }
+
+    public SystemPrompt getSystemPrompt() {
+        return systemPrompt;
+    }
+
+    @MCChildElement
+    public void setSystemPrompt(SystemPrompt systemPrompt) {
+        this.systemPrompt = systemPrompt;
     }
 }

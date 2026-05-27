@@ -97,6 +97,51 @@ public class GoogleLLMRequest extends AbstractLLMRequest {
         return Math.max(1, Math.round(chars / 4.0 * 1.15));
     }
 
+    /**
+     * Returns the text of the first part inside {@code systemInstruction},
+     * or an empty string if no system prompt is set.
+     *
+     * <p>Gemini API wire format:
+     * <pre>{@code
+     * { "systemInstruction": { "parts": [{ "text": "You are a helpful assistant." }] } }
+     * }</pre>
+     */
+    @Override
+    public String getSystemPrompt() {
+        for (var part : json.path("systemInstruction").path("parts")) {
+            if (part.path("text").isTextual()) {
+                return part.path("text").asText("");
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Sets {@code systemInstruction} to a single text part carrying {@code systemPrompt}.
+     * Replaces any existing system instruction.
+     */
+    @Override
+    public void setSystemPrompt(String systemPrompt) {
+        json.putObject("systemInstruction")
+                .putArray("parts")
+                .addObject()
+                .put("text", systemPrompt);
+    }
+
+    /**
+     * Removes the {@code systemInstruction} field entirely.
+     * Has no effect if no system instruction is present.
+     */
+    @Override
+    public void removeSystemPrompt() {
+        json.remove("systemInstruction");
+    }
+
+    @Override
+    public boolean isChatCompletion() {
+        return exchange.getRequest().getUri().contains("/chat/completions");
+    }
+
     private long countText(JsonNode node) {
         if (node == null || node.isMissingNode() || node.isNull()) {
             return 0;

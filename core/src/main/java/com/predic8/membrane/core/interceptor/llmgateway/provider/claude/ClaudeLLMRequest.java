@@ -20,6 +20,9 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMRequ
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * system field for system prompt
+ */
 public class ClaudeLLMRequest extends AbstractLLMRequest {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeLLMRequest.class);
@@ -80,6 +83,20 @@ public class ClaudeLLMRequest extends AbstractLLMRequest {
         return tokens;
     }
 
+    /**
+     * Returns the system prompt from the top-level {@code "system"} field,
+     * or an empty string if no system prompt is set.
+     */
+    @Override
+    public String getSystemPrompt() {
+        return json.path("system").asText("");
+    }
+
+    @Override
+    public boolean isChatCompletion() {
+        return false;
+    }
+
     private boolean isThinking() {
         var thinking = json.path("thinking");
         return thinking.isObject() && "enabled".equals(thinking.path("type").asText());
@@ -104,5 +121,26 @@ public class ClaudeLLMRequest extends AbstractLLMRequest {
     public void setApiKey(String apiKey) {
         exchange.getRequest().getHeader().removeFields(X_API_KEY);
         exchange.getRequest().getHeader().add(X_API_KEY, apiKey);
+    }
+
+    /**
+     * Sets the top-level {@code "system"} field to {@code systemPrompt}.
+     * Replaces any existing system prompt.
+     *
+     * <p>Claude API wire format:
+     * <pre>{@code { "system": "You are a helpful assistant.", "messages": [...] }}</pre>
+     */
+    @Override
+    public void setSystemPrompt(String systemPrompt) {
+        json.put("system", systemPrompt);
+    }
+
+    /**
+     * Removes the top-level {@code "system"} field entirely.
+     * Has no effect if no system prompt is present.
+     */
+    @Override
+    public void removeSystemPrompt() {
+        json.remove("system");
     }
 }

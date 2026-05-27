@@ -40,4 +40,12 @@ public interface LLMRequest {
 
     List<String> getTools();
 
+    String getSystemPrompt();
+
+    boolean isChatCompletion();
+
+    void setSystemPrompt(String systemPrompt);
+
+    void removeSystemPrompt();
 }
+

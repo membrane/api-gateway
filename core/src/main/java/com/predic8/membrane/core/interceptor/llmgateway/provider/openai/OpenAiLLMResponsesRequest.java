@@ -38,6 +38,37 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
     }
 
     @Override
+    public String getSystemPrompt() {
+        return json.path("instructions").asText();
+    }
+
+    @Override
+    public boolean isChatCompletion() {
+        return false;
+    }
+
+    /**
+     * Sets the {@code "instructions"} field, which is the system prompt in the
+     * OpenAI Responses API. Replaces any existing value.
+     *
+     * <p>OpenAI Responses API wire format:
+     * <pre>{@code { "instructions": "You are a helpful assistant.", "input": "..." }}</pre>
+     */
+    @Override
+    public void setSystemPrompt(String systemPrompt) {
+        json.put("instructions", systemPrompt);
+    }
+
+    /**
+     * Removes the {@code "instructions"} field entirely.
+     * Has no effect if no system prompt is present.
+     */
+    @Override
+    public void removeSystemPrompt() {
+        json.remove("instructions");
+    }
+
+    @Override
     public long getRequestedMaxOutputTokens() {
         if (json.has("max_output_tokens"))
             return json.get("max_output_tokens").asLong();

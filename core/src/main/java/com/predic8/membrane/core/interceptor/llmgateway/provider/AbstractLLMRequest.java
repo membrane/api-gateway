@@ -70,12 +70,11 @@ public abstract class AbstractLLMRequest extends AbstractLLMMessage implements L
             return null;
         }
 
-        int index = ah.indexOf(BEARER_PREFIX);
-        if (index < 0) {
+        if (!ah.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
             return null;
         }
 
-        var token = ah.substring(index + BEARER_PREFIX.length()).trim();
+        var token = ah.substring(BEARER_PREFIX.length()).trim();
 
         return token.isEmpty() ? null : token;
     }

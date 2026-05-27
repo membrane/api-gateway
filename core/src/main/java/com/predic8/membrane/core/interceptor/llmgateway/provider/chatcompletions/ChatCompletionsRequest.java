@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.AbstractOpenAiLLMRequest;
 
@@ -51,6 +52,65 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
                 .map(n -> n.path("function").path("name").asText(""))
                 .filter(name -> !name.isEmpty())
                 .toList();
+    }
+
+    /**
+     * Returns the content of the first {@code "role": "system"} message,
+     * or an empty string if none is present.
+     */
+    @Override
+    public String getSystemPrompt() {
+        for (var message : json.path("messages")) {
+            if ("system".equals(message.path("role").asText())) {
+                return message.path("content").asText("");
+            }
+        }
+        return "";
+    }
+
+    /**
+     * Sets the system prompt in the {@code "messages"} array.
+     * If a system message already exists its {@code "content"} is updated in place;
+     * otherwise a new {@code {"role":"system","content":"..."}} entry is prepended.
+     *
+     * <p>Chat Completions API wire format:
+     * <pre>{@code
+     * { "messages": [{"role": "system", "content": "You are a helpful assistant."}, ...] }
+     * }</pre>
+     */
+    @Override
+    public void setSystemPrompt(String systemPrompt) {
+        var messages = json.withArray("messages");
+        for (var message : messages) {
+            if ("system".equals(message.path("role").asText())) {
+                ((ObjectNode) message).put("content", systemPrompt);
+                return;
+            }
+        }
+        // No system message found — prepend one
+        var systemMessage = json.objectNode();
+        systemMessage.put("role", "system");
+        systemMessage.put("content", systemPrompt);
+        messages.insert(0, systemMessage);
+    }
+
+    /**
+     * Removes all {@code "role": "system"} messages from the {@code "messages"} array.
+     * Has no effect if no system message is present.
+     */
+    @Override
+    public void removeSystemPrompt() {
+        var messages = json.withArray("messages");
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            if ("system".equals(messages.get(i).path("role").asText())) {
+                messages.remove(i);
+            }
+        }
+    }
+
+    @Override
+    public boolean isChatCompletion() {
+        return true;
     }
 
     @Override
