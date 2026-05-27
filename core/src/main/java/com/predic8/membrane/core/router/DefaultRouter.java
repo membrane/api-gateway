@@ -130,7 +130,9 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     private RuleReinitializer reinitializer;
 
+    @GuardedBy("lock")
     private String yamlConfigurationLocation;
+    @GuardedBy("lock")
     private List<File> yamlTrackedFiles = List.of();
 
     public DefaultRouter() {
@@ -472,19 +474,25 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         return reinitializer;
     }
 
-    public synchronized void setYamlConfiguration(String yamlConfigurationLocation, List<Path> trackedFiles) {
-        this.yamlConfigurationLocation = yamlConfigurationLocation;
-        this.yamlTrackedFiles = trackedFiles.stream()
-                .map(Path::toFile)
-                .toList();
+    public void setYamlConfiguration(String yamlConfigurationLocation, List<Path> trackedFiles) {
+        synchronized (lock) {
+            this.yamlConfigurationLocation = yamlConfigurationLocation;
+            this.yamlTrackedFiles = trackedFiles.stream()
+                    .map(Path::toFile)
+                    .toList();
+        }
     }
 
-    public synchronized String getYamlConfigurationLocation() {
-        return yamlConfigurationLocation;
+    public String getYamlConfigurationLocation() {
+        synchronized (lock) {
+            return yamlConfigurationLocation;
+        }
     }
 
-    public synchronized List<File> getYamlTrackedFiles() {
-        return new ArrayList<>(yamlTrackedFiles);
+    public List<File> getYamlTrackedFiles() {
+        synchronized (lock) {
+            return new ArrayList<>(yamlTrackedFiles);
+        }
     }
 
     public boolean reloadYamlConfiguration() {
