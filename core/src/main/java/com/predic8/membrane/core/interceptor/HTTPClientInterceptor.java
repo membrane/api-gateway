@@ -13,19 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.ProtocolUpgradeDeniedException;
+import com.predic8.membrane.core.transport.http.UnableToTunnelException;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.URLUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
 /**
  * @description The <i>httpClient</i> sends the request of an exchange to a Web
@@ -83,19 +90,40 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
             httpClient.call(exc);
             return RETURN;
         } catch (ConnectException e) {
-            String msg = "Target %s is not reachable.".formatted(getDestination(exc));
+            var msg = "Target %s is not reachable.".formatted(getDestination(exc));
             log.warn("{} {}", msg, PROXIES_HINT);
             gateway(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Bad Gateway")
                     .addSubSee("connect")
                     .status(502)
                     .detail(msg)
                     .buildAndSetResponse(exc);
             return ABORT;
+        } catch (SocketException e) {
+            internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Bad Gateway")
+                    .status(502)
+                    .addSubSee("socket-exception")
+                    .detail("Error communicating with target %s. Reason: %s".formatted(exc.getDestinations(), e.getMessage()))
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        } catch (EOFWhileReadingLineException e) {
+            internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Bad Gateway")
+                    .status(502)
+                    .detail("Backend closed the connection before the response was complete.")
+                    .addSubSee("socket-closed")
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return ABORT;
         } catch (SocketTimeoutException e) {
             // Details are logged further down in the HTTPClient
+            log.info("Target {} is not reachable.",exc.getDestinations());
             internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Gateway Timeout")
+                    .status(504)
                     .addSubSee("socket-timeout")
-                    .detail("Target %s is not reachable.".formatted(exc.getDestinations()))
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (UnknownHostException e) {
