@@ -25,6 +25,34 @@ import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.BATCH;
 import static java.util.EnumSet.of;
 
+/**
+ * @topic 3. Security and Validation
+ * @description
+ * <p>Protects JSON-RPC endpoints by validating request structure, controlling batch usage,
+ * applying ordered allow/deny rules to method names, and optionally validating
+ * method parameters against JSON Schema documents.</p>
+ *
+ * <p>Method rules are evaluated in the configured order. The first matching rule decides
+ * whether a method is allowed or denied.</p>
+ *
+ * <p>Parameter schemas are configured separately in the <code>params</code> child element. The
+ * keys are regular expressions matched against the JSON-RPC method name. The first matching
+ * schema entry is used to validate the <code>params</code> object or array. Schemas must be
+ * referenced by path or URL and cannot be configured inline.</p>
+ *
+ * @yaml
+ * <pre><code>
+ * - jsonRPCProtection:
+ *     batch:
+ *       enabled: true
+ *       maxSize: 50
+ *     rules:
+ *       - allow: "^rpc\\.(health|echo)$"
+ *       - deny: "^rpc\\..*$"
+ *     params:
+ *       "^rpc\\.echo$": "classpath:/json/rpc/echo-params.schema.json"
+ * </code></pre>
+ */
 @MCElement(name = "jsonRPCProtection")
 public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
@@ -71,18 +99,34 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         return RETURN;
     }
 
+    /**
+     * @description Configures whether JSON-RPC batch requests are allowed and how many request objects one batch may contain.
+     */
     @MCChildElement(order = 0)
     public void setBatch(BatchRule batchRule) {
         this.batchRule = batchRule;
         validator = null;
     }
 
+    /**
+     * @description
+     * <p>Configures ordered allow/deny rules for JSON-RPC method names.</p>
+     *
+     * <p>The first matching rule decides whether the method is allowed or denied. Methods that do not match any configured rule are allowed. To switch to default-deny behavior, add a final deny rule such as <code>deny: .*</code>.</p>
+     */
     @MCChildElement(order = 1)
     public void setRules(List<Rule> rules) {
         this.rules = rules == null ? List.of() : new ArrayList<>(rules);
         validator = null;
     }
 
+    /**
+     * @description
+     * <p>Configures JSON Schema files for validating <code>params</code> per method name.</p>
+     *
+     * <p>The keys are regular expressions matched against the JSON-RPC method name in order.
+     * The first matching entry is used. Values must be schema paths or URLs; inline schemas are not supported.</p>
+     */
     @MCChildElement(order = 2)
     public void setParams(JsonRPCParams params) {
         this.params = params == null ? new JsonRPCParams() : params;

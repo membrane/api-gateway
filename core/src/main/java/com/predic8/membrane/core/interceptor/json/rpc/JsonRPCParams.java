@@ -40,12 +40,29 @@ import static com.networknt.schema.SchemaRegistry.withDefaultDialect;
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 
+/**
+ * @description
+ * <p>Maps JSON-RPC method name patterns to JSON Schema locations for validating the
+ * <code>params</code> member of a request.</p>
+ *
+ * <p>Each key is a regular expression matched against the method name. The first matching
+ * key wins. Each value must point to an external JSON Schema document such as a classpath,
+ * file, or HTTP resource. Inline schemas are not supported.</p>
+ */
 @MCElement(name = "params", component = false)
 public class JsonRPCParams {
 
     private Map<String, String> params = new LinkedHashMap<>();
     private List<CompiledSchema> schemas = List.of();
 
+    /**
+     * @description
+     * <p>Defines a map from method name regex to JSON Schema location.</p>
+     *
+     * <p>The insertion order is preserved and determines precedence when multiple regexes match.</p>
+     *
+     * @example "^rpc\\.echo$": "classpath:/json/rpc/echo-params.schema.json"
+     */
     @MCOtherAttributes
     public void setParams(Map<String, String> params) {
         this.params = params == null ? new LinkedHashMap<>() : new LinkedHashMap<>(params);

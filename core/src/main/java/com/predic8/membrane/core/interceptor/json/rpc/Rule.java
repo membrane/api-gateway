@@ -21,6 +21,10 @@ public abstract class Rule {
 
     abstract boolean permits();
 
+    /**
+     * @description The regular expression matched against the JSON-RPC <code>method</code> value.
+     * @example "^rpc\\.(health|echo)$"
+     */
     @Required
     @MCAttribute
     public void setMethod(String method) {
