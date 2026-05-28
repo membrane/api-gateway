@@ -18,7 +18,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 
-import static com.predic8.membrane.core.util.text.SerializationFunction.HEADER_SERIALIZATION;
+import static com.predic8.membrane.core.util.text.SerializationFunction.HEADERVALUE_SERIALIZATION;
 
 /**
  * @description Set HTTP header on the current message.
@@ -45,7 +45,7 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
 
     @Override
     protected ExchangeExpression getExchangeExpression() {
-        return TemplateExchangeExpression.newInstance(this, language, expression, router, HEADER_SERIALIZATION);
+        return TemplateExchangeExpression.newInstance(this, language, expression, router, HEADERVALUE_SERIALIZATION);
     }
 
     @Override

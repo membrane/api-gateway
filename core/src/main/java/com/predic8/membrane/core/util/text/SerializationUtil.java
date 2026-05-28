@@ -41,7 +41,7 @@ public class SerializationUtil {
      * - {@code XML}: Serializes for safe inclusion in an XML context using XML 1.1 rules.
      * - {@code SEGMENT}: Encodes as safe URI path segments, ensuring they do not introduce
      * - {@code TEXT}: Serializes as plain text, without any encoding.
-     * - {@code HEADER}: Removes CR, LF, and NUL to secure header names and value.
+     * - {@code HEADERVALUE}: Escapes CR, LF, and NUL to secure header values.
      * path separators, query delimiters, or other unsafe characters, as per RFC 3986.
      */
     public enum Serialization {
@@ -50,7 +50,7 @@ public class SerializationUtil {
         TEXT,
         URL,
         SEGMENT,
-        HEADER
+        HEADERVALUE
     }
 
     public static Optional<SerializationFunction> getSerialization(String mimeType) {
@@ -74,7 +74,7 @@ public class SerializationUtil {
             case TEXT -> TEXT_SERIALIZATION;
             case URL -> URL_SERIALIZATION;
             case SEGMENT -> SEGMENT_SERIALIZATION;
-            case HEADER -> HEADER_SERIALIZATION;
+            case HEADERVALUE -> HEADERVALUE_SERIALIZATION;
         };
     }
 
@@ -140,13 +140,14 @@ public class SerializationUtil {
     }
 
     /**
-     * Encodes the given value so it can be safely used as a header name or value
-     * by stripping characters that would enable HTTP header injection (CR, LF, NUL).
+     * Encodes the given value so it can be safely used as a header value
+     * by escaping characters that would enable HTTP header injection:
+     * CR becomes {@code \r}, LF becomes {@code \n}, and NUL becomes {@code \0}.
      *
      * @param value the value to encode; may be {@code null}
-     * @return a string with CR, LF, and NUL characters removed; empty string if {@code value} is null
+     * @return a string with CR, LF, and NUL characters escaped; empty string if {@code value} is null
      */
-    public static String headerEncode(Object value) {
+    public static String headerValueEncode(Object value) {
         if (value == null) return "";
 
         String s = value.toString();
@@ -154,8 +155,12 @@ public class SerializationUtil {
 
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            if (c == '\r' || c == '\n' || c == '\0') continue;
-            out.append(c);
+            switch (c) {
+                case '\r' -> out.append("\\r");
+                case '\n' -> out.append("\\n");
+                case '\0' -> out.append("\\0");
+                default -> out.append(c);
+            }
         }
 
         return out.toString();
