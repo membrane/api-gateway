@@ -1,0 +1,10 @@
+{
+   "model": "gpt-5",
+   "max_tokens": 100,
+   "messages": [
+     {
+       "role": "user",
+       "content": "Who are you?"
+     }
+   ]
+}

@@ -14,12 +14,29 @@
 
 package com.predic8.membrane.core.util.json;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.http.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.math.*;
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Optional;
+
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static java.util.Optional.empty;
 
 public class JsonUtil {
+
+    private static final Logger log = LoggerFactory.getLogger(JsonUtil.class);
+
+
+    private static final ObjectMapper om = new ObjectMapper();
 
     private static final JsonNodeFactory FACTORY = JsonNodeFactory.instance;
 
@@ -74,5 +91,61 @@ public class JsonUtil {
         } catch (NumberFormatException ignore) { /* fall through */ }
 
         return FACTORY.textNode(value);
+    }
+
+    /**
+     * Get JSON object from message body.
+     * The caller must deal with the possibility that the body is not a JSON object or
+     * there are parsing errors.
+     * @param jsonString String with a JSON body
+     * @return JSON object or empty if the body is not a JSON object or there are parsing errors
+     */
+    public static Optional<ObjectNode> getJsonObject(String jsonString) {
+        try {
+            var node = om.readTree(jsonString);
+            if (node instanceof ObjectNode on) {
+                return Optional.of(on);
+            }
+            log.debug("Expected JSON Object but got: {}",node.getNodeType());
+        } catch (Exception e) {
+            log.debug("Error reading JSON: {}", e.getMessage());
+        }
+        return empty();
+    }
+
+    /**
+     * Get JSON object from message body.
+     * The caller must deal with the possibility that the body is not a JSON object or
+     * there are parsing errors.
+     * @param msg With a JSON body
+     * @return JSON object or empty if the body is not a JSON object or there are parsing errors
+     */
+    public static Optional<ObjectNode> getJsonObject(Message msg) {
+       return getJsonObjectFromSteam(msg.getBodyAsStreamDecoded());
+    }
+
+    private static Optional<ObjectNode> getJsonObjectFromSteam(InputStream obj) {
+        try {
+            var node = om.readTree(obj);
+            if (node instanceof ObjectNode on) {
+                return Optional.of(on);
+            }
+            log.debug("Expected JSON Object but got: {}",node.getNodeType());
+        } catch (Exception e) {
+            log.debug("Error reading JSON: {}", e.getMessage());
+        }
+        return empty();
+    }
+
+
+    public static void setJsonBody(Message msg, ObjectNode json) {
+        try {
+            if (!msg.isJSON()) {
+                msg.getHeader().setContentType(APPLICATION_JSON);
+            }
+            msg.setBodyContent(om.writeValueAsBytes(json));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -40,9 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.cli.util.JwkGenerator.generateJWK;

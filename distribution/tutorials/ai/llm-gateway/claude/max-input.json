@@ -1,0 +1,10 @@
+{
+  "model": "claude-sonnet-4-0",
+  "max_tokens": 100,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Who are you, where do you get your information from, how do you answer questions, why were you created, what kinds of problems can you solve, where do you go when you search for information, how do you decide what is important, what do you know about programming, science, history, languages, and technology, how do you explain difficult concepts to people, why do people use AI assistants, what happens when you do not know an answer, and why should someone trust the answers you provide?"
+    }
+  ]
+}
