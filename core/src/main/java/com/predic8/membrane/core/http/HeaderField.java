@@ -15,7 +15,8 @@
 
 package com.predic8.membrane.core.http;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.core.util.text.SerializationFunction.HEADERVALUE_SERIALIZATION;
 
 public class HeaderField {
 
@@ -52,28 +53,16 @@ public class HeaderField {
 	public String getValue() {
 		return value;
 	}
+
 	public void setValue(String value) {
-		if (value != null && containsControlChar(value)) {
-			throw new IllegalArgumentException("Illegal character (CR, LF or NUL) in header value");
-		}
-		this.value = value;
+		this.value = HEADERVALUE_SERIALIZATION.apply(value);
 	}
 	public HeaderName getHeaderName() {
 		return headerName;
 	}
-	public void setHeaderName(HeaderName headerName) {
-		if (headerName != null && containsControlChar(headerName.getName())) {
-			throw new IllegalArgumentException("Illegal character (CR, LF or NUL) in header name");
-		}
-		this.headerName = headerName;
-	}
 
-	private static boolean containsControlChar(String s) {
-		for (int i = 0; i < s.length(); i++) {
-			char c = s.charAt(i);
-			if (c == '\r' || c == '\n' || c == '\0') return true;
-		}
-		return false;
+	public void setHeaderName(HeaderName headerName) {
+		this.headerName = headerName;
 	}
 
 	@Override
