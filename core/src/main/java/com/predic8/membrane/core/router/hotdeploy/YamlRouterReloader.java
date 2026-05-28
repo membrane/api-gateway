@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.router.hotdeploy;
 
+import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.YamlConfigurationSource;
 import org.slf4j.Logger;
@@ -70,7 +71,7 @@ public final class YamlRouterReloader implements ConfigurationReloader {
             log.info("Configuration Reloaded.");
             return true;
         } catch (Exception e) {
-            log.error("Could not reload YAML configuration.", e);
+            logReloadFailure(e);
             if (!runtimeStopped) {
                 log.info("Keeping the previous YAML runtime because reload validation failed before shutdown.");
                 return true;
@@ -87,6 +88,14 @@ public final class YamlRouterReloader implements ConfigurationReloader {
         } finally {
             router.clearReloading();
         }
+    }
+
+    private void logReloadFailure(Exception e) {
+        if (e instanceof ConfigurationParsingException) {
+            log.error("Could not reload YAML configuration: {}", e.getMessage());
+            return;
+        }
+        log.error("Could not reload YAML configuration.", e);
     }
 
     private void validate(String location) throws Exception {
