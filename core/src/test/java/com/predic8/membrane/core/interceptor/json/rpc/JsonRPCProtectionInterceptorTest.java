@@ -22,7 +22,9 @@ import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -106,7 +108,7 @@ public class JsonRPCProtectionInterceptorTest {
     @Test
     void paramsValidation() throws Exception {
         JsonRPCParams params = new JsonRPCParams();
-        params.setParams(java.util.Map.of(
+        params.setParams(Map.of(
                 "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
         ));
         var interceptor = interceptor(List.of(), params);
@@ -123,6 +125,38 @@ public class JsonRPCProtectionInterceptorTest {
 
         assertEquals(RETURN, interceptor.handleRequest(exc2));
         assertErrorContains(exc2.getResponse(), 400, "Invalid params for method 'rpc.echo'");
+    }
+
+    @Test
+    void paramsValidationSupportsRegexMethodPatterns() throws Exception {
+        JsonRPCParams params = new JsonRPCParams();
+        params.setParams(Map.of(
+                "^rpc\\..*$", "classpath:/json/rpc/generic-rpc-params.schema.json"
+        ));
+        var interceptor = interceptor(List.of(), params);
+
+        var exc = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.health","params":{"code":1}}
+                """);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    }
+
+    @Test
+    void paramsValidationUsesFirstMatchingRegexPattern() throws Exception {
+        JsonRPCParams params = new JsonRPCParams();
+        LinkedHashMap<String, String> map = new LinkedHashMap<>();
+        map.put("^rpc\\.echo$", "classpath:/json/rpc/echo-params.schema.json");
+        map.put("^rpc\\..*$", "classpath:/json/rpc/generic-rpc-params.schema.json");
+        params.setParams(map);
+        var interceptor = interceptor(List.of(), params);
+
+        var exc = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"code":1}}
+                """);
+
+        assertEquals(RETURN, interceptor.handleRequest(exc));
+        assertErrorContains(exc.getResponse(), 400, "Invalid params for method 'rpc.echo'");
     }
 
     private JsonRPCProtectionInterceptor interceptor(List<Rule> rules) {

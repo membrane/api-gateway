@@ -28,26 +28,27 @@ import com.predic8.membrane.core.util.URIFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
-import static com.networknt.schema.SchemaRegistry.withDefaultDialect;
-import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
+import static com.networknt.schema.SchemaRegistry.withDefaultDialect;
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
-import static java.util.stream.Collectors.toUnmodifiableMap;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 
 @MCElement(name = "params", component = false)
 public class JsonRPCParams {
 
-    private Map<String, String> params = new HashMap<>();
-    private Map<String, Schema> schemas = Map.of();
+    private Map<String, String> params = new LinkedHashMap<>();
+    private List<CompiledSchema> schemas = List.of();
 
     @MCOtherAttributes
     public void setParams(Map<String, String> params) {
-        this.params = params == null ? new HashMap<>() : new HashMap<>(params);
+        this.params = params == null ? new LinkedHashMap<>() : new LinkedHashMap<>(params);
     }
 
     public Map<String, String> getParams() {
@@ -56,26 +57,38 @@ public class JsonRPCParams {
 
     public void init(Resolver resolver, URIFactory uriFactory, String beanBaseLocation) {
         if (params.isEmpty()) {
-            schemas = Map.of();
+            schemas = List.of();
             return;
         }
         if (resolver == null || uriFactory == null) {
             throw new ConfigurationException("Cannot initialize JSON-RPC param schemas without resolver context.");
         }
 
-        schemas = params.entrySet().stream().collect(toUnmodifiableMap(
-                Map.Entry::getKey,
-                entry -> loadSchema(entry.getKey(), entry.getValue(), resolver, uriFactory, beanBaseLocation)
-        ));
+        schemas = params.entrySet().stream()
+                .map(entry -> new CompiledSchema(
+                        entry.getKey(),
+                        compilePattern(entry.getKey()),
+                        loadSchema(entry.getKey(), entry.getValue(), resolver, uriFactory, beanBaseLocation)
+                ))
+                .toList();
     }
 
     public Schema getSchema(String method) {
-        return schemas.get(method);
+        if (method == null) {
+            return null;
+        }
+
+        for (CompiledSchema schema : schemas) {
+            if (schema.pattern().matcher(method).matches()) {
+                return schema.schema();
+            }
+        }
+        return null;
     }
 
-    private static Schema loadSchema(String method, String schemaPath, Resolver resolver, URIFactory uriFactory, String beanBaseLocation) {
+    private static Schema loadSchema(String methodPattern, String schemaPath, Resolver resolver, URIFactory uriFactory, String beanBaseLocation) {
         if (schemaPath == null || schemaPath.trim().isEmpty()) {
-            throw new ConfigurationException("JSON-RPC param schema path for method '%s' must not be empty.".formatted(method));
+            throw new ConfigurationException("JSON-RPC param schema path for method pattern '%s' must not be empty.".formatted(methodPattern));
         }
 
         String resolvedLocation = combine(uriFactory, beanBaseLocation, schemaPath.trim());
@@ -88,9 +101,9 @@ public class JsonRPCParams {
             schema.initializeValidators();
             return schema;
         } catch (IOException e) {
-            throw new ConfigurationException("Cannot read JSON-RPC param schema for method '%s' from '%s'.".formatted(method, schemaPath), e);
+            throw new ConfigurationException("Cannot read JSON-RPC param schema for method pattern '%s' from '%s'.".formatted(methodPattern, schemaPath), e);
         } catch (RuntimeException e) {
-            throw new ConfigurationException("Cannot create JSON-RPC param schema for method '%s' from '%s'.".formatted(method, schemaPath), e);
+            throw new ConfigurationException("Cannot create JSON-RPC param schema for method pattern '%s' from '%s'.".formatted(methodPattern, schemaPath), e);
         }
     }
 
@@ -105,5 +118,19 @@ public class JsonRPCParams {
 
     private static InputFormat getSchemaFormat(String schemaLocation) {
         return schemaLocation.toLowerCase().endsWith(".yaml") || schemaLocation.toLowerCase().endsWith(".yml") ? YAML : JSON;
+    }
+
+    private static Pattern compilePattern(String methodPattern) {
+        if (methodPattern == null || methodPattern.trim().isEmpty()) {
+            throw new ConfigurationException("JSON-RPC param method pattern must not be empty.");
+        }
+        try {
+            return Pattern.compile(methodPattern.trim());
+        } catch (PatternSyntaxException e) {
+            throw new ConfigurationException("Invalid JSON-RPC param method regex: " + methodPattern, e);
+        }
+    }
+
+    private record CompiledSchema(String methodPattern, Pattern pattern, Schema schema) {
     }
 }
