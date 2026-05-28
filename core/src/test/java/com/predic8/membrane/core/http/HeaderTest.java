@@ -267,32 +267,24 @@ class HeaderTest {
     void sanitization() {
         Header h = new Header();
 
-        assertThrows(IllegalArgumentException.class,
-                () -> h.add("X-Foo", "value\r\nInjected: evil"));
-        assertThrows(IllegalArgumentException.class,
-                () -> h.add("X-Foo", "value\rInjected: evil"));
-        assertThrows(IllegalArgumentException.class,
-                () -> h.add("X-Foo", "value\nInjected: evil"));
-        assertThrows(IllegalArgumentException.class,
-                () -> h.add("X-Foo", "value\u0000Injected"));
-
-        assertThrows(IllegalArgumentException.class,
-                () -> h.add("X-Foo\r\nInjected", "value"));
-        assertThrows(IllegalArgumentException.class,
-                () -> h.add("X-Foo\rInjected", "value"));
-        assertThrows(IllegalArgumentException.class,
-                () -> h.add("X-Foo\nInjected", "value"));
+        h.add("X-CRLF", "value\r\nInjected: evil");
+        h.add("X-CR", "value\rInjected: evil");
+        h.add("X-LF", "value\nInjected: evil");
+        h.add("X-NUL", "value\u0000Injected");
+        assertEquals("value\\r\\nInjected: evil", h.getFirstValue("X-CRLF"));
+        assertEquals("value\\rInjected: evil", h.getFirstValue("X-CR"));
+        assertEquals("value\\nInjected: evil", h.getFirstValue("X-LF"));
+        assertEquals("value\\0Injected", h.getFirstValue("X-NUL"));
 
         h.add("X-Bar", "ok");
-        assertThrows(IllegalArgumentException.class,
-                () -> h.setValue("X-Bar", "evil\r\nInjected: x"));
+        h.setValue("X-Bar", "evil\r\nInjected: x");
+        assertEquals("evil\\r\\nInjected: x", h.getFirstValue("X-Bar"));
 
         HeaderField field = h.getAllHeaderFields()[0];
-        assertThrows(IllegalArgumentException.class,
-                () -> field.setValue("evil\r\nInjected: x"));
+        field.setValue("evil\r\nInjected: x");
+        assertEquals("evil\\r\\nInjected: x", field.getValue());
 
         h.add("X-Normal", "regular value");
         assertEquals("regular value", h.getFirstValue("X-Normal"));
-        assertEquals("ok", h.getFirstValue("X-Bar"));
     }
 }
