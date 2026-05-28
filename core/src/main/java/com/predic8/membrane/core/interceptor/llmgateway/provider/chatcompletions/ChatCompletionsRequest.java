@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.AbstractOpenAiLLMRequest;
 
@@ -69,29 +68,29 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
     }
 
     /**
-     * Sets the system prompt in the {@code "messages"} array.
-     * If a system message already exists its {@code "content"} is updated in place;
-     * otherwise a new {@code {"role":"system","content":"..."}} entry is prepended.
+     * Replaces all system messages with one separate {@code {"role":"system","content":"..."}} message
+     * per prompt, prepended to the messages array in list order.
      *
      * <p>Chat Completions API wire format:
      * <pre>{@code
-     * { "messages": [{"role": "system", "content": "You are a helpful assistant."}, ...] }
+     * { "messages": [
+     *     {"role": "system", "content": "prompt 1"},
+     *     {"role": "system", "content": "prompt 2"},
+     *     ...user messages...
+     * ]}
      * }</pre>
      */
     @Override
-    public void setSystemPrompt(String systemPrompt) {
+    public void setSystemPrompts(List<String> prompts) {
+        removeSystemPrompt();
         var messages = json.withArray("messages");
-        for (var message : messages) {
-            if ("system".equals(message.path("role").asText())) {
-                ((ObjectNode) message).put("content", systemPrompt);
-                return;
-            }
+        // Insert in reverse so that prompts[0] ends up at index 0
+        for (int i = prompts.size() - 1; i >= 0; i--) {
+            var systemMessage = json.objectNode();
+            systemMessage.put("role", "system");
+            systemMessage.put("content", prompts.get(i));
+            messages.insert(0, systemMessage);
         }
-        // No system message found — prepend one
-        var systemMessage = json.objectNode();
-        systemMessage.put("role", "system");
-        systemMessage.put("content", systemPrompt);
-        messages.insert(0, systemMessage);
     }
 
     /**
@@ -115,7 +114,10 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
 
     @Override
     public long getRequestedMaxOutputTokens() {
-        return json.path("max_completion_tokens").asLong(0);
+        // Prefer max_completion_tokens (modern OpenAI/o1+), fall back to max_tokens (legacy / all other providers)
+        long v = json.path("max_completion_tokens").asLong(0);
+        if (v > 0) return v;
+        return json.path("max_tokens").asLong(0);
     }
 
 }

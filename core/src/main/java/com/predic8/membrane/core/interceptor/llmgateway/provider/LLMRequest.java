@@ -44,7 +44,7 @@ public interface LLMRequest {
 
     boolean isChatCompletion();
 
-    void setSystemPrompt(String systemPrompt);
+    void setSystemPrompts(List<String> prompts);
 
     void removeSystemPrompt();
 }

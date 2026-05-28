@@ -31,8 +31,9 @@ public abstract class AbstractOpenAiLLMRequest extends AbstractLLMRequest {
 
         chars += estimateChatCompletitions();
 
-        // system instructions
+        // system instructions: "system" (chat completions) or "instructions" (responses API)
         chars += countText(json.path("system"));
+        chars += countText(json.path("instructions"));
 
         // tools/functions contribute significantly
         chars += countJsonSize(json.path("tools"));

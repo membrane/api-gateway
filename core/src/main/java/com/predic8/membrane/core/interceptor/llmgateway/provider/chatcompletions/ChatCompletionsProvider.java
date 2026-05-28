@@ -57,6 +57,6 @@ public class ChatCompletionsProvider implements LLMProvider {
 
     @Override
     public LLMErrorCreator getErrorCreator() {
-        return null;
+        return new ChatCompletionsErrorCreator();
     }
 }

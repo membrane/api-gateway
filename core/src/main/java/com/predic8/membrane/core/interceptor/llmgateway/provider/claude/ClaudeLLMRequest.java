@@ -20,6 +20,8 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMRequ
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * system field for system prompt
  */
@@ -124,15 +126,14 @@ public class ClaudeLLMRequest extends AbstractLLMRequest {
     }
 
     /**
-     * Sets the top-level {@code "system"} field to {@code systemPrompt}.
-     * Replaces any existing system prompt.
+     * Concatenates all prompts (newline-separated) into the top-level {@code "system"} field.
      *
      * <p>Claude API wire format:
-     * <pre>{@code { "system": "You are a helpful assistant.", "messages": [...] }}</pre>
+     * <pre>{@code { "system": "prompt 1\nprompt 2", "messages": [...] }}</pre>
      */
     @Override
-    public void setSystemPrompt(String systemPrompt) {
-        json.put("system", systemPrompt);
+    public void setSystemPrompts(List<String> prompts) {
+        json.put("system", String.join("\n", prompts));
     }
 
     /**

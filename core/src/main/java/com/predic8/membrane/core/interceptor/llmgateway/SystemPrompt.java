@@ -8,6 +8,8 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
@@ -23,7 +25,7 @@ public class SystemPrompt {
         REMOVE, OVERWRITE, APPEND, PREPEND
     }
 
-    private Action action;
+    private Action action = Action.OVERWRITE;
     private String content = "";
 
     public Outcome handleRequest(LLMRequest aiReq, Exchange exc) {
@@ -31,15 +33,15 @@ public class SystemPrompt {
         switch (action) {
             case OVERWRITE -> {
                 log.debug("Overwriting instructions: {}", content);
-                aiReq.setSystemPrompt(content);
+                aiReq.setSystemPrompts(List.of(content));
             }
             case PREPEND -> {
                 log.debug("Prepending instructions: {}", content);
-                aiReq.setSystemPrompt( content + "\n" + instructions);
+                aiReq.setSystemPrompts(List.of(content, instructions));
             }
             case APPEND -> {
                 log.debug("Appending instructions: {}", content);
-                aiReq.setSystemPrompt(instructions + "\n" + content);
+                aiReq.setSystemPrompts(List.of(instructions, content));
             }
             case REMOVE -> {
                 log.info("Removing instructions: {}", instructions);
