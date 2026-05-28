@@ -35,14 +35,14 @@ public class SerializationUtil {
      * <p/>
      * The strategies include:
      * <p/>
-     * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
-     * other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
      * - {@code JSON}: Serializes s for safe inclusion in a JSON context.
      * - {@code XML}: Serializes for safe inclusion in an XML context using XML 1.1 rules.
-     * - {@code SEGMENT}: Encodes as safe URI path segments, ensuring they do not introduce
+     * - {@code URL}: Encodes strings for safe inclusion in a URL, replacing spaces and
+     * other special characters with their percent-encoded counterparts (e.g., SPACE -> +).
      * - {@code TEXT}: Serializes as plain text, without any encoding.
-     * - {@code HEADERVALUE}: Escapes CR, LF, and NUL to secure header values.
+     * - {@code SEGMENT}: Encodes as safe URI path segments, ensuring they do not introduce
      * path separators, query delimiters, or other unsafe characters, as per RFC 3986.
+     * - {@code HEADERVALUE}: Escapes CR, LF, and NUL to secure header values.
      */
     public enum Serialization {
         JSON,
