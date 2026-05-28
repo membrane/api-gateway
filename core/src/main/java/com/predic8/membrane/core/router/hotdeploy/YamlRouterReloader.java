@@ -58,7 +58,7 @@ public final class YamlRouterReloader implements ConfigurationReloader {
                 throw new IllegalStateException("No YAML configuration location is known.");
             }
 
-            log.info("Reloading YAML configuration from {}.", currentSource.location());
+            log.debug("Reloading YAML configuration from {}.", currentSource.location());
             validate(currentSource.location());
 
             router.stopRuntimeForReload();
@@ -67,7 +67,7 @@ public final class YamlRouterReloader implements ConfigurationReloader {
 
             setSource(loadIntoRouter(router, currentSource.location()));
             router.start();
-            log.info("YAML configuration reloaded successfully.");
+            log.info("Configuration Reloaded.");
             return true;
         } catch (Exception e) {
             log.error("Could not reload YAML configuration.", e);

@@ -56,7 +56,7 @@ public class YamlHotDeploymentThread extends Thread {
                     sleep(1000);
                 }
 
-                log.info("yaml configuration changed.");
+                log.info("Configuration Changed.");
 
                 if (!reloader.reload()) {
                     break;
