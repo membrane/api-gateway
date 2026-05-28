@@ -14,80 +14,40 @@
 
 package com.predic8.membrane.core.router.hotdeploy;
 
-import com.predic8.membrane.core.router.DefaultRouter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.function.BooleanSupplier;
+
+import static com.predic8.membrane.core.router.hotdeploy.FileWatchSnapshot.capture;
 
 public class YamlHotDeploymentThread extends Thread {
 
     private static final Logger log = LoggerFactory.getLogger(YamlHotDeploymentThread.class.getName());
 
-    private final DefaultRouter router;
-    private final DefaultHotDeployer hotDeployer;
-    private final List<FileInfo> files = new ArrayList<>();
+    private final ConfigurationReloader reloader;
+    private final BooleanSupplier enabled;
+    private FileWatchSnapshot snapshot;
 
-    private static class FileInfo {
-        public String file;
-        public long lastModified;
-    }
-
-    public YamlHotDeploymentThread(DefaultRouter router, DefaultHotDeployer hotDeployer) {
+    public YamlHotDeploymentThread(ConfigurationReloader reloader, BooleanSupplier enabled) {
         super("yaml-hotdeploy");
-        this.router = router;
-        this.hotDeployer = hotDeployer;
+        this.reloader = reloader;
+        this.enabled = enabled;
         refreshTrackedFiles();
     }
 
     private void refreshTrackedFiles() {
-        files.clear();
-        LinkedHashSet<String> trackedPaths = new LinkedHashSet<>();
-        for (File file : router.getYamlTrackedFiles()) {
-            trackedPaths.add(file.getAbsolutePath());
-            File parent = file.getParentFile();
-            if (parent != null) {
-                trackedPaths.add(parent.getAbsolutePath());
-            }
-        }
-        for (String path : trackedPaths) {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.file = path;
-            files.add(fileInfo);
-        }
-        updateLastModified();
-    }
-
-    private void updateLastModified() {
-        for (FileInfo fileInfo : files) {
-            fileInfo.lastModified = getLastModified(fileInfo.file);
-        }
-    }
-
-    private static long getLastModified(String file) {
-        return new File(file).lastModified();
-    }
-
-    private boolean configurationChanged() {
-        for (FileInfo fileInfo : files) {
-            if (getLastModified(fileInfo.file) != fileInfo.lastModified) {
-                return true;
-            }
-        }
-        return false;
+        snapshot = capture(reloader.trackedFiles());
     }
 
     @Override
     public void run() {
         log.debug("YAML Hot Deployment Thread started.");
 
-        while (!isInterrupted() && hotDeployer.isEnabled()) {
+        while (!isInterrupted() && enabled.getAsBoolean()) {
             try {
-                while (!configurationChanged()) {
-                    if (isInterrupted() || !hotDeployer.isEnabled()) {
+                while (!snapshot.hasChanged()) {
+                    if (isInterrupted() || !enabled.getAsBoolean()) {
                         log.debug("YAML Hot Deployment Thread interrupted.");
                         return;
                     }
@@ -96,13 +56,13 @@ public class YamlHotDeploymentThread extends Thread {
                     sleep(1000);
                 }
 
-                log.debug("yaml configuration changed.");
+                log.info("yaml configuration changed.");
 
-                if (!router.reloadYamlConfiguration()) {
+                if (!reloader.reload()) {
                     break;
                 }
 
-                if (!hotDeployer.isEnabled()) {
+                if (!enabled.getAsBoolean()) {
                     break;
                 }
 

@@ -36,6 +36,7 @@ import com.predic8.membrane.core.proxies.RuleManager;
 import com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.hotdeploy.ConfigurationReloader;
 import com.predic8.membrane.core.router.hotdeploy.DefaultHotDeployer;
 import com.predic8.membrane.core.router.hotdeploy.HotDeployer;
 import com.predic8.membrane.core.transport.PortOccupiedException;
@@ -55,20 +56,11 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
-import static com.predic8.membrane.annot.Constants.PRODUCT_NAME;
-import static com.predic8.membrane.annot.Constants.VERSION;
-import static com.predic8.membrane.core.proxies.ApiInfo.logInfosAboutStartedProxies;
 import static com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource.MANUAL;
 import static com.predic8.membrane.core.util.DLPUtil.displayTraceWarning;
-import static com.predic8.membrane.core.util.text.TerminalColors.BRIGHT_CYAN;
-import static com.predic8.membrane.core.util.text.TerminalColors.RESET;
 
 /*
  * Responsibilities:
@@ -129,11 +121,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     private HotDeployer hotDeployer = new DefaultHotDeployer();
 
     private RuleReinitializer reinitializer;
-
-    @GuardedBy("lock")
-    private String yamlConfigurationLocation;
-    @GuardedBy("lock")
-    private List<File> yamlTrackedFiles = List.of();
 
     public DefaultRouter() {
         log.debug("Creating new router.");
@@ -474,72 +461,29 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         return reinitializer;
     }
 
-    public void setYamlConfiguration(String yamlConfigurationLocation, List<Path> trackedFiles) {
-        synchronized (lock) {
-            this.yamlConfigurationLocation = yamlConfigurationLocation;
-            this.yamlTrackedFiles = trackedFiles.stream()
-                    .map(Path::toFile)
-                    .toList();
-        }
+    public void setConfigurationReloader(ConfigurationReloader configurationReloader) {
+        hotDeployer.setConfigurationReloader(configurationReloader);
     }
 
-    public String getYamlConfigurationLocation() {
-        synchronized (lock) {
-            return yamlConfigurationLocation;
-        }
-    }
-
-    public List<File> getYamlTrackedFiles() {
-        synchronized (lock) {
-            return new ArrayList<>(yamlTrackedFiles);
-        }
-    }
-
-    public boolean reloadYamlConfiguration() {
-        String location;
-        YamlRuntimeState previousState = null;
+    public boolean markReloading() {
         synchronized (lock) {
             if (reloading) {
                 return false;
             }
             reloading = true;
-            location = yamlConfigurationLocation;
             lock.notifyAll();
-        }
-
-        try {
-            if (location == null || location.isBlank()) {
-                throw new IllegalStateException("No YAML configuration location is known.");
-            }
-
-            log.info("Reloading YAML configuration from {}.", location);
-            validateYamlConfiguration(location);
-            previousState = captureYamlRuntimeState();
-            shutdownForYamlReload();
-            resetForYamlReload();
-            YamlRouterBootstrap.loadIntoRouter(this, location);
-            start();
-            disposeYamlRuntime(previousState);
-            logInfosAboutStartedProxies(getRuleManager());
-            log.info("{}{} {} up and running!{}", BRIGHT_CYAN(), PRODUCT_NAME, VERSION, RESET());
-            log.info("YAML configuration reloaded successfully.");
             return true;
-        } catch (Exception e) {
-            log.error("Could not reload YAML configuration.", e);
-            if (previousState != null) {
-                return recoverPreviousYamlRuntime(previousState, e);
-            }
-            log.info("Keeping the previous YAML runtime because reload validation failed before shutdown.");
-            return true;
-        } finally {
-            synchronized (lock) {
-                reloading = false;
-                lock.notifyAll();
-            }
         }
     }
 
-    private void shutdownForYamlReload() {
+    public void clearReloading() {
+        synchronized (lock) {
+            reloading = false;
+            lock.notifyAll();
+        }
+    }
+
+    public void stopRuntimeForReload() {
         getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::stop);
 
         if (reinitializer != null)
@@ -553,7 +497,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         }
     }
 
-    private void resetForYamlReload() {
+    public void resetRuntime() {
         synchronized (lock) {
             mainComponents = new DefaultMainComponents(this);
             configuration = new Configuration();
@@ -562,65 +506,11 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         }
     }
 
-    private void validateYamlConfiguration(String location) throws Exception {
-        DefaultRouter candidate = new DefaultRouter();
-        try {
-            YamlRouterBootstrap.loadIntoRouter(candidate, location);
-        } finally {
-            candidate.getTimerManager().shutdown();
-            candidate.closeRegistryIfSupported();
-        }
-    }
-
-    private YamlRuntimeState captureYamlRuntimeState() {
-        synchronized (lock) {
-            return new YamlRuntimeState(
-                    mainComponents,
-                    configuration,
-                    initialized,
-                    reinitializer,
-                    yamlConfigurationLocation,
-                    new ArrayList<>(yamlTrackedFiles)
-            );
-        }
-    }
-
-    private boolean recoverPreviousYamlRuntime(YamlRuntimeState previousState, Exception originalError) {
-        log.info("Attempting to recover the previous YAML runtime after reload failure.");
-
-        restoreYamlRuntime(previousState);
-
-        try {
-            start();
-            log.info("Recovered the previous YAML runtime after reload failure.");
-            return true;
-        } catch (Exception recoveryError) {
-            log.error("Could not recover the previous YAML runtime after reload failure.", recoveryError);
-            recoveryError.addSuppressed(originalError);
-            return false;
-        }
-    }
-
-    private void restoreYamlRuntime(YamlRuntimeState previousState) {
-        synchronized (lock) {
-            mainComponents = previousState.mainComponents();
-            configuration = previousState.configuration();
-            initialized = previousState.initialized();
-            reinitializer = previousState.reinitializer();
-            yamlConfigurationLocation = previousState.yamlConfigurationLocation();
-            yamlTrackedFiles = new ArrayList<>(previousState.yamlTrackedFiles());
-        }
-        hotDeployer.setEnabled(previousState.configuration().isHotDeploy());
-    }
-
-    private void disposeYamlRuntime(YamlRuntimeState previousState) {
-        if (previousState == null)
-            return;
-
-        if (previousState.reinitializer() != null)
-            previousState.reinitializer().stop();
-        previousState.mainComponents().getTimerManager().shutdown();
-        closeRegistryIfSupported(previousState.mainComponents().getRegistry());
+    public void disposeRuntime() {
+        if (reinitializer != null)
+            reinitializer.stop();
+        mainComponents.getTimerManager().shutdown();
+        closeRegistryIfSupported();
     }
 
     private void closeRegistryIfSupported() {
@@ -631,16 +521,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         if (registry instanceof BeanRegistryImplementation beanRegistry) {
             beanRegistry.close();
         }
-    }
-
-    private record YamlRuntimeState(
-            DefaultMainComponents mainComponents,
-            Configuration configuration,
-            boolean initialized,
-            RuleReinitializer reinitializer,
-            String yamlConfigurationLocation,
-            List<File> yamlTrackedFiles
-    ) {
     }
 
     private static void handleOpenAPIParsingException(OpenAPIParsingException e) {

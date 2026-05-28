@@ -25,7 +25,7 @@ import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.router.RouterXmlBootstrap;
-import com.predic8.membrane.core.router.YamlRouterBootstrap;
+import com.predic8.membrane.core.router.hotdeploy.YamlRouterReloader;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.codec.binary.Hex;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +51,7 @@ import static com.predic8.membrane.core.interceptor.authentication.SecurityUtils
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPIMisplacedError;
 import static com.predic8.membrane.core.proxies.ApiInfo.logInfosAboutStartedProxies;
+import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 import static com.predic8.membrane.core.util.ExceptionUtil.concatMessageAndCauseMessages;
 import static com.predic8.membrane.core.util.OSUtil.fixBackslashes;
 import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
@@ -228,7 +229,7 @@ public class RouterCLI {
 
     static Router initRouterByYAML(String location) throws Exception {
         var router = new DefaultRouter();
-        YamlRouterBootstrap.loadIntoRouter(router, location);
+        router.setConfigurationReloader(new YamlRouterReloader(router, loadIntoRouter(router, location)));
         router.start();
         logInfosAboutStartedProxies(router.getRuleManager());
         logStartupMessage();

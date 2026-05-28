@@ -21,6 +21,8 @@ import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
 
+import static java.lang.Thread.currentThread;
+
 public class DefaultHotDeployer implements HotDeployer {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultHotDeployer.class.getName());
@@ -29,6 +31,7 @@ public class DefaultHotDeployer implements HotDeployer {
     private Thread hdt;
 
     private DefaultRouter router;
+    private ConfigurationReloader configurationReloader;
 
     private final Object lock = new Object();
     private volatile boolean enabled = true;
@@ -73,8 +76,9 @@ public class DefaultHotDeployer implements HotDeployer {
                 return;
             }
 
-            if (router.getYamlConfigurationLocation() != null && !router.getYamlTrackedFiles().isEmpty()) {
-                hdt = new YamlHotDeploymentThread(router, this);
+            // Start from YAML
+            if (configurationReloader != null && !configurationReloader.trackedFiles().isEmpty()) {
+                hdt = new YamlHotDeploymentThread(configurationReloader, this::isEnabled);
                 hdt.start();
                 return;
             }
@@ -85,22 +89,30 @@ public class DefaultHotDeployer implements HotDeployer {
 
     @Override
     public void stop() {
+        Thread threadToStop;
         synchronized (lock) {
             if (hdt == null)
                 return;
-
-            if (router != null && router.getReinitializer() != null) {
-                router.getReinitializer().stop();
-            }
-
-            if (hdt instanceof HotDeploymentThread hotDeploymentThread) {
-                hotDeploymentThread.stopASAP();
-            } else if (hdt instanceof YamlHotDeploymentThread yamlHotDeploymentThread) {
-                yamlHotDeploymentThread.stopASAP();
-            } else {
-                hdt.interrupt();
-            }
+            threadToStop = hdt;
             hdt = null;
+        }
+
+        if (threadToStop == currentThread()) {
+            return;
+        }
+
+        if (threadToStop instanceof HotDeploymentThread hotDeploymentThread) {
+            hotDeploymentThread.stopASAP();
+        } else if (threadToStop instanceof YamlHotDeploymentThread yamlHotDeploymentThread) {
+            yamlHotDeploymentThread.stopASAP();
+        } else {
+            threadToStop.interrupt();
+        }
+
+        try {
+            threadToStop.join(2000);
+        } catch (InterruptedException e) {
+            currentThread().interrupt();
         }
     }
 
@@ -108,7 +120,12 @@ public class DefaultHotDeployer implements HotDeployer {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
 
-        if (enabled && router != null) {
+        if (!enabled) {
+            stop();
+            return;
+        }
+
+        if (router != null) {
             startInternal();
         }
     }
@@ -116,5 +133,10 @@ public class DefaultHotDeployer implements HotDeployer {
     @Override
     public boolean isEnabled() {
         return enabled;
+    }
+
+    @Override
+    public void setConfigurationReloader(ConfigurationReloader configurationReloader) {
+        this.configurationReloader = configurationReloader;
     }
 }
