@@ -318,7 +318,7 @@ public class Header {
     }
 
     public boolean isChunked() {
-        return CHUNKED.equals(getFirstValue(TRANSFER_ENCODING));
+        return getSingleValues(TRANSFER_ENCODING).anyMatch(CHUNKED::equalsIgnoreCase);
     }
 
     public long getContentLength() {

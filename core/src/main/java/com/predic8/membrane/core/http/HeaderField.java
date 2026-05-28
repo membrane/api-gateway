@@ -15,7 +15,8 @@
 
 package com.predic8.membrane.core.http;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.core.util.text.SerializationFunction.HEADERVALUE_SERIALIZATION;
 
 public class HeaderField {
 
@@ -23,13 +24,13 @@ public class HeaderField {
 	private String value;
 
 	public HeaderField(HeaderName headerName,String value) {
-		this.headerName = headerName;
-		this.value = value;
+		setHeaderName(headerName);
+		setValue(value);
 	}
 
 	public HeaderField(String line) {
-		headerName = new HeaderName(getName(line));
-		value = getValue(line);
+		setHeaderName(new HeaderName(getName(line)));
+		setValue(getValue(line));
 	}
 
 	private String getValue(String line) {
@@ -52,12 +53,14 @@ public class HeaderField {
 	public String getValue() {
 		return value;
 	}
+
 	public void setValue(String value) {
-		this.value = value;
+		this.value = HEADERVALUE_SERIALIZATION.apply(value);
 	}
 	public HeaderName getHeaderName() {
 		return headerName;
 	}
+
 	public void setHeaderName(HeaderName headerName) {
 		this.headerName = headerName;
 	}
