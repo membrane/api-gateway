@@ -23,13 +23,13 @@ public class HeaderField {
 	private String value;
 
 	public HeaderField(HeaderName headerName,String value) {
-		this.headerName = headerName;
-		this.value = value;
+		setHeaderName(headerName);
+		setValue(value);
 	}
 
 	public HeaderField(String line) {
-		headerName = new HeaderName(getName(line));
-		value = getValue(line);
+		setHeaderName(new HeaderName(getName(line)));
+		setValue(getValue(line));
 	}
 
 	private String getValue(String line) {
@@ -53,13 +53,27 @@ public class HeaderField {
 		return value;
 	}
 	public void setValue(String value) {
+		if (value != null && containsControlChar(value)) {
+			throw new IllegalArgumentException("Illegal character (CR, LF or NUL) in header value");
+		}
 		this.value = value;
 	}
 	public HeaderName getHeaderName() {
 		return headerName;
 	}
 	public void setHeaderName(HeaderName headerName) {
+		if (headerName != null && containsControlChar(headerName.getName())) {
+			throw new IllegalArgumentException("Illegal character (CR, LF or NUL) in header name");
+		}
 		this.headerName = headerName;
+	}
+
+	private static boolean containsControlChar(String s) {
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			if (c == '\r' || c == '\n' || c == '\0') return true;
+		}
+		return false;
 	}
 
 	@Override

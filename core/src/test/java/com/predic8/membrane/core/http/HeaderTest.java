@@ -262,4 +262,37 @@ class HeaderTest {
         assertEquals("1, 2", h.getValuesAsString("X-Foo"));
         assertEquals("3, 4", h.getValuesAsString("X-BAR"));
     }
+
+    @Test
+    void sanitization() {
+        Header h = new Header();
+
+        assertThrows(IllegalArgumentException.class,
+                () -> h.add("X-Foo", "value\r\nInjected: evil"));
+        assertThrows(IllegalArgumentException.class,
+                () -> h.add("X-Foo", "value\rInjected: evil"));
+        assertThrows(IllegalArgumentException.class,
+                () -> h.add("X-Foo", "value\nInjected: evil"));
+        assertThrows(IllegalArgumentException.class,
+                () -> h.add("X-Foo", "value\u0000Injected"));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> h.add("X-Foo\r\nInjected", "value"));
+        assertThrows(IllegalArgumentException.class,
+                () -> h.add("X-Foo\rInjected", "value"));
+        assertThrows(IllegalArgumentException.class,
+                () -> h.add("X-Foo\nInjected", "value"));
+
+        h.add("X-Bar", "ok");
+        assertThrows(IllegalArgumentException.class,
+                () -> h.setValue("X-Bar", "evil\r\nInjected: x"));
+
+        HeaderField field = h.getAllHeaderFields()[0];
+        assertThrows(IllegalArgumentException.class,
+                () -> field.setValue("evil\r\nInjected: x"));
+
+        h.add("X-Normal", "regular value");
+        assertEquals("regular value", h.getFirstValue("X-Normal"));
+        assertEquals("ok", h.getFirstValue("X-Bar"));
+    }
 }
