@@ -1,0 +1,5 @@
+{
+  "model": "gpt-5-nano",
+  "input": "Who are you?",
+  "stream": true
+}

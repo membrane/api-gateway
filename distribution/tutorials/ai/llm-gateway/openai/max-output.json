@@ -1,0 +1,5 @@
+{
+  "model": "gpt-5-nano",
+  "input": "Explain in detail who you are?",
+  "max_output_tokens": 500
+}

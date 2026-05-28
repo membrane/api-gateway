@@ -1,3 +1,17 @@
+/* Copyright 2026 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core.interceptor.mcp;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -9,14 +23,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.mcp.MCPUtil.InvalidToolArgumentsException;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import com.predic8.membrane.core.jsonrpc.JSONRPCResponse;
-import com.predic8.membrane.core.mcp.MCPInitialize;
-import com.predic8.membrane.core.mcp.MCPInitializeResponse;
-import com.predic8.membrane.core.mcp.MCPInitialized;
-import com.predic8.membrane.core.mcp.MCPPing;
-import com.predic8.membrane.core.mcp.MCPToolsCall;
-import com.predic8.membrane.core.mcp.MCPToolsCallResponse;
-import com.predic8.membrane.core.mcp.MCPToolsList;
-import com.predic8.membrane.core.mcp.MCPToolsListResponse;
+import com.predic8.membrane.core.mcp.*;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,13 +43,7 @@ import static com.predic8.membrane.core.interceptor.mcp.McpSchemaBuilder.object;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.INITIALIZED;
 import static com.predic8.membrane.core.interceptor.mcp.McpSessionContext.McpSessionState.READY;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INTERNAL_ERROR;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_PARAMS;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_METHOD_NOT_FOUND;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_PARSE_ERROR;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.error;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.success;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 
 /**
  * @description MCP Server for Membrane. It allows querying Membrane's internal state and operation from an LLM
