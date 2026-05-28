@@ -29,6 +29,9 @@ import java.util.List;
 import static com.predic8.membrane.core.util.OSUtil.isWindowsAbsolutePath;
 import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
 
+/**
+ * Parses YAML into a router instance and returns the local files that can later be watched for hot reloads.
+ */
 public final class YamlRouterBootstrap {
 
     private YamlRouterBootstrap() {

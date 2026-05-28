@@ -97,6 +97,7 @@ public class DefaultHotDeployer implements HotDeployer {
             hdt = null;
         }
 
+        // A watcher can stop itself after a failed reload; joining the current thread would deadlock here.
         if (threadToStop == currentThread()) {
             return;
         }

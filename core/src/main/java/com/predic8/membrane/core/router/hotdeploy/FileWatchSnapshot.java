@@ -19,6 +19,9 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+/**
+ * Snapshot of the currently watched YAML files and their last-modified timestamps.
+ */
 final class FileWatchSnapshot {
 
     private final List<WatchedPath> files;

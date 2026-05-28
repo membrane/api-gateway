@@ -21,6 +21,9 @@ import java.util.function.BooleanSupplier;
 
 import static com.predic8.membrane.core.router.hotdeploy.FileWatchSnapshot.capture;
 
+/**
+ * Polling watcher for the tracked YAML files; it only detects changes and delegates reload decisions.
+ */
 public class YamlHotDeploymentThread extends Thread {
 
     private static final Logger log = LoggerFactory.getLogger(YamlHotDeploymentThread.class.getName());

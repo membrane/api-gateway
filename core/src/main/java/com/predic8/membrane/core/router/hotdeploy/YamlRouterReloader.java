@@ -26,6 +26,9 @@ import java.util.List;
 
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
 
+/**
+ * Performs YAML validate-and-reload orchestration around the router lifecycle.
+ */
 public final class YamlRouterReloader implements ConfigurationReloader {
 
     private static final Logger log = LoggerFactory.getLogger(YamlRouterReloader.class);
@@ -60,6 +63,7 @@ public final class YamlRouterReloader implements ConfigurationReloader {
             }
 
             log.debug("Reloading YAML configuration from {}.", currentSource.location());
+            // Validation only bootstraps a fresh router; it does not call start() or bind ports.
             validate(currentSource.location());
 
             router.stopRuntimeForReload();
