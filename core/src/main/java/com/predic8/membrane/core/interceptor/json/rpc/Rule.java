@@ -7,6 +7,10 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+/**
+ * @TODO => util.allowdeny
+ * method => probe?
+ */
 public abstract class Rule {
 
     private String method;

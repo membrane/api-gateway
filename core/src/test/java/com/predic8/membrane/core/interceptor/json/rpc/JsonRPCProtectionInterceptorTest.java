@@ -29,9 +29,7 @@ import java.util.Map;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JsonRPCProtectionInterceptorTest {
 
@@ -165,7 +163,7 @@ public class JsonRPCProtectionInterceptorTest {
 
     private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params) {
         var interceptor = new JsonRPCProtectionInterceptor();
-        interceptor.setRules(rules);
+        interceptor.setMethods(rules);
         interceptor.setParams(params);
         interceptor.init(new DefaultRouter());
         return interceptor;

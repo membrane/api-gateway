@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -46,7 +45,7 @@ import static java.util.EnumSet.of;
  *     batch:
  *       enabled: true
  *       maxSize: 50
- *     rules:
+ *     methods:
  *       - allow: "^rpc\\.(health|echo)$"
  *       - deny: "^rpc\\..*$"
  *     params:
@@ -60,12 +59,12 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
     private static final ObjectMapper OM = new ObjectMapper();
 
     private BatchRule batchRule = new BatchRule();
-    private List<Rule> rules = List.of();
+    private List<Rule> methods = List.of();
     private JsonRPCParams params = new JsonRPCParams();
     private JsonRPCValidator validator;
 
     public JsonRPCProtectionInterceptor() {
-        name = "json rpc protection";
+        name = "JSON-RPC protection";
         setAppliedFlow(of(REQUEST));
     }
 
@@ -78,16 +77,20 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        if (!"POST".equals(exc.getRequest().getMethod())) {
+        if (!exc.getRequest().isPOSTRequest()) {
             return CONTINUE;
         }
 
-        String body = exc.getRequest().getBodyAsStringDecoded();
-        if (body == null || body.isBlank()) {
+        if (exc.getRequest().isBodyEmpty()) {
             return CONTINUE;
         }
 
-        return reject(exc, getValidator().validate(body));
+        if (!exc.getRequest().isJSON()) {
+            // @TODO Error msg
+            return RETURN;
+        }
+
+        return reject(exc, getValidator().validate(exc.getRequest().getBodyAsStringDecoded()));
     }
 
     private Outcome reject(Exchange exc, ValidationError error) {
@@ -105,7 +108,6 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 0)
     public void setBatch(BatchRule batchRule) {
         this.batchRule = batchRule;
-        validator = null;
     }
 
     /**
@@ -115,9 +117,8 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
      * <p>The first matching rule decides whether the method is allowed or denied. Methods that do not match any configured rule are allowed. To switch to default-deny behavior, add a final deny rule such as <code>deny: .*</code>.</p>
      */
     @MCChildElement(order = 1)
-    public void setRules(List<Rule> rules) {
-        this.rules = rules == null ? List.of() : new ArrayList<>(rules);
-        validator = null;
+    public void setMethods(List<Rule> methods) {
+        this.methods = methods;
     }
 
     /**
@@ -129,16 +130,15 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
      */
     @MCChildElement(order = 2)
     public void setParams(JsonRPCParams params) {
-        this.params = params == null ? new JsonRPCParams() : params;
-        validator = null;
+        this.params = params;
     }
 
     public BatchRule getBatch() {
         return batchRule;
     }
 
-    public List<Rule> getRules() {
-        return rules;
+    public List<Rule> getMethods() {
+        return methods;
     }
 
     public JsonRPCParams getParams() {
@@ -154,7 +154,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     private JsonRPCValidator createValidator() {
         params.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
-        return new JsonRPCValidator(batchRule, rules, params);
+        return new JsonRPCValidator(batchRule, methods, params);
     }
 
     private Response createErrorResponse(ValidationError error) {

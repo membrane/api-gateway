@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.networknt.schema.Error;
-import com.networknt.schema.Schema;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,23 +27,22 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_PARAMS;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_METHOD_NOT_FOUND;
+import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.SINGLE;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 
 public class JsonRPCValidator {
 
     private static final Logger log = LoggerFactory.getLogger(JsonRPCValidator.class);
-    private static final ObjectMapper OM = new ObjectMapper();
+    private static final ObjectMapper om = new ObjectMapper();
 
     private final BatchRule batchRule;
     private final List<Rule> rules;
     private final JsonRPCParams params;
 
     public JsonRPCValidator(BatchRule batchRule, List<Rule> rules, JsonRPCParams params) {
-        this.batchRule = batchRule == null ? new BatchRule() : batchRule;
-        this.rules = rules == null ? List.of() : List.copyOf(rules);
-        this.params = params == null ? new JsonRPCParams() : params;
+        this.batchRule = batchRule;
+        this.rules = rules;
+        this.params = params;
     }
 
     public ValidationError validate(String body) {
@@ -53,8 +51,8 @@ public class JsonRPCValidator {
         }
 
         try {
-            PayloadType payloadType = getPayloadType(body);
-            JsonNode root = OM.readTree(body);
+            var payloadType = getPayloadType(body);
+            var root = om.readTree(body);
             return validate(root, payloadType);
         } catch (JsonProcessingException e) {
             log.debug("Invalid JSON-RPC payload.", e);
@@ -68,7 +66,7 @@ public class JsonRPCValidator {
         } catch (RuntimeException e) {
             log.debug("Invalid JSON-RPC payload.", e);
             return new ValidationError(
-                    PayloadType.SINGLE,
+                    SINGLE,
                     null,
                     400,
                     ERR_INVALID_REQUEST,
@@ -78,9 +76,6 @@ public class JsonRPCValidator {
     }
 
     private ValidationError validate(JsonNode root, PayloadType payloadType) {
-        if (root == null) {
-            return null;
-        }
         if (root.isObject()) {
             return validateSingle(root);
         }
@@ -92,9 +87,9 @@ public class JsonRPCValidator {
 
     private ValidationError validateSingle(JsonNode node) {
         try {
-            return validateMethod(parseRequest(node), PayloadType.SINGLE);
+            return validateMethod(JSONRPCRequest.fromNode(node), SINGLE);
         } catch (IOException e) {
-            return new ValidationError(PayloadType.SINGLE, null, 400, ERR_INVALID_REQUEST, "Invalid JSON-RPC request: " + e.getMessage());
+            return new ValidationError(SINGLE, null, 400, ERR_INVALID_REQUEST, "Invalid JSON-RPC request: " + e.getMessage());
         }
     }
 
@@ -121,7 +116,7 @@ public class JsonRPCValidator {
             }
 
             try {
-                ValidationError error = validateMethod(parseRequest(requestNode), PayloadType.BATCH);
+                ValidationError error = validateMethod(JSONRPCRequest.fromNode(requestNode), PayloadType.BATCH);
                 if (error != null) {
                     return error;
                 }
@@ -133,7 +128,7 @@ public class JsonRPCValidator {
     }
 
     private ValidationError validateMethod(JSONRPCRequest request, PayloadType payloadType) {
-        for (Rule rule : rules) {
+        for (var rule : rules) {
             if (!rule.matches(request.getMethod())) {
                 continue;
             }
@@ -152,12 +147,12 @@ public class JsonRPCValidator {
     }
 
     private ValidationError validateParams(JSONRPCRequest request, PayloadType payloadType) {
-        Schema schema = params.getSchema(request.getMethod());
+        var schema = params.getSchema(request.getMethod());
         if (schema == null) {
             return null;
         }
 
-        List<Error> errors = schema.validate(getParamsNode(request));
+        var errors = schema.validate(getParamsNode(request));
         if (errors.isEmpty()) {
             return null;
         }
@@ -174,23 +169,19 @@ public class JsonRPCValidator {
         );
     }
 
-    private JSONRPCRequest parseRequest(JsonNode node) throws IOException {
-        return JSONRPCRequest.fromNode(node);
-    }
-
     private JsonNode getParamsNode(JSONRPCRequest request) {
         Object params = request.getParams();
         if (params == null) {
             return NullNode.instance;
         }
-        return OM.valueToTree(params);
+        return om.valueToTree(params);
     }
 
     private PayloadType getPayloadType(String body) {
         if (body == null) {
-            return PayloadType.SINGLE;
+            return SINGLE;
         }
-        return body.trim().startsWith("[") ? PayloadType.BATCH : PayloadType.SINGLE;
+        return body.trim().startsWith("[") ? PayloadType.BATCH : SINGLE;
     }
 
     public enum PayloadType {

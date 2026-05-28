@@ -25,9 +25,9 @@ import com.predic8.membrane.core.interceptor.schemavalidation.json.MembraneSchem
 import com.predic8.membrane.core.resolver.Resolver;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +65,7 @@ public class JsonRPCParams {
      */
     @MCOtherAttributes
     public void setParams(Map<String, String> params) {
-        this.params = params == null ? new LinkedHashMap<>() : new LinkedHashMap<>(params);
+        this.params = params;
     }
 
     public Map<String, String> getParams() {
@@ -81,7 +81,11 @@ public class JsonRPCParams {
             throw new ConfigurationException("Cannot initialize JSON-RPC param schemas without resolver context.");
         }
 
-        schemas = params.entrySet().stream()
+        schemas = getCompiledSchemas(resolver, uriFactory, beanBaseLocation);
+    }
+
+    private @NotNull List<CompiledSchema> getCompiledSchemas(Resolver resolver, URIFactory uriFactory, String beanBaseLocation) {
+        return params.entrySet().stream()
                 .map(entry -> new CompiledSchema(
                         entry.getKey(),
                         compilePattern(entry.getKey()),
@@ -91,11 +95,7 @@ public class JsonRPCParams {
     }
 
     public Schema getSchema(String method) {
-        if (method == null) {
-            return null;
-        }
-
-        for (CompiledSchema schema : schemas) {
+        for (var schema : schemas) {
             if (schema.pattern().matcher(method).matches()) {
                 return schema.schema();
             }
@@ -108,9 +108,9 @@ public class JsonRPCParams {
             throw new ConfigurationException("JSON-RPC param schema path for method pattern '%s' must not be empty.".formatted(methodPattern));
         }
 
-        String resolvedLocation = combine(uriFactory, beanBaseLocation, schemaPath.trim());
-        try (InputStream in = resolver.resolve(resolvedLocation)) {
-            Schema schema = createSchemaRegistry(resolver).getSchema(
+        var resolvedLocation = combine(uriFactory, beanBaseLocation, schemaPath.trim());
+        try (var in = resolver.resolve(resolvedLocation)) {
+            var schema = createSchemaRegistry(resolver).getSchema(
                     SchemaLocation.of(resolvedLocation),
                     in,
                     getSchemaFormat(resolvedLocation)
