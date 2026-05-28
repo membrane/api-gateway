@@ -30,5 +30,5 @@ public interface SerializationFunction extends Function<Object, String> {
     SerializationFunction TEXT_SERIALIZATION = ToTextSerializer::toText;
     SerializationFunction URL_SERIALIZATION = ToURLSerializer::toURL;
     SerializationFunction SEGMENT_SERIALIZATION = SerializationUtil::pathEncode;
-
+    SerializationFunction HEADER_SERIALIZATION = SerializationUtil::headerEncode;
 }

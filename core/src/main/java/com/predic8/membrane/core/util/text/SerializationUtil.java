@@ -41,14 +41,16 @@ public class SerializationUtil {
      * - {@code XML}: Serializes for safe inclusion in an XML context using XML 1.1 rules.
      * - {@code SEGMENT}: Encodes as safe URI path segments, ensuring they do not introduce
      * - {@code TEXT}: Serializes as plain text, without any encoding.
+     * - {@code HEADER}: Removes CR, LF, and NUL to secure header names and value.
      * path separators, query delimiters, or other unsafe characters, as per RFC 3986.
      */
     public enum Serialization {
+        JSON,
+        XML,
         TEXT,
         URL,
         SEGMENT,
-        JSON,
-        XML
+        HEADER
     }
 
     public static Optional<SerializationFunction> getSerialization(String mimeType) {
@@ -67,11 +69,12 @@ public class SerializationUtil {
 
     public static SerializationFunction getSerialization(Serialization serialization) {
         return switch (serialization) {
+            case JSON -> JSON_SERIALIZATION;
+            case XML -> XML_SERIALIZATION;
             case TEXT -> TEXT_SERIALIZATION;
             case URL -> URL_SERIALIZATION;
             case SEGMENT -> SEGMENT_SERIALIZATION;
-            case JSON -> JSON_SERIALIZATION;
-            case XML -> XML_SERIALIZATION;
+            case HEADER -> HEADER_SERIALIZATION;
         };
     }
 
@@ -131,6 +134,28 @@ public class SerializationUtil {
                 char hex2 = toUpperCase(forDigit(c & 0xF, 16));
                 out.append(hex1).append(hex2);
             }
+        }
+
+        return out.toString();
+    }
+
+    /**
+     * Encodes the given value so it can be safely used as a header name or value
+     * by stripping characters that would enable HTTP header injection (CR, LF, NUL).
+     *
+     * @param value the value to encode; may be {@code null}
+     * @return a string with CR, LF, and NUL characters removed; empty string if {@code value} is null
+     */
+    public static String headerEncode(Object value) {
+        if (value == null) return "";
+
+        String s = value.toString();
+        var out = new StringBuilder(s.length());
+
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '\r' || c == '\n' || c == '\0') continue;
+            out.append(c);
         }
 
         return out.toString();

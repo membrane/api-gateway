@@ -55,14 +55,6 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         } catch (Exception e) {
             var msg = "Error evaluating expression %s for field %s".formatted(expression, fieldName);
             if (failOnError) {
-                if (e instanceof IllegalArgumentException) {
-                    user(getRouter().getConfiguration().isProduction(), getDisplayName())
-                            .detail(e.getMessage())
-                            .internal("field", fieldName)
-                            .internal("expression", expression)
-                            .buildAndSetResponse(exchange);
-                    return ABORT;
-                }
                 if (e instanceof ExchangeExpressionException eee) {
                     var pd = prepareProblemDetails(msg);
                     eee.provideDetails(pd);

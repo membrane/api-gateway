@@ -13,10 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.text.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.TemplateExchangeExpression;
+
+import static com.predic8.membrane.core.util.text.SerializationFunction.HEADER_SERIALIZATION;
 
 /**
  * @description Set HTTP header on the current message.
@@ -39,6 +41,11 @@ public class SetHeaderInterceptor extends AbstractSetterInterceptor {
             return !exc.getMessage(flow).getHeader().contains(fieldName);
         }
         return true;
+    }
+
+    @Override
+    protected ExchangeExpression getExchangeExpression() {
+        return TemplateExchangeExpression.newInstance(this, language, expression, router, HEADER_SERIALIZATION);
     }
 
     @Override
