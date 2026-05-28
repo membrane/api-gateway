@@ -17,6 +17,7 @@ package com.predic8.membrane.core.router;
 import java.nio.file.Path;
 import java.util.List;
 
+/** Root YAML location and included local YAML files. */
 public record YamlConfigurationSource(String location, List<Path> trackedFiles) {
 
     public YamlConfigurationSource {
