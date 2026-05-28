@@ -17,12 +17,17 @@ package com.predic8.membrane.core.interceptor.json.rpc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_PARAMS;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_METHOD_NOT_FOUND;
 
 public class JsonRPCValidator {
@@ -31,10 +36,12 @@ public class JsonRPCValidator {
 
     private final BatchRule batchRule;
     private final List<Rule> rules;
+    private final JsonRPCParams params;
 
-    public JsonRPCValidator(BatchRule batchRule, List<Rule> rules) {
+    public JsonRPCValidator(BatchRule batchRule, List<Rule> rules, JsonRPCParams params) {
         this.batchRule = batchRule == null ? new BatchRule() : batchRule;
         this.rules = rules == null ? List.of() : List.copyOf(rules);
+        this.params = params == null ? new JsonRPCParams() : params;
     }
 
     public ValidationError validate(String body) {
@@ -126,7 +133,7 @@ public class JsonRPCValidator {
                 continue;
             }
             if (rule.permits()) {
-                return null;
+                break;
             }
             return new ValidationError(
                     payloadType,
@@ -136,11 +143,42 @@ public class JsonRPCValidator {
                     "JSON-RPC method '%s' is not allowed.".formatted(request.getMethod())
             );
         }
-        return null;
+        return validateParams(request, payloadType);
+    }
+
+    private ValidationError validateParams(JSONRPCRequest request, PayloadType payloadType) {
+        Schema schema = params.getSchema(request.getMethod());
+        if (schema == null) {
+            return null;
+        }
+
+        List<Error> errors = schema.validate(getParamsNode(request));
+        if (errors.isEmpty()) {
+            return null;
+        }
+
+        return new ValidationError(
+                payloadType,
+                request,
+                400,
+                ERR_INVALID_PARAMS,
+                "Invalid params for method '%s': %s".formatted(
+                        request.getMethod(),
+                        errors.stream().map(Error::getMessage).collect(Collectors.joining("; "))
+                )
+        );
     }
 
     private JSONRPCRequest parseRequest(JsonNode node) throws IOException {
         return JSONRPCRequest.parse(OM.writeValueAsString(node));
+    }
+
+    private JsonNode getParamsNode(JSONRPCRequest request) {
+        Object params = request.getParams();
+        if (params == null) {
+            return NullNode.instance;
+        }
+        return OM.valueToTree(params);
     }
 
     private PayloadType getPayloadType(String body) {

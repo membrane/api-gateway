@@ -103,9 +103,36 @@ public class JsonRPCProtectionInterceptorTest {
         assertThrows(ConfigurationException.class, () -> allow.setMethod("[*"));
     }
 
+    @Test
+    void paramsValidation() throws Exception {
+        JsonRPCParams params = new JsonRPCParams();
+        params.setParams(java.util.Map.of(
+                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
+        ));
+        var interceptor = interceptor(List.of(), params);
+
+        var exc = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"message":"hello"}}
+                """);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        var exc2 = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{}}
+                """);
+
+        assertEquals(RETURN, interceptor.handleRequest(exc2));
+        assertErrorContains(exc2.getResponse(), 400, "Invalid params for method 'rpc.echo'");
+    }
+
     private JsonRPCProtectionInterceptor interceptor(List<Rule> rules) {
+        return interceptor(rules, new JsonRPCParams());
+    }
+
+    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params) {
         var interceptor = new JsonRPCProtectionInterceptor();
         interceptor.setRules(rules);
+        interceptor.setParams(params);
         interceptor.init(new DefaultRouter());
         return interceptor;
     }
@@ -133,6 +160,12 @@ public class JsonRPCProtectionInterceptorTest {
         assertEquals(statusCode, response.getStatusCode());
         JsonNode node = OM.readTree(response.getBodyAsStringDecoded());
         assertEquals(message, node.path("error").path("message").asText());
+    }
+
+    private void assertErrorContains(Response response, int statusCode, String messagePart) throws Exception {
+        assertEquals(statusCode, response.getStatusCode());
+        JsonNode node = OM.readTree(response.getBodyAsStringDecoded());
+        assertTrue(node.path("error").path("message").asText().contains(messagePart));
     }
 
     private void assertBatchError(Response response, int statusCode, String message) throws Exception {
