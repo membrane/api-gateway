@@ -13,6 +13,9 @@ public abstract class Rule {
     private Pattern methodPattern;
 
     public boolean matches(String method) {
+        if (method == null) {
+            return false;
+        }
         return methodPattern != null && methodPattern.matcher(method).matches();
     }
 

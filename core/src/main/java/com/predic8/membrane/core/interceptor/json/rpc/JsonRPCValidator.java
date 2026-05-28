@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import com.networknt.schema.Error;
 import com.networknt.schema.Schema;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -32,6 +34,7 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_METHOD_NOT_F
 
 public class JsonRPCValidator {
 
+    private static final Logger log = LoggerFactory.getLogger(JsonRPCValidator.class);
     private static final ObjectMapper OM = new ObjectMapper();
 
     private final BatchRule batchRule;
@@ -54,20 +57,22 @@ public class JsonRPCValidator {
             JsonNode root = OM.readTree(body);
             return validate(root, payloadType);
         } catch (JsonProcessingException e) {
+            log.debug("Invalid JSON-RPC payload.", e);
             return new ValidationError(
                     getPayloadType(body),
                     null,
                     400,
                     ERR_INVALID_REQUEST,
-                    "Invalid JSON-RPC payload: " + e.getOriginalMessage()
+                    "Invalid JSON-RPC payload"
             );
         } catch (RuntimeException e) {
+            log.debug("Invalid JSON-RPC payload.", e);
             return new ValidationError(
                     PayloadType.SINGLE,
                     null,
                     400,
                     ERR_INVALID_REQUEST,
-                    "Invalid JSON-RPC payload: " + e.getMessage()
+                    "Invalid JSON-RPC payload"
             );
         }
     }
@@ -170,7 +175,7 @@ public class JsonRPCValidator {
     }
 
     private JSONRPCRequest parseRequest(JsonNode node) throws IOException {
-        return JSONRPCRequest.parse(OM.writeValueAsString(node));
+        return JSONRPCRequest.fromNode(node);
     }
 
     private JsonNode getParamsNode(JSONRPCRequest request) {
