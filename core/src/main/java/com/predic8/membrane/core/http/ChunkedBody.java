@@ -43,6 +43,18 @@ public class ChunkedBody extends AbstractBody {
 
     private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
 
+    /**
+     * Maximum hex digits in a chunk-size field. Prevents Long.parseLong from receiving a
+     * value that overflows a long (would require >8 digits), with a margin.
+     */
+    private static final int MAX_CHUNK_SIZE_HEX_DIGITS = 4;
+    /**
+     * Hard cap on a single chunk in bytes (100 MiB).
+     * Without this, a sender can trigger a 2 GiB byte[] allocation with just "7FFFFFFF\r\n"
+     * — Integer.MAX_VALUE is a valid input for Integer.parseInt but immediately causes OOM.
+     */
+    static final int MAX_CHUNK_BYTES = 100 * 1024 * 1024;
+
     private final InputStream inputStream;
     private long lengthStreamed;
     private Header trailer;
@@ -94,22 +106,40 @@ public class ChunkedBody extends AbstractBody {
 
         int c;
         while ((c = in.read()) != -1) {
-            if (c == 13) {
-                in.read(); // LF
+            if (c == 13) { // CR — end of chunk-size line
+                in.read(); // consume LF
                 break;
             }
 
-            // ignore chunk extensions
+            // chunk-ext: ignore everything from ';' through the terminating LF
             if (c == ';') {
                 //noinspection StatementWithEmptyBody
-                while ((c = in.read()) != 10)
+                while ((c = in.read()) != 10 && c != -1)
                     ;
+                break; // LF consumed; chunk-size line is done
             }
 
+            if (buffer.length() >= MAX_CHUNK_SIZE_HEX_DIGITS) {
+                log.info("Chunk-size {} exceeds limit: {}",buffer.length(), MAX_CHUNK_SIZE_HEX_DIGITS);
+                throw new IOException("Chunk-size exceeds limit");
+            }
             buffer.append((char) c);
         }
 
-        return Integer.parseInt(buffer.toString().trim(), 16);
+        var hex = buffer.toString().trim();
+        if (hex.isEmpty()) {
+            throw new IOException("Empty chunk-size field");
+        }
+        int size;
+        try {
+            size = Integer.parseInt(hex, 16);
+        } catch (NumberFormatException e) {
+            throw new IOException("Invalid chunk-size value: '" + hex + "'", e);
+        }
+        if (size < 0 || size > MAX_CHUNK_BYTES) {
+            throw new IOException("Chunk size " + size + " exceeds limit of " + MAX_CHUNK_BYTES + " bytes");
+        }
+        return size;
     }
 
     @Override
