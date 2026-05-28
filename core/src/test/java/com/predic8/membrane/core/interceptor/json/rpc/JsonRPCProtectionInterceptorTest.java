@@ -157,6 +157,21 @@ public class JsonRPCProtectionInterceptorTest {
         assertErrorContains(exc.getResponse(), 400, "Invalid params for method 'rpc.echo'");
     }
 
+    @Test
+    void xmlStyleParamMappingsAreSupported() throws Exception {
+        JsonRPCParams params = new JsonRPCParams();
+        params.setParamMappings(List.of(
+                new JsonRPCParams.Param("^rpc\\.echo$", "classpath:/json/rpc/echo-params.schema.json")
+        ));
+        var interceptor = interceptor(List.of(), params);
+
+        var exc = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"message":"hello"}}
+                """);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    }
+
     private JsonRPCProtectionInterceptor interceptor(List<Rule> rules) {
         return interceptor(rules, new JsonRPCParams());
     }

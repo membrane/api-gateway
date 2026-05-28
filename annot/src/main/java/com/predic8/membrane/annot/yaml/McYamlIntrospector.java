@@ -38,7 +38,7 @@ public final class McYamlIntrospector {
     }
 
     public static boolean isStructured(Method method) {
-        return findAnnotation(method, MCChildElement.class) != null;
+        return isJsonVisibleChild(method);
     }
 
     public static boolean matchesJsonKey(Method method, String key) {
@@ -48,7 +48,7 @@ public final class McYamlIntrospector {
     }
 
     private static boolean matchesJsonChildElementKey(Method method, String key) {
-        return findAnnotation(method, MCChildElement.class) != null
+        return isJsonVisibleChild(method)
                && matchesPropertyName(method, key);
     }
 
@@ -101,7 +101,7 @@ public final class McYamlIntrospector {
     private static <T> @NotNull List<Method> getChildSetters(Class<T> clazz) {
         List<Method> childSetters = stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
-                .filter(method -> findAnnotation(method, MCChildElement.class) != null)
+                .filter(McYamlIntrospector::isJsonVisibleChild)
                 .toList();
         if (childSetters.isEmpty()) {
             throw new RuntimeException("No @MCChildElement setter found in " + clazz.getName());
@@ -155,7 +155,7 @@ public final class McYamlIntrospector {
     }
 
     public static boolean hasChildren(Class<?> clazz) {
-        return stream(clazz.getMethods()).anyMatch(m -> m.isAnnotationPresent(MCChildElement.class));
+        return stream(clazz.getMethods()).anyMatch(McYamlIntrospector::isJsonVisibleChild);
     }
 
     public static <T> Method getAnySetter(Class<T> clazz) {
@@ -169,13 +169,18 @@ public final class McYamlIntrospector {
     public static <T> Method getChildSetter(Class<T> clazz, Class<?> valueClass) {
         return stream(clazz.getMethods())
                 .filter(McYamlIntrospector::isSetter)
-                .filter(McYamlIntrospector::isStructured)
+                .filter(McYamlIntrospector::isJsonVisibleChild)
                 .filter(method -> method.getParameterTypes().length == 1)
                 .filter(method -> method.getParameterTypes()[0].isAssignableFrom(valueClass))
                 .reduce((a, b) -> {
                     throw new RuntimeException("Multiple potential setters found on %s for value of type %s".formatted(clazz.getName(), valueClass.getName()));
                 })
                 .orElseThrow(() -> new RuntimeException("Could not find child setter on %s for value of type %s".formatted(clazz.getName(), valueClass.getName())));
+    }
+
+    private static boolean isJsonVisibleChild(Method method) {
+        MCChildElement annotation = findAnnotation(method, MCChildElement.class);
+        return annotation != null && !annotation.excludeFromJson();
     }
 
     public static boolean isReferenceAttribute(Method setter) {
