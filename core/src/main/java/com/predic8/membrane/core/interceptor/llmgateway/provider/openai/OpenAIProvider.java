@@ -36,6 +36,9 @@ public class OpenAIProvider extends AbstractLLMProvider {
     @Override
     public LLMRequest getLLMRequest(Exchange exchange) throws IOException {
         var uri = exchange.getRequest().getUri();
+        if (uri.startsWith("/v1/chat/completions")) {
+            return new OpenAIChatCompletionsRequest(exchange);
+        }
         if (uri.startsWith("/v1/responses")) {
             return new OpenAiLLMResponsesRequest(exchange);
         }

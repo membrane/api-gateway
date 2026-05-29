@@ -58,11 +58,7 @@ public class DefaultPolicies implements Policies {
         if (outcome != CONTINUE) {
             return outcome;
         }
-        outcome = checkModel(mir, exc);
-        if (outcome != CONTINUE) {
-            return outcome;
-        }
-        return CONTINUE;
+        return checkModel(mir, exc);
     }
 
     public Outcome checkModel(ModelInputRequest mir, Exchange exc) {

@@ -166,7 +166,6 @@ class MultipartUtilTest {
     // Real-world resource: XOP multipart from ReassembleTest
     // -------------------------------------------------------------------------
 
-    @SuppressWarnings("DataFlowIssue")
     @Test
     void xopResourceSplitsIntoTwoParts() throws IOException {
         byte[] body = IOUtils.toByteArray(getClass().getResourceAsStream("/multipart/embedded-byte-array.txt"));

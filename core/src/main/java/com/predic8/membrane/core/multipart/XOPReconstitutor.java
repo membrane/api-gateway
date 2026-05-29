@@ -59,7 +59,7 @@ public class XOPReconstitutor {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
-	public InputStream reconstituteIfNecessary(Message message) throws IOException {
+	public InputStream reconstituteIfNecessary(Message message) {
 		try {
 			Message reconstitutedMessage = getReconstitutedMessage(message);
 			if (reconstitutedMessage != null)
