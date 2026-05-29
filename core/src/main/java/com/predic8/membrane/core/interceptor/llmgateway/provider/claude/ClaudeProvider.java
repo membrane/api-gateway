@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 
+import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
@@ -31,7 +32,7 @@ import java.util.function.Consumer;
 public class ClaudeProvider implements LLMProvider {
 
     @Override
-    public LLMRequest getLLMRequest(Exchange exchange) {
+    public LLMRequest getLLMRequest(Exchange exchange) throws IOException {
         return new ClaudeLLMRequest(exchange);
     }
 

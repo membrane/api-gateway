@@ -16,22 +16,24 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.claude;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
  * system field for system prompt
  */
-public class ClaudeLLMRequest extends AbstractLLMRequest {
+public class ClaudeLLMRequest extends AbstractModelInputRequest implements ModelInputRequest {
 
     private static final Logger log = LoggerFactory.getLogger(ClaudeLLMRequest.class);
 
     public static final String X_API_KEY = "x-api-key";
 
-    public ClaudeLLMRequest(Exchange exchange) {
+    public ClaudeLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
 
         exchange.getRequest().getHeader().setValue( "Accept-Encoding","identity");
@@ -92,11 +94,6 @@ public class ClaudeLLMRequest extends AbstractLLMRequest {
     @Override
     public String getSystemPrompt() {
         return json.path("system").asText("");
-    }
-
-    @Override
-    public boolean isChatCompletion() {
-        return false;
     }
 
     private boolean isThinking() {

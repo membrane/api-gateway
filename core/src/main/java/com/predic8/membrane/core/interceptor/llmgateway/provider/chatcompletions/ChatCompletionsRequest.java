@@ -17,13 +17,14 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletion
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.openai.AbstractOpenAiLLMRequest;
 
+import java.io.IOException;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
 
 public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
 
-    public ChatCompletionsRequest(Exchange exchange) {
+    public ChatCompletionsRequest(Exchange exchange) throws IOException {
         super(exchange);
 
         if (json == null) {
@@ -105,11 +106,6 @@ public class ChatCompletionsRequest extends AbstractOpenAiLLMRequest {
                 messages.remove(i);
             }
         }
-    }
-
-    @Override
-    public boolean isChatCompletion() {
-        return true;
     }
 
     @Override

@@ -15,29 +15,41 @@
 package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.annot.Constants;
-import com.predic8.membrane.core.http.cookie.*;
-import com.predic8.membrane.core.util.*;
-import jakarta.mail.internet.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.http.cookie.Cookies;
+import com.predic8.membrane.core.http.cookie.MimeHeaders;
+import com.predic8.membrane.core.http.cookie.ServerCookie;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.HttpUtil;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.security.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
-import java.util.function.*;
-import java.util.regex.*;
-import java.util.stream.*;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.util.HttpUtil.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Arrays.*;
-import static java.util.Collections.*;
+import static com.predic8.membrane.core.http.MimeType.isBinary;
+import static com.predic8.membrane.core.util.HttpUtil.readLine;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.stream;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Locale.ROOT;
-import static java.util.regex.Pattern.*;
-import static java.util.stream.Collectors.*;
-import static org.apache.commons.codec.binary.Base64.*;
+import static java.util.regex.Pattern.CASE_INSENSITIVE;
+import static java.util.regex.Pattern.compile;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 /**
  * The headers of an HTTP message.
@@ -329,6 +341,15 @@ public class Header {
 
     public String getContentType() {
         return getFirstValue(CONTENT_TYPE);
+    }
+
+    /**
+     * Returns {@code true} if the {@code Content-Type} header starts with {@code multipart/}
+     * (e.g. {@code multipart/form-data}, {@code multipart/related}, {@code multipart/mixed}).
+     */
+    public boolean isMultipart() {
+        String ct = getContentType();
+        return ct != null && ct.regionMatches(true, 0, "multipart/", 0, 10);
     }
 
     public String getUserAgent() {

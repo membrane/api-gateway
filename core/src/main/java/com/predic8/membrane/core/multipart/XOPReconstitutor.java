@@ -14,20 +14,31 @@
 
 package com.predic8.membrane.core.multipart;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.*;
-import jakarta.mail.internet.*;
-import org.apache.commons.fileupload.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.MessageUtil;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.concurrent.*;
-import javax.xml.namespace.*;
+import javax.annotation.concurrent.ThreadSafe;
+import javax.xml.namespace.QName;
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.stream.events.Characters;
+import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
+import java.util.HashMap;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 /**
  * Reassemble a multipart XOP message (see
@@ -90,7 +101,7 @@ public class XOPReconstitutor {
 		if (boundary == null)
 			return null;
 
-		HashMap<String, Part> parts = split(message, boundary);
+		HashMap<String, Part> parts = splitById(message, boundary);
 		Part startPart = parts.get(start);
 		if (startPart == null)
 			return null;
@@ -132,36 +143,16 @@ public class XOPReconstitutor {
 		return m;
 	}
 
-	@SuppressWarnings("deprecation")
-	private HashMap<String, Part> split(Message message, String boundary)
-			throws IOException, EndOfStreamException {
-		HashMap<String, Part> parts = new HashMap<>();
-
-		MultipartStream multipartStream = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(UTF_8));
-		boolean nextPart = multipartStream.skipPreamble();
-		while(nextPart) {
-			Header header = new Header(multipartStream.readHeaders());
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			multipartStream.readBodyData(baos);
-
-			// see http://www.iana.org/assignments/transfer-encodings/transfer-encodings.xml
-			String cte = header.getFirstValue("Content-Transfer-Encoding");
-			if (cte != null &&
-					!cte.equals("binary") &&
-					!cte.equals("8bit") &&
-					!cte.equals("7bit"))
-				throw new RuntimeException("Content-Transfer-Encoding '" + cte + "' not implemented.");
-
-
-			Part part = new Part(header, baos.toByteArray());
+	/** Splits the multipart message and indexes parts by Content-ID for XOP lookup. */
+	private HashMap<String, Part> splitById(Message message, String boundary) throws IOException {
+		HashMap<String, Part> byId = new HashMap<>();
+		for (Part part : MultipartUtil.split(message, boundary)) {
 			String id = part.getContentID();
 			if (id != null) {
-				parts.put(id, part);
+				byId.put(id, part);
 			}
-
-			nextPart = multipartStream.readBoundary();
 		}
-		return parts;
+		return byId;
 	}
 
 	private byte[] fillInXOPParts(InputStream inputStream,
@@ -189,7 +180,7 @@ public class XOPReconstitutor {
 						if (p == null)
 							throw new RuntimeException("Did not find multipart with id " + href);
 
-						writer.add(p.asXMLEvent());
+						writer.add(base64CharactersEvent(p.getBody()));
 						xopIncludeOpen = true;
 						continue;
 					}
@@ -210,6 +201,35 @@ public class XOPReconstitutor {
 			return null;
 		}
 		return baos.toByteArray();
+	}
+
+	/** Wraps raw bytes as a base64-encoded XML Characters event for XOP inlining. */
+	private static Characters base64CharactersEvent(byte[] data) {
+		String encoded = new String(encodeBase64(data), UTF_8);
+		return new Characters() {
+			@Override public String getData()             { return encoded; }
+			@Override public boolean isCharacters()       { return true; }
+			@Override public boolean isWhiteSpace()       { return false; }
+			@Override public boolean isCData()            { return false; }
+			@Override public boolean isIgnorableWhiteSpace() { return false; }
+			@Override public int getEventType()           { return CHARACTERS; }
+			@Override public Characters asCharacters()    { return this; }
+			@Override public boolean isStartElement()     { return false; }
+			@Override public boolean isEndElement()       { return false; }
+			@Override public boolean isStartDocument()    { return false; }
+			@Override public boolean isEndDocument()      { return false; }
+			@Override public boolean isAttribute()        { return false; }
+			@Override public boolean isNamespace()        { return false; }
+			@Override public boolean isEntityReference()  { return false; }
+			@Override public boolean isProcessingInstruction() { return false; }
+			@Override public QName getSchemaType()        { return null; }
+			@Override public Location getLocation()       { return null; }
+			@Override public StartElement asStartElement() { return null; }
+			@Override public EndElement asEndElement()    { return null; }
+			@Override public void writeAsEncodedUnicode(Writer writer) {
+				throw new UnsupportedOperationException();
+			}
+		};
 	}
 
 }

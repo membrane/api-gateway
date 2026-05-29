@@ -17,18 +17,20 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.google;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 
+import java.io.IOException;
 import java.util.List;
 
-public class GoogleLLMRequest extends AbstractLLMRequest {
+public class GoogleLLMRequest extends AbstractModelInputRequest implements ModelInputRequest {
 
     /**
      * x-goog-api-key is correct it is not google
      */
     public static final String X_GOOG_API_KEY = "x-goog-api-key";
 
-    public GoogleLLMRequest(Exchange exchange) {
+    public GoogleLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
     }
 
@@ -140,12 +142,6 @@ public class GoogleLLMRequest extends AbstractLLMRequest {
     @Override
     public void removeSystemPrompt() {
         json.remove("systemInstruction");
-    }
-
-    @Override
-    public boolean isChatCompletion() {
-        // Gemini uses its own generateContent API, not Chat Completions
-        return false;
     }
 
     private long countText(JsonNode node) {

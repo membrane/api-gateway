@@ -23,6 +23,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.store.AiApiStore;
 import com.predic8.membrane.core.interceptor.llmgateway.store.AiApiUser;
 import com.predic8.membrane.core.util.ConfigurationException;
@@ -31,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
-import static com.predic8.membrane.core.util.json.JsonUtil.setJsonBody;
 
 /*
  * @description <p>
@@ -81,23 +81,17 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
 
-        LLMRequest aiReq;
+        LLMRequest llmReq;
         try {
-            aiReq = provider.getLLMRequest(exc);
+            llmReq = provider.getLLMRequest(exc);
         } catch (Exception e) {
             exc.setResponse(errorCreator.invalidRequestError("Error parsing request: " + e.getMessage()));
             return RETURN;
         }
 
-        if (!exc.getRequest().isPOSTRequest()) {
-            if (apiKey != null)
-                aiReq.setApiKey(apiKey);
-            return CONTINUE;
-        }
-
         AiApiUser user = null;
         if (store != null) {
-            var opt = store.getUser(aiReq.getApiKey());
+            var opt = store.getUser(llmReq.getApiKey());
             if (opt.isEmpty()) {
                 exc.setResponse(errorCreator.authenticationFailed());
                 return RETURN;
@@ -107,12 +101,45 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
             exc.setProperty(MEMBRANE_AI_USER, user);
         }
 
-        long inputTokens = aiReq.estimateInputTokens();
-        log.debug("Estimated input tokens: {}", inputTokens);
+        // If APIKey is specified, use that for the LLM. Overwrites keys from the client
+        if (apiKey != null) {
+            llmReq.setApiKey(apiKey);
+        }
+
+        if (!exc.getRequest().isPOSTRequest()) {
+            return CONTINUE;
+        }
+
+        if (!(llmReq instanceof ModelInputRequest mir)) {
+            return CONTINUE;
+        }
+
+        var outcome = policies.handleRequest(mir, exc);
+        if (outcome != CONTINUE) {
+            return outcome;
+        }
+
+        if (systemPrompt != null) {
+            outcome = systemPrompt.handleRequest(mir, exc);
+            if (outcome != CONTINUE) {
+                return outcome;
+            }
+        }
 
         // Check store limits
+        if (checkStoreLimits(exc, mir, user) != CONTINUE) {
+            return RETURN;
+        }
+
+        exc.getRequest().setBodyContent(mir.getBody().getContent());
+        return CONTINUE;
+    }
+
+    private Outcome checkStoreLimits(Exchange exc, ModelInputRequest mir, AiApiUser user) {
+        long inputTokens = mir.estimateInputTokens();
+        log.debug("Estimated input tokens: {}", inputTokens);
         if (store != null) {
-            var effectiveMaxTokens = computeEffectiveMaxOutputTokens(aiReq.getRequestedMaxOutputTokens(), policies.getMaxOutputTokens());
+            var effectiveMaxTokens = computeEffectiveMaxOutputTokens(mir.getRequestedMaxOutputTokens(), policies.getMaxOutputTokens());
             var remaining = store.checkLimit(user, inputTokens, effectiveMaxTokens);
             log.debug("User {} has {} remaining tokens left", user, remaining);
             if (remaining <= 0) {
@@ -121,27 +148,6 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
                 return RETURN;
             }
         }
-
-        // If APIKey is specified, use that for the LLM. Overwrites keys from the client
-        if (apiKey != null) {
-            aiReq.setApiKey(apiKey);
-        }
-
-        log.debug("Requested model: {}", aiReq.getModel());
-
-        var outcome = policies.handleRequest(aiReq,exc);
-        if (outcome != CONTINUE) {
-            return outcome;
-        }
-
-        if (systemPrompt != null) {
-            outcome = systemPrompt.handleRequest(aiReq,exc);
-            if (outcome != CONTINUE) {
-                return outcome;
-            }
-        }
-
-        setJsonBody(exc.getRequest(), aiReq.getJson());
         return CONTINUE;
     }
 

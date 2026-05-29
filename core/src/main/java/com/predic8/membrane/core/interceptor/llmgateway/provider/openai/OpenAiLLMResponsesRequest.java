@@ -16,13 +16,14 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.openai;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
+import java.io.IOException;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
 
 public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
 
-    public OpenAiLLMResponsesRequest(Exchange exchange) {
+    public OpenAiLLMResponsesRequest(Exchange exchange) throws IOException {
         super(exchange);
     }
 
@@ -40,11 +41,6 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
     @Override
     public String getSystemPrompt() {
         return json.path("instructions").asText("");
-    }
-
-    @Override
-    public boolean isChatCompletion() {
-        return false;
     }
 
     /**

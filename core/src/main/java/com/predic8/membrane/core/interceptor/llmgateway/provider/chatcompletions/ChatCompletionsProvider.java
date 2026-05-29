@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 
+import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
@@ -46,7 +47,7 @@ import java.util.function.Consumer;
 @MCElement(name = "chatCompletions")
 public class ChatCompletionsProvider implements LLMProvider {
     @Override
-    public LLMRequest getLLMRequest(Exchange request) {
+    public LLMRequest getLLMRequest(Exchange request) throws IOException {
         return new ChatCompletionsRequest(request);
     }
 
