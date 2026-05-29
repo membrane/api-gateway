@@ -24,7 +24,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.ChunkedBodyTransferer.ZERO;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
 import static java.lang.Long.toHexString;
@@ -47,13 +47,18 @@ public class ChunkedBody extends AbstractBody {
      * Maximum hex digits in a chunk-size field. Prevents Long.parseLong from receiving a
      * value that overflows a long (would require >8 digits), with a margin.
      */
-    private static final int MAX_CHUNK_SIZE_HEX_DIGITS = 4;
+    private static final int MAX_CHUNK_SIZE_HEX_DIGITS = 8;
+
     /**
-     * Hard cap on a single chunk in bytes (100 MiB).
+     * Hard cap on a single chunk in bytes
      * Without this, a sender can trigger a 2 GiB byte[] allocation with just "7FFFFFFF\r\n"
-     * — Integer.MAX_VALUE is a valid input for Integer.parseInt but immediately causes OOM.
      */
-    static final int MAX_CHUNK_BYTES = 100 * 1024 * 1024;
+    private static int MAX_CHUNK_BYTES;
+
+    static {
+        var v = System.getProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH);
+        MAX_CHUNK_BYTES = v == null ? MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT : Integer.parseInt(v);
+    }
 
     private final InputStream inputStream;
     private long lengthStreamed;
@@ -102,7 +107,7 @@ public class ChunkedBody extends AbstractBody {
     }
 
     public static int readChunkSize(InputStream in) throws IOException {
-        StringBuilder buffer = new StringBuilder();
+        var buffer = new StringBuilder();
 
         int c;
         while ((c = in.read()) != -1) {
@@ -126,20 +131,23 @@ public class ChunkedBody extends AbstractBody {
             buffer.append((char) c);
         }
 
+        return parseChunkSize(buffer);
+    }
+
+    static int parseChunkSize(StringBuilder buffer) throws IOException {
         var hex = buffer.toString().trim();
         if (hex.isEmpty()) {
             throw new IOException("Empty chunk-size field");
         }
-        int size;
         try {
-            size = Integer.parseInt(hex, 16);
+            int size = Integer.parseInt(hex, 16);
+            if (size < 0 || size > MAX_CHUNK_BYTES) {
+                throw new IOException("Chunk size %d exceeds limit of %d bytes".formatted(size, MAX_CHUNK_BYTES));
+            }
+            return size;
         } catch (NumberFormatException e) {
-            throw new IOException("Invalid chunk-size value: '" + hex + "'", e);
+            throw new IOException("Invalid chunk-size value: %s".formatted(hex), e);
         }
-        if (size < 0 || size > MAX_CHUNK_BYTES) {
-            throw new IOException("Chunk size " + size + " exceeds limit of " + MAX_CHUNK_BYTES + " bytes");
-        }
-        return size;
     }
 
     @Override
