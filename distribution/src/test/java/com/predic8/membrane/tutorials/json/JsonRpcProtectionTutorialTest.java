@@ -16,8 +16,6 @@ package com.predic8.membrane.tutorials.json;
 
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.containsString;
@@ -45,8 +43,8 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
             .statusCode(200)
             .contentType(JSON)
             .body("jsonrpc", equalTo("2.0"))
-            .body("id", equalTo("1"))
-            .body("result.status", equalTo("ok"));
+            .body("id", equalTo(1))
+            .body("result.message", equalTo("Hello"));
         // @formatter:on
     }
 
@@ -56,7 +54,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
         given()
             .contentType(JSON)
             .body("""
-                {"jsonrpc":"2.0","id":4,"method":"rpc.echo","params":{"message":"Hello"}}
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"message":"Hello"}}
                 """)
         .when()
             .post("http://localhost:2000")
@@ -64,7 +62,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
             .statusCode(200)
             .contentType(JSON)
             .body("jsonrpc", equalTo("2.0"))
-            .body("id", equalTo("4"))
+            .body("id", equalTo(1))
             .body("result.message", equalTo("Hello"));
         // @formatter:on
     }
@@ -75,7 +73,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
         given()
             .contentType(JSON)
             .body("""
-                {"jsonrpc":"2.0","id":2,"method":"rpc.admin.shutdown"}
+                {"jsonrpc":"2.0","id":1,"method":"rpc.admin.shutdown"}
                 """)
         .when()
             .post("http://localhost:2000")
@@ -83,7 +81,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
             .statusCode(403)
             .contentType(JSON)
             .body("jsonrpc", equalTo("2.0"))
-            .body("id", equalTo(2))
+            .body("id", equalTo(1))
             .body("error.code", equalTo(-32601))
             .body("error.message", containsString("rpc.admin.shutdown"));
         // @formatter:on
@@ -95,7 +93,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
         given()
             .contentType(JSON)
             .body("""
-                {"jsonrpc":"2.0","id":3,"method":"rpc.echo","params":{}}
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{}}
                 """)
         .when()
             .post("http://localhost:2000")
@@ -103,7 +101,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
             .statusCode(400)
             .contentType(JSON)
             .body("jsonrpc", equalTo("2.0"))
-            .body("id", equalTo(3))
+            .body("id", equalTo(1))
             .body("error.code", equalTo(-32602))
             .body("error.message", containsString("Invalid params for method 'rpc.echo'"));
         // @formatter:on
