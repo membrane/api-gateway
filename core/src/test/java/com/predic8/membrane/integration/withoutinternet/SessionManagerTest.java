@@ -97,26 +97,28 @@ public class SessionManagerTest {
             Supplier<com.predic8.membrane.core.interceptor.session.SessionManager> smSupplier) throws Exception {
         var httpRouter = Util.basicRouter(Util.createServiceProxy(GATEWAY_PORT, testInterceptor(smSupplier, Duration.ZERO)));
 
-        HttpClientContext ctx = getHttpClientContext();
+        try {
+            HttpClientContext ctx = getHttpClientContext();
 
-        String rememberThis = UUID.randomUUID().toString();
-        String rememberThisFromServer;
-        try (CloseableHttpClient client = getHttpClient()) {
+            String rememberThis = UUID.randomUUID().toString();
+            String rememberThisFromServer;
+            try (CloseableHttpClient client = getHttpClient()) {
 
-            try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
-                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+                try (CloseableHttpResponse resp = client.execute(RequestBuilder.get("http://localhost:" + GATEWAY_PORT).addHeader(REMEMBER_HEADER, rememberThis).build(), ctx)) {
+                    Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+                }
+
+                try (CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT), ctx)) {
+                    rememberThisFromServer = resp.getFirstHeader(REMEMBER_HEADER).getValue();
+                    Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
+                }
             }
 
-            try (CloseableHttpResponse resp = client.execute(new HttpGet("http://localhost:" + GATEWAY_PORT), ctx)) {
-                rememberThisFromServer = resp.getFirstHeader(REMEMBER_HEADER).getValue();
-                Arrays.stream(resp.getAllHeaders()).forEach(h -> System.out.println(h.toString()));
-            }
+            assertNotEquals(rememberThis, rememberThisFromServer);
+            assertEquals("", rememberThisFromServer);
+        } finally {
+            httpRouter.stop();
         }
-
-        assertNotEquals(rememberThis, rememberThisFromServer);
-        assertEquals("null", rememberThisFromServer);
-
-        httpRouter.stop();
     }
 
     @ParameterizedTest(name = "{0}")
