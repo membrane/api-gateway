@@ -20,6 +20,9 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.allowdeny.Allow;
+import com.predic8.membrane.core.util.allowdeny.Deny;
+import com.predic8.membrane.core.util.allowdeny.Rule;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -98,7 +101,7 @@ public class JsonRPCProtectionInterceptorTest {
     @Test
     void invalidRegexIsRejected() {
         Allow allow = new Allow();
-        assertThrows(ConfigurationException.class, () -> allow.setMethod("[*"));
+        assertThrows(ConfigurationException.class, () -> allow.setPattern("[*"));
     }
 
     @Test
@@ -194,15 +197,15 @@ public class JsonRPCProtectionInterceptorTest {
                 .buildExchange();
     }
 
-    private Allow allow(String method) {
+    private Allow allow(String pattern) {
         Allow allow = new Allow();
-        allow.setMethod(method);
+        allow.setPattern(pattern);
         return allow;
     }
 
-    private Deny deny(String method) {
+    private Deny deny(String pattern) {
         Deny deny = new Deny();
-        deny.setMethod(method);
+        deny.setPattern(pattern);
         return deny;
     }
 

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.networknt.schema.Error;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
+import com.predic8.membrane.core.util.allowdeny.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

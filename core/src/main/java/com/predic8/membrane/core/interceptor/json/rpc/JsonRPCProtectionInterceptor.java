@@ -10,6 +10,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.ValidationError;
 import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import com.predic8.membrane.core.jsonrpc.JSONRPCResponse;
+import com.predic8.membrane.core.util.allowdeny.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
