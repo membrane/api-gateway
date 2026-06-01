@@ -25,7 +25,6 @@ import com.predic8.membrane.core.util.config.allowdeny.Deny;
 import com.predic8.membrane.core.util.config.allowdeny.Rule;
 import org.junit.jupiter.api.Test;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -141,10 +140,10 @@ public class JsonRPCProtectionInterceptorTest {
     }
 
     @Test
-    void paramsValidationSupportsRegexMethodPatterns() throws Exception {
+    void paramsValidationUsesExactMethodName() throws Exception {
         JsonRPCParams params = new JsonRPCParams();
         params.setParams(Map.of(
-                "^rpc\\..*$", "classpath:/json/rpc/generic-rpc-params.schema.json"
+                "rpc.health", "classpath:/json/rpc/generic-rpc-params.schema.json"
         ));
         var interceptor = interceptor(List.of(), params);
 
@@ -156,27 +155,35 @@ public class JsonRPCProtectionInterceptorTest {
     }
 
     @Test
-    void paramsValidationUsesFirstMatchingRegexPattern() throws Exception {
+    void paramsValidationDoesNotMatchDifferentMethodNames() throws Exception {
         JsonRPCParams params = new JsonRPCParams();
-        LinkedHashMap<String, String> map = new LinkedHashMap<>();
-        map.put("^rpc\\.echo$", "classpath:/json/rpc/echo-params.schema.json");
-        map.put("^rpc\\..*$", "classpath:/json/rpc/generic-rpc-params.schema.json");
-        params.setParams(map);
+        params.setParams(Map.of(
+                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
+        ));
         var interceptor = interceptor(List.of(), params);
 
         var exc = exchange("""
-                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"code":1}}
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo.v2","params":{"code":1}}
                 """);
 
-        assertEquals(RETURN, interceptor.handleRequest(exc));
-        assertErrorContains(exc.getResponse(), 400, "Invalid params for method 'rpc.echo'");
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+    }
+
+    @Test
+    void regexLikeMethodNamesAreRejectedInYamlConfig() {
+        JsonRPCParams params = new JsonRPCParams();
+        params.setParams(Map.of(
+                "^rpc\\.echo$", "classpath:/json/rpc/echo-params.schema.json"
+        ));
+
+        assertThrows(ConfigurationException.class, () -> interceptor(List.of(), params));
     }
 
     @Test
     void xmlStyleParamMappingsAreSupported() throws Exception {
         JsonRPCParams params = new JsonRPCParams();
         params.setParamMappings(List.of(
-                new JsonRPCParams.Param("^rpc\\.echo$", "classpath:/json/rpc/echo-params.schema.json")
+                new JsonRPCParams.Param("rpc.echo", "classpath:/json/rpc/echo-params.schema.json")
         ));
         var interceptor = interceptor(List.of(), params);
 

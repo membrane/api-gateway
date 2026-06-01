@@ -47,7 +47,7 @@ api:
               - allow: '^rpc\.(health|echo)$'
               - deny: '.*' # Default deny for everything else
             params:
-              '^rpc\.echo$': echo-params.schema.json # Validate params for rpc.echo
+              'rpc.echo': echo-params.schema.json # Validate params for rpc.echo
   target:
     url: http://localhost:2001
 

@@ -28,45 +28,44 @@ import com.predic8.membrane.core.interceptor.schemavalidation.json.MembraneSchem
 import com.predic8.membrane.core.resolver.Resolver;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 import static com.networknt.schema.InputFormat.JSON;
 import static com.networknt.schema.InputFormat.YAML;
 import static com.networknt.schema.SchemaRegistry.withDefaultDialect;
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * @description
- * <p>Maps JSON-RPC method name patterns to JSON Schema locations for validating the
+ * <p>Maps JSON-RPC method names to JSON Schema locations for validating the
  * <code>params</code> member of a request.</p>
  *
- * <p>In YAML, the configuration is expressed as a map from method regex to schema location.
+ * <p>In YAML, the configuration is expressed as a map from exact method name to schema location.
  * In XML, use repeated <code>param</code> child elements with <code>method</code> and
- * <code>schema</code> attributes. Entries are checked in order and the first matching
- * method pattern wins. Inline schemas are not supported.</p>
+ * <code>schema</code> attributes. Each method name can be configured once. Inline schemas are
+ * not supported.</p>
  */
 @MCElement(name = "params", component = false)
 public class JsonRPCParams {
 
     private Map<String, String> params = new LinkedHashMap<>();
     private List<Param> paramMappings = List.of();
-    private List<CompiledSchema> schemas = List.of();
+    private Map<String, Schema> schemas = Map.of();
 
     /**
      * @description
-     * <p>Defines a map from method name regex to JSON Schema location.</p>
+     * <p>Defines a map from exact method name to JSON Schema location.</p>
      *
-     * <p>The insertion order is preserved and determines precedence when multiple regexes match.</p>
+     * <p>The keys are matched literally against the JSON-RPC <code>method</code> value.</p>
      *
-     * @example "^rpc\\.echo$": "classpath:/json/rpc/echo-params.schema.json"
+     * @example "rpc.echo": "classpath:/json/rpc/echo-params.schema.json"
      */
     @MCOtherAttributes
     public void setParams(Map<String, String> params) {
@@ -83,7 +82,7 @@ public class JsonRPCParams {
      *
      * <p>This form is intended for XML configuration. YAML keeps using the map syntax shown above.</p>
      *
-     * @example &lt;param method="^rpc\\.echo$" schema="classpath:/json/rpc/echo-params.schema.json"/&gt;
+     * @example &lt;param method="rpc.echo" schema="classpath:/json/rpc/echo-params.schema.json"/&gt;
      */
     @MCChildElement(excludeFromJson = true)
     public void setParamMappings(List<Param> paramMappings) {
@@ -97,34 +96,35 @@ public class JsonRPCParams {
     public void init(Resolver resolver, URIFactory uriFactory, String beanBaseLocation) {
         List<Param> effectiveMappings = getEffectiveMappings();
         if (effectiveMappings.isEmpty()) {
-            schemas = List.of();
+            schemas = Map.of();
             return;
         }
         if (resolver == null || uriFactory == null) {
             throw new ConfigurationException("Cannot initialize JSON-RPC param schemas without resolver context.");
         }
 
-        schemas = effectiveMappings.stream()
-                .map(entry -> new CompiledSchema(
-                        entry.getMethod(),
-                        compilePattern(entry.getMethod()),
-                        loadSchema(entry.getMethod(), entry.getSchema(), resolver, uriFactory, beanBaseLocation)
-                ))
-                .toList();
+        Map<String, Schema> resolvedSchemas = new LinkedHashMap<>();
+        for (Param entry : effectiveMappings) {
+            String methodName = validateMethodName(entry.getMethod());
+            if (resolvedSchemas.containsKey(methodName)) {
+                throw new ConfigurationException("Duplicate JSON-RPC param schema mapping for method '%s'.".formatted(methodName));
+            }
+            resolvedSchemas.put(methodName,
+                    loadSchema(methodName, entry.getSchema(), resolver, uriFactory, beanBaseLocation));
+        }
+        schemas = unmodifiableMap(resolvedSchemas);
     }
 
     public Schema getSchema(String method) {
-        for (var schema : schemas) {
-            if (schema.pattern().matcher(method).matches()) {
-                return schema.schema();
-            }
+        if (method == null) {
+            return null;
         }
-        return null;
+        return schemas.get(method);
     }
 
-    private static Schema loadSchema(String methodPattern, String schemaPath, Resolver resolver, URIFactory uriFactory, String beanBaseLocation) {
+    private static Schema loadSchema(String methodName, String schemaPath, Resolver resolver, URIFactory uriFactory, String beanBaseLocation) {
         if (schemaPath == null || schemaPath.trim().isEmpty()) {
-            throw new ConfigurationException("JSON-RPC param schema path for method pattern '%s' must not be empty.".formatted(methodPattern));
+            throw new ConfigurationException("JSON-RPC param schema path for method '%s' must not be empty.".formatted(methodName));
         }
 
         var resolvedLocation = combine(uriFactory, beanBaseLocation, schemaPath.trim());
@@ -137,9 +137,9 @@ public class JsonRPCParams {
             schema.initializeValidators();
             return schema;
         } catch (IOException e) {
-            throw new ConfigurationException("Cannot read JSON-RPC param schema for method pattern '%s' from '%s'.".formatted(methodPattern, schemaPath), e);
+            throw new ConfigurationException("Cannot read JSON-RPC param schema for method '%s' from '%s'.".formatted(methodName, schemaPath), e);
         } catch (RuntimeException e) {
-            throw new ConfigurationException("Cannot create JSON-RPC param schema for method pattern '%s' from '%s'.".formatted(methodPattern, schemaPath), e);
+            throw new ConfigurationException("Cannot create JSON-RPC param schema for method '%s' from '%s'.".formatted(methodName, schemaPath), e);
         }
     }
 
@@ -156,18 +156,12 @@ public class JsonRPCParams {
         return schemaLocation.toLowerCase().endsWith(".yaml") || schemaLocation.toLowerCase().endsWith(".yml") ? YAML : JSON;
     }
 
-    private static Pattern compilePattern(String methodPattern) {
-        if (methodPattern == null || methodPattern.trim().isEmpty()) {
-            throw new ConfigurationException("JSON-RPC param method pattern must not be empty.");
+    private static String validateMethodName(String methodName) {
+        if (methodName == null || methodName.trim().isEmpty()) {
+            throw new ConfigurationException("JSON-RPC param method name must not be empty.");
         }
-        try {
-            return Pattern.compile(methodPattern.trim());
-        } catch (PatternSyntaxException e) {
-            throw new ConfigurationException("Invalid JSON-RPC param method regex: " + methodPattern, e);
-        }
-    }
 
-    private record CompiledSchema(String methodPattern, Pattern pattern, Schema schema) {
+        return methodName.trim();
     }
 
     private List<Param> getEffectiveMappings() {
@@ -197,8 +191,8 @@ public class JsonRPCParams {
         }
 
         /**
-         * @description The regular expression matched against the JSON-RPC <code>method</code> value.
-         * @example ^rpc\\.echo$
+         * @description The exact JSON-RPC <code>method</code> value whose <code>params</code> should be validated.
+         * @example rpc.echo
          */
         @Required
         @MCAttribute

@@ -52,9 +52,9 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQU
  * whether a method is allowed or denied.</p>
  *
  * <p>Parameter schemas are configured separately in the <code>params</code> child element. The
- * keys are regular expressions matched against the JSON-RPC method name. The first matching
- * schema entry is used to validate the <code>params</code> object or array. Schemas must be
- * referenced by path or URL and cannot be configured inline.</p>
+ * keys are exact JSON-RPC method names. The matching schema entry is used to validate the
+ * <code>params</code> object or array. Schemas must be referenced by path or URL and cannot
+ * be configured inline.</p>
  *
  * @yaml
  * <pre><code>
@@ -67,7 +67,7 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQU
  *       - deny: "^rpc\\..*$"
  *       - deny: * # Switch to default-deny behavior
  *     params:
- *       "^rpc\\.echo$": "classpath:/json/rpc/echo-params.schema.json"
+ *       "rpc.echo": "classpath:/json/rpc/echo-params.schema.json"
  * </code></pre>
  */
 @MCElement(name = "jsonRPCProtection")
@@ -148,8 +148,8 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
      * @description
      * <p>Configures JSON Schema files for validating <code>params</code> per method name.</p>
      *
-     * <p>The keys are regular expressions matched against the JSON-RPC method name in order.
-     * The first matching entry is used. Values must be schema paths or URLs; inline schemas are not supported.</p>
+     * <p>The keys are exact JSON-RPC method names. Values must be schema paths or URLs; inline
+     * schemas are not supported.</p>
      */
     @MCChildElement(order = 2)
     public void setParams(JsonRPCParams params) {
