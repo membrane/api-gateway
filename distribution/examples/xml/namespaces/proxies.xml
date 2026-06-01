@@ -40,7 +40,7 @@
                 <setProperty name="city" value="${//ns1:city}" language="xpath">
                     <spring:ref bean="ns"/>
                 </setProperty>
-                <setHeader name="id" value="${string(/per:person/@id)}" language="xpath">
+                <setHeader name="id" value="${/per:person/@id}" language="xpath">
                     <spring:ref bean="ns"/>
                 </setHeader>
                 <setProperty name="reqIdHeader" value="${header.id}"/>
