@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.2.json
+#
+# Tutorial: JSON-RPC Protection
+#
+# Protect a JSON-RPC endpoint by:
+# - allowing only selected methods
+# - rejecting all other methods
+# - validating params with JSON Schema
+# - limiting batch requests
+#
+# Notes:
+# - Method rules are evaluated top-down.
+# - The first matching rule wins.
+#
+# 1.) Send an allowed request
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"rpc.health"}' -H "Content-Type: application/json" http://localhost:2000
+#
+# 2.) Try a blocked method
+#     curl -d '{"jsonrpc":"2.0","id":2,"method":"rpc.admin.shutdown"}' -H "Content-Type: application/json" http://localhost:2000
+#
+#     Should return a JSON-RPC error explaining that the method is not allowed.
+#
+# 3.) Try invalid params
+#     curl -d '{"jsonrpc":"2.0","id":3,"method":"rpc.echo","params":{}}' -H "Content-Type: application/json" http://localhost:2000
+#
+#     The schema requires params.message.
+#
+# 4.) Send a valid request
+#     curl -d '{"jsonrpc":"2.0","id":4,"method":"rpc.echo","params":{"message":"Hello"}}' -H "Content-Type: application/json" http://localhost:2000
+#
+#     The request should be forwarded to the mock upstream on port 2001.
+#
+# 5.) Try a batch that is too large
+#     curl -d '[{"jsonrpc":"2.0","id":5,"method":"rpc.health"},{"jsonrpc":"2.0","id":6,"method":"rpc.echo","params":{"message":"Hi"}},{"jsonrpc":"2.0","id":7,"method":"rpc.health"}]' -H "Content-Type: application/json" http://localhost:2000
+#
+#     Should return a JSON-RPC batch error because maxSize is 2.
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - jsonRPCProtection:
+            batch:
+              enabled: true
+              maxSize: 2 # At most two calls per batch
+            methods:
+              - allow: '^rpc\.(health|echo)$'
+              - deny: '.*' # Default deny for everything else
+            params:
+              '^rpc\.echo$': echo-params.schema.json # Validate params for rpc.echo
+  target:
+    url: http://localhost:2001
+
+---
+api:
+  port: 2001
+  flow:
+    - request:
+        - log:
+            message: "Accepted JSON-RPC request reached the upstream."
+    - response:
+        - template:
+            contentType: application/json
+            pretty: true
+            src: |
+              {
+                "accepted": true
+              }
+    - return:
+        status: 200
