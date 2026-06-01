@@ -148,6 +148,16 @@ class SetHeaderInterceptorSpELTest extends AbstractSetHeaderInterceptorTest {
     }
 
     @Test
+    @DisplayName("CR, LF, and NUL in interpolated values are escaped to prevent header injection")
+    void escapesControlCharsInInterpolation() {
+        exchange.setProperty("dirty", "evil\r\nInjected: yes\0end");
+        interceptor.setValue("${properties['dirty']}");
+        interceptor.init(router);
+        assertEquals(CONTINUE, interceptor.handleRequest(exchange));
+        assertEquals("evil\\r\\nInjected: yes\\0end", getHeader("x-bar"));
+    }
+
+    @Test
     void failOnErrorTrue() {
         interceptor.setValue("42${wrong}");
         interceptor.setFailOnError(true);

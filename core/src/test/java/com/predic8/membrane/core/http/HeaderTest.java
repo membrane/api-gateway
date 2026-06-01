@@ -262,4 +262,29 @@ class HeaderTest {
         assertEquals("1, 2", h.getValuesAsString("X-Foo"));
         assertEquals("3, 4", h.getValuesAsString("X-BAR"));
     }
+
+    @Test
+    void sanitization() {
+        Header h = new Header();
+
+        h.add("X-CRLF", "value\r\nInjected: evil");
+        h.add("X-CR", "value\rInjected: evil");
+        h.add("X-LF", "value\nInjected: evil");
+        h.add("X-NUL", "value\u0000Injected");
+        assertEquals("value\\r\\nInjected: evil", h.getFirstValue("X-CRLF"));
+        assertEquals("value\\rInjected: evil", h.getFirstValue("X-CR"));
+        assertEquals("value\\nInjected: evil", h.getFirstValue("X-LF"));
+        assertEquals("value\\0Injected", h.getFirstValue("X-NUL"));
+
+        h.add("X-Bar", "ok");
+        h.setValue("X-Bar", "evil\r\nInjected: x");
+        assertEquals("evil\\r\\nInjected: x", h.getFirstValue("X-Bar"));
+
+        HeaderField field = h.getAllHeaderFields()[0];
+        field.setValue("evil\r\nInjected: x");
+        assertEquals("evil\\r\\nInjected: x", field.getValue());
+
+        h.add("X-Normal", "regular value");
+        assertEquals("regular value", h.getFirstValue("X-Normal"));
+    }
 }
