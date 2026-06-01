@@ -133,7 +133,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        if (exc.getResponse() == null) {
+        if (exc.getResponse() == null || result.getMappings().isEmpty()) {
             return CONTINUE;
         }
 
