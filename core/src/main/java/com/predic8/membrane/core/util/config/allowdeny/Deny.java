@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.util.allowdeny;
+package com.predic8.membrane.core.util.config.allowdeny;
 
 import com.predic8.membrane.annot.MCElement;
 

@@ -20,9 +20,9 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.allowdeny.Allow;
-import com.predic8.membrane.core.util.allowdeny.Deny;
-import com.predic8.membrane.core.util.allowdeny.Rule;
+import com.predic8.membrane.core.util.config.allowdeny.Allow;
+import com.predic8.membrane.core.util.config.allowdeny.Deny;
+import com.predic8.membrane.core.util.config.allowdeny.Rule;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
