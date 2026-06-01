@@ -21,8 +21,9 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.RequestValidationResult;
+import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.ResponseValidationContext;
 import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.ValidationError;
-import com.predic8.membrane.core.jsonrpc.JSONRPCRequest;
 import com.predic8.membrane.core.jsonrpc.JSONRPCResponse;
 import com.predic8.membrane.core.util.config.allowdeny.Rule;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ import java.util.List;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.BATCH;
@@ -56,6 +58,10 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQU
  * <code>params</code> object or array. Schemas must be referenced by path or URL and cannot
  * be configured inline.</p>
  *
+ * <p>Result schemas can be configured in the <code>result</code> child element using the same
+ * method-to-schema mapping format. Successful JSON-RPC responses are then validated against the
+ * configured schema for the originating request method.</p>
+ *
  * @yaml
  * <pre><code>
  * - jsonRPCProtection:
@@ -68,6 +74,8 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQU
  *       - deny: * # Switch to default-deny behavior
  *     params:
  *       "rpc.echo": "classpath:/json/rpc/echo-params.schema.json"
+ *     result:
+ *       "rpc.echo": "classpath:/json/rpc/echo-result.schema.json"
  * </code></pre>
  */
 @MCElement(name = "jsonRPCProtection")
@@ -75,21 +83,24 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JsonRPCProtectionInterceptor.class);
     private static final ObjectMapper OM = new ObjectMapper();
+    private static final String RESPONSE_VALIDATION_CONTEXT = JsonRPCProtectionInterceptor.class.getName() + ".responseValidationContext";
 
     private BatchRule batchRule = new BatchRule();
     private List<Rule> methods = List.of();
     private JsonRPCParams params = new JsonRPCParams();
+    private JsonRPCResult result = new JsonRPCResult();
     private JsonRPCValidator validator;
 
     public JsonRPCProtectionInterceptor() {
         name = "JSON-RPC protection";
-        setAppliedFlow(of(REQUEST));
+        setAppliedFlow(of(REQUEST, RESPONSE));
     }
 
     @Override
     public void init() {
         super.init();
         params.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
+        result.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
         validator = createValidator();
     }
 
@@ -104,7 +115,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         }
 
         if (!exc.getRequest().isJSON()) {
-            return reject(exc, new ValidationError(
+            return rejectRequest(exc, new ValidationError(
                     payloadType(exc.getRequest().getBodyAsStringDecoded()),
                     null,
                     415,
@@ -113,14 +124,41 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
             ));
         }
 
-        return reject(exc, getValidator().validate(exc.getRequest().getBodyAsStringDecoded()));
+        RequestValidationResult validation = getValidator().validateRequest(exc.getRequest().getBodyAsStringDecoded());
+        if (validation.responseValidationContext() != null) {
+            exc.setProperty(RESPONSE_VALIDATION_CONTEXT, validation.responseValidationContext());
+        }
+        return rejectRequest(exc, validation.error());
     }
 
-    private Outcome reject(Exchange exc, ValidationError error) {
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        if (exc.getResponse() == null) {
+            return CONTINUE;
+        }
+
+        ResponseValidationContext context = exc.getProperty(RESPONSE_VALIDATION_CONTEXT, ResponseValidationContext.class);
+        if (context == null) {
+            return CONTINUE;
+        }
+
+        return rejectResponse(exc, getValidator().validateResponse(exc.getResponse().getBodyAsStringDecoded(), context));
+    }
+
+    private Outcome rejectRequest(Exchange exc, ValidationError error) {
         if (error == null) {
             return CONTINUE;
         }
         log.info("Rejected JSON-RPC request: {}", error.message());
+        exc.setResponse(createErrorResponse(error));
+        return RETURN;
+    }
+
+    private Outcome rejectResponse(Exchange exc, ValidationError error) {
+        if (error == null) {
+            return CONTINUE;
+        }
+        log.info("Rejected JSON-RPC response: {}", error.message());
         exc.setResponse(createErrorResponse(error));
         return RETURN;
     }
@@ -156,6 +194,19 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         this.params = params;
     }
 
+    /**
+     * @description
+     * <p>Configures JSON Schema files for validating successful JSON-RPC <code>result</code>
+     * payloads per method name.</p>
+     *
+     * <p>The keys are exact JSON-RPC method names. Values must be schema paths or URLs; inline
+     * schemas are not supported.</p>
+     */
+    @MCChildElement(order = 3)
+    public void setResult(JsonRPCResult result) {
+        this.result = result;
+    }
+
     public BatchRule getBatch() {
         return batchRule;
     }
@@ -168,6 +219,10 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         return params;
     }
 
+    public JsonRPCResult getResult() {
+        return result;
+    }
+
     private JsonRPCValidator getValidator() {
         if (validator == null) {
             validator = createValidator();
@@ -177,7 +232,8 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     private JsonRPCValidator createValidator() {
         params.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
-        return new JsonRPCValidator(batchRule, methods, params);
+        result.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
+        return new JsonRPCValidator(batchRule, methods, params, result);
     }
 
     private Response createErrorResponse(ValidationError error) {
@@ -185,24 +241,17 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
             if (error.payloadType() == BATCH) {
                 return statusCode(error.httpStatus())
                         .contentType(APPLICATION_JSON)
-                        .body(OM.writeValueAsString(List.of(JSONRPCResponse.error(responseId(error.request()), error.code(), error.message()))))
+                        .body(OM.writeValueAsString(List.of(JSONRPCResponse.error(error.responseId(), error.code(), error.message()))))
                         .build();
             }
 
             return statusCode(error.httpStatus())
                     .contentType(APPLICATION_JSON)
-                    .body(JSONRPCResponse.error(responseId(error.request()), error.code(), error.message()).toJson())
+                    .body(JSONRPCResponse.error(error.responseId(), error.code(), error.message()).toJson())
                     .build();
         } catch (IOException e) {
             throw new RuntimeException("Could not create JSON-RPC error response", e);
         }
-    }
-
-    private Object responseId(JSONRPCRequest request) {
-        if (request == null || request.isNotification()) {
-            return null;
-        }
-        return request.getId();
     }
 
     private JsonRPCValidator.PayloadType payloadType(String body) {

@@ -16,18 +16,14 @@ package com.predic8.membrane.core.interceptor.json.rpc;
 
 import com.predic8.membrane.annot.MCElement;
 
-import java.util.Map;
-
 /**
  * @description
  * <p>Maps JSON-RPC method names to JSON Schema locations for validating the
- * <code>params</code> member of a request.</p>
+ * <code>result</code> member of a successful response.</p>
  *
- * <p>In YAML, the configuration is expressed as a map from exact method name to schema location.
- * In XML, use repeated <code>param</code> child elements with <code>method</code> and
- * <code>schema</code> attributes. Each method name can be configured once. Inline schemas are
- * not supported.</p>
+ * <p>The configuration is expressed as a map from the exact method name to the schema location.
+ * Inline schemas are not supported.</p>
  */
-@MCElement(name = "params", component = false)
-public class JsonRPCParams extends AbstractJsonRPCMethodSchemas {
+@MCElement(name = "result", component = false)
+public class JsonRPCResult extends AbstractJsonRPCMethodSchemas {
 }

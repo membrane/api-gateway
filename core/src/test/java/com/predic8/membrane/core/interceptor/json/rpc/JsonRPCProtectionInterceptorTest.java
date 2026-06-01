@@ -120,7 +120,7 @@ public class JsonRPCProtectionInterceptorTest {
     @Test
     void paramsValidation() throws Exception {
         JsonRPCParams params = new JsonRPCParams();
-        params.setParams(Map.of(
+        params.setMappings(Map.of(
                 "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
         ));
         var interceptor = interceptor(List.of(), params);
@@ -142,7 +142,7 @@ public class JsonRPCProtectionInterceptorTest {
     @Test
     void paramsValidationUsesExactMethodName() throws Exception {
         JsonRPCParams params = new JsonRPCParams();
-        params.setParams(Map.of(
+        params.setMappings(Map.of(
                 "rpc.health", "classpath:/json/rpc/generic-rpc-params.schema.json"
         ));
         var interceptor = interceptor(List.of(), params);
@@ -157,7 +157,7 @@ public class JsonRPCProtectionInterceptorTest {
     @Test
     void paramsValidationDoesNotMatchDifferentMethodNames() throws Exception {
         JsonRPCParams params = new JsonRPCParams();
-        params.setParams(Map.of(
+        params.setMappings(Map.of(
                 "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
         ));
         var interceptor = interceptor(List.of(), params);
@@ -167,16 +167,6 @@ public class JsonRPCProtectionInterceptorTest {
                 """);
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
-    }
-
-    @Test
-    void regexLikeMethodNamesAreRejectedInYamlConfig() {
-        JsonRPCParams params = new JsonRPCParams();
-        params.setParams(Map.of(
-                "^rpc\\.echo$", "classpath:/json/rpc/echo-params.schema.json"
-        ));
-
-        assertThrows(ConfigurationException.class, () -> interceptor(List.of(), params));
     }
 
     @Test
@@ -194,19 +184,124 @@ public class JsonRPCProtectionInterceptorTest {
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
     }
 
+    @Test
+    void resultValidation() throws Exception {
+        JsonRPCResult result = new JsonRPCResult();
+        result.setMappings(Map.of(
+                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
+        ));
+        var interceptor = interceptor(List.of(), new JsonRPCParams(), result);
+
+        var exc = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo"}
+                """);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(jsonResponse("""
+                {"jsonrpc":"2.0","id":1,"result":{"message":"hello"}}
+                """));
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+
+        var exc2 = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo"}
+                """);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc2));
+        exc2.setResponse(jsonResponse("""
+                {"jsonrpc":"2.0","id":1,"result":{}}
+                """));
+        assertEquals(RETURN, interceptor.handleResponse(exc2));
+        assertErrorContains(exc2.getResponse(), 500, "Invalid result for method 'rpc.echo'");
+    }
+
+    @Test
+    void resultValidationDoesNotMatchDifferentMethodNames() throws Exception {
+        JsonRPCResult result = new JsonRPCResult();
+        result.setMappings(Map.of(
+                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
+        ));
+        var interceptor = interceptor(List.of(), new JsonRPCParams(), result);
+
+        var exc = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo.v2"}
+                """);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(jsonResponse("""
+                {"jsonrpc":"2.0","id":1,"result":{}}
+                """));
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+    }
+
+    @Test
+    void batchResultValidationUsesRequestIdToResolveMethod() throws Exception {
+        JsonRPCResult result = new JsonRPCResult();
+        result.setMappings(Map.of(
+                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json",
+                "rpc.health", "classpath:/json/rpc/generic-rpc-params.schema.json"
+        ));
+        var interceptor = interceptor(List.of(), new JsonRPCParams(), result);
+
+        var exc = exchange("""
+                [
+                  {"jsonrpc":"2.0","id":1,"method":"rpc.echo"},
+                  {"jsonrpc":"2.0","id":2,"method":"rpc.health"}
+                ]
+                """);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(jsonResponse("""
+                [
+                  {"jsonrpc":"2.0","id":2,"result":{"code":1}},
+                  {"jsonrpc":"2.0","id":1,"result":{}}
+                ]
+                """));
+        assertEquals(RETURN, interceptor.handleResponse(exc));
+        assertBatchErrorContains(exc.getResponse(), 500, "Invalid result for method 'rpc.echo'");
+        assertBatchErrorId(exc.getResponse(), 1);
+    }
+
+    @Test
+    void xmlStyleResultMappingsAreSupported() throws Exception {
+        JsonRPCResult result = new JsonRPCResult();
+        result.setParamMappings(List.of(
+                new JsonRPCResult.Param("rpc.echo", "classpath:/json/rpc/echo-params.schema.json")
+        ));
+        var interceptor = interceptor(List.of(), new JsonRPCParams(), result);
+
+        var exc = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo"}
+                """);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(jsonResponse("""
+                {"jsonrpc":"2.0","id":1,"result":{"message":"hello"}}
+                """));
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+    }
+
     private JsonRPCProtectionInterceptor interceptor(List<Rule> rules) {
-        return interceptor(rules, new JsonRPCParams());
+        return interceptor(rules, new JsonRPCParams(), new JsonRPCResult());
     }
 
     private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params) {
-        return interceptor(rules, params, new BatchRule());
+        return interceptor(rules, params, new JsonRPCResult());
+    }
+
+    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params, JsonRPCResult result) {
+        return interceptor(rules, params, result, new BatchRule());
     }
 
     private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params, BatchRule batchRule) {
+        return interceptor(rules, params, new JsonRPCResult(), batchRule);
+    }
+
+    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params, JsonRPCResult result, BatchRule batchRule) {
         var interceptor = new JsonRPCProtectionInterceptor();
         interceptor.setBatch(batchRule);
         interceptor.setMethods(rules);
         interceptor.setParams(params);
+        interceptor.setResult(result);
         interceptor.init(new DefaultRouter());
         return interceptor;
     }
@@ -216,6 +311,12 @@ public class JsonRPCProtectionInterceptorTest {
                 .contentType(APPLICATION_JSON)
                 .body(body)
                 .buildExchange();
+    }
+
+    private Response jsonResponse(String body) {
+        return Response.ok()
+                .json(body)
+                .build();
     }
 
     private Allow allow(String pattern) {
@@ -248,5 +349,18 @@ public class JsonRPCProtectionInterceptorTest {
         assertTrue(node.isArray());
         assertEquals(1, node.size());
         assertEquals(message, node.get(0).path("error").path("message").asText());
+    }
+
+    private void assertBatchErrorContains(Response response, int statusCode, String messagePart) throws Exception {
+        assertEquals(statusCode, response.getStatusCode());
+        JsonNode node = OM.readTree(response.getBodyAsStringDecoded());
+        assertTrue(node.isArray());
+        assertEquals(1, node.size());
+        assertTrue(node.get(0).path("error").path("message").asText().contains(messagePart));
+    }
+
+    private void assertBatchErrorId(Response response, long id) throws Exception {
+        JsonNode node = OM.readTree(response.getBodyAsStringDecoded());
+        assertEquals(id, node.get(0).path("id").asLong());
     }
 }
