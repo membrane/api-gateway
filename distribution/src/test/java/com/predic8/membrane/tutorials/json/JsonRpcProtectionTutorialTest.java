@@ -16,6 +16,8 @@ package com.predic8.membrane.tutorials.json;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.containsString;
@@ -42,7 +44,28 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
         .then()
             .statusCode(200)
             .contentType(JSON)
-            .body("accepted", equalTo(true));
+            .body("jsonrpc", equalTo("2.0"))
+            .body("id", equalTo("1"))
+            .body("result.status", equalTo("ok"));
+        // @formatter:on
+    }
+
+    @Test
+    void validatesConfiguredResultSchema() {
+        // @formatter:off
+        given()
+            .contentType(JSON)
+            .body("""
+                {"jsonrpc":"2.0","id":4,"method":"rpc.echo","params":{"message":"Hello"}}
+                """)
+        .when()
+            .post("http://localhost:2000")
+        .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .body("jsonrpc", equalTo("2.0"))
+            .body("id", equalTo("4"))
+            .body("result.message", equalTo("Hello"));
         // @formatter:on
     }
 
