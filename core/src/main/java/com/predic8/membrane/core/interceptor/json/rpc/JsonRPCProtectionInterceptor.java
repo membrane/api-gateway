@@ -23,7 +23,9 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.BATCH;
+import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.SINGLE;
 import static java.util.EnumSet.of;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
 
 /**
  * @topic 3. Security and Validation
@@ -87,8 +89,13 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         }
 
         if (!exc.getRequest().isJSON()) {
-            // @TODO Error msg
-            return RETURN;
+            return reject(exc, new ValidationError(
+                    payloadType(exc.getRequest().getBodyAsStringDecoded()),
+                    null,
+                    415,
+                    ERR_INVALID_REQUEST,
+                    "Content-Type %s is not supported. Expected application/json.".formatted(exc.getRequest().getHeader().getContentType())
+            ));
         }
 
         return reject(exc, getValidator().validate(exc.getRequest().getBodyAsStringDecoded()));
@@ -181,5 +188,12 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
             return null;
         }
         return request.getId();
+    }
+
+    private JsonRPCValidator.PayloadType payloadType(String body) {
+        if (body == null) {
+            return SINGLE;
+        }
+        return body.trim().startsWith("[") ? BATCH : SINGLE;
     }
 }

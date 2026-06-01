@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.TEXT_PLAIN;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static org.junit.jupiter.api.Assertions.*;
@@ -102,6 +103,19 @@ public class JsonRPCProtectionInterceptorTest {
     void invalidRegexIsRejected() {
         Allow allow = new Allow();
         assertThrows(ConfigurationException.class, () -> allow.setPattern("[*"));
+    }
+
+    @Test
+    void nonJsonContentTypeIsRejected() throws Exception {
+        var interceptor = interceptor(List.of());
+
+        var exc = Request.post("/")
+                .contentType(TEXT_PLAIN)
+                .body("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"rpc.health\"}")
+                .buildExchange();
+
+        assertEquals(RETURN, interceptor.handleRequest(exc));
+        assertError(exc.getResponse(), 415, "Content-Type text/plain is not supported. Expected application/json.");
     }
 
     @Test
