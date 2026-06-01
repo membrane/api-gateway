@@ -66,10 +66,9 @@ public class JsonRPCProtectionInterceptorTest {
 
     @Test
     void batchRequestsCanBeDisabled() throws Exception {
-        var interceptor = interceptor(List.of());
         BatchRule batchRule = new BatchRule();
         batchRule.setEnabled(false);
-        interceptor.setBatch(batchRule);
+        var interceptor = interceptor(List.of(), new JsonRPCParams(), batchRule);
 
         var exc = exchange("""
                 [{"jsonrpc":"2.0","id":1,"method":"rpc.health"}]
@@ -81,10 +80,9 @@ public class JsonRPCProtectionInterceptorTest {
 
     @Test
     void batchSizeIsLimited() throws Exception {
-        var interceptor = interceptor(List.of());
         BatchRule batchRule = new BatchRule();
         batchRule.setMaxSize(1);
-        interceptor.setBatch(batchRule);
+        var interceptor = interceptor(List.of(), new JsonRPCParams(), batchRule);
 
         var exc = exchange("""
                 [
@@ -177,7 +175,12 @@ public class JsonRPCProtectionInterceptorTest {
     }
 
     private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params) {
+        return interceptor(rules, params, new BatchRule());
+    }
+
+    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params, BatchRule batchRule) {
         var interceptor = new JsonRPCProtectionInterceptor();
+        interceptor.setBatch(batchRule);
         interceptor.setMethods(rules);
         interceptor.setParams(params);
         interceptor.init(new DefaultRouter());
