@@ -100,7 +100,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     private void addParserDefinitions(Model m, MainInfo main) {
         for (ElementInfo elementInfo : main.getElements().values()) {
 
-            if (elementInfo.getAnnotation().mixed() && !elementInfo.getChildElementSpecs().isEmpty()) {
+            if (elementInfo.getAnnotation().mixed() && !getJsonVisibleChildElementSpecs(elementInfo).isEmpty()) {
                 throw new ProcessingException(
                         "@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
                         elementInfo.getElement()
@@ -140,7 +140,14 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private AbstractSchema<?> createNoEnvelopeParser(Model model, MainInfo main, ElementInfo elementInfo, String parserName) {
         // With noEnvelope=true, there should be exactly one child element
-        ChildElementInfo childSpec = elementInfo.getChildElementSpecs().getFirst();
+        List<ChildElementInfo> visibleChildElementSpecs = getJsonVisibleChildElementSpecs(elementInfo);
+        if (visibleChildElementSpecs.isEmpty()) {
+            throw new ProcessingException(
+                    "@MCElement(noEnvelope=true) must declare at least one JSON-visible @MCChildElement.",
+                    elementInfo.getElement()
+            );
+        }
+        ChildElementInfo childSpec = visibleChildElementSpecs.getFirst();
         String childName = childSpec.getPropertyName();
 
         boolean flowParserType = shouldGenerateFlowParserType(childSpec);
@@ -198,7 +205,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         var attrs = ei.getAis().stream().toList();
 
         boolean hasText = ei.getTci() != null;
-        boolean hasChildren = !ei.getChildElementSpecs().isEmpty();
+        boolean hasChildren = !getJsonVisibleChildElementSpecs(ei).isEmpty();
 
         if (hasChildren) {
             throw new ProcessingException("@MCElement(collapsed=true) must not declare child elements.", ei.getElement());
@@ -318,7 +325,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private void processMCChilds(Model model, MainInfo main, ElementInfo parentElementInfo, AbstractSchema<?> parentSchema) {
-        for (ChildElementInfo childSpec : parentElementInfo.getChildElementSpecs()) {
+        for (ChildElementInfo childSpec : getJsonVisibleChildElementSpecs(parentElementInfo)) {
 
             if (!childSpec.isList()) {
                 if (parentSchema instanceof SchemaObject parentObjectSchema) {
@@ -537,7 +544,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
     }
 
     private boolean hasComponentChild(ElementInfo parentElementInfo, MainInfo main) {
-        for (ChildElementInfo childSpec : parentElementInfo.getChildElementSpecs()) {
+        for (ChildElementInfo childSpec : getJsonVisibleChildElementSpecs(parentElementInfo)) {
             var childDeclaration = getChildElementDeclarationInfo(main, childSpec);
             if (childDeclaration == null) continue;
 
@@ -586,9 +593,15 @@ public class JsonSchemaGenerator extends AbstractGrammar {
                 .filter(attributeInfo -> !attributeInfo.excludedFromJsonSchema())
                 .anyMatch(attributeInfo -> !"id".equals(attributeInfo.getXMLName()))
                 || elementInfo.getTci() != null
-                || !elementInfo.getChildElementSpecs().isEmpty()
+                || !getJsonVisibleChildElementSpecs(elementInfo).isEmpty()
                 || elementInfo.getOai() != null
                 || hasComponentChild(elementInfo, main);
+    }
+
+    private static List<ChildElementInfo> getJsonVisibleChildElementSpecs(ElementInfo elementInfo) {
+        return elementInfo.getChildElementSpecs().stream()
+                .filter(childElementInfo -> !childElementInfo.excludedFromJsonSchema())
+                .toList();
     }
 
     private void setItemsIfArray(AbstractSchema<?> parentSchema, AbstractSchema<?> itemsSchema) {

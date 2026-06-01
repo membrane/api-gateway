@@ -93,6 +93,10 @@ public class ChildElementInfo extends AbstractJavadocedInfo implements Comparabl
 		this.list = list;
 	}
 
+    public boolean excludedFromJsonSchema() {
+        return annotation != null && annotation.excludeFromJson();
+    }
+
     @Override
     public String toString() {
         return "ChildElementInfo{" +
