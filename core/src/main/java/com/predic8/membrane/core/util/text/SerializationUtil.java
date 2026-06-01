@@ -20,6 +20,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.text.SerializationFunction.*;
+import static com.predic8.membrane.core.util.text.ToTextSerializer.toText;
 import static java.lang.Character.*;
 import static java.nio.charset.StandardCharsets.*;
 
@@ -150,7 +151,7 @@ public class SerializationUtil {
     public static String headerValueEncode(Object value) {
         if (value == null) return "";
 
-        String s = value.toString();
+        String s = toText(value);
         var out = new StringBuilder(s.length());
 
         for (int i = 0; i < s.length(); i++) {
