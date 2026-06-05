@@ -20,11 +20,24 @@ import com.predic8.membrane.annot.MCOtherAttributes;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * @description
+ * <p>Embeds a JSON Schema inline in the Membrane configuration.</p>
+ *
+ * <p>The entries inside <code>schema</code> are copied verbatim into the generated
+ * JSON Schema document.</p>
+ */
 @MCElement(name = "schema", component = false, id = "json-rpc-inline-schema")
 public class JsonRPCInlineSchema {
 
     private final Map<String, Object> properties = new LinkedHashMap<>();
 
+    /**
+     * @description
+     * <p>Defines the raw JSON Schema keywords for the inline schema.</p>
+     *
+     * @example type: object
+     */
     @MCOtherAttributes
     public void setProperties(Map<String, Object> properties) {
         if (properties != null) {

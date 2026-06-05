@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
+import static java.lang.Boolean.FALSE;
 
 public class SchemaObject extends AbstractSchema<SchemaObject> {
 
@@ -57,7 +58,7 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
 
         if (additionalPropertiesSchema != null && isObject()) {
             node.set("additionalProperties", additionalPropertiesSchema.json(jnf.objectNode()));
-        } else if (Boolean.FALSE.equals(additionalProperties) && isObject()) {
+        } else if (FALSE.equals(additionalProperties) && isObject()) {
             node.put("additionalProperties", false);
         }
 

@@ -68,7 +68,8 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQU
  *       - allow: "^rpc\\.(health|echo)$"
  *       - deny: ".*"
  *     schemaValidation:
- *       error: classpath:/json/rpc/error.schema.json
+ *       error:
+ *         location: classpath:/json/rpc/error.schema.json
  *       methods:
  *         "rpc.echo":
  *           params:

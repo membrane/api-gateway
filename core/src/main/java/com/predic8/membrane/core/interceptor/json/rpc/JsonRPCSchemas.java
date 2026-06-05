@@ -17,6 +17,13 @@ package com.predic8.membrane.core.interceptor.json.rpc;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 
+/**
+ * @description
+ * <p>Defines the JSON Schema validation rules for one exact JSON-RPC method name.</p>
+ *
+ * <p>Use <code>params</code> to validate the request payload and <code>response</code>
+ * to validate successful upstream responses.</p>
+ */
 @MCElement(name = "method", component = false, id = "json-rpc-method-schema")
 public class JsonRPCSchemas {
 
@@ -24,6 +31,9 @@ public class JsonRPCSchemas {
 
     private JsonRPCResponseValidation responseValidation;
 
+    /**
+     * @description Validates the JSON-RPC <code>params</code> member for this method.
+     */
     @MCChildElement(order = 1)
     public void setParams(JsonRPCParamValidation paramValidation) {
         this.paramValidation = paramValidation;
@@ -33,6 +43,9 @@ public class JsonRPCSchemas {
         return paramValidation;
     }
 
+    /**
+     * @description Validates the successful JSON-RPC <code>result</code> payload for this method.
+     */
     @MCChildElement(order = 2)
     public void setResponse(JsonRPCResponseValidation responseValidation) {
         this.responseValidation = responseValidation;

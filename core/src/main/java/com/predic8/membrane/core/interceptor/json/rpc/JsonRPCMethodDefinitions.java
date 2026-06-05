@@ -20,11 +20,25 @@ import com.predic8.membrane.annot.MCOtherAttributes;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * @description
+ * <p>Maps JSON-RPC method names to their schema validation definitions.</p>
+ *
+ * <p>In YAML, the entries are written as a map under <code>schemaValidation.methods</code>.</p>
+ */
 @MCElement(name = "methods", component = false, id = "json-rpc-method-definitions")
 public class JsonRPCMethodDefinitions {
 
     private final Map<String, JsonRPCSchemas> methods = new LinkedHashMap<>();
 
+    /**
+     * @description
+     * <p>Defines the per-method schema validation entries.</p>
+     *
+     * <p>Each key must match one JSON-RPC <code>method</code> value exactly.</p>
+     *
+     * @example "rpc.echo": { params: { location: "classpath:/json/rpc/echo-params.schema.json" } }
+     */
     @MCOtherAttributes
     public void setMethods(Map<String, JsonRPCSchemas> methods) {
         if (methods != null) {

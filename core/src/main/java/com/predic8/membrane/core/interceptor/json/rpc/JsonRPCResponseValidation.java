@@ -16,6 +16,13 @@ package com.predic8.membrane.core.interceptor.json.rpc;
 
 import com.predic8.membrane.annot.MCElement;
 
+/**
+ * @description
+ * <p>Configures JSON Schema validation for successful JSON-RPC responses of one method.</p>
+ *
+ * <p>The schema is applied to the JSON-RPC <code>result</code> value. Use either
+ * <code>location</code> or an inline <code>schema</code>.</p>
+ */
 @MCElement(name = "response", component = false, id = "json-rpc-response-validation")
 public class JsonRPCResponseValidation extends SchemaSetter {
 }

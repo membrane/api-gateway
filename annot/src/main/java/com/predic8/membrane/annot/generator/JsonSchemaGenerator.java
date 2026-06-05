@@ -32,6 +32,7 @@ import java.util.*;
 import static com.predic8.membrane.annot.Constants.JSON_SCHEMA_VERSION;
 import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactory.*;
 import static com.predic8.membrane.annot.generator.util.SchemaGeneratorUtil.escapeJsonContent;
+import static com.predic8.membrane.annot.model.OtherAttributesInfo.ValueType.STRING;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /**
@@ -321,7 +322,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
             return;
         }
 
-        if (otherAttributes.getValueType() == OtherAttributesInfo.ValueType.STRING) {
+        if (otherAttributes.getValueType() == STRING) {
             parserSchema.additionalProperties(from("string"));
             return;
         }

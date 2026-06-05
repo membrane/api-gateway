@@ -17,7 +17,6 @@ package com.predic8.membrane.annot.yaml.parsing.binding;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
-import com.predic8.membrane.annot.yaml.McYamlIntrospector;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 import com.predic8.membrane.annot.yaml.WrongEnumConstantException;
 import com.predic8.membrane.annot.yaml.parsing.support.SpelEvaluator;
@@ -27,8 +26,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.hasOtherAttributes;
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.isReferenceAttribute;
+import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
+import static com.predic8.membrane.annot.yaml.parsing.binding.ObjectBinder.bind;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
@@ -109,8 +108,8 @@ public final class ScalarValueConverter {
         if (valueType == String.class) {
             return node.isTextual() ? evaluateSpelForString(key, node.asText()) : node.asText();
         }
-        return ObjectBinder.bind(
-                ctx.updateContext(McYamlIntrospector.getElementName(valueType)).addProperty(key),
+        return bind(
+                ctx.updateContext(getElementName(valueType)).addProperty(key),
                 valueType,
                 node
         );

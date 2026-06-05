@@ -38,6 +38,19 @@ import static com.networknt.schema.SchemaRegistry.withDefaultDialect;
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 
+/**
+ * @description
+ * <p>Configures JSON Schema validation for JSON-RPC request params, successful responses,
+ * and error responses.</p>
+ *
+ * <p>Under <code>methods</code>, each key is matched against the exact JSON-RPC
+ * <code>method</code> value. For every method, <code>params</code> and
+ * <code>response</code> can define either a schema <code>location</code> or an
+ * inline <code>schema</code>.</p>
+ *
+ * <p>The optional <code>error</code> entry validates JSON-RPC <code>error</code>
+ * objects returned by the upstream service.</p>
+ */
 @MCElement(name = "schemaValidation", component = false)
 public class JsonRPCSchemaValidation {
 
@@ -53,11 +66,25 @@ public class JsonRPCSchemaValidation {
         return errorValidation;
     }
 
+    /**
+     * @description
+     * <p>Configures a JSON Schema for validating JSON-RPC <code>error</code> objects.</p>
+     *
+     * <p>This applies to upstream responses that contain an <code>error</code> member
+     * instead of a successful <code>result</code>.</p>
+     */
     @MCChildElement(order = 1)
     public void setErrorValidation(JsonRPCErrorValidation errorValidation) {
         this.errorValidation = errorValidation;
     }
 
+    /**
+     * @description
+     * <p>Configures per-method JSON Schema validation rules.</p>
+     *
+     * <p>The keys in this map are exact JSON-RPC method names such as
+     * <code>rpc.echo</code>.</p>
+     */
     @MCChildElement(order = 2)
     public void setMethods(JsonRPCMethodDefinitions methods) {
         this.methods = methods == null ? new JsonRPCMethodDefinitions() : methods;
@@ -150,18 +177,15 @@ public class JsonRPCSchemaValidation {
         if (errorValidation == null) {
             return null;
         }
-
-        String location = normalizeLocation(errorValidation.getLocation());
-        if (location == null) {
-            throw new ConfigurationException("JSON-RPC error schema validation must define a non-empty location.");
-        }
-
-        return loadSchema(
-                "JSON-RPC error schema",
+        return resolveConfiguredSchema(
                 registry,
-                SchemaLocation.of(combine(uriFactory, beanBaseLocation, location)),
+                "<error>",
+                "error",
+                errorValidation.getLocation(),
+                errorValidation.getSchema(),
                 resolver,
-                location
+                uriFactory,
+                beanBaseLocation
         );
     }
 
@@ -173,7 +197,19 @@ public class JsonRPCSchemaValidation {
                                      Resolver resolver,
                                      URIFactory uriFactory,
                                      String beanBaseLocation) {
-        Schema schema = resolveConfiguredSchema(registry, methodName, schemaRole, definition, resolver, uriFactory, beanBaseLocation);
+        if (definition == null) {
+            return;
+        }
+        Schema schema = resolveConfiguredSchema(
+                registry,
+                methodName,
+                schemaRole,
+                definition.getLocation(),
+                definition.getSchema(),
+                resolver,
+                uriFactory,
+                beanBaseLocation
+        );
         if (schema != null) {
             target.put(methodName, schema);
         }
@@ -182,17 +218,14 @@ public class JsonRPCSchemaValidation {
     private Schema resolveConfiguredSchema(SchemaRegistry registry,
                                            String methodName,
                                            String schemaRole,
-                                           SchemaSetter definition,
+                                           String configuredLocation,
+                                           JsonRPCInlineSchema inlineSchema,
                                            Resolver resolver,
                                            URIFactory uriFactory,
                                            String beanBaseLocation) {
-        if (definition == null) {
-            return null;
-        }
-
-        String location = normalizeLocation(definition.getLocation());
+        String location = normalizeLocation(configuredLocation);
         boolean hasLocation = location != null;
-        boolean hasInlineSchema = definition.getSchema() != null;
+        boolean hasInlineSchema = inlineSchema != null;
 
         if (hasLocation == hasInlineSchema) {
             throw new ConfigurationException(
@@ -211,7 +244,7 @@ public class JsonRPCSchemaValidation {
             );
         }
 
-        return loadInlineSchema(registry, methodName, schemaRole, definition.getSchema(), uriFactory, beanBaseLocation);
+        return loadInlineSchema(registry, methodName, schemaRole, inlineSchema, uriFactory, beanBaseLocation);
     }
 
     private Schema loadInlineSchema(SchemaRegistry registry,

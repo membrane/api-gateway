@@ -22,6 +22,14 @@ public class SchemaSetter {
     protected String location;
     protected JsonRPCInlineSchema schema;
 
+    /**
+     * @description
+     * <p>References the JSON Schema by path or URL.</p>
+     *
+     * <p>Configure either <code>location</code> or <code>schema</code>, but not both.</p>
+     *
+     * @example classpath:/json/rpc/echo-params.schema.json
+     */
     @MCAttribute
     public void setLocation(String location) {
         this.location = location;
@@ -31,6 +39,12 @@ public class SchemaSetter {
         return location;
     }
 
+    /**
+     * @description
+     * <p>Defines the JSON Schema inline.</p>
+     *
+     * <p>Configure either <code>schema</code> or <code>location</code>, but not both.</p>
+     */
     @MCChildElement(order = 1)
     public void setSchema(JsonRPCInlineSchema schema) {
         this.schema = schema;

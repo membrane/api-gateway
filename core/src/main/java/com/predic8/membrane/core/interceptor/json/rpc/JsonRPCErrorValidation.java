@@ -14,20 +14,15 @@
 
 package com.predic8.membrane.core.interceptor.json.rpc;
 
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name = "error", component = false, collapsed = true)
-public class JsonRPCErrorValidation {
-
-    private String location;
-
-    @MCAttribute
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public String getLocation() {
-        return location;
-    }
+/**
+ * @description
+ * <p>Configures a JSON Schema that validates JSON-RPC <code>error</code> objects.</p>
+ *
+ * <p>Use either <code>location</code> to load an external schema or
+ * <code>schema</code> to define the schema inline.</p>
+ */
+@MCElement(name = "error", component = false)
+public class JsonRPCErrorValidation extends SchemaSetter {
 }
