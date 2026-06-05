@@ -80,7 +80,7 @@ public final class CollectionBinder {
     private static Object parseMapToObj(ParsingContext<?> ctx, JsonNode node, String key) {
         if ("$ref".equals(key))
             return REFERENCE_RESOLVER.resolveReferencedObject(ctx, node.asText(), key);
-        var childContext = ctx.addPath("." + key);
+        var childContext = ctx.addProperty(key);
         return ObjectBinder.bind(childContext.updateContext(key), childContext.resolveClass(key), node);
     }
 

@@ -283,31 +283,40 @@ public class LineYamlErrorRenderer {
     }
 
     private static String getParentPath(String jsonPath) {
-        // Handle both $.parent.child and $.parent[0] formats
-        int lastDot = jsonPath.lastIndexOf('.');
-        int lastBracket = jsonPath.lastIndexOf('[');
-
-        if (lastBracket > lastDot) {
-            // Last segment is array index like [0]
-            return jsonPath.substring(0, lastBracket);
-        } else {
-            // Last segment is object key like .field
-            return jsonPath.substring(0, lastDot);
-        }
+        return jsonPath.substring(0, findLastSegmentStart(jsonPath));
     }
 
     private static String getLastSegment(String jsonPath) {
-        // Handle both $.parent.child and $.parent[0] formats
-        int lastDot = jsonPath.lastIndexOf('.');
+        int start = findLastSegmentStart(jsonPath);
+        String segment = jsonPath.substring(start);
+
+        if (segment.startsWith(".")) {
+            return segment.substring(1);
+        }
+
+        if (segment.startsWith("['") && segment.endsWith("']")) {
+            return segment.substring(2, segment.length() - 2)
+                    .replace("\\'", "'")
+                    .replace("\\\\", "\\");
+        }
+
+        if (segment.startsWith("[") && segment.endsWith("]")) {
+            return segment.substring(1, segment.length() - 1);
+        }
+
+        throw new IllegalArgumentException("Unsupported JSONPath segment: " + segment);
+    }
+
+    private static int findLastSegmentStart(String jsonPath) {
         int lastBracket = jsonPath.lastIndexOf('[');
+        int lastDot = jsonPath.lastIndexOf('.');
 
         if (lastBracket > lastDot) {
-            // Array index like [0]
-            String bracket = jsonPath.substring(lastBracket);
-            return bracket.substring(1, bracket.length() - 1); // Extract "0" from "[0]"
-        } else {
-            // Object key like .field
-            return jsonPath.substring(lastDot + 1);
+            return lastBracket;
         }
+        if (lastDot >= 0) {
+            return lastDot;
+        }
+        throw new IllegalArgumentException("Cannot determine parent path of: " + jsonPath);
     }
 }

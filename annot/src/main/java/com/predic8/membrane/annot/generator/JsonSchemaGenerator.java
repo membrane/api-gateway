@@ -247,7 +247,7 @@ public class JsonSchemaGenerator extends AbstractGrammar {
 
     private SchemaObject getParserSchemaObject(ElementInfo elementInfo, String parserName) {
         return object(parserName)
-                .additionalProperties(elementInfo.isString())
+                .additionalProperties(false)
                 .description(getDescriptionContent(elementInfo));
     }
 
@@ -312,6 +312,29 @@ public class JsonSchemaGenerator extends AbstractGrammar {
         processMCAttributes(elementInfo, parserSchema);
         collectTextContent(elementInfo, parserSchema);
         processMCChilds(model, main, elementInfo, parserSchema);
+        processMCOtherAttributes(model, main, elementInfo, parserSchema);
+    }
+
+    private void processMCOtherAttributes(Model model, MainInfo main, ElementInfo elementInfo, SchemaObject parserSchema) {
+        var otherAttributes = elementInfo.getOai();
+        if (otherAttributes == null) {
+            return;
+        }
+
+        if (otherAttributes.getValueType() == OtherAttributesInfo.ValueType.STRING) {
+            parserSchema.additionalProperties(from("string"));
+            return;
+        }
+
+        var valueElementInfo = main.getElements().get(otherAttributes.getMapValueType());
+        if (valueElementInfo == null) {
+            parserSchema.additionalProperties(true);
+            return;
+        }
+
+        parserSchema.additionalProperties(
+                ref("additionalProperties").ref(defsRefPath(valueElementInfo.getXSDTypeName(model)))
+        );
     }
 
     private void collectTextContent(ElementInfo elementInfo, SchemaObject parserSchema) {

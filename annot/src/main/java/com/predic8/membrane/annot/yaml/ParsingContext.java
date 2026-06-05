@@ -38,6 +38,10 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
         return new ParsingContext(context, registry,grammar,topLevel, this.path + path,key);
     }
 
+    public ParsingContext<?> addProperty(String property) {
+        return new ParsingContext(context, registry, grammar, topLevel, path + toJsonPathProperty(property), key);
+    }
+
     public ParsingContext<?> child(String childContext, String pathSegment) {
         return new ParsingContext(childContext, registry, grammar, topLevel, path + pathSegment, null);
     }
@@ -82,6 +86,16 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
 
     public String getPath() {
         return path;
+    }
+
+    private static String toJsonPathProperty(String property) {
+        if (property.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+            return "." + property;
+        }
+        return "['" + property
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                + "']";
     }
 
     @Override

@@ -22,7 +22,8 @@ import static com.predic8.membrane.annot.generator.kubernetes.model.SchemaFactor
 
 public class SchemaObject extends AbstractSchema<SchemaObject> {
 
-    private boolean additionalProperties;
+    private Boolean additionalProperties;
+    private AbstractSchema<?> additionalPropertiesSchema;
 
     // Java Properties (@MCAttributes, @MCChildElement)
     protected final List<AbstractSchema<?>> properties = new ArrayList<>();
@@ -54,7 +55,9 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
         if (minProperties != null) node.put("minProperties", minProperties);
         if (maxProperties != null) node.put("maxProperties", maxProperties);
 
-        if (!additionalProperties && isObject()) {
+        if (additionalPropertiesSchema != null && isObject()) {
+            node.set("additionalProperties", additionalPropertiesSchema.json(jnf.objectNode()));
+        } else if (Boolean.FALSE.equals(additionalProperties) && isObject()) {
             node.put("additionalProperties", false);
         }
 
@@ -75,6 +78,13 @@ public class SchemaObject extends AbstractSchema<SchemaObject> {
 
     public SchemaObject additionalProperties(boolean additionalProperties) {
         this.additionalProperties = additionalProperties;
+        this.additionalPropertiesSchema = null;
+        return this;
+    }
+
+    public SchemaObject additionalProperties(AbstractSchema<?> additionalPropertiesSchema) {
+        this.additionalProperties = null;
+        this.additionalPropertiesSchema = additionalPropertiesSchema;
         return this;
     }
 

@@ -167,7 +167,7 @@ public abstract class AbstractJsonRPCMethodSchemas {
                 .toList();
     }
 
-    @MCElement(name = "param", component = false)
+    @MCElement(name = "param", component = false, id = "old-param")
     public static class Param {
 
         private String method;

@@ -49,9 +49,9 @@ public final class ComponentDefinitionExtractor {
             String componentRef = "#/components/" + id;
 
             if (!session.componentIds().add(componentRef))
-                throw new ConfigurationParsingException("Duplicate component id '%s'. Component ids must be unique across all included files.".formatted(componentRef), null, pc.addPath("." + id));
+                throw new ConfigurationParsingException("Duplicate component id '%s'. Component ids must be unique across all included files.".formatted(componentRef), null, pc.addProperty(id));
 
-            ensureSingleKey(pc.addPath("." + id), def);
+            ensureSingleKey(pc.addProperty(id), def);
             String componentKind = def.fieldNames().next();
 
             ObjectNode wrapped = JsonNodeFactory.instance.objectNode();

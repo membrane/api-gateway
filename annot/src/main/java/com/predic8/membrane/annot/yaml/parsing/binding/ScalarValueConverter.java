@@ -17,11 +17,14 @@ package com.predic8.membrane.annot.yaml.parsing.binding;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
+import com.predic8.membrane.annot.yaml.McYamlIntrospector;
 import com.predic8.membrane.annot.yaml.ParsingContext;
 import com.predic8.membrane.annot.yaml.WrongEnumConstantException;
 import com.predic8.membrane.annot.yaml.parsing.support.SpelEvaluator;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Map;
 
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.hasOtherAttributes;
@@ -73,7 +76,7 @@ public final class ScalarValueConverter {
         if (isNumber(wanted))
             return parseNumericOrThrow(ctx, key, wanted, evaluated, node);
         if (wanted == Map.class && setter != null && hasOtherAttributes(setter))
-            return Map.of(key, evaluated);
+            return Map.of(key, convertAnySetterValue(ctx, setter, node, key));
         if (isBeanReference(wanted))
             return referenceResolver.resolveReference(ctx, value, key, wanted);
         if (setter != null && isReferenceAttribute(setter))
@@ -92,10 +95,40 @@ public final class ScalarValueConverter {
         if (isBoolean(wanted))
             return node.isBoolean() ? node.booleanValue() : parseBoolean(node.asText());
         if (wanted.equals(Map.class) && setter != null && hasOtherAttributes(setter))
-            return Map.of(key, node.asText());
+            return Map.of(key, convertAnySetterValue(ctx, setter, node, key));
         if (setter != null && isReferenceAttribute(setter))
             return resolveRegistryReference(ctx, node.asText(), key);
         throw unsupported(wanted, key, node);
+    }
+
+    private Object convertAnySetterValue(ParsingContext<?> ctx, Method setter, JsonNode node, String key) {
+        Class<?> valueType = getMapValueType(setter);
+        if (valueType == null || valueType == Object.class) {
+            return SCALAR_MAPPER.convertValue(node, Object.class);
+        }
+        if (valueType == String.class) {
+            return node.isTextual() ? evaluateSpelForString(key, node.asText()) : node.asText();
+        }
+        return ObjectBinder.bind(
+                ctx.updateContext(McYamlIntrospector.getElementName(valueType)).addProperty(key),
+                valueType,
+                node
+        );
+    }
+
+    private static Class<?> getMapValueType(Method setter) {
+        Type genericType = setter.getGenericParameterTypes()[0];
+        if (!(genericType instanceof ParameterizedType parameterizedType)) {
+            return Object.class;
+        }
+        Type valueType = parameterizedType.getActualTypeArguments()[1];
+        if (valueType instanceof Class<?> clazz) {
+            return clazz;
+        }
+        if (valueType instanceof ParameterizedType nested && nested.getRawType() instanceof Class<?> clazz) {
+            return clazz;
+        }
+        return Object.class;
     }
 
     private Object resolveRegistryReference(ParsingContext<?> ctx, String ref, String key) {

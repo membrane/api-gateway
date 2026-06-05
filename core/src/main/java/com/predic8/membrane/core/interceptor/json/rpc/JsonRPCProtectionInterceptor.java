@@ -91,6 +91,8 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
     private JsonRPCResult result = new JsonRPCResult();
     private JsonRPCValidator validator;
 
+    private JsonRPCSchemaValidation schemaValidation;
+
     public JsonRPCProtectionInterceptor() {
         name = "JSON-RPC protection";
         setAppliedFlow(of(REQUEST, RESPONSE));
@@ -181,6 +183,18 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
     public void setMethods(List<Rule> methods) {
         this.methods = methods;
     }
+
+
+
+    @MCChildElement(order = 4)
+    public void setSchemaValidation(JsonRPCSchemaValidation schemaValidation) {
+        this.schemaValidation = schemaValidation;
+    }
+
+    public JsonRPCSchemaValidation getSchemaValidation() {
+        return schemaValidation;
+    }
+
 
     /**
      * @description
