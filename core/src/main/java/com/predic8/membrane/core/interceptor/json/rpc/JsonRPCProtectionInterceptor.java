@@ -111,10 +111,6 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
-        if (exc.getRequest().isBodyEmpty()) {
-            return CONTINUE;
-        }
-
         if (!exc.getRequest().isJSON()) {
             return rejectRequest(exc, new ValidationError(
                     payloadType(exc.getRequest().getBodyAsStringDecoded()),
