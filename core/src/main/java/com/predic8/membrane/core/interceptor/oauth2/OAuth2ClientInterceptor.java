@@ -68,6 +68,7 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
 
     @Override
     public void init() {
+        super.init();
         name = "OAuth2 Client";
         setAppliedFlow(REQUEST_FLOW);
 
