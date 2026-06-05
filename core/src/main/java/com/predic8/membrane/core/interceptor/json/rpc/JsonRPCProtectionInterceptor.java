@@ -48,19 +48,15 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQU
  * @description
  * <p>Protects JSON-RPC endpoints by validating request structure, controlling batch usage,
  * applying ordered allow/deny rules to method names, and optionally validating
- * method parameters against JSON Schema documents.</p>
+ * request parameters and responses against JSON Schema documents.</p>
  *
  * <p>Method rules are evaluated in the configured order. The first matching rule decides
  * whether a method is allowed or denied.</p>
  *
- * <p>Parameter schemas are configured separately in the <code>params</code> child element. The
- * keys are exact JSON-RPC method names. The matching schema entry is used to validate the
- * <code>params</code> object or array. Schemas must be referenced by path or URL and cannot
- * be configured inline.</p>
- *
- * <p>Result schemas can be configured in the <code>result</code> child element using the same
- * method-to-schema mapping format. Successful JSON-RPC responses are then validated against the
- * configured schema for the originating request method.</p>
+ * <p>Schema validation is configured under <code>schemaValidation</code>. Per-method
+ * <code>params</code> and <code>response</code> schemas can use either
+ * <code>location</code> for external JSON Schema files or <code>schema</code> for inline
+ * schema definitions.</p>
  *
  * @yaml
  * <pre><code>
@@ -70,12 +66,20 @@ import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQU
  *       maxSize: 50
  *     methods:
  *       - allow: "^rpc\\.(health|echo)$"
- *       - deny: "^rpc\\..*$"
- *       - deny: * # Switch to default-deny behavior
- *     params:
- *       "rpc.echo": "classpath:/json/rpc/echo-params.schema.json"
- *     result:
- *       "rpc.echo": "classpath:/json/rpc/echo-result.schema.json"
+ *       - deny: ".*"
+ *     schemaValidation:
+ *       error: classpath:/json/rpc/error.schema.json
+ *       methods:
+ *         "rpc.echo":
+ *           params:
+ *             location: classpath:/json/rpc/echo-params.schema.json
+ *           response:
+ *             schema:
+ *               type: object
+ *               required: [message]
+ *               properties:
+ *                 message:
+ *                   type: string
  * </code></pre>
  */
 @MCElement(name = "jsonRPCProtection")
@@ -87,11 +91,8 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     private BatchRule batchRule = new BatchRule();
     private List<Rule> methods = List.of();
-    private JsonRPCParams params = new JsonRPCParams();
-    private JsonRPCResult result = new JsonRPCResult();
+    private JsonRPCSchemaValidation schemaValidation = new JsonRPCSchemaValidation();
     private JsonRPCValidator validator;
-
-    private JsonRPCSchemaValidation schemaValidation;
 
     public JsonRPCProtectionInterceptor() {
         name = "JSON-RPC protection";
@@ -101,8 +102,6 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
-        params.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
-        result.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
         validator = createValidator();
     }
 
@@ -135,13 +134,13 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        if (exc.getResponse() == null || result.getMappings().isEmpty()) {
+        if (exc.getResponse() == null || !schemaValidation.hasResponseValidation()) {
             return CONTINUE;
         }
 
         ResponseValidationContext context = exc.getProperty(RESPONSE_VALIDATION_CONTEXT, ResponseValidationContext.class);
-        if (context == null) {
-            return CONTINUE;
+        if (context == null && schemaValidation.hasErrorValidation()) {
+            context = new ResponseValidationContext(payloadType(exc.getResponse().getBodyAsStringDecoded()), java.util.Map.of());
         }
 
         return rejectResponse(exc, getValidator().validateResponse(exc.getResponse().getBodyAsStringDecoded(), context));
@@ -188,37 +187,11 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     @MCChildElement(order = 4)
     public void setSchemaValidation(JsonRPCSchemaValidation schemaValidation) {
-        this.schemaValidation = schemaValidation;
+        this.schemaValidation = schemaValidation == null ? new JsonRPCSchemaValidation() : schemaValidation;
     }
 
     public JsonRPCSchemaValidation getSchemaValidation() {
         return schemaValidation;
-    }
-
-
-    /**
-     * @description
-     * <p>Configures JSON Schema files for validating <code>params</code> per method name.</p>
-     *
-     * <p>The keys are exact JSON-RPC method names. Values must be schema paths or URLs; inline
-     * schemas are not supported.</p>
-     */
-    @MCChildElement(order = 2)
-    public void setParams(JsonRPCParams params) {
-        this.params = params;
-    }
-
-    /**
-     * @description
-     * <p>Configures JSON Schema files for validating successful JSON-RPC <code>result</code>
-     * payloads per method name.</p>
-     *
-     * <p>The keys are exact JSON-RPC method names. Values must be schema paths or URLs; inline
-     * schemas are not supported.</p>
-     */
-    @MCChildElement(order = 3)
-    public void setResult(JsonRPCResult result) {
-        this.result = result;
     }
 
     public BatchRule getBatch() {
@@ -229,14 +202,6 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         return methods;
     }
 
-    public JsonRPCParams getParams() {
-        return params;
-    }
-
-    public JsonRPCResult getResult() {
-        return result;
-    }
-
     private JsonRPCValidator getValidator() {
         if (validator == null) {
             validator = createValidator();
@@ -245,9 +210,8 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
     }
 
     private JsonRPCValidator createValidator() {
-        params.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
-        result.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
-        return new JsonRPCValidator(batchRule, methods, params, result);
+        schemaValidation.init(router.getResolverMap(), router.getConfiguration().getUriFactory(), getBeanBaseLocation());
+        return new JsonRPCValidator(batchRule, methods, schemaValidation);
     }
 
     private Response createErrorResponse(ValidationError error) {

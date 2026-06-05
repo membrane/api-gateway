@@ -30,6 +30,7 @@ import com.predic8.membrane.core.util.config.allowdeny.Deny;
 import com.predic8.membrane.core.util.config.allowdeny.Rule;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -77,7 +78,7 @@ public class JsonRPCProtectionInterceptorTest {
     void batchRequestsCanBeDisabled() throws Exception {
         BatchRule batchRule = new BatchRule();
         batchRule.setEnabled(false);
-        var interceptor = interceptor(List.of(), new JsonRPCParams(), batchRule);
+        var interceptor = interceptor(List.of(), batchRule);
 
         var exc = exchange("""
                 [{"jsonrpc":"2.0","id":1,"method":"rpc.health"}]
@@ -91,7 +92,7 @@ public class JsonRPCProtectionInterceptorTest {
     void batchSizeIsLimited() throws Exception {
         BatchRule batchRule = new BatchRule();
         batchRule.setMaxSize(1);
-        var interceptor = interceptor(List.of(), new JsonRPCParams(), batchRule);
+        var interceptor = interceptor(List.of(), batchRule);
 
         var exc = exchange("""
                 [
@@ -125,11 +126,10 @@ public class JsonRPCProtectionInterceptorTest {
 
     @Test
     void paramsValidation() throws Exception {
-        JsonRPCParams params = new JsonRPCParams();
-        params.setMappings(Map.of(
-                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
+        var interceptor = interceptor(List.of(), schemaValidation(
+                Map.of("rpc.echo", "classpath:/json/rpc/echo-params.schema.json"),
+                Map.of()
         ));
-        var interceptor = interceptor(List.of(), params);
 
         var exc = exchange("""
                 {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"message":"hello"}}
@@ -147,11 +147,10 @@ public class JsonRPCProtectionInterceptorTest {
 
     @Test
     void paramsValidationUsesExactMethodName() throws Exception {
-        JsonRPCParams params = new JsonRPCParams();
-        params.setMappings(Map.of(
-                "rpc.health", "classpath:/json/rpc/generic-rpc-params.schema.json"
+        var interceptor = interceptor(List.of(), schemaValidation(
+                Map.of("rpc.health", "classpath:/json/rpc/generic-rpc-params.schema.json"),
+                Map.of()
         ));
-        var interceptor = interceptor(List.of(), params);
 
         var exc = exchange("""
                 {"jsonrpc":"2.0","id":1,"method":"rpc.health","params":{"code":1}}
@@ -162,11 +161,10 @@ public class JsonRPCProtectionInterceptorTest {
 
     @Test
     void paramsValidationDoesNotMatchDifferentMethodNames() throws Exception {
-        JsonRPCParams params = new JsonRPCParams();
-        params.setMappings(Map.of(
-                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
+        var interceptor = interceptor(List.of(), schemaValidation(
+                Map.of("rpc.echo", "classpath:/json/rpc/echo-params.schema.json"),
+                Map.of()
         ));
-        var interceptor = interceptor(List.of(), params);
 
         var exc = exchange("""
                 {"jsonrpc":"2.0","id":1,"method":"rpc.echo.v2","params":{"code":1}}
@@ -176,27 +174,40 @@ public class JsonRPCProtectionInterceptorTest {
     }
 
     @Test
-    void xmlStyleParamMappingsAreSupported() throws Exception {
-        JsonRPCParams params = new JsonRPCParams();
-        params.setParamMappings(List.of(
-                new JsonRPCParams.Param("rpc.echo", "classpath:/json/rpc/echo-params.schema.json")
-        ));
-        var interceptor = interceptor(List.of(), params);
+    void paramsValidationSupportsInlineSchema() throws Exception {
+        JsonRPCParamValidation params = new JsonRPCParamValidation();
+        params.setSchema(inlineSchema(Map.of(
+                "type", "object",
+                "required", List.of("message"),
+                "properties", Map.of(
+                        "message", Map.of("type", "string")
+                )
+        )));
+
+        JsonRPCSchemas methodSchemas = new JsonRPCSchemas();
+        methodSchemas.setParams(params);
+        var interceptor = interceptor(List.of(), schemaValidationForMethods(Map.of("rpc.echo", methodSchemas)));
 
         var exc = exchange("""
                 {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"message":"hello"}}
                 """);
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
+
+        var exc2 = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{}}
+                """);
+
+        assertEquals(RETURN, interceptor.handleRequest(exc2));
+        assertErrorContains(exc2.getResponse(), 400, "Invalid params for method 'rpc.echo'");
     }
 
     @Test
     void resultValidation() throws Exception {
-        JsonRPCResult result = new JsonRPCResult();
-        result.setMappings(Map.of(
-                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
+        var interceptor = interceptor(List.of(), schemaValidation(
+                Map.of(),
+                Map.of("rpc.echo", "classpath:/json/rpc/echo-params.schema.json")
         ));
-        var interceptor = interceptor(List.of(), new JsonRPCParams(), result);
 
         var exc = exchange("""
                 {"jsonrpc":"2.0","id":1,"method":"rpc.echo"}
@@ -222,11 +233,10 @@ public class JsonRPCProtectionInterceptorTest {
 
     @Test
     void resultValidationDoesNotMatchDifferentMethodNames() throws Exception {
-        JsonRPCResult result = new JsonRPCResult();
-        result.setMappings(Map.of(
-                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json"
+        var interceptor = interceptor(List.of(), schemaValidation(
+                Map.of(),
+                Map.of("rpc.echo", "classpath:/json/rpc/echo-params.schema.json")
         ));
-        var interceptor = interceptor(List.of(), new JsonRPCParams(), result);
 
         var exc = exchange("""
                 {"jsonrpc":"2.0","id":1,"method":"rpc.echo.v2"}
@@ -241,12 +251,13 @@ public class JsonRPCProtectionInterceptorTest {
 
     @Test
     void batchResultValidationUsesRequestIdToResolveMethod() throws Exception {
-        JsonRPCResult result = new JsonRPCResult();
-        result.setMappings(Map.of(
-                "rpc.echo", "classpath:/json/rpc/echo-params.schema.json",
-                "rpc.health", "classpath:/json/rpc/generic-rpc-params.schema.json"
+        var interceptor = interceptor(List.of(), schemaValidation(
+                Map.of(),
+                Map.of(
+                        "rpc.echo", "classpath:/json/rpc/echo-params.schema.json",
+                        "rpc.health", "classpath:/json/rpc/generic-rpc-params.schema.json"
+                )
         ));
-        var interceptor = interceptor(List.of(), new JsonRPCParams(), result);
 
         var exc = exchange("""
                 [
@@ -268,12 +279,13 @@ public class JsonRPCProtectionInterceptorTest {
     }
 
     @Test
-    void xmlStyleResultMappingsAreSupported() throws Exception {
-        JsonRPCResult result = new JsonRPCResult();
-        result.setParamMappings(List.of(
-                new JsonRPCResult.Param("rpc.echo", "classpath:/json/rpc/echo-params.schema.json")
-        ));
-        var interceptor = interceptor(List.of(), new JsonRPCParams(), result);
+    void errorValidation() throws Exception {
+        JsonRPCSchemaValidation schemaValidation = new JsonRPCSchemaValidation();
+        JsonRPCErrorValidation errorValidation = new JsonRPCErrorValidation();
+        errorValidation.setLocation("classpath:/json/rpc/error.schema.json");
+        schemaValidation.setErrorValidation(errorValidation);
+
+        var interceptor = interceptor(List.of(), schemaValidation);
 
         var exc = exchange("""
                 {"jsonrpc":"2.0","id":1,"method":"rpc.echo"}
@@ -281,9 +293,20 @@ public class JsonRPCProtectionInterceptorTest {
 
         assertEquals(CONTINUE, interceptor.handleRequest(exc));
         exc.setResponse(jsonResponse("""
-                {"jsonrpc":"2.0","id":1,"result":{"message":"hello"}}
+                {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"broken","data":{"reason":"timeout"}}}
                 """));
         assertEquals(CONTINUE, interceptor.handleResponse(exc));
+
+        var exc2 = exchange("""
+                {"jsonrpc":"2.0","id":1,"method":"rpc.echo"}
+                """);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc2));
+        exc2.setResponse(jsonResponse("""
+                {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"broken"}}
+                """));
+        assertEquals(RETURN, interceptor.handleResponse(exc2));
+        assertErrorContains(exc2.getResponse(), 500, "Invalid error response");
     }
 
     @Test
@@ -332,29 +355,61 @@ public class JsonRPCProtectionInterceptorTest {
     }
 
     private JsonRPCProtectionInterceptor interceptor(List<Rule> rules) {
-        return interceptor(rules, new JsonRPCParams(), new JsonRPCResult());
+        return interceptor(rules, new JsonRPCSchemaValidation(), new BatchRule());
     }
 
-    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params) {
-        return interceptor(rules, params, new JsonRPCResult());
+    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, BatchRule batchRule) {
+        return interceptor(rules, new JsonRPCSchemaValidation(), batchRule);
     }
 
-    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params, JsonRPCResult result) {
-        return interceptor(rules, params, result, new BatchRule());
+    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCSchemaValidation schemaValidation) {
+        return interceptor(rules, schemaValidation, new BatchRule());
     }
 
-    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params, BatchRule batchRule) {
-        return interceptor(rules, params, new JsonRPCResult(), batchRule);
-    }
-
-    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCParams params, JsonRPCResult result, BatchRule batchRule) {
+    private JsonRPCProtectionInterceptor interceptor(List<Rule> rules, JsonRPCSchemaValidation schemaValidation, BatchRule batchRule) {
         var interceptor = new JsonRPCProtectionInterceptor();
         interceptor.setBatch(batchRule);
         interceptor.setMethods(rules);
-        interceptor.setParams(params);
-        interceptor.setResult(result);
+        interceptor.setSchemaValidation(schemaValidation);
         interceptor.init(new DefaultRouter());
         return interceptor;
+    }
+
+    private JsonRPCSchemaValidation schemaValidation(Map<String, String> paramLocations, Map<String, String> responseLocations) {
+        Map<String, JsonRPCSchemas> methods = new LinkedHashMap<>();
+
+        paramLocations.forEach((method, location) ->
+                methodSchemas(methods, method).setParams(withLocation(new JsonRPCParamValidation(), location))
+        );
+        responseLocations.forEach((method, location) ->
+                methodSchemas(methods, method).setResponse(withLocation(new JsonRPCResponseValidation(), location))
+        );
+
+        return schemaValidationForMethods(methods);
+    }
+
+    private JsonRPCSchemaValidation schemaValidationForMethods(Map<String, JsonRPCSchemas> methods) {
+        JsonRPCMethodDefinitions methodDefinitions = new JsonRPCMethodDefinitions();
+        methodDefinitions.setMethods(methods);
+
+        JsonRPCSchemaValidation schemaValidation = new JsonRPCSchemaValidation();
+        schemaValidation.setMethods(methodDefinitions);
+        return schemaValidation;
+    }
+
+    private JsonRPCSchemas methodSchemas(Map<String, JsonRPCSchemas> methods, String methodName) {
+        return methods.computeIfAbsent(methodName, ignored -> new JsonRPCSchemas());
+    }
+
+    private <T extends SchemaSetter> T withLocation(T validation, String location) {
+        validation.setLocation(location);
+        return validation;
+    }
+
+    private JsonRPCInlineSchema inlineSchema(Map<String, Object> schemaProperties) {
+        JsonRPCInlineSchema schema = new JsonRPCInlineSchema();
+        schema.setProperties(schemaProperties);
+        return schema;
     }
 
     private com.predic8.membrane.core.exchange.Exchange exchange(String body) throws Exception {

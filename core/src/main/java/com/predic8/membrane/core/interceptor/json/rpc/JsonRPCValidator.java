@@ -43,14 +43,12 @@ public class JsonRPCValidator {
 
     private final BatchRule batchRule;
     private final List<Rule> rules;
-    private final JsonRPCParams params;
-    private final JsonRPCResult result;
+    private final JsonRPCSchemaValidation schemaValidation;
 
-    public JsonRPCValidator(BatchRule batchRule, List<Rule> rules, JsonRPCParams params, JsonRPCResult result) {
+    public JsonRPCValidator(BatchRule batchRule, List<Rule> rules, JsonRPCSchemaValidation schemaValidation) {
         this.batchRule = batchRule;
         this.rules = rules;
-        this.params = params;
-        this.result = result;
+        this.schemaValidation = schemaValidation;
     }
 
     public ValidationError validate(String body) {
@@ -76,7 +74,10 @@ public class JsonRPCValidator {
     }
 
     public ValidationError validateResponse(String body, ResponseValidationContext context) {
-        if (context == null || !context.expectsResponses() || result.isEmpty()) {
+        if (context == null || !schemaValidation.hasResponseValidation()) {
+            return null;
+        }
+        if (!context.expectsResponses() && !schemaValidation.hasErrorValidation()) {
             return null;
         }
         if (body == null || body.isBlank()) {
@@ -166,6 +167,10 @@ public class JsonRPCValidator {
         }
 
         if (response.isError()) {
+            return validateErrorResponse(node, payloadType, response.getId());
+        }
+
+        if (!schemaValidation.hasMethodResponseValidation()) {
             return null;
         }
 
@@ -174,7 +179,7 @@ public class JsonRPCValidator {
             return invalidResponse(payloadType, response.getId(), "JSON-RPC response id '%s' does not match any request.".formatted(response.getId()));
         }
 
-        var schema = result.getSchema(methodName);
+        var schema = schemaValidation.getResponseSchema(methodName);
         if (schema == null) {
             return null;
         }
@@ -232,7 +237,7 @@ public class JsonRPCValidator {
     }
 
     private ValidationError validateParams(JSONRPCRequest request, PayloadType payloadType) {
-        var schema = params.getSchema(request.getMethod());
+        var schema = schemaValidation.getParamSchema(request.getMethod());
         if (schema == null) {
             return null;
         }
@@ -269,10 +274,33 @@ public class JsonRPCValidator {
     }
 
     private ResponseValidationContext createResponseValidationContext(PayloadType payloadType, Map<Object, String> methodsById) {
-        if (result.isEmpty() || methodsById.isEmpty()) {
+        if (!schemaValidation.hasResponseValidation()) {
+            return null;
+        }
+        if (methodsById.isEmpty() && !schemaValidation.hasErrorValidation()) {
             return null;
         }
         return new ResponseValidationContext(payloadType, Collections.unmodifiableMap(new LinkedHashMap<>(methodsById)));
+    }
+
+    private ValidationError validateErrorResponse(JsonNode node, PayloadType payloadType, Object responseId) {
+        var schema = schemaValidation.getErrorSchema();
+        if (schema == null) {
+            return null;
+        }
+
+        var errors = schema.validate(node.path("error"));
+        if (errors.isEmpty()) {
+            return null;
+        }
+
+        return invalidResponse(
+                payloadType,
+                responseId,
+                "Invalid error response: %s".formatted(
+                        errors.stream().map(Error::getMessage).collect(Collectors.joining("; "))
+                )
+        );
     }
 
     private void rememberResponseMethod(Map<Object, String> methodsById, JSONRPCRequest request) {

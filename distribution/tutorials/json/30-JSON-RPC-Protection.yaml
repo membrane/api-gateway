@@ -5,13 +5,13 @@
 # Protect a JSON-RPC endpoint by:
 # - allowing only selected methods
 # - rejecting all other methods
-# - validating params and result with JSON Schema
+# - validating params and responses with JSON Schema
 # - limiting batch requests
 #
 # Notes:
 # - Method rules are evaluated top-down.
 # - The first matching rule wins.
-# - The keys in params/result are exact JSON-RPC method names.
+# - schemaValidation.methods keys are exact JSON-RPC method names.
 # - The mock upstream below returns one fixed JSON-RPC success response.
 #
 # 1.) Send an allowed request
@@ -48,10 +48,13 @@ api:
           methods:
             - allow: '^rpc\.(health|echo)$'
             - deny: '.*' # Default deny for everything else
-          params:
-            'rpc.echo': echo-params.schema.json # Validate params for rpc.echo
-          result:
-            'rpc.echo': echo-result.schema.json # Validate result for rpc.echo
+          schemaValidation:
+            methods:
+              'rpc.echo':
+                params:
+                  location: echo-params.schema.json # Validate params for rpc.echo
+                response:
+                  location: echo-result.schema.json # Validate result for rpc.echo
   target:
     url: http://localhost:2001
 
