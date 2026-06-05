@@ -68,7 +68,7 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
                     .title("Bad Gateway")
                     .status(502)
                     .addSubSee("oauth2-token")
-                    .detail("Could not obtain an OAuth2 access token from %s.".formatted(tokenUrl))
+                    .detail("Could not obtain an OAuth2 access token.")
                     .buildAndSetResponse(exc);
             return ABORT;
         }
