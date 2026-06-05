@@ -12,6 +12,7 @@
 # - Method rules are evaluated top-down.
 # - The first matching rule wins.
 # - schemaValidation.methods keys are exact JSON-RPC method names.
+# - This tutorial shows both schema styles: inline `schema` and file-based `location`.
 # - The mock upstream below returns one fixed JSON-RPC success response.
 #
 # 1.) Send an allowed request
@@ -25,7 +26,7 @@
 # 3.) Try invalid params
 #     curl -d '{"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{}}' -H "Content-Type: application/json" http://localhost:2000
 #
-#     The schema requires params.message.
+#     The inline schema requires params.message.
 #
 # 4.) Send a valid request
 #     curl -d '{"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"message":"Hello"}}' -H "Content-Type: application/json" http://localhost:2000
@@ -52,7 +53,13 @@ api:
             methods:
               'rpc.echo':
                 params:
-                  location: echo-params.schema.json # Validate params for rpc.echo
+                  schema: # Inline schema for rpc.echo params
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
                 response:
                   location: echo-result.schema.json # Validate result for rpc.echo
   target:
