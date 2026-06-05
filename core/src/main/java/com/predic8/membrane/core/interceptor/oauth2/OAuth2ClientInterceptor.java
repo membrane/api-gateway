@@ -9,7 +9,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.security.BasicAuthenticationUtil;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +24,11 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryStringOmitNullValues;
+import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.createAuthorizationHeader;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Base64.getEncoder;
 
 /**
  * @description Obtains an OAuth2 access token using the client credentials flow and forwards the request with a Bearer token.
@@ -164,8 +164,7 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
     }
 
     private String buildBasicAuthorization() {
-        String credentials = encodeClientCredential(clientId) + ":" + encodeClientCredential(clientSecret);
-        return "Basic " + getEncoder().encodeToString(credentials.getBytes(UTF_8));
+        return createAuthorizationHeader(clientId, clientSecret, this::encodeClientCredential);
     }
 
     private String encodeClientCredential(String value) {
