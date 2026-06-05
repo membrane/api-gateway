@@ -21,6 +21,8 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.urlencode;
+import static java.lang.Math.max;
+import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Base64.getEncoder;
 
@@ -40,6 +42,10 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private HttpClient httpClient;
+    private final Object tokenLock = new Object();
+
+    private volatile String cachedAccessToken;
+    private volatile long cachedAccessTokenValidUntilEpochMillis;
 
     @Override
     public void init() {
@@ -52,7 +58,7 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) {
         try {
-            String token = fetchAccessToken();
+            String token = getAccessToken();
             exc.getRequest().getHeader().setValue(AUTHORIZATION, "Bearer " + token);
             return CONTINUE;
         } catch (Exception e) {
@@ -66,6 +72,23 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
+
+    private String getAccessToken() throws Exception {
+        if (hasValidCachedToken()) {
+            return cachedAccessToken;
+        }
+
+        synchronized (tokenLock) {
+            if (hasValidCachedToken()) {
+                return cachedAccessToken;
+            }
+            return fetchAccessToken();
+        }
+    }
+
+    private boolean hasValidCachedToken() {
+        return cachedAccessToken != null && currentTimeMillis() < cachedAccessTokenValidUntilEpochMillis;
     }
 
     private String fetchAccessToken() throws Exception {
@@ -85,12 +108,29 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
             throw new IllegalStateException("Authorization server returned status " + response.getStatusCode() + ".");
         }
 
-        String token = objectMapper.readTree(responseBody).path("access_token").asText(null);
+        var responseJson = objectMapper.readTree(responseBody);
+        String token = responseJson.path("access_token").asText(null);
         if (token == null || token.isBlank()) {
             throw new IllegalStateException("Authorization server did not return an access token.");
         }
 
+        updateTokenCache(token, responseJson.path("expires_in").asLong(-1));
         return token;
+    }
+
+    private void updateTokenCache(String token, long expiresInSeconds) {
+        if (expiresInSeconds <= 0) {
+            cachedAccessToken = null;
+            cachedAccessTokenValidUntilEpochMillis = 0;
+            log.debug("Token response from {} has no usable expires_in. Token will not be cached.", tokenUrl);
+            return;
+        }
+
+        // Refresh slightly before expiry to avoid sending a token that expires mid-request.
+        long refreshBufferSeconds = Math.min(30, max(1, expiresInSeconds / 10));
+
+        cachedAccessToken = token;
+        cachedAccessTokenValidUntilEpochMillis = currentTimeMillis() + max(1, expiresInSeconds - refreshBufferSeconds) * 1000;
     }
 
     private String buildTokenRequestBody() {
