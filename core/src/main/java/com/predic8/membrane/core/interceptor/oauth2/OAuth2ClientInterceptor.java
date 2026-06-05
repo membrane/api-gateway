@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -9,21 +10,23 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.net.URLEncoder.encode;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.gateway;
 import static com.predic8.membrane.core.http.Header.ACCEPT;
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.urlencode;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
+import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Base64.getEncoder;
 
@@ -108,8 +111,7 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
     }
 
     private String fetchAccessToken() throws Exception {
-        Exchange tokenExchange = new Request.Builder()
-                .post(tokenUrl)
+        Exchange tokenExchange = post(tokenUrl)
                 .contentType(APPLICATION_X_WWW_FORM_URLENCODED)
                 .header(ACCEPT, APPLICATION_JSON)
                 .header(AUTHORIZATION, buildBasicAuthorization())
@@ -125,12 +127,17 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
         }
 
         var responseJson = objectMapper.readTree(responseBody);
+        String token = extractAccessToken(responseJson);
+
+        updateTokenCache(token, responseJson.path("expires_in").asLong(-1));
+        return token;
+    }
+
+    private static @NotNull String extractAccessToken(JsonNode responseJson) {
         String token = responseJson.path("access_token").asText(null);
         if (token == null || token.isBlank()) {
             throw new IllegalStateException("Authorization server did not return an access token.");
         }
-
-        updateTokenCache(token, responseJson.path("expires_in").asLong(-1));
         return token;
     }
 
