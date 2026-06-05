@@ -6,10 +6,10 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.util.URLParamUtil;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +23,7 @@ import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.oauth2.OAuth2Util.urlencode;
+import static com.predic8.membrane.core.util.URLParamUtil.createQueryStringOmitNullValues;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.net.URLEncoder.encode;
@@ -157,19 +157,10 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
     }
 
     private String buildTokenRequestBody() {
-        StringBuilder body = new StringBuilder("grant_type=client_credentials");
-        appendParam(body, "scope", scope);
-        return body.toString();
-    }
-
-    private void appendParam(StringBuilder body, String name, String value) {
-        if (value == null || value.isBlank()) {
-            return;
-        }
-        body.append("&")
-                .append(name)
-                .append("=")
-                .append(urlencode(value));
+        return createQueryStringOmitNullValues(
+                "grant_type", "client_credentials",
+                "scope", scope == null || scope.isBlank() ? null : scope
+        );
     }
 
     private String buildBasicAuthorization() {

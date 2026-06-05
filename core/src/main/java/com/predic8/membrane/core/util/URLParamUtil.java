@@ -115,6 +115,26 @@ public class URLParamUtil {
         return buf.toString();
     }
 
+    public static String createQueryStringOmitNullValues(String... params) {
+        if (params.length % 2 != 0)
+            throw new IllegalArgumentException("params must contain key/value pairs");
+
+        StringBuilder buf = new StringBuilder();
+        boolean first = true;
+        for (int i = 0; i < params.length; i += 2) {
+            if (params[i + 1] == null)
+                continue;
+            if (first)
+                first = false;
+            else
+                buf.append('&');
+            buf.append(URLEncoder.encode(params[i], UTF_8));
+            buf.append('=');
+            buf.append(URLEncoder.encode(params[i + 1], UTF_8));
+        }
+        return buf.toString();
+    }
+
     /**
      * Parse a URL query into parameter pairs. The query is expected to be application/x-www-form-urlencoded .
      * <p>
