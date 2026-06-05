@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static com.predic8.membrane.annot.Constants.*;
+
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
  * "Transfer-Encoding: chunked" is set on the input.
@@ -41,10 +43,10 @@ public class Body extends AbstractBody {
 	private final static int MAX_CHUNK_LENGTH;
 
 	static {
-		String bufferSize = System.getProperty("membrane.core.http.body.buffersize");
-		BUFFER_SIZE = bufferSize == null ? 8192 : Integer.parseInt(bufferSize);
-		String maxChunkLength = System.getProperty("membrane.core.http.body.maxchunklength");
-		MAX_CHUNK_LENGTH = maxChunkLength == null ? 1_000_000_000 : Integer.parseInt(maxChunkLength);
+		var bufferSize = System.getProperty(MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE);
+		BUFFER_SIZE = bufferSize == null ? MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE_DEFAULT : Integer.parseInt(bufferSize);
+		var maxChunkLength = System.getProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH);
+		MAX_CHUNK_LENGTH = maxChunkLength == null ? MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT : Integer.parseInt(maxChunkLength);
 	}
 
 	private final InputStream inputStream;

@@ -14,10 +14,9 @@
 
 package com.predic8.membrane.annot;
 
-import javax.xml.*;
-import javax.xml.namespace.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.namespace.QName;
+import java.io.FileInputStream;
+import java.util.Properties;
 
 public class Constants {
 
@@ -30,6 +29,19 @@ public class Constants {
      * Users should use the environment variable instead.
      */
     public static final String MEMBRANE_DISABLE_TERM_COLORS_PROPERTY = "membrane.disable.term.colors";
+
+	/**
+	 * Size of the IO buffer used for reading HTTP bodies.
+	 */
+	public static final String MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE = "membrane.core.http.body.buffersize";
+	public static final int MEMBRANE_CORE_HTTP_BODY_BUFFERSIZE_DEFAULT = 8192;
+
+	/**
+	 * Maximum size of an HTTP chunk in bytes. Limit is checked to avoid DoS attacks.
+	 * Without this, a sender can trigger a 2 GiB byte[] allocation with just "7FFFFFFF\r\n
+	 */
+	public static final String MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH = "membrane.core.http.body.maxchunklength";
+	public static final int MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT = 100 * 1024 * 1024;
 
     public static final String CRLF = "" + ((char) 13) + ((char) 10);
 
