@@ -33,7 +33,7 @@ import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class AbstractModelInputRequest extends AbstractLLMRequest implements ModelInputRequest {
+public class AbstractModelInputRequest extends BaseLLMRequest implements ModelInputRequest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractModelInputRequest.class);
 

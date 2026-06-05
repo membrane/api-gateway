@@ -4,11 +4,11 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
 
-public class AbstractLLMRequest extends AbstractLLMMessage implements LLMRequest {
+public class BaseLLMRequest extends AbstractLLMMessage implements LLMRequest {
 
     public static final String BEARER_PREFIX = "Bearer";
 
-    protected AbstractLLMRequest(Exchange exchange) {
+    protected BaseLLMRequest(Exchange exchange) {
         super(exchange);
     }
 
