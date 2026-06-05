@@ -27,6 +27,21 @@ import static java.lang.System.currentTimeMillis;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Base64.getEncoder;
 
+/**
+ * @description Obtains an OAuth2 access token using the client credentials flow and forwards the request with a Bearer token.
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - oauth2Client:
+ *         tokenUrl: https://auth.example.com/oauth2/token
+ *         clientId: gateway
+ *         clientSecret: secret
+ *         scope: read write
+ *   target:
+ *     url: https://api.example.com
+ * </code></pre>
+ */
 @MCElement(name="oauth2Client")
 public class OAuth2ClientInterceptor extends AbstractInterceptor {
 
@@ -159,6 +174,11 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
         return encode(value, UTF_8);
     }
 
+    /**
+     * @description The token endpoint used to obtain the OAuth2 access token.
+     * @required
+     * @example https://auth.example.com/oauth2/token
+     */
     @MCAttribute
     @Required
     public void setTokenUrl(String tokenUrl) {
@@ -169,6 +189,11 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
         return tokenUrl;
     }
 
+    /**
+     * @description The OAuth2 client id used for the token request.
+     * @required
+     * @example gateway
+     */
     @MCAttribute
     @Required
     public void setClientId(String clientId) {
@@ -179,6 +204,11 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
         return clientId;
     }
 
+    /**
+     * @description The OAuth2 client secret used for the token request.
+     * @required
+     * @example secret
+     */
     @MCAttribute
     @Required
     public void setClientSecret(String clientSecret) {
@@ -189,6 +219,10 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
         return clientSecret;
     }
 
+    /**
+     * @description Space-separated scopes requested for the access token.
+     * @example read write
+     */
     @MCAttribute
     public void setScope(String scope) {
         this.scope = scope;
