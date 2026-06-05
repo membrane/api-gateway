@@ -12,6 +12,7 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.net.URLEncoder.encode;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.gateway;
 import static com.predic8.membrane.core.http.Header.ACCEPT;
 import static com.predic8.membrane.core.http.Header.AUTHORIZATION;
@@ -150,8 +151,12 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
     }
 
     private String buildBasicAuthorization() {
-        String credentials = clientId + ":" + clientSecret;
+        String credentials = encodeClientCredential(clientId) + ":" + encodeClientCredential(clientSecret);
         return "Basic " + getEncoder().encodeToString(credentials.getBytes(UTF_8));
+    }
+
+    private String encodeClientCredential(String value) {
+        return encode(value, UTF_8);
     }
 
     @MCAttribute
