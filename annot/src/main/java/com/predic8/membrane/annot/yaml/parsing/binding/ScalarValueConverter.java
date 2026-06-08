@@ -101,9 +101,10 @@ public final class ScalarValueConverter {
     }
 
     /**
-     * Converts one value from an {@code @MCOtherAttributes} map.
-     * Plain scalar values stay plain values. If the map stores typed child objects,
-     * they are bound as children of the current local element.
+     * Converts the value of one entry from an {@code @MCOtherAttributes} map.
+     * Example: for `methods: { 'rpc.echo': { params: ... } }` the key is `rpc.echo`.
+     * The nested object is then bound as the configured Java type for the map value,
+     * not left as a raw map. Plain scalar values such as `timeout: 5` stay plain values.
      */
     private Object convertAnySetterValue(ParsingContext<?> ctx, Method setter, JsonNode node, String key) {
         Class<?> valueType = getMapValueType(setter);
