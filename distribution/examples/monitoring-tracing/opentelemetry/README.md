@@ -27,6 +27,13 @@ docker run -it --name jaeger -e COLLECTOR_OTLP_ENABLED=true -p 16686:16686 -p 43
 A span created by Membrane should be visible in the [Jaeger UI](http://localhost:16686).
 ![sample](resources/otel_example.png)
 7. Check the headers printed to the console. You will see headers such as `traceparent`, which indicate the trace and span context involved in the request.
+8. The trace and span IDs are also written into the MDC log context and appear in every log line produced during that request:
+
+   ```
+   12:34:56,789  INFO 42 http-123 OpenTelemetryInterceptor:108 [4bf92f3577b34da6a3ce929d0e0e4736/00f067aa0ba902b7] {} - ...
+   ```
+
+   The `[traceId/spanId]` segment is printed by the included `log4j2.xml`. When no span is active the brackets are empty (`[/]`).
 
 **How it is done**
 
@@ -57,3 +64,9 @@ api:
 **Note on Transport:**
 
 The OTLP exporter is configured by default to use gRPC. To use HTTP, set the `transport` field to `http` and set the `port` to `4318`.
+
+**MDC Log Context:**
+
+The `openTelemetry` plugin writes the current `traceId` and `spanId` into the SLF4J MDC for the duration of each request. This lets any log line emitted by Membrane — or your own interceptors — be correlated directly with a trace in Jaeger without any extra instrumentation. The included `log4j2.xml` exposes them via the `[%X{traceId}/%X{spanId}]` pattern. To add them to your own Log4j2 layout use the same `%X{traceId}` and `%X{spanId}` conversion specifiers.
+
+> **Note:** Place `openTelemetry` either globally in the transport (as shown in `apis.yaml`) or as the **first plugin** in an API flow. Only log lines produced by plugins that run *after* `openTelemetry` will carry the `traceId` and `spanId` in the MDC.
