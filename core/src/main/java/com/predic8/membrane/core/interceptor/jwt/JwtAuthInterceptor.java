@@ -128,7 +128,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (Exception e) {
-            log.info("Could not retrieve JWT: ", e.getMessage());
+            log.info("Could not retrieve JWT: {}", e.getMessage());
             security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(ERROR_JWT_NOT_FOUND)
                     .addSubSee(ERROR_JWT_NOT_FOUND_ID)
