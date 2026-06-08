@@ -25,7 +25,7 @@ import com.predic8.membrane.annot.MCElement;
  * to validate successful upstream responses.</p>
  */
 @MCElement(name = "method", component = false, id = "json-rpc-method-schema")
-public class JsonRPCSchemas {
+public class JsonRPCMethodSchemas {
 
     private JsonRPCParamValidation paramValidation;
 

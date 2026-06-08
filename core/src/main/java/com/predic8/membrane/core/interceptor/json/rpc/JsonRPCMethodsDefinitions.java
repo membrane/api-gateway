@@ -27,9 +27,9 @@ import java.util.Map;
  * <p>In YAML, the entries are written as a map under <code>schemaValidation.methods</code>.</p>
  */
 @MCElement(name = "methods", component = false, id = "json-rpc-method-definitions")
-public class JsonRPCMethodDefinitions {
+public class JsonRPCMethodsDefinitions {
 
-    private final Map<String, JsonRPCSchemas> methods = new LinkedHashMap<>();
+    private final Map<String, JsonRPCMethodSchemas> methods = new LinkedHashMap<>();
 
     /**
      * @description
@@ -40,13 +40,13 @@ public class JsonRPCMethodDefinitions {
      * @example "rpc.echo": { params: { location: "classpath:/json/rpc/echo-params.schema.json" } }
      */
     @MCOtherAttributes
-    public void setMethods(Map<String, JsonRPCSchemas> methods) {
+    public void setMethods(Map<String, JsonRPCMethodSchemas> methods) {
         if (methods != null) {
             this.methods.putAll(methods);
         }
     }
 
-    public Map<String, JsonRPCSchemas> getMethods() {
+    public Map<String, JsonRPCMethodSchemas> getMethods() {
         return methods;
     }
 }

@@ -218,7 +218,7 @@ class JsonRPCProtectionInterceptorTest {
                 schemaValidation.getErrorValidation().getSchema().getProperties().get("type")
         );
 
-        Map<String, JsonRPCSchemas> methods = schemaValidation.getMethods().getMethods();
+        Map<String, JsonRPCMethodSchemas> methods = schemaValidation.getMethods().getMethods();
         assertEquals(
                 "classpath:/json/rpc/echo-params.schema.json",
                 methods.get("rpc.echo").getParams().getLocation()
