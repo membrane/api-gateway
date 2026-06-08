@@ -432,6 +432,30 @@ public class YAMLParsingErrorTest {
     }
 
     @Test
+    void otherAttributesKeyWithQuoteWrongFieldRendersErrorReport() throws Exception {
+        var result = compileMethodMapSources();
+
+        try {
+            parseYAML(result, """
+                    api:
+                      methods:
+                        "rpc'echo":
+                          wrong: 1
+                    """);
+            fail();
+        } catch (RuntimeException e) {
+            var c = getCause(e);
+            var pc = c.getParsingContext();
+            assertEquals("$.api.methods['rpc\\'echo']", pc.getPath());
+            assertEquals("wrong", pc.getKey());
+
+            String report = c.getFormattedReport();
+            assertTrue(report.contains("rpc'echo"));
+            assertTrue(report.contains("wrong"));
+        }
+    }
+
+    @Test
     void otherAttributesMapValueUsesLocalContextForChildren() throws Exception {
         var result = compileMethodMapSources();
 

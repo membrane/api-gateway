@@ -88,6 +88,10 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
         return path;
     }
 
+    /**
+     * Encodes a property name so it can be appended to a Jayway JSONPath.
+     * Simple identifiers stay in dot notation, while keys with dots or quotes switch to bracket notation.
+     */
     private static String toJsonPathProperty(String property) {
         if (property.matches("[A-Za-z_][A-Za-z0-9_]*")) {
             return "." + property;

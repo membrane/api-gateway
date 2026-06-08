@@ -100,6 +100,11 @@ public final class ScalarValueConverter {
         throw unsupported(wanted, key, node);
     }
 
+    /**
+     * Converts one value from an {@code @MCOtherAttributes} map.
+     * Plain scalar values stay plain values. If the map stores typed child objects,
+     * they are bound as children of the current local element.
+     */
     private Object convertAnySetterValue(ParsingContext<?> ctx, Method setter, JsonNode node, String key) {
         Class<?> valueType = getMapValueType(setter);
         if (valueType == null || valueType == Object.class) {

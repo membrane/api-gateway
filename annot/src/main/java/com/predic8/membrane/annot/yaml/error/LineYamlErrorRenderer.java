@@ -286,25 +286,47 @@ public class LineYamlErrorRenderer {
         return jsonPath.substring(0, findLastSegmentStart(jsonPath));
     }
 
+    /**
+     * Returns the last part of a JSONPath created by {@link ParsingContext}.
+     * Examples:
+     * `$.api.methods` -> `methods`
+     * `$.api.methods['rpc.echo']` -> `rpc.echo`
+     * `$.api.methods[0]` -> `0`
+     */
     private static String getLastSegment(String jsonPath) {
-        int start = findLastSegmentStart(jsonPath);
-        String segment = jsonPath.substring(start);
+        String segment = jsonPath.substring(findLastSegmentStart(jsonPath));
 
-        if (segment.startsWith(".")) {
+        if (isPropertySegment(segment)) {
             return segment.substring(1);
         }
 
-        if (segment.startsWith("['") && segment.endsWith("']")) {
-            return segment.substring(2, segment.length() - 2)
-                    .replace("\\'", "'")
-                    .replace("\\\\", "\\");
+        if (isQuotedPropertySegment(segment)) {
+            return decodeQuotedPropertySegment(segment);
         }
 
-        if (segment.startsWith("[") && segment.endsWith("]")) {
+        if (isArrayIndexSegment(segment)) {
             return segment.substring(1, segment.length() - 1);
         }
 
         throw new IllegalArgumentException("Unsupported JSONPath segment: " + segment);
+    }
+
+    private static boolean isPropertySegment(String segment) {
+        return segment.startsWith(".");
+    }
+
+    private static boolean isQuotedPropertySegment(String segment) {
+        return segment.startsWith("['") && segment.endsWith("']");
+    }
+
+    private static String decodeQuotedPropertySegment(String segment) {
+        return segment.substring(2, segment.length() - 2)
+                .replace("\\'", "'")
+                .replace("\\\\", "\\");
+    }
+
+    private static boolean isArrayIndexSegment(String segment) {
+        return segment.startsWith("[") && segment.endsWith("]");
     }
 
     private static int findLastSegmentStart(String jsonPath) {
