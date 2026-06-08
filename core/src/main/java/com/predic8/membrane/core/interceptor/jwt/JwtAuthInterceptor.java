@@ -60,7 +60,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     public static final String ERROR_VALIDATION_FAILED_ID = "jwt-validation-failed";
     public static final String ERROR_MALFORMED_COMPACT_SERIALIZATION = "JWTs compact serialization not valid.";
     public static final String ERROR_MALFORMED_COMPACT_SERIALIZATION_ID = "jwt-compact-serialization-not-valid";
-    public static final String JWT_INVALID_SIGNATURE = "JWT signature is invalid.";
+    public static final String ERROR_JWT_INVALID_SIGNATURE = "JWT signature is invalid.";
 
     public static String ERROR_JWT_VALUE_NOT_PRESENT(String key) {
         return "JWT does not contain '" + key + "'";
@@ -111,7 +111,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         } catch (InvalidJwtSignatureException e) {
             log.info("JWT signature is invalid.");
             security(router.getConfiguration().isProduction(), "jwt-auth")
-                    .detail(JWT_INVALID_SIGNATURE)
+                    .detail(ERROR_JWT_INVALID_SIGNATURE)
                     .addSubSee(ERROR_VALIDATION_FAILED_ID)
                     .stacktrace(false)
                     .status(401)
