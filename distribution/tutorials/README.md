@@ -12,7 +12,7 @@ Complete this tutorial before moving on to the JSON or XML tutorials.
 
 ## [JSON](json)
 
-This tutorial builds on 'Getting Started'. It explains how to read, create and transform JSON data, how to use JsonPath to extract information or compute values, and how to protect JSON-RPC endpoints.
+This tutorial builds on 'Getting Started'. It explains how to read, create and transform JSON data, how to use JsonPath to extract information or compute values.
 
 
 ## [XML](xml)
