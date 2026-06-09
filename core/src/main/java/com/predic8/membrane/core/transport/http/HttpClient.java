@@ -80,7 +80,7 @@ public class HttpClient implements AutoCloseable {
         var outConType = connectionFactory.getConnection(exc, hcp, attempt);
         setRequestURI(exc.getRequest(), target, outConType.con());
 
-        if (configuration.getProxy() != null && outConType.sslProvider() == null) {
+        if (configuration.getProxy() != null && configuration.getProxy().isAuthentication() && outConType.sslProvider() == null) {
             // if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
             exc.getRequest().getHeader().setProxyAuthorization(configuration.getProxy().getCredentials());
         }
