@@ -16,6 +16,7 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.annot.Constants;
 import com.predic8.membrane.core.http.cookie.*;
+import com.predic8.membrane.core.util.security.BasicAuthenticationUtil;
 import com.predic8.membrane.core.util.*;
 import jakarta.mail.internet.*;
 import org.jetbrains.annotations.*;
@@ -31,6 +32,7 @@ import java.util.stream.*;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.createAuthorizationHeader;
 import static java.nio.charset.StandardCharsets.*;
 import static java.util.Arrays.*;
 import static java.util.Collections.*;
@@ -428,9 +430,7 @@ public class Header {
      * @param password the password for authentication
      */
     public void setAuthorization(String user, String password) {
-        setValue("Authorization", "Basic "
-                                  + new String(encodeBase64((user + ":" + password)
-                .getBytes(UTF_8)), UTF_8));
+        setValue(AUTHORIZATION, createAuthorizationHeader(user, password));
     }
 
     /**

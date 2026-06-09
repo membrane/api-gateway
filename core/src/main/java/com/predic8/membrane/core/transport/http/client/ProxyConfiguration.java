@@ -16,11 +16,11 @@ package com.predic8.membrane.core.transport.http.client;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.config.security.*;
+import com.predic8.membrane.core.util.security.BasicAuthenticationUtil;
 
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.*;
-import static org.apache.commons.codec.binary.Base64.*;
+import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.createAuthorizationHeader;
 
 /**
  * @description <p>Configuration for an outbound HTTP proxy used by the HTTP client.
@@ -167,7 +167,7 @@ public class ProxyConfiguration {
 	 * The "Basic" authentication scheme defined in RFC 2617 does not properly define how to treat non-ASCII characters.
 	 */
 	public String getCredentials() {
-		return  "Basic " + new String(encodeBase64((username + ":" + password).getBytes(UTF_8)), UTF_8);
+		return createAuthorizationHeader(username, password);
 	}
 
 }
