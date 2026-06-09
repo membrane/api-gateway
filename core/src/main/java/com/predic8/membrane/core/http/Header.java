@@ -430,7 +430,7 @@ public class Header {
      * @param password the password for authentication
      */
     public void setAuthorization(String user, String password) {
-        setValue("Authorization", createAuthorizationHeader(user, password));
+        setValue(AUTHORIZATION, createAuthorizationHeader(user, password));
     }
 
     /**

@@ -82,7 +82,7 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
             exc.getRequest().getHeader().setValue(AUTHORIZATION, "Bearer " + token);
             return CONTINUE;
         } catch (Exception e) {
-            log.warn("Could not obtain OAuth2 access token from {}: {}", tokenUrl, e.getMessage());
+            log.info("Could not obtain OAuth2 access token from {}: {}", tokenUrl, e.getMessage());
             log.debug("OAuth2 token request failed.", e);
             gateway(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Bad Gateway")
