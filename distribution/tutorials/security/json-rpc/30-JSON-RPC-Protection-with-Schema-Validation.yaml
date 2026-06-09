@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.2.2.json
 #
-# Tutorial: JSON-RPC Protection
+# Tutorial: JSON-RPC Protection with Schema Validation
 #
 # Protect a JSON-RPC endpoint by:
 # - allowing only selected methods

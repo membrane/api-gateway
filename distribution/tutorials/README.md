@@ -25,6 +25,11 @@ If your APIs use XML as input or output, this tutorial provides useful configura
 Learn how to use Membrane in more advanced scenarios. Topics include path rewriting, scripting, conditions and more.
 
 
+## [Security](security)
+
+This tutorial covers transport and message protection topics such as TLS termination, authentication, ACLs, JSON/XML/GraphQL protection, and a dedicated JSON-RPC tutorial with allow/deny, batch validation, and schema validation examples.
+
+
 ## [AI / MCP](ai/mcp)
 
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, and protect the MCP endpoint with an API key.

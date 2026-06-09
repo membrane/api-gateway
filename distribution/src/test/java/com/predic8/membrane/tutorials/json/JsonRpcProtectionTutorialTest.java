@@ -25,8 +25,13 @@ import static org.hamcrest.Matchers.nullValue;
 public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
 
     @Override
+    protected String getTutorialDir() {
+        return "security/json-rpc";
+    }
+
+    @Override
     protected String getTutorialYaml() {
-        return "30-JSON-RPC-Protection.yaml";
+        return "30-JSON-RPC-Protection-with-Schema-Validation.yaml";
     }
 
     @Test
