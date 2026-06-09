@@ -10,9 +10,6 @@
 # Notes:
 # - Method rules are evaluated top-down.
 # - The first matching rule wins.
-# - The allowed methods use plain names instead of regex-style method patterns.
-# - Accepted requests get a generated JSON-RPC success response so the example
-#   stays focused on protection rules.
 #
 # Try:
 #
@@ -45,21 +42,42 @@ api:
           - allow: ping
           - allow: sum
           - deny: .*
-    - groovy:
-        src: |
-          import groovy.json.JsonOutput
-          import groovy.json.JsonSlurper
-
-          def payload = new JsonSlurper().parseText(message.bodyAsStringDecoded)
-          def success = { id ->
-            [jsonrpc: "2.0", id: id, result: [ok: true]]
-          }
-
-          def responseBody = payload instanceof List
-            ? JsonOutput.toJson(payload.collect { success(it.id) })
-            : JsonOutput.toJson(success(payload.id))
-
-          Response.ok()
-            .contentType("application/json")
-            .body(responseBody)
-            .build()
+    - if:
+        test: body.toString().trim().startsWith('[')
+        flow:
+          - static:
+              contentType: application/json
+              pretty: true
+              src: |
+                [
+                  {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "result": {
+                      "ok": true
+                    }
+                  },
+                  {
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "result": {
+                      "ok": true
+                    }
+                  }
+                ]
+          - return:
+              status: 200
+        else:
+          - static:
+              contentType: application/json
+              pretty: true
+              src: |
+                {
+                  "jsonrpc": "2.0",
+                  "id": 1,
+                  "result": {
+                    "ok": true
+                  }
+                }
+          - return:
+              status: 200
