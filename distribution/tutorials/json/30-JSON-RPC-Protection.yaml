@@ -48,7 +48,7 @@ api:
             maxSize: 2 # At most two calls per batch
           methods:
             - allow: '^rpc\.(health|echo)$'
-            - deny: '.*' # Default deny for everything else
+            - deny: '.*' # deny for everything else
           schemaValidation:
             methods:
               'rpc.echo':
