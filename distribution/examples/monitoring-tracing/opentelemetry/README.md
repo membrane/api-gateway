@@ -30,7 +30,7 @@ A span created by Membrane should be visible in the [Jaeger UI](http://localhost
 8. The trace and span IDs are also written into the MDC log context and appear in every log line produced during that request:
 
    ```
-   12:34:56,789  INFO 42 http-123 OpenTelemetryInterceptor:108 [4bf92f3577b34da6a3ce929d0e0e4736/00f067aa0ba902b7] {} - ...
+   10:23:24,309  INFO 71 router /127.0.0.1:51225 LogInterceptor:161 {api=Backend, spanId=c3842209e491c98d, traceId=037203a62701acf8d0da0080dae55aef} 
    ```
 
    The `[traceId/spanId]` segment is printed by the included `log4j2.xml`. When no span is active the brackets are empty (`[/]`).
