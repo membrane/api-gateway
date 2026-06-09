@@ -12,8 +12,9 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.json;
+package com.predic8.membrane.tutorials.security;
 
+import com.predic8.membrane.tutorials.json.AbstractJsonTutorialTest;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -31,7 +32,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "30-JSON-RPC-Protection-with-Schema-Validation.yaml";
+        return "20-JSON-RPC-Protection-with-Schema-Validation.yaml";
     }
 
     @Test
