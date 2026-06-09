@@ -14,10 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import java.util.function.Function;
-
-import static java.net.URLEncoder.encode;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import com.predic8.membrane.core.util.URLParamUtil;
 
 public class OAuth2TokenBody {
     private String code;
@@ -70,27 +67,18 @@ public class OAuth2TokenBody {
     }
 
     public String build() {
-        StringBuilder r = new StringBuilder("grant_type=" + grantType);
-        appendParam(r, "refresh_token", refreshToken);
-        appendParam(r, "code", code);
-        appendParam(r, "redirect_uri", redirectUri);
-        appendParam(r, "scope", scope);
-        appendParam(r, "code_verifier", codeVerifier);
-        appendParam(r, "client_id", clientId);
-        appendParam(r, "client_secret", clientSecret);
-        appendParam(r, "client_assertion_type", clientAssertionType);
-        appendParam(r, "client_assertion", clientAssertion);
-        return r.toString();
-    }
-
-    private void appendParam(StringBuilder sb, String paramName, String paramValue) {
-        appendParam(sb, paramName, paramValue, e -> encode(e, UTF_8));
-    }
-
-    private void appendParam(StringBuilder sb, String paramName, String paramValue, Function<String, String> encoder) {
-        if (paramValue == null)
-            return;
-        sb.append("&").append(paramName).append("=").append(encoder.apply(paramValue));
+        return URLParamUtil.createQueryStringOmitNullValues(
+                "grant_type", grantType,
+                "refresh_token", refreshToken,
+                "code", code,
+                "redirect_uri", redirectUri,
+                "scope", scope,
+                "code_verifier", codeVerifier,
+                "client_id", clientId,
+                "client_secret", clientSecret,
+                "client_assertion_type", clientAssertionType,
+                "client_assertion", clientAssertion
+        );
     }
 
     public OAuth2TokenBody redirectUri(String redirectUri) {
