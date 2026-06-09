@@ -120,7 +120,7 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
         var response = tokenExchange.getResponse();
         String responseBody = response.getBodyAsStringDecoded();
         if (response.getStatusCode() != 200) {
-            throw new IllegalStateException("Authorization server returned status " + response.getStatusCode() + ".");
+            throw new IllegalStateException("Authorization server returned status %d.".formatted(response.getStatusCode()));
         }
 
         var responseJson = objectMapper.readTree(responseBody);
