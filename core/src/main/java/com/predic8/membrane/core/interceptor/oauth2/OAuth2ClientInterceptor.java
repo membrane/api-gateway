@@ -95,10 +95,6 @@ public class OAuth2ClientInterceptor extends AbstractInterceptor {
     }
 
     private String getAccessToken() throws Exception {
-        if (hasValidCachedToken()) {
-            return cachedAccessToken;
-        }
-
         synchronized (tokenLock) {
             if (hasValidCachedToken()) {
                 return cachedAccessToken;
