@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
- * @description (Experimental) Anthroic Claude provider configuration
+ * @description (Experimental) Anthropic Claude provider configuration
  * Use to configure a LLM gateway to use the anthropic API
  */
 @MCElement( name="claude")

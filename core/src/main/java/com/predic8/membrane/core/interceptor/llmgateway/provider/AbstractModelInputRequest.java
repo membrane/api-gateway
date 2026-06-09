@@ -117,7 +117,7 @@ public class AbstractModelInputRequest extends BaseLLMRequest implements ModelIn
 
     @Override
     public long getRequestedMaxOutputTokens() {
-        return 0;
+        return -1;
     }
 
     @Override

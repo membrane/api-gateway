@@ -101,7 +101,7 @@ public class DefaultPolicies implements Policies {
 
     /**
      * @param models List of models that can be used by the gateway.
-     * @desciption Restricts the models that can be used by the gateway.
+     * @description Restricts the models that can be used by the gateway.
      * @default null (no restriction)
      */
     @MCAttribute
@@ -123,7 +123,7 @@ public class DefaultPolicies implements Policies {
     @MCAttribute
     public void setMaxOutputTokens(int maxOutputTokens) {
         if (maxOutputTokens < 0) {
-            throw new IllegalArgumentException("maxOutputTokens must be >= 0");
+            throw new ConfigurationException("maxOutputTokens must be >= 0");
         }
         this.maxOutputTokens = maxOutputTokens;
     }
