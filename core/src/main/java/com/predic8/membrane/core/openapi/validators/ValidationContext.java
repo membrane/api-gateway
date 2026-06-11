@@ -42,7 +42,7 @@ public class ValidationContext {
 
     private Content content = Content.JSON;
 
-    public static ValidationContext fromRequest(Request request) {
+    public static ValidationContext fromRequest(Request<?> request) {
         ValidationContext ctx = new ValidationContext();
         ctx.method = request.getMethod();
         ctx.path = request.getPath();

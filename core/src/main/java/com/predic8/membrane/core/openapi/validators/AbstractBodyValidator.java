@@ -16,7 +16,6 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.model.Message;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Content;
@@ -28,7 +27,7 @@ import static com.predic8.membrane.core.openapi.validators.ValidationContext.Val
 import static com.predic8.membrane.core.util.MediaTypeUtil.getMostSpecificMediaType;
 import static java.lang.String.format;
 
-public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>> {
+public abstract class AbstractBodyValidator {
 
     protected final OpenAPI api;
 

@@ -80,7 +80,7 @@ public class ProblemDetailsXML {
             String key = entry.getKey();
 
             if (value instanceof Map<?, ?> mv) {
-                Element element = createElement(document, parent, key);
+                Element element = createElement(document, key);
                 @SuppressWarnings("unchecked")
                 Map<String, Object> nested = (Map<String, Object>) mv;
                 mapToXmlElements(nested, document, element);
@@ -88,7 +88,7 @@ public class ProblemDetailsXML {
             } else if (value instanceof java.util.Collection<?> col) {
                 for (Object obj : col) {
                     if (obj == null) continue;
-                    Element arrayElement = createElement(document, parent, key);
+                    Element arrayElement = createElement(document, key);
                     if (obj instanceof Map<?,?> objMap) {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> nested = (Map<String, Object>) objMap;
@@ -103,12 +103,12 @@ public class ProblemDetailsXML {
                 for (int i = 0; i < len; i++) {
                     Object obj = java.lang.reflect.Array.get(value, i);
                     if (obj == null) continue;
-                    Element arrayElement = createElement(document, parent, key);
+                    Element arrayElement = createElement(document, key);
                     arrayElement.setTextContent(String.valueOf(obj));
                     parent.appendChild(arrayElement);
                 }
             } else {
-                Element element = createElement(document, parent, key);
+                Element element = createElement(document, key);
                 element.setTextContent(String.valueOf(value));
                 parent.appendChild(element);
             }
@@ -120,13 +120,13 @@ public class ProblemDetailsXML {
      * or an {@code <entry key="...">} wrapper element otherwise.
      * The element is NOT yet appended to {@code parent} — the caller appends it.
      */
-    private static Element createElement(Document document, Element parent, String key) {
+    private static Element createElement(Document document, String key) {
         if (isValidXmlName(key)) {
             return document.createElement(key);
         }
         // Fall back to <entry key="..."> for keys that aren't valid XML names
         // (e.g. "REQUEST/BODY#/id" from OpenAPI validation errors)
-        Element entry = document.createElement("entry");
+        var entry = document.createElement("entry");
         entry.setAttribute("key", key);
         return entry;
     }

@@ -23,8 +23,6 @@ import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 import static com.predic8.membrane.core.openapi.model.Request.post;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
@@ -78,7 +76,7 @@ class OpenAPIValidatorXMLTest {
             """;
 
     @BeforeEach
-    void setUp() throws IOException {
+    void setUp() {
         validator = new OpenAPIValidator(new URIFactory(),
                 new OpenAPIRecord(
                         parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-message.oas.yaml")),
