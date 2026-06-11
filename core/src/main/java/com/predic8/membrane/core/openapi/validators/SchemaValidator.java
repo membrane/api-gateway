@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.jetbrains.annotations.Nullable;
@@ -80,7 +81,7 @@ public class SchemaValidator implements JsonSchemaValidator {
             } else {
                 value = resolveValueAndParseJSON(obj);
             }
-        } catch (SAXException e) {
+        } catch (SAXException | XmlParseException e) {
             log.warn("Cannot parse XML body. " + e);
             return errors.add(new ValidationError(ctx.entityType(BODY), "Request body cannot be parsed as XML"));
         } catch (IOException e) {

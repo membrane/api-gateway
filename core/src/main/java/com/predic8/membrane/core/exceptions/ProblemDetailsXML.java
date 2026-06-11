@@ -104,7 +104,11 @@ public class ProblemDetailsXML {
                     Object obj = java.lang.reflect.Array.get(value, i);
                     if (obj == null) continue;
                     Element arrayElement = createElement(document, key);
-                    arrayElement.setTextContent(String.valueOf(obj));
+                    if (obj instanceof Map<?, ?> objMap) {
+                        mapToXmlElements((Map<String, Object>) objMap, document, arrayElement);
+                    } else {
+                        arrayElement.setTextContent(String.valueOf(obj));
+                    }
                     parent.appendChild(arrayElement);
                 }
             } else {

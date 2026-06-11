@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.w3c.dom.Document;
@@ -30,9 +31,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
@@ -52,13 +50,6 @@ import java.util.Map;
 @SuppressWarnings("rawtypes")
 public class XmlToJsonConverter {
 
-    private static final DocumentBuilderFactory FACTORY;
-
-    static {
-        FACTORY = DocumentBuilderFactory.newInstance();
-        FACTORY.setNamespaceAware(false);
-    }
-
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final OpenAPI api;
@@ -76,13 +67,7 @@ public class XmlToJsonConverter {
      * according to {@code schema}.
      */
     public JsonNode convert(String xmlString, Schema schema) throws IOException, SAXException {
-        Document doc;
-        try {
-            DocumentBuilder builder = FACTORY.newDocumentBuilder();
-            doc = builder.parse(new InputSource(new StringReader(xmlString)));
-        } catch (ParserConfigurationException e) {
-            throw new IOException("Cannot create XML parser", e);
-        }
+        Document doc = HardenedXmlParser.getInstance().parse(new InputSource(new StringReader(xmlString)));
         return convertElement(doc.getDocumentElement(), resolveRef(schema));
     }
 
@@ -213,7 +198,12 @@ public class XmlToJsonConverter {
                 try { yield MAPPER.getNodeFactory().numberNode(Double.parseDouble(text.trim())); }
                 catch (NumberFormatException e) { yield MAPPER.getNodeFactory().textNode(text); }
             }
-            case "boolean" -> MAPPER.getNodeFactory().booleanNode(Boolean.parseBoolean(text.trim()));
+            case "boolean" -> {
+                String t = text.trim();
+                if ("true".equalsIgnoreCase(t))  yield MAPPER.getNodeFactory().booleanNode(true);
+                if ("false".equalsIgnoreCase(t)) yield MAPPER.getNodeFactory().booleanNode(false);
+                yield MAPPER.getNodeFactory().textNode(text);   // invalid literal → let the validator report it
+            }
             default        -> MAPPER.getNodeFactory().textNode(text);
         };
     }
