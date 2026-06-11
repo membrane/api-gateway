@@ -16,20 +16,26 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.model.Body;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.openapi.util.SchemaUtil.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 
 public class SchemaValidator implements JsonSchemaValidator {
 
@@ -63,7 +69,20 @@ public class SchemaValidator implements JsonSchemaValidator {
 
         Object value;
         try {
-            value = resolveValueAndParseJSON(obj);
+            if (ctx.isXML()) {
+                if (obj instanceof Body body) {
+                    // Top-level call: convert XML string → JsonNode guided by the schema
+                    value = new XmlToJsonConverter(api).convert(body.asString(), schema);
+                } else {
+                    // Recursive call: obj is already a JsonNode produced by the converter
+                    value = obj;
+                }
+            } else {
+                value = resolveValueAndParseJSON(obj);
+            }
+        } catch (SAXException e) {
+            log.warn("Cannot parse XML body. " + e);
+            return errors.add(new ValidationError(ctx.entityType(BODY), "Request body cannot be parsed as XML"));
         } catch (IOException e) {
             log.warn("Cannot parse body. " + e);
             return errors.add(new ValidationError(ctx.statusCode(400).entityType(BODY).entity("REQUEST"), "Request body cannot be parsed as JSON"));

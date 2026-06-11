@@ -14,21 +14,36 @@
 
 package com.predic8.membrane.core.exceptions;
 
-import com.predic8.membrane.core.http.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.http.Response;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.StringWriter;
+import java.util.Map;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static javax.xml.XMLConstants.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_XML;
+import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
 import static javax.xml.transform.OutputKeys.*;
 
 public class ProblemDetailsXML {
+
+    /**
+     * XML Name production rule (simplified): starts with letter or '_', followed by
+     * letters, digits, '.', '-', '_', ':'.
+     * Keys that contain '/', '#', spaces, etc. are not valid XML element names.
+     */
+    private static final Pattern VALID_XML_NAME = Pattern.compile("[a-zA-Z_][a-zA-Z0-9.\\-_:]*");
+
+    private static boolean isValidXmlName(String name) {
+        return name != null && !name.isEmpty() && VALID_XML_NAME.matcher(name).matches();
+    }
 
     static void createXMLContent(Map<String, Object> root, Response.ResponseBuilder builder) throws Exception {
         builder.body(convertMapToXml(root));
@@ -62,9 +77,10 @@ public class ProblemDetailsXML {
             Object value = entry.getValue();
             if (value == null)
                 continue;
-            String name = entry.getKey();
+            String key = entry.getKey();
+
             if (value instanceof Map<?, ?> mv) {
-                Element element = document.createElement(name);
+                Element element = createElement(document, parent, key);
                 @SuppressWarnings("unchecked")
                 Map<String, Object> nested = (Map<String, Object>) mv;
                 mapToXmlElements(nested, document, element);
@@ -72,8 +88,14 @@ public class ProblemDetailsXML {
             } else if (value instanceof java.util.Collection<?> col) {
                 for (Object obj : col) {
                     if (obj == null) continue;
-                    Element arrayElement = document.createElement(name);
-                    arrayElement.setTextContent(String.valueOf(obj));
+                    Element arrayElement = createElement(document, parent, key);
+                    if (obj instanceof Map<?,?> objMap) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> nested = (Map<String, Object>) objMap;
+                        mapToXmlElements(nested, document, arrayElement);
+                    } else {
+                        arrayElement.setTextContent(String.valueOf(obj));
+                    }
                     parent.appendChild(arrayElement);
                 }
             } else if (value.getClass().isArray()) {
@@ -81,15 +103,31 @@ public class ProblemDetailsXML {
                 for (int i = 0; i < len; i++) {
                     Object obj = java.lang.reflect.Array.get(value, i);
                     if (obj == null) continue;
-                    Element arrayElement = document.createElement(name);
+                    Element arrayElement = createElement(document, parent, key);
                     arrayElement.setTextContent(String.valueOf(obj));
                     parent.appendChild(arrayElement);
                 }
             } else {
-                Element element = document.createElement(name);
+                Element element = createElement(document, parent, key);
                 element.setTextContent(String.valueOf(value));
                 parent.appendChild(element);
             }
         }
+    }
+
+    /**
+     * Creates an element whose tag name is {@code key} when {@code key} is a valid XML name,
+     * or an {@code <entry key="...">} wrapper element otherwise.
+     * The element is NOT yet appended to {@code parent} — the caller appends it.
+     */
+    private static Element createElement(Document document, Element parent, String key) {
+        if (isValidXmlName(key)) {
+            return document.createElement(key);
+        }
+        // Fall back to <entry key="..."> for keys that aren't valid XML names
+        // (e.g. "REQUEST/BODY#/id" from OpenAPI validation errors)
+        Element entry = document.createElement("entry");
+        entry.setAttribute("key", key);
+        return entry;
     }
 }

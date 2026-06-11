@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.model.Request;
 
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
 
@@ -37,6 +37,10 @@ public class ValidationContext {
     private ValidatedEntityType validatedEntityType;
     private String validatedEntity;
     private int statusCode;
+
+    public enum Content { JSON, XML }
+
+    private Content content = Content.JSON;
 
     public static ValidationContext fromRequest(Request request) {
         ValidationContext ctx = new ValidationContext();
@@ -191,6 +195,13 @@ public class ValidationContext {
         return ctx;
     }
 
+    public ValidationContext content(Content content) {
+        ValidationContext ctx = this.deepCopy();
+        ctx.content = content;
+        return ctx;
+    }
+
+
     public String getPath() {
         return path;
     }
@@ -201,6 +212,10 @@ public class ValidationContext {
 
     public String getUriTemplate() {
         return uriTemplate;
+    }
+
+    public boolean isXML() {
+        return content == Content.XML;
     }
 
     public ValidationContext addJSONpointerSegment(String segment) {
