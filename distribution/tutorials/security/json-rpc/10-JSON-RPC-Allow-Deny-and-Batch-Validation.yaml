@@ -42,6 +42,15 @@ api:
           - allow: ping
           - allow: sum
           - deny: .*
+  target:
+    url: http://localhost:3000
+
+---
+# Demo backend.
+# Returns a success response for every request (depending on the request type single or batch).
+api:
+  port: 3000
+  flow:
     - if:
         test: body.toString().trim().startsWith('[')
         flow:
