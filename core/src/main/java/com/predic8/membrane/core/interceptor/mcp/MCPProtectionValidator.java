@@ -16,10 +16,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.fromNode;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_PARAMS;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_METHOD_NOT_FOUND;
-import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_PARSE_ERROR;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.*;
 import static com.predic8.membrane.core.mcp.MCPToolsCall.from;
 
 final class MCPProtectionValidator {

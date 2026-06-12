@@ -8,7 +8,6 @@ import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.mcp.MCPProtectionValidator.ValidationError;
-import com.predic8.membrane.core.jsonrpc.JSONRPCResponse;
 import com.predic8.membrane.core.util.config.allowdeny.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,24 +27,35 @@ import static java.util.EnumSet.of;
 
 /**
  * @description
- * <p>Protects an MCP endpoint by validating the JSON-RPC request structure and
- * controlling access to optional MCP methods and tool names.</p>
+ * <p>Protects an MCP endpoint by validating incoming JSON-RPC requests and
+ * restricting the MCP methods and tools that clients may use.</p>
+ *
+ * <p>Only HTTP <code>POST</code> requests with an
+ * <code>application/json</code> content type are accepted. JSON-RPC batch
+ * requests are rejected.</p>
  *
  * <p><code>initialize</code> and <code>ping</code> are always allowed.
- * <code>tools/list</code>, <code>tools/call</code>, and notifications can be
- * disabled under <code>methods</code>. All other MCP methods are
- * rejected.</p>
+ * <code>tools/list</code>, <code>tools/call</code>, and notifications are
+ * enabled by default and can be disabled under <code>methods</code>. Every
+ * other method is rejected.</p>
+ *
+ * <p>Tool rules are evaluated in declaration order and the first matching
+ * rule wins. If no rule matches, the tool is allowed. Consequently, all tools
+ * are allowed when <code>tools</code> is omitted. Add a final
+ * <code>deny: ".*"</code> rule to change this into an allowlist.</p>
  *
  * @yaml
  * <pre><code>
  * - mcpProtection:
  *     methods:
  *       toolsList: true
- *       toolsCall: false
+ *       toolsCall: true
  *       notifications: true
  *     tools:
- *       - allow: "^(listProxies|getStatistics|getExchanges)$"
- *       - deny: ".*"
+ *       - allow: "listProxies"
+ *       - allow: "getStatistics"
+ *       - allow: "getExchanges"
+ *       - deny: ".*"           # tool names also support regular expressions
  * </code></pre>
  */
 @MCElement(name = "mcpProtection")
@@ -97,11 +107,26 @@ public class MCPProtectionInterceptor extends AbstractInterceptor {
         );
     }
 
+    /**
+     * @description
+     * <p>Configures the optional MCP method groups. <code>initialize</code>
+     * and <code>ping</code> cannot be disabled by this interceptor.</p>
+     */
     @MCChildElement(order = 1)
     public void setMethods(MCPProtectionMethods methods) {
         this.methods = methods == null ? new MCPProtectionMethods() : methods;
     }
 
+    /**
+     * @description
+     * <p>Configures ordered allow and deny rules for tool names used by
+     * <code>tools/call</code>. Rules support regular expressions. The first
+     * matching rule wins; tools unmatched by any rule are allowed.</p>
+     *
+     * <p>When no rules are configured, all tools are allowed. To allow only
+     * explicitly listed tools, place their <code>allow</code> rules first and
+     * finish the list with <code>deny: ".*"</code>.</p>
+     */
     @MCChildElement(order = 2)
     public void setTools(List<Rule> tools) {
         this.tools = tools == null ? List.of() : tools;
