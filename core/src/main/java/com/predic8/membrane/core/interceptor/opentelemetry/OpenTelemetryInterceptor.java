@@ -34,6 +34,7 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.util.ArrayList;
@@ -154,7 +155,23 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         }
 
         span.addEvent("Close Exchange").end();
+        clearMdc();
         return CONTINUE;
+    }
+
+    @Override
+    public void handleAbort(Exchange exc) {
+        var span = getExchangeSpan(exc);
+        if (span != null) {
+            span.setStatus(ERROR, "Exchange aborted");
+            span.end();
+        }
+        clearMdc();
+    }
+
+    private static void clearMdc() {
+        MDC.remove("traceId");
+        MDC.remove("spanId");
     }
 
     private static Span getExchangeSpan(Exchange exc) {
@@ -203,6 +220,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 setExchangeHeader(exc);
                 exc.setProperty(MEMBRANE_OTEL_SPAN, membraneSpan);
                 exc.setProperty(MEMBRANE_OTEL_TRACER, tracer);
+
+                var spanContext = membraneSpan.getSpanContext();
+                MDC.put("traceId", spanContext.getTraceId());
+                MDC.put("spanId", spanContext.getSpanId());
             }
         }
     }
