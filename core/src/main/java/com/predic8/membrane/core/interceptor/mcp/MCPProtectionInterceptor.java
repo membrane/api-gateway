@@ -83,6 +83,7 @@ public class MCPProtectionInterceptor extends AbstractInterceptor {
         if (!exc.getRequest().isPOSTRequest()) {
             return reject(exc, new ValidationError(
                     null,
+                    false,
                     405,
                     ERR_INVALID_REQUEST,
                     "HTTP method %s is not supported. Expected POST.".formatted(exc.getRequest().getMethod())
@@ -92,6 +93,7 @@ public class MCPProtectionInterceptor extends AbstractInterceptor {
         if (!exc.getRequest().isJSON()) {
             return reject(exc, new ValidationError(
                     null,
+                    false,
                     415,
                     ERR_INVALID_REQUEST,
                     "Content-Type %s is not supported. Expected application/json.".formatted(
@@ -157,6 +159,10 @@ public class MCPProtectionInterceptor extends AbstractInterceptor {
         }
 
         log.info("Rejected MCP request: {}", error.message());
+        if (error.notification()) {
+            exc.setResponse(statusCode(error.httpStatus()).bodyEmpty().build());
+            return RETURN;
+        }
         exc.setResponse(createErrorResponse(error, addAllowHeader));
         return RETURN;
     }

@@ -319,4 +319,32 @@ class MCPProtectionInterceptorTest {
             return name;
         }
     }
+
+    @Test
+    void suppressesJsonRpcErrorForRejectedNotification() throws Exception {
+        var exc = exchange(METHOD_POST, APPLICATION_JSON, """
+                {"jsonrpc":"2.0","method":"notifications/cancelled","params":{}}
+                """);
+
+        assertEquals(RETURN, interceptor("methods:\n  notifications: false").handleRequest(exc));
+        assertNotNull(exc.getResponse());
+        assertEquals(403, exc.getResponse().getStatusCode());
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().isEmpty());
+    }
+
+    @Test
+    void sendsJsonRpcErrorForRejectedRequestWithNullId() throws Exception {
+        var exc = exchange(METHOD_POST, APPLICATION_JSON, """
+                {"jsonrpc":"2.0","id":null,"method":"resources/read","params":{}}
+                """);
+
+        assertEquals(RETURN, interceptor("").handleRequest(exc));
+        assertError(
+                exc,
+                403,
+                ERR_METHOD_NOT_FOUND,
+                "MCP method 'resources/read' is not allowed.",
+                null
+        );
+    }
 }

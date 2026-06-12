@@ -42,7 +42,7 @@ final class MCPProtectionValidator {
             root = OM.readTree(body);
         } catch (JsonProcessingException e) {
             log.debug("Invalid MCP JSON payload.", e);
-            return new ValidationError(null, 400, ERR_PARSE_ERROR, "Invalid JSON payload.");
+            return new ValidationError(null, false, 400, ERR_PARSE_ERROR, "Invalid JSON payload.");
         }
 
         if (root == null || !root.isObject()) {
@@ -62,6 +62,7 @@ final class MCPProtectionValidator {
         if (!isMethodAllowed(request.getMethod())) {
             return new ValidationError(
                     responseId(request),
+                    request.isNotification(),
                     403,
                     ERR_METHOD_NOT_FOUND,
                     "MCP method '%s' is not allowed.".formatted(request.getMethod())
@@ -78,6 +79,7 @@ final class MCPProtectionValidator {
         } catch (IllegalArgumentException e) {
             return new ValidationError(
                     responseId(request),
+                    request.isNotification(),
                     400,
                     ERR_INVALID_PARAMS,
                     e.getMessage()
@@ -90,6 +92,7 @@ final class MCPProtectionValidator {
 
         return new ValidationError(
                 responseId(request),
+                request.isNotification(),
                 403,
                 ERR_INVALID_PARAMS,
                 "MCP tool '%s' is not allowed.".formatted(toolsCall.getName())
@@ -115,7 +118,7 @@ final class MCPProtectionValidator {
     }
 
     private ValidationError invalidRequest(String message) {
-        return new ValidationError(null, 400, ERR_INVALID_REQUEST, message);
+        return new ValidationError(null, false, 400, ERR_INVALID_REQUEST, message);
     }
 
     private Object responseId(JSONRPCRequest request) {
@@ -124,6 +127,7 @@ final class MCPProtectionValidator {
 
     record ValidationError(
             Object responseId,
+            boolean notification,
             int httpStatus,
             int code,
             String message
