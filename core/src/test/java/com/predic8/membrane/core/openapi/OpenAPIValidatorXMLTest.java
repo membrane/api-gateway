@@ -26,8 +26,7 @@ import org.junit.jupiter.api.Test;
 import static com.predic8.membrane.core.openapi.model.Request.post;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getResourceAsStream;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.parseOpenAPI;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAPIValidatorXMLTest {
 
@@ -150,7 +149,9 @@ class OpenAPIValidatorXMLTest {
                 </order>
                 """;
         var errors = validator.validate(post().path("/orders").xml(mixed));
-        assertFalse(errors.isEmpty(), "Expected a validation error for mixed content");
+        assertEquals(1, errors.size(), "Expected exactly one validation error: " + errors);
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("mixed content"),
+                "Error should be about mixed content: " + errors.get(0).getMessage());
     }
 
     /** A single-valued element occurring multiple times is rejected instead of dropping extras. */
@@ -164,6 +165,8 @@ class OpenAPIValidatorXMLTest {
                 </order>
                 """;
         var errors = validator.validate(post().path("/orders").xml(duplicate));
-        assertFalse(errors.isEmpty(), "Expected a validation error for a repeated single-valued element");
+        assertEquals(1, errors.size(), "Expected exactly one validation error: " + errors);
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("occurs more than once"),
+                "Error should be about a repeated element: " + errors.get(0).getMessage());
     }
 }
