@@ -14,15 +14,16 @@
 
 package com.predic8.membrane.core.http;
 
-import jakarta.mail.internet.*;
-import org.springframework.http.*;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
+import org.springframework.http.MediaType;
 
-import java.util.*;
+import java.util.List;
 
 import static java.util.Collections.reverse;
-import static java.util.Comparator.*;
-import static org.apache.commons.lang3.StringUtils.*;
-import static org.springframework.http.MediaType.*;
+import static java.util.Comparator.comparingDouble;
+import static org.apache.commons.lang3.StringUtils.containsIgnoreCase;
+import static org.springframework.http.MediaType.parseMediaTypes;
 
 /**
  * Use javax.mail.internet.ContentType to parse a mime type or the methods using
@@ -64,6 +65,8 @@ public class MimeType {
 
     public static final String APPLICATION_GRAPHQL = "application/graphql";
     public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
+
+    public static final String MULTIPART_FORM_DATA = "multipart/form-data";
 
     public static final String APPLICATION_X_JAVASCRIPT = "application/x-javascript";
 
@@ -189,6 +192,10 @@ public class MimeType {
 
     public static boolean isWWWFormUrlEncoded(String mediaType) {
         return isOfMediaType(APPLICATION_X_WWW_FORM_URLENCODED, mediaType);
+    }
+
+    public static boolean isMultipartFormData(String mediaType) {
+        return isOfMediaType(MULTIPART_FORM_DATA, mediaType);
     }
 
     public static boolean isOfMediaType(String expectedType, String actualType) {
