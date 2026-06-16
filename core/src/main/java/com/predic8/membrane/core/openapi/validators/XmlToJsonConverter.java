@@ -50,7 +50,7 @@ import java.util.Map;
 @SuppressWarnings("rawtypes")
 public class XmlToJsonConverter {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper om = new ObjectMapper();
 
     private final OpenAPI api;
 
@@ -58,26 +58,23 @@ public class XmlToJsonConverter {
         this.api = api;
     }
 
-    // -----------------------------------------------------------------------
-    // Public entry point
-    // -----------------------------------------------------------------------
-
     /**
      * Parses {@code xmlString} and converts the root element to a {@link JsonNode}
      * according to {@code schema}.
      */
     public JsonNode convert(String xmlString, Schema schema) throws IOException, SAXException {
-        Document doc = HardenedXmlParser.getInstance().parse(new InputSource(new StringReader(xmlString)));
-        return convertElement(doc.getDocumentElement(), resolveRef(schema));
+        return convertElement(getParse(xmlString).getDocumentElement(), resolveRef(schema));
     }
 
-    // -----------------------------------------------------------------------
-    // Core conversion
-    // -----------------------------------------------------------------------
+    private static Document getParse(String xmlString) {
+        return HardenedXmlParser.getInstance().parse(new InputSource(new StringReader(xmlString)));
+    }
 
     private JsonNode convertElement(Element element, Schema schema) {
+        checkNoMixedContent(element);
+
         if (schema == null)
-            return MAPPER.getNodeFactory().textNode(element.getTextContent().trim());
+            return om.getNodeFactory().textNode(element.getTextContent().trim());
 
         schema = resolveRef(schema);
         String type = effectiveType(schema);
@@ -96,7 +93,7 @@ public class XmlToJsonConverter {
     // -----------------------------------------------------------------------
 
     private ObjectNode convertObjectElement(Element element, Schema schema) {
-        ObjectNode node = MAPPER.createObjectNode();
+        ObjectNode node = om.createObjectNode();
 
         @SuppressWarnings("unchecked")
         Map<String, Schema> properties = (Map<String, Schema>) schema.getProperties();
@@ -120,8 +117,8 @@ public class XmlToJsonConverter {
                 node.set(propName, convertArrayProperty(element, propName, propSchema));
 
             } else {
-                // Regular child element
-                Element child = firstChildByName(element, xmlName);
+                // Regular single-valued child element
+                Element child = singleChildByName(element, xmlName);
                 if (child != null)
                     node.set(propName, convertElement(child, propSchema));
             }
@@ -137,7 +134,7 @@ public class XmlToJsonConverter {
      * Handles an array schema that is the *root* of the conversion (rare but possible).
      */
     private ArrayNode convertArrayElement(Element element, Schema schema) {
-        ArrayNode arrayNode = MAPPER.createArrayNode();
+        ArrayNode arrayNode = om.createArrayNode();
         Schema itemSchema = resolveRef(schema.getItems());
         NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -151,7 +148,7 @@ public class XmlToJsonConverter {
      * Handles an array *property* inside an object, respecting {@code xml.wrapped}.
      */
     private ArrayNode convertArrayProperty(Element parentElement, String propName, Schema propSchema) {
-        ArrayNode arrayNode = MAPPER.createArrayNode();
+        ArrayNode arrayNode = om.createArrayNode();
 
         Schema itemSchema  = resolveRef(propSchema.getItems());
         boolean wrapped    = isXmlWrapped(propSchema);
@@ -159,8 +156,8 @@ public class XmlToJsonConverter {
         String  itemName    = xmlNameOf(propName, itemSchema);          // name of each item element
 
         if (wrapped) {
-            // Items live inside a wrapper element  <wrapperName><itemName/><itemName/>…</wrapperName>
-            Element wrapperEl = firstChildByName(parentElement, wrapperName);
+            // Items live inside a single wrapper element  <wrapperName><itemName/><itemName/>…</wrapperName>
+            Element wrapperEl = singleChildByName(parentElement, wrapperName);
             if (wrapperEl == null)
                 return arrayNode;
             NodeList children = wrapperEl.getChildNodes();
@@ -187,24 +184,26 @@ public class XmlToJsonConverter {
     private JsonNode convertPrimitive(String text, Schema schema) {
         String type = schema != null ? effectiveType(schema) : null;
         if (type == null)
-            return MAPPER.getNodeFactory().textNode(text);
+            return om.getNodeFactory().textNode(text);
 
         return switch (type) {
             case "integer" -> {
-                try { yield MAPPER.getNodeFactory().numberNode(Long.parseLong(text.trim())); }
-                catch (NumberFormatException e) { yield MAPPER.getNodeFactory().textNode(text); }
+                try { yield om.getNodeFactory().numberNode(Long.parseLong(text.trim())); }
+                catch (NumberFormatException e) { yield om.getNodeFactory().textNode(text); }
             }
             case "number" -> {
-                try { yield MAPPER.getNodeFactory().numberNode(Double.parseDouble(text.trim())); }
-                catch (NumberFormatException e) { yield MAPPER.getNodeFactory().textNode(text); }
+                try { yield om.getNodeFactory().numberNode(Double.parseDouble(text.trim())); }
+                catch (NumberFormatException e) { yield om.getNodeFactory().textNode(text); }
             }
             case "boolean" -> {
+                // XML Schema xs:boolean has the lexical space {true, false, 1, 0} and is
+                // case-sensitive, so only these exact literals are valid (e.g. "True" is not).
                 String t = text.trim();
-                if ("true".equalsIgnoreCase(t))  yield MAPPER.getNodeFactory().booleanNode(true);
-                if ("false".equalsIgnoreCase(t)) yield MAPPER.getNodeFactory().booleanNode(false);
-                yield MAPPER.getNodeFactory().textNode(text);   // invalid literal → let the validator report it
+                if ("true".equals(t) || "1".equals(t))  yield om.getNodeFactory().booleanNode(true);
+                if ("false".equals(t) || "0".equals(t)) yield om.getNodeFactory().booleanNode(false);
+                yield om.getNodeFactory().textNode(text);   // invalid literal → let the validator report it
             }
-            default        -> MAPPER.getNodeFactory().textNode(text);
+            default        -> om.getNodeFactory().textNode(text);
         };
     }
 
@@ -242,11 +241,23 @@ public class XmlToJsonConverter {
         return SchemaUtil.getSchemaFromRef(api, schema.get$ref());
     }
 
-    /** Returns the XML element name for a property, falling back to the property name. */
+    /**
+     * Returns the (possibly qualified) XML name for a property.
+     *
+     * <p>The local name is taken from {@code xml.name}, falling back to the property name.
+     * If {@code xml.prefix} is set, the result is {@code prefix:localName} so it matches the
+     * qualified tag/attribute name produced by the namespace-aware parser. The prefix may also
+     * be baked directly into {@code xml.name} (e.g. {@code "ns:id"}) without setting {@code xml.prefix}.
+     */
     private static String xmlNameOf(String propertyName, Schema schema) {
-        if (schema != null && schema.getXml() != null && schema.getXml().getName() != null)
-            return schema.getXml().getName();
-        return propertyName;
+        if (schema == null || schema.getXml() == null)
+            return propertyName;
+
+        String localName = schema.getXml().getName() != null ? schema.getXml().getName() : propertyName;
+        String prefix = schema.getXml().getPrefix();
+        if (prefix != null && !prefix.isEmpty())
+            return prefix + ":" + localName;
+        return localName;
     }
 
     private static boolean isXmlAttribute(Schema schema) {
@@ -261,14 +272,48 @@ public class XmlToJsonConverter {
             && Boolean.TRUE.equals(schema.getXml().getWrapped());
     }
 
-    /** Returns the first direct child element with the given tag name, or {@code null}. */
-    private static Element firstChildByName(Element parent, String name) {
+    /**
+     * Rejects mixed content: an element that has child elements <em>and</em> non-whitespace
+     * text directly below it. Whitespace-only text between elements (e.g. indentation in a
+     * pretty-printed document) is not considered mixed content and is allowed.
+     */
+    private static void checkNoMixedContent(Element element) {
+        boolean hasChildElements = false;
+        boolean hasSignificantText = false;
+
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node n = children.item(i);
+            short type = n.getNodeType();
+            if (type == Node.ELEMENT_NODE) {
+                hasChildElements = true;
+            } else if (type == Node.TEXT_NODE || type == Node.CDATA_SECTION_NODE) {
+                String text = n.getNodeValue();
+                if (text != null && !text.trim().isEmpty())
+                    hasSignificantText = true;
+            }
+        }
+
+        if (hasChildElements && hasSignificantText)
+            throw new MixedContentException(element.getTagName());
+    }
+
+    /**
+     * Returns the single direct child element with the given tag name, or {@code null} if there
+     * is none. If the element occurs more than once - where the schema expects a single value -
+     * a {@link MultipleElementsException} is thrown rather than silently keeping the first.
+     */
+    private static Element singleChildByName(Element parent, String name) {
+        Element found = null;
         NodeList children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node n = children.item(i);
-            if (n instanceof Element el && el.getTagName().equals(name))
-                return el;
+            if (n instanceof Element el && el.getTagName().equals(name)) {
+                if (found != null)
+                    throw new MultipleElementsException(name);
+                found = el;
+            }
         }
-        return null;
+        return found;
     }
 }

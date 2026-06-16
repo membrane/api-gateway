@@ -56,7 +56,6 @@ public abstract class AbstractBodyValidator {
             }
             ctx = ctx.content(ValidationContext.Content.XML);
             return errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx, message.getBody()));
-       //     return errors.add(ctx,"Validation of XML messages is not implemented yet!");
         }
         if(isWWWFormUrlEncoded(mediaType)) {
             return errors.add(ctx,"Validation of 'application/x-www-form-urlencoded' messages is not implemented yet!");

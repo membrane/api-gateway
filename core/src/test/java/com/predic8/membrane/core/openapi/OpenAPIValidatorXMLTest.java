@@ -139,4 +139,31 @@ class OpenAPIValidatorXMLTest {
         var errors = validator.validate(post().path("/orders").xml("<order><unclosed>"));
         assertFalse(errors.isEmpty(), "Expected a parse error for malformed XML");
     }
+
+    /** Text interleaved with child elements cannot be mapped onto the schema and is rejected. */
+    @Test
+    void mixedContentProducesValidationError() throws ParseException {
+        String mixed = """
+                <order>
+                  <id>4711</id>
+                  <customer>Anna <b>Müller</b></customer>
+                </order>
+                """;
+        var errors = validator.validate(post().path("/orders").xml(mixed));
+        assertFalse(errors.isEmpty(), "Expected a validation error for mixed content");
+    }
+
+    /** A single-valued element occurring multiple times is rejected instead of dropping extras. */
+    @Test
+    void repeatedSingleValuedElementProducesValidationError() throws ParseException {
+        String duplicate = """
+                <order>
+                  <id>4711</id>
+                  <id>4712</id>
+                  <customer>Anna Müller</customer>
+                </order>
+                """;
+        var errors = validator.validate(post().path("/orders").xml(duplicate));
+        assertFalse(errors.isEmpty(), "Expected a validation error for a repeated single-valued element");
+    }
 }

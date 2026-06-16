@@ -81,11 +81,13 @@ public class SchemaValidator implements JsonSchemaValidator {
             } else {
                 value = resolveValueAndParseJSON(obj);
             }
+        } catch (MixedContentException | MultipleElementsException e) {
+            return errors.add(new ValidationError(ctx.entityType(BODY), e.getMessage()));
         } catch (SAXException | XmlParseException e) {
-            log.warn("Cannot parse XML body. " + e);
+            log.info("Cannot parse XML body. " + e);
             return errors.add(new ValidationError(ctx.entityType(BODY), "Request body cannot be parsed as XML"));
         } catch (IOException e) {
-            log.warn("Cannot parse body. " + e);
+            log.info("Cannot parse body. " + e);
             return errors.add(new ValidationError(ctx.statusCode(400).entityType(BODY).entity("REQUEST"), "Request body cannot be parsed as JSON"));
         }
 
