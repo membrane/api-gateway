@@ -16,8 +16,6 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.openapi.model.JsonBody;
 import com.predic8.membrane.core.openapi.model.Message;
@@ -66,7 +64,6 @@ public class MultipartFormDataValidator {
         this.api = api;
     }
 
-    @SuppressWarnings("rawtypes")
     public ValidationErrors validate(ValidationContext ctx, MediaType mediaType, Message<?, ?> message) {
         ctx = ctx.entityType(BODY);
         var err = new ValidationErrors();
@@ -150,10 +147,10 @@ public class MultipartFormDataValidator {
         if (properties == null)
             return err;
 
-        for (Map.Entry<String, List<FormPart>> entry : parts.entrySet()) {
+        for (var entry : parts.entrySet()) {
             var name = entry.getKey();
 
-            Schema propertySchema = properties.get(name);
+            var propertySchema = properties.get(name);
             if (propertySchema == null) {
                 if (FALSE.equals(schema.getAdditionalProperties()))
                     err.add(ctx.statusCode(400), "The multipart/form-data body contains an unexpected property '%s'.".formatted(name));
@@ -163,8 +160,8 @@ public class MultipartFormDataValidator {
             // For an array property each occurrence of the field name is one array item, so each
             // part is validated against the items schema rather than the array schema itself.
             Schema partSchema = propertySchema;
-            if (isArraySchema(propertySchema)) {
-                Schema items = resolveRef(propertySchema.getItems());
+            if (SchemaUtil.isArray(propertySchema)) {
+                Schema items = SchemaUtil.resolveRef(api, propertySchema.getItems());
                 if (items != null)
                     partSchema = items;
             }
@@ -183,7 +180,7 @@ public class MultipartFormDataValidator {
         var err = new ValidationErrors();
 
         // Binary file uploads (type: string, format: binary/byte) are opaque, only their presence is checked.
-        if (isBinaryStringSchema(propertySchema))
+        if (SchemaUtil.isBinaryString(propertySchema))
             return err;
 
         if (isJson(contentType)) {
@@ -196,71 +193,13 @@ public class MultipartFormDataValidator {
 
         // Scalar parts (e.g. text/plain, the default for primitives) are validated by parsing the
         // raw text into the declared type and validating that value against the schema.
-        if (isScalarSchema(propertySchema)) {
+        if (SchemaUtil.isScalar(propertySchema)) {
             return err.add(new SchemaValidator(api, propertySchema)
-                    .validate(ctx, toScalarNode(new String(part.content, UTF_8), propertySchema)));
+                    .validate(ctx, SchemaUtil.parseScalar(new String(part.content, UTF_8), propertySchema)));
         }
 
         // Opaque content (e.g. octet-stream for a complex type) is not validated against the schema.
         return err;
-    }
-
-    @SuppressWarnings("rawtypes")
-    private boolean isScalarSchema(Schema schema) {
-        String type = effectiveType(schema);
-        return "string".equals(type) || "integer".equals(type) || "number".equals(type) || "boolean".equals(type);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private boolean isArraySchema(Schema schema) {
-        return "array".equals(effectiveType(schema));
-    }
-
-    @SuppressWarnings("rawtypes")
-    private Schema resolveRef(Schema schema) {
-        if (schema == null || schema.get$ref() == null)
-            return schema;
-        return SchemaUtil.getSchemaFromRef(api, schema.get$ref());
-    }
-
-    /**
-     * Parses the raw text of a scalar part into a typed JSON value so it can be validated against
-     * the schema. If the text does not match the declared numeric/boolean type it is kept as text,
-     * which lets the schema validator report the type mismatch.
-     */
-    @SuppressWarnings("rawtypes")
-    private JsonNode toScalarNode(String text, Schema schema) {
-        JsonNodeFactory nf = JsonNodeFactory.instance;
-        return switch (effectiveType(schema)) {
-            case "integer" -> {
-                try { yield nf.numberNode(Long.parseLong(text.trim())); }
-                catch (NumberFormatException e) { yield nf.textNode(text); }
-            }
-            case "number" -> {
-                try { yield nf.numberNode(Double.parseDouble(text.trim())); }
-                catch (NumberFormatException e) { yield nf.textNode(text); }
-            }
-            case "boolean" -> switch (text.trim()) {
-                case "true" -> nf.booleanNode(true);
-                case "false" -> nf.booleanNode(false);
-                default -> nf.textNode(text);
-            };
-            default -> nf.textNode(text);
-        };
-    }
-
-    @SuppressWarnings("rawtypes")
-    private static String effectiveType(Schema schema) {
-        if (schema.getType() != null)
-            return schema.getType();
-        var types = schema.getTypes();
-        if (types == null)
-            return null;
-        for (Object type : types) {
-            if (!"null".equals(type))
-                return type.toString();
-        }
-        return null;
     }
 
     @SuppressWarnings("rawtypes")
@@ -277,36 +216,11 @@ public class MultipartFormDataValidator {
 
     @SuppressWarnings("rawtypes")
     private String defaultContentType(Schema schema) {
-        if (isBinaryStringSchema(schema))
+        if (SchemaUtil.isBinaryString(schema))
             return APPLICATION_OCTET_STREAM;
-        if (isObjectOrArray(schema))
+        if (SchemaUtil.isObjectOrArray(schema))
             return APPLICATION_JSON;
         return TEXT_PLAIN;
-    }
-
-    @SuppressWarnings("rawtypes")
-    private boolean isBinaryStringSchema(Schema schema) {
-        if (!isStringSchema(schema))
-            return false;
-        String format = schema.getFormat();
-        return "binary".equals(format) || "byte".equals(format);
-    }
-
-    @SuppressWarnings("rawtypes")
-    private boolean isStringSchema(Schema schema) {
-        if ("string".equals(schema.getType()))
-            return true;
-        return schema.getTypes() != null && schema.getTypes().contains("string");
-    }
-
-    @SuppressWarnings("rawtypes")
-    private boolean isObjectOrArray(Schema schema) {
-        String type = schema.getType();
-        if ("object".equals(type) || "array".equals(type))
-            return true;
-        if (schema.get$ref() != null)
-            return true;
-        return schema.getProperties() != null;
     }
 
     /**
