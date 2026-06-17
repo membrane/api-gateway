@@ -128,6 +128,23 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         assertTrue(errors.get(0).getMessage().toLowerCase().contains("name is missing"));
     }
 
+    /**
+     * The encoding declares application/json for 'metadata'. Sending it as text/plain violates the
+     * declared encoding and must be reported.
+     */
+    @Test
+    void partContentTypeViolatingEncodingIsReported() throws ParseException {
+        var body = new MultipartBuilder()
+                .part("metadata", null, MimeType.TEXT_PLAIN, null, "{\"id\": 7, \"name\": \"Mia\"}")
+                .part("file", "data.bin", MimeType.APPLICATION_OCTET_STREAM, null, "binary-content")
+                .build();
+
+        var errors = validateUpload(body);
+
+        assertEquals(1, errors.size(), () -> "Errors: " + errors);
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("content-type"));
+    }
+
     private ValidationErrors validateUpload(String body) throws ParseException {
         return validator.validate(Request.post().path("/upload")
                 .mediaType(MultipartBuilder.CONTENT_TYPE)

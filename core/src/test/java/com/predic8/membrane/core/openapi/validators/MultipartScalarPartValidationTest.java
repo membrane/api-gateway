@@ -76,9 +76,9 @@ public class MultipartScalarPartValidationTest extends AbstractValidatorTest {
     }
 
     @Test
-    void addressAsJsonWithValidCityPasses() throws ParseException {
-        // When the part carries an explicit application/json Content-Type, the object is validated
-        // against the schema (the part's Content-Type takes precedence over the encoding default).
+    void addressWithContentTypeViolatingOctetStreamEncodingIsReported() throws ParseException {
+        // The encoding declares application/octet-stream for 'address'. Sending the part as
+        // application/json violates the declared encoding and must be reported.
         var body = new MultipartBuilder()
                 .part("name", null, TEXT_PLAIN, null, "Berlin")
                 .part("address", null, APPLICATION_JSON, null, "{\"city\": \"Madrid\"}")
@@ -86,21 +86,9 @@ public class MultipartScalarPartValidationTest extends AbstractValidatorTest {
 
         var errors = validateAttachments(body);
 
-        assertTrue(errors.isEmpty(), () -> "Expected no errors but got: " + errors);
-    }
-
-    @Test
-    void addressAsJsonWithInvalidCityIsReported() throws ParseException {
-        var body = new MultipartBuilder()
-                .part("name", null, TEXT_PLAIN, null, "Berlin")
-                .part("address", null, APPLICATION_JSON, null, "{\"city\": \"Paris\"}") // not in enum
-                .build();
-
-        var errors = validateAttachments(body);
-
         assertEquals(1, errors.size(), () -> "Errors: " + errors);
-        assertTrue(errors.get(0).getMessage().toLowerCase().contains("enum"),
-                "Expected an enum error but got: " + errors.get(0).getMessage());
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("content-type"),
+                "Expected a content-type/encoding mismatch error but got: " + errors.get(0).getMessage());
     }
 
     private ValidationErrors validateAttachments(String body) throws ParseException {

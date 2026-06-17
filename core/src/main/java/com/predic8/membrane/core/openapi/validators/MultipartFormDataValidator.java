@@ -168,10 +168,31 @@ public class MultipartFormDataValidator {
 
             // A field name may occur multiple times (array items / multi-file fields), so validate every occurrence.
             for (var part : entry.getValue()) {
-                err.add(validatePart(ctx.addJSONpointerSegment(name), partSchema,
-                        contentTypeOf(name, part, partSchema, encodings), part));
+                var partCtx = ctx.addJSONpointerSegment(name);
+
+                // If the part carries an explicit Content-Type it must conform to the declared
+                // encoding; otherwise the body is not validated against a content type it was not sent with.
+                var contentTypeErrors = validateEncodingContentType(partCtx, name, part, encodings);
+                if (!contentTypeErrors.isEmpty()) {
+                    err.add(contentTypeErrors);
+                    continue;
+                }
+
+                err.add(validatePart(partCtx, partSchema, contentTypeOf(name, part, partSchema, encodings), part));
             }
         }
+        return err;
+    }
+
+    private ValidationErrors validateEncodingContentType(ValidationContext ctx, String name, FormPart part, Map<String, Encoding> encodings) {
+        var err = new ValidationErrors();
+        if (part.contentType == null || encodings == null)
+            return err;
+        var encoding = encodings.get(name);
+        if (encoding == null || encoding.getContentType() == null)
+            return err;
+        if (!isOfAnyMediaType(encoding.getContentType(), part.contentType))
+            err.add(ctx.statusCode(400), "Part '%s' has Content-Type '%s' but the encoding requires '%s'.".formatted(name, part.contentType, encoding.getContentType()));
         return err;
     }
 
