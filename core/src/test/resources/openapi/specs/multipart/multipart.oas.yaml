@@ -1,0 +1,46 @@
+openapi: '3.0.3'
+info:
+  title: Multipart API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /upload:
+    post:
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  $ref: '#/components/schemas/Customer'
+                file:
+                  type: string
+                  format: binary
+              required:
+                - metadata
+                - file
+            encoding:
+              metadata:
+                contentType: application/json
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Customer:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email

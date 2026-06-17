@@ -208,6 +208,18 @@ public class MimeType {
     }
 
     /**
+     * Matches an actual media type against one or more expected media types or ranges given as a
+     * comma-separated list, e.g. {@code "image/png, image/jpeg"} or {@code "image/*"}.
+     */
+    public static boolean isOfAnyMediaType(String expectedTypes, String actualType) {
+        for (String expected : expectedTypes.split(",")) {
+            if (isOfMediaType(expected.trim(), actualType))
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * Sorts a string of media types like the one in Accept
      *
      * @param s with MediaTypes e.g. text/html;q=0.9, application/json, application/xml;q=0.9, image/webp;q=0.8

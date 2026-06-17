@@ -32,7 +32,7 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
 
     @Override
     protected String getOpenAPIFileName() {
-        return "/openapi/specs/multipart/multipart.yml";
+        return "/openapi/specs/multipart/multipart.oas.yaml";
     }
 
     /**

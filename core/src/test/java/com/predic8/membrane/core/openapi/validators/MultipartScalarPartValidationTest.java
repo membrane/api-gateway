@@ -34,7 +34,7 @@ public class MultipartScalarPartValidationTest extends AbstractValidatorTest {
 
     @Override
     protected String getOpenAPIFileName() {
-        return "/openapi/specs/multipart/encoding-octet-stream.yml";
+        return "/openapi/specs/multipart/encoding-octet-stream.oas.yaml";
     }
 
     @Test
