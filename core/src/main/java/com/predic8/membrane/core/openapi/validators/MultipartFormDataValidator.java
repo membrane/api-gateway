@@ -16,14 +16,16 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.openapi.model.JsonBody;
 import com.predic8.membrane.core.openapi.model.Message;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Encoding;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
-import jakarta.mail.internet.ContentType;
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.ParameterParser;
 import org.slf4j.Logger;
@@ -32,12 +34,12 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
+import static com.predic8.membrane.core.http.Header.CONTENT_TRANSFER_ENCODING;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static java.lang.Boolean.FALSE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -67,54 +69,54 @@ public class MultipartFormDataValidator {
     @SuppressWarnings("rawtypes")
     public ValidationErrors validate(ValidationContext ctx, MediaType mediaType, Message<?, ?> message) {
         ctx = ctx.entityType(BODY);
-        ValidationErrors errors = new ValidationErrors();
+        var err = new ValidationErrors();
 
-        Schema schema = mediaType.getSchema();
+        var schema = mediaType.getSchema();
         if (schema == null) {
             // Without a schema there is nothing to validate the parts against.
-            return errors;
+            return err;
         }
 
-        String boundary = getBoundary(message);
+        var boundary = getBoundary(message);
         if (boundary == null) {
-            return errors.add(ctx, "Content-Type 'multipart/form-data' is missing the required 'boundary' parameter.");
+            return err.add(ctx, "Content-Type 'multipart/form-data' is missing the required 'boundary' parameter.");
         }
 
-        Map<String, FormPart> parts;
+        Map<String, List<FormPart>> parts;
         try {
             parts = parseParts(message, boundary);
         } catch (Exception e) {
-            log.warn("Cannot parse multipart/form-data body.", e);
-            return errors.add(ctx, "The multipart/form-data body cannot be parsed: " + e.getMessage());
+            log.info("Cannot parse multipart/form-data body.", e);
+            return err.add(ctx, "The multipart/form-data body cannot be parsed: " + e.getMessage());
         }
 
-        errors.add(validateRequiredParts(ctx, schema, parts));
-        errors.add(validateParts(ctx, schema, mediaType.getEncoding(), parts));
-        return errors;
+        err.add(validateRequiredParts(ctx, schema, parts));
+        err.add(validateParts(ctx, schema, mediaType.getEncoding(), parts));
+        return err;
     }
 
     private String getBoundary(Message<?, ?> message) {
-        ContentType ct = message.getMediaType();
+        var ct = message.getMediaType();
         if (ct == null)
             return null;
         return ct.getParameter("boundary");
     }
 
     @SuppressWarnings("deprecation")
-    private Map<String, FormPart> parseParts(Message<?, ?> message, String boundary) throws IOException {
-        Map<String, FormPart> parts = new HashMap<>();
-        byte[] body = message.getBody().asString().getBytes(UTF_8);
+    private Map<String, List<FormPart>> parseParts(Message<?, ?> message, String boundary) throws IOException {
+        Map<String, List<FormPart>> parts = new HashMap<>();
+        byte[] body = message.getBody().asBytes();
 
-        MultipartStream mps = new MultipartStream(new ByteArrayInputStream(body), boundary.getBytes(UTF_8));
+        var mps = new MultipartStream(new ByteArrayInputStream(body), boundary.getBytes(UTF_8));
         boolean nextPart = mps.skipPreamble();
         while (nextPart) {
-            Header header = new Header(mps.readHeaders());
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            var header = new Header(mps.readHeaders());
+            var baos = new ByteArrayOutputStream();
             mps.readBodyData(baos);
 
-            FormPart part = new FormPart(header, decodeIfNecessary(header, baos.toByteArray()));
+            var part = new FormPart(header, decodeIfNecessary(header, baos.toByteArray()));
             if (part.name != null)
-                parts.put(part.name, part);
+                parts.computeIfAbsent(part.name, k -> new ArrayList<>()).add(part);
 
             nextPart = mps.readBoundary();
         }
@@ -122,7 +124,7 @@ public class MultipartFormDataValidator {
     }
 
     private byte[] decodeIfNecessary(Header header, byte[] content) {
-        String cte = header.getFirstValue("Content-Transfer-Encoding");
+        var cte = header.getFirstValue( CONTENT_TRANSFER_ENCODING);
         if (cte != null && cte.trim().equalsIgnoreCase("base64")) {
             return Base64.getMimeDecoder().decode(content);
         }
@@ -130,59 +132,135 @@ public class MultipartFormDataValidator {
     }
 
     @SuppressWarnings("rawtypes")
-    private ValidationErrors validateRequiredParts(ValidationContext ctx, Schema schema, Map<String, FormPart> parts) {
-        ValidationErrors errors = new ValidationErrors();
+    private ValidationErrors validateRequiredParts(ValidationContext ctx, Schema schema, Map<String, List<FormPart>> parts) {
+        var err = new ValidationErrors();
         if (schema.getRequired() == null)
-            return errors;
-        for (Object required : schema.getRequired()) {
+            return err;
+        for (var required : schema.getRequired()) {
             if (!parts.containsKey(required.toString()))
-                errors.add(ctx.statusCode(400), "Required multipart property '%s' is missing.".formatted(required));
+                err.add(ctx.statusCode(400), "Required multipart property '%s' is missing.".formatted(required));
         }
-        return errors;
+        return err;
     }
 
     @SuppressWarnings("rawtypes")
-    private ValidationErrors validateParts(ValidationContext ctx, Schema schema, Map<String, Encoding> encodings, Map<String, FormPart> parts) {
-        ValidationErrors errors = new ValidationErrors();
+    private ValidationErrors validateParts(ValidationContext ctx, Schema schema, Map<String, Encoding> encodings, Map<String, List<FormPart>> parts) {
+        var err = new ValidationErrors();
         Map<String, Schema> properties = schema.getProperties();
         if (properties == null)
-            return errors;
+            return err;
 
-        for (Map.Entry<String, FormPart> entry : parts.entrySet()) {
-            String name = entry.getKey();
-            FormPart part = entry.getValue();
+        for (Map.Entry<String, List<FormPart>> entry : parts.entrySet()) {
+            var name = entry.getKey();
 
             Schema propertySchema = properties.get(name);
             if (propertySchema == null) {
-                if (Boolean.FALSE.equals(schema.getAdditionalProperties()))
-                    errors.add(ctx.statusCode(400), "The multipart/form-data body contains an unexpected property '%s'.".formatted(name));
+                if (FALSE.equals(schema.getAdditionalProperties()))
+                    err.add(ctx.statusCode(400), "The multipart/form-data body contains an unexpected property '%s'.".formatted(name));
                 continue;
             }
 
-            errors.add(validatePart(ctx.addJSONpointerSegment(name), propertySchema,
-                    contentTypeOf(name, part, propertySchema, encodings), part));
+            // For an array property each occurrence of the field name is one array item, so each
+            // part is validated against the items schema rather than the array schema itself.
+            Schema partSchema = propertySchema;
+            if (isArraySchema(propertySchema)) {
+                Schema items = resolveRef(propertySchema.getItems());
+                if (items != null)
+                    partSchema = items;
+            }
+
+            // A field name may occur multiple times (array items / multi-file fields), so validate every occurrence.
+            for (var part : entry.getValue()) {
+                err.add(validatePart(ctx.addJSONpointerSegment(name), partSchema,
+                        contentTypeOf(name, part, partSchema, encodings), part));
+            }
         }
-        return errors;
+        return err;
     }
 
     @SuppressWarnings("rawtypes")
     private ValidationErrors validatePart(ValidationContext ctx, Schema propertySchema, String contentType, FormPart part) {
-        ValidationErrors errors = new ValidationErrors();
+        var err = new ValidationErrors();
 
         // Binary file uploads (type: string, format: binary/byte) are opaque, only their presence is checked.
         if (isBinaryStringSchema(propertySchema))
-            return errors;
+            return err;
 
         if (isJson(contentType)) {
             try {
-                return errors.add(new SchemaValidator(api, propertySchema).validate(ctx, new JsonBody(new String(part.content, UTF_8))));
+                return err.add(new SchemaValidator(api, propertySchema).validate(ctx, new JsonBody(new String(part.content, UTF_8))));
             } catch (Exception e) {
-                return errors.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as JSON.".formatted(part.name, contentType));
+                return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as JSON.".formatted(part.name, contentType));
             }
         }
 
-        // Other part content types are currently not validated against the schema.
-        return errors;
+        // Scalar parts (e.g. text/plain, the default for primitives) are validated by parsing the
+        // raw text into the declared type and validating that value against the schema.
+        if (isScalarSchema(propertySchema)) {
+            return err.add(new SchemaValidator(api, propertySchema)
+                    .validate(ctx, toScalarNode(new String(part.content, UTF_8), propertySchema)));
+        }
+
+        // Opaque content (e.g. octet-stream for a complex type) is not validated against the schema.
+        return err;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean isScalarSchema(Schema schema) {
+        String type = effectiveType(schema);
+        return "string".equals(type) || "integer".equals(type) || "number".equals(type) || "boolean".equals(type);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean isArraySchema(Schema schema) {
+        return "array".equals(effectiveType(schema));
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Schema resolveRef(Schema schema) {
+        if (schema == null || schema.get$ref() == null)
+            return schema;
+        return SchemaUtil.getSchemaFromRef(api, schema.get$ref());
+    }
+
+    /**
+     * Parses the raw text of a scalar part into a typed JSON value so it can be validated against
+     * the schema. If the text does not match the declared numeric/boolean type it is kept as text,
+     * which lets the schema validator report the type mismatch.
+     */
+    @SuppressWarnings("rawtypes")
+    private JsonNode toScalarNode(String text, Schema schema) {
+        JsonNodeFactory nf = JsonNodeFactory.instance;
+        return switch (effectiveType(schema)) {
+            case "integer" -> {
+                try { yield nf.numberNode(Long.parseLong(text.trim())); }
+                catch (NumberFormatException e) { yield nf.textNode(text); }
+            }
+            case "number" -> {
+                try { yield nf.numberNode(Double.parseDouble(text.trim())); }
+                catch (NumberFormatException e) { yield nf.textNode(text); }
+            }
+            case "boolean" -> switch (text.trim()) {
+                case "true" -> nf.booleanNode(true);
+                case "false" -> nf.booleanNode(false);
+                default -> nf.textNode(text);
+            };
+            default -> nf.textNode(text);
+        };
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static String effectiveType(Schema schema) {
+        if (schema.getType() != null)
+            return schema.getType();
+        var types = schema.getTypes();
+        if (types == null)
+            return null;
+        for (Object type : types) {
+            if (!"null".equals(type))
+                return type.toString();
+        }
+        return null;
     }
 
     @SuppressWarnings("rawtypes")
@@ -190,7 +268,7 @@ public class MultipartFormDataValidator {
         if (part.contentType != null)
             return part.contentType;
         if (encodings != null) {
-            Encoding encoding = encodings.get(name);
+            var encoding = encodings.get(name);
             if (encoding != null && encoding.getContentType() != null)
                 return encoding.getContentType();
         }
@@ -245,9 +323,9 @@ public class MultipartFormDataValidator {
             this.content = content;
             this.contentType = header.getContentType();
 
-            String contentDisposition = header.getFirstValue("Content-Disposition");
+            var contentDisposition = header.getFirstValue("Content-Disposition");
             if (contentDisposition != null) {
-                ParameterParser parser = new ParameterParser();
+                var parser = new ParameterParser();
                 parser.setLowerCaseNames(true);
                 Map<String, String> params = parser.parse(contentDisposition, new char[]{';'});
                 this.name = params.get("name");

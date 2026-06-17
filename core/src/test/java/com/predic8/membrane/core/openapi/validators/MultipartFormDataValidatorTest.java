@@ -16,24 +16,23 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.openapi.model.Request;
 import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
 
-    private static final String BOUNDARY = "abc123";
-    private static final String CRLF = "\r\n";
-
     @Override
     protected String getOpenAPIFileName() {
-        return "/openapi/specs/multipart.yml";
+        return "/openapi/specs/multipart/multipart.yml";
     }
 
     /**
@@ -43,15 +42,15 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
      */
     @Test
     void jsonPartAsBase64() throws ParseException {
-        String customer = "{\"id\": 1, \"name\": \"Alice\", \"email\": \"alice@example.com\"}";
-        String base64 = Base64.getEncoder().encodeToString(customer.getBytes(UTF_8));
+        String customer = """
+                {"id": 1, "name": "Alice", "email": "alice@example.com"}""";
 
-        String body = new MultipartBuilder()
-                .part("metadata", null, "application/json", "base64", base64)
-                .part("file", "data.bin", "application/octet-stream", null, "binary-content")
+        var body = new MultipartBuilder()
+                .part("metadata", null, APPLICATION_JSON, "base64", encodeBase64(customer))
+                .part("file", "data.bin", MimeType.APPLICATION_OCTET_STREAM , null, "binary-content")
                 .build();
 
-        ValidationErrors errors = validateUpload(body);
+        var errors = validateUpload(body);
 
         assertTrue(errors.isEmpty(), () -> "Expected no errors but got: " + errors);
     }
@@ -63,14 +62,15 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
      */
     @Test
     void jsonAsFileUpload() throws ParseException {
-        String json = "{\"some\": \"document\", \"answer\": 42}";
+        String json = """
+                {"some": "document", "answer": 42}""";
 
         String body = new MultipartBuilder()
                 .part("metadata", null, "application/json", null, "{\"id\": 2, \"name\": \"Bob\"}")
                 .part("file", "payload.json", "application/json", null, json)
                 .build();
 
-        ValidationErrors errors = validateUpload(body);
+        var errors = validateUpload(body);
 
         assertTrue(errors.isEmpty(), () -> "Expected no errors but got: " + errors);
     }
@@ -81,18 +81,17 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
      */
     @Test
     void invalidJsonPartIsReported() throws ParseException {
-        String invalidCustomer = "{\"id\": 3}"; // 'name' is required
-        String base64 = Base64.getEncoder().encodeToString(invalidCustomer.getBytes(UTF_8));
+        var invalidCustomer = "{\"id\": 3}"; // 'name' is required
 
-        String body = new MultipartBuilder()
-                .part("metadata", null, "application/json", "base64", base64)
+        var body = new MultipartBuilder()
+                .part("metadata", null, "application/json", "base64", encodeBase64(invalidCustomer))
                 .part("file", "data.bin", "application/octet-stream", null, "binary-content")
                 .build();
 
-        ValidationErrors errors = validateUpload(body);
+        var errors = validateUpload(body);
 
         assertEquals(1, errors.size(), () -> "Errors: " + errors);
-        assertTrue(errors.get(0).getMessage().toLowerCase().contains("name"));
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("name is missing"));
     }
 
     /**
@@ -100,47 +99,42 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
      */
     @Test
     void missingRequiredPartIsReported() throws ParseException {
-        String body = new MultipartBuilder()
+        var body = new MultipartBuilder()
                 .part("metadata", null, "application/json", null, "{\"id\": 4, \"name\": \"Eve\"}")
                 .build();
 
-        ValidationErrors errors = validateUpload(body);
+        var errors = validateUpload(body);
 
         assertEquals(1, errors.size(), () -> "Errors: " + errors);
         assertTrue(errors.get(0).getMessage().toLowerCase().contains("file"));
     }
 
+    /**
+     * A field name may occur more than once. Every occurrence must be validated; earlier ones
+     * must not be silently dropped. Here the first 'metadata' part is invalid (missing the
+     * required 'name'), the second is valid - the invalid one still has to be reported.
+     */
+    @Test
+    void repeatedPartOccurrencesAreAllValidated() throws ParseException {
+        var body = new MultipartBuilder()
+                .part("metadata", null, "application/json", null, "{\"id\": 5}")
+                .part("metadata", null, "application/json", null, "{\"id\": 6, \"name\": \"Zoe\"}")
+                .part("file", "data.bin", "application/octet-stream", null, "binary-content")
+                .build();
+
+        var errors = validateUpload(body);
+
+        assertEquals(1, errors.size(), () -> "Errors: " + errors);
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("name is missing"));
+    }
+
     private ValidationErrors validateUpload(String body) throws ParseException {
         return validator.validate(Request.post().path("/upload")
-                .mediaType("multipart/form-data; boundary=" + BOUNDARY)
+                .mediaType(MultipartBuilder.CONTENT_TYPE)
                 .body(body));
     }
 
-    /**
-     * Assembles a raw multipart/form-data body using CRLF line breaks as required
-     * by the multipart parser.
-     */
-    private static class MultipartBuilder {
-
-        private final StringBuilder sb = new StringBuilder();
-
-        MultipartBuilder part(String name, String filename, String contentType, String transferEncoding, String content) {
-            sb.append("--").append(BOUNDARY).append(CRLF);
-            sb.append("Content-Disposition: form-data; name=\"").append(name).append("\"");
-            if (filename != null)
-                sb.append("; filename=\"").append(filename).append("\"");
-            sb.append(CRLF);
-            if (contentType != null)
-                sb.append("Content-Type: ").append(contentType).append(CRLF);
-            if (transferEncoding != null)
-                sb.append("Content-Transfer-Encoding: ").append(transferEncoding).append(CRLF);
-            sb.append(CRLF);
-            sb.append(content).append(CRLF);
-            return this;
-        }
-
-        String build() {
-            return sb + "--" + BOUNDARY + "--" + CRLF;
-        }
+    private static String encodeBase64(String customer) {
+        return Base64.getEncoder().encodeToString(customer.getBytes(UTF_8));
     }
 }
