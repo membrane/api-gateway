@@ -34,6 +34,7 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import java.util.ArrayList;
@@ -81,7 +82,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 SLF4JBridgeHandler.install();
             }
         } catch (Throwable t) {
-            log.warn("jul-to-slf4j not available; OpenTelemetry logs may go to stderr.", t);
+            log.warn("jul-to-slf4j is not available; OpenTelemetry logs may go to stderr. Add the jul-to-slf4j JAR to the lib folder if you want to avoid this.");
         }
 
         otel = OpenTelemetryConfigurator.openTelemetry("Membrane", exporter, getSampleRate());
@@ -154,7 +155,23 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         }
 
         span.addEvent("Close Exchange").end();
+        clearMdc();
         return CONTINUE;
+    }
+
+    @Override
+    public void handleAbort(Exchange exc) {
+        var span = getExchangeSpan(exc);
+        if (span != null) {
+            span.setStatus(ERROR, "Exchange aborted");
+            span.end();
+        }
+        clearMdc();
+    }
+
+    private static void clearMdc() {
+        MDC.remove("traceId");
+        MDC.remove("spanId");
     }
 
     private static Span getExchangeSpan(Exchange exc) {
@@ -203,6 +220,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
                 setExchangeHeader(exc);
                 exc.setProperty(MEMBRANE_OTEL_SPAN, membraneSpan);
                 exc.setProperty(MEMBRANE_OTEL_TRACER, tracer);
+
+                var spanContext = membraneSpan.getSpanContext();
+                MDC.put("traceId", spanContext.getTraceId());
+                MDC.put("spanId", spanContext.getSpanId());
             }
         }
     }
@@ -263,7 +284,7 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         return sampleRate;
     }
 
-    @MCElement(name = "customAttribute", topLevel = false)
+    @MCElement(name = "customAttribute", component = false)
     public static class CustomAttribute {
 
         private String name;
