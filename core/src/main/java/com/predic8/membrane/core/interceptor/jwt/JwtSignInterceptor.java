@@ -39,6 +39,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.jose4j.jws.AlgorithmIdentifiers.RSA_USING_SHA256;
 
 @MCElement(name = "jwtSign")
@@ -90,11 +91,11 @@ public class JwtSignInterceptor extends AbstractInterceptor {
 
     private Outcome handleInternal(Exchange exc, Flow flow) {
         try {
-            var bytes = createSignature(exc, flow).getCompactSerialization().getBytes();
+            var jwt = createSignature(exc, flow).getCompactSerialization();
             if (property != null) {
-                exc.setProperty(property, new String(bytes));
+                exc.setProperty(property, jwt);
             } else {
-                exc.getMessage(flow).setBodyContent(bytes);
+                exc.getMessage(flow).setBodyContent(jwt.getBytes(US_ASCII));
             }
             return CONTINUE;
         } catch (Exception e) {
