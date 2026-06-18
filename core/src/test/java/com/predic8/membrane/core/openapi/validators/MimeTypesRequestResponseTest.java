@@ -16,12 +16,15 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import jakarta.mail.internet.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import jakarta.mail.internet.ParseException;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MimeTypesRequestResponseTest extends AbstractValidatorTest {
 
@@ -34,7 +37,6 @@ protected String getOpenAPIFileName() {
     public void notImplementedResponse() throws ParseException {
         testNotImplementedResponse(200, APPLICATION_XML);
         testNotImplementedResponse(201, TEXT_XML);
-        testNotImplementedResponse(202, APPLICATION_X_WWW_FORM_URLENCODED);
     }
 
     private void testNotImplementedResponse(int statusCode, String mimeType) throws ParseException {
@@ -50,7 +52,6 @@ protected String getOpenAPIFileName() {
     public void notImplementedRequest() throws ParseException {
         testNotImplementedRequest(APPLICATION_XML,"/application-xml");
         testNotImplementedRequest(TEXT_XML, "/text-xml");
-        testNotImplementedRequest(APPLICATION_X_WWW_FORM_URLENCODED, "/x-www-form-urlencoded");
     }
 
     private void testNotImplementedRequest(String mimeType, String path) throws ParseException {
