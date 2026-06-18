@@ -85,7 +85,7 @@ public class SchemaUtil {
     }
 
     public static boolean isObjectOrArray(Schema schema) {
-        String type = schema.getType();
+        String type = getEffectiveType(schema);
         if ("object".equals(type) || "array".equals(type))
             return true;
         if (schema.get$ref() != null)
