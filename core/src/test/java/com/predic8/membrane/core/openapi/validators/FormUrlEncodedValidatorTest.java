@@ -85,6 +85,16 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
     }
 
     @Test
+    void minLengthOnTopLevelStringViaRefIsReported() throws ParseException {
+        // The request body schema is a $ref; 'code' is a top-level string with minLength 5.
+        var errors = validateForm("id=" + VALID_UUID + "&code=abc");
+
+        assertEquals(1, errors.size(), () -> "Errors: " + errors);
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("minlength"),
+                "Expected a minLength error but got: " + errors.get(0).getMessage());
+    }
+
+    @Test
     void missingRequiredFieldIsReported() throws ParseException {
         var errors = validateForm("count=3");
 
@@ -93,8 +103,34 @@ public class FormUrlEncodedValidatorTest extends AbstractValidatorTest {
                 "Expected a missing 'id' error but got: " + errors.get(0).getMessage());
     }
 
+    // -----------------------------------------------------------------------
+    // Same validation must work for an inline top-level schema (no $ref)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void validInlineFormPasses() throws ParseException {
+        var errors = validateInline("id=" + VALID_UUID + "&code=abcde");
+
+        assertTrue(errors.isEmpty(), () -> "Expected no errors but got: " + errors);
+    }
+
+    @Test
+    void minLengthOnTopLevelStringInlineIsReported() throws ParseException {
+        var errors = validateInline("id=" + VALID_UUID + "&code=abc");
+
+        assertEquals(1, errors.size(), () -> "Errors: " + errors);
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("minlength"),
+                "Expected a minLength error but got: " + errors.get(0).getMessage());
+    }
+
     private ValidationErrors validateForm(String body) throws ParseException {
         return validator.validate(post().path("/form")
+                .mediaType(APPLICATION_X_WWW_FORM_URLENCODED)
+                .body(body));
+    }
+
+    private ValidationErrors validateInline(String body) throws ParseException {
+        return validator.validate(post().path("/form-inline")
                 .mediaType(APPLICATION_X_WWW_FORM_URLENCODED)
                 .body(body));
     }

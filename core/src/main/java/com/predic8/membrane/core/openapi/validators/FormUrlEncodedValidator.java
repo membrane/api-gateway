@@ -63,7 +63,9 @@ public class FormUrlEncodedValidator {
         ctx = ctx.entityType(BODY);
         var errors = new ValidationErrors();
 
-        Schema schema = mediaType.getSchema();
+        // The media type schema may be a $ref to a component; resolve it so its properties and
+        // required list are visible.
+        Schema schema = SchemaUtil.resolveRef(api, mediaType.getSchema());
         if (schema == null) {
             // Without a schema there is nothing to validate the fields against.
             return errors;
@@ -76,7 +78,7 @@ public class FormUrlEncodedValidator {
             return errors.add(ctx, "The application/x-www-form-urlencoded body cannot be read: " + e.getMessage());
         }
 
-        Map<String, List<String>> form = parse(raw);
+        var form = parse(raw);
 
         errors.add(validateRequired(ctx, schema, form));
         errors.add(validateFields(ctx, schema, form));
@@ -120,8 +122,8 @@ public class FormUrlEncodedValidator {
         Map<String, Schema> properties = schema.getProperties();
 
         for (var entry : form.entrySet()) {
-            String name = entry.getKey();
-            List<String> values = entry.getValue();
+            var name = entry.getKey();
+            var values = entry.getValue();
 
             Schema propertySchema = properties != null ? properties.get(name) : null;
             if (propertySchema == null) {

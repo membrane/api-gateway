@@ -12,6 +12,19 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
+              # Referenced (not inline) so the validator must resolve the top-level $ref.
+              $ref: "#/components/schemas/Form"
+      responses:
+        '200':
+          description: OK
+  /form-inline:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              # Inline (not referenced) top-level schema.
               type: object
               required:
                 - id
@@ -19,25 +32,42 @@ paths:
                 id:
                   type: string
                   format: uuid
-                count:
-                  type: integer
-                address:
-                  # complex types are stringified to support RFC 1866
-                  type: object
-                  properties:
-                    city:
-                      type: string
-                    country:
-                      type: string
-                      minLength: 3
-                tags:
-                  type: array
-                  items:
-                    type: string
-                counts:
-                  type: array
-                  items:
-                    type: integer
+                code:
+                  type: string
+                  minLength: 5
       responses:
         '200':
           description: OK
+
+components:
+  schemas:
+    Form:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          minLength: 5
+        count:
+          type: integer
+        address:
+          # complex types are stringified to support RFC 1866
+          type: object
+          properties:
+            city:
+              type: string
+            country:
+              type: string
+              minLength: 3
+        tags:
+          type: array
+          items:
+            type: string
+        counts:
+          type: array
+          items:
+            type: integer
