@@ -136,7 +136,7 @@ public class FormUrlEncodedValidator {
             if (SchemaUtil.isArray(propertySchema)) {
                 errors.add(new SchemaValidator(api, propertySchema).validate(fieldCtx, toArrayNode(values, propertySchema)));
             } else {
-                errors.add(new SchemaValidator(api, propertySchema).validate(fieldCtx, toNode(values.get(0), propertySchema)));
+                errors.add(new SchemaValidator(api, propertySchema).validate(fieldCtx, toNode(values.getFirst(), propertySchema)));
             }
         }
         return errors;
