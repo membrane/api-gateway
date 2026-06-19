@@ -32,6 +32,7 @@ class OpenAPIValidatorXMLTest {
 
     OpenAPIValidator validator;
     OpenAPIValidator validatorRequired;
+    OpenAPIValidator validatorNamespaced;
 
     /** A valid order with all fields present and correct types. */
     final String validOrder = """
@@ -84,6 +85,11 @@ class OpenAPIValidatorXMLTest {
         validatorRequired = new OpenAPIValidator(new URIFactory(),
                 new OpenAPIRecord(
                         parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-message-required.oas.yaml")),
+                        new OpenAPISpec()));
+
+        validatorNamespaced = new OpenAPIValidator(new URIFactory(),
+                new OpenAPIRecord(
+                        parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-message-namespaced.oas.yaml")),
                         new OpenAPISpec()));
     }
 
@@ -168,5 +174,73 @@ class OpenAPIValidatorXMLTest {
         assertEquals(1, errors.size(), "Expected exactly one validation error: " + errors);
         assertTrue(errors.get(0).getMessage().toLowerCase().contains("occurs more than once"),
                 "Error should be about a repeated element: " + errors.get(0).getMessage());
+    }
+
+    // -----------------------------------------------------------------------
+    // Namespaces (xml.namespace) — the spec declares prefix "o" bound to
+    // http://example.com/orders; matching is by namespace URI + local name,
+    // so the prefix actually used in the document is irrelevant.
+    // -----------------------------------------------------------------------
+
+    /** Same namespace URI as the spec, but the document binds it under a different prefix. */
+    @Test
+    void namespacedOrderWithDifferentDocumentPrefixIsAccepted() throws ParseException {
+        String xml = """
+                <x:order xmlns:x="http://example.com/orders">
+                  <x:id>4711</x:id>
+                  <x:customer>Anna Müller</x:customer>
+                  <x:items>
+                    <x:item>
+                      <x:productId>P10</x:productId>
+                      <x:quantity>2</x:quantity>
+                    </x:item>
+                  </x:items>
+                </x:order>
+                """;
+        var errors = validatorNamespaced.validate(post().path("/orders").xml(xml));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    /** Elements in the (correct) default namespace carry no prefix but still match by URI. */
+    @Test
+    void namespacedOrderInDefaultNamespaceIsAccepted() throws ParseException {
+        String xml = """
+                <order xmlns="http://example.com/orders">
+                  <id>4711</id>
+                  <customer>Anna Müller</customer>
+                </order>
+                """;
+        var errors = validatorNamespaced.validate(post().path("/orders").xml(xml));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    /**
+     * Elements in the wrong namespace URI do not match the schema, so the required
+     * id/customer are reported as missing — proving the namespace is enforced, not ignored.
+     */
+    @Test
+    void wrongNamespaceMeansElementsDoNotMatchAndRequiredFieldsAreMissing() throws ParseException {
+        String xml = """
+                <x:order xmlns:x="http://wrong.example.com/orders">
+                  <x:id>4711</x:id>
+                  <x:customer>Anna Müller</x:customer>
+                </x:order>
+                """;
+        var errors = validatorNamespaced.validate(post().path("/orders").xml(xml));
+        assertFalse(errors.isEmpty(),
+                "Expected required-field errors because the elements are in the wrong namespace: " + errors);
+    }
+
+    /** A correctly namespaced element is matched and its content is still type-checked. */
+    @Test
+    void nonIntegerIdInNamespacedOrderProducesTypeError() throws ParseException {
+        String xml = """
+                <x:order xmlns:x="http://example.com/orders">
+                  <x:id>not-a-number</x:id>
+                  <x:customer>Anna Müller</x:customer>
+                </x:order>
+                """;
+        var errors = validatorNamespaced.validate(post().path("/orders").xml(xml));
+        assertFalse(errors.isEmpty(), "Expected a type validation error for non-integer id");
     }
 }

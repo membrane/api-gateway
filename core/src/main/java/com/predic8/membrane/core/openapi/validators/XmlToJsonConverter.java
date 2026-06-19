@@ -24,6 +24,7 @@ import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -43,9 +44,17 @@ import java.util.Map;
  * <p>Supported OpenAPI XML Object hints:
  * <ul>
  *   <li>{@code xml.name}        – overrides the element/wrapper name for a property</li>
+ *   <li>{@code xml.prefix}      – qualifies the name with a namespace prefix ({@code prefix:name})</li>
+ *   <li>{@code xml.namespace}   – matches elements/attributes by namespace URI + local name,
+ *                                 independent of the prefix used in the document</li>
  *   <li>{@code xml.attribute}   – maps an XML attribute to a schema property</li>
  *   <li>{@code xml.wrapped}     – signals that an array is enclosed in a wrapper element</li>
  * </ul>
+ *
+ * <p>When {@code xml.namespace} is present, matching is namespace-aware: the namespace URI and
+ * local name decide the match and the document's prefix is irrelevant. When it is absent, names
+ * are matched literally against the qualified tag name (optionally built from {@code xml.prefix}),
+ * which keeps the prefix-sensitive behaviour for specs that do not declare namespace URIs.
  */
 @SuppressWarnings("rawtypes")
 public class XmlToJsonConverter {
@@ -104,12 +113,12 @@ public class XmlToJsonConverter {
             String propName  = entry.getKey();
             Schema propSchema = resolveRef(entry.getValue());
 
-            String xmlName = xmlNameOf(propName, propSchema);
+            XmlName xmlName = xmlNameOf(propName, propSchema);
             boolean isAttr = isXmlAttribute(propSchema);
 
             if (isAttr) {
                 // Map XML attribute → JSON property
-                String attrValue = element.getAttribute(xmlName);
+                String attrValue = attributeValue(element, xmlName);
                 if (!attrValue.isEmpty())
                     node.set(propName, convertPrimitive(attrValue, propSchema));
 
@@ -152,8 +161,8 @@ public class XmlToJsonConverter {
 
         Schema itemSchema  = resolveRef(propSchema.getItems());
         boolean wrapped    = isXmlWrapped(propSchema);
-        String  wrapperName = xmlNameOf(propName, propSchema);          // name of wrapper / sibling element
-        String  itemName    = xmlNameOf(propName, itemSchema);          // name of each item element
+        XmlName wrapperName = xmlNameOf(propName, propSchema);          // name of wrapper / sibling element
+        XmlName itemName    = xmlNameOf(propName, itemSchema);          // name of each item element
 
         if (wrapped) {
             // Items live inside a single wrapper element  <wrapperName><itemName/><itemName/>…</wrapperName>
@@ -170,7 +179,7 @@ public class XmlToJsonConverter {
             NodeList children = parentElement.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
                 if (children.item(i) instanceof Element child
-                    && child.getTagName().equals(itemName))
+                    && itemName.matches(child))
                     arrayNode.add(convertElement(child, itemSchema));
             }
         }
@@ -242,22 +251,61 @@ public class XmlToJsonConverter {
     }
 
     /**
-     * Returns the (possibly qualified) XML name for a property.
+     * Returns the {@link XmlName} a property is matched by.
      *
      * <p>The local name is taken from {@code xml.name}, falling back to the property name.
-     * If {@code xml.prefix} is set, the result is {@code prefix:localName} so it matches the
-     * qualified tag/attribute name produced by the namespace-aware parser. The prefix may also
-     * be baked directly into {@code xml.name} (e.g. {@code "ns:id"}) without setting {@code xml.prefix}.
+     * If {@code xml.namespace} is set, matching is namespace-aware (URI + local name) and the
+     * document's prefix is ignored. Otherwise the result carries a literal qualified name: if
+     * {@code xml.prefix} is set it is {@code prefix:localName}, matching the qualified tag/attribute
+     * name produced by the namespace-aware parser. The prefix may also be baked directly into
+     * {@code xml.name} (e.g. {@code "ns:id"}) without setting {@code xml.prefix}.
      */
-    private static String xmlNameOf(String propertyName, Schema schema) {
-        if (schema == null || schema.getXml() == null)
-            return propertyName;
+    private static XmlName xmlNameOf(String propertyName, Schema schema) {
+        XML xml = (schema == null) ? null : schema.getXml();
 
-        String localName = schema.getXml().getName() != null ? schema.getXml().getName() : propertyName;
-        String prefix = schema.getXml().getPrefix();
-        if (prefix != null && !prefix.isEmpty())
-            return prefix + ":" + localName;
-        return localName;
+        String localName = (xml != null && xml.getName() != null) ? xml.getName() : propertyName;
+        String prefix    = (xml != null) ? xml.getPrefix()    : null;
+        String namespace = (xml != null) ? xml.getNamespace() : null;
+
+        if (namespace != null && !namespace.isEmpty())
+            // Namespace-aware: ignore the document prefix, match URI + local part.
+            return new XmlName(namespace, stripPrefix(localName), null);
+
+        // Backward-compatible literal matching on the qualified tag name.
+        String qualified = (prefix != null && !prefix.isEmpty()) ? prefix + ":" + localName : localName;
+        return new XmlName(null, stripPrefix(localName), qualified);
+    }
+
+    /** Drops a leading {@code prefix:} from a name, leaving the local part. */
+    private static String stripPrefix(String name) {
+        int i = name.indexOf(':');
+        return (i >= 0) ? name.substring(i + 1) : name;
+    }
+
+    /** Reads an attribute value, namespace-aware when the {@link XmlName} carries a namespace URI. */
+    private static String attributeValue(Element element, XmlName name) {
+        return (name.namespaceURI() != null)
+            ? element.getAttributeNS(name.namespaceURI(), name.localName())
+            : element.getAttribute(name.qualifiedName());
+    }
+
+    /**
+     * The expected XML identity of a property. When {@code namespaceURI} is set, matching is
+     * namespace-aware (URI + local name) and the document's prefix is irrelevant; otherwise the
+     * match falls back to the literal qualified tag name for backward compatibility.
+     */
+    private record XmlName(String namespaceURI, String localName, String qualifiedName) {
+
+        boolean matches(Element el) {
+            if (namespaceURI != null)
+                return namespaceURI.equals(el.getNamespaceURI())
+                    && localName.equals(localNameOf(el));
+            return qualifiedName.equals(el.getTagName());
+        }
+
+        private static String localNameOf(Element el) {
+            return el.getLocalName() != null ? el.getLocalName() : el.getTagName();
+        }
     }
 
     private static boolean isXmlAttribute(Schema schema) {
@@ -303,14 +351,14 @@ public class XmlToJsonConverter {
      * is none. If the element occurs more than once - where the schema expects a single value -
      * a {@link MultipleElementsException} is thrown rather than silently keeping the first.
      */
-    private static Element singleChildByName(Element parent, String name) {
+    private static Element singleChildByName(Element parent, XmlName name) {
         Element found = null;
         NodeList children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node n = children.item(i);
-            if (n instanceof Element el && el.getTagName().equals(name)) {
+            if (n instanceof Element el && name.matches(el)) {
                 if (found != null)
-                    throw new MultipleElementsException(name);
+                    throw new MultipleElementsException(name.localName());
                 found = el;
             }
         }

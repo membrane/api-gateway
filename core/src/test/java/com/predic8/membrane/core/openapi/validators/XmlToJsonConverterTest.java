@@ -281,121 +281,249 @@ class XmlToJsonConverterTest {
             assertEquals("Bob", node.get("customer").asText());
         }
 
-        @Test
-        void prefixedElementsMatchWhenXmlNameContainsThePrefix() throws Exception {
-            String xml = """
-                    <ns:order xmlns:ns="http://example.com/ns">
-                      <ns:id>1</ns:id>
-                      <ns:customer>Bob</ns:customer>
-                    </ns:order>
-                    """;
-            Schema schema = obj()
-                    .addProperty("id", integer().xml(new XML().name("ns:id")))
-                    .addProperty("customer", str().xml(new XML().name("ns:customer")));
+        // -------------------------------------------------------------------
+        // Prefix-based matching (xml.prefix / a prefix baked into xml.name).
+        // The literal qualified tag name decides the match.
+        // -------------------------------------------------------------------
 
-            JsonNode node = converter.convert(xml, schema);
+        @Nested
+        class Prefix {
 
-            assertEquals(1, node.get("id").asInt());
-            assertEquals("Bob", node.get("customer").asText());
+            @Test
+            void prefixedElementsMatchWhenXmlNameContainsThePrefix() throws Exception {
+                String xml = """
+                        <ns:order xmlns:ns="http://example.com/ns">
+                          <ns:id>1</ns:id>
+                          <ns:customer>Bob</ns:customer>
+                        </ns:order>
+                        """;
+                Schema schema = obj()
+                        .addProperty("id", integer().xml(new XML().name("ns:id")))
+                        .addProperty("customer", str().xml(new XML().name("ns:customer")));
+
+                JsonNode node = converter.convert(xml, schema);
+
+                assertEquals(1, node.get("id").asInt());
+                assertEquals("Bob", node.get("customer").asText());
+            }
+
+            @Test
+            void prefixedElementsAreNotMatchedWithoutThePrefixInXmlName() throws Exception {
+                // Documents the current (prefix-sensitive) behaviour: the qualified tag name "ns:id"
+                // does not match the plain property name "id".
+                String xml = """
+                        <ns:order xmlns:ns="http://example.com/ns">
+                          <ns:id>1</ns:id>
+                        </ns:order>
+                        """;
+                JsonNode node = converter.convert(xml, obj().addProperty("id", integer()));
+
+                assertFalse(node.has("id"));
+            }
+
+            @Test
+            void namespacedAttributeIsMappedViaQualifiedXmlName() throws Exception {
+                String xml = """
+                        <product xmlns:ns="http://example.com/ns" ns:code="X1"/>
+                        """;
+                Schema schema = obj()
+                        .addProperty("code", str().xml(new XML().attribute(true).name("ns:code")));
+
+                JsonNode node = converter.convert(xml, schema);
+
+                assertEquals("X1", node.get("code").asText());
+            }
+
+            @Test
+            void prefixSetInOpenAPIIsCombinedWithLocalName() throws Exception {
+                // Idiomatic OpenAPI: the prefix is declared via xml.prefix, the local name via xml.name.
+                String xml = """
+                        <ns:order xmlns:ns="http://example.com/ns">
+                          <ns:id>1</ns:id>
+                          <ns:customer>Bob</ns:customer>
+                        </ns:order>
+                        """;
+                Schema schema = obj()
+                        .addProperty("id", integer().xml(new XML().prefix("ns").name("id")))
+                        .addProperty("customer", str().xml(new XML().prefix("ns").name("customer")));
+
+                JsonNode node = converter.convert(xml, schema);
+
+                assertEquals(1, node.get("id").asInt());
+                assertEquals("Bob", node.get("customer").asText());
+            }
+
+            @Test
+            void prefixSetInOpenAPIWithoutExplicitNameUsesPropertyName() throws Exception {
+                // Only xml.prefix is set; the local name defaults to the property name.
+                String xml = """
+                        <ns:order xmlns:ns="http://example.com/ns">
+                          <ns:id>1</ns:id>
+                        </ns:order>
+                        """;
+                Schema schema = obj()
+                        .addProperty("id", integer().xml(new XML().prefix("ns")));
+
+                JsonNode node = converter.convert(xml, schema);
+
+                assertEquals(1, node.get("id").asInt());
+            }
+
+            @Test
+            void prefixSetInOpenAPIAppliesToAttributes() throws Exception {
+                String xml = """
+                        <product xmlns:ns="http://example.com/ns" ns:code="X1"/>
+                        """;
+                Schema schema = obj()
+                        .addProperty("code", str().xml(new XML().attribute(true).prefix("ns").name("code")));
+
+                JsonNode node = converter.convert(xml, schema);
+
+                assertEquals("X1", node.get("code").asText());
+            }
+
+            @Test
+            void prefixSetInOpenAPIAppliesToWrappedArrays() throws Exception {
+                // Both the wrapper element and its items are namespaced via xml.prefix.
+                String xml = """
+                        <ns:order xmlns:ns="http://example.com/ns">
+                          <ns:items>
+                            <ns:item><id>10</id></ns:item>
+                            <ns:item><id>11</id></ns:item>
+                          </ns:items>
+                        </ns:order>
+                        """;
+                Schema item = obj().addProperty("id", integer());
+                Schema schema = obj()
+                        .addProperty("items", array(item).xml(new XML().prefix("ns").wrapped(true)));
+
+                JsonNode node = converter.convert(xml, schema);
+
+                JsonNode items = node.get("items");
+                assertTrue(items.isArray());
+                assertEquals(2, items.size());
+                assertEquals(10, items.get(0).get("id").asInt());
+                assertEquals(11, items.get(1).get("id").asInt());
+            }
         }
 
-        @Test
-        void prefixedElementsAreNotMatchedWithoutThePrefixInXmlName() throws Exception {
-            // Documents the current (prefix-sensitive) behaviour: the qualified tag name "ns:id"
-            // does not match the plain property name "id".
-            String xml = """
-                    <ns:order xmlns:ns="http://example.com/ns">
-                      <ns:id>1</ns:id>
-                    </ns:order>
-                    """;
-            JsonNode node = converter.convert(xml, obj().addProperty("id", integer()));
+        // -------------------------------------------------------------------
+        // Namespace-URI matching (xml.namespace). The URI + local name decide
+        // the match; the prefix used in the document is irrelevant.
+        // -------------------------------------------------------------------
 
-            assertFalse(node.has("id"));
-        }
+        @Nested
+        class Namespace {
 
-        @Test
-        void namespacedAttributeIsMappedViaQualifiedXmlName() throws Exception {
-            String xml = """
-                    <product xmlns:ns="http://example.com/ns" ns:code="X1"/>
-                    """;
-            Schema schema = obj()
-                    .addProperty("code", str().xml(new XML().attribute(true).name("ns:code")));
+            @Test
+            void namespaceUriIsMatchedRegardlessOfDocumentPrefix() throws Exception {
+                // The spec declares the namespace URI; the document binds it under a *different* prefix.
+                // With xml.namespace set, matching is by URI + local name, so the prefix is irrelevant.
+                String xml = """
+                        <foo:order xmlns:foo="http://example.com/ns">
+                          <foo:id>1</foo:id>
+                          <foo:customer>Bob</foo:customer>
+                        </foo:order>
+                        """;
+                Schema schema = obj()
+                        .addProperty("id", integer().xml(new XML().namespace("http://example.com/ns").name("id")))
+                        .addProperty("customer", str().xml(new XML().namespace("http://example.com/ns").name("customer")));
 
-            JsonNode node = converter.convert(xml, schema);
+                JsonNode node = converter.convert(xml, schema);
 
-            assertEquals("X1", node.get("code").asText());
-        }
+                assertEquals(1, node.get("id").asInt());
+                assertEquals("Bob", node.get("customer").asText());
+            }
 
-        @Test
-        void prefixSetInOpenAPIIsCombinedWithLocalName() throws Exception {
-            // Idiomatic OpenAPI: the prefix is declared via xml.prefix, the local name via xml.name.
-            String xml = """
-                    <ns:order xmlns:ns="http://example.com/ns">
-                      <ns:id>1</ns:id>
-                      <ns:customer>Bob</ns:customer>
-                    </ns:order>
-                    """;
-            Schema schema = obj()
-                    .addProperty("id", integer().xml(new XML().prefix("ns").name("id")))
-                    .addProperty("customer", str().xml(new XML().prefix("ns").name("customer")));
+            @Test
+            void namespacePrefixIsIgnoredWhenNamespaceUriIsSet() throws Exception {
+                // The schema declares prefix "o", but with xml.namespace set the prefix is decorative:
+                // matching is by URI, so a document using a *different* prefix still matches.
+                String xml = """
+                        <x:order xmlns:x="http://example.com/ns">
+                          <x:id>1</x:id>
+                        </x:order>
+                        """;
+                Schema schema = obj()
+                        .addProperty("id", integer().xml(new XML()
+                                .namespace("http://example.com/ns").prefix("o").name("id")));
 
-            JsonNode node = converter.convert(xml, schema);
+                JsonNode node = converter.convert(xml, schema);
 
-            assertEquals(1, node.get("id").asInt());
-            assertEquals("Bob", node.get("customer").asText());
-        }
+                assertEquals(1, node.get("id").asInt());
+            }
 
-        @Test
-        void prefixSetInOpenAPIWithoutExplicitNameUsesPropertyName() throws Exception {
-            // Only xml.prefix is set; the local name defaults to the property name.
-            String xml = """
-                    <ns:order xmlns:ns="http://example.com/ns">
-                      <ns:id>1</ns:id>
-                    </ns:order>
-                    """;
-            Schema schema = obj()
-                    .addProperty("id", integer().xml(new XML().prefix("ns")));
+            @Test
+            void namespaceUriMatchesDefaultNamespacedElements() throws Exception {
+                // Elements live in a default namespace (no prefix); xml.namespace still matches them by URI.
+                String xml = """
+                        <order xmlns="http://example.com/ns">
+                          <id>1</id>
+                        </order>
+                        """;
+                Schema schema = obj()
+                        .addProperty("id", integer().xml(new XML().namespace("http://example.com/ns")));
 
-            JsonNode node = converter.convert(xml, schema);
+                JsonNode node = converter.convert(xml, schema);
 
-            assertEquals(1, node.get("id").asInt());
-        }
+                assertEquals(1, node.get("id").asInt());
+            }
 
-        @Test
-        void prefixSetInOpenAPIAppliesToAttributes() throws Exception {
-            String xml = """
-                    <product xmlns:ns="http://example.com/ns" ns:code="X1"/>
-                    """;
-            Schema schema = obj()
-                    .addProperty("code", str().xml(new XML().attribute(true).prefix("ns").name("code")));
+            @Test
+            void wrongNamespaceUriDoesNotMatch() throws Exception {
+                // The element's URI differs from the one declared in the schema -> no match.
+                String xml = """
+                        <ns:order xmlns:ns="http://other.com/ns">
+                          <ns:id>1</ns:id>
+                        </ns:order>
+                        """;
+                Schema schema = obj()
+                        .addProperty("id", integer().xml(new XML().namespace("http://example.com/ns").name("id")));
 
-            JsonNode node = converter.convert(xml, schema);
+                JsonNode node = converter.convert(xml, schema);
 
-            assertEquals("X1", node.get("code").asText());
-        }
+                assertFalse(node.has("id"));
+            }
 
-        @Test
-        void prefixSetInOpenAPIAppliesToWrappedArrays() throws Exception {
-            // Both the wrapper element and its items are namespaced via xml.prefix.
-            String xml = """
-                    <ns:order xmlns:ns="http://example.com/ns">
-                      <ns:items>
-                        <ns:item><id>10</id></ns:item>
-                        <ns:item><id>11</id></ns:item>
-                      </ns:items>
-                    </ns:order>
-                    """;
-            Schema item = obj().addProperty("id", integer());
-            Schema schema = obj()
-                    .addProperty("items", array(item).xml(new XML().prefix("ns").wrapped(true)));
+            @Test
+            void namespacedAttributeIsMatchedByNamespaceUri() throws Exception {
+                // A prefixed attribute is matched by URI + local name, independent of its prefix.
+                String xml = """
+                        <product xmlns:foo="http://example.com/ns" foo:code="X1"/>
+                        """;
+                Schema schema = obj()
+                        .addProperty("code", str().xml(new XML().attribute(true)
+                                .namespace("http://example.com/ns").name("code")));
 
-            JsonNode node = converter.convert(xml, schema);
+                JsonNode node = converter.convert(xml, schema);
 
-            JsonNode items = node.get("items");
-            assertTrue(items.isArray());
-            assertEquals(2, items.size());
-            assertEquals(10, items.get(0).get("id").asInt());
-            assertEquals(11, items.get(1).get("id").asInt());
+                assertEquals("X1", node.get("code").asText());
+            }
+
+            @Test
+            void namespaceUriAppliesToWrappedArrays() throws Exception {
+                // Wrapper and items are matched by namespace URI even though the doc uses a different prefix.
+                String xml = """
+                        <foo:order xmlns:foo="http://example.com/ns">
+                          <foo:items>
+                            <foo:item><id>10</id></foo:item>
+                            <foo:item><id>11</id></foo:item>
+                          </foo:items>
+                        </foo:order>
+                        """;
+                Schema item = obj().addProperty("id", integer());
+                Schema schema = obj()
+                        .addProperty("items", array(item)
+                                .xml(new XML().namespace("http://example.com/ns").wrapped(true)));
+
+                JsonNode node = converter.convert(xml, schema);
+
+                JsonNode items = node.get("items");
+                assertTrue(items.isArray());
+                assertEquals(2, items.size());
+                assertEquals(10, items.get(0).get("id").asInt());
+                assertEquals(11, items.get(1).get("id").asInt());
+            }
         }
     }
 
