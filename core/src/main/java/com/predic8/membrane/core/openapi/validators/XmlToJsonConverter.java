@@ -117,10 +117,10 @@ public class XmlToJsonConverter {
             boolean isAttr = isXmlAttribute(propSchema);
 
             if (isAttr) {
-                // Map XML attribute → JSON property
-                String attrValue = attributeValue(element, xmlName);
-                if (!attrValue.isEmpty())
-                    node.set(propName, convertPrimitive(attrValue, propSchema));
+                // Map XML attribute → JSON property. Check for presence (not emptiness) so that a
+                // present-but-empty attribute (e.g. sku="") is kept as "" instead of being dropped.
+                if (hasAttribute(element, xmlName))
+                    node.set(propName, convertPrimitive(attributeValue(element, xmlName), propSchema));
 
             } else if ("array".equals(effectiveType(propSchema))) {
                 node.set(propName, convertArrayProperty(element, propName, propSchema));
@@ -280,6 +280,13 @@ public class XmlToJsonConverter {
     private static String stripPrefix(String name) {
         int i = name.indexOf(':');
         return (i >= 0) ? name.substring(i + 1) : name;
+    }
+
+    /** Tests whether the attribute is present, namespace-aware when the {@link XmlName} carries a URI. */
+    private static boolean hasAttribute(Element element, XmlName name) {
+        return (name.namespaceURI() != null)
+            ? element.hasAttributeNS(name.namespaceURI(), name.localName())
+            : element.hasAttribute(name.qualifiedName());
     }
 
     /** Reads an attribute value, namespace-aware when the {@link XmlName} carries a namespace URI. */

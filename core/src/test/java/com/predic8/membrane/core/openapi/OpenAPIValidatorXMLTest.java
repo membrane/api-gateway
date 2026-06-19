@@ -33,6 +33,7 @@ class OpenAPIValidatorXMLTest {
     OpenAPIValidator validator;
     OpenAPIValidator validatorRequired;
     OpenAPIValidator validatorNamespaced;
+    OpenAPIValidator validatorAttribute;
 
     /** A valid order with all fields present and correct types. */
     final String validOrder = """
@@ -90,6 +91,11 @@ class OpenAPIValidatorXMLTest {
         validatorNamespaced = new OpenAPIValidator(new URIFactory(),
                 new OpenAPIRecord(
                         parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-message-namespaced.oas.yaml")),
+                        new OpenAPISpec()));
+
+        validatorAttribute = new OpenAPIValidator(new URIFactory(),
+                new OpenAPIRecord(
+                        parseOpenAPI(getResourceAsStream(this, "/openapi/specs/xml/xml-attribute.oas.yaml")),
                         new OpenAPISpec()));
     }
 
@@ -242,5 +248,38 @@ class OpenAPIValidatorXMLTest {
                 """;
         var errors = validatorNamespaced.validate(post().path("/orders").xml(xml));
         assertFalse(errors.isEmpty(), "Expected a type validation error for non-integer id");
+    }
+
+    // -----------------------------------------------------------------------
+    // Attributes (xml.attribute) — a present-but-empty attribute must be kept,
+    // not dropped, so it is distinguishable from an absent one.
+    // -----------------------------------------------------------------------
+
+    @Test
+    void productWithAttributeIsAccepted() throws ParseException {
+        var errors = validatorAttribute.validate(post().path("/products")
+                .xml("<product sku=\"A-1\"><name>Book</name></product>"));
+        assertEquals(0, errors.size(), "Expected no validation errors: " + errors);
+    }
+
+    /**
+     * Regression: a present-but-empty required attribute (sku="") must be treated as present, so it
+     * does NOT trigger a missing-required error. Previously the empty value was dropped like an
+     * absent attribute, falsely failing the 'required' check.
+     */
+    @Test
+    void presentButEmptyRequiredAttributeIsNotReportedAsMissing() throws ParseException {
+        var errors = validatorAttribute.validate(post().path("/products")
+                .xml("<product sku=\"\"><name>Book</name></product>"));
+        assertEquals(0, errors.size(),
+                "A present-but-empty required attribute must satisfy 'required': " + errors);
+    }
+
+    /** An entirely absent required attribute must still be reported as missing. */
+    @Test
+    void absentRequiredAttributeIsReportedAsMissing() throws ParseException {
+        var errors = validatorAttribute.validate(post().path("/products")
+                .xml("<product><name>Book</name></product>"));
+        assertFalse(errors.isEmpty(), "Expected a missing-required error for absent attribute 'sku'");
     }
 }

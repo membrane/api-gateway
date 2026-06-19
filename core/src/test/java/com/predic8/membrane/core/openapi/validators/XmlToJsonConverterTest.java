@@ -255,6 +255,19 @@ class XmlToJsonConverterTest {
 
             assertFalse(node.has("id"));
         }
+
+        @Test
+        void presentButEmptyAttributeIsKeptAsEmptyString() throws Exception {
+            // A present-but-empty attribute must be preserved (as "") rather than dropped like an
+            // absent one, so the validator can still apply constraints such as required / minLength.
+            Schema schema = obj()
+                    .addProperty("sku", str().xml(new XML().attribute(true)));
+
+            JsonNode node = converter.convert("<product sku=\"\"/>", schema);
+
+            assertTrue(node.has("sku"));
+            assertEquals("", node.get("sku").asText());
+        }
     }
 
     // -----------------------------------------------------------------------
