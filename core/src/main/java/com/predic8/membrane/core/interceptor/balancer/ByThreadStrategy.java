@@ -49,7 +49,10 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 	private int retryTimeOnBusy = 1000;
 
 	public void done(AbstractExchange exc) {
-		String endPoint = exc.getOriginalRequestUri();
+		Node node = exc.getProperty("dispatchedNode", Node.class);
+		if (node == null)
+			return;
+		String endPoint = getHostColonPort(node);
 		if (endpointCount.containsKey(endPoint)) {
 			Integer counter = endpointCount.get(endPoint);
 			counter--;

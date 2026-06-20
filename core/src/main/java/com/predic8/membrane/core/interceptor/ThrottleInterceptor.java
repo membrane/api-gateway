@@ -180,10 +180,12 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 			sb.append("Delays requests by ").append(String.format("%.1f", delay / 1000.0))
 					.append(" seconds.");
 		if (maxThreads > 0) {
+			if (!sb.isEmpty())
+				sb.append(" ");
 			sb.append("Only allows ").append(maxThreads)
 					.append(" concurrent requests.");
 			if (busyDelay > 0)
-				sb.append("The server waits at most ")
+				sb.append(" The server waits at most ")
 						.append(String.format("%.1f", busyDelay / 1000.0))
 						.append(" seconds for enough running requests to terminate, ")
 						.append("returning an error if the server is still busy after the timeout.");
