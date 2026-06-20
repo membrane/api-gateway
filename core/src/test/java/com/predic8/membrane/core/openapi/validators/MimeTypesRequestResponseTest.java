@@ -16,12 +16,15 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import jakarta.mail.internet.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.model.Response;
+import jakarta.mail.internet.ParseException;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MimeTypesRequestResponseTest extends AbstractValidatorTest {
 
@@ -30,33 +33,37 @@ protected String getOpenAPIFileName() {
         return "/openapi/specs/mimetypes.yml";
     }
 
+    // application/x-www-form-urlencoded is still not implemented
     @Test
-    public void notImplementedResponse() throws ParseException {
-        testNotImplementedResponse(200, APPLICATION_XML);
-        testNotImplementedResponse(201, TEXT_XML);
-        testNotImplementedResponse(202, APPLICATION_X_WWW_FORM_URLENCODED);
-    }
-
-    private void testNotImplementedResponse(int statusCode, String mimeType) throws ParseException {
+    public void formUrlEncodedResponseNotImplemented() throws ParseException {
         ValidationErrors errors = validator.validateResponse(Request.get().path("/mimetypes"),
-                Response.statusCode(statusCode).mediaType(mimeType).body("{ }"));
-//        System.out.println("errors = " + errors);
-        assertEquals(1,errors.size());
-        ValidationError e = errors.get(0);
-        assertTrue(e.getMessage().toLowerCase().contains("not implemented"));
+                Response.statusCode(202).mediaType(APPLICATION_X_WWW_FORM_URLENCODED).body("{ }"));
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("not implemented"));
     }
 
     @Test
-    public void notImplementedRequest() throws ParseException {
-        testNotImplementedRequest(APPLICATION_XML,"/application-xml");
-        testNotImplementedRequest(TEXT_XML, "/text-xml");
-        testNotImplementedRequest(APPLICATION_X_WWW_FORM_URLENCODED, "/x-www-form-urlencoded");
+    public void formUrlEncodedRequestNotImplemented() throws ParseException {
+        ValidationErrors errors = validator.validate(
+                Request.post().path("/x-www-form-urlencoded").mediaType(APPLICATION_X_WWW_FORM_URLENCODED).body("name=Alice"));
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("not implemented"));
     }
 
-    private void testNotImplementedRequest(String mimeType, String path) throws ParseException {
-        ValidationErrors errors = validator.validate(Request.post().path(path).mediaType(mimeType).body("{}"));
-        assertEquals(1,errors.size());
-        ValidationError e = errors.get(0);
-        assertTrue(e.getMessage().toLowerCase().contains("not implemented"));
+    // XML: invalid XML produces a parse error (not "not implemented" any more)
+    @Test
+    public void invalidXmlRequestBodyProducesParseError() throws ParseException {
+        ValidationErrors errors = validator.validate(
+                Request.post().path("/application-xml").mediaType(APPLICATION_XML).body("{ not-xml }"));
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("cannot be parsed as xml"));
+    }
+
+    @Test
+    public void invalidXmlResponseBodyProducesParseError() throws ParseException {
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/mimetypes"),
+                Response.statusCode(200).mediaType(APPLICATION_XML).body("{ not-xml }"));
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("cannot be parsed as xml"));
     }
 }

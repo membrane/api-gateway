@@ -16,16 +16,18 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
+import com.predic8.membrane.core.openapi.model.Message;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
 
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static com.predic8.membrane.core.util.MediaTypeUtil.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.MEDIA_TYPE;
+import static com.predic8.membrane.core.util.MediaTypeUtil.getMostSpecificMediaType;
+import static java.lang.String.format;
 
-public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>> {
+public abstract class AbstractBodyValidator {
 
     protected final OpenAPI api;
 
@@ -49,7 +51,11 @@ public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>>
             return errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx, message.getBody()));
         }
         if(isXML(mediaType)) {
-            return errors.add(ctx,"Validation of XML messages is not implemented yet!");
+            if (mediaTypeObj.getSchema() != null && mediaTypeObj.getSchema().get$ref() != null) {
+                ctx = ctx.schemaType(mediaTypeObj.getSchema().get$ref());
+            }
+            ctx = ctx.content(ValidationContext.Content.XML);
+            return errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx, message.getBody()));
         }
         if(isWWWFormUrlEncoded(mediaType)) {
             return errors.add(ctx,"Validation of 'application/x-www-form-urlencoded' messages is not implemented yet!");
