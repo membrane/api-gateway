@@ -14,28 +14,49 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Semaphore;
+
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.lang.Boolean.TRUE;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * @description <p>
- *              The throttle feature can slow down traffic to thwart denial of service attacks.
- *              </p>
+ * @description Throttles incoming traffic by delaying requests and/or capping how many are processed concurrently, to
+ * protect a backend from overload. With <code>delay</code> set, every request is held briefly before it continues. With
+ * <code>maxThreads</code> set, a request that arrives while the limit is already reached is rejected with 503 once no
+ * slot frees up. See the examples under examples/routing-traffic/throttle.
  * @topic 3. Security and Validation
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - throttle:
+ *         maxThreads: 10
+ *         busyDelay: 3000
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {
 	private static final Logger log = LoggerFactory.getLogger(ThrottleInterceptor.class.getName());
 
+	private static final String SLOT_ACQUIRED = "membrane.throttle.slotacquired";
+
 	private long delay = 0;
 	private int maxThreads = 0;
-	private int threads = 0;
 	private int busyDelay = 0;
+
+	private Semaphore slots;
 
 	public ThrottleInterceptor() {
 		name = "throttle";
@@ -47,18 +68,36 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 			log.debug("delaying for {} ms",delay);
 			sleep(delay);
 		}
-		if ( maxThreads > 0 && threads >= maxThreads ) {
-			log.debug("Max thread limit of {} reached. Waiting {}ms",maxThreads, busyDelay );
-			sleep(busyDelay);
-			if ( threads >= maxThreads ) {
-				log.info("Max thread limit of {} reached. Server Busy.",maxThreads);
-				exc.setResponse(Response.serviceUnavailable("Server busy.").build());
-				return Outcome.ABORT;
+		if (slots != null && !acquireSlot(exc))
+			return ABORT;
+		return CONTINUE;
+	}
+
+	/**
+	 * Reserves a slot atomically, waiting up to busyDelay for one to free up. Marks the exchange so the slot is
+	 * released exactly once on response or abort.
+	 */
+	private boolean acquireSlot(Exchange exc) {
+		try {
+			if (slots.tryAcquire(busyDelay, MILLISECONDS)) {
+				exc.setProperty(SLOT_ACQUIRED, true);
+				return true;
 			}
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 		}
-		increaseThreads();
-		log.debug("thread count increased: {}",threads);
-		return Outcome.CONTINUE;
+		log.info("Max thread limit of {} reached. Server Busy.", maxThreads);
+		exc.setResponse(Response.serviceUnavailable("Server busy.").build());
+		return false;
+	}
+
+	private void releaseSlot(Exchange exc) {
+		if (slots == null)
+			return;
+		if (TRUE.equals(exc.getProperty(SLOT_ACQUIRED))) {
+			exc.setProperty(SLOT_ACQUIRED, false);
+			slots.release();
+		}
 	}
 
 	private void sleep(long delay) {
@@ -71,24 +110,13 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleResponse(Exchange exc) {
-		decreaseThreads();
-		log.debug("thread count decreased: {}",threads);
-		return Outcome.CONTINUE;
+		releaseSlot(exc);
+		return CONTINUE;
 	}
 
 	@Override
-	public void handleAbort(Exchange exchange) {
-		decreaseThreads();
-		log.debug("thread count decreased: {}",threads);
-	}
-
-
-	private synchronized void decreaseThreads() {
-		--threads;
-	}
-
-	private synchronized void increaseThreads() {
-		++threads;
+	public void handleAbort(Exchange exc) {
+		releaseSlot(exc);
 	}
 
 	public long getDelay() {
@@ -96,7 +124,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description If non-zero, delays requests by specified number of milliseconds.
+	 * @description Milliseconds to hold every request before it continues. <code>0</code> disables the delay.
 	 * @default 0
 	 * @example 1000
 	 */
@@ -110,13 +138,16 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description If non-zero, newly incoming request are aborted if the number of running requests has reached this limit.
+	 * @description Maximum number of requests processed concurrently. A request arriving while the limit is reached
+	 * waits up to <code>busyDelay</code> for a slot to free up and, if none does, is rejected with 503. <code>0</code>
+	 * means unlimited.
 	 * @default 0
 	 * @example 5
 	 */
 	@MCAttribute
 	public void setMaxThreads(int maxThreads) {
 		this.maxThreads = maxThreads;
+		this.slots = maxThreads > 0 ? new Semaphore(maxThreads, true) : null;
 	}
 
 	public int getBusyDelay() {
@@ -124,8 +155,8 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description If a newly incoming request exceeds maxThreads, the interceptor waits the specified number in
-	 *              milliseconds and retries once before aborting the request.
+	 * @description When <code>maxThreads</code> is reached, the maximum time in milliseconds a request waits for a slot
+	 * to free up before it is rejected with 503. <code>0</code> rejects immediately.
 	 * @default 0
 	 * @example 3000
 	 */
@@ -146,13 +177,16 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	public String getLongDescription() {
 		StringBuilder sb = new StringBuilder();
 		if (delay > 0)
-			sb.append("Delays requests by " + String.format("%.1f", delay/1000.0) + " seconds.");
+			sb.append("Delays requests by ").append(String.format("%.1f", delay / 1000.0))
+					.append(" seconds.");
 		if (maxThreads > 0) {
-			sb.append("Only allows " + maxThreads + " concurrent requests.");
+			sb.append("Only allows ").append(maxThreads)
+					.append(" concurrent requests.");
 			if (busyDelay > 0)
-				sb.append("The server waits at most " +
-						String.format("%.1f", busyDelay/1000.0) + " seconds for enough running requests to terminate, " +
-						"returning an error if the server is still busy after the timeout.");
+				sb.append("The server waits at most ")
+						.append(String.format("%.1f", busyDelay / 1000.0))
+						.append(" seconds for enough running requests to terminate, ")
+						.append("returning an error if the server is still busy after the timeout.");
 		}
 		return sb.toString();
 	}

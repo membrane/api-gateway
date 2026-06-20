@@ -13,32 +13,51 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.lang.AbstractExchangeExpressionInterceptor;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.google.api.client.http.HttpMethods.*;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.util.TemplateUtil.*;
-import static java.util.Collections.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.TemplateUtil.containsTemplateMarker;
+import static java.util.Collections.singletonList;
 
 /**
- * @description Calls an external endpoint
+ * @description Calls an external HTTP endpoint and merges its response into the current message. The
+ * endpoint's response body replaces the message body, and its headers are copied onto the message
+ * except <code>Server</code>, <code>Content-Encoding</code> and <code>Transfer-Encoding</code>. Runs
+ * in both the request and the response flow. The <code>url</code> may contain <code>${...}</code>
+ * expressions that are evaluated against the exchange before each call; a URL without a template
+ * marker is used verbatim. On an unknown host or a failed call the exchange is aborted with a Problem
+ * Details response. See the examples and tutorials under examples/orchestration and
+ * tutorials/orchestration.
  * @topic 1. Proxies and Flow
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - call:
+ *         url: https://api.predic8.de/shop/v2/products
+ * </code></pre>
  */
 @MCElement(name = "call")
 public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
@@ -200,8 +219,11 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
-     * @description Sets the url of the call
-     * @example "https://api.predic8.de"
+     * @description Target URL of the call. May contain <code>${...}</code> expressions that are
+     * evaluated against the exchange before each call; without a template marker the value is used
+     * verbatim. Templating cannot be combined with <code>allowIllegalCharacters</code> on the URI
+     * factory.
+     * @example https://api.predic8.de/shop/v2/products
      */
     @SuppressWarnings("unused")
     @MCAttribute
@@ -215,9 +237,10 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
+     * @description HTTP method used for the call. With <code>POST</code>, <code>PUT</code> or
+     * <code>PATCH</code> the current message body is forwarded; other methods are sent without a body.
      * @default GET
-     * @description Sets the method for the call
-     * @example GET, POST, PUT, ...
+     * @example POST
      */
     @MCAttribute
     public void setMethod(String method) {

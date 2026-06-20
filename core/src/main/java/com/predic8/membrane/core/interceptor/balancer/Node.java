@@ -15,15 +15,19 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.proxies.StatisticCollector;
 
-import javax.xml.stream.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Objects.equal;
 import static com.predic8.membrane.core.interceptor.balancer.Node.Status.DOWN;
@@ -31,8 +35,13 @@ import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 import static java.lang.System.currentTimeMillis;
 
 /**
- * @description Represents a backend node in a load-balancing <code>Cluster</code>.
- * <p>Identity is <code>host</code>+<code>port</code>.</p>
+ * @description A single backend server in a cluster, addressed by host and port. A node is assumed to be up until a health check or an external command marks it down; while down it
+ * receives no requests.
+ * @yaml <pre><code>
+ * node:
+ *   host: node1.predic8.com
+ *   port: 8080
+ * </code></pre>
  */
 @MCElement(name="node", component =false)
 public class Node extends AbstractXmlElement {
@@ -114,8 +123,8 @@ public class Node extends AbstractXmlElement {
 	}
 
 	/**
-	 * @description The node's host.
-	 * @example server3
+	 * @description Host name or IP address of the backend server.
+	 * @example node1.predic8.com
 	 */
 	@MCAttribute
 	@Required
@@ -128,9 +137,10 @@ public class Node extends AbstractXmlElement {
 	}
 
 	/**
-	 * @description The node's port.
+	 * @description TCP port of the backend server. When left at <code>0</code> the destination URL is built without an
+	 * explicit port, i.e. port 80 for HTTP.
 	 * @example 8080
-	 * @default 80
+	 * @default 0
 	 */
 	@MCAttribute
 	public void setPort(int port) {
@@ -138,10 +148,9 @@ public class Node extends AbstractXmlElement {
 	}
 
 	/**
-	 * @description Sets the node's health-check URL. If not set, a TCP check against the host and port is used.
-	 * Only works when a balancerHealthMonitor is set.
-	 * @param healthUrl the full HTTP(s) endpoint for this node's health check
-	 * @example &lt;node host="localhost" port="8080" healthUrl="http://localhost:8080/health"/&gt;
+	 * @description Full HTTP(S) URL polled to check this node's health. When unset, a plain TCP connection to the host
+	 * and port is used instead. Takes effect only when a balancerHealthMonitor is configured.
+	 * @example http://localhost:8080/health
 	 */
 	@MCAttribute
 	public void setHealthUrl(String healthUrl) {
@@ -153,7 +162,8 @@ public class Node extends AbstractXmlElement {
 	}
 
     /**
-     * @description Node priority; lower values are preferred.
+     * @description Selection priority used by priorityStrategy; lower numbers are preferred. Ignored by the other
+     * dispatching strategies.
      * @default 10
      * @example 2
      */

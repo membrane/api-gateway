@@ -14,27 +14,36 @@
 
 package com.predic8.membrane.core.interceptor.xml;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.json.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.json.JsonToXml;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.text.StringUtil.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @description Converts JSON message bodies into XML.
- * The converter wraps the JSON document into a root element. The name of the
- * root element is configurable. If unset, JSON objects default to "root" and JSON arrays default to "array".
- * This interceptor reads the JSON body, converts it into XML and updates the message
- * body and Content-Type header. The resulting XML is always UTF-8 encoded and starts with an XML prolog.
- *
+ * @description Converts a JSON message body to XML. A body that is not JSON passes through unchanged. The result is
+ * UTF-8 encoded, begins with an XML prolog, and the Content-Type is set to <code>application/xml</code>. If the body is
+ * not valid JSON the exchange is aborted with a 500 Problem Details. See the examples under
+ * examples/message-transformation/json2xml and the tutorial tutorials/xml/10-JSON-to-XML.yaml.
  * @topic 2. Enterprise Integration Patterns
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - json2Xml:
+ *         root: order
+ * </code></pre>
  */
 @MCElement(name = "json2Xml")
 public class Json2XmlInterceptor extends AbstractInterceptor {
@@ -108,12 +117,12 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * XML always needs a single root element. A JSON object can have multiple properties or an array can have multiple items.
-     * The converter therefore wraps the document into a root element if necessary. With this property you can set the name of the root element.
-     * If the property is set, the XML is always wrapped into an element with the given name.
-     *
-     * @param root Name of the element to wrap the content in
-     * @default "root" for objects and "array" for arrays
+     * @description Name of the single XML root element the converted document is wrapped in. When set, every result is
+     * wrapped in an element with this name. When unset, the name is derived from the document: a single-property object
+     * uses that property as the root, a top-level array uses the array element name, and any other object or value is
+     * wrapped in <code>root</code>.
+     * @default derived from the JSON
+     * @example order
      */
     @MCAttribute
     public void setRoot(String root) {
@@ -125,8 +134,9 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Sets the XML tag name used to represent JSON arrays.
-     * @default "array"
+     * @description XML element name wrapped around every JSON array, nested ones included.
+     * @default array
+     * @example items
      */
     @MCAttribute
     public void setArray(String array) {
@@ -138,8 +148,9 @@ public class Json2XmlInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * Sets the XML tag name used for array items.
-     * Default is "item".
+     * @description XML element name used for each item of a JSON array.
+     * @default item
+     * @example entry
      */
     @MCAttribute
     public void setItem(String item) {

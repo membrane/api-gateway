@@ -13,38 +13,55 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.apikey;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.apikey.extractors.*;
-import com.predic8.membrane.core.interceptor.apikey.stores.*;
-import com.predic8.membrane.core.security.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyExtractor;
+import com.predic8.membrane.core.interceptor.apikey.extractors.ApiKeyHeaderExtractor;
+import com.predic8.membrane.core.interceptor.apikey.extractors.LocationNameValue;
+import com.predic8.membrane.core.interceptor.apikey.stores.ApiKeyStore;
+import com.predic8.membrane.core.interceptor.apikey.stores.UnauthorizedApiKeyException;
+import com.predic8.membrane.core.security.ApiKeySecurityScheme;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.stream.Collectors.*;
-import static java.util.stream.Stream.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Stream.ofNullable;
 
 /**
- * @description Validates API keys extracted from incoming requests and looks up permissions (scopes) via configured key stores.
- * Extractors can read the keys from HTTP headers, query parameters and may other message part. When validation succeeds, the interceptor adds an
- * <code>ApiKeySecurityScheme</code> with the resolved scopes to the <code>Exchange</code>. Scopes can be checked in later plugins
- * using the SpEL function <code>hasScope("...")</code>.
- * On missing or invalid keys, a Problem Details response is generated (401 for missing, 403 for invalid) unless
- * <code>required="false"</code> is set.
+ * @description Validates an API key extracted from each request and resolves its scopes from the
+ * configured stores. On success it adds an <code>ApiKeySecurityScheme</code> carrying the scopes to
+ * the <code>Exchange</code>, which later plugins test with <code>hasScope("...")</code>. A missing
+ * key returns <code>401</code> and an invalid key <code>403</code> as Problem Details, unless
+ * <code>required</code> is <code>false</code>, in which case requests pass and scopes are attached
+ * only when a valid key is present.
+ * <pre>
+ * apiKey:
+ *   [ required: true | false ]    # default: true
+ *   extractors:                   # 0..*, default: header X-Api-Key
+ *     - header: &lt;name&gt; | query: &lt;name&gt;
+ *     ...
+ *   stores:                       # 0..*
+ *     - ...
+ * </pre>
+ * @topic 3. Security and Validation
  * @yaml <pre><code>
  * api:
- *  port: 2000
- *  flow:
- *    - apiKey:
- *       required: true
- *       extractors:
- *         - header: X-Api-Key
+ *   port: 2000
+ *   flow:
+ *     - apiKey:
+ *         required: true
+ *         extractors:
+ *           - header: X-Api-Key
  * </code></pre>
- * @topic 3. Security and Validation
  */
 @MCElement(name = "apiKey")
 public class ApiKeysInterceptor extends AbstractInterceptor {
@@ -162,9 +179,8 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Controls whether API key validation is enforced. If set to <code>false</code>, the interceptor still extracts
-     * keys and loads scopes so they remain available for downstream checks (e.g., via <code>hasScope("...")</code>), but requests
-     * without a valid key are allowed to pass.
+     * @description Whether a valid key is required. When <code>false</code>, keys are still extracted
+     * and scopes attached, but requests without a valid key pass through.
      * @default true
      * @example false
      */
@@ -179,16 +195,8 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Defines the API key stores used to resolve and authorize keys. Provide one or more child elements that
-     * implement a store (e.g., file-based, in-memory. jdbc or mongodb). Scopes from multiple stores are combined.
-     * <p>
-     * Example:
-     * </p>
-     * <pre><code><apiKey>
-     *   <!-- store elements; order does not matter -->
-     *   <yourFileStore src="classpath:keys.txt"/>
-     *   <yourXmlStore  ref="sharedKeysBean"/>;
-     * </apiKey></code></pre>
+     * @description Key stores that resolve a key to its scopes and authorize it. Scopes from all
+     * configured stores are merged. A key unknown to every store is rejected as invalid.
      */
     @MCChildElement(allowForeign = true)
     public void setStores(List<ApiKeyStore> stores) {
@@ -200,22 +208,9 @@ public class ApiKeysInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Configures how and where API keys are extracted from requests (e.g., HTTP header or URL query parameter).
-     * Provide one or more extractor elements. If omitted, a header extractor using <code>X-Api-Key</code> is used.
-     * @default <header /> (header name <code>X-Api-Key</code>)
-     * <p>
-     * Examples:
-     * </p>
-     * <pre><code><apiKey>
-     *   <!-- header: X-Api-Key (default) -->
-     *   <header />
-     *
-     *   <!-- custom header -->
-     *   <header name="Authorization" prefix="Api-Key "/>
-     *
-     *   <!-- query parameter -->
-     *   <query name="api_key"/>
-     * </apiKey></code></pre>
+     * @description Where keys are read from. The first extractor that finds a key wins. If omitted,
+     * a single <code>header</code> extractor reading <code>X-Api-Key</code> is used.
+     * @default header X-Api-Key
      */
     @MCChildElement(allowForeign = true, order = 1)
     public void setExtractors(List<ApiKeyExtractor> extractors) {
