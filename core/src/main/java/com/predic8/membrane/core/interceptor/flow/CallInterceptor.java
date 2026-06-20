@@ -85,11 +85,11 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
 
         if (router.getConfiguration().getUriFactory().isAllowIllegalCharacters()) {
              throw new ConfigurationException("""
-                    URL Templating and Illegal URL Characters
-                    
-                    Url templating expressions and enablement of illegal characters in URLs are mutually exclusive. Either disable
-                    illegal characters in the configuration (configuration/uriFactory/allowIllegalCharacters) or remove the
-                    templating expression %s from the URL in the call URL.
+                    Illegal URL Characters
+
+                    The call interceptor cannot be used while illegal characters in URLs are enabled. Disable them in
+                    the configuration (configuration/uriFactory/allowIllegalCharacters) to use <call>. Affected call
+                    URL: %s
                     """.formatted(exchangeExpression.getExpression()));
         }
 
@@ -221,8 +221,8 @@ public class CallInterceptor extends AbstractExchangeExpressionInterceptor {
     /**
      * @description Target URL of the call. May contain <code>${...}</code> expressions that are
      * evaluated against the exchange before each call; without a template marker the value is used
-     * verbatim. Templating cannot be combined with <code>allowIllegalCharacters</code> on the URI
-     * factory.
+     * verbatim. This interceptor cannot be used when <code>allowIllegalCharacters</code> is enabled on
+     * the URI factory.
      * @example https://api.predic8.de/shop/v2/products
      */
     @SuppressWarnings("unused")
