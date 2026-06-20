@@ -14,19 +14,30 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * @description <p>
- *              The throttle feature can slow down traffic to thwart denial of service attacks.
- *              </p>
+ * @description Throttles incoming traffic by delaying requests and/or capping how many are processed concurrently, to
+ * protect a backend from overload. With <code>delay</code> set, every request is held briefly before it continues. With
+ * <code>maxThreads</code> set, a request that arrives while the limit is already reached is rejected with 503 once no
+ * slot frees up. See the examples under examples/routing-traffic/throttle.
  * @topic 3. Security and Validation
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - throttle:
+ *         maxThreads: 10
+ *         busyDelay: 3000
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {
@@ -96,7 +107,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description If non-zero, delays requests by specified number of milliseconds.
+	 * @description Milliseconds to hold every request before it continues. <code>0</code> disables the delay.
 	 * @default 0
 	 * @example 1000
 	 */
@@ -110,7 +121,8 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description If non-zero, newly incoming request are aborted if the number of running requests has reached this limit.
+	 * @description Maximum number of requests processed concurrently. A request arriving while this limit is reached is
+	 * rejected with 503 once no slot frees up within <code>busyDelay</code>. <code>0</code> means unlimited.
 	 * @default 0
 	 * @example 5
 	 */
@@ -124,8 +136,8 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description If a newly incoming request exceeds maxThreads, the interceptor waits the specified number in
-	 *              milliseconds and retries once before aborting the request.
+	 * @description When <code>maxThreads</code> is reached, milliseconds to wait for a slot to free up before rejecting
+	 * the request with 503. The limit is re-checked once after the wait.
 	 * @default 0
 	 * @example 3000
 	 */

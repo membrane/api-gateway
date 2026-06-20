@@ -13,18 +13,34 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.templating;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.soap.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.util.soap.SoapVersion;
 
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.util.soap.SoapVersion.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.soap.SoapVersion.SOAP_11;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @description Renders a SOAP body for legacy integration
+ * @description Wraps a rendered template in a SOAP <code>Envelope</code> and <code>Body</code> and sets it as the
+ * message body. The element body is a Groovy template: <code>${...}</code> expressions are substituted with values from
+ * the request or response, headers, query parameters, and so on, exactly as with <code>template</code>. The
+ * Content-Type is set to match the SOAP version. See the examples under examples/web-services-soap/rest2soap-template
+ * and the tutorial tutorials/soap/60-SOAP-Body-Template.yaml.
  * @topic 2. Enterprise Integration Patterns
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - soapBody:
+ *         version: '1.2'
+ *         src: |
+ *           &lt;cs:getCity xmlns:cs="https://predic8.de/cities"&gt;
+ *             &lt;name&gt;${params.city}&lt;/name&gt;
+ *           &lt;/cs:getCity&gt;
+ * </code></pre>
  */
 @MCElement(name="soapBody", mixed = true)
 public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
@@ -67,6 +83,13 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
         return version.toString();
     }
 
+    /**
+     * @description SOAP version of the generated envelope. <code>1.1</code> uses the
+     * <code>http://schemas.xmlsoap.org/soap/envelope/</code> namespace and a <code>text/xml</code> Content-Type;
+     * <code>1.2</code> uses <code>http://www.w3.org/2003/05/soap-envelope</code> and <code>application/soap+xml</code>.
+     * @default 1.1
+     * @example 1.2
+     */
     @MCAttribute
     public void setVersion(String version) {
         this.version = SoapVersion.parse(version);

@@ -43,11 +43,28 @@ import static com.predic8.membrane.core.util.BeanDefinitionBasePathUtil.resolveB
 import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
 
 /**
- * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
- * {@link JSONSchemaValidator} and {@link SchematronValidator} depending on the
- * attributes.
- *
+ * @description Validates request and response message bodies against a schema. The schema type is selected by the
+ * attribute you set: <code>wsdl</code> for SOAP messages, <code>schema</code> for XML against an XSD,
+ * <code>jsonSchema</code> for JSON or YAML, or <code>schematron</code>. Exactly one of them must be configured; inside a
+ * soapProxy the WSDL is taken from the proxy automatically. An empty body passes; an invalid body is rejected, either
+ * with a detailed error response or a generic one plus a log entry, depending on <code>failureHandler</code>. See the
+ * examples under examples/validation, examples/xml/xml-validation, and examples/web-services-soap/soap-wsdl-validation.
+ * <pre>
+ * validator:
+ *   wsdl: &lt;url&gt; | schema: &lt;url&gt; | jsonSchema: &lt;url&gt; | schematron: &lt;url&gt;   # choose one
+ *   [ failureHandler: response | log ]   # default: response
+ * </pre>
  * @topic 3. Security and Validation
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - validator:
+ *         jsonSchema: schema.json
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name = "validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
@@ -179,8 +196,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description The WSDL (URL or file) to validate against.
-     * @example <a href="http://predic8.com:8080/material/ArticleService?wsdl">"http://predic8.com:8080/material/ArticleService?wsdl</a>
+     * @description WSDL (URL or file) to validate SOAP request and response messages against.
+     * @example http://predic8.com/material/ArticleService?wsdl
      */
     @MCAttribute
     public void setWsdl(String wsdl) {
@@ -196,8 +213,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description The XSD Schema (URL or file) to validate against.
-     * @example <a href="http://www.predic8.com/schemas/order.xsd">http://www.predic8.com/schemas/order.xsd</a>
+     * @description XSD schema (URL or file) to validate XML message bodies against.
+     * @example http://www.predic8.com/schemas/order.xsd
      */
     @MCAttribute
     public void setSchema(String schema) {
@@ -209,8 +226,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description If "response", the HTTP response will include a detailled error message. If "log", the response will
-     * be generic and the validation error will be logged.
+     * @description How a validation failure is reported. <code>response</code> returns a detailed error to the client;
+     * <code>log</code> returns a generic error and writes the details to the log.
      * @default response
      * @example log
      */
@@ -224,8 +241,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description The JSON Schema (URL or file) to validate against.
-     * @example examples/validation/json-schema/schema2000.json
+     * @description JSON Schema (URL or file) to validate JSON or YAML message bodies against.
+     * @example schema2000.json
      */
     @MCAttribute
     public void setJsonSchema(String jsonSchema) {
@@ -237,7 +254,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description The version of the Schema.
+     * @description JSON Schema draft to validate against. Applies only to <code>jsonSchema</code>.
      * @example 04, 05, 06, 07, 2019-09, 2020-12
      * @default 2020-12
      */
@@ -251,8 +268,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description The Schematron schema (URL or file) to validate against.
-     * @example examples/validation/schematron/car-schematron.xml
+     * @description Schematron schema (URL or file) to validate XML message bodies against.
+     * @example car-schematron.xml
      */
     @MCAttribute
     public void setSchematron(String schematron) {
@@ -264,7 +281,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description Whether to skip validation for SOAP fault messages.
+     * @description Whether to skip validation of SOAP fault messages. Only valid together with <code>wsdl</code>.
      * @default false
      */
     @MCAttribute
@@ -278,8 +295,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
     }
 
     /**
-     * @description Optional name of a serivce element in a WSDL. If specified it will be
-     * checked if the SOAP element is possible for that service.
+     * @description Name of a service element in the WSDL. When set, messages are validated against that service only.
+     * @example ArticleService
      */
     @MCAttribute
     public void setServiceName(String serviceName) {
@@ -336,6 +353,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
     }
 
+    /**
+     * @description Additional schemas referenced from the main schema, mapped by their URI. Supported only for
+     * <code>jsonSchema</code>; ignored by the WSDL, XSD, and Schematron validators.
+     */
     @MCChildElement
     public void setReferenceSchemas(SchemaMappings schemaMappings) {
         this.schemaMappings = schemaMappings;
