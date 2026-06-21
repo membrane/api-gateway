@@ -1,0 +1,72 @@
+openapi: 3.1.0
+info:
+  title: XML Order API (namespaced)
+  version: 1.0.0
+
+paths:
+  /orders:
+    post:
+      summary: Create a namespaced order using XML
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/Order"
+      responses:
+        "201":
+          description: Order created
+
+components:
+  schemas:
+    Order:
+      type: object
+      required:
+        - id
+        - customer
+      xml:
+        name: order
+        prefix: o
+        namespace: http://example.com/orders
+      properties:
+        id:
+          type: integer
+          example: 4711
+          xml:
+            prefix: o
+            namespace: http://example.com/orders
+        customer:
+          type: string
+          example: Anna Müller
+          xml:
+            prefix: o
+            namespace: http://example.com/orders
+        items:
+          type: array
+          xml:
+            wrapped: true
+            name: items
+            prefix: o
+            namespace: http://example.com/orders
+          items:
+            $ref: "#/components/schemas/Item"
+
+    Item:
+      type: object
+      xml:
+        name: item
+        prefix: o
+        namespace: http://example.com/orders
+      properties:
+        productId:
+          type: string
+          example: P10
+          xml:
+            prefix: o
+            namespace: http://example.com/orders
+        quantity:
+          type: integer
+          example: 2
+          xml:
+            prefix: o
+            namespace: http://example.com/orders
