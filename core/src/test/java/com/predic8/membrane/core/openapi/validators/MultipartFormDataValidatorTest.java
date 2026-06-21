@@ -19,11 +19,12 @@ package com.predic8.membrane.core.openapi.validators;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.openapi.model.Request;
 import jakarta.mail.internet.ParseException;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Base64;
 
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -47,7 +48,7 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
 
         var body = new MultipartBuilder()
                 .part("metadata", null, APPLICATION_JSON, "base64", encodeBase64(customer))
-                .part("file", "data.bin", MimeType.APPLICATION_OCTET_STREAM , null, "binary-content")
+                .part("file", "data.bin", APPLICATION_OCTET_STREAM , null, "binary-content")
                 .build();
 
         var errors = validateUpload(body);
@@ -66,7 +67,8 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
                 {"some": "document", "answer": 42}""";
 
         String body = new MultipartBuilder()
-                .part("metadata", null, "application/json", null, "{\"id\": 2, \"name\": \"Bob\"}")
+                .part("metadata", null, "application/json", null, """
+                        {"id": 2, "name": "Bob"}""")
                 .part("file", "payload.json", "application/json", null, json)
                 .build();
 
@@ -81,7 +83,8 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
      */
     @Test
     void invalidJsonPartIsReported() throws ParseException {
-        var invalidCustomer = "{\"id\": 3}"; // 'name' is required
+        var invalidCustomer = """
+                {"id": 3}"""; // 'name' is required
 
         var body = new MultipartBuilder()
                 .part("metadata", null, "application/json", "base64", encodeBase64(invalidCustomer))
@@ -100,7 +103,8 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
     @Test
     void missingRequiredPartIsReported() throws ParseException {
         var body = new MultipartBuilder()
-                .part("metadata", null, "application/json", null, "{\"id\": 4, \"name\": \"Eve\"}")
+                .part("metadata", null, "application/json", null, """
+                        {"id": 4, "name": "Eve"}""")
                 .build();
 
         var errors = validateUpload(body);
@@ -117,8 +121,10 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
     @Test
     void repeatedPartOccurrencesAreAllValidated() throws ParseException {
         var body = new MultipartBuilder()
-                .part("metadata", null, "application/json", null, "{\"id\": 5}")
-                .part("metadata", null, "application/json", null, "{\"id\": 6, \"name\": \"Zoe\"}")
+                .part("metadata", null, "application/json", null, """
+                        {"id": 5}""")
+                .part("metadata", null, "application/json", null, """
+                        {"id": 6, "name": "Zoe"}""")
                 .part("file", "data.bin", "application/octet-stream", null, "binary-content")
                 .build();
 
@@ -128,6 +134,68 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         assertTrue(errors.get(0).getMessage().toLowerCase().contains("name is missing"));
     }
 
+    @Nested
+    class Xml {
+
+        /**
+         * The 'metadataXml' part carries an XML document. It has to be converted to JSON guided by the
+         * Customer schema and validated like any other structured part.
+         */
+        @Test
+        void xmlPartIsValidated() throws ParseException {
+            var body = new MultipartBuilder()
+                    .part("metadata", null, APPLICATION_JSON, null, """
+                            {"id": 1, "name": "Alice"}""")
+                    .part("metadataXml", null, APPLICATION_XML, null, """
+                            <customer><id>2</id><name>Bob</name></customer>""")
+                    .part("file", "data.bin", APPLICATION_OCTET_STREAM, null, "binary-content")
+                    .build();
+
+            var errors = validateUpload(body);
+
+            assertTrue(errors.isEmpty(), () -> "Expected no errors but got: " + errors);
+        }
+
+        /**
+         * An XML part whose content violates the schema (the required 'name' is missing) must be reported.
+         */
+        @Test
+        void invalidXmlPartIsReported() throws ParseException {
+            var body = new MultipartBuilder()
+                    .part("metadata", null, APPLICATION_JSON, null, """
+                            {"id": 1, "name": "Alice"}""")
+                    .part("metadataXml", null, APPLICATION_XML, null, """
+                            <customer><id>2</id></customer>""") // 'name' is required
+                    .part("file", "data.bin", APPLICATION_OCTET_STREAM, null, "binary-content")
+                    .build();
+
+            var errors = validateUpload(body);
+
+            assertEquals(1, errors.size(), () -> "Errors: " + errors);
+            assertTrue(errors.get(0).getMessage().toLowerCase().contains("name is missing"));
+        }
+
+        /**
+         * An XML part that is not well-formed must be reported rather than passing validation.
+         */
+        @Test
+        void malformedXmlPartIsReported() throws ParseException {
+            var body = new MultipartBuilder()
+                    .part("metadata", null, APPLICATION_JSON, null, """
+                            {"id": 1, "name": "Alice"}""")
+                    .part("metadataXml", null, APPLICATION_XML, null, """
+                            <customer><id>2</id><name>Bob</name>""") // not closed
+                    .part("file", "data.bin", APPLICATION_OCTET_STREAM, null, "binary-content")
+                    .build();
+
+            var errors = validateUpload(body);
+
+            assertEquals(1, errors.size(), () -> "Errors: " + errors);
+            assertTrue(errors.get(0).getMessage().contains("Part 'metadataXml'"), () -> "Errors: " + errors);
+            assertTrue(errors.get(0).getMessage().toLowerCase().contains("could not be parsed as xml"), () -> "Errors: " + errors);
+        }
+    }
+
     /**
      * The encoding declares application/json for 'metadata'. Sending it as text/plain violates the
      * declared encoding and must be reported.
@@ -135,8 +203,9 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
     @Test
     void partContentTypeViolatingEncodingIsReported() throws ParseException {
         var body = new MultipartBuilder()
-                .part("metadata", null, MimeType.TEXT_PLAIN, null, "{\"id\": 7, \"name\": \"Mia\"}")
-                .part("file", "data.bin", MimeType.APPLICATION_OCTET_STREAM, null, "binary-content")
+                .part("metadata", null, MimeType.TEXT_PLAIN, null, """
+                        {"id": 7, "name": "Mia"}""")
+                .part("file", "data.bin", APPLICATION_OCTET_STREAM, null, "binary-content")
                 .build();
 
         var errors = validateUpload(body);

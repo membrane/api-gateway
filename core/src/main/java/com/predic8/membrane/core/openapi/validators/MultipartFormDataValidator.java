@@ -16,10 +16,12 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.openapi.model.JsonBody;
 import com.predic8.membrane.core.openapi.model.Message;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Encoding;
 import io.swagger.v3.oas.models.media.MediaType;
@@ -28,6 +30,7 @@ import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.ParameterParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +39,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_TRANSFER_ENCODING;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.Content.XML;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 import static java.lang.Boolean.FALSE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -210,6 +214,20 @@ public class MultipartFormDataValidator {
             } catch (Exception e) {
                 return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as JSON.".formatted(part.name, contentType));
             }
+        }
+
+        // XML parts are converted to JSON (guided by the schema) and validated by the same
+        // SchemaValidator. The conversion is done here so parse failures can name the part.
+        if (isXML(contentType)) {
+            JsonNode json;
+            try {
+                json = new XmlToJsonConverter(api).convert(new String(part.content, UTF_8), propertySchema);
+            } catch (MixedContentException | MultipleElementsException e) {
+                return err.add(ctx.statusCode(400), "Part '%s': %s".formatted(part.name, e.getMessage()));
+            } catch (SAXException | XmlParseException | IOException e) {
+                return err.add(ctx.statusCode(400), "Part '%s' is declared as %s but its content could not be parsed as XML.".formatted(part.name, contentType));
+            }
+            return err.add(new SchemaValidator(api, propertySchema).validate(ctx.content(XML), json));
         }
 
         // Scalar parts (e.g. text/plain, the default for primitives) are validated by parsing the

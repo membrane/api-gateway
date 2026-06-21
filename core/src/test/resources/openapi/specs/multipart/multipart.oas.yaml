@@ -16,6 +16,8 @@ paths:
               properties:
                 metadata:
                   $ref: '#/components/schemas/Customer'
+                metadataXml:
+                  $ref: '#/components/schemas/Customer'
                 file:
                   type: string
                   format: binary
@@ -25,6 +27,8 @@ paths:
             encoding:
               metadata:
                 contentType: application/json
+              metadataXml:
+                contentType: application/xml
       responses:
         '200':
           description: OK
