@@ -58,25 +58,40 @@ public class MultipleContentTest extends AbstractValidatorTest {
 
     @Test
     public void sendXMLRequest() throws ParseException {
+        // Valid XML with no required constraints in UserB schema → should pass
         ValidationErrors errors = validator.validate(Request.put().path("/with-wildcard").mediaType(APPLICATION_XML).body("""
-                <name>Alice</name>
+                <user><lastname>Alice</lastname></user>
+                """));
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    public void sendInvalidXMLRequest() throws ParseException {
+        // Malformed XML → parse error
+        ValidationErrors errors = validator.validate(Request.put().path("/with-wildcard").mediaType(APPLICATION_XML).body("""
+                <unclosed>
                 """));
         assertEquals(1, errors.size());
-        ValidationError error = errors.get(0);
-        assertEquals(400, error.getContext().getStatusCode());
-        assertTrue(error.getMessage().contains("not implemented"));
+        assertEquals(400, errors.get(0).getContext().getStatusCode());
     }
 
     @Test
     public void returnXMLResponse() throws ParseException {
-
+        // Valid XML with no required constraints in UserB schema → should pass
         ValidationErrors errors = validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType(APPLICATION_XML).body("""
-                <name>Alice</name>
+                <user><lastname>Alice</lastname></user>
+                """));
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    public void returnInvalidXMLResponse() throws ParseException {
+        // Malformed XML → parse error
+        ValidationErrors errors = validator.validateResponse(Request.get().path("/with-wildcard"), Response.statusCode(200).mediaType(APPLICATION_XML).body("""
+                <unclosed>
                 """));
         assertEquals(1, errors.size());
-        ValidationError error = errors.get(0);
-        assertEquals(500, error.getContext().getStatusCode());
-        assertTrue(error.getMessage().contains("not implemented"));
+        assertEquals(500, errors.get(0).getContext().getStatusCode());
     }
 
     @Test
