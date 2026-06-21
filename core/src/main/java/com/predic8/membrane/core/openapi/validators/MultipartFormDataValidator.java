@@ -116,8 +116,9 @@ public class MultipartFormDataValidator {
             mps.readBodyData(baos);
 
             var part = new FormPart(header, decodeIfNecessary(header, baos.toByteArray()));
-            if (part.name != null)
-                parts.computeIfAbsent(part.name, k -> new ArrayList<>()).add(part);
+            if (part.name == null)
+                throw new IOException("a part is missing the required Content-Disposition 'name' parameter.");
+            parts.computeIfAbsent(part.name, k -> new ArrayList<>()).add(part);
 
             nextPart = mps.readBoundary();
         }
@@ -147,9 +148,9 @@ public class MultipartFormDataValidator {
     @SuppressWarnings("rawtypes")
     private ValidationErrors validateParts(ValidationContext ctx, Schema schema, Map<String, Encoding> encodings, Map<String, List<FormPart>> parts) {
         var err = new ValidationErrors();
-        Map<String, Schema> properties = schema.getProperties();
-        if (properties == null)
-            return err;
+        // A schema without properties may still be closed (additionalProperties: false), so fall back to
+        // an empty map and let the loop below reject unexpected parts rather than returning early.
+        Map<String, Schema> properties = schema.getProperties() != null ? schema.getProperties() : Map.of();
 
         for (var entry : parts.entrySet()) {
             var name = entry.getKey();
@@ -168,8 +169,10 @@ public class MultipartFormDataValidator {
                 partSchema = propertySchema;
 
             // For an array property each occurrence of the field name is one array item, so each
-            // part is validated against the items schema rather than the array schema itself.
+            // part is validated against the items schema rather than the array schema itself. The
+            // array-level cardinality (minItems/maxItems) is checked here against the occurrence count.
             if (SchemaUtil.isArray(partSchema)) {
+                err.add(validateArrayCardinality(ctx.addJSONpointerSegment(name), partSchema, entry.getValue().size()));
                 var items = SchemaUtil.resolveRef(api, partSchema.getItems());
                 if (items != null)
                     partSchema = items;
@@ -190,6 +193,16 @@ public class MultipartFormDataValidator {
                 err.add(validatePart(partCtx, partSchema, contentTypeOf(name, part, partSchema, encodings), part));
             }
         }
+        return err;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private ValidationErrors validateArrayCardinality(ValidationContext ctx, Schema arraySchema, int count) {
+        var err = new ValidationErrors();
+        if (arraySchema.getMinItems() != null && count < arraySchema.getMinItems())
+            err.add(ctx.statusCode(400), "Array has %d items. This is less than minItems of %d.".formatted(count, arraySchema.getMinItems()));
+        if (arraySchema.getMaxItems() != null && count > arraySchema.getMaxItems())
+            err.add(ctx.statusCode(400), "Array has %d items. This is more than maxItems of %d.".formatted(count, arraySchema.getMaxItems()));
         return err;
     }
 

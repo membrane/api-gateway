@@ -214,6 +214,23 @@ public class MultipartFormDataValidatorTest extends AbstractValidatorTest {
         assertTrue(errors.get(0).getMessage().toLowerCase().contains("content-type"));
     }
 
+    /**
+     * A part without the required Content-Disposition 'name' parameter is malformed and must be
+     * rejected rather than silently dropped.
+     */
+    @Test
+    void partWithoutNameIsReported() throws ParseException {
+        var body = new MultipartBuilder()
+                .part(null, null, APPLICATION_JSON, null, """
+                        {"id": 1, "name": "Alice"}""")
+                .build();
+
+        var errors = validateUpload(body);
+
+        assertEquals(1, errors.size(), () -> "Errors: " + errors);
+        assertTrue(errors.get(0).getMessage().toLowerCase().contains("name"), () -> "Errors: " + errors);
+    }
+
     private ValidationErrors validateUpload(String body) throws ParseException {
         return validator.validate(Request.post().path("/upload")
                 .mediaType(MultipartBuilder.CONTENT_TYPE)

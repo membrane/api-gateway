@@ -31,7 +31,9 @@ public class MultipartBuilder {
 
     public MultipartBuilder part(String name, String filename, String contentType, String transferEncoding, String content) {
         sb.append("--").append(BOUNDARY).append(CRLF);
-        sb.append("Content-Disposition: form-data; name=\"").append(name).append("\"");
+        sb.append("Content-Disposition: form-data");
+        if (name != null)
+            sb.append("; name=\"").append(name).append("\"");
         if (filename != null)
             sb.append("; filename=\"").append(filename).append("\"");
         sb.append(CRLF);
