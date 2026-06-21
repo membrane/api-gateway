@@ -161,11 +161,16 @@ public class MultipartFormDataValidator {
                 continue;
             }
 
+            // Resolve a $ref once here so the content-type default and the per-part validation below
+            // all operate on the referenced schema (which may be a scalar, an object, or an array).
+            var partSchema = SchemaUtil.resolveRef(api, propertySchema);
+            if (partSchema == null)
+                partSchema = propertySchema;
+
             // For an array property each occurrence of the field name is one array item, so each
             // part is validated against the items schema rather than the array schema itself.
-            Schema partSchema = propertySchema;
-            if (SchemaUtil.isArray(propertySchema)) {
-                Schema items = SchemaUtil.resolveRef(api, propertySchema.getItems());
+            if (SchemaUtil.isArray(partSchema)) {
+                var items = SchemaUtil.resolveRef(api, partSchema.getItems());
                 if (items != null)
                     partSchema = items;
             }
@@ -255,6 +260,7 @@ public class MultipartFormDataValidator {
 
     @SuppressWarnings("rawtypes")
     private String defaultContentType(Schema schema) {
+        // schema is already $ref-resolved by the caller.
         if (SchemaUtil.isBinaryString(schema))
             return APPLICATION_OCTET_STREAM;
         if (SchemaUtil.isObjectOrArray(schema))
