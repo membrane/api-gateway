@@ -16,6 +16,7 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
+import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.model.Message;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Content;
@@ -59,6 +60,9 @@ public abstract class AbstractBodyValidator {
         }
         if(isWWWFormUrlEncoded(mediaType)) {
             return errors.add(ctx,"Validation of 'application/x-www-form-urlencoded' messages is not implemented yet!");
+        }
+        if(isMultipartFormData(mediaType)) {
+            return errors.add(new MultipartFormDataValidator(api).validate(ctx.statusCode(getDefaultStatusCode()), mediaTypeObj, message));
         }
         // Other types that can't be validated against OpenAPI are Ok.
         return errors;

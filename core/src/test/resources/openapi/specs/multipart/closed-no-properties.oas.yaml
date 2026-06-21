@@ -1,0 +1,19 @@
+openapi: '3.0.3'
+info:
+  title: Closed Multipart API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /upload:
+    post:
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              additionalProperties: false
+      responses:
+        '200':
+          description: OK
