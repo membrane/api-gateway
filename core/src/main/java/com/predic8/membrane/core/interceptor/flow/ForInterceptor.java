@@ -95,14 +95,20 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
             log.debug("List detected {}",l);
             for (Object o2 : l) {
                 log.debug("type: {}, it: {}",o2.getClass(),o2);
-                if (flow.isRequest()) {
-                    exc.setProperty("it", o2);
-                    getFlowController().invokeRequestHandlers(exc, interceptors);
-                }
+                exc.setProperty("it", o2);
+                invokeFlowHandlers(exc, flow, interceptors);
             }
         }
 
         return CONTINUE;
+    }
+
+    private Outcome invokeFlowHandlers(Exchange exc, Flow flow, List<Interceptor> interceptors) {
+        return switch (flow) {
+            case REQUEST -> getFlowController().invokeRequestHandlers(exc, interceptors);
+            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, interceptors);
+            default -> throw new RuntimeException("Should never happen");
+        };
     }
 
     public Language getLanguage() {
