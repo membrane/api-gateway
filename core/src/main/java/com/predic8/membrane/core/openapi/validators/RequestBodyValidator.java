@@ -16,12 +16,13 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.parameters.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.util.Utils;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.parameters.RequestBody;
 
-public class RequestBodyValidator extends AbstractBodyValidator<Request<? extends Body>> {
+public class RequestBodyValidator extends AbstractBodyValidator {
 
     @Override
     public int getDefaultStatusCode() {
