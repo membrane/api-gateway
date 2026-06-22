@@ -61,6 +61,9 @@ public abstract class AbstractBodyValidator {
         if(isWWWFormUrlEncoded(mediaType)) {
             return errors.add(new FormUrlEncodedValidator(api).validate(ctx, mediaTypeObj, message));
         }
+        if(isMultipartFormData(mediaType)) {
+            return errors.add(new MultipartFormDataValidator(api).validate(ctx.statusCode(getDefaultStatusCode()), mediaTypeObj, message));
+        }
         // Other types that can't be validated against OpenAPI are Ok.
         return errors;
     }

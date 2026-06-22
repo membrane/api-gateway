@@ -16,9 +16,10 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.*;
+import java.io.IOException;
 
 public interface Body {
 
@@ -27,4 +28,6 @@ public interface Body {
     String asString() throws IOException;
 
     JsonNode getJson() throws IOException;
+
+    byte[] asBytes() throws IOException;
 }

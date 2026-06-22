@@ -16,7 +16,7 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.JsonNode;
 
 public class NoBody implements Body {
     @Override
@@ -27,5 +27,10 @@ public class NoBody implements Body {
     @Override
     public JsonNode getJson() {
         throw new RuntimeException("NoBody does not have JSON content!");
+    }
+
+    @Override
+    public byte[] asBytes() {
+        return new byte[0];
     }
 }
