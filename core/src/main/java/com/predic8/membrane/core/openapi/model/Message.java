@@ -16,13 +16,16 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.fasterxml.jackson.databind.*;
-import jakarta.mail.internet.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
 
-import java.io.*;
-import java.util.*;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON_CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 
 public abstract class Message<T extends Body, S extends Message<T,S>> {
 
@@ -127,6 +130,14 @@ public abstract class Message<T extends Body, S extends Message<T,S>> {
 
     public S json() {
         this.mediaType = APPLICATION_JSON_CONTENT_TYPE;
+
+        //noinspection unchecked
+        return (S)this;
+    }
+
+    public S xml(String xml) throws ParseException {
+        this.body = new StringBody(xml);
+        this.mediaType = new ContentType(APPLICATION_XML);
 
         //noinspection unchecked
         return (S)this;

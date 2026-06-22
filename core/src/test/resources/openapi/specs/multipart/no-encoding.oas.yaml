@@ -1,0 +1,39 @@
+openapi: '3.1.1'
+info:
+  title: Multipart with no encoding. See https://spec.openapis.org/oas/v3.1.1.html#example-basic-multipart-form
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /attachments:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  # default for primitives without a special format is text/plain
+                  type: string
+                  format: uuid
+                profileImage:
+                  # default for string with binary format is `application/octet-stream`
+                  type: string
+                  format: binary
+                addresses:
+                  # default for arrays is based on the type in the `items`
+                  # subschema, which is an object, so `application/json`
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Address'
+
+components:
+  schemas:
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
