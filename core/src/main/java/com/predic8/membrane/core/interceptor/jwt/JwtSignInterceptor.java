@@ -12,28 +12,35 @@
  */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.session.*;
-import com.predic8.membrane.core.util.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.jetbrains.annotations.NotNull;
 import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.*;
-import org.jose4j.jws.*;
-import org.jose4j.lang.*;
-import org.slf4j.*;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.lang.JoseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static org.jose4j.jws.AlgorithmIdentifiers.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.jose4j.jws.AlgorithmIdentifiers.RSA_USING_SHA256;
 
 @MCElement(name = "jwtSign")
 public class JwtSignInterceptor extends AbstractInterceptor {
@@ -46,13 +53,18 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     private int expirySeconds = 300;
     private int clockSkewSeconds = 120;
 
+    /**
+     * If set the token is written to this exchange property
+     */
+    private String property;
+
     private final ObjectMapper om = new ObjectMapper();
 
     @Override
     public void init() {
         super.init();
         try {
-            Map<String, Object> params = JsonUtil.parseJson(jwk.get(router.getResolverMap(), getBeanBaseLocation()));
+            var params = JsonUtil.parseJson(jwk.get(router.getResolverMap(), getBeanBaseLocation()));
             if (Objects.equals(params.get("p"), DEFAULT_PKEY)) {
                 log.warn("""
                     \n------------------------------------ DEFAULT JWK IN USE! ------------------------------------
@@ -79,13 +91,12 @@ public class JwtSignInterceptor extends AbstractInterceptor {
 
     private Outcome handleInternal(Exchange exc, Flow flow) {
         try {
-            JsonWebSignature jws = new JsonWebSignature();
-            jws.setHeader("typ", "JWT");
-            jws.setPayload(prepareJwtPayload(exc.getMessage(flow)));
-            jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
-            jws.setAlgorithmHeaderValue(RSA_USING_SHA256);
-            jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
-            exc.getMessage(flow).setBodyContent(jws.getCompactSerialization().getBytes());
+            var jwt = createSignature(exc, flow).getCompactSerialization();
+            if (property != null) {
+                exc.setProperty(property, jwt);
+            } else {
+                exc.getMessage(flow).setBodyContent(jwt.getBytes(US_ASCII));
+            }
             return CONTINUE;
         } catch (Exception e) {
             log.error("Error during attempt to sign JWT payload", e);
@@ -98,13 +109,23 @@ public class JwtSignInterceptor extends AbstractInterceptor {
         }
     }
 
+    private @NotNull JsonWebSignature createSignature(Exchange exc, Flow flow) throws IOException {
+        var jws = new JsonWebSignature();
+        jws.setHeader("typ", "JWT");
+        jws.setPayload(prepareJwtPayload(exc.getMessage(flow)));
+        jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
+        jws.setAlgorithmHeaderValue(RSA_USING_SHA256);
+        jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
+        return jws;
+    }
+
     private String prepareJwtPayload(Message msg) throws IOException {
-        ObjectNode jsonBody = (ObjectNode) om.readTree(msg.getBodyAsStream());
+        var body = (ObjectNode) om.readTree(msg.getBodyAsStream());
         long epoch = System.currentTimeMillis() / 1000;
-        jsonBody.put("iat", epoch);
-        jsonBody.put("exp", epoch + expirySeconds);
-        jsonBody.put("nbf", epoch - clockSkewSeconds);
-        return jsonBody.toString();
+        body.put("iat", epoch);
+        body.put("exp", epoch + expirySeconds);
+        body.put("nbf", epoch - clockSkewSeconds);
+        return body.toString();
     }
 
     public JwtSessionManager.Jwk getJwk() {
@@ -141,5 +162,18 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setClockSkewSeconds(int clockSkewSeconds) {
         this.clockSkewSeconds = clockSkewSeconds;
+    }
+
+    public String getProperty() {
+        return property;
+    }
+
+    /**
+     * The name of a property to be set with the signed JWT instead of the body.
+     * @param property Name of the property
+     */
+    @MCAttribute
+    public void setProperty(String property) {
+        this.property = property;
     }
 }
