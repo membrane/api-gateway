@@ -50,7 +50,10 @@ for a in "$@"; do
   case "$a" in
     -b|--build) FORCE_BUILD=1 ;;
     -*) log "ERROR: unknown flag '$a'"; exit 2 ;;
-    *)  TEST_ARG="$a" ;;
+    *)  if [[ -n "$TEST_ARG" ]]; then
+          log "ERROR: more than one test class given ('$TEST_ARG' and '$a'); pass exactly one"; exit 2
+        fi
+        TEST_ARG="$a" ;;
   esac
 done
 
@@ -74,12 +77,29 @@ fi
 
 # --- resolve a fully-qualified class name from a simple name, FQN, or path ---
 simple="${TEST_ARG##*/}"; simple="${simple%.java}"; simple="${simple##*.}"
-hit="$(find "$TESTSRC" -name "${simple}.java" | head -1)"
-if [[ -z "$hit" ]]; then
+hits=()
+while IFS= read -r h; do hits+=("$h"); done < <(find "$TESTSRC" -name "${simple}.java")
+if [[ "${#hits[@]}" -eq 0 ]]; then
   log "ERROR: no test class matching '$TEST_ARG' under $TESTSRC"
   exit 2
 fi
-rel="${hit#"$TESTSRC"/}"; rel="${rel%.java}"
+# If the simple name is ambiguous, try to narrow using the path/FQN the user gave.
+if [[ "${#hits[@]}" -gt 1 ]]; then
+  wanted="${TEST_ARG%.java}"; wanted="${wanted//.//}"   # FQN dots -> path; plain names unaffected
+  narrowed=()
+  for h in "${hits[@]}"; do
+    [[ "$h" == *"/$wanted.java" ]] && narrowed+=("$h")
+  done
+  if [[ "${#narrowed[@]}" -eq 1 ]]; then
+    hits=("${narrowed[@]}")
+  else
+    log "ERROR: '$simple' is ambiguous; ${#hits[@]} test classes match:"
+    for h in "${hits[@]}"; do log "  ${h#"$TESTSRC"/}"; done
+    log "Pass a more specific path or fully-qualified class name to disambiguate."
+    exit 2
+  fi
+fi
+rel="${hits[0]#"$TESTSRC"/}"; rel="${rel%.java}"
 FQN="${rel//\//.}"
 log "Resolved test class: $FQN"
 
