@@ -56,7 +56,7 @@ public class MultipartUtil {
         if (contentType == null) {
             throw new IOException("No Content-Type header");
         }
-        String boundary = contentType.getParameter("boundary");
+        var boundary = contentType.getParameter("boundary");
         if (boundary == null) {
             throw new IOException("No boundary parameter in Content-Type: " + contentType);
         }

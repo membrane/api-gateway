@@ -58,9 +58,7 @@ public class AbstractModelInputRequest extends BaseLLMRequest implements ModelIn
                     }
                 }
                 body = exchange.getRequest().getBody();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (ParseException e) {
+            } catch (IOException | ParseException e) {
                 throw new RuntimeException(e);
             }
             return;

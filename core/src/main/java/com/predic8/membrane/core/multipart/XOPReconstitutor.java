@@ -205,6 +205,8 @@ public class XOPReconstitutor {
 
 	/** Wraps raw bytes as a base64-encoded XML Characters event for XOP inlining. */
 	private static Characters base64CharactersEvent(byte[] data) {
+		// Encode once up front: getData() may be called repeatedly by the XMLEventWriter,
+		// and re-encoding on each call would needlessly repeat the work for large parts.
 		String encoded = new String(encodeBase64(data), UTF_8);
 		return new Characters() {
 			@Override public String getData()             { return encoded; }
