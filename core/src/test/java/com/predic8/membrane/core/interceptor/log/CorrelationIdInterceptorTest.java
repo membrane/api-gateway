@@ -93,6 +93,31 @@ class CorrelationIdInterceptorTest {
     }
 
     @Test
+    void controlCharactersInHeaderAreMaskedInMdc() throws URISyntaxException {
+        interceptor.init(new DefaultRouter());
+        // ESC and TAB are not escaped by the header layer, so they would otherwise reach the MDC and
+        // could be used for terminal-escape / log injection.
+        Exchange exc = get("/foo").header("X-Correlation-Id", "abc[31m\tINJECTED").buildExchange();
+
+        interceptor.handleRequest(exc);
+
+        String mdc = MDC.get("correlationId");
+        assertFalse(mdc.contains(""), "ESC must be masked");
+        assertFalse(mdc.contains("\t"), "TAB must be masked");
+        assertEquals("abc_[31m_INJECTED", mdc);
+    }
+
+    @Test
+    void overlongHeaderValueIsTruncatedInMdc() throws URISyntaxException {
+        interceptor.init(new DefaultRouter());
+        Exchange exc = get("/foo").header("X-Correlation-Id", "x".repeat(500)).buildExchange();
+
+        interceptor.handleRequest(exc);
+
+        assertEquals(200, MDC.get("correlationId").length());
+    }
+
+    @Test
     void responseRemovesMdcEntry() throws URISyntaxException {
         interceptor.init(new DefaultRouter());
         Exchange exc = get("/foo").buildExchange();

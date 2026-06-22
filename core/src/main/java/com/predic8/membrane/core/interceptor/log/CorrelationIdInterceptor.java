@@ -25,6 +25,8 @@ import java.util.UUID;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 
 /**
  * @description Reads a correlation id from a request header (or generates one if absent), writes it
@@ -34,6 +36,12 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  */
 @MCElement(name = "correlationId")
 public class CorrelationIdInterceptor extends AbstractExchangeExpressionInterceptor {
+
+    /**
+     * Upper bound for a correlation id taken from the request header. Long enough for a UUID and
+     * common id formats, while capping attacker-controlled input that ends up in the logs.
+     */
+    private static final int MAX_HEADER_VALUE_LENGTH = 200;
 
     private String header = "X-Correlation-Id";
     private String logField = "correlationId";
@@ -49,6 +57,10 @@ public class CorrelationIdInterceptor extends AbstractExchangeExpressionIntercep
             value = generateId(exc);
             if (value != null)
                 exc.getRequest().getHeader().setValue(header, value);
+        } else {
+            // Sanitize attacker-controlled header input before it reaches the MDC to prevent
+            // CR/LF log forging and to cap excessive length.
+            value = maskNonPrintableCharacters(truncateAfter(value, MAX_HEADER_VALUE_LENGTH));
         }
         if (value != null)
             MDC.put(logField, value);
