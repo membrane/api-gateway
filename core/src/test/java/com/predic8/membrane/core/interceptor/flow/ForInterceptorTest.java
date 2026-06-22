@@ -29,26 +29,37 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ForInterceptorTest {
 
-    /** Nested interceptor that counts how often it is invoked in each flow. */
+    /** Nested interceptor that counts how often it is invoked in each flow and returns a configured outcome. */
     private static class CountingInterceptor extends AbstractInterceptor {
         int requestCalls;
         int responseCalls;
+        private final Outcome requestOutcome;
+        private final Outcome responseOutcome;
+
+        CountingInterceptor() {
+            this(CONTINUE, CONTINUE);
+        }
+
+        CountingInterceptor(Outcome requestOutcome, Outcome responseOutcome) {
+            this.requestOutcome = requestOutcome;
+            this.responseOutcome = responseOutcome;
+        }
 
         @Override
         public Outcome handleRequest(Exchange exc) {
             requestCalls++;
-            return CONTINUE;
+            return requestOutcome;
         }
 
         @Override
         public Outcome handleResponse(Exchange exc) {
             responseCalls++;
-            return CONTINUE;
+            return responseOutcome;
         }
     }
 
     /** A &lt;for&gt; over the three-element SpEL list literal {@code {'a','b','c'}} with one nested interceptor. */
-    private static ForInterceptor forOverThreeItems(AbstractInterceptor nested) {
+    private static ForInterceptor forOverThreeItems(CountingInterceptor nested) {
         var fi = new ForInterceptor();
         fi.setLanguage(SPEL);
         fi.setIn("{'a','b','c'}");
@@ -82,34 +93,9 @@ public class ForInterceptorTest {
     @Nested
     class NonContinueOutcomeStopsLoopAndPropagates {
 
-        /** Nested interceptor that counts invocations per flow and returns a configured outcome. */
-        private static class OutcomeInterceptor extends AbstractInterceptor {
-            int requestCalls;
-            int responseCalls;
-            private final Outcome requestOutcome;
-            private final Outcome responseOutcome;
-
-            OutcomeInterceptor(Outcome requestOutcome, Outcome responseOutcome) {
-                this.requestOutcome = requestOutcome;
-                this.responseOutcome = responseOutcome;
-            }
-
-            @Override
-            public Outcome handleRequest(Exchange exc) {
-                requestCalls++;
-                return requestOutcome;
-            }
-
-            @Override
-            public Outcome handleResponse(Exchange exc) {
-                responseCalls++;
-                return responseOutcome;
-            }
-        }
-
         @Test
         void abortInRequestFlow() {
-            var nested = new OutcomeInterceptor(ABORT, CONTINUE);
+            var nested = new CountingInterceptor(ABORT, CONTINUE);
             var exc = new Exchange(null);
             exc.setRequest(new Request.Builder().build());
 
@@ -119,7 +105,7 @@ public class ForInterceptorTest {
 
         @Test
         void returnInRequestFlow() {
-            var nested = new OutcomeInterceptor(RETURN, CONTINUE);
+            var nested = new CountingInterceptor(RETURN, CONTINUE);
             var exc = new Exchange(null);
             exc.setRequest(new Request.Builder().build());
 
@@ -129,7 +115,7 @@ public class ForInterceptorTest {
 
         @Test
         void abortInResponseFlow() {
-            var nested = new OutcomeInterceptor(CONTINUE, ABORT);
+            var nested = new CountingInterceptor(CONTINUE, ABORT);
             var exc = new Exchange(null);
             exc.setResponse(Response.ok().build());
 
