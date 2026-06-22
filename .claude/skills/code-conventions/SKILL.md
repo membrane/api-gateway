@@ -11,15 +11,13 @@ Use these conventions when writing or refactoring Java code.
 
 Use **Java 21** as the target language version.
 
-Prefer modern Java features where they improve readability.
+Prefer modern Java features.
 
 Examples:
 
 ```java
 record User(String id, String name) {}
 ```
-
-Use newer language features only when they make the code simpler and easier to understand.
 
 ## Use `var` When Possible
 
