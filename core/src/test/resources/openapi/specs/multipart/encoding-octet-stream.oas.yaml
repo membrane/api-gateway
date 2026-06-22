@@ -1,0 +1,30 @@
+openapi: '3.1.1'
+info:
+  title: Multipart with Octet Stream
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /attachments:
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 3
+                address:
+                  type: object
+                  properties:
+                    city:
+                      type: string
+                      enum:
+                        - Berlin
+                        - Madrid
+                        - Sao Paulo
+            encoding:
+              address:
+                contentType: application/octet-stream
