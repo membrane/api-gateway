@@ -13,16 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -96,7 +101,9 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
             for (Object o2 : l) {
                 log.debug("type: {}, it: {}",o2.getClass(),o2);
                 exc.setProperty("it", o2);
-                invokeFlowHandlers(exc, flow, interceptors);
+                Outcome outcome = invokeFlowHandlers(exc, flow, interceptors);
+                if (outcome != CONTINUE)
+                    return outcome;
             }
         }
 

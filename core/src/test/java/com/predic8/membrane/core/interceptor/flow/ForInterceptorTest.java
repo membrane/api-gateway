@@ -19,9 +19,10 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static java.util.List.of;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +48,7 @@ public class ForInterceptorTest {
     }
 
     /** A &lt;for&gt; over the three-element SpEL list literal {@code {'a','b','c'}} with one nested interceptor. */
-    private static ForInterceptor forOverThreeItems(CountingInterceptor nested) {
+    private static ForInterceptor forOverThreeItems(AbstractInterceptor nested) {
         var fi = new ForInterceptor();
         fi.setLanguage(SPEL);
         fi.setIn("{'a','b','c'}");
@@ -76,5 +77,64 @@ public class ForInterceptorTest {
         assertEquals(CONTINUE, forOverThreeItems(nested).handleResponse(exc));
         assertEquals(3, nested.responseCalls);
         assertEquals(0, nested.requestCalls);
+    }
+
+    @Nested
+    class NonContinueOutcomeStopsLoopAndPropagates {
+
+        /** Nested interceptor that counts invocations per flow and returns a configured outcome. */
+        private static class OutcomeInterceptor extends AbstractInterceptor {
+            int requestCalls;
+            int responseCalls;
+            private final Outcome requestOutcome;
+            private final Outcome responseOutcome;
+
+            OutcomeInterceptor(Outcome requestOutcome, Outcome responseOutcome) {
+                this.requestOutcome = requestOutcome;
+                this.responseOutcome = responseOutcome;
+            }
+
+            @Override
+            public Outcome handleRequest(Exchange exc) {
+                requestCalls++;
+                return requestOutcome;
+            }
+
+            @Override
+            public Outcome handleResponse(Exchange exc) {
+                responseCalls++;
+                return responseOutcome;
+            }
+        }
+
+        @Test
+        void abortInRequestFlow() {
+            var nested = new OutcomeInterceptor(ABORT, CONTINUE);
+            var exc = new Exchange(null);
+            exc.setRequest(new Request.Builder().build());
+
+            assertEquals(ABORT, forOverThreeItems(nested).handleRequest(exc));
+            assertEquals(1, nested.requestCalls);
+        }
+
+        @Test
+        void returnInRequestFlow() {
+            var nested = new OutcomeInterceptor(RETURN, CONTINUE);
+            var exc = new Exchange(null);
+            exc.setRequest(new Request.Builder().build());
+
+            assertEquals(RETURN, forOverThreeItems(nested).handleRequest(exc));
+            assertEquals(1, nested.requestCalls);
+        }
+
+        @Test
+        void abortInResponseFlow() {
+            var nested = new OutcomeInterceptor(CONTINUE, ABORT);
+            var exc = new Exchange(null);
+            exc.setResponse(Response.ok().build());
+
+            assertEquals(ABORT, forOverThreeItems(nested).handleResponse(exc));
+            assertEquals(1, nested.responseCalls);
+        }
     }
 }
