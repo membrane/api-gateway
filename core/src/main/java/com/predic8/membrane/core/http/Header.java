@@ -78,6 +78,7 @@ public class Header {
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9110#name-content-encoding">RFC 9110 Section 8.4</a>
      */
     public static final String CONTENT_ENCODING = "Content-Encoding";
+    public static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding";
 
     public static final String CONTENT_LENGTH = "Content-Length";
     public static final String CONTENT_TYPE = "Content-Type";
