@@ -14,38 +14,59 @@
 
 package com.predic8.membrane.core.http;
 
-import com.fasterxml.jackson.databind.*;
-import com.google.common.io.*;
-import com.predic8.membrane.core.config.security.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Resources;
 import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import okhttp3.*;
-import org.apache.commons.httpclient.methods.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.security.TrustStore;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpServerHandler;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import javax.net.ssl.*;
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.security.cert.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
-import static com.google.common.io.Resources.*;
-import static com.predic8.membrane.annot.Constants.*;
+import static com.google.common.io.Resources.getResource;
+import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.annot.Constants.MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT;
 import static com.predic8.membrane.core.http.ChunkedBody.*;
-import static com.predic8.membrane.core.http.ChunksBuilder.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.*;
-import static java.lang.Thread.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.ChunksBuilder.chunks;
+import static com.predic8.membrane.core.http.Request.get;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.transport.http2.Http2ServerHandler.HTTP2_SERVER;
+import static java.lang.Thread.sleep;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ChunkedBodyTest {
@@ -447,6 +468,93 @@ public class ChunkedBodyTest {
         return new ByteArrayInputStream(chunks().add("""
                 { "foo": 42 }""").add("""
                 { "foo": 43 }""").build());
+    }
+
+    // -------------------------------------------------------------------------
+    // parseChunkSize unit tests
+    // -------------------------------------------------------------------------
+
+    @Nested
+    class ParseChunkSizeTest {
+
+        // -- valid inputs ------------------------------------------------------
+
+        @ParameterizedTest
+        @MethodSource("validChunkSizes")
+        void validInputsParseCorrectly(String input, int expected) throws IOException {
+            assertEquals(expected, parseChunkSize(buf(input)));
+        }
+
+        static Stream<Arguments> validChunkSizes() {
+            return Stream.of(
+                    Arguments.of("0",    0),          // terminating chunk
+                    Arguments.of("1",    1),
+                    Arguments.of("ff",   255),        // lowercase hex
+                    Arguments.of("FF",   255),        // uppercase hex
+                    Arguments.of("3d2F", 15663),      // mixed case
+                    Arguments.of("  a  ", 10),        // whitespace trimmed
+                    Arguments.of(Integer.toHexString(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT),
+                                 MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT)  // exactly at limit
+            );
+        }
+
+        // -- too large --------------------------------------------------------
+
+        @Test
+        void oneByteOverLimitIsRejected() {
+            assertThrows(IOException.class,
+                    () -> parseChunkSize(buf(Integer.toHexString(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT + 1))));
+        }
+
+        @Test
+        void integerMaxValueIsRejected() {
+            // 7FFFFFFF = Integer.MAX_VALUE = 2 GiB — parses without NumberFormatException but exceeds cap
+            assertThrows(IOException.class, () -> parseChunkSize(buf("7fffffff")));
+        }
+
+        @Test
+        void overflowsIntegerParseIsRejectedAsInvalidValue() {
+            // 80000000 exceeds Integer.MAX_VALUE → Integer.parseInt throws NumberFormatException
+            assertThrows(IOException.class, () -> parseChunkSize(buf("80000000")));
+        }
+
+        @Test
+        void maxUnsignedHexIsRejectedAsInvalidValue() {
+            assertThrows(IOException.class, () -> parseChunkSize(buf("ffffffff")));
+        }
+
+        // -- negative (sign prefix accepted by Integer.parseInt) --------------
+
+        @Test
+        void negativeValueIsRejected() {
+            assertThrows(IOException.class, () -> parseChunkSize(buf("-1")));
+        }
+
+        // -- empty / blank ----------------------------------------------------
+
+        @Test
+        void emptyBufferIsRejected() {
+            assertThrows(IOException.class, () -> parseChunkSize(buf("")));
+        }
+
+        @Test
+        void blankBufferIsRejected() {
+            assertThrows(IOException.class, () -> parseChunkSize(buf("   ")));
+        }
+
+        // -- non-hex characters -----------------------------------------------
+
+        @ParameterizedTest
+        @ValueSource(strings = {"xyz", "1g", "0x1a", "12 34", "1.0"})
+        void nonHexInputIsRejected(String input) {
+            assertThrows(IOException.class, () -> parseChunkSize(buf(input)));
+        }
+
+        // -- helper -----------------------------------------------------------
+
+        private static StringBuilder buf(String s) {
+            return new StringBuilder(s);
+        }
     }
 
 }

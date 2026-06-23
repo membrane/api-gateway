@@ -15,21 +15,15 @@
 package com.predic8.membrane.core.http;
 
 import jakarta.activation.MimeType;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.*;
+import org.junit.jupiter.params.provider.*;
 
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.http.MimeType.isBinary;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.http.MimeType.*;
+import static java.nio.charset.StandardCharsets.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HeaderTest {
@@ -310,5 +304,30 @@ class HeaderTest {
         void missingContentTypeIsNotMultipart() {
             assertFalse(new Header().isMultipart());
         }
+    }
+
+    @Test
+    void sanitization() {
+        Header h = new Header();
+
+        h.add("X-CRLF", "value\r\nInjected: evil");
+        h.add("X-CR", "value\rInjected: evil");
+        h.add("X-LF", "value\nInjected: evil");
+        h.add("X-NUL", "value\u0000Injected");
+        assertEquals("value\\r\\nInjected: evil", h.getFirstValue("X-CRLF"));
+        assertEquals("value\\rInjected: evil", h.getFirstValue("X-CR"));
+        assertEquals("value\\nInjected: evil", h.getFirstValue("X-LF"));
+        assertEquals("value\\0Injected", h.getFirstValue("X-NUL"));
+
+        h.add("X-Bar", "ok");
+        h.setValue("X-Bar", "evil\r\nInjected: x");
+        assertEquals("evil\\r\\nInjected: x", h.getFirstValue("X-Bar"));
+
+        HeaderField field = h.getAllHeaderFields()[0];
+        field.setValue("evil\r\nInjected: x");
+        assertEquals("evil\\r\\nInjected: x", field.getValue());
+
+        h.add("X-Normal", "regular value");
+        assertEquals("regular value", h.getFirstValue("X-Normal"));
     }
 }

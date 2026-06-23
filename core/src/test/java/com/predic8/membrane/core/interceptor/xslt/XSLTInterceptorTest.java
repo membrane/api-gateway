@@ -13,22 +13,20 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
-import org.hamcrest.*;
-import org.junit.jupiter.api.*;
-import org.xml.sax.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.InputSource;
 
-import javax.xml.xpath.*;
-import java.io.*;
-import java.net.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import static com.predic8.membrane.core.http.Request.get;
-import static com.predic8.membrane.core.http.Response.*;
+import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class XSLTInterceptorTest {
 
@@ -83,7 +81,7 @@ public class XSLTInterceptorTest {
         i.init(new DummyTestRouter());
         assertEquals(ABORT, i.handleRequest(exc));
         assertEquals(400, exc.getResponse().getStatusCode());
-        String body = exc.getResponse().getBodyAsStringDecoded();
+        var body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("rubbish"));
         assertTrue(body.contains("not allowed in prolog"));
     }

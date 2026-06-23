@@ -24,7 +24,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.predic8.membrane.annot.Constants.CRLF_BYTES;
+import static com.predic8.membrane.annot.Constants.*;
 import static com.predic8.membrane.core.http.ChunkedBodyTransferer.ZERO;
 import static com.predic8.membrane.core.util.ByteUtil.readByteArray;
 import static java.lang.Long.toHexString;
@@ -42,6 +42,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class ChunkedBody extends AbstractBody {
 
     private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
+
+    /**
+     * Maximum hex digits in a chunk-size field. Prevents Long.parseLong from receiving a
+     * value that overflows a long (would require >8 digits), with a margin.
+     */
+    private static final int MAX_CHUNK_SIZE_HEX_DIGITS = 8;
+
+    /**
+     * Hard cap on a single chunk in bytes
+     * Without this, a sender can trigger a 2 GiB byte[] allocation with just "7FFFFFFF\r\n"
+     */
+    private static int MAX_CHUNK_BYTES;
+
+    static {
+        var v = System.getProperty(MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH);
+        MAX_CHUNK_BYTES = v == null ? MEMBRANE_CORE_HTTP_BODY_MAXCHUNKLENGTH_DEFAULT : Integer.parseInt(v);
+    }
 
     private final InputStream inputStream;
     private long lengthStreamed;
@@ -90,26 +107,47 @@ public class ChunkedBody extends AbstractBody {
     }
 
     public static int readChunkSize(InputStream in) throws IOException {
-        StringBuilder buffer = new StringBuilder();
+        var buffer = new StringBuilder();
 
         int c;
         while ((c = in.read()) != -1) {
-            if (c == 13) {
-                in.read(); // LF
+            if (c == 13) { // CR — end of chunk-size line
+                in.read(); // consume LF
                 break;
             }
 
-            // ignore chunk extensions
+            // chunk-ext: ignore everything from ';' through the terminating LF
             if (c == ';') {
                 //noinspection StatementWithEmptyBody
-                while ((c = in.read()) != 10)
+                while ((c = in.read()) != 10 && c != -1)
                     ;
+                break; // LF consumed; chunk-size line is done
             }
 
+            if (buffer.length() >= MAX_CHUNK_SIZE_HEX_DIGITS) {
+                log.info("Chunk-size {} exceeds limit: {}",buffer.length(), MAX_CHUNK_SIZE_HEX_DIGITS);
+                throw new IOException("Chunk-size exceeds limit");
+            }
             buffer.append((char) c);
         }
 
-        return Integer.parseInt(buffer.toString().trim(), 16);
+        return parseChunkSize(buffer);
+    }
+
+    static int parseChunkSize(StringBuilder buffer) throws IOException {
+        var hex = buffer.toString().trim();
+        if (hex.isEmpty()) {
+            throw new IOException("Empty chunk-size field");
+        }
+        try {
+            int size = Integer.parseInt(hex, 16);
+            if (size < 0 || size > MAX_CHUNK_BYTES) {
+                throw new IOException("Chunk size %d exceeds limit of %d bytes".formatted(size, MAX_CHUNK_BYTES));
+            }
+            return size;
+        } catch (NumberFormatException e) {
+            throw new IOException("Invalid chunk-size value: %s".formatted(hex), e);
+        }
     }
 
     @Override

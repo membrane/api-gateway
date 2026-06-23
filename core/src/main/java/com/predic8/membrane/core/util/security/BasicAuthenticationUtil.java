@@ -17,8 +17,10 @@ package com.predic8.membrane.core.util.security;
 import com.predic8.membrane.core.exchange.*;
 
 import java.util.*;
+import java.util.function.UnaryOperator;
 
 import static java.nio.charset.StandardCharsets.*;
+import static java.util.Objects.requireNonNull;
 
 public class BasicAuthenticationUtil {
 
@@ -32,8 +34,8 @@ public class BasicAuthenticationUtil {
      */
     public record BasicCredentials(String username, String password) {
         public BasicCredentials {
-            Objects.requireNonNull(username, "Username cannot be null");
-            Objects.requireNonNull(password, "Password cannot be null");
+            requireNonNull(username, "Username cannot be null");
+            requireNonNull(password, "Password cannot be null");
         }
 
         /**
@@ -66,6 +68,19 @@ public class BasicAuthenticationUtil {
      */
     public static BasicCredentials getCredentials(Exchange exc) {
         return parseCredentials(decodeAuthorizationHeader(exc));
+    }
+
+    public static String createAuthorizationHeader(String username, String password) {
+        return createAuthorizationHeader(username, password, UnaryOperator.identity());
+    }
+
+    public static String createAuthorizationHeader(String username, String password, UnaryOperator<String> credentialEncoder) {
+        requireNonNull(username, "username cannot be null");
+        requireNonNull(password, "password cannot be null");
+        requireNonNull(credentialEncoder, "credentialEncoder cannot be null");
+
+        String credentials = credentialEncoder.apply(username) + ":" + credentialEncoder.apply(password);
+        return BASIC_PREFIX + Base64.getEncoder().encodeToString(credentials.getBytes(UTF_8));
     }
 
     /**
