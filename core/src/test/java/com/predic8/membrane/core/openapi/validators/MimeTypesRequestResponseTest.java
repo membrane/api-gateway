@@ -22,6 +22,7 @@ import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,6 +36,7 @@ protected String getOpenAPIFileName() {
 
     // application/x-www-form-urlencoded is still not implemented
     @Test
+
     public void formUrlEncodedResponseNotImplemented() throws ParseException {
         ValidationErrors errors = validator.validateResponse(Request.get().path("/mimetypes"),
                 Response.statusCode(202).mediaType(APPLICATION_X_WWW_FORM_URLENCODED).body("{ }"));
