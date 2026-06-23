@@ -114,6 +114,12 @@ api:
 the surrounding element (default `spel`). For request transformation, jsonpath
 reads the body, e.g. `${$.fieldName}`.
 
+> For anything involving a built-in function (`user()`, `base64Encode`,
+> `hasScope`, …), the SpEL-vs-Groovy call difference (`${user()}` vs.
+> `${fn.user()}`), or which variables are in scope, see
+> [expressions.md](expressions.md). The schema does not cover this and it's a
+> common source of runtime 500s.
+
 ```yaml
 target:
   method: GET

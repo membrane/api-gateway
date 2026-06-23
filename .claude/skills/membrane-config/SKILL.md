@@ -53,9 +53,19 @@ elements) and evolves; ground every snippet.
    python3 scripts/describe_element.py --list        # all element ids
    ```
 
-4. **Write the config** following the conventions below.
+4. **For any expression, template, or built-in function**, read
+   [references/expressions.md](references/expressions.md) before writing it. The
+   schema does **not** cover this, and it's the easiest place to be confidently
+   wrong: which engine evaluates a string (`template` is Groovy, `setBody`/`if`
+   default to SpEL), how you call a function (`${user()}` in SpEL vs.
+   `${fn.user()}` in a Groovy template), which variables are in scope, and the
+   full built-in catalog (`user()`, `base64Encode`, `hasScope`, `env`, …). These
+   bugs surface as a runtime 500, not a schema error — `validate_config.py` won't
+   catch them.
 
-5. **Validate** (YAML only) — always, before presenting:
+5. **Write the config** following the conventions below.
+
+6. **Validate** (YAML only) — always, before presenting:
    ```bash
    python3 scripts/validate_config.py path/to/apis.yaml
    ```
