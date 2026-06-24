@@ -13,12 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.templating;
 
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SoapBodyTemplateInterceptorTest {
 
@@ -56,6 +57,23 @@ class SoapBodyTemplateInterceptorTest {
         i.setVersion("1.2");
         assertEquals("1.2", i.getVersion());
         assertEquals("application/soap+xml", i.getContentType());
+    }
+
+    @Test
+    void explicitContentType_overridesVersionDefault() {
+        SoapBodyTemplateInterceptor i = new SoapBodyTemplateInterceptor();
+        i.setContentType("text/xml;charset=UTF-8");
+
+        assertEquals("text/xml;charset=UTF-8", i.getContentType());
+    }
+
+    @Test
+    void explicitContentType_overridesEvenForSoap12() {
+        SoapBodyTemplateInterceptor i = new SoapBodyTemplateInterceptor();
+        i.setVersion("1.2");
+        i.setContentType("text/xml;charset=UTF-8");
+
+        assertEquals("text/xml;charset=UTF-8", i.getContentType());
     }
 
     private static void setSoapVersion(String version) {
