@@ -124,7 +124,7 @@ public class ResolverMap implements Cloneable, Resolver {
      */
     private static final Pattern SCHEME = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:[/\\\\]");
 
-    private static boolean hasScheme(String location) {
+    static boolean hasScheme(String location) {
         return SCHEME.matcher(location).find();
     }
 
