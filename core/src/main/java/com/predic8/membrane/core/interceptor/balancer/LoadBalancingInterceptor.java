@@ -31,8 +31,25 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
- * @description Performs load-balancing between several nodes. Nodes sharing session state may be bundled into a cluster.
- * May only be used as interceptor in a serviceProxy or api.
+ * @description Distributes requests across a set of backend nodes. Nodes are grouped into one or more clusters, and the
+ * configured dispatching strategy picks a node for each request, defaulting to round-robin. Failover is always on: the
+ * remaining nodes are added as fallback destinations, so a request retries the next node when one fails. When a
+ * sessionIdExtractor is configured, requests carrying a known session are pinned to the node that first served it
+ * (sticky sessions). On dispatch the chosen node is stored on the exchange and its statistics are updated when the
+ * response returns; if no node is available the request is answered with 503. Can only be used inside an api or
+ * serviceProxy. See the examples under examples/loadbalancing.
+ * <pre>
+ * balancer:
+ *   [ name: &lt;id&gt; ]                  # default: Default
+ *   [ sessionIdExtractor: ... ]      # enables sticky sessions
+ *   [ roundRobinStrategy | priorityStrategy | byThreadStrategy | faultMonitoringStrategy ]
+ *   clusters:                        # 1..*
+ *     - name: &lt;id&gt;
+ *       nodes:                       # 1..*
+ *         - host: &lt;host&gt;
+ *           port: &lt;port&gt;
+ *     ...
+ * </pre>
  * @topic 2. Enterprise Integration Patterns
  * @yaml
  * <pre><code>
@@ -41,7 +58,6 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  *   flow:
  *     - balancer:
  *         name: DemoBalancer
- *         priorityStrategy: {}
  *         clusters:
  *           - name: PROD
  *             nodes:
@@ -202,11 +218,8 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * This is *NOT* {@link #setDisplayName(String)}, but the balancer's name
-     * set in the proxy configuration to identify this balancer.
-     *
-     * @description Uniquely identifies this load balancer, if there is more than one. Used
-     * in the web administration interface and lbclient to manage nodes.
+     * @description Identifies this balancer when more than one is configured. Used by the web administration
+     * interface and the lbclient to address its nodes.
      * @example balancer1
      * @default Default
      */
@@ -229,7 +242,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Sets the strategy used to choose the backend nodes.
+     * @description Strategy that picks a node for each request. Defaults to round-robin when omitted.
      */
     @MCChildElement(order = 3)
     public void setDispatchingStrategy(DispatchingStrategy strategy) {
@@ -245,7 +258,8 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Sets the strategy used to extract a session ID from incoming HTTP requests.
+     * @description Extracts a session ID from requests and responses to enable sticky sessions. Requests carrying a
+     * known session are routed back to the node that first handled it, until that node goes down.
      */
     @MCChildElement(order = 1)
     public void setSessionIdExtractor(
@@ -266,7 +280,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Specifies a list of clusters.
+     * @description Clusters of nodes managed by this balancer. Nodes in the same cluster share session state.
      */
     @MCChildElement(order = 2)
     public void setClusters(List<Cluster> clusters) {
@@ -282,9 +296,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Time in milliseconds after which sessions time out. (If a session
-     * extractor is used.) Default is 1 hour, 0 means never.
-     * @example 600000 <i>(10min)</i>
+     * @description Time in milliseconds after which an idle sticky session expires. Applies only when a
+     * sessionIdExtractor is configured. <code>0</code> disables expiry.
+     * @example 600000
      * @default 3600000
      */
     @MCAttribute
@@ -302,7 +316,8 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Whether to track the per-node result on every Exchange.
+     * @description Whether to record the per-node outcome of every request on the exchange, so later plugins can
+     * inspect which node handled it and how.
      * @default false
      */
     @MCAttribute

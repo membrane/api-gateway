@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.isObjectOrArray;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 import static java.lang.Boolean.FALSE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -158,7 +159,7 @@ public class FormUrlEncodedValidator {
      * the schema validator reports the type mismatch.
      */
     private JsonNode toNode(String value, Schema schema) {
-        if (SchemaUtil.isObjectOrArray(schema)) {
+        if (isObjectOrArray(api, schema)) {
             try {
                 return om.readTree(value);
             } catch (Exception e) {

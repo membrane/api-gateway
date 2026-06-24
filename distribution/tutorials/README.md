@@ -25,6 +25,11 @@ If your APIs use XML as input or output, this tutorial provides useful configura
 Learn how to use Membrane in more advanced scenarios. Topics include path rewriting, scripting, conditions and more.
 
 
+## [Operation](operation)
+
+Run and observe Membrane in production. 
+
+
 ## [AI / MCP](ai/mcp)
 
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, and protect the MCP endpoint with an API key.

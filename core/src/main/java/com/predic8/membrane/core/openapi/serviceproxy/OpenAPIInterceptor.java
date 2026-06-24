@@ -54,8 +54,27 @@ import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
 /**
- * @description <p>Validator for OpenAPI documents</p>
+ * @description Validates requests and responses against the OpenAPI documents declared on the enclosing
+ * <code>api</code> (its <code>openapi</code> elements). Those documents are normally validated automatically before the
+ * flow runs; add this element to the flow to run validation at a specific point instead, for example after an
+ * authentication plugin so its result is available to security validation. What is checked is controlled per document
+ * by the <code>openapi</code> element's <code>validateRequests</code>, <code>validateResponses</code>, and
+ * <code>validateSecurity</code> options (or the matching <code>x-membrane-validation</code> extension in the document).
+ * A request matching no document is answered with 404, a request that violates its schema with a 4xx Problem Details,
+ * and an invalid response with 500. Can only be used inside an api. See the examples under examples/openapi and the
+ * tutorial tutorials/getting-started/90-OpenAPI-Validation.yaml.
  * @topic 5. OpenAPI
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   openapi:
+ *     - location: fruitshop-api.yml
+ *       validateRequests: true
+ *       validateResponses: true
+ *   flow:
+ *     - openapiValidator: {} # Executes the validation at that point!
+ * </code></pre>
  */
 @MCElement(name = "openapiValidator")
 public class OpenAPIInterceptor extends AbstractInterceptor {

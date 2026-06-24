@@ -39,6 +39,8 @@ import java.util.*;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_TRANSFER_ENCODING;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.isBinaryString;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.isObjectOrArray;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.Content.XML;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
 import static java.lang.Boolean.FALSE;
@@ -223,7 +225,7 @@ public class MultipartFormDataValidator {
         var err = new ValidationErrors();
 
         // Binary file uploads (type: string, format: binary/byte) are opaque, only their presence is checked.
-        if (SchemaUtil.isBinaryString(propertySchema))
+        if (isBinaryString(propertySchema))
             return err;
 
         if (isJson(contentType)) {
@@ -274,9 +276,9 @@ public class MultipartFormDataValidator {
     @SuppressWarnings("rawtypes")
     private String defaultContentType(Schema schema) {
         // schema is already $ref-resolved by the caller.
-        if (SchemaUtil.isBinaryString(schema))
+        if (isBinaryString(schema))
             return APPLICATION_OCTET_STREAM;
-        if (SchemaUtil.isObjectOrArray(schema))
+        if (isObjectOrArray(api, schema))
             return APPLICATION_JSON;
         return TEXT_PLAIN;
     }
