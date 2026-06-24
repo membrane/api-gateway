@@ -37,19 +37,30 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 /**
- * @description Iterates over a collection extracted from the <code>Exchange</code> and applies
- * its nested interceptors for each element. The current element is exposed
- * in the exchange under the property key <code>"it"</code>.
- *
- * @yaml <pre><code>
+ * @description Iterates over a collection and runs its nested flow once per element. The
+ * <code>in</code> expression is evaluated against the exchange and must yield a <code>List</code>;
+ * for each item the nested plugins run with the current item exposed as the exchange property
+ * <code>it</code>. Iteration happens only in the request flow and only when the expression yields a
+ * list; any other value passes through unchanged. If the expression fails to evaluate, the exchange
+ * is aborted with a Problem Details response. See the examples and tutorials under
+ * examples/orchestration and tutorials/orchestration.
+ * <pre>
  * for:
- *   in: message.headers['items']
- *   language: SpEL
- *   flow:
- *     - log: {} # nested plugins here
- * </code></pre>
- *
+ *   in: expression                # must evaluate to a List
+ *   [ language: SpEL | groovy | jsonpath | xpath ]   # default: SpEL
+ *   flow:                         # runs once per item; current item in property "it"
+ *     - ...
+ * </pre>
  * @topic 1. Proxies and Flow
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - for:
+ *         in: message.json.items
+ *         flow:
+ *           - log: {}
+ * </code></pre>
  */
 @MCElement(name = "for")
 public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
@@ -123,9 +134,9 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     /**
-     * @description the language of the 'test' condition
-     * @default groovy
-     * @example SpEL, groovy, jsonpath, xpath
+     * @description Expression language used to evaluate <code>in</code>.
+     * @default SpEL
+     * @example groovy
      */
     @MCAttribute
     public void setLanguage(Language language) {
@@ -137,8 +148,9 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     /**
-     * @description An expression that evaluates to a collection (e.g., a List). The interceptors nested within the &lt;for&gt; element will be executed for each item in this collection. The current item is available in the exchange property named `it`.
-     * @example `message.json.customers` (if language is the default "SpEL") or `/orders/order/@id` (if language="xpath")
+     * @description Expression that selects the collection to iterate over; it must evaluate to a
+     * <code>List</code>.
+     * @example message.json.customers
      */
     @Required
     @MCAttribute

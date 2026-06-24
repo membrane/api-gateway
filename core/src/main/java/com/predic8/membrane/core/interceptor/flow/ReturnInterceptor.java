@@ -16,35 +16,43 @@
 
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.EnumSet;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.util.HttpUtil.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_ABORT_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.HttpUtil.getMessageForStatusCode;
+import static java.lang.String.format;
 
 
 /**
- * @description Terminates the exchange flow. The returned response is determined in the following order:
- * <p>
- * 1. If there is already a response in the exchange, that response is returned
- * 2. If there is no response in the exchange, the body and contentType of the request is copied into a new response.
- * </p>
- * <p>
- * The options <i>status</i> and <i>contentType</i> will overwrite the values from the messages.
- * </p>
- * <p>
- * This plugin is useful together with the template plugin. See examples/template.
- * </p>
+ * @description Stops processing the request and sends a response back to the client without calling
+ * the backend. If the exchange already holds a response, that response is sent; otherwise a new
+ * response is built from the request's body and Content-Type. Often paired with <code>template</code>
+ * to return a generated body. See the examples under examples/templating.
  * @topic 1. Proxies and Flow
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - template:
+ *         contentType: application/json
+ *         src: '{ "status": "ok" }'
+ *     - return:
+ *         status: 200
+ * </code></pre>
  */
 @MCElement(name = "return")
 public class ReturnInterceptor extends AbstractInterceptor {
@@ -122,7 +130,7 @@ public class ReturnInterceptor extends AbstractInterceptor {
 
     /**
      * @deprecated Use status instead.
-     * @description HTTP status code to be returned. statusCode is kept only for backward compatibility use status instead.
+     * @description Deprecated alias for <code>status</code>, kept for backward compatibility.
      * @default 200
      * @example 400
      */
@@ -152,7 +160,8 @@ public class ReturnInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Content-Type of the response. If not set, the content type of the request (if available) or no content type will be used.
+     * @description Content-Type of the response. When unset, an existing response's Content-Type is left unchanged; only
+     * when a new response is built from the request is the request's Content-Type used if present, otherwise none is set.
      * @default null
      * @example application/json; charset=utf-8
      */
