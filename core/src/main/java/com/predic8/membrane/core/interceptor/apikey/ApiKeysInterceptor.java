@@ -49,7 +49,7 @@ import static java.util.stream.Stream.ofNullable;
  *   extractors:                   # 0..*, default: header X-Api-Key
  *     - header: &lt;name&gt; | query: &lt;name&gt;
  *     ...
- *   stores:                       # 0..*
+ *   stores:                       # 1..*
  *     - ...
  * </pre>
  * @topic 3. Security and Validation
