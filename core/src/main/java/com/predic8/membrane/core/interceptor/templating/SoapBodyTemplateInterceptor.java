@@ -13,17 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.templating;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.soap.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.util.soap.SoapVersion;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.util.soap.SoapVersion.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.soap.SoapVersion.SOAP_11;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @description Renders a SOAP body for legacy integration
+ * @description Renders a SOAP body for legacy integration. The Content-Type defaults to the type of the
+ * configured SOAP version (<code>text/xml</code> for 1.1, <code>application/soap+xml</code> for 1.2). Setting
+ * <code>contentType</code> explicitly overrides this, e.g. to add a charset.
  * @topic 2. Enterprise Integration Patterns
  */
 @MCElement(name="soapBody", mixed = true)
@@ -60,7 +61,8 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
 
     @Override
     public String getContentType() {
-        return version.getContentType();
+        // A content type configured by the user takes precedence over the SOAP version default.
+        return contentType != null ? contentType : version.getContentType();
     }
 
     public String getVersion() {
@@ -74,6 +76,7 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
 
     @Override
     protected String getDefaultContentType() {
-        return TEXT_XML;
+        // No fixed default: an unset content type falls back to the SOAP version's type in getContentType().
+        return null;
     }
 }

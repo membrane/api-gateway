@@ -59,7 +59,7 @@ public abstract class AbstractBodyValidator {
             return errors.add(new SchemaValidator(api, mediaTypeObj.getSchema()).validate(ctx, message.getBody()));
         }
         if(isWWWFormUrlEncoded(mediaType)) {
-            return errors.add(ctx,"Validation of 'application/x-www-form-urlencoded' messages is not implemented yet!");
+            return errors.add(new FormUrlEncodedValidator(api).validate(ctx, mediaTypeObj, message));
         }
         if(isMultipartFormData(mediaType)) {
             return errors.add(new MultipartFormDataValidator(api).validate(ctx.statusCode(getDefaultStatusCode()), mediaTypeObj, message));
