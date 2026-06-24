@@ -122,10 +122,13 @@ public class SchemaUtil {
      * {@code array}, or it declares {@code properties}. Used to decide whether a part without an explicit
      * content type defaults to JSON rather than {@code text/plain}.
      * <p>
-     * A {@code $ref} is not resolved here, so callers must resolve it first (see {@link #resolveRef});
-     * an unresolved {@code $ref} carries no type and is reported as not structured.
+     * A {@code $ref} is resolved against {@code api} first (see {@link #resolveRef}), so the referenced
+     * schema's type is what gets inspected. A ref that cannot be resolved is reported as not structured.
      */
-    public static boolean isObjectOrArray(Schema schema) {
+    public static boolean isObjectOrArray(OpenAPI api, Schema schema) {
+        schema = resolveRef(api, schema);
+        if (schema == null)
+            return false;
         var type = getEffectiveType(schema);
         if ("object".equals(type) || "array".equals(type))
             return true;
