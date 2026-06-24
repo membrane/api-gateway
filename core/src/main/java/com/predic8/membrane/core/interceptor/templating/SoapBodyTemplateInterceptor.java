@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.soap.SoapVersion;
 
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.util.soap.SoapVersion.SOAP_11;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -26,6 +27,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * configured SOAP version (<code>text/xml</code> for 1.1, <code>application/soap+xml</code> for 1.2). Setting
  * <code>contentType</code> explicitly overrides this, e.g. to add a charset.
  * @topic 2. Enterprise Integration Patterns
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - soapBody:
+ *         version: '1.2'
+ *         src: |
+ *           &lt;cs:getCity xmlns:cs="https://predic8.de/cities"&gt;
+ *             &lt;name&gt;${params.city}&lt;/name&gt;
+ *           &lt;/cs:getCity&gt;
+ * </code></pre>
  */
 @MCElement(name="soapBody", mixed = true)
 public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
@@ -69,6 +82,13 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
         return version.toString();
     }
 
+    /**
+     * @description SOAP version of the generated envelope. <code>1.1</code> uses the
+     * <code>http://schemas.xmlsoap.org/soap/envelope/</code> namespace and a <code>text/xml</code> Content-Type;
+     * <code>1.2</code> uses <code>http://www.w3.org/2003/05/soap-envelope</code> and <code>application/soap+xml</code>.
+     * @default 1.1
+     * @example 1.2
+     */
     @MCAttribute
     public void setVersion(String version) {
         this.version = SoapVersion.parse(version);

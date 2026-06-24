@@ -33,18 +33,34 @@ import org.slf4j.LoggerFactory;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 
-/*
- * @description <p>
- * API Gateway for Large Language Models (LLMs).
- * </p>
- * <b>Features:</b>
- * <ul>
- *   <li>Sharing an API key between multiple users</li>
- *   <li>Enforcing token limits</li>
- *   <li>Logging LLM usage</li>
- * </ul>
- * </p>
+/**
+ * @description Gateway in front of an LLM provider's chat API (OpenAI, Anthropic/Claude, or Google Gemini). It can
+ * share a single provider API key among many clients, authenticate clients and enforce per-user token limits through a
+ * store, apply usage policies, and inject a system prompt; token usage is recorded when the response returns. Place it
+ * in the flow of an api whose target is the provider's API. Without a store the gateway is stateless and just forwards
+ * requests with the configured key and policies. See the tutorials under tutorials/ai/llm-gateway.
+ * <pre>
+ * llmGateway:
+ *   [ apiKey: &lt;provider-key&gt; ]
+ *   claude | openai | google              # the provider (required)
+ *   [ policies: ... ]                     # token limits, model rules
+ *   [ systemPrompt: ... ]
+ *   [ simpleStore | jdbcAiApiUsageStore ] # enables per-user auth and limits
+ * </pre>
  * @topic 10. AI
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - llmGateway:
+ *         claude: {}
+ *         policies:
+ *           maxInputTokens: 100
+ *           maxOutputTokens: 200
+ *   target:
+ *     url: https://api.anthropic.com
+ * </code></pre>
  */
 @MCElement(name = "llmGateway")
 public class LLMGatewayInterceptor extends AbstractInterceptor {
@@ -175,8 +191,9 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @param apiKey LLM provider API key
-     * @description API key for the LLM provider. Specify here the API key from OpenAI or Anthropic.
+     * @description API key for the LLM provider, used for all upstream calls and overriding any key sent by the client.
+     * Use the key issued by OpenAI, Anthropic, or Google.
+     * @example sk-...
      */
     @MCAttribute
     public void setApiKey(String apiKey) {
@@ -188,10 +205,8 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @param store Store for API keys and usage statistics
-     * @description The LLM Gateway can operate stateless and statefully. For stateful operation, specify an AiApiStore.
-     * A store is needed for user authentication at the gateway.
-     * The gateway will use the store to enforce token limits and log usage statistics.
+     * @description Backing store that makes the gateway stateful: it authenticates clients by their API key, enforces
+     * per-user token limits, and records usage. Omit it to run the gateway statelessly.
      */
     @MCChildElement(allowForeign = true, order = 30)
     public void setAiStore(AiApiStore store) {
@@ -208,9 +223,8 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @param provider The LLM provider to use.
-     * @description The LLM provider to use. Currently, OpenAI, Anthropic and Gemini are supported.
-     * The provider determines the API used to talk to the LLM. The provider can be different as long as the API is supported.
+     * @description The LLM provider whose API is exposed, for example <code>claude</code>, <code>openai</code>, or
+     * <code>google</code>. Determines the wire format used to talk to the model.
      */
     @MCChildElement(order = 10)
     public void setProvider(LLMProvider provider) {
@@ -222,8 +236,7 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
     }
 
     /**
-     *
-     * @param policies Usage policy for the LLM Gateway.
+     * @description Usage policies applied to each request, such as maximum input and output tokens or allowed models.
      */
     @MCChildElement(order = 20)
     public void setPolicies(Policies policies) {
@@ -234,6 +247,9 @@ public class LLMGatewayInterceptor extends AbstractInterceptor {
         return systemPrompt;
     }
 
+    /**
+     * @description System prompt injected into every request before it is forwarded to the provider.
+     */
     @MCChildElement
     public void setSystemPrompt(SystemPrompt systemPrompt) {
         this.systemPrompt = systemPrompt;

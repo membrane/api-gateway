@@ -15,26 +15,40 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.router.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.router.Router;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.*;
+import java.util.List;
+import java.util.TreeMap;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
 import static java.util.Comparator.comparing;
 
 
 /**
- * @description Dispatch strategy that selects cluster nodes based on ascending priority and health.
- * Nodes are grouped by ascending priority.
- * The highest-priority group with one or more healthy nodes (status UP) is chosen.
- * If multiple nodes are healthy at that priority, one is selected at random.
- * If no nodes are UP, falls back to the first node in sorted order.
+ * @description Selects a node by ascending priority, then health. Nodes are grouped by their priority value (lower
+ * means higher priority); the first group that contains at least one node currently up is used, and if it holds several
+ * up nodes one is picked at random. Lower-priority groups are only used once all higher-priority nodes are down. If no
+ * node is up anywhere, it falls back to the first node in priority order. Set each node's priority attribute to control
+ * the order.
+ * @yaml <pre><code>
+ * balancer:
+ *   priorityStrategy: {}
+ *   clusters:
+ *     - nodes:
+ *         - host: primary.predic8.com
+ *           port: 8080
+ *           priority: 1
+ *         - host: standby.predic8.com
+ *           port: 8080
+ *           priority: 2
+ * </code></pre>
  */
 @MCElement(name="priorityStrategy")
 public class PriorityStrategy extends AbstractXmlElement implements DispatchingStrategy {

@@ -14,28 +14,36 @@
 
 package com.predic8.membrane.core.interceptor.beautifier;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.prettifier.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.prettifier.NullPrettifier;
+import com.predic8.membrane.core.prettifier.Prettifier;
+import com.predic8.membrane.core.prettifier.XMLPrettifier;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.charset.*;
+import java.io.IOException;
+import java.nio.charset.Charset;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
- * @description Beautifies request and response bodies. Supported are the Formats: <b>JSON</b>, <b>JSON5</b>, <b>XML</b>, <b>TEXT</b>
+ * @description Pretty-prints the message body according to its <code>Content-Type</code>. JSON, JSON5,
+ * XML and plain text are reindented; any other content type is left unchanged. Runs in both the
+ * request and the response flow and is best-effort: an empty or unparseable body passes through
+ * untouched and the exchange never fails. See the tutorials under tutorials/json and tutorials/xml.
  * @yaml <pre><code>
  * api:
  *   port: 2000
  *   flow:
  *     - static:
  *         contentType: application/json
- *         src: <foo><bar>baz</bar></foo>
+ *         src: '{"name":"Membrane","tags":["api","gateway"]}'
  *     - beautifier: {}
  *     - return: {}
  * </code></pre>

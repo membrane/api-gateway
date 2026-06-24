@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.3.json
+#
+# Tutorial: Propagating the Correlation Id
+#
+# The real value of a correlation id shows when a request crosses service
+# boundaries: the same id should appear in the logs of every service involved.
+#
+# Each API just writes a short log line - it does not need to mention the id or
+# the port, because Membrane adds both to every log line automatically (you see
+# them as {api=..., correlationId=...} in the console).
+#
+# When you call port 2000, the plugin generates (or reads) an id and writes it
+# into the request header. That header is forwarded to port 2001, where the
+# global plugin finds it already present and reuses it. Result: both APIs log
+# the SAME id.
+#
+# 1.) Start Membrane:
+#       Linux/Mac:  ./membrane.sh -c 20-Propagation.yaml
+#       Windows:    membrane.cmd  -c 20-Propagation.yaml
+#
+# 2.) Call the EDGE API on port 2000 and watch the console:
+#       curl http://localhost:2000
+#
+#     Two log lines appear with the same generated id, e.g.:
+#       {api=0.0.0.0:2000, correlationId=req-6f1c2e7a-...} - Forwarding request
+#       {api=0.0.0.0:2001, correlationId=req-6f1c2e7a-...} - Handling request
+#     The id reached port 2001 even though you never called it directly.
+#
+# 3.) Send your own id and see it flow through unchanged:
+#       curl http://localhost:2000 -H "X-Correlation-Id: order-4711"
+#
+#       {api=0.0.0.0:2000, correlationId=order-4711} - Forwarding request
+#       {api=0.0.0.0:2001, correlationId=order-4711} - Handling request
+
+global:
+  - correlationId:
+      default: "req-${T(java.util.UUID).randomUUID()}"
+
+---
+
+# Edge API: the entry point. Forwards everything to the internal API on 2001.
+api:
+  port: 2000
+  flow:
+    - log:
+        message: Forwarding request
+  target:
+    url: http://localhost:2001
+
+---
+
+# Internal API: the backend. It receives the id that was propagated from 2000.
+api:
+  port: 2001
+  flow:
+    - log:
+        message: Handling request
+    - return:
+        status: 200
