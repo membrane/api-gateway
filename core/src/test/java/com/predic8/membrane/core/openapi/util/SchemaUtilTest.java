@@ -16,6 +16,8 @@
 
 package com.predic8.membrane.core.openapi.util;
 
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.Test;
 
@@ -24,43 +26,60 @@ import static org.junit.jupiter.api.Assertions.*;
 @SuppressWarnings({"rawtypes", "unchecked"})
 class SchemaUtilTest {
 
+    private static OpenAPI apiWithSchema(String name, Schema schema) {
+        return new OpenAPI().components(new Components().addSchemas(name, schema));
+    }
+
     // -----------------------------------------------------------------------
     // isObjectOrArray must work for OAS 3.0 (type) and OAS 3.1 (types array)
     // -----------------------------------------------------------------------
 
     @Test
     void objectAndArrayDetectedForOAS30Type() {
-        assertTrue(SchemaUtil.isObjectOrArray(new Schema().type("object")));
-        assertTrue(SchemaUtil.isObjectOrArray(new Schema().type("array")));
+        assertTrue(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema().type("object")));
+        assertTrue(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema().type("array")));
     }
 
     @Test
     void objectAndArrayDetectedForOAS31TypesArray() {
-        assertTrue(SchemaUtil.isObjectOrArray(new Schema().typesItem("object")));
-        assertTrue(SchemaUtil.isObjectOrArray(new Schema().typesItem("array")));
+        assertTrue(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema().typesItem("object")));
+        assertTrue(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema().typesItem("array")));
     }
 
     @Test
     void nullableObjectDetectedForOAS31TypesArray() {
-        assertTrue(SchemaUtil.isObjectOrArray(new Schema().typesItem("object").typesItem("null")));
+        assertTrue(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema().typesItem("object").typesItem("null")));
     }
 
     @Test
-    void refIsTreatedAsObjectOrArray() {
-        assertTrue(SchemaUtil.isObjectOrArray(new Schema().$ref("#/components/schemas/Foo")));
+    void refToObjectIsObjectOrArray() {
+        OpenAPI api = apiWithSchema("Foo", new Schema().type("object"));
+        assertTrue(SchemaUtil.isObjectOrArray(api, new Schema().$ref("#/components/schemas/Foo")));
+    }
+
+    @Test
+    void refToScalarIsNotObjectOrArray() {
+        OpenAPI api = apiWithSchema("Foo", new Schema().type("string"));
+        assertFalse(SchemaUtil.isObjectOrArray(api, new Schema().$ref("#/components/schemas/Foo")));
+    }
+
+    @Test
+    void unresolvableRefIsNotObjectOrArray() {
+        assertFalse(SchemaUtil.isObjectOrArray(apiWithSchema("Bar", new Schema().type("object")),
+                new Schema().$ref("#/components/schemas/Foo")));
     }
 
     @Test
     void schemaWithPropertiesButNoTypeIsObjectOrArray() {
-        assertTrue(SchemaUtil.isObjectOrArray(new Schema().addProperty("a", new Schema().type("string"))));
+        assertTrue(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema().addProperty("a", new Schema().type("string"))));
     }
 
     @Test
     void scalarsAreNotObjectOrArray() {
-        assertFalse(SchemaUtil.isObjectOrArray(new Schema().type("string")));
-        assertFalse(SchemaUtil.isObjectOrArray(new Schema().type("integer")));
-        assertFalse(SchemaUtil.isObjectOrArray(new Schema().typesItem("string")));
-        assertFalse(SchemaUtil.isObjectOrArray(new Schema()));
+        assertFalse(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema().type("string")));
+        assertFalse(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema().type("integer")));
+        assertFalse(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema().typesItem("string")));
+        assertFalse(SchemaUtil.isObjectOrArray(new OpenAPI(), new Schema()));
     }
 
     // -----------------------------------------------------------------------
