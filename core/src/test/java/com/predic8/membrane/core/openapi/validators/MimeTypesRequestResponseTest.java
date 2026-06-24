@@ -22,8 +22,6 @@ import jakarta.mail.internet.ParseException;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.http.MimeType.APPLICATION_X_WWW_FORM_URLENCODED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,24 +30,6 @@ public class MimeTypesRequestResponseTest extends AbstractValidatorTest {
     @Override
 protected String getOpenAPIFileName() {
         return "/openapi/specs/mimetypes.yml";
-    }
-
-    // application/x-www-form-urlencoded is still not implemented
-    @Test
-
-    public void formUrlEncodedResponseNotImplemented() throws ParseException {
-        ValidationErrors errors = validator.validateResponse(Request.get().path("/mimetypes"),
-                Response.statusCode(202).mediaType(APPLICATION_X_WWW_FORM_URLENCODED).body("{ }"));
-        assertEquals(1, errors.size());
-        assertTrue(errors.get(0).getMessage().toLowerCase().contains("not implemented"));
-    }
-
-    @Test
-    public void formUrlEncodedRequestNotImplemented() throws ParseException {
-        ValidationErrors errors = validator.validate(
-                Request.post().path("/x-www-form-urlencoded").mediaType(APPLICATION_X_WWW_FORM_URLENCODED).body("name=Alice"));
-        assertEquals(1, errors.size());
-        assertTrue(errors.get(0).getMessage().toLowerCase().contains("not implemented"));
     }
 
     // XML: invalid XML produces a parse error (not "not implemented" any more)
