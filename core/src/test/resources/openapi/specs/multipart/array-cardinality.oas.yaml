@@ -1,0 +1,25 @@
+openapi: '3.0.3'
+info:
+  title: Array Cardinality Multipart API
+  version: '1.0'
+servers:
+  - url: https://api.server.test
+paths:
+  /upload:
+    post:
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                tags:
+                  type: array
+                  minItems: 2
+                  maxItems: 3
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
