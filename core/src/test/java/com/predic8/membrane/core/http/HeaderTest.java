@@ -15,15 +15,21 @@
 package com.predic8.membrane.core.http;
 
 import jakarta.activation.MimeType;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
 
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.MimeType.isBinary;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class HeaderTest {
@@ -303,6 +309,49 @@ class HeaderTest {
         @Test
         void missingContentTypeIsNotMultipart() {
             assertFalse(new Header().isMultipart());
+        }
+    }
+
+    @Nested
+    class IsChunked {
+        @Test
+        void plainChunked() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "chunked");
+            assertTrue(h.isChunked());
+        }
+
+        @Test
+        void caseInsensitive() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "Chunked");
+            assertTrue(h.isChunked());
+        }
+
+        @Test
+        void chunkedAsFinalCoding() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "gzip, chunked");
+            assertTrue(h.isChunked());
+        }
+
+        @Test
+        void chunkedNotFinalCodingIsNotChunkedFramed() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "chunked, gzip");
+            assertFalse(h.isChunked());
+        }
+
+        @Test
+        void otherCodingIsNotChunked() {
+            var h = new Header();
+            h.add(TRANSFER_ENCODING, "gzip");
+            assertFalse(h.isChunked());
+        }
+
+        @Test
+        void missingTransferEncodingIsNotChunked() {
+            assertFalse(new Header().isChunked());
         }
     }
 

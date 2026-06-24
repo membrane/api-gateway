@@ -330,8 +330,22 @@ public class Header {
         setValue(PROXY_AUTHORIZATION, value);
     }
 
+    /**
+     * Whether the message body uses chunked transfer framing.
+     * <p>
+     * Per RFC 7230 section 3.3.1 the body is chunked-framed if "chunked" is the
+     * <em>final</em> transfer-coding. Transfer-coding names are case-insensitive,
+     * and codings may be combined in a comma-separated list (e.g. "gzip, chunked"),
+     * so this looks at the last token case-insensitively rather than requiring an
+     * exact "chunked" match.
+     */
     public boolean isChunked() {
-        return CHUNKED.equals(getFirstValue(TRANSFER_ENCODING));
+        String value = getFirstValue(TRANSFER_ENCODING);
+        if (value == null)
+            return false;
+        int lastComma = value.lastIndexOf(',');
+        String last = (lastComma == -1 ? value : value.substring(lastComma + 1)).trim();
+        return CHUNKED.equalsIgnoreCase(last);
     }
 
     public long getContentLength() {
