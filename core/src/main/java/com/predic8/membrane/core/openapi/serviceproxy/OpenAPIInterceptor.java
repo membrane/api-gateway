@@ -130,6 +130,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             ValidationErrors errors = validateRequest(rec, exc);
 
             if (!errors.isEmpty()) {
+                log.info("OpenAPI request validation failed for {} {} against '{}': {}",
+                        exc.getRequest().getMethod(), exc.getRequest().getUri(),
+                        rec.api.getInfo().getTitle(), errors);
                 apiProxy.statisticCollector.collect(errors);
                 createErrorResponse(exc, errors, ValidationErrors.Direction.REQUEST, validationDetails(rec.api));
                 return RETURN;
@@ -183,6 +186,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             ValidationErrors errors = validateResponse(rec, exc);
 
             if (errors != null && errors.hasErrors()) {
+                log.info("OpenAPI response validation failed for {} {} against '{}': {}",
+                        exc.getRequest().getMethod(), exc.getRequest().getUri(),
+                        rec.api.getInfo().getTitle(), errors);
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
                 apiProxy.statisticCollector.collect(errors);
                 createErrorResponse(exc, errors, ValidationErrors.Direction.RESPONSE, validationDetails(rec.api));

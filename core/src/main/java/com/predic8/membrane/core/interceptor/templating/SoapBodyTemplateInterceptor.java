@@ -23,11 +23,9 @@ import static com.predic8.membrane.core.util.soap.SoapVersion.SOAP_11;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * @description Wraps a rendered template in a SOAP <code>Envelope</code> and <code>Body</code> and sets it as the
- * message body. The element body is a Groovy template: <code>${...}</code> expressions are substituted with values from
- * the request or response, headers, query parameters, and so on, exactly as with <code>template</code>. The
- * Content-Type is set to match the SOAP version. See the examples under examples/web-services-soap/rest2soap-template
- * and the tutorial tutorials/soap/60-SOAP-Body-Template.yaml.
+ * @description Renders a SOAP body for legacy integration. The Content-Type defaults to the type of the
+ * configured SOAP version (<code>text/xml</code> for 1.1, <code>application/soap+xml</code> for 1.2). Setting
+ * <code>contentType</code> explicitly overrides this, e.g. to add a charset.
  * @topic 2. Enterprise Integration Patterns
  * @yaml
  * <pre><code>
@@ -76,7 +74,8 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
 
     @Override
     public String getContentType() {
-        return version.getContentType();
+        // A content type configured by the user takes precedence over the SOAP version default.
+        return contentType != null ? contentType : version.getContentType();
     }
 
     public String getVersion() {
@@ -97,6 +96,7 @@ public class SoapBodyTemplateInterceptor extends TemplateInterceptor {
 
     @Override
     protected String getDefaultContentType() {
-        return TEXT_XML;
+        // No fixed default: an unset content type falls back to the SOAP version's type in getContentType().
+        return null;
     }
 }

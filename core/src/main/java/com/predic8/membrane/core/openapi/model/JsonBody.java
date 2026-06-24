@@ -16,10 +16,14 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 
-import java.io.*;
+import java.io.IOException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JsonBody implements Body {
 
@@ -47,5 +51,10 @@ public class JsonBody implements Body {
     @Override
     public JsonNode getJson() throws IOException {
         return payload;
+    }
+
+    @Override
+    public byte[] asBytes() {
+        return asString().getBytes(UTF_8);
     }
 }
