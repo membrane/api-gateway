@@ -32,8 +32,6 @@ protected String getOpenAPIFileName() {
         return "/openapi/specs/mimetypes.yml";
     }
 
-    // application/x-www-form-urlencoded validation is covered by FormUrlEncodedValidatorTest.
-
     // XML: invalid XML produces a parse error (not "not implemented" any more)
     @Test
     public void invalidXmlRequestBodyProducesParseError() throws ParseException {
