@@ -142,7 +142,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             validator.setErrorHandler(new SchemaValidatorErrorHandler());
             return validator;
         } catch (SAXException e) {
-            throw new ConfigurationException("Cannot read schema %s.".formatted(location), e);
+            throw new ConfigurationException("Cannot read schema %s".formatted(location), e);
         }
     }
 
