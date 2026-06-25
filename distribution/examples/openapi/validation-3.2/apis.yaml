@@ -1,0 +1,36 @@
+# Configures Membrane as an API Gateway for an OpenAPI 3.2 description.
+api:
+  port: 2000
+  openapi:
+    - location: bulk-api-3.2.yml
+      validateRequests: yes
+
+---
+# This proxy provides a mock backend implementation for the API.
+# Instead of the mock you can use the backend for your API.
+api:
+  port: 3000
+  path:
+    uri: /documents
+  flow:
+    - response:
+        - template:
+            pretty: true
+            contentType: application/json
+            src: '{ "success": true }'
+    - return:
+        status: 202
+
+---
+api:
+  port: 3000
+  path:
+    uri: /find
+  flow:
+    - response:
+        - template:
+            pretty: true
+            contentType: application/json
+            src: '{ "success": true }'
+    - return:
+        status: 200

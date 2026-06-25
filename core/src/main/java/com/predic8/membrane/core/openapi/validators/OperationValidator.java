@@ -19,6 +19,7 @@ package com.predic8.membrane.core.openapi.validators;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
 import com.predic8.membrane.core.openapi.util.MethodNotAllowException;
+import com.predic8.membrane.core.openapi.util.OpenAPI32Parser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -52,7 +53,14 @@ public class OperationValidator {
     public ValidationErrors validateRequest(ValidationContext ctx, Request<?> req) {
         var errors = new ValidationErrors();
         errors.add(validatePathParameters(ctx, req, operation.getParameters()));
-        errors.add(new QueryParameterValidator(api, pathItem).validate(ctx, req, operation));
+        // OpenAPI 3.2 `in: querystring` captures the whole query string and is mutually exclusive with
+        // `in: query` parameters, so it replaces the per-parameter query validation.
+        Parameter querystring = OpenAPI32Parser.getQuerystringParameter(pathItem, operation);
+        if (querystring != null) {
+            errors.add(new QuerystringParameterValidator(api).validate(ctx, req, querystring));
+        } else {
+            errors.add(new QueryParameterValidator(api, pathItem).validate(ctx, req, operation));
+        }
         errors.add(new RequestHeaderParameterValidator(api, pathItem).validateHeaderParameters(ctx, req, operation));
         if (shouldValidate(api, SECURITY))
             errors.add(new SecurityValidator(api).validateSecurity(ctx, req, operation));
@@ -69,7 +77,7 @@ public class OperationValidator {
     }
 
     private static Operation getOperation(String method, PathItem pi) throws MethodNotAllowException {
-        return switch (method.toUpperCase()) {
+        Operation operation = switch (method.toUpperCase()) {
             case "GET" -> pi.getGet();
             case "HEAD" -> pi.getHead();
             case "OPTIONS" -> pi.getOptions();
@@ -78,7 +86,12 @@ public class OperationValidator {
             case "DELETE" -> pi.getDelete();
             case "PATCH" -> pi.getPatch();
             case "TRACE" -> pi.getTrace();
-            default -> throw new MethodNotAllowException();
+            // OpenAPI 3.2 adds the QUERY method and arbitrary additionalOperations, which the
+            // swagger model cannot hold; OpenAPI32Parser attaches them as a PathItem extension.
+            default -> OpenAPI32Parser.getAdditionalOperation(pi, method);
         };
+        if (operation == null)
+            throw new MethodNotAllowException();
+        return operation;
     }
 }

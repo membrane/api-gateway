@@ -1,0 +1,39 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<!-- Configures Membrane as an API Gateway for an OpenAPI 3.2 description -->
+		<api port="2000">
+			<openapi location="bulk-api-3.2.yml" validateRequests="yes"/>
+		</api>
+
+		<!-- This proxy provides a mock backend implementation for the API. Instead
+			 of the mock you can use the backend for your API.
+		-->
+		<api port="3000">
+			<path>/documents</path>
+			<response>
+				<template pretty="true" contentType="application/json">
+					{ "success": true }
+				</template>
+			</response>
+			<return statusCode="202"/>
+		</api>
+
+		<api port="3000">
+			<path>/find</path>
+			<response>
+				<template pretty="true" contentType="application/json">
+					{ "success": true }
+				</template>
+			</response>
+			<return statusCode="200"/>
+		</api>
+
+	</router>
+
+</spring:beans>
