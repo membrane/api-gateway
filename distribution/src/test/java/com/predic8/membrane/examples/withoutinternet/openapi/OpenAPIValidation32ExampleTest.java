@@ -125,4 +125,33 @@ public class OpenAPIValidation32ExampleTest extends AbstractSampleMembraneStartS
 			.body(containsString("term"));
 		// @formatter:on
 	}
+
+	@Test
+	public void xmlNodeTypeBodyIsValidated() {
+		// id/currency as attributes and total value as element text — all via OpenAPI 3.2 xml.nodeType.
+		// @formatter:off
+		given()
+			.contentType("application/xml")
+			.body("<order id=\"A1\"><total currency=\"USD\">42.5</total></order>")
+		.when()
+			.post(LOCALHOST_2000 + "/orders")
+		.then()
+			.statusCode(201)
+			.body(containsString("success"));
+		// @formatter:on
+	}
+
+	@Test
+	public void xmlNodeTypeTextWrongTypeIsRejected() {
+		// The total value (nodeType: text, type number) is not a number.
+		// @formatter:off
+		given()
+			.contentType("application/xml")
+			.body("<order id=\"A1\"><total currency=\"USD\">not-a-number</total></order>")
+		.when()
+			.post(LOCALHOST_2000 + "/orders")
+		.then()
+			.statusCode(400);
+		// @formatter:on
+	}
 }

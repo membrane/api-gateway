@@ -134,6 +134,52 @@ class OpenAPI32ValidatorTest {
     }
 
     @Test
+    void validContentSchema() {
+        ValidationErrors errors = validator.validate(
+                new Request<>("POST").path("/wrap").body("""
+                        {"payload": "{\\"event\\": \\"created\\"}"}""").json());
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    void contentSchemaViolationIsInvalid() {
+        // The JSON inside the payload string misses the required "event".
+        ValidationErrors errors = validator.validate(
+                new Request<>("POST").path("/wrap").body("""
+                        {"payload": "{\\"other\\": 1}"}""").json());
+        assertEquals(1, errors.size());
+        assertEquals("/payload/event", errors.get(0).getContext().getJSONpointer());
+    }
+
+    @Test
+    void contentNotParseableIsInvalid() {
+        ValidationErrors errors = validator.validate(
+                new Request<>("POST").path("/wrap").body("""
+                        {"payload": "not json"}""").json());
+        assertEquals(1, errors.size());
+        assertTrue(errors.get(0).getMessage().contains("not valid application/json"));
+    }
+
+    @Test
+    void validBase64ContentSchema() {
+        // "eyJpZCI6NX0=" is base64 of {"id":5}
+        ValidationErrors errors = validator.validate(
+                new Request<>("POST").path("/wrap").body("""
+                        {"payload": "{\\"event\\": \\"x\\"}", "encoded": "eyJpZCI6NX0="}""").json());
+        assertEquals(0, errors.size());
+    }
+
+    @Test
+    void base64ContentSchemaViolationIsInvalid() {
+        // "eyJpZCI6IngifQ==" is base64 of {"id":"x"} — id must be an integer.
+        ValidationErrors errors = validator.validate(
+                new Request<>("POST").path("/wrap").body("""
+                        {"payload": "{\\"event\\": \\"x\\"}", "encoded": "eyJpZCI6IngifQ=="}""").json());
+        assertEquals(1, errors.size());
+        assertEquals("/encoded/id", errors.get(0).getContext().getJSONpointer());
+    }
+
+    @Test
     void validQuerystringParameter() {
         ValidationErrors errors = validator.validate(Request.get().path("/find?term=shoes&page=2"));
         assertEquals(0, errors.size());

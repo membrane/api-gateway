@@ -66,6 +66,39 @@ paths:
       responses:
         '202':
           description: Accepted
+  /wrap:
+    post:
+      summary: Body with strings that carry JSON content (contentMediaType/contentSchema)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payload]
+              properties:
+                payload:
+                  type: string
+                  contentMediaType: application/json
+                  contentSchema:
+                    type: object
+                    required: [event]
+                    properties:
+                      event:
+                        type: string
+                encoded:
+                  type: string
+                  contentEncoding: base64
+                  contentMediaType: application/json
+                  contentSchema:
+                    type: object
+                    required: [id]
+                    properties:
+                      id:
+                        type: integer
+      responses:
+        '200':
+          description: ok
   /find:
     get:
       summary: Search with the whole query string typed as a single parameter

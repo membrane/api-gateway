@@ -7,8 +7,10 @@ requests against them — including the constructs that 3.2 adds on top of 3.1:
   JSON Lines) is validated individually against a schema.
 - **The `QUERY` HTTP method**: a read operation that carries a request body.
 - **The `in: querystring` parameter**: the entire query string described as one typed value.
+- **The `xml.nodeType` keyword**: replaces the deprecated `xml.attribute`/`xml.wrapped` and adds
+  `text`/`cdata` for element text content.
 
-The API in [`bulk-api-3.2.yml`](bulk-api-3.2.yml) uses all three.
+The API in [`bulk-api-3.2.yml`](bulk-api-3.2.yml) uses all four.
 
 ## Running the example
 

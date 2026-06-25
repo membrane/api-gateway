@@ -34,6 +34,16 @@
 			<return statusCode="200"/>
 		</api>
 
+		<api port="3000">
+			<path>/orders</path>
+			<response>
+				<template pretty="true" contentType="application/json">
+					{ "success": true }
+				</template>
+			</response>
+			<return statusCode="201"/>
+		</api>
+
 	</router>
 
 </spring:beans>

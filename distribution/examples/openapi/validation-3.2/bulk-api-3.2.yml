@@ -51,8 +51,41 @@ paths:
       responses:
         '200':
           description: Matching documents
+  /orders:
+    # OpenAPI 3.2: xml.nodeType replaces the deprecated xml.attribute / xml.wrapped.
+    post:
+      summary: Submit an order as XML
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '201':
+          description: Created
 components:
   schemas:
+    Order:
+      type: object
+      required: [id, total]
+      properties:
+        id:
+          type: string
+          xml:
+            nodeType: attribute
+        total:
+          type: object
+          required: [currency, value]
+          properties:
+            currency:
+              type: string
+              xml:
+                nodeType: attribute
+            value:
+              type: number
+              xml:
+                nodeType: text
     Document:
       type: object
       required: [id, title]

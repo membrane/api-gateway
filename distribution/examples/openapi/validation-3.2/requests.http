@@ -41,3 +41,17 @@ GET http://localhost:2000/find?term=membrane&page=2
 ### in: querystring missing the required "term", should fail
 
 GET http://localhost:2000/find?page=2
+
+### xml.nodeType (OpenAPI 3.2) — id/currency as attributes, total as text, should work
+
+POST http://localhost:2000/orders
+Content-Type: application/xml
+
+<order id="A1"><total currency="USD">42.5</total></order>
+
+### xml.nodeType — total text is not a number, should fail
+
+POST http://localhost:2000/orders
+Content-Type: application/xml
+
+<order id="A1"><total currency="USD">not-a-number</total></order>

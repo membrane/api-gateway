@@ -42,6 +42,8 @@ public class SchemaValidator implements JsonSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(SchemaValidator.class.getName());
 
+    private static final com.fasterxml.jackson.databind.ObjectMapper CONTENT_MAPPER = new com.fasterxml.jackson.databind.ObjectMapper();
+
     @SuppressWarnings("rawtypes")
     private Schema schema;
     final private OpenAPI api;
@@ -115,7 +117,49 @@ public class SchemaValidator implements JsonSchemaValidator {
 
         errors.add(new NumberRestrictionValidator(schema).validate(ctx, value));
         errors.add(validateByType(ctx, value));
+        errors.add(validateContentSchema(ctx, value));
         return errors;
+    }
+
+    /**
+     * Validates the JSON Schema 2020-12 string content keywords (emphasized by OpenAPI 3.2): when a
+     * string carries content of another media type ({@code contentMediaType}, optionally
+     * {@code contentEncoding: base64}) the decoded content is parsed and validated against
+     * {@code contentSchema}. Only JSON content media types are validated; others are left untouched.
+     */
+    private ValidationErrors validateContentSchema(ValidationContext ctx, Object value) {
+        if (schema.getContentSchema() == null || schema.getContentMediaType() == null)
+            return null;
+        String text = asString(value);
+        if (text == null || !isJsonMediaType(schema.getContentMediaType()))
+            return null;
+
+        if ("base64".equals(schema.getContentEncoding()) || "base64url".equals(schema.getContentEncoding())) {
+            try {
+                text = new String(java.util.Base64.getMimeDecoder().decode(text), java.nio.charset.StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e) {
+                return ValidationErrors.error(ctx, "The string is not valid base64 content.");
+            }
+        }
+
+        com.fasterxml.jackson.databind.JsonNode content;
+        try {
+            content = CONTENT_MAPPER.readTree(text);
+        } catch (IOException e) {
+            return ValidationErrors.error(ctx, "The string content is not valid %s.".formatted(schema.getContentMediaType()));
+        }
+        return new SchemaValidator(api, schema.getContentSchema()).validate(ctx, content);
+    }
+
+    private static @Nullable String asString(Object value) {
+        if (value instanceof com.fasterxml.jackson.databind.JsonNode node)
+            return node.isTextual() ? node.textValue() : null;
+        return value instanceof String s ? s : null;
+    }
+
+    private static boolean isJsonMediaType(String mediaType) {
+        String mt = mediaType.toLowerCase();
+        return mt.equals("application/json") || mt.endsWith("+json");
     }
 
     private boolean isNullable() {

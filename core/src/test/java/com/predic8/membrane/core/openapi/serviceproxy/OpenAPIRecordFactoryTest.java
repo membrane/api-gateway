@@ -139,6 +139,23 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
+    void externalRefsResolvedInOpenAPI32() {
+        OpenAPIRecord rec = getOpenAPIRecord("oas32/refs/api.yaml", "refs-demo-v1-0-0");
+        assertNotNull(rec);
+        // The external component ref (customer.yaml#/Customer) must be resolved into the model.
+        var customer = rec.api.getComponents().getSchemas().get("Customer");
+        assertNotNull(customer.getProperties());
+        assertTrue(customer.getProperties().containsKey("email"));
+        // Both a standard operation and the 3.2 query operation reference it via #/components.
+        assertEquals("#/components/schemas/Customer", rec.api.getPaths().get("/customers").getPost()
+                .getRequestBody().getContent().get(APPLICATION_JSON).getSchema().get$ref());
+        var query = com.predic8.membrane.core.openapi.util.OpenAPI32Parser.getAdditionalOperation(
+                rec.api.getPaths().get("/customers"), "QUERY");
+        assertEquals("#/components/schemas/Customer",
+                query.getRequestBody().getContent().get(APPLICATION_JSON).getSchema().get$ref());
+    }
+
+    @Test
     void openAPI32PublishesFaithfulDocument() {
         OpenAPIRecord rec = getOpenAPIRecord("oas32/query-method.yaml", "search-api-v1-0-0");
         // The published node is the original 3.2 document, keeping constructs the swagger model

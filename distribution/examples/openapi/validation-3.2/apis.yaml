@@ -34,3 +34,17 @@ api:
             src: '{ "success": true }'
     - return:
         status: 200
+
+---
+api:
+  port: 3000
+  path:
+    uri: /orders
+  flow:
+    - response:
+        - template:
+            pretty: true
+            contentType: application/json
+            src: '{ "success": true }'
+    - return:
+        status: 201
