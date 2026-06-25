@@ -76,11 +76,4 @@ Membrane rejects the request and points at the offending item with a JSON Pointe
 }
 ```
 
-## How it works
-
-`swagger-parser`, the library Membrane builds on, does not support OpenAPI 3.2 yet. Membrane therefore
-ships a dedicated `OpenAPI32Parser` that reads 3.2 documents, parses the large 3.1-compatible subset with
-the established engine, and re-attaches the new 3.2 constructs (the `query`/`additionalOperations`
-operations and `itemSchema`) so that routing and validation can use them.
-
 See also the [validation-simple](../validation-simple) and [validation](../validation) examples.
