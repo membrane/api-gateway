@@ -14,16 +14,20 @@
 
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.acl.rules.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.acl.rules.AccessRule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @topic 3. Security and Validation
@@ -31,16 +35,23 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
  * <p>Applies access control rules to incoming requests based on the peer address.</p>
  *
  * <p>The interceptor evaluates the configured child rules in order and uses the first rule that matches the peer to
- * decide whether the request is permitted. If no rule matches, access is denied.</p>
+ * decide whether the request is permitted. If no rule matches, access is denied. A denied request is rejected with
+ * 403.</p>
  *
  * <p>Rules can match on IPv4/IPv6 (optionally with CIDR prefix) or on a hostname pattern. Hostname matching requires
  * the peer hostname to be resolved and is performed only when at least one configured rule uses a hostname target.</p>
  *
+ * <p>See the examples under examples/security/access-control-list and the tutorial
+ * tutorials/security/60-Access-Control-Lists.yaml.</p>
+ *
  * @yaml
  * <pre><code>
- * - accessControl:
- *     - allow: "10.0.0.0/8"
- *     - deny: "0.0.0.0/0"
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - accessControl:
+ *         - allow: "10.0.0.0/8"
+ *         - deny: "0.0.0.0/0"
  * </code></pre>
  */
 @MCElement(name = "accessControl", noEnvelope = true)

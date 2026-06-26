@@ -14,24 +14,46 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.ws.relocator.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.util.URLUtil;
+import com.predic8.membrane.core.ws.relocator.Relocator;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.namespace.*;
-import java.io.*;
-import java.net.*;
+import javax.xml.namespace.QName;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.util.soap.WSDLUtil.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.RESPONSE_FLOW;
+import static com.predic8.membrane.core.util.soap.WSDLUtil.rewriteRelativeWsdlPath;
 
 /**
- * @description <p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
+ * @description Rewrites SOAP endpoint addresses and XML Schema locations (XSD <code>import</code> and
+ * <code>include</code>) in WSDL and XSD documents returned by the backend, so they point at the gateway instead of the
+ * backend's own address. By default the gateway's protocol, host, and port from the incoming request are used; set the
+ * attributes below to force a specific address. Typically used inside a soapProxy, where the service path is taken from
+ * the proxy. See the tutorial tutorials/soap/30-WSDL-Rewriter.yaml.
  * @topic 6. Web Services with SOAP and WSDL
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - wsdlRewriter:
+ *         protocol: https
+ *         host: api.example.com
+ *         port: 443
+ *   target:
+ *     url: https://legacy.example.com/ArticleService?wsdl
+ * </code></pre>
  */
 @MCElement(name = "wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
@@ -159,11 +181,10 @@ public class WSDLInterceptor extends RelocatingInterceptor {
     }
 
     /**
-     * When the wsdlRewriter is used in a SOAPProxy, the path is set to the path/uri from the SOAPProxy.
-     *
-     * @param path
-     * @description Path to use for the service location
+     * @description Service location path written into the rewritten endpoint addresses. Inside a soapProxy it defaults
+     * to the proxy's path.
      * @default soapProxy/path/uri
+     * @example /shop/ArticleService
      */
     @MCAttribute
     public void setPath(String path) {

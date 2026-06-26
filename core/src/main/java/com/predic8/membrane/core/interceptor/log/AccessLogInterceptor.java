@@ -28,8 +28,19 @@ import java.util.List;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
- * @description Writes exchange metrics into a Log4j appender
- * @explanation Defaults to Apache Common Log pattern
+ * @description Writes one access-log line per completed exchange through a Log4j appender. The line follows the Apache
+ * Common Log Format by default; add additionalPatternList entries to append your own SpEL-evaluated fields. Where the
+ * line is written and in which format is controlled by the Log4j configuration (log4j2.xml). Typically configured under
+ * <code>global</code> so it covers every API. See the examples under examples/logging/access.
+ * @topic 4. Monitoring, Logging and Statistics
+ * @yaml
+ * <pre><code>
+ * global:
+ *   - accessLog:
+ *       additionalPatternList:
+ *         - name: forwarded
+ *           expression: headers['x-forwarded-for']
+ * </code></pre>
  */
 @MCElement(name = "accessLog")
 public class AccessLogInterceptor extends AbstractInterceptor {
@@ -78,6 +89,10 @@ public class AccessLogInterceptor extends AbstractInterceptor {
         return additionalVariables;
     }
 
+    /**
+     * @description Extra fields appended to each log line. Each additionalVariable binds a name, referenced in
+     * log4j2.xml as %X{name}, to a SpEL expression evaluated against the exchange.
+     */
     @SuppressWarnings("unused")
     @MCChildElement
     public void setAdditionalPatternList(List<AdditionalVariable> additionalVariableList) {
@@ -89,7 +104,9 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description - Provide a default value if the exchange property could not be found, defaults to "-"
+     * @description Value logged when an exchange property or expression resolves to null.
+     * @default -
+     * @example N/A
      */
     @MCAttribute
     public void setDefaultValue(String defaultValue) {
@@ -102,7 +119,8 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description - Provide a datetime pattern, defaults to "dd/MM/yyyy:HH:mm:ss Z"
+     * @description Pattern used to format the request timestamp in the log line.
+     * @default dd/MM/yyyy:HH:mm:ss Z
      */
     @MCAttribute
     public void setDateTimePattern(String dateTimePattern) {
@@ -115,7 +133,9 @@ public class AccessLogInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description - Reading the payload size would disable "Streaming", defaults to false
+     * @description Whether to omit the payload size from the log line. Logging the size requires reading the whole
+     * body, which disables streaming; set to <code>true</code> to keep streaming.
+     * @default false
      */
     @MCAttribute
     public void setExcludePayloadSize(boolean excludePayloadSize) {
