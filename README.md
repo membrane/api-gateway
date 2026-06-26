@@ -11,9 +11,9 @@
 
 Lightweight **API Gateway** for **REST**, **GraphQL** and **legacy Web Services**, easily extended with powerful plugins.
 
-Based on the Java platform, Membrane integrates smoothly with major enterprise technologies. Load tests show that Java provides an excellent foundation for high performance and scalability. On a 2021 MacBook Pro, Membrane handles more than 20,000 requests per second, supports up to 10,000 concurrent clients, and can host over 100,000 APIs on a single instance.
+Built on the **Java platform**, Membrane integrates seamlessly with enterprise technologies while delivering high performance and scalability. In load tests on a MacBook Pro, Membrane processed more than 40,000 requests per second, supported up to 20,000 concurrent clients, and hosted over 100,000 APIs on a single instance.
 
-The examples below demonstrate how to address a wide range of API Gateway requirements using simple configurations. Version **7.0.0 or newer** is required.
+The examples below demonstrate how to address a wide range of requirements using simple configurations.
 
 **Forwarding Requests from Port 2000 to a Backend:** 
 
@@ -88,17 +88,30 @@ Authenticated requests to '/token' return a signed JWT in which the username fro
 
 This example is intentionally minimal, but it highlights the basic building blocks: authenticate the caller, shape the token payload, and sign the result. From there, you can extend it with additional claims, custom logic, or stricter policies to implement tailored API security flows.
 
-## API Gateway eBook (New Second Edition)
+## API Gateway eBook
 
-Get the latest version of the *API Gateway eBook*. The **second edition** includes new chapters, improved material, and additional examples across more than 320 pages.
-
-Learn how API Gateways work through practical scenarios and real-world examples, including insights based on the Membrane API Gateway.
+Learn how API Gateways work through practical scenarios and real-world examples.
 
 <img src="docs/images/api-gateway-ebook-cover.jpg" alt="API Gateway eBook Cover" width="400">
 
 [Download](https://www.membrane-api.io/ebook/API-Gateway-Handbook-v2.0.0.pdf) instantly. **No registration** required.
 
-## Features
+## Tech Talk
+
+Meet other Membrane users **online** to discuss API gateway configuration, operation, and architecture. Membrane developers answer questions and welcome your feedback and feature requests.
+
+### Upcoming Topics
+
+- **August 26, 2026** Building an LLM Gateway
+- **September 30, 2026** Legacy Integration with XML, SOAP, and WSDL
+- **October 28, 2026** Authentication with JSON Web Tokens (JWT)
+- **November 25, 2026** MCP and AI Tool Integration
+- **December 30, 2026** Message Transformation
+
+[Learn more](https://www.membrane-api.io/user-meeting/)
+
+
+## Membrane API Gateway Features
 
 ### **OpenAPI**
 
@@ -110,6 +123,15 @@ Learn how API Gateways work through practical scenarios and real-world examples,
 - Built-in [OAuth2 Authorization Server](https://www.membrane-soa.org/service-proxy-doc/4.8/security/oauth2/flows/code/index.html).
 - [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
+
+### **AI Gateway**
+- [LLM Gateway](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
+- [Securely Share LLM API Keys](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
+
+### **AI Gateway**
+- [LLM Gateway](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
+- [Securely Share LLM API Keys](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
+- MCP Protection *(available from version 7.3.0)*
 
 ### **Legacy Web Services**
 - Seamless support for [SOAP message routing](#soap-web-services).
