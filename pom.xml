@@ -75,7 +75,7 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>21</javac.source>
 		<javac.target>21</javac.target>
-		<jackson.version>2.21.0</jackson.version>
+		<jackson.version>2.21.4</jackson.version>
 		<spring.version>6.2.19</spring.version>
 		<slf4j.version>2.0.17</slf4j.version>
 		<log4j.version>2.25.4</log4j.version>
@@ -316,7 +316,7 @@
 			<dependency>
 				<groupId>io.swagger.parser.v3</groupId>
 				<artifactId>swagger-parser</artifactId>
-				<version>2.1.37</version>
+				<version>2.1.45</version>
 			</dependency>
 			<dependency>
 				<groupId>net.sf.saxon</groupId>
