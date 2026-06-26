@@ -180,6 +180,15 @@ class OpenAPI32ValidatorTest {
     }
 
     @Test
+    void validBase64UrlContentSchema() {
+        // base64url of {"id": 7, "note": ">>"} — contains '-', which the MIME decoder would skip.
+        ValidationErrors errors = validator.validate(
+                new Request<>("POST").path("/wrap").body("""
+                        {"payload": "{\\"event\\": \\"x\\"}", "encodedUrl": "eyJpZCI6IDcsICJub3RlIjogIj4-In0="}""").json());
+        assertEquals(0, errors.size());
+    }
+
+    @Test
     void validQuerystringParameter() {
         ValidationErrors errors = validator.validate(Request.get().path("/find?term=shoes&page=2"));
         assertEquals(0, errors.size());

@@ -57,7 +57,7 @@ public class OpenAPIRecord {
         this.api = api;
         this.node = convertToNode(api);
         this.spec = spec;
-        this.version = api.getSpecVersion().name();
+        this.version = api.getOpenapi() != null ? api.getOpenapi() : api.getSpecVersion().name();
     }
 
     /**

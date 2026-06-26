@@ -96,6 +96,16 @@ paths:
                     properties:
                       id:
                         type: integer
+                encodedUrl:
+                  type: string
+                  contentEncoding: base64url
+                  contentMediaType: application/json
+                  contentSchema:
+                    type: object
+                    required: [id]
+                    properties:
+                      id:
+                        type: integer
       responses:
         '200':
           description: ok

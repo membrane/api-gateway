@@ -74,7 +74,11 @@ public class OpenAPITestUtils {
         ParseOptions opts = new ParseOptions();
         opts.setResolve(true);
         try {
-            return new OpenAPI32Parser().parse(getYAMLResource(obj, path), null, opts);
+            // Pass the resource location so OpenAPIResolver can resolve relative external $refs,
+            // matching the file-based parsing path.
+            var resource = obj.getClass().getResource(path);
+            String location = resource != null ? resource.toString() : null;
+            return new OpenAPI32Parser().parse(getYAMLResource(obj, path), location, opts);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

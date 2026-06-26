@@ -134,9 +134,13 @@ public class SchemaValidator implements JsonSchemaValidator {
         if (text == null || !isJsonMediaType(schema.getContentMediaType()))
             return null;
 
-        if ("base64".equals(schema.getContentEncoding()) || "base64url".equals(schema.getContentEncoding())) {
+        String encoding = schema.getContentEncoding();
+        if ("base64".equals(encoding) || "base64url".equals(encoding)) {
+            var decoder = "base64url".equals(encoding)
+                    ? java.util.Base64.getUrlDecoder()
+                    : java.util.Base64.getMimeDecoder();
             try {
-                text = new String(java.util.Base64.getMimeDecoder().decode(text), java.nio.charset.StandardCharsets.UTF_8);
+                text = new String(decoder.decode(text), java.nio.charset.StandardCharsets.UTF_8);
             } catch (IllegalArgumentException e) {
                 return ValidationErrors.error(ctx, "The string is not valid base64 content.");
             }
