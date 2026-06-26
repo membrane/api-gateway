@@ -127,10 +127,6 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
 ### **AI Gateway**
 - [LLM Gateway](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
 - [Securely Share LLM API Keys](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
-
-### **AI Gateway**
-- [LLM Gateway](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
-- [Securely Share LLM API Keys](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
 - MCP Protection *(available from version 7.3.0)*
 
 ### **Legacy Web Services**
