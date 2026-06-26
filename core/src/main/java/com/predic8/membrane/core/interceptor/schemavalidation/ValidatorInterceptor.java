@@ -110,6 +110,8 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
         try {
             validator = getMessageValidator();
             validator.init();
+        } catch (ConfigurationException e) {
+            throw e;
         } catch (Exception e) {
             throw new ConfigurationException("Cannot create message validator: %s".formatted(e.getMessage()), e);
         }
