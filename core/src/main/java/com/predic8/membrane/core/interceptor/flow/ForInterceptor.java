@@ -13,16 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.flow;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -32,19 +37,30 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 
 /**
- * @description Iterates over a collection extracted from the <code>Exchange</code> and applies
- * its nested interceptors for each element. The current element is exposed
- * in the exchange under the property key <code>"it"</code>.
- *
- * @yaml <pre><code>
+ * @description Iterates over a collection and runs its nested flow once per element. The
+ * <code>in</code> expression is evaluated against the exchange and must yield a <code>List</code>;
+ * for each item the nested plugins run with the current item exposed as the exchange property
+ * <code>it</code>. Iteration happens only in the request flow and only when the expression yields a
+ * list; any other value passes through unchanged. If the expression fails to evaluate, the exchange
+ * is aborted with a Problem Details response. See the examples and tutorials under
+ * examples/orchestration and tutorials/orchestration.
+ * <pre>
  * for:
- *   in: message.headers['items']
- *   language: SpEL
- *   flow:
- *     - log: {} # nested plugins here
- * </code></pre>
- *
+ *   in: expression                # must evaluate to a List
+ *   [ language: SpEL | groovy | jsonpath | xpath ]   # default: SpEL
+ *   flow:                         # runs once per item; current item in property "it"
+ *     - ...
+ * </pre>
  * @topic 1. Proxies and Flow
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - for:
+ *         in: message.json.items
+ *         flow:
+ *           - log: {}
+ * </code></pre>
  */
 @MCElement(name = "for")
 public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
@@ -95,14 +111,22 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
             log.debug("List detected {}",l);
             for (Object o2 : l) {
                 log.debug("type: {}, it: {}",o2.getClass(),o2);
-                if (flow.isRequest()) {
-                    exc.setProperty("it", o2);
-                    getFlowController().invokeRequestHandlers(exc, interceptors);
-                }
+                exc.setProperty("it", o2);
+                Outcome outcome = invokeFlowHandlers(exc, flow, interceptors);
+                if (outcome != CONTINUE)
+                    return outcome;
             }
         }
 
         return CONTINUE;
+    }
+
+    private Outcome invokeFlowHandlers(Exchange exc, Flow flow, List<Interceptor> interceptors) {
+        return switch (flow) {
+            case REQUEST -> getFlowController().invokeRequestHandlers(exc, interceptors);
+            case RESPONSE -> getFlowController().invokeResponseHandlers(exc, interceptors);
+            default -> throw new RuntimeException("Should never happen");
+        };
     }
 
     public Language getLanguage() {
@@ -110,9 +134,9 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     /**
-     * @description the language of the 'test' condition
-     * @default groovy
-     * @example SpEL, groovy, jsonpath, xpath
+     * @description Expression language used to evaluate <code>in</code>.
+     * @default SpEL
+     * @example groovy
      */
     @MCAttribute
     public void setLanguage(Language language) {
@@ -124,8 +148,9 @@ public class ForInterceptor extends AbstractFlowWithChildrenInterceptor {
     }
 
     /**
-     * @description An expression that evaluates to a collection (e.g., a List). The interceptors nested within the &lt;for&gt; element will be executed for each item in this collection. The current item is available in the exchange property named `it`.
-     * @example `message.json.customers` (if language is the default "SpEL") or `/orders/order/@id` (if language="xpath")
+     * @description Expression that selects the collection to iterate over; it must evaluate to a
+     * <code>List</code>.
+     * @example message.json.customers
      */
     @Required
     @MCAttribute

@@ -16,22 +16,33 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
-import groovy.text.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.parser.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.URIFactory;
+import groovy.text.StreamingTemplateEngine;
+import groovy.text.Template;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.ObjectMapperFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -42,15 +53,28 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isOpenAPI3;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
-import static com.predic8.membrane.core.openapi.util.UriUtil.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
 import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
 import static java.lang.String.valueOf;
 
 /**
- * @description <p>
- * The <i>openapiPublisher</i> serves OpenAPI documents
- * </p>
+ * @description Serves the OpenAPI documents declared on the enclosing <code>api</code> together with a Swagger UI,
+ * under the <code>/api-docs</code> path. <code>/api-docs</code> returns an overview of all documents: an HTML page when
+ * the client accepts HTML, otherwise a JSON list with each document's title, version, and links.
+ * <code>/api-docs/{id}</code> returns one document as YAML, rewritten so its server URLs point at the gateway, and
+ * <code>/api-docs/ui/{id}</code> opens the Swagger UI for that document. An unknown id returns 404; requests to other
+ * paths pass through unchanged. Can only be used inside an api. See the examples under examples/openapi and the tutorial
+ * tutorials/getting-started/80-OpenAPI.yaml.
  * @topic 5. OpenAPI
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   openapi:
+ *     - location: fruitshop-api.yml
+ *   flow:
+ *     - openapiPublisher: {}
+ * </code></pre>
  */
 @MCElement(name = "openapiPublisher")
 public class OpenAPIPublisherInterceptor extends AbstractInterceptor {

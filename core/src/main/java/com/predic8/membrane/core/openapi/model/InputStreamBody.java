@@ -16,10 +16,10 @@
 
 package com.predic8.membrane.core.openapi.model;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.model.*;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static com.predic8.membrane.core.openapi.util.Utils.inputStreamToString;
 
@@ -50,5 +50,8 @@ public class InputStreamBody implements Body {
         return node;
     }
 
-
+    @Override
+    public byte[] asBytes() throws IOException {
+        return is.readAllBytes();
+    }
 }
