@@ -1,5 +1,9 @@
 *.sh	eol=lf
 
+# Use CRLF for Windows scripts
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
 # Test fixtures: never transcode or touch
 /core/src/test/resources/charsets/** binary
 
