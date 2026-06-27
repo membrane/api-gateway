@@ -16,35 +16,41 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.parameters.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import io.swagger.v3.oas.models.parameters.*;
-import io.swagger.v3.oas.models.security.*;
-import org.jetbrains.annotations.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.openapi.util.OpenAPIUtil;
+import com.predic8.membrane.core.openapi.validators.parameters.AbstractParameterParser;
+import com.predic8.membrane.core.openapi.validators.parameters.ParameterParser;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Operation;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.PathItem;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.Parameter;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.QueryParameter;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.security.SecurityScheme;
+import org.jetbrains.annotations.NotNull;
 
-import java.net.*;
 import java.util.*;
-import java.util.concurrent.atomic.*;
-import java.util.regex.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.hasObjectType;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isExplode;
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.OBJECT;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
-import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
-import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
+import static com.predic8.membrane.core.util.CollectionsUtil.join;
+import static com.predic8.membrane.shaded.io.swagger.v3.oas.models.security.SecurityScheme.In.QUERY;
+import static com.predic8.membrane.shaded.io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY;
 import static java.lang.Boolean.TRUE;
-import static java.net.URLDecoder.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Collections.*;
-import static java.util.stream.Collectors.*;
+import static java.net.URLDecoder.decode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toSet;
 
 public class QueryParameterValidator extends AbstractParameterValidator {
 

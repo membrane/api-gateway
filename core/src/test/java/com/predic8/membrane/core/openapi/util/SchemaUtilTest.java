@@ -16,9 +16,9 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.media.Schema;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Components;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

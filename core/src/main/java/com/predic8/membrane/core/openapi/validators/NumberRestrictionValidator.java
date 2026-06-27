@@ -16,15 +16,17 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
-import io.swagger.v3.oas.models.media.*;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
 
-import java.math.*;
+import java.math.BigDecimal;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.*;
-import static java.lang.String.*;
-import static java.math.BigDecimal.*;
+import static com.predic8.membrane.core.openapi.util.Utils.convertToBigDecimal;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
+import static java.lang.String.format;
+import static java.math.BigDecimal.ZERO;
 
 public class NumberRestrictionValidator {
 

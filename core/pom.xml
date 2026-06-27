@@ -107,16 +107,6 @@
             <groupId>com.google.api-client</groupId>
             <artifactId>google-api-client</artifactId>
         </dependency>
-        <!--
-            Still needed for com.github.fge.jsonschema.library.format JSON Schema dependency.
-            Can be deleted if a newer version of the JSON Schema lib will be migrated to Jakarta Mail.
-        -->
-        <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
-            <version>1.5.0-b01</version>
-        </dependency>
-
         <dependency>
             <groupId>jakarta.mail</groupId>
             <artifactId>jakarta.mail-api</artifactId>
@@ -179,19 +169,17 @@
             <version>${graalvm.version}</version>
             <scope>provided</scope>
         </dependency>
+        <!-- Swagger/OpenAPI parser stack with io.swagger.* and com.fasterxml.jackson.*
+             relocated under com.predic8.membrane.shaded.* so the parser's Jackson 2 is
+             isolated from the Jackson used by the rest of core. -->
         <dependency>
-            <groupId>io.swagger.parser.v3</groupId>
-            <artifactId>swagger-parser</artifactId>
+            <groupId>org.membrane-soa</groupId>
+            <artifactId>service-proxy-openapi-parser-shaded</artifactId>
         </dependency>
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
             <version>4.9.8</version>
-        </dependency>
-        <!-- fallback parser for documents based on older Swagger standards -->
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-parser</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>

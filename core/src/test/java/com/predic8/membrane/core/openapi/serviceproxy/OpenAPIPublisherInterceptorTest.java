@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.serviceproxy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
@@ -25,7 +26,6 @@ import com.predic8.membrane.core.openapi.util.OpenAPITestUtils;
 import com.predic8.membrane.core.proxies.NullProxy;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.util.URIFactory;
-import io.swagger.v3.parser.ObjectMapperFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIPublisherInterceptorTest {
 
-    private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private final ObjectMapper omYaml = new YAMLMapper();
     private final ObjectMapper om = new ObjectMapper();
 
     private static final String META_OLD = "/api-doc";

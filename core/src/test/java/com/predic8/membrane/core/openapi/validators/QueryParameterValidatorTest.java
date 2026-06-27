@@ -13,21 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.security.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.predic8.membrane.core.openapi.util.OpenAPIUtil;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Components;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Operation;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.PathItem;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.security.SecurityScheme;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.openapi.model.Request.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.openapi.model.Request.get;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getApi;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getPath;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.STRING;
-import static com.predic8.membrane.core.openapi.validators.QueryParameterValidator.*;
-import static io.swagger.v3.oas.models.security.SecurityScheme.In.*;
-import static io.swagger.v3.oas.models.security.SecurityScheme.Type.*;
+import static com.predic8.membrane.core.openapi.validators.QueryParameterValidator.getQueryString;
+import static com.predic8.membrane.shaded.io.swagger.v3.oas.models.security.SecurityScheme.In.QUERY;
+import static com.predic8.membrane.shaded.io.swagger.v3.oas.models.security.SecurityScheme.Type.APIKEY;
 import static org.junit.jupiter.api.Assertions.*;
 
 class QueryParameterValidatorTest extends AbstractValidatorTest {

@@ -16,14 +16,14 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import io.swagger.v3.oas.models.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.IOException;
 
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getApi;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getYAMLResource;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OpenAPIUtilTest {

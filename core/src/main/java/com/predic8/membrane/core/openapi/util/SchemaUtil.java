@@ -19,9 +19,9 @@ package com.predic8.membrane.core.openapi.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.media.Schema;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Components;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
 
 import java.util.Map;
 

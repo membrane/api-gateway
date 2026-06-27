@@ -16,15 +16,17 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.parameters.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Operation;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.PathItem;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.Parameter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.*;
+import java.util.stream.Stream;
 
-import static java.util.Locale.*;
-import static java.util.Optional.*;
+import static java.util.Locale.ROOT;
+import static java.util.Optional.ofNullable;
 
 public abstract class AbstractParameterValidator {
 

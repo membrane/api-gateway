@@ -12,6 +12,12 @@
                      creating a distribution, development or testing.
                  -->
                 <exclude>org.membrane-soa:membrane-api-gateway</exclude>
+                <!-- The swagger/OpenAPI parser is shipped relocated inside
+                     service-proxy-openapi-parser-shaded; drop the un-relocated swagger jars that
+                     the reactor still resolves transitively so they don't ship as dead weight. -->
+                <exclude>io.swagger:*</exclude>
+                <exclude>io.swagger.core.v3:*</exclude>
+                <exclude>io.swagger.parser.v3:*</exclude>
             </excludes>
             <unpack>false</unpack>
             <outputDirectory>/lib</outputDirectory>

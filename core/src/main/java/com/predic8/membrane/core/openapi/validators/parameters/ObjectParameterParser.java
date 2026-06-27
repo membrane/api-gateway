@@ -14,19 +14,24 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.openapi.util.OpenAPIUtil;
+import com.predic8.membrane.core.openapi.validators.SchemaValidator;
+import com.predic8.membrane.core.openapi.validators.ValidationContext;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.Optional;
 
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
-import static com.predic8.membrane.core.util.json.JsonUtil.*;
-import static java.net.URLDecoder.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Objects.*;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.NULL;
+import static com.predic8.membrane.core.util.json.JsonUtil.scalarAsJson;
+import static java.net.URLDecoder.decode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNullElse;
 
 /**
  * Parser for form-style object parameters (non-exploded).

@@ -16,35 +16,45 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.*;
-import org.apache.commons.lang3.exception.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.shaded.io.swagger.parser.OpenAPIParser;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.parser.core.models.ParseOptions;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.URIUtil.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.util.URIUtil.convertPath2FilePathString;
+import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
+import static java.lang.String.format;
 
 public class OpenAPIRecordFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIRecordFactory.class.getName());
 
-    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    // Core's own (un-shaded) YAML mapper: readTree() must return a com.fasterxml.jackson JsonNode
+    // for addConversionNoticeIfSwagger2(), not the relocated node type from the shaded parser.
+    private static final ObjectMapper omYaml = new YAMLMapper();
 
     private final Router router;
     private final String baseLocation;

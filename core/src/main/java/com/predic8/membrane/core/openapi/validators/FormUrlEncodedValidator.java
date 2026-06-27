@@ -22,9 +22,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.predic8.membrane.core.openapi.model.Message;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.Schema;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.MediaType;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
 
 import java.io.IOException;
 import java.net.URLDecoder;

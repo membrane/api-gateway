@@ -17,13 +17,15 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
-import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.regex.*;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.STRING;
+import static java.lang.String.format;
 
 public class StringRestrictionValidator {
 

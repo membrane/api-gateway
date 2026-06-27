@@ -16,14 +16,15 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.v3.oas.models.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.openapi.util.OpenAPIUtil;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 public class OpenAPIRecord {
 

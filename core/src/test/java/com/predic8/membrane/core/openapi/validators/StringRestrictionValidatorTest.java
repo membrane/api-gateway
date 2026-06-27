@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import io.swagger.v3.oas.models.media.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StringRestrictionValidatorTest {

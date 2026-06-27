@@ -63,6 +63,7 @@
 
 	<modules>
 		<module>annot</module>
+		<module>openapi-parser-shaded</module>
 		<module>core</module>
 		<module>distribution</module>
 		<module>war</module>
@@ -88,6 +89,11 @@
 			<dependency>
 				<groupId>org.membrane-soa</groupId>
 				<artifactId>service-proxy-annot</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.membrane-soa</groupId>
+				<artifactId>service-proxy-openapi-parser-shaded</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
@@ -531,6 +537,12 @@
 
 				<plugin>
 					<artifactId>maven-assembly-plugin</artifactId>
+					<version>3.6.0</version>
+				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-shade-plugin</artifactId>
 					<version>3.6.0</version>
 				</plugin>
 

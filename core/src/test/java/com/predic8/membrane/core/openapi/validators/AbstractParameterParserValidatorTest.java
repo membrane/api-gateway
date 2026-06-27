@@ -14,13 +14,14 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.parameters.HeaderParameter;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.PathItem;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.HeaderParameter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AbstractParameterParserValidatorTest {
 

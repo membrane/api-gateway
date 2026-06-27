@@ -16,15 +16,18 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
+import com.predic8.membrane.core.openapi.util.Utils;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
 
 
 @SuppressWarnings("rawtypes")

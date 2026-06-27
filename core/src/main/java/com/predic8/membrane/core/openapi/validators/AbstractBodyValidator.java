@@ -16,11 +16,10 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.Body;
 import com.predic8.membrane.core.openapi.model.Message;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.MediaType;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Content;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.MediaType;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;

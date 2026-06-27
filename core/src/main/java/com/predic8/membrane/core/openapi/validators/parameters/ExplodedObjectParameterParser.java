@@ -14,19 +14,24 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.openapi.validators.SchemaValidator;
+import com.predic8.membrane.core.openapi.validators.ValidationContext;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.regex.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.util.json.JsonUtil.*;
-import static java.net.URLDecoder.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.resolveSchema;
+import static com.predic8.membrane.core.util.json.JsonUtil.scalarAsJson;
+import static java.net.URLDecoder.decode;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ExplodedObjectParameterParser extends AbstractParameterParser {
 

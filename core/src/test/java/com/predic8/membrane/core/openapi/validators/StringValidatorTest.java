@@ -14,12 +14,16 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import io.swagger.v3.oas.models.media.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.STRING;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 import static org.junit.jupiter.api.Assertions.*;
 
 class StringValidatorTest {

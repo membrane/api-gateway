@@ -16,13 +16,13 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
 
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.util.Utils.areThereErrors;
 
 @SuppressWarnings("rawtypes")
 public class OneOfValidator {

@@ -16,21 +16,22 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.regex.*;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
-import static java.lang.String.*;
-import static java.util.Collections.*;
+import static java.lang.String.format;
+import static java.util.Collections.emptySet;
 
 /**
  * Not supported:

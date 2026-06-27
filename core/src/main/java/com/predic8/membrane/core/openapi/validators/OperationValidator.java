@@ -19,10 +19,10 @@ package com.predic8.membrane.core.openapi.validators;
 import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.model.Response;
 import com.predic8.membrane.core.openapi.util.MethodNotAllowException;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.parameters.Parameter;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Operation;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.PathItem;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.Parameter;
 
 import java.util.List;
 

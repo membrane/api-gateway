@@ -16,29 +16,36 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.fasterxml.jackson.databind.*;
-import io.swagger.v3.core.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import io.swagger.v3.oas.models.parameters.*;
-import io.swagger.v3.parser.ObjectMapperFactory;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.predic8.membrane.shaded.io.swagger.v3.core.util.Json31;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Operation;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.PathItem;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.Parameter;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
-import static io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_ID;
+import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
+import static com.predic8.membrane.core.openapi.util.Utils.normalizeForId;
+import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.OBJECT;
+import static com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.Parameter.StyleEnum.*;
 
 public class OpenAPIUtil {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIUtil.class.getName());
 
-    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    // Core's own (un-shaded) YAML mapper: readTree() must return a com.fasterxml.jackson JsonNode
+    // that the rest of core consumes, not the relocated node type from the shaded parser.
+    private static final ObjectMapper omYaml = new YAMLMapper();
 
     public static String getIdFromAPI(OpenAPI api) {
         if (api.getInfo().getExtensions() != null) {

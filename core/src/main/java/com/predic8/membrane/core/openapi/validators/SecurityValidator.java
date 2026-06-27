@@ -16,21 +16,28 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.security.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.core.security.ApiKeySecurityScheme;
+import com.predic8.membrane.core.security.JWTSecurityScheme;
+import com.predic8.membrane.core.security.OAuth2SecurityScheme;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Operation;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.security.SecurityRequirement;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.security.SecurityScheme;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
-import java.util.*;
-import java.util.concurrent.atomic.*;
-import java.util.stream.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.*;
-import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.*;
-import static org.slf4j.LoggerFactory.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
+import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.BASIC;
+import static com.predic8.membrane.core.security.BasicHttpSecurityScheme.BEARER;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * See:

@@ -16,16 +16,15 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
-
-import java.util.regex.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
+import static java.lang.String.format;
 
 @SuppressWarnings("rawtypes")
 public class StringValidator implements JsonSchemaValidator {

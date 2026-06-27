@@ -14,16 +14,20 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import io.swagger.v3.oas.models.parameters.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.openapi.util.OpenAPIUtil;
+import com.predic8.membrane.core.openapi.validators.AbstractValidatorTest;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.Parameter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.model.Request.get;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.OBJECT;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ExplodedObjectParameterTest extends AbstractValidatorTest {
 

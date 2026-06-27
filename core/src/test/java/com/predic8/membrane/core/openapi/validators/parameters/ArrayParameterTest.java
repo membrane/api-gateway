@@ -14,18 +14,21 @@
 
 package com.predic8.membrane.core.openapi.validators.parameters;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.openapi.validators.*;
-import io.swagger.v3.oas.models.parameters.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.openapi.util.OpenAPIUtil;
+import com.predic8.membrane.core.openapi.validators.AbstractValidatorTest;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.Parameter;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.ARRAY;
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.NUMBER;
 import static java.util.Collections.emptyList;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ArrayParameterTest extends AbstractValidatorTest {
 

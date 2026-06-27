@@ -17,9 +17,10 @@ package com.predic8.membrane.examples;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.github.fge.jsonschema.core.report.ProcessingReport;
-import com.github.fge.jsonschema.main.JsonSchema;
-import com.github.fge.jsonschema.main.JsonSchemaFactory;
+import com.networknt.schema.Error;
+import com.networknt.schema.Schema;
+import com.networknt.schema.SchemaLocation;
+import com.networknt.schema.SchemaRegistry;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -32,6 +33,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static com.networknt.schema.InputFormat.JSON;
+import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,19 +43,20 @@ import static org.hamcrest.Matchers.is;
 public class ConfigSerializationTestYaml {
 
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
-    private static final ObjectMapper JSON = new ObjectMapper();
-    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory.byDefault();
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private static final String SCHEMA_CLASSPATH =
             "/com/predic8/membrane/core/config/json/membrane.schema.json";
 
-    private static final JsonSchema SCHEMA;
+    private static final Schema SCHEMA;
 
     static {
         try (InputStream in = ConfigSerializationTestYaml.class.getResourceAsStream(SCHEMA_CLASSPATH)) {
             if (in == null)
                 throw new IOException("Schema not found on classpath: " + SCHEMA_CLASSPATH);
-            SCHEMA = SCHEMA_FACTORY.getJsonSchema(JSON.readTree(in));
+            SCHEMA = SchemaRegistry.withDefaultDialect(DRAFT_2020_12, b -> {})
+                    .getSchema(SchemaLocation.of("https://membrane-soa.org/membrane.schema.json"), in, JSON);
+            SCHEMA.initializeValidators();
         } catch (Exception e) {
             throw new RuntimeException("Failed to load JSON schema", e);
         }
@@ -107,21 +111,9 @@ public class ConfigSerializationTestYaml {
                 MappingIterator<Object> it = YAML.readerFor(Object.class).readValues(reader);
 
                 while (it.hasNext()) {
-                    ProcessingReport report = SCHEMA.validateUnchecked(JSON.valueToTree(it.next()));
-                    assertThat("Schema validation failed for " + yamlPath + ":\n" + report,
-                            report.isSuccess(), is(true));
-
-                    report.iterator().forEachRemaining(pm -> {
-                        // the fge library attempts to resolve the URL from the top level "id" field,
-                        // we therefore changed the schema to 06 and "id" to "$id" which is ignored by the library
-                        String pmStr = pm.toString();
-                        if (pmStr.contains("{\"loadingURI\":\"#\",\"pointer\":\"\"}") && pmStr.contains("the following keywords are unknown and will be ignored: [$id]"))
-                            return;
-                        // the library also complains about the IntelliJ specific HTML description, which is fine.
-                        if (pmStr.contains("x-intellij-html-description"))
-                            return;
-                        throw new RuntimeException("Schema validation failed for " + yamlPath + ":\n" + pm);
-                    });
+                    List<Error> errors = SCHEMA.validate(JSON_MAPPER.valueToTree(it.next()));
+                    assertThat("Schema validation failed for " + yamlPath + ":\n" + errors,
+                            errors.isEmpty(), is(true));
                 }
             }
         } catch (Exception e) {

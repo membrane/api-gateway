@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<javadocOptions>
+  <tags>
+    <tag>
+      <name>MCAttribute</name>
+      <head>MCAttribute</head>
+      <placement>X</placement>
+    </tag>
+    <tag>
+      <name>Required</name>
+      <head>Required</head>
+      <placement>a</placement>
+    </tag>
+    <tag>
+      <name>default</name>
+      <head>Default</head>
+      <placement>a</placement>
+    </tag>
+    <tag>
+      <name>description</name>
+      <head>Description</head>
+      <placement>a</placement>
+    </tag>
+    <tag>
+      <name>example</name>
+      <head>Example</head>
+      <placement>a</placement>
+    </tag>
+    <tag>
+      <name>explanation</name>
+      <head>Explanation</head>
+      <placement>a</placement>
+    </tag>
+    <tag>
+      <name>topic</name>
+      <head>Topic</head>
+      <placement>a</placement>
+    </tag>
+  </tags>
+  <docletArtifacts>
+    <docletArtifact />
+  </docletArtifacts>
+  <tagletArtifacts>
+    <tagletArtifact />
+  </tagletArtifacts>
+  <javadocResourcesDirectory>src/main/javadoc</javadocResourcesDirectory>
+</javadocOptions>

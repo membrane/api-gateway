@@ -16,18 +16,22 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.v3.oas.models.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_VALIDATION;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getSingleOpenAPIRecord;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 

@@ -16,14 +16,16 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.parameters.*;
+import com.predic8.membrane.core.openapi.model.Request;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Operation;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.PathItem;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.HeaderParameter;
 
-import java.util.*;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.HEADER_PARAMETER;
+import static java.lang.String.format;
 
 public class RequestHeaderParameterValidator extends AbstractParameterValidator{
 

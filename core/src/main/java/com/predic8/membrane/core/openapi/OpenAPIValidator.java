@@ -28,8 +28,8 @@ import com.predic8.membrane.core.openapi.validators.ValidationContext;
 import com.predic8.membrane.core.openapi.validators.ValidationErrors;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.PathItem;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.PathItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

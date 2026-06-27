@@ -18,10 +18,10 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.util.xml.parser.XmlParseException;
-import io.swagger.v3.oas.models.Components;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.XML;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Components;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Schema;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.XML;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

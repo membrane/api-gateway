@@ -18,15 +18,15 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.predic8.membrane.core.openapi.model.Response;
 import com.predic8.membrane.core.util.Pair;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.responses.ApiResponse;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Operation;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.responses.ApiResponse;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
 import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
-import static io.swagger.v3.oas.models.responses.ApiResponses.DEFAULT;
+import static com.predic8.membrane.shaded.io.swagger.v3.oas.models.responses.ApiResponses.DEFAULT;
 import static java.lang.String.format;
 
 public class ResponseBodyValidator extends AbstractBodyValidator {

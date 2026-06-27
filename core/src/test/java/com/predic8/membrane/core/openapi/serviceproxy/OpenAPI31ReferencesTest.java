@@ -16,21 +16,29 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.interceptor.flow.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import io.swagger.v3.oas.models.parameters.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.router.TestRouter;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.Operation;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.PathItem;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.Content;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.media.JsonSchema;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.parameters.RequestBody;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Set;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
-import static io.restassured.RestAssured.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class OpenAPI31ReferencesTest {
 

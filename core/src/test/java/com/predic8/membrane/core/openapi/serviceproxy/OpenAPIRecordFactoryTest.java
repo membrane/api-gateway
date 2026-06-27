@@ -13,14 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
-import static io.swagger.v3.oas.models.SpecVersion.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getApi;
+import static com.predic8.membrane.shaded.io.swagger.v3.oas.models.SpecVersion.V30;
+import static com.predic8.membrane.shaded.io.swagger.v3.oas.models.SpecVersion.V31;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.*;
 

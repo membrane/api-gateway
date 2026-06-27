@@ -21,16 +21,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
 import groovy.text.StreamingTemplateEngine;
 import groovy.text.Template;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.parser.ObjectMapperFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +83,9 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
 
     private final ObjectMapper om = new ObjectMapper();
     private final ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
-    private final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    // Serializes the rewritten OpenAPI document, which is held as a core JsonNode, to YAML —
+    // so this is core's own (un-shaded) mapper, not the relocated one from the parser.
+    private final ObjectMapper omYaml = new YAMLMapper();
 
     public static final String PATH = "/api-docs";
     public static final String PATH_UI = "/api-docs/ui";

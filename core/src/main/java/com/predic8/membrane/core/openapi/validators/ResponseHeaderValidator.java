@@ -16,12 +16,12 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.headers.*;
-import io.swagger.v3.oas.models.responses.*;
+import com.predic8.membrane.core.openapi.model.Message;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.OpenAPI;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.headers.Header;
+import com.predic8.membrane.shaded.io.swagger.v3.oas.models.responses.ApiResponse;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.util.Utils.getComponentLocalNameFromRef;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.HEADER_PARAMETER;
 import static java.lang.String.format;
 
