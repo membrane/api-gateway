@@ -16,12 +16,13 @@ package com.predic8.membrane.core.interceptor.llmgateway.store;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.util.ConfigurationException;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.Long.MAX_VALUE;
 
-@MCElement(name = "users", component = false, id="ai-api-users")
+@MCElement(name = "users", component = false, id = "ai-api-users")
 public class AiApiUser {
 
     private String name;
@@ -33,6 +34,7 @@ public class AiApiUser {
 
     /**
      * Updates the store with the number of tokens used in this call
+     *
      * @param usage The number of tokens used
      */
     public void addTokensUsedInPeriod(Usage usage) {
@@ -45,6 +47,7 @@ public class AiApiUser {
 
     /**
      * Checks if the user has enough tokens to make the request.
+     *
      * @param tokensNeededForRequest The number of tokens that the user needs to make the request
      * @return The estimated number of tokens that the user has left after this request
      */
@@ -59,8 +62,8 @@ public class AiApiUser {
     }
 
     /**
-     * @description Name of the API user, group or cost center.
      * @param name of the user
+     * @description Name of the API user, group or cost center.
      */
     @MCAttribute()
     public void setName(String name) {
@@ -93,6 +96,9 @@ public class AiApiUser {
      */
     @MCAttribute
     public void setTokens(long tokens) {
+        if (tokens < 0) {
+            throw new ConfigurationException("tokens must be >= 0");
+        }
         this.tokens = tokens;
     }
 

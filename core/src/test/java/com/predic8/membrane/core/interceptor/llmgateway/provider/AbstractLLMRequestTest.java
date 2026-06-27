@@ -46,39 +46,5 @@ class AbstractLLMRequestTest {
         TestLLMRequest(Exchange exchange) {
             super(exchange);
         }
-
-        @Override
-        public long getRequestedMaxOutputTokens() {
-            return -1;
-        }
-
-        @Override
-        public void setMaxOutputTokens(int maxOutputTokens) {
-        }
-
-        @Override
-        public long estimateInputTokens() {
-            return 0;
-        }
-
-        @Override
-        public String getSystemPrompt() {
-            return null;
-        }
-
-        @Override
-        public boolean isChatCompletion() {
-            return false;
-        }
-
-        @Override
-        public void setSystemPrompt(String systemPrompt) {
-
-        }
-
-        @Override
-        public void removeSystemPrompt() {
-
-        }
     }
 }
