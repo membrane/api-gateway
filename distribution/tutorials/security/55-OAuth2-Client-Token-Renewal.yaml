@@ -1,34 +1,24 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
 #
-# Tutorial: OAuth2 Client Credentials Flow
+# Tutorial: OAuth2 Client — Automatic Token Management
 #
-# Machine-to-machine API access: a service authenticates with its own client ID
-# and secret — no user login required.
+# The gateway fetches and renews access tokens transparently.
+# Callers need no credentials — Membrane handles the full token lifecycle.
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 50-OAuth2-Client-Credentials.yaml
+#     ./membrane.sh -c 55-OAuth2-Client-Token-Renewal.yaml
 #
-# 2.) Call the API without a token — blocked:
-#     curl -i localhost:2000
-#
-#     HTTP/1.1 400 Bad Request
-#
-# 3.) Get an access token (no username/password — client credentials only):
-#     curl -s -d "grant_type=client_credentials&client_id=abc&client_secret=def" localhost:7007/oauth2/token
-#
-#     {"access_token":"<token>","token_type":"bearer",...}
-#
-# 4.) Call the API with the token (replace <token>):
-#     curl -H "Authorization: Bearer <token>" localhost:2000
+# 2.) Call the gateway — no token needed from the caller:
+#     curl localhost:2000
 #
 #     Service accessed!
-#
-# Continue with file 55-OAuth2-Client-Token-Renewal.yaml
 
 api:
   name: Authorization Server
   port: 7007
   flow:
+    - log:
+        message: "Token request: ${method} ${path}"
     - oauth2authserver:
         issuer: http://localhost:7007
         staticUserDataProvider:
@@ -50,11 +40,14 @@ api:
 ---
 
 api:
-  name: Protected API
+  name: Gateway
   port: 2000
   flow:
-    - tokenValidator:
-        endpoint: http://localhost:7007/oauth2/userinfo
+    # Fetches a token from the auth server, caches it, and re-fetches before expiry.
+    - oauth2Client:
+        tokenUrl: http://localhost:7007/oauth2/token
+        clientId: abc
+        clientSecret: def
   target:
     host: localhost
     port: 3000
@@ -62,8 +55,20 @@ api:
 ---
 
 api:
-  name: Backend
+  name: Protected API
   port: 3000
+  flow:
+    - tokenValidator:
+        endpoint: http://localhost:7007/oauth2/userinfo
+  target:
+    host: localhost
+    port: 4000
+
+---
+
+api:
+  name: Backend
+  port: 4000
   flow:
     - static:
         src: Service accessed!
