@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: API Key Authentication
+#
+# Secure an API by requiring a valid API key with every request.
+# Keys are passed via the X-Api-Key HTTP header.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 100-API-Key-Authentication.yaml
+#
+# 2.) No API key → 401:
+#     curl -i localhost:2000
+#
+#     401 Unauthorized
+#
+# 3.) Valid key in header → 200:
+#     curl localhost:2000 -H "X-Api-Key: abc123"
+#
+#     Secured API!
+#
+# Continue with 110-API-Key-RBAC.yaml
+
+api:
+  port: 2000
+  flow:
+    - apiKey:
+        stores:
+          - simple:
+              - secret:
+                  value: demokey
+              - secret:
+                  value: abc123
+        extractors:
+          - header: X-Api-Key
+    - static:
+        src: Secured API!
+    - return:
+        status: 200

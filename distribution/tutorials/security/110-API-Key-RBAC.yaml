@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: API Key RBAC (Role-Based Access Control)
+#
+# API keys carry scopes that determine what a caller may access.
+# Authentication is optional — callers without a key reach the public path.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 110-API-Key-RBAC.yaml
+#
+# 2.) No key → public path:
+#     curl localhost:2000
+#
+#     Public area
+#
+# 3.) Finance key → finance path:
+#     curl localhost:2000 -H "X-Api-Key: key-finance"
+#
+#     Finance area
+#
+# 4.) Admin key → admin path:
+#     curl localhost:2000 -H "X-Api-Key: key-admin"
+#
+#     Admin area
+#
+# Continue with 120-API-Key-OpenAPI.yaml
+
+api:
+  port: 2000
+  flow:
+    - apiKey:
+        required: false  # unauthenticated callers are allowed through
+        stores:
+          - simple:
+              - secret:
+                  value: key-finance
+                  scopes:    # scopes granted to this key
+                    - finance
+              - secret:
+                  value: key-admin
+                  scopes:
+                    - admin
+        extractors:
+          - header: X-Api-Key
+    - if:
+        test: hasScope('admin')
+        flow:
+          - template:
+              src: Admin area
+          - return:
+              status: 200
+    - if:
+        test: hasScope('finance')
+        flow:
+          - template:
+              src: Finance area
+          - return:
+              status: 200
+    - static:
+        src: Public area
+    - return:
+        status: 200
