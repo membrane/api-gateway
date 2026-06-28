@@ -14,14 +14,19 @@
 
 package com.predic8.membrane.examples.withoutinternet.test;
 
-import com.predic8.membrane.examples.util.*;
-import io.restassured.*;
-import io.restassured.filter.log.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.util.Process2;
+import io.restassured.RestAssured;
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.filter.log.ResponseLoggingFilter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OAuth2APIExampleTest extends DistributionExtractingTestcase {
 
@@ -52,13 +57,14 @@ public class OAuth2APIExampleTest extends DistributionExtractingTestcase {
     @Test
     void testIt() throws Exception {
         BufferLogger logger = new BufferLogger();
-        // client.sh prints true when the script was successful. The logger waits for this string "true"
+        // "Got: " (with space) matches only the API-response echo line in client.sh, not "Got Token: <bearer>",
+        // preventing false early trigger when the bearer token happens to contain the substring "true".
         try(Process2 ignored = new Process2.Builder()
                 .in(getExampleDir(getExampleDirName()))
                 .withWatcher(logger)
                 .script("client")
                 .withParameters("john password")
-                .waitAfterStartFor("true")
+                .waitAfterStartFor("Got: ")
                 .start()) {
             assertTrue(logger.contains("success"));
             assertTrue(logger.contains("true"));
