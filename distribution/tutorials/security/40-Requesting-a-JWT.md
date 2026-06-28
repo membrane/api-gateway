@@ -40,5 +40,5 @@ Try it without the header — the request is rejected.
 
 ## Next
 
-Continue with [20-Issuing-and-Validating-JWTs.yaml](20-Issuing-and-Validating-JWTs.yaml)
+Continue with [50-Issuing-and-Validating-JWTs.yaml](50-Issuing-and-Validating-JWTs.yaml)
 where Membrane issues and validates the tokens itself.

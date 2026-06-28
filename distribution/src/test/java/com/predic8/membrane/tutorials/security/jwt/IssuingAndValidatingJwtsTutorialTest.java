@@ -24,7 +24,7 @@ public class IssuingAndValidatingJwtsTutorialTest extends AbstractSecurityJwtTut
 
     @Override
     protected String getTutorialYaml() {
-        return "20-Issuing-and-Validating-JWTs.yaml";
+        return "50-Issuing-and-Validating-JWTs.yaml";
     }
 
     @Test

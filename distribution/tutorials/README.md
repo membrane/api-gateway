@@ -35,7 +35,7 @@ Run and observe Membrane in production.
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, and protect the MCP endpoint with an API key.
 
 
-## [Security / JWT](security/jwt)
+## [Security](security)
 
 Issue signed JSON Web Tokens and protect an API by validating them. Covers the OAuth2 client-credentials flow, Bearer tokens, and signature/expiry/audience checks.
 

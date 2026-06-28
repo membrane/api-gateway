@@ -20,7 +20,7 @@ public abstract class AbstractSecurityJwtTutorialTest extends AbstractMembraneTu
 
     @Override
     protected String getTutorialDir() {
-        return "security/jwt";
+        return "security";
     }
 
 }
