@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: Splitting Config with Include
+#
+# Split a Membrane configuration across multiple files using include.
+# Each service team can own its API definition independently.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 95-Include.yaml
+#
+# 2.) Call the customers API:
+#     curl -i http://localhost:2000/customers
+#
+#     X-Gateway: Membrane
+#     {"customers":[1,2,3]}
+#
+# 3.) Call the orders API:
+#     curl -i http://localhost:2000/orders
+#
+#     X-Gateway: Membrane
+#     {"orders":[5,9,13]}
+#
+# 4.) Call an unknown path:
+#     curl -i http://localhost:2000/unknown
+#
+#     X-Gateway: Membrane
+#     404 Not Found
+
+# Included files define the per-service APIs.
+include:
+  - ./apis/customers.yaml
+  - ./apis/orders.yaml
+
+---
+# Global interceptors run on every request across all APIs.
+# Place shared concerns here: logging, CORS, rate limiting, authentication.
+global:
+  - log:
+      message: "${method} ${path}"
+  - response:
+      - setHeader:
+          name: X-Gateway
+          value: Membrane
+
+---
+# Fallback: catches all requests not matched by the included APIs.
+api:
+  port: 2000
+  flow:
+    - return:
+        status: 404

@@ -13,14 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.router.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
-import static io.swagger.v3.oas.models.SpecVersion.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getApi;
+import static io.swagger.v3.oas.models.SpecVersion.V30;
+import static io.swagger.v3.oas.models.SpecVersion.V31;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -121,6 +125,46 @@ class OpenAPIRecordFactoryTest {
         assertEquals("Deep Refs", rec.api.getInfo().getTitle());
         assertEquals(V31, rec.api.getSpecVersion());
         assertNotNull(getMail(rec));
+    }
+
+    @Test
+    void readAndParseOpenAPI32() {
+        OpenAPIRecord rec = getOpenAPIRecord("oas32/query-method.yaml", "search-api-v1-0-0");
+        assertNotNull(rec);
+        assertEquals("Search API", rec.api.getInfo().getTitle());
+        // Parsed with 3.1 (V31) semantics, but the real 3.2 version is reported.
+        assertEquals(V31, rec.api.getSpecVersion());
+        assertEquals("3.2.0", rec.version);
+        assertEquals("3.2.0", rec.node.get("openapi").asText());
+    }
+
+    @Test
+    void externalRefsResolvedInOpenAPI32() {
+        OpenAPIRecord rec = getOpenAPIRecord("oas32/refs/api.yaml", "refs-demo-v1-0-0");
+        assertNotNull(rec);
+        // The external component ref (customer.yaml#/Customer) must be resolved into the model.
+        var customer = rec.api.getComponents().getSchemas().get("Customer");
+        assertNotNull(customer.getProperties());
+        assertTrue(customer.getProperties().containsKey("email"));
+        // Both a standard operation and the 3.2 query operation reference it via #/components.
+        assertEquals("#/components/schemas/Customer", rec.api.getPaths().get("/customers").getPost()
+                .getRequestBody().getContent().get(APPLICATION_JSON).getSchema().get$ref());
+        var query = com.predic8.membrane.core.openapi.util.OpenAPI32Parser.getAdditionalOperation(
+                rec.api.getPaths().get("/customers"), "QUERY");
+        assertEquals("#/components/schemas/Customer",
+                query.getRequestBody().getContent().get(APPLICATION_JSON).getSchema().get$ref());
+    }
+
+    @Test
+    void openAPI32PublishesFaithfulDocument() {
+        OpenAPIRecord rec = getOpenAPIRecord("oas32/query-method.yaml", "search-api-v1-0-0");
+        // The published node is the original 3.2 document, keeping constructs the swagger model
+        // cannot represent (query method, itemSchema).
+        var search = rec.node.get("paths").get("/search");
+        assertTrue(search.has("query"));
+        assertTrue(search.has("additionalOperations"));
+        assertTrue(search.path("query").path("responses").path("200").path("content")
+                .path("application/jsonl").has("itemSchema"));
     }
 
     @Test

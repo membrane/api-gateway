@@ -338,6 +338,13 @@ public abstract class Message {
 		return MimeType.isImage(getHeader().getContentType());
 	}
 
+	/**
+	 * @return true if the message has a media type of image/*, audio/*, video/*, octect-stream, or application/octet-stream
+	 */
+	public boolean isBinary() {
+		return MimeType.isBinary(getHeader().getContentType());
+	}
+
 	public boolean isXML() {
         return MimeType.isXML(getHeader().getContentType());
 	}

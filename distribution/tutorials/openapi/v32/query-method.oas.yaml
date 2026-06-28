@@ -1,0 +1,25 @@
+openapi: 3.2.0
+info:
+  title: OpenAPI 3.2 QUERY Method
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /search:
+    # New in OpenAPI 3.2: the QUERY method is a read operation that carries a request body.
+    query:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [term]
+              properties:
+                term:
+                  type: string
+                limit:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Search results

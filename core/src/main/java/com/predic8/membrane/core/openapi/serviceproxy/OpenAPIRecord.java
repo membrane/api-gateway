@@ -16,14 +16,15 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.v3.oas.models.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.openapi.util.OpenAPIUtil;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.URIFactory;
+import io.swagger.v3.oas.models.OpenAPI;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 public class OpenAPIRecord {
 
@@ -54,18 +55,35 @@ public class OpenAPIRecord {
 
     public OpenAPIRecord(OpenAPI api, OpenAPISpec spec) {
         this.api = api;
+        this.node = convertToNode(api);
+        this.spec = spec;
+        this.version = api.getOpenapi() != null ? api.getOpenapi() : api.getSpecVersion().name();
+    }
+
+    /**
+     * Creates a record with an explicitly provided document node instead of one serialized from the
+     * parsed model. Used for OpenAPI 3.2 documents, where the original node is kept so that
+     * publishing stays faithful to constructs the swagger model cannot represent, and the real
+     * {@code 3.2.x} version string is reported.
+     */
+    public OpenAPIRecord(OpenAPI api, JsonNode node, OpenAPISpec spec) {
+        this.api = api;
+        this.node = node;
+        this.spec = spec;
+        this.version = api.getOpenapi() != null ? api.getOpenapi() : api.getSpecVersion().name();
+    }
+
+    private static JsonNode convertToNode(OpenAPI api) {
         try {
-            this.node = OpenAPIUtil.convert2Json(api);
+            return OpenAPIUtil.convert2Json(api);
         } catch (IOException e) {
             throw new ConfigurationException("""
                     Cannot convert OpenAPI to JSON.
-                    
+
                     OpenAPI:
                     %s
-                    """.formatted(api),e);
+                    """.formatted(api), e);
         }
-        this.spec = spec;
-        this.version = api.getSpecVersion().name();
     }
 
     public JsonNode rewriteOpenAPI(Exchange exc, URIFactory uriFactory) throws URISyntaxException {
