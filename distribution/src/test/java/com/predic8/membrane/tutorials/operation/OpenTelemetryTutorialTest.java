@@ -14,10 +14,18 @@
 
 package com.predic8.membrane.tutorials.operation;
 
+import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+import com.predic8.membrane.examples.withoutinternet.opentelemetry.Traceparent;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.util.List;
+
+import static com.predic8.membrane.examples.withoutinternet.opentelemetry.Traceparent.parse;
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Verifies tutorial step 40-OpenTelemetry.yaml: a three-hop chain
@@ -29,9 +37,17 @@ import static io.restassured.RestAssured.given;
  */
 public class OpenTelemetryTutorialTest extends AbstractOperationTutorialTest {
 
+    private BufferLogger logger;
+
     @Override
     protected String getTutorialYaml() {
         return "40-OpenTelemetry.yaml";
+    }
+
+    @BeforeEach
+    void startMembrane() throws IOException, InterruptedException {
+        logger = new BufferLogger();
+        process = startServiceProxyScript(logger);
     }
 
     @Test
@@ -58,7 +74,8 @@ public class OpenTelemetryTutorialTest extends AbstractOperationTutorialTest {
 
     @Test
     void traceparentIsPropagatedToBackend() throws Exception {
-        var traceparent = new SubstringWaitableConsoleEvent(process, "traceparent: 00-");
+        // Wait until at least one downstream hop logs a real traceparent.
+        var firstHopWithTraceparent = new SubstringWaitableConsoleEvent(process, "traceparent: 00-");
 
         given()
         .when()
@@ -66,6 +83,14 @@ public class OpenTelemetryTutorialTest extends AbstractOperationTutorialTest {
         .then()
             .statusCode(200);
 
-        traceparent.waitFor(5000);
+        firstHopWithTraceparent.waitFor(5000);
+
+        // Gateway logs "traceparent: null" (no incoming header from the test client),
+        // so parse() finds exactly the two downstream hops (Microservice A and B).
+        List<Traceparent> traceparents = parse(logger.toString());
+        assertTrue(traceparents.size() >= 2,
+            "Expected traceparent logged by at least 2 downstream hops, got: " + traceparents.size());
+        assertTrue(traceparents.get(0).sameTraceId(traceparents.get(1)),
+            "Trace ID must be identical across all hops — W3C traceparent propagation is broken");
     }
 }

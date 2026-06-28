@@ -62,9 +62,8 @@ public class OtlpExporter implements OtelExporter {
         return format("%s://%s:%d%s", isSecured() ? "https" : "http", host, getProtocolPort(port, transport), getPathExtension());
     }
 
-    @SuppressWarnings("StringEquality")
     private String getPathExtension() {
-        if (path == "" && transport == HTTP) {
+        if (path.isEmpty() && transport == HTTP) {
             return "/v1/traces";
         }
         return path;
@@ -137,7 +136,8 @@ public class OtlpExporter implements OtelExporter {
     }
 
     /**
-     * @description Whether to use HTTPS instead of HTTP. Does not affect gRPC TLS configuration.
+     * @description Whether to use a secure (TLS) connection. When <code>true</code>, the endpoint URL
+     * scheme is set to <code>https</code> for HTTP transport and causes the gRPC client to use TLS as well.
      * @default false
      */
     @SuppressWarnings("unused")
