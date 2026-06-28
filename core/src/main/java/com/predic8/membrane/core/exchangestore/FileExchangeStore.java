@@ -14,27 +14,74 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import org.apache.commons.io.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.Constants;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.http.AbstractBody;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.RuleKey;
+import com.predic8.membrane.core.proxies.StatisticCollector;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.nio.file.*;
-import java.text.*;
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Timer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.util.TimerTaskUtil.createTimerTask;
-import static com.predic8.membrane.core.util.xml.XMLTextUtil.*;
-import static java.nio.charset.StandardCharsets.*;
-import static java.util.Calendar.*;
+import static com.predic8.membrane.core.util.xml.XMLTextUtil.formatXML;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Calendar.DAY_OF_MONTH;
 
 /**
- * The output file is UTF-8 encoded.
+ * @description <p>When APIs pass through a gateway, you often need a complete record of what was
+ * sent and received: for debugging, compliance, or post-incident investigation. The
+ * <code>fileExchangeStore</code> captures every HTTP request and response to disk so you can
+ * inspect or replay traffic long after it happened, without modifying any upstream service.</p>
+ * <p>Each exchange is written as a pair of UTF-8 <code>.msg</code> files under
+ * <code>&lt;dir&gt;/YYYY/M/D/</code>, one for the request and one for the response.
+ * XML bodies are pretty-printed by default. The exchange property <code>message.file.path</code>
+ * is set to the shared base path of the pair so downstream plugins can locate the files.</p>
+ * <p>Declare it once in the <code>components:</code> section; Membrane picks it up automatically
+ * as the global exchange store — no per-API wiring is needed.</p>
+ * <p>When <code>maxDays</code> is non-negative, a nightly background task at 03:14 removes
+ * day-directories older than that many days.</p>
+ * <pre>
+ * fileExchangeStore:
+ *   dir: &lt;path&gt;                    # required
+ *   [ raw: true | false ]           # default false
+ *   [ saveBodyOnly: true | false ]  # default false; ignored when raw is true
+ *   [ maxDays: &lt;n&gt; ]               # default -1 (keep forever)
+ * </pre>
+ * See <code>tutorials/operation/70-FileExchangeStore.yaml</code> and
+ * <code>examples/extending-membrane/file-exchangestore</code>.
+ * @topic 4. Monitoring, Logging and Statistics
+ * @yaml <pre><code>
+ * components:
+ *   store:
+ *     fileExchangeStore:
+ *       dir: ./exchanges
+ * ---
+ * api:
+ *   port: 2000
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name = "fileExchangeStore")
 public class FileExchangeStore extends AbstractExchangeStore {
@@ -249,7 +296,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
     }
 
     /**
-     * @description Directory where the exchanges are saved.
+     * @description Directory where request and response files are written. Created automatically if it does not exist.
      * @example logs
      */
     @Required
@@ -263,10 +310,9 @@ public class FileExchangeStore extends AbstractExchangeStore {
     }
 
     /**
+     * @description When <code>true</code>, always writes the start line and headers (overriding <code>saveBodyOnly</code>)
+     * and copies the body verbatim — no XML pretty-printing.
      * @default false
-     * @description If this is true, headers will always be printed (overriding
-     * saveBodyOnly) and the body of the exchange won't be
-     * formatted nicely.
      * @example true
      */
     @MCAttribute
@@ -279,9 +325,9 @@ public class FileExchangeStore extends AbstractExchangeStore {
     }
 
     /**
+     * @description When <code>true</code>, omits the start line and headers and writes only the body.
+     * Ignored when <code>raw</code> is <code>true</code>.
      * @default false
-     * @description If this is true, no headers will be written to the exchange
-     * log files.
      * @example true
      */
     @MCAttribute
@@ -294,10 +340,9 @@ public class FileExchangeStore extends AbstractExchangeStore {
     }
 
     /**
+     * @description Number of days for which exchange files are kept. A nightly background task at 03:14
+     * removes day-directories older than this value. Set to -1 to keep files indefinitely.
      * @default -1
-     * @description Number of days for which exchange logs are preserved. A
-     * value smaller than zero deactivates the deletion of old
-     * logs.
      * @example 60
      */
     @MCAttribute

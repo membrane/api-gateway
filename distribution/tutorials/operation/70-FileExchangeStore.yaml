@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: File Exchange Store
+#
+# fileExchangeStore saves every request and response to disk.
+#
+# 1.) Start Membrane:
+#       Linux/Mac:  ./membrane.sh -c 70-FileExchangeStore.yaml
+#       Windows:    membrane.cmd  -c 70-FileExchangeStore.yaml
+#
+# 2.) Call the API:
+#       curl http://localhost:2000/
+#
+# 3.) Inspect the recorded files:
+#       find exchanges/ -name "*.msg"
+#
+#     exchanges/
+#     └── 2026/
+#         └── 6/
+#             └── 28/
+#                 ├── h11m30s12ms001-1-Request.msg
+#                 └── h11m30s12ms001-1-Response.msg
+
+components:
+  store:
+    fileExchangeStore:
+      dir: ./exchanges
+
+---
+api:
+  port: 2000
+  flow:
+    - return:
+        status: 200
