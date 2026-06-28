@@ -53,11 +53,39 @@ import static io.opentelemetry.api.trace.StatusCode.OK;
 import static io.opentelemetry.context.Context.current;
 
 /**
- * @description Creates an OpenTelemetry span for each HTTP request passing through. Sends the tracing data to the
- * speficied OpenTelemetry collector.
- *
- * See also examples/monitoring-tracing/opentelemetry for a demo, including screenshots.
+ * @description OpenTelemetry is an open observability standard for distributed tracing. It tracks
+ * a request as it travels across services by passing a <code>traceparent</code> header from hop
+ * to hop and collecting timing data (spans) in a central backend such as Jaeger or Zipkin.
+ * Membrane supports OpenTelemetry by creating one INTERNAL span per request: it extracts the
+ * incoming W3C trace context from request headers, opens the span, and injects the updated
+ * <code>traceparent</code> into the forwarded request so downstream services join the same trace.
+ * HTTP headers are recorded as <code>http.header.*</code> attributes, the response status as
+ * <code>http.status_code</code>, and for API proxies the OpenAPI title as <code>openapi.title</code>.
+ * The <code>traceId</code> and <code>spanId</code> are written into SLF4J MDC automatically so
+ * every log line carries them. Aborted exchanges are marked ERROR. Declare the plugin in
+ * <code>global:</code> to instrument all APIs at once.
+ * See tutorials/operation/40-OpenTelemetry.yaml for a runnable multi-hop example with Jaeger,
+ * and examples/monitoring-tracing/opentelemetry for screenshots.
+ * <pre>
+ * openTelemetry:
+ *   [ sampleRate: 0.0..1.0 ]        # default: 1.0
+ *   [ logBody: true | false ]        # default: false
+ *   [ otlpExporter: ... ]            # defaults to localhost:4317 over gRPC
+ *   [ customAttribute:
+ *       - name: key
+ *         value: val
+ *       ... ]
+ * </pre>
  * @topic 4. Monitoring, Logging and Statistics
+ * @yaml <pre><code>
+ * global:
+ *   - openTelemetry:
+ *       sampleRate: 1.0
+ *       otlpExporter:
+ *         host: localhost
+ *         port: 4317
+ *         transport: grpc
+ * </code></pre>
  */
 @MCElement(name = "openTelemetry")
 public class OpenTelemetryInterceptor extends AbstractInterceptor {
@@ -252,11 +280,20 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         return customAttributes;
     }
 
+    /**
+     * @description Static key-value pairs attached as attributes to every span.
+     * Useful for tagging traces with environment, region, or deployment metadata.
+     */
     @MCChildElement(order = 20)
     public void setCustomAttributes(List<CustomAttribute> customAttributes) {
         this.customAttributes.addAll(customAttributes);
     }
 
+    /**
+     * @description When <code>true</code>, records request and response bodies as span events.
+     * Reads the entire body into memory; avoid on large or streaming payloads.
+     * @default false
+     */
     @MCAttribute
     public void setLogBody(boolean logBody) {
         this.logBody = logBody;
@@ -266,6 +303,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         return logBody;
     }
 
+    /**
+     * @description The OTLP exporter that delivers spans to the collector.
+     * Defaults to <code>otlpExporter</code> targeting <code>localhost:4317</code> over gRPC.
+     */
     @MCChildElement(order = 10)
     public void setExporter(OtelExporter exporter) {
         this.exporter = exporter;
@@ -275,6 +316,10 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         return exporter;
     }
 
+    /**
+     * @description Fraction of requests to sample, between 0.0 (none) and 1.0 (all).
+     * @default 1.0
+     */
     @MCAttribute
     public void setSampleRate(double sampleRate) {
         this.sampleRate = sampleRate;
@@ -290,6 +335,9 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
         private String name;
         private String value;
 
+        /**
+         * @description Attribute key written to the span.
+         */
         @MCAttribute
         public void setName(String name) {
             this.name = name;
@@ -299,6 +347,9 @@ public class OpenTelemetryInterceptor extends AbstractInterceptor {
             return name;
         }
 
+        /**
+         * @description Attribute value written to the span.
+         */
         @MCAttribute
         public void setValue(String value) {
             this.value = value;
