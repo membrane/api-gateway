@@ -23,8 +23,12 @@
 # 4.) To connect a real Prometheus server use the scrape config in
 #     prometheus/prometheus.yml.  With Docker:
 #       docker run -p 9090:9090 \
+#         --add-host=host.docker.internal:host-gateway \
 #         -v $(pwd)/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
 #         prom/prometheus
+#
+#     --add-host is required on Linux so host.docker.internal resolves to the host;
+#     on macOS and Windows it is provided automatically.
 #
 #     Open http://localhost:9090 and search for 'membrane_count'.
 
