@@ -1,0 +1,24 @@
+openapi: 3.2.0
+info:
+  title: OpenAPI 3.2 itemSchema
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /documents:
+    post:
+      requestBody:
+        content:
+          # New in OpenAPI 3.2: itemSchema describes each item of a sequential media type.
+          application/jsonl:
+            itemSchema:
+              type: object
+              required: [id, title]
+              properties:
+                id:
+                  type: string
+                title:
+                  type: string
+      responses:
+        '202':
+          description: Accepted

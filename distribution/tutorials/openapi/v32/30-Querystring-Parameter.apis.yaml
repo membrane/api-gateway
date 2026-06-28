@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: OpenAPI 3.2 - The in: querystring Parameter
+#
+# OpenAPI 3.2 adds the "querystring" parameter location: instead of describing each query
+# parameter on its own, the whole query string is one typed value (here as
+# application/x-www-form-urlencoded). Membrane validates it as a unit.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 30-Querystring-Parameter.apis.yaml
+#
+# 2.) Send a valid query string:
+#     curl 'localhost:2000/products?term=boots&page=2'
+#
+#     term and page match the schema, so the request passes to the backend.
+#
+# 3.) Now omit the required "term":
+#     curl 'localhost:2000/products?page=2'
+#
+#     Membrane rejects it with 400: term is required.
+
+api:
+  port: 2000
+  openapi:
+    - location: querystring.oas.yaml
+      validateRequests: true
+
+---
+# Mock backend
+# Requests that pass validation are forwarded here.
+api:
+  port: 3000
+  path:
+    uri: /products
+  flow:
+    - static:
+        contentType: application/json
+        src: '{ "products": ["Steel-toed Slippers", "Waterproof Sponge Sandals"] }'
+    - return:
+        status: 200

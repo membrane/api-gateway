@@ -61,7 +61,20 @@ public class FormUrlEncodedValidator {
     }
 
     public ValidationErrors validate(ValidationContext ctx, MediaType mediaType, Message<?, ?> message) {
-        ctx = ctx.entityType(BODY);
+        String raw;
+        try {
+            raw = message.getBody().asString();
+        } catch (IOException e) {
+            return ValidationErrors.error(ctx.entityType(BODY), "The application/x-www-form-urlencoded body cannot be read: " + e.getMessage());
+        }
+        return validate(ctx.entityType(BODY), mediaType, raw);
+    }
+
+    /**
+     * Validates a raw {@code application/x-www-form-urlencoded} string (a message body or an
+     * OpenAPI 3.2 {@code in: querystring} value) against the media type's schema.
+     */
+    public ValidationErrors validate(ValidationContext ctx, MediaType mediaType, String raw) {
         var errors = new ValidationErrors();
 
         // The media type schema may be a $ref to a component; resolve it so its properties and
@@ -70,13 +83,6 @@ public class FormUrlEncodedValidator {
         if (schema == null) {
             // Without a schema there is nothing to validate the fields against.
             return errors;
-        }
-
-        String raw;
-        try {
-            raw = message.getBody().asString();
-        } catch (IOException e) {
-            return errors.add(ctx, "The application/x-www-form-urlencoded body cannot be read: " + e.getMessage());
         }
 
         var form = parse(raw);

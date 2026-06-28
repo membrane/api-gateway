@@ -44,6 +44,11 @@ Issue signed JSON Web Tokens and protect an API by validating them. Covers the O
 
 If you need to integrate legacy SOAP Web Services, this tutorial provides examples and practical guidance.
 
+
+## [OpenAPI 3.2](openapi/v32)
+
+Learn the features added in OpenAPI 3.2 - such as the QUERY method - and how Membrane validates requests against them.
+
 ---
 
 ## Start Membrane with Docker

@@ -52,7 +52,7 @@ public class SimpleAiApiStore implements AiApiStore {
     @Override
     public void store(AiApiUser user, Usage usage) {
         if (logUsage)
-            log.info("user: {} {}",user.getName(),usage.toString());
+            log.info("user: {} {}", user.getName(), usage.toString());
         user.addTokensUsedInPeriod(usage);
     }
 

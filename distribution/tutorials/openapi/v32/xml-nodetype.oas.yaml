@@ -1,0 +1,41 @@
+openapi: 3.2.0
+info:
+  title: OpenAPI 3.2 XML nodeType
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /orders:
+    post:
+      requestBody:
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '201':
+          description: Created
+components:
+  schemas:
+    Order:
+      type: object
+      required: [id, total]
+      properties:
+        id:
+          type: string
+          # New in OpenAPI 3.2: nodeType replaces the deprecated xml.attribute / xml.wrapped.
+          xml:
+            nodeType: attribute
+        total:
+          type: object
+          required: [currency, value]
+          properties:
+            currency:
+              type: string
+              xml:
+                nodeType: attribute
+            value:
+              type: number
+              # nodeType: text -> the value is the element's text content
+              xml:
+                nodeType: text

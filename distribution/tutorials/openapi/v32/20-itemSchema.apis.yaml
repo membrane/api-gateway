@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: OpenAPI 3.2 - itemSchema for Sequential Media Types
+#
+# Sequential media types (here application/jsonl, JSON Lines) carry a stream of items
+# instead of a single document. OpenAPI 3.2 describes each item with itemSchema, and
+# Membrane validates every item on its own.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 20-itemSchema.apis.yaml
+#
+# 2.) Send a valid JSON Lines stream (one document per line):
+#     curl -X POST localhost:2000/documents -H 'Content-Type: application/jsonl' --data-binary $'{"id":"1","title":"First"}\n{"id":"2","title":"Second"}'
+#
+#     Every line matches itemSchema, so the stream passes to the backend.
+#
+# 3.) Now break the second line by dropping the required "title":
+#     curl -X POST localhost:2000/documents -H 'Content-Type: application/jsonl' --data-binary $'{"id":"1","title":"First"}\n{"id":"2"}'
+#
+#     Membrane rejects it with 400 and points at the offending item: /1/title is required.
+
+api:
+  port: 2000
+  openapi:
+    - location: item-schema.oas.yaml
+      validateRequests: true
+
+---
+# Mock backend
+# Streams that pass validation are forwarded here.
+api:
+  port: 3000
+  path:
+    uri: /documents
+  flow:
+    - static:
+        contentType: application/json
+        src: '{ "imported": 2, "note": "documents filed under probably-fine" }'
+    - return:
+        status: 202
