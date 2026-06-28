@@ -14,15 +14,19 @@
 
 package com.predic8.membrane.core.interceptor.apikey.stores;
 
-import com.mongodb.client.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import org.bson.*;
+import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoDatabase;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import org.bson.Document;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
-import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Filters.eq;
 
 /**
  * @description Uses a MongoDB collection as a store for API keys and their scopes.
@@ -77,7 +81,8 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
             throw new UnauthorizedApiKeyException();
         }
 
-        return Optional.of(new HashSet<>(apiKeyDoc.getList("scopes", String.class)));
+        var scopes = apiKeyDoc.getList("scopes", String.class);
+        return Optional.of(scopes != null ? new HashSet<>(scopes) : new HashSet<>());
     }
 
     /**
