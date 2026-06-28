@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.openapi.util.OpenAPI32Parser;
 import com.predic8.membrane.core.openapi.util.SchemaUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -49,6 +50,10 @@ import java.util.Map;
  *                                 independent of the prefix used in the document</li>
  *   <li>{@code xml.attribute}   – maps an XML attribute to a schema property</li>
  *   <li>{@code xml.wrapped}     – signals that an array is enclosed in a wrapper element</li>
+ *   <li>{@code xml.nodeType}    – the OAS 3.2 replacement for {@code attribute}/{@code wrapped}:
+ *                                 {@code attribute} maps an attribute, {@code element} wraps an
+ *                                 array, {@code text}/{@code cdata} take the element's text content,
+ *                                 {@code none} leaves an array unwrapped</li>
  * </ul>
  *
  * <p>When {@code xml.namespace} is present, matching is namespace-aware: the namespace URI and
@@ -116,7 +121,12 @@ public class XmlToJsonConverter {
             XmlName xmlName = xmlNameOf(propName, propSchema);
             boolean isAttr = isXmlAttribute(propSchema);
 
-            if (isAttr) {
+            if (isXmlText(propSchema)) {
+                // OAS 3.2 nodeType: text/cdata — the value is the containing element's text content,
+                // e.g. <price currency="USD">42</price> with currency as attribute and value as text.
+                node.set(propName, convertPrimitive(directTextContent(element), propSchema));
+
+            } else if (isAttr) {
                 // Map XML attribute → JSON property. Check for presence (not emptiness) so that a
                 // present-but-empty attribute (e.g. sku="") is kept as "" instead of being dropped.
                 if (hasAttribute(element, xmlName))
@@ -315,16 +325,48 @@ public class XmlToJsonConverter {
         }
     }
 
+    /**
+     * Returns the OAS 3.2 {@code xml.nodeType} via the single {@link OpenAPI32Parser} accessor, so the
+     * 3.2 source (today a vendor extension) is the only thing to switch when the parser supports 3.2.
+     */
+    private static String xmlNodeType(Schema schema) {
+        return OpenAPI32Parser.getXmlNodeType(schema);
+    }
+
     private static boolean isXmlAttribute(Schema schema) {
+        String nodeType = xmlNodeType(schema);
+        if (nodeType != null) // OAS 3.2: nodeType is authoritative
+            return "attribute".equals(nodeType);
         return schema != null
             && schema.getXml() != null
             && Boolean.TRUE.equals(schema.getXml().getAttribute());
     }
 
     private static boolean isXmlWrapped(Schema schema) {
+        String nodeType = xmlNodeType(schema);
+        if (nodeType != null) // OAS 3.2: nodeType: element wraps an array, none/text/... do not
+            return "element".equals(nodeType);
         return schema != null
             && schema.getXml() != null
             && Boolean.TRUE.equals(schema.getXml().getWrapped());
+    }
+
+    /** True for the OAS 3.2 {@code nodeType: text} / {@code nodeType: cdata} (value is the element's text). */
+    private static boolean isXmlText(Schema schema) {
+        String nodeType = xmlNodeType(schema);
+        return "text".equals(nodeType) || "cdata".equals(nodeType);
+    }
+
+    /** Concatenated direct text and CDATA content of an element (not descendant text). */
+    private static String directTextContent(Element element) {
+        StringBuilder sb = new StringBuilder();
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node n = children.item(i);
+            if (n.getNodeType() == Node.TEXT_NODE || n.getNodeType() == Node.CDATA_SECTION_NODE)
+                sb.append(n.getNodeValue());
+        }
+        return sb.toString().trim();
     }
 
     /**

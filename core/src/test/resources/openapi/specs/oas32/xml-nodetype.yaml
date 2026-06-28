@@ -1,0 +1,51 @@
+openapi: 3.2.0
+info:
+  title: XML NodeType API
+  version: 1.0.0
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/Order'
+      responses:
+        '200':
+          description: ok
+components:
+  schemas:
+    Order:
+      type: object
+      required: [id, price, items]
+      properties:
+        id:
+          type: string
+          # OAS 3.2: replaces the deprecated attribute: true
+          xml:
+            nodeType: attribute
+        price:
+          $ref: '#/components/schemas/Price'
+        items:
+          type: array
+          # OAS 3.2: replaces the deprecated wrapped: true
+          xml:
+            nodeType: element
+          items:
+            type: string
+            xml:
+              name: item
+    Price:
+      type: object
+      required: [currency, value]
+      properties:
+        currency:
+          type: string
+          xml:
+            nodeType: attribute
+        value:
+          type: number
+          # OAS 3.2: the value is the element's text content
+          xml:
+            nodeType: text

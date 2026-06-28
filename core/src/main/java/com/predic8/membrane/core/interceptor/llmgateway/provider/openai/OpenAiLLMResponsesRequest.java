@@ -16,13 +16,14 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.openai;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
+import java.io.IOException;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
 
 public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
 
-    public OpenAiLLMResponsesRequest(Exchange exchange) {
+    public OpenAiLLMResponsesRequest(Exchange exchange) throws IOException {
         super(exchange);
     }
 
@@ -39,24 +40,18 @@ public class OpenAiLLMResponsesRequest extends AbstractOpenAiLLMRequest {
 
     @Override
     public String getSystemPrompt() {
-        return json.path("instructions").asText();
-    }
-
-    @Override
-    public boolean isChatCompletion() {
-        return false;
+        return json.path("instructions").asText("");
     }
 
     /**
-     * Sets the {@code "instructions"} field, which is the system prompt in the
-     * OpenAI Responses API. Replaces any existing value.
+     * Concatenates all prompts (newline-separated) into the {@code "instructions"} field.
      *
      * <p>OpenAI Responses API wire format:
-     * <pre>{@code { "instructions": "You are a helpful assistant.", "input": "..." }}</pre>
+     * <pre>{@code { "instructions": "prompt 1\nprompt 2", "input": "..." }}</pre>
      */
     @Override
-    public void setSystemPrompt(String systemPrompt) {
-        json.put("instructions", systemPrompt);
+    public void setSystemPrompts(List<String> prompts) {
+        json.put("instructions", String.join("\n", prompts));
     }
 
     /**

@@ -1,0 +1,27 @@
+openapi: 3.2.0
+info:
+  title: OpenAPI 3.2 querystring Parameter
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /products:
+    get:
+      parameters:
+        # New in OpenAPI 3.2: in: querystring describes the whole query string as one value.
+        - name: filter
+          in: querystring
+          content:
+            application/x-www-form-urlencoded:
+              schema:
+                type: object
+                required: [term]
+                properties:
+                  term:
+                    type: string
+                  page:
+                    type: integer
+                    minimum: 1
+      responses:
+        '200':
+          description: Matching products

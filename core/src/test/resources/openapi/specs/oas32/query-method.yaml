@@ -1,0 +1,155 @@
+openapi: 3.2.0
+info:
+  title: Search API
+  version: 1.0.0
+$self: https://example.com/search-api
+paths:
+  /search:
+    # New in OpenAPI 3.2: the QUERY HTTP method carries a request body.
+    query:
+      summary: Run a search with a request body
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchQuery'
+      responses:
+        '200':
+          description: Streamed results
+          content:
+            # New in OpenAPI 3.2: itemSchema for sequential media types.
+            application/jsonl:
+              itemSchema:
+                $ref: '#/components/schemas/Result'
+    # New in OpenAPI 3.2: arbitrary HTTP methods via additionalOperations.
+    additionalOperations:
+      PURGE:
+        summary: Purge the search index
+        responses:
+          '204':
+            description: Purged
+  /bulk:
+    post:
+      summary: Bulk ingest documents as a JSON Lines stream
+      requestBody:
+        required: true
+        content:
+          # New in OpenAPI 3.2: itemSchema validates each item of a sequential media type.
+          application/jsonl:
+            itemSchema:
+              $ref: '#/components/schemas/Document'
+      responses:
+        '202':
+          description: Accepted
+  /events:
+    post:
+      summary: Submit a Server-Sent Events stream
+      requestBody:
+        required: true
+        content:
+          # itemSchema over text/event-stream: each item is one parsed SSE event.
+          text/event-stream:
+            itemSchema:
+              type: object
+              required: [data]
+              properties:
+                data:
+                  type: string
+                event:
+                  type: string
+                id:
+                  type: string
+                retry:
+                  type: integer
+                  minimum: 0
+      responses:
+        '202':
+          description: Accepted
+  /wrap:
+    post:
+      summary: Body with strings that carry JSON content (contentMediaType/contentSchema)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payload]
+              properties:
+                payload:
+                  type: string
+                  contentMediaType: application/json
+                  contentSchema:
+                    type: object
+                    required: [event]
+                    properties:
+                      event:
+                        type: string
+                encoded:
+                  type: string
+                  contentEncoding: base64
+                  contentMediaType: application/json
+                  contentSchema:
+                    type: object
+                    required: [id]
+                    properties:
+                      id:
+                        type: integer
+                encodedUrl:
+                  type: string
+                  contentEncoding: base64url
+                  contentMediaType: application/json
+                  contentSchema:
+                    type: object
+                    required: [id]
+                    properties:
+                      id:
+                        type: integer
+      responses:
+        '200':
+          description: ok
+  /find:
+    get:
+      summary: Search with the whole query string typed as a single parameter
+      parameters:
+        # New in OpenAPI 3.2: in: querystring describes the entire query string via content.
+        - name: filter
+          in: querystring
+          content:
+            application/x-www-form-urlencoded:
+              schema:
+                type: object
+                required: [term]
+                properties:
+                  term:
+                    type: string
+                  page:
+                    type: integer
+      responses:
+        '200':
+          description: Matching documents
+components:
+  schemas:
+    SearchQuery:
+      type: object
+      required: [term]
+      properties:
+        term:
+          type: string
+        # 3.1/3.2 JSON Schema 2020-12: multiple types.
+        limit:
+          type: [integer, "null"]
+    Result:
+      type: object
+      properties:
+        id:
+          type: string
+    Document:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
