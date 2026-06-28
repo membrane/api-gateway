@@ -54,13 +54,14 @@ public class IncludeTutorialTest extends AbstractAdvancedTutorialTest {
     }
 
     @Test
-    void unknownPathReturns404() {
+    void unknownPathReturns404WithGatewayHeader() {
         // @formatter:off
         given()
         .when()
             .get("http://localhost:2000/unknown")
         .then()
-            .statusCode(404);
+            .statusCode(404)
+            .header("X-Gateway", equalTo("Membrane"));
         // @formatter:on
     }
 }

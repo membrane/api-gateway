@@ -23,7 +23,8 @@
 # 4.) Call an unknown path:
 #     curl -i http://localhost:2000/unknown
 #
-#     HTTP/1.1 404 Not Found
+#     X-Gateway: Membrane
+#     404 Not Found
 
 # Included files define the per-service APIs.
 include:
