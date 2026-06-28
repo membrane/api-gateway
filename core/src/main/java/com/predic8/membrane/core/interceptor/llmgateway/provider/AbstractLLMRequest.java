@@ -79,12 +79,10 @@ public abstract class AbstractLLMRequest extends AbstractLLMMessage implements L
         return token.isEmpty() ? null : token;
     }
 
-    @Override
     public ObjectNode getJson() {
         return json;
     }
 
-    @Override
     public String getModel() {
         return json.path("model").asText();
     }

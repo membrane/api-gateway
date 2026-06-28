@@ -16,11 +16,12 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
+import java.io.IOException;
 import java.util.function.Consumer;
 
 public interface LLMProvider {
 
-    LLMRequest getLLMRequest(Exchange request);
+    LLMRequest getLLMRequest(Exchange request) throws IOException;
     LLMResponse getLLMResponse(Exchange request, Consumer<LLMResponse> postProcessor);
     LLMErrorCreator getErrorCreator();
 

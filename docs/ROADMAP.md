@@ -31,6 +31,8 @@ PRIO 2:
       - 
 
 PRIO 3:
+- OpenAPI: validate `in: cookie` parameters
+  - Path, query and header parameters are validated; cookie parameters currently are not.
 - ReplaceInterceptor: Support Languages, tutorial/transformation
 - WebServiceExplorerInterceptor
   - Support multiple services, ports, ...

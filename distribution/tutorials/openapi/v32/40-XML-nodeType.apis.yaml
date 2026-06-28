@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: OpenAPI 3.2 - The xml.nodeType Keyword
+#
+# OpenAPI 3.2 replaces the deprecated xml.attribute / xml.wrapped with xml.nodeType and
+# adds text/cdata. It controls how a property maps to XML: an attribute, an element, or the
+# element's text content. Membrane uses it to validate XML bodies.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 40-XML-nodeType.apis.yaml
+#
+# 2.) Send a valid order (id and currency as attributes, total as element text):
+#     curl -X POST localhost:2000/orders -H 'Content-Type: application/xml' -d '<order id="A1"><total currency="USD">42.50</total></order>'
+#
+#     The XML matches the schema, so the request passes to the backend.
+#
+# 3.) Now send a non-numeric total:
+#     curl -X POST localhost:2000/orders -H 'Content-Type: application/xml' -d '<order id="A1"><total currency="USD">cheap</total></order>'
+#
+#     Membrane rejects it with 400: the total value must be a number.
+
+api:
+  port: 2000
+  openapi:
+    - location: xml-nodetype.oas.yaml
+      validateRequests: true
+
+---
+# Mock backend
+# Requests that pass validation are forwarded here.
+api:
+  port: 3000
+  path:
+    uri: /orders
+  flow:
+    - static:
+        contentType: application/json
+        src: '{ "status": "order received, summoning a courier pigeon" }'
+    - return:
+        status: 201

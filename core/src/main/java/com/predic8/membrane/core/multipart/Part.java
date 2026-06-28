@@ -14,141 +14,120 @@
 
 package com.predic8.membrane.core.multipart;
 
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Header;
 
-import javax.xml.namespace.*;
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static java.nio.charset.StandardCharsets.*;
-import static org.apache.commons.codec.binary.Base64.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * A single part of a multipart HTTP message, consisting of a header block and a body.
+ *
+ * @see MultipartUtil#split(com.predic8.membrane.core.http.Message)
+ */
 public class Part {
 
-	private final Header header;
-	private final byte[] data;
+    private static final Pattern NAME_PATTERN =
+            Pattern.compile("(?i)\\bname=\"([^\"]+)\"");
+    private static final Pattern FILENAME_PATTERN =
+            Pattern.compile("(?i)\\bfilename=\"([^\"]+)\"");
 
-	public Part(Header header, byte[] data) {
-		this.header = header;
-		this.data = data;
-	}
+    private final Header header;
+    private final byte[] body;
 
-	public String getContentID() {
-		return header.getFirstValue("Content-ID");
-	}
+    public Part(Header header, byte[] body) {
+        this.header = header;
+        this.body = body;
+    }
 
-	public Header getHeader() {
-		return header;
-	}
+    // -------------------------------------------------------------------------
+    // Header accessors
+    // -------------------------------------------------------------------------
 
-	public InputStream getInputStream() {
-		return new ByteArrayInputStream(data);
-	}
+    /**
+     * Returns the part's own header block (may contain Content-Type, Content-ID, etc.).
+     */
+    public Header getHeader() {
+        return header;
+    }
 
-	public XMLEvent asXMLEvent() {
-		return new Characters() {
+    /**
+     * Returns the {@code Content-ID} header value, or {@code null} if absent.
+     * Used in MIME multipart/related messages (e.g. SOAP XOP).
+     */
+    public String getContentID() {
+        return header.getFirstValue("Content-ID");
+    }
 
-			@Override
-			public void writeAsEncodedUnicode(Writer writer) {
-				throw new RuntimeException("not implemented");
-			}
+    /**
+     * Returns the {@code Content-Type} of this part (e.g. {@code "image/png"}),
+     * or {@code null} if no Content-Type header is present.
+     */
+    public String getContentType() {
+        return header.getContentType();
+    }
 
-			@Override
-			public boolean isStartElement() {
-				return false;
-			}
+    /**
+     * Returns the {@code name} parameter from the {@code Content-Disposition} header.
+     * This is the form field name in {@code multipart/form-data} submissions.
+     * Returns {@code null} if not present.
+     */
+    public String getName() {
+        return extractDispositionParam(NAME_PATTERN);
+    }
 
-			@Override
-			public boolean isStartDocument() {
-				return false;
-			}
+    /**
+     * Returns the {@code filename} parameter from the {@code Content-Disposition} header,
+     * or {@code null} if not present.
+     */
+    public String getFilename() {
+        return extractDispositionParam(FILENAME_PATTERN);
+    }
 
-			@Override
-			public boolean isProcessingInstruction() {
-				return false;
-			}
+    // -------------------------------------------------------------------------
+    // Body accessors
+    // -------------------------------------------------------------------------
 
-			@Override
-			public boolean isNamespace() {
-				return false;
-			}
+    /**
+     * Returns the raw body bytes of this part.
+     */
+    public byte[] getBody() {
+        return body;
+    }
 
-			@Override
-			public boolean isEntityReference() {
-				return false;
-			}
+    /**
+     * Returns the body decoded as a UTF-8 string.
+     */
+    public String getBodyAsString() {
+        return getBodyAsString(UTF_8);
+    }
 
-			@Override
-			public boolean isEndElement() {
-				return false;
-			}
+    /**
+     * Returns the body decoded using the given charset.
+     */
+    public String getBodyAsString(Charset charset) {
+        return new String(body, charset);
+    }
 
-			@Override
-			public boolean isEndDocument() {
-				return false;
-			}
+    /**
+     * Returns a fresh {@link InputStream} over the body bytes.
+     */
+    public InputStream getInputStream() {
+        return new ByteArrayInputStream(body);
+    }
 
-			@Override
-			public boolean isCharacters() {
-				return true;
-			}
+    // -------------------------------------------------------------------------
+    // Internal helpers
+    // -------------------------------------------------------------------------
 
-			@Override
-			public boolean isAttribute() {
-				return false;
-			}
-
-			@Override
-			public QName getSchemaType() {
-				return null;
-			}
-
-			@Override
-			public Location getLocation() {
-				return null;
-			}
-
-			@Override
-			public int getEventType() {
-				return CHARACTERS;
-			}
-
-			@Override
-			public StartElement asStartElement() {
-				return null;
-			}
-
-			@Override
-			public EndElement asEndElement() {
-				return null;
-			}
-
-			@Override
-			public Characters asCharacters() {
-				return this;
-			}
-
-			@Override
-			public String getData() {
-				return new String(encodeBase64(data), UTF_8);
-			}
-
-			@Override
-			public boolean isWhiteSpace() {
-				return false;
-			}
-
-			@Override
-			public boolean isCData() {
-				return false;
-			}
-
-			@Override
-			public boolean isIgnorableWhiteSpace() {
-				return false;
-			}
-		};
-	}
-
+    private String extractDispositionParam(Pattern pattern) {
+        String disposition = header.getFirstValue("Content-Disposition");
+        if (disposition == null) return null;
+        Matcher m = pattern.matcher(disposition);
+        return m.find() ? m.group(1) : null;
+    }
 }

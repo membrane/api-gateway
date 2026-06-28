@@ -38,6 +38,8 @@ components:
     Numbers:
       type: object
       properties:
+        integer:
+          type: integer
         minimum:
           type: number
           minimum: 5

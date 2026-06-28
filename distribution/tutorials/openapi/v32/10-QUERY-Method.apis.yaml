@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: OpenAPI 3.2 - The QUERY HTTP Method
+#
+# OpenAPI 3.2 adds the QUERY method: a safe, read-only operation that - unlike GET -
+# carries a request body.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 10-QUERY-Method.apis.yaml
+#
+# 2.) Send a valid QUERY with a search body:
+#     curl -X QUERY localhost:2000/search -H 'Content-Type: application/json' -d '{"term": "shoes"}'
+#
+#     The body matches the schema, so the request passes to the backend.
+#
+# 3.) Now omit the required "term":
+#     curl -X QUERY localhost:2000/search -H 'Content-Type: application/json' -d '{}'
+#
+#     Membrane rejects it with status 400: "term" is required.
+
+api:
+  port: 2000
+  openapi:
+    - location: query-method.oas.yaml
+      validateRequests: true
+
+---
+# Mock backend 
+# Requests that pass validation are forwarded here.
+api:
+  port: 3000
+  path:
+    uri: /search
+  flow:
+    - static:
+        contentType: application/json
+        src: '{ "results": ["Invisible Running Shoes", "Left Shoe (single, slightly haunted)", "Anti-Gravity Boots"] }'
+    - return:
+        status: 200

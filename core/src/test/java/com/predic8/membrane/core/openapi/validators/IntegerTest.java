@@ -16,15 +16,17 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.model.*;
-import org.junit.jupiter.api.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.predic8.membrane.core.openapi.model.JsonBody;
+import com.predic8.membrane.core.openapi.model.Request;
+import org.junit.jupiter.api.Test;
 
-import java.math.*;
+import java.math.BigDecimal;
 
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class IntegerTest extends AbstractValidatorTest {
@@ -118,6 +120,15 @@ protected String getOpenAPIFileName() {
     public void validMaximumWithoutTypeInBody() {
         ValidationErrors errors = validator.validate(Request.post().path("/integer").body(new JsonBody(getNumbers("maximum-without-type",new BigDecimal(5)))));
         assertEquals(0,errors.size());
+    }
+
+    @Test
+    public void stringForIntegerPropertyInBodyIsRejected() {
+        var root = om.createObjectNode();
+        root.put("integer", "1"); // JSON string, not a number
+        var errors = validator.validate(Request.post().path("/integer").body(new JsonBody(root)));
+        assertEquals(1, errors.size());
+        assertTrue(errors.getFirst().getMessage().contains("not an integer"));
     }
 
     private JsonNode getNumbers(String name, BigDecimal n) {
