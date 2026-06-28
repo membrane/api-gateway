@@ -82,7 +82,7 @@ public class MongoDBApiKeyStore implements ApiKeyStore {
         }
 
         var scopes = apiKeyDoc.getList("scopes", String.class);
-        return Optional.of(scopes != null ? new HashSet<>(scopes) : new HashSet<>());
+        return scopes == null || scopes.isEmpty() ? Optional.empty() : Optional.of(new HashSet<>(scopes));
     }
 
     /**
