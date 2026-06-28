@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: OpenTelemetry
+#
+# 1.) Start Jaeger (Docker required):
+#       docker run -d --name jaeger \
+#         -e COLLECTOR_OTLP_ENABLED=true \
+#         -p 16686:16686 \
+#         -p 4317:4317 \
+#         jaegertracing/all-in-one:latest
+#
+# 2.) Start Membrane:
+#       Linux/Mac:  ./membrane.sh -c 40-OpenTelemetry.yaml
+#       Windows:    membrane.cmd  -c 40-OpenTelemetry.yaml
+#
+# 3.) Send a few requests:
+#       curl http://localhost:2000
+#
+# 4.) Open http://localhost:16686, select 'Membrane' and click 'Find Traces'.
+
+global:
+  - openTelemetry:
+      sampleRate: 1.0
+      otlpExporter:
+        host: localhost
+        port: 4317
+        transport: grpc
+
+---
+api:
+  name: Gateway
+  port: 2000
+  flow:
+    - request:
+        - log:
+            message: "traceparent: ${header.traceparent}"
+  target:
+    url: http://localhost:2001
+
+---
+api:
+  name: Microservice A
+  port: 2001
+  flow:
+    - request:
+        - log:
+            message: "traceparent: ${header.traceparent}"
+  target:
+    url: http://localhost:2002
+
+---
+api:
+  name: Microservice B
+  port: 2002
+  flow:
+    - request:
+        - log:
+            message: "traceparent: ${header.traceparent}"
+    - static:
+        src: Greetings from the backend!
+    - return:
+        status: 200
+
+# ---------------------------------------------------------------------------
+# How it works
+# ---------------------------------------------------------------------------
+#
+# Each request travels through three APIs: Gateway → Microservice A → Microservice B.
+# The openTelemetry plugin (declared once in global:) runs on every hop and adds
+# a W3C traceparent header to the request before it is forwarded.
+#
+# The traceparent header has four fields separated by dashes:
+#
+#   00 - a3ce929d0e0e47368efb39bb0c10f469 - 674ad14c4ca87b49 - 01
+#   │    │                                   │                   └─ flags (01 = sampled)
+#   │    │                                   └─ parent-id: ID of the current span
+#   │    └─ trace-id: one ID shared by the entire request across all services
+#   └─ version (always 00)
+#
+# Look at the log output: the trace-id stays the same at every hop.
+# The parent-id changes, because each service adds its own span to the trace.
+# That is exactly what you see as the call chain in the Jaeger UI.
+#
+# The microservices can run on different computers. As long as each one has
+# the openTelemetry plugin configured, the trace will be stitched together
+# correctly in Jaeger from spans that originated on different machines.
+#
+# The trace-id and span-id are also written into the log context (MDC)
+# automatically, so every log line carries them without extra code:
+#
+#   INFO {api=Microservice B, spanId=674ad14c4ca87b49, traceId=a3ce929d...}
+#
+# Reference: https://www.membrane-api.io/docs/current/openTelemetry.html
