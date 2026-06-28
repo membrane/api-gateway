@@ -42,6 +42,15 @@ public class ApiKeyOpenApiTutorialTest extends AbstractSecurityTutorialTest {
             .post("http://localhost:2000/shop/v2/products")
         .then()
             .statusCode(403);
+
+        given()
+            .header("X-Api-Key", "222")
+            .contentType("application/json")
+            .body("{\"name\":\"Mango\",\"price\":1.99}")
+        .when()
+            .post("http://localhost:2000/shop/v2/products")
+        .then()
+            .statusCode(201);
         // @formatter:on
     }
 }
