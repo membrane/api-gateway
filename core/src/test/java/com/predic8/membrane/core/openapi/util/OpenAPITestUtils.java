@@ -16,20 +16,24 @@
 
 package com.predic8.membrane.core.openapi.util;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.router.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.router.Router;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.ObjectMapperFactory;
+import io.swagger.v3.parser.core.models.ParseOptions;
 
 import java.io.*;
-import java.util.*;
+import java.util.Map;
 
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static java.util.Collections.*;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static java.util.Collections.singletonList;
 
 public class OpenAPITestUtils {
 
@@ -65,6 +69,20 @@ public class OpenAPITestUtils {
         return new OpenAPIParser().readLocation(file, null, parseOptions).getOpenAPI();
     }
 
+
+    public static OpenAPI parseOpenAPI32(Object obj, String path) {
+        ParseOptions opts = new ParseOptions();
+        opts.setResolve(true);
+        try {
+            // Pass the resource location so OpenAPIResolver can resolve relative external $refs,
+            // matching the file-based parsing path.
+            var resource = obj.getClass().getResource(path);
+            String location = resource != null ? resource.toString() : null;
+            return new OpenAPI32Parser().parse(getYAMLResource(obj, path), location, opts);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
     public static APIProxy createProxy(Router router, OpenAPISpec spec) {
         APIProxy proxy = new APIProxy();

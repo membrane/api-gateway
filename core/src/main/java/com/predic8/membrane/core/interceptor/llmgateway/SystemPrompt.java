@@ -18,9 +18,11 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
@@ -37,27 +39,27 @@ public class SystemPrompt {
         REMOVE, OVERWRITE, APPEND, PREPEND
     }
 
-    private Action action;
+    private Action action = Action.OVERWRITE;
     private String content = "";
 
-    public Outcome handleRequest(LLMRequest aiReq, Exchange exc) {
-        var instructions = aiReq.getSystemPrompt() == null ? "" : aiReq.getSystemPrompt();
+    public Outcome handleRequest(ModelInputRequest mir, Exchange exc) {
+        var instructions = mir.getSystemPrompt() == null ? "" : mir.getSystemPrompt();
         switch (action) {
             case OVERWRITE -> {
                 log.debug("Overwriting instructions: {}", content);
-                aiReq.setSystemPrompt(content);
+                mir.setSystemPrompts(List.of(content));
             }
             case PREPEND -> {
                 log.debug("Prepending instructions: {}", content);
-                aiReq.setSystemPrompt( content + "\n" + instructions);
+                mir.setSystemPrompts(List.of(content, instructions));
             }
             case APPEND -> {
                 log.debug("Appending instructions: {}", content);
-                aiReq.setSystemPrompt(instructions + "\n" + content);
+                mir.setSystemPrompts(List.of(instructions, content));
             }
             case REMOVE -> {
                 log.info("Removing instructions: {}", instructions);
-                aiReq.removeSystemPrompt();
+                mir.removeSystemPrompt();
             }
         }
         return CONTINUE;

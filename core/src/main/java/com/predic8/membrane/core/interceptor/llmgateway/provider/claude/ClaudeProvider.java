@@ -21,17 +21,18 @@ import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 
+import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
- * @description (Experimental) Anthroic Claude provider configuration
+ * @description (Experimental) Anthropic Claude provider configuration
  * Use to configure a LLM gateway to use the anthropic API
  */
 @MCElement( name="claude")
 public class ClaudeProvider implements LLMProvider {
 
     @Override
-    public LLMRequest getLLMRequest(Exchange exchange) {
+    public LLMRequest getLLMRequest(Exchange exchange) throws IOException {
         return new ClaudeLLMRequest(exchange);
     }
 

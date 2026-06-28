@@ -123,6 +123,7 @@ public class SharingApiKeysOpenAiTutorialTest extends AbstractOpenAiTutorialTest
         .when()
             .post(LOCALHOST_2000 + "/v1/responses")
         .then()
+            .log().ifValidationFails()
             .statusCode(400)
             .body("error.type", equalTo("invalid_request_error"))
             .body("error.code", equalTo("model_not_allowed"))
