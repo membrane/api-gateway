@@ -128,6 +128,9 @@ public final class ScalarValueConverter {
         );
     }
 
+    /**
+     * Returns the runtime class used as the value type of a map setter parameter.
+     */
     private static Class<?> getMapValueType(Method setter) {
         Type genericType = setter.getGenericParameterTypes()[0];
         if (!(genericType instanceof ParameterizedType parameterizedType)) {

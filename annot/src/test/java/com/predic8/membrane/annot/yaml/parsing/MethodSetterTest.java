@@ -20,12 +20,14 @@ import com.predic8.membrane.annot.MCOtherAttributes;
 import com.predic8.membrane.annot.util.GrammarMock;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.annot.yaml.ParsingContext;
+import com.predic8.membrane.annot.yaml.parsing.binding.ScalarValueConverter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -74,6 +76,16 @@ class MethodSetterTest {
     static class StringAttributes {
         @MCOtherAttributes
         public void setAttributes(Map<String, String> attributes) {}
+    }
+
+    @SuppressWarnings({"rawtypes", "unused"})
+    static class RawAttributes {
+        public void setAttributes(Map attributes) {}
+    }
+
+    @SuppressWarnings("unused")
+    static class ListAttributes {
+        public void setAttributes(Map<String, List<String>> attributes) {}
     }
 
     enum Mode {
@@ -140,11 +152,31 @@ class MethodSetterTest {
                 () -> coerceOtherAttribute(StringAttributes.class, "{\"nested\":true}"));
     }
 
+    @ParameterizedTest
+    @MethodSource("mapValueTypes")
+    void mapValueTypeIsReadFromSetterParameter(Class<?> attributesClass, Class<?> expectedValueType) throws Exception {
+        assertEquals(expectedValueType, getMapValueType(attributesClass));
+    }
+
+    static Stream<Arguments> mapValueTypes() {
+        return Stream.of(
+                Arguments.of(IntegerAttributes.class, Integer.class),
+                Arguments.of(ListAttributes.class, List.class),
+                Arguments.of(RawAttributes.class, Object.class)
+        );
+    }
+
     private Map<?, ?> coerceOtherAttribute(Class<?> clazz, String json) throws Exception {
         Method setter = clazz.getMethod("setAttributes", Map.class);
         Object value = new MethodSetter(setter, null)
                 .coerceScalarOrReference(null, om.readTree(json), OTHER_ATTRIBUTE_NAME, Map.class);
 
         return assertInstanceOf(Map.class, value);
+    }
+
+    private Class<?> getMapValueType(Class<?> clazz) throws Exception {
+        Method method = ScalarValueConverter.class.getDeclaredMethod("getMapValueType", Method.class);
+        method.setAccessible(true);
+        return (Class<?>) method.invoke(null, clazz.getMethod("setAttributes", Map.class));
     }
 }
