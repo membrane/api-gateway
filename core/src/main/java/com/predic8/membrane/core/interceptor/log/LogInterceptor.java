@@ -159,6 +159,10 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private static String dumpBody(Message msg) {
+        if (msg.isBinary()) {
+            return "[Binary]";
+        }
+
         try {
             return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
         } catch (Exception e) {

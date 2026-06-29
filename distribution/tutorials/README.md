@@ -35,9 +35,19 @@ Run and observe Membrane in production.
 Expose Membrane as an MCP server for AI clients, inspect recent API traffic, and protect the MCP endpoint with an API key.
 
 
+## [Security](security)
+
+Issue signed JSON Web Tokens and protect an API by validating them. Covers the OAuth2 client-credentials flow, Bearer tokens, and signature/expiry/audience checks.
+
+
 ## [SOAP Web Services (Legacy)](soap)
 
 If you need to integrate legacy SOAP Web Services, this tutorial provides examples and practical guidance.
+
+
+## [OpenAPI 3.2](openapi/v32)
+
+Learn the features added in OpenAPI 3.2 - such as the QUERY method - and how Membrane validates requests against them.
 
 ---
 

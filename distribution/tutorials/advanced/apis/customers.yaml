@@ -1,0 +1,10 @@
+api:
+  port: 2000
+  path:
+    uri: /customers
+  flow:
+    - static:
+        src: '{"customers":[1,2,3]}'
+        contentType: application/json
+    - return:
+        status: 200

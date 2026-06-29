@@ -40,8 +40,8 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.isBinary;
 import static com.predic8.membrane.core.util.HttpUtil.readLine;
-import static com.predic8.membrane.core.util.security.BasicAuthenticationUtil.createAuthorizationHeader;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Locale.ROOT;
@@ -49,6 +49,7 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static java.util.regex.Pattern.compile;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.codec.binary.Base64.encodeBase64;
 
 /**
  * The headers of an HTTP message.
@@ -77,7 +78,6 @@ public class Header {
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9110#name-content-encoding">RFC 9110 Section 8.4</a>
      */
     public static final String CONTENT_ENCODING = "Content-Encoding";
-
     public static final String CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding";
 
     public static final String CONTENT_LENGTH = "Content-Length";
@@ -330,8 +330,22 @@ public class Header {
         setValue(PROXY_AUTHORIZATION, value);
     }
 
+    /**
+     * Whether the message body uses chunked transfer framing.
+     * <p>
+     * Per RFC 7230 section 3.3.1 the body is chunked-framed if "chunked" is the
+     * <em>final</em> transfer-coding. Transfer-coding names are case-insensitive,
+     * and codings may be combined in a comma-separated list (e.g. "gzip, chunked"),
+     * so this looks at the last token case-insensitively rather than requiring an
+     * exact "chunked" match.
+     */
     public boolean isChunked() {
-        return getSingleValues(TRANSFER_ENCODING).anyMatch(CHUNKED::equalsIgnoreCase);
+        String value = getFirstValue(TRANSFER_ENCODING);
+        if (value == null)
+            return false;
+        int lastComma = value.lastIndexOf(',');
+        String last = (lastComma == -1 ? value : value.substring(lastComma + 1)).trim();
+        return CHUNKED.equalsIgnoreCase(last);
     }
 
     public long getContentLength() {
@@ -342,6 +356,15 @@ public class Header {
 
     public String getContentType() {
         return getFirstValue(CONTENT_TYPE);
+    }
+
+    /**
+     * Returns {@code true} if the {@code Content-Type} header starts with {@code multipart/}
+     * (e.g. {@code multipart/form-data}, {@code multipart/related}, {@code multipart/mixed}).
+     */
+    public boolean isMultipart() {
+        String ct = getContentType();
+        return ct != null && ct.regionMatches(true, 0, "multipart/", 0, 10);
     }
 
     public String getUserAgent() {
@@ -441,7 +464,9 @@ public class Header {
      * @param password the password for authentication
      */
     public void setAuthorization(String user, String password) {
-        setValue(AUTHORIZATION, createAuthorizationHeader(user, password));
+        setValue("Authorization", "Basic "
+                                  + new String(encodeBase64((user + ":" + password)
+                .getBytes(UTF_8)), UTF_8));
     }
 
     /**

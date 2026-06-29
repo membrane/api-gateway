@@ -16,13 +16,14 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.openai;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMProvider;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMResponse;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsErrorCreator;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.chatcompletions.ChatCompletionsResponse;
 
+import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
@@ -30,19 +31,24 @@ import java.util.function.Consumer;
  * Use to configure a LLM gateway to use the OpenAI API
  */
 @MCElement( name="openai")
-public class OpenAIProvider implements LLMProvider {
+public class OpenAIProvider extends AbstractLLMProvider {
 
     @Override
-    public LLMRequest getLLMRequest(Exchange exchange) {
-        if (isResponsesApi(exchange)) {
+    public LLMRequest getLLMRequest(Exchange exchange) throws IOException {
+        var uri = exchange.getRequest().getUri();
+        if (uri.startsWith("/v1/chat/completions")) {
+            return new OpenAIChatCompletionsRequest(exchange);
+        }
+        if (uri.startsWith("/v1/responses")) {
             return new OpenAiLLMResponsesRequest(exchange);
         }
-        return new OpenAIChatCompletionsRequest(exchange);
+        return super.getLLMRequest(exchange);
     }
 
     @Override
     public LLMResponse getLLMResponse(Exchange exchange, Consumer<LLMResponse> postProcessor) {
-        if (isResponsesApi(exchange)) {
+        var uri = exchange.getRequest().getUri();
+        if (uri.startsWith("/v1/responses")) {
             return new OpenAiLLMResponsesResponse(exchange,postProcessor);
         }
         return new ChatCompletionsResponse(exchange, postProcessor);
@@ -53,7 +59,4 @@ public class OpenAIProvider implements LLMProvider {
         return new ChatCompletionsErrorCreator();
     }
 
-    static boolean isResponsesApi(Exchange exchange) {
-        return exchange.getRequest().getUri().startsWith("/v1/responses");
-    }
 }
