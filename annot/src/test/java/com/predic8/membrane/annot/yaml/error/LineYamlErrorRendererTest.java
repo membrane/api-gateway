@@ -16,13 +16,38 @@ package com.predic8.membrane.annot.yaml.error;
 
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.annot.yaml.error.LineYamlErrorRenderer.getLastSegment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class LineYamlErrorRendererTest {
 
     @Test
-    void splitsQuotedJsonPathSegmentWithDot() {
-        assertEquals("bar.baz", LineYamlErrorRenderer.getLastSegment("$.foo['bar.baz']"));
-        assertEquals("$.foo", LineYamlErrorRenderer.getParentPath("$.foo['bar.baz']"));
+    void splitsJsonPathSegments() {
+        assertPath("$.foo.bar", "$.foo", "bar");
+        assertPath("$.foo['bar.baz']", "$.foo", "bar.baz");
+        assertPath("$.foo['bar.baz'].qux", "$.foo['bar.baz']", "qux");
+        assertPath("$.foo['bar.baz'][0]", "$.foo['bar.baz']", "0");
+        assertPath("$.foo[12]", "$.foo", "12");
+        assertPath("$.foo[12].bar", "$.foo[12]", "bar");
+        assertPath("$.foo[12]['bar.baz']", "$.foo[12]", "bar.baz");
+        assertPath("$['foo.bar']", "$", "foo.bar");
+        assertPath("$.foo['bar\\'baz']", "$.foo", "bar'baz");
+        assertPath("$.foo['bar\\\\baz']", "$.foo", "bar\\baz");
+    }
+
+    @Test
+    void rejectsJsonPathWithoutSegment() {
+        IllegalArgumentException e = assertThrows(
+                IllegalArgumentException.class,
+                () -> getLastSegment("$")
+        );
+
+        assertEquals("Cannot determine parent path of: $", e.getMessage());
+    }
+
+    private static void assertPath(String jsonPath, String expectedParentPath, String expectedLastSegment) {
+        assertEquals(expectedLastSegment, getLastSegment(jsonPath));
+        assertEquals(expectedParentPath, LineYamlErrorRenderer.getParentPath(jsonPath));
     }
 }
