@@ -112,7 +112,14 @@ public final class ScalarValueConverter {
             return SCALAR_MAPPER.convertValue(node, Object.class);
         }
         if (valueType == String.class) {
-            return node.isTextual() ? evaluateSpelForString(key, node.asText()) : node.asText();
+            if (node.isTextual())
+                return evaluateSpelForString(key, node.asText());
+            if (node.isObject() || node.isArray())
+                throw unsupported(valueType, key, node);
+            return SCALAR_MAPPER.convertValue(node, valueType);
+        }
+        if (isScalarCompatible(valueType)) {
+            return SCALAR_MAPPER.convertValue(node, valueType);
         }
         return bind(
                 ctx.updateContext(getElementName(valueType)).addProperty(key),
@@ -201,6 +208,28 @@ public final class ScalarValueConverter {
 
     private static boolean isNumber(Class<?> wanted) {
         return isInteger(wanted) || isLong(wanted) || isDouble(wanted);
+    }
+
+    private static boolean isScalarCompatible(Class<?> wanted) {
+        return wanted.isEnum()
+                || isPrimitiveScalar(wanted)
+                || isPrimitiveWrapper(wanted)
+                || Number.class.isAssignableFrom(wanted);
+    }
+
+    private static boolean isPrimitiveScalar(Class<?> wanted) {
+        return wanted.isPrimitive() && wanted != void.class;
+    }
+
+    private static boolean isPrimitiveWrapper(Class<?> wanted) {
+        return wanted == Boolean.class
+                || wanted == Character.class
+                || wanted == Byte.class
+                || wanted == Short.class
+                || wanted == Integer.class
+                || wanted == Long.class
+                || wanted == Float.class
+                || wanted == Double.class;
     }
 
     private static ConfigurationParsingException unsupported(Class<?> wanted, String key, JsonNode node) {
