@@ -35,17 +35,30 @@ import static com.predic8.membrane.core.util.text.TerminalColors.*;
 import static org.slf4j.LoggerFactory.getLogger;
 
 /**
- * @description Logs request and response messages. The messages will appear either on the console or in
- * a log file depending on the log configuration.
- * <p>Typical use cases:
- * <ul>
- *   <li>Debugging APIs during development.</li>
- *   <li>Operational visibility in production (metadata-only, masked values, message, body).</li>
- * </ul>
- * </p>
- * When supported, the log uses terminal colors to make the output easier to read and find. To overwrite the detection
- * of color support, set the system property <code>MEMBRANE_DISABLE_TERM_COLORS</code> to <code>true</code> or <code>false</code>.
+ * @description Logs request and response messages to the console or a log file, depending on the logging configuration.
+ * By default it writes the start line, headers, and body of each message, with sensitive header values masked. Set
+ * <code>message</code> to log the result of an expression instead of the full dump:
+ * <pre><code>
+ * flow:
+ *   - log:
+ *       message: Received ${method} ${path}
+ * </code></pre>
+ * Streamed bodies are logged chunk by
+ * chunk. Output uses terminal colors per log level where supported; set the system property
+ * <code>MEMBRANE_DISABLE_TERM_COLORS</code> to <code>true</code> or <code>false</code> to override color detection. See
+ * the examples under examples/logging.
  * @topic 4. Monitoring, Logging and Statistics
+ * @yaml
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - log:
+ *         level: INFO
+ *         body: false
+ *   target:
+ *     url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name = "log")
 public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
@@ -146,6 +159,10 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     private static String dumpBody(Message msg) {
+        if (msg.isBinary()) {
+            return "[Binary]";
+        }
+
         try {
             return "Body:\n%s\n".formatted(msg.getBodyAsStringDecoded());
         } catch (Exception e) {
@@ -194,7 +211,9 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
-     * Message to write into the log. Can be an expression.
+     * @description Expression whose result is logged instead of the full message dump. Evaluated in the configured
+     * language against the current exchange.
+     * @example Received ${method} ${path}
      */
     @MCAttribute
     public void setMessage(String message) {
@@ -202,11 +221,9 @@ public class LogInterceptor extends AbstractExchangeExpressionInterceptor {
     }
 
     /**
-     * @description Whether to mask sensitive header values (e.g., Authorization, Cookies, API keys).
-     *
-     * <p>When enabled (default), values are replaced by ****.</p>
-     *
-     *
+     * @description Whether to mask sensitive header values such as Authorization, cookies, and API keys, replacing
+     * them with ****.
+     * @default true
      */
     @MCAttribute
     public void setMaskSensitive(boolean maskSensitive) {

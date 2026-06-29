@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: Correlation Id
+#
+# A correlation id is a unique value attached to one request so that all log
+# lines belonging to that request can be found again. The 'correlationId' plugin
+# reads the id from a request header. If the header is missing it generates
+# one. It also puts the id into the logging context, so it travels with the
+# request through the message flow.
+#
+# 1.) Start Membrane:
+#       Linux/Mac:  ./membrane.sh -c 10-Correlation-Id.yaml
+#       Windows:    membrane.cmd  -c 10-Correlation-Id.yaml
+#
+# 2.) Call the API WITHOUT a header and watch the console:
+#       curl http://localhost:2000
+#
+#     The header was missing, so the plugin generated an id from the 'default'
+#     expression and the 'log' plugin prints it:
+#       Correlation id: req-6f1c2e7a-9b4d-4f0a-8a1e-2d3c4b5a6f70
+#     With Membrane's default log configuration the id is also shown on every
+#     other log line as part of the MDC, e.g. {correlationId=req-...}.
+#
+# 3.) Call the API WITH your own id and watch the console again:
+#       curl http://localhost:2000 -H "X-Trace-Id: 1234-5678"
+#
+#     This time the plugin keeps your value:
+#       Correlation id: 1234-5678
+#
+# 4.) Continue with 20-Propagation.yaml to see the id travel between APIs.
+
+api:
+  port: 2000
+  flow:
+    # Read the id from 'X-Trace-Id'; if absent, generate 'req-<random uuid>'.
+    - correlationId:
+        header: X-Trace-Id
+        default: "req-${T(java.util.UUID).randomUUID()}"
+    - log:
+        message: "Correlation id: ${request.header['X-Trace-Id']}"
+    - return:
+        status: 200

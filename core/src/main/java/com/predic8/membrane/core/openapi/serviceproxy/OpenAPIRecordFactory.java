@@ -16,29 +16,38 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.*;
-import org.apache.commons.lang3.exception.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.util.OpenAPI32Parser;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.ObjectMapperFactory;
+import io.swagger.v3.parser.core.models.ParseOptions;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.URIUtil.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.util.URIUtil.convertPath2FilePathString;
+import static com.predic8.membrane.core.util.URIUtil.pathFromFileURI;
+import static java.lang.String.format;
 
 public class OpenAPIRecordFactory {
 
@@ -152,22 +161,42 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        OpenAPIRecord record = new OpenAPIRecord(getOpenAPI(spec), spec);
+        JsonNode node = omYaml.readTree(getInputStreamForLocation(spec.location));
+        OpenAPIRecord record;
+        if (OpenAPI32Parser.isOpenAPI32(node)) {
+            OpenAPI api = parseOpenAPI32(node, convertPathToFileUriPathIfNeeded(resolve(spec.location)), spec.location);
+            record = new OpenAPIRecord(api, node, spec);
+        } else {
+            OpenAPI api = parseFromLocation(spec);
+            addConversionNoticeIfSwagger2(api, node);
+            record = new OpenAPIRecord(api, spec);
+        }
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
     private OpenAPIRecord create(OpenAPISpec spec, File file) {
-        OpenAPIRecord record = new OpenAPIRecord(parseFileAsOpenAPI(file), spec);
+        OpenAPIRecord record;
+        try {
+            JsonNode node = omYaml.readTree(file);
+            if (OpenAPI32Parser.isOpenAPI32(node)) {
+                OpenAPI api = parseOpenAPI32(node, file.toURI().toString(), file.getPath());
+                record = new OpenAPIRecord(api, node, spec);
+            } else {
+                record = new OpenAPIRecord(parseFileAsOpenAPI(file), spec);
+            }
+        } catch (IOException e) {
+            throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), file.getPath());
+        }
         setExtensionOnAPI(spec, record.api);
         return record;
     }
 
-    private OpenAPI getOpenAPI(OpenAPISpec spec) throws IOException {
-        OpenAPI openAPI = parseFromLocation(spec);
-        addConversionNoticeIfSwagger2(openAPI, omYaml.readTree(getInputStreamForLocation(spec.location)));
-        return openAPI;
-
+    private OpenAPI parseOpenAPI32(JsonNode node, String location, String displayLocation) {
+        OpenAPI api = new OpenAPI32Parser().parse(node, location, getParseOptions());
+        if (api == null)
+            throw new OpenAPIParsingException("Could not parse OpenAPI 3.2 document.", displayLocation);
+        return api;
     }
 
     private OpenAPI parseFromLocation(OpenAPISpec spec) {

@@ -13,16 +13,32 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.*;
-
-import javax.xml.stream.*;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.Router;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
+import java.util.Hashtable;
+import java.util.Map;
+
+/**
+ * @description Dispatches each request to a node that has fewer than maxNumberOfThreadsPerEndpoint requests in flight,
+ * capping concurrency per node. When every node is at capacity it waits retryTimeOnBusy milliseconds and retries, up to
+ * five times, then fails the request with an error.
+ * @yaml <pre><code>
+ * balancer:
+ *   byThreadStrategy:
+ *     maxNumberOfThreadsPerEndpoint: 10
+ *   clusters:
+ *     - nodes:
+ *         - host: node1.predic8.com
+ *           port: 8080
+ * </code></pre>
+ */
 @MCElement(name="byThreadStrategy")
 public class ByThreadStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
@@ -33,7 +49,10 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 	private int retryTimeOnBusy = 1000;
 
 	public void done(AbstractExchange exc) {
-		String endPoint = exc.getOriginalRequestUri();
+		Node node = exc.getProperty("dispatchedNode", Node.class);
+		if (node == null)
+			return;
+		String endPoint = getHostColonPort(node);
 		if (endpointCount.containsKey(endPoint)) {
 			Integer counter = endpointCount.get(endPoint);
 			counter--;
@@ -74,13 +93,18 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 	}
 
 	/**
-	 * @description Maximum number of concurrently running requests per endpoint.
+	 * @description Maximum number of requests allowed in flight per node at the same time.
+	 * @default 5
 	 */
 	@MCAttribute
 	public void setMaxNumberOfThreadsPerEndpoint(int maxNumberOfThreadsPerEndpoint) {
 		this.maxNumberOfThreadsPerEndpoint = maxNumberOfThreadsPerEndpoint;
 	}
 
+	/**
+	 * @description Time in milliseconds to wait before retrying when all nodes are at capacity.
+	 * @default 1000
+	 */
 	@MCAttribute
 	public void setRetryTimeOnBusy(int retryTimeOnBusy) {
 		this.retryTimeOnBusy = retryTimeOnBusy;

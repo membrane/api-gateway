@@ -16,24 +16,33 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.fasterxml.jackson.databind.node.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.model.*;
-import com.predic8.membrane.core.openapi.util.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.media.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.model.Body;
+import com.predic8.membrane.core.openapi.util.SchemaUtil;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.Schema;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
-import static com.predic8.membrane.core.openapi.util.SchemaUtil.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.util.SchemaUtil.getSchemaNameFromRef;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.BODY;
+import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.QUERY_PARAMETER;
 
 public class SchemaValidator implements JsonSchemaValidator {
 
     private static final Logger log = LoggerFactory.getLogger(SchemaValidator.class.getName());
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper CONTENT_MAPPER = new com.fasterxml.jackson.databind.ObjectMapper();
 
     @SuppressWarnings("rawtypes")
     private Schema schema;
@@ -63,9 +72,24 @@ public class SchemaValidator implements JsonSchemaValidator {
 
         Object value;
         try {
-            value = resolveValueAndParseJSON(obj);
+            if (ctx.isXML()) {
+                if (obj instanceof Body body) {
+                    // Top-level call: convert XML string → JsonNode guided by the schema
+                    value = new XmlToJsonConverter(api).convert(body.asString(), schema);
+                } else {
+                    // Recursive call: obj is already a JsonNode produced by the converter
+                    value = obj;
+                }
+            } else {
+                value = resolveValueAndParseJSON(obj);
+            }
+        } catch (MixedContentException | MultipleElementsException e) {
+            return errors.add(new ValidationError(ctx.entityType(BODY), e.getMessage()));
+        } catch (SAXException | XmlParseException e) {
+            log.info("Cannot parse XML body. " + e);
+            return errors.add(new ValidationError(ctx.entityType(BODY), "Request body cannot be parsed as XML"));
         } catch (IOException e) {
-            log.warn("Cannot parse body. " + e);
+            log.info("Cannot parse body. " + e);
             return errors.add(new ValidationError(ctx.statusCode(400).entityType(BODY).entity("REQUEST"), "Request body cannot be parsed as JSON"));
         }
 
@@ -93,7 +117,53 @@ public class SchemaValidator implements JsonSchemaValidator {
 
         errors.add(new NumberRestrictionValidator(schema).validate(ctx, value));
         errors.add(validateByType(ctx, value));
+        errors.add(validateContentSchema(ctx, value));
         return errors;
+    }
+
+    /**
+     * Validates the JSON Schema 2020-12 string content keywords (emphasized by OpenAPI 3.2): when a
+     * string carries content of another media type ({@code contentMediaType}, optionally
+     * {@code contentEncoding: base64}) the decoded content is parsed and validated against
+     * {@code contentSchema}. Only JSON content media types are validated; others are left untouched.
+     */
+    private ValidationErrors validateContentSchema(ValidationContext ctx, Object value) {
+        if (schema.getContentSchema() == null || schema.getContentMediaType() == null)
+            return null;
+        String text = asString(value);
+        if (text == null || !isJsonMediaType(schema.getContentMediaType()))
+            return null;
+
+        String encoding = schema.getContentEncoding();
+        if ("base64".equals(encoding) || "base64url".equals(encoding)) {
+            var decoder = "base64url".equals(encoding)
+                    ? java.util.Base64.getUrlDecoder()
+                    : java.util.Base64.getMimeDecoder();
+            try {
+                text = new String(decoder.decode(text), java.nio.charset.StandardCharsets.UTF_8);
+            } catch (IllegalArgumentException e) {
+                return ValidationErrors.error(ctx, "The string is not valid base64 content.");
+            }
+        }
+
+        com.fasterxml.jackson.databind.JsonNode content;
+        try {
+            content = CONTENT_MAPPER.readTree(text);
+        } catch (IOException e) {
+            return ValidationErrors.error(ctx, "The string content is not valid %s.".formatted(schema.getContentMediaType()));
+        }
+        return new SchemaValidator(api, schema.getContentSchema()).validate(ctx, content);
+    }
+
+    private static @Nullable String asString(Object value) {
+        if (value instanceof com.fasterxml.jackson.databind.JsonNode node)
+            return node.isTextual() ? node.textValue() : null;
+        return value instanceof String s ? s : null;
+    }
+
+    private static boolean isJsonMediaType(String mediaType) {
+        String mt = mediaType.toLowerCase();
+        return mt.equals("application/json") || mt.endsWith("+json");
     }
 
     private boolean isNullable() {

@@ -17,10 +17,10 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import java.util.*;
-import java.util.stream.*;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
+import static com.predic8.membrane.core.openapi.util.Utils.setFieldIfNotNull;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
 
 public class ValidationErrors {
 
@@ -73,6 +73,10 @@ public class ValidationErrors {
 
     public ValidationError get(int i) {
         return errors.get(i);
+    }
+
+    public ValidationError getFirst() {
+        return errors.getFirst();
     }
 
     public Stream<ValidationError> stream() {
