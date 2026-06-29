@@ -127,7 +127,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
         exc.setProperty(JSON_RPC_ELIGIBLE, Boolean.TRUE);
 
-        RequestValidationResult validation = getValidator().validateRequest(exc.getRequest().getBodyAsStringDecoded());
+        RequestValidationResult validation = validator.validateRequest(exc.getRequest().getBodyAsStringDecoded());
         if (validation.responseValidationContext() != null) {
             exc.setProperty(RESPONSE_VALIDATION_CONTEXT, validation.responseValidationContext());
         }
@@ -149,7 +149,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
             context = new ResponseValidationContext(getPayloadType(exc.getResponse().getBodyAsStringDecoded()), java.util.Map.of());
         }
 
-        return rejectResponse(exc, getValidator().validateResponse(exc.getResponse().getBodyAsStringDecoded(), context));
+        return rejectResponse(exc, validator.validateResponse(exc.getResponse().getBodyAsStringDecoded(), context));
     }
 
     private Outcome rejectRequest(Exchange exc, ValidationError error) {
@@ -207,13 +207,6 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     public List<Rule> getMethods() {
         return methods;
-    }
-
-    private JsonRPCValidator getValidator() {
-        if (validator == null) {
-            validator = createValidator();
-        }
-        return validator;
     }
 
     private JsonRPCValidator createValidator() {

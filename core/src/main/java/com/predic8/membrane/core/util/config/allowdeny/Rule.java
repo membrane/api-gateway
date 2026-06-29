@@ -33,7 +33,7 @@ public abstract class Rule {
         if (probe == null) {
             return false;
         }
-        return compiledPattern != null && compiledPattern.matcher(probe).matches();
+        return compiledPattern.matcher(probe).matches();
     }
 
     public abstract boolean permits();
