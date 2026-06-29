@@ -254,6 +254,20 @@ class JsonRPCProtectionInterceptorTest {
         assertTrue(exception.getMessage().contains("batch maxSize must be greater than 0"));
     }
 
+    @Test
+    void skipsResponseValidationWithoutEligibleRequestMarker() throws Exception {
+        var interceptor = interceptor(ERROR_INLINE_CONFIG);
+        var exc = exchange(METHOD_GET, TEXT_PLAIN, null);
+        String responseBody = """
+                {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"broken"}}
+                """;
+
+        exc.setResponse(jsonResponse(responseBody));
+
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(responseBody, exc.getResponse().getBodyAsStringDecoded());
+    }
+
     private static Stream<RequestCase> requestCases() {
         return Stream.of(
                 requestContinues(
@@ -641,15 +655,13 @@ class JsonRPCProtectionInterceptorTest {
                         "Invalid error response",
                         1
                 ),
-                responseRejects(
-                        "error validation also works without prior request context",
+                responseContinues(
+                        "error validation is skipped without prior request context",
                         ERROR_INLINE_CONFIG,
                         null,
                         """
                         {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"broken"}}
-                        """,
-                        "Invalid error response",
-                        1
+                        """
                 )
         );
     }

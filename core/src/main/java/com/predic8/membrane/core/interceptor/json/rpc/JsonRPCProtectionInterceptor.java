@@ -90,6 +90,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JsonRPCProtectionInterceptor.class);
     private static final ObjectMapper OM = new ObjectMapper();
+    private static final String JSON_RPC_ELIGIBLE = JsonRPCProtectionInterceptor.class.getName() + ".jsonRpcEligible";
     private static final String RESPONSE_VALIDATION_CONTEXT = JsonRPCProtectionInterceptor.class.getName() + ".responseValidationContext";
 
     private BatchRule batchRule = new BatchRule();
@@ -124,6 +125,8 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
             ));
         }
 
+        exc.setProperty(JSON_RPC_ELIGIBLE, Boolean.TRUE);
+
         RequestValidationResult validation = getValidator().validateRequest(exc.getRequest().getBodyAsStringDecoded());
         if (validation.responseValidationContext() != null) {
             exc.setProperty(RESPONSE_VALIDATION_CONTEXT, validation.responseValidationContext());
@@ -134,6 +137,10 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleResponse(Exchange exc) {
         if (exc.getResponse() == null || !schemaValidation.hasResponseValidation()) {
+            return CONTINUE;
+        }
+
+        if (!Boolean.TRUE.equals(exc.getProperty(JSON_RPC_ELIGIBLE, Boolean.class))) {
             return CONTINUE;
         }
 
