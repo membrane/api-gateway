@@ -14,13 +14,35 @@
 
 package com.predic8.membrane.core.router;
 
+import com.predic8.membrane.annot.beanregistry.BeanDefinition;
+
 import java.nio.file.Path;
 import java.util.List;
 
-/** Root YAML location and included local YAML files. */
-public record YamlConfigurationSource(String location, List<Path> trackedFiles) {
+/** Root YAML location, included local YAML files, and the parsed definition snapshot for recovery. */
+public record YamlConfigurationSource(String location, List<Path> trackedFiles, List<BeanDefinition> definitionSnapshot) {
 
     public YamlConfigurationSource {
         trackedFiles = trackedFiles == null ? List.of() : List.copyOf(trackedFiles);
+        definitionSnapshot = copyDefinitions(definitionSnapshot);
+    }
+
+    private static List<BeanDefinition> copyDefinitions(List<BeanDefinition> definitions) {
+        if (definitions == null) {
+            return List.of();
+        }
+        return definitions.stream()
+                .map(YamlConfigurationSource::copyDefinition)
+                .toList();
+    }
+
+    private static BeanDefinition copyDefinition(BeanDefinition definition) {
+        return new BeanDefinition(
+                definition.getKind(),
+                definition.getName(),
+                definition.getNamespace(),
+                definition.getUid(),
+                definition.getNode() == null ? null : definition.getNode().deepCopy(),
+                definition.getSourceMetadata());
     }
 }

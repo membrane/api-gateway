@@ -63,7 +63,7 @@ class YamlHotDeploymentTest {
     }
 
     @Test
-    void shouldLeaveRouterStoppedWhenReloadFailsAfterShutdown() throws Exception {
+    void shouldRestorePreviousRuntimeWhenReloadFailsAfterShutdown() throws Exception {
         Path config = tempDir.resolve("apis.yaml");
         Files.writeString(config, configWithInternal("first", "https://example.com"));
 
@@ -75,6 +75,28 @@ class YamlHotDeploymentTest {
 
             Files.writeString(config, configWithInternal("second", "https://example.org"));
             router.failNextStart();
+
+            assertTrue(reloader.reload());
+            assertTrue(router.isRunning());
+            assertEquals(List.of("first"), getRuleNames(router));
+        } finally {
+            router.stop();
+        }
+    }
+
+    @Test
+    void shouldReturnFalseWhenReloadAndRollbackFailAfterShutdown() throws Exception {
+        Path config = tempDir.resolve("apis.yaml");
+        Files.writeString(config, configWithInternal("first", "https://example.com"));
+
+        FailingReloadStartRouter router = new FailingReloadStartRouter();
+        try {
+            YamlRouterReloader reloader = new YamlRouterReloader(router, loadIntoRouter(router, config.toString()));
+            router.setConfigurationReloader(reloader);
+            router.start();
+
+            Files.writeString(config, configWithInternal("second", "https://example.org"));
+            router.failNextStarts(2);
 
             assertFalse(reloader.reload());
             assertFalse(router.isRunning());
@@ -102,16 +124,20 @@ class YamlHotDeploymentTest {
     }
 
     private static class FailingReloadStartRouter extends DefaultRouter {
-        private boolean failNextStart;
+        private int failingStarts;
 
         void failNextStart() {
-            failNextStart = true;
+            failNextStarts(1);
+        }
+
+        void failNextStarts(int failingStarts) {
+            this.failingStarts = failingStarts;
         }
 
         @Override
         public void start() {
-            if (failNextStart) {
-                failNextStart = false;
+            if (failingStarts > 0) {
+                failingStarts--;
                 throw new RuntimeException("simulated reload start failure");
             }
             super.start();

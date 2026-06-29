@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadIntoRouter;
+import static com.predic8.membrane.core.router.YamlRouterBootstrap.loadSnapshotIntoRouter;
 
 /**
  * Performs YAML validate-and-reload orchestration around the router lifecycle.
@@ -50,44 +51,35 @@ public final class YamlRouterReloader implements ConfigurationReloader {
 
     @Override
     public boolean reload() {
-        YamlConfigurationSource currentSource = getSource();
-        boolean runtimeStopped = false;
+        boolean passedShutdownPoint = false;
 
         if (!router.markReloading()) {
             return false;
         }
 
+        YamlConfigurationSource sourceConfig = null;
         try {
-            if (currentSource == null || currentSource.location() == null || currentSource.location().isBlank()) {
-                throw new IllegalStateException("No YAML configuration location is known.");
-            }
+            sourceConfig = getRequiredSource();
 
-            log.debug("Reloading YAML configuration from {}.", currentSource.location());
+            log.debug("Reloading YAML configuration from {}.", sourceConfig.location());
             // Validation only bootstraps a fresh router; it does not call start() or bind ports.
-            validate(currentSource.location());
+            YamlConfigurationSource validatedSource = validate(sourceConfig.location());
 
+            passedShutdownPoint = true;
             router.stopRuntimeForReload();
-            runtimeStopped = true;
             router.resetRuntime();
 
-            setSource(loadIntoRouter(router, currentSource.location()));
+            YamlConfigurationSource reloadedSource = loadSnapshotIntoRouter(router, validatedSource);
             router.start();
+            setSource(reloadedSource);
             log.info("Configuration Reloaded.");
             return true;
         } catch (Exception e) {
             logReloadFailure(e);
-            if (!runtimeStopped) {
-                log.info("Keeping the previous YAML runtime because reload validation failed before shutdown.");
-                return true;
+            if (!passedShutdownPoint) {
+                return keepLastKnownGoodRuntimeAfterValidationFailure();
             }
-            try {
-                router.stopRuntimeForReload();
-            } catch (Exception cleanupError) {
-                cleanupError.addSuppressed(e);
-                log.error("Could not clean up the failed YAML runtime after reload failure.", cleanupError);
-            }
-            log.info("YAML runtime remains stopped after reload failure.");
-            return false;
+            return restoreLastKnownGoodRuntime(sourceConfig, e);
         } finally {
             router.clearReloading();
         }
@@ -101,16 +93,74 @@ public final class YamlRouterReloader implements ConfigurationReloader {
         log.error("Could not reload YAML configuration.", e);
     }
 
-    private void validate(String location) throws Exception {
-        DefaultRouter candidate = new DefaultRouter();
+    private boolean keepLastKnownGoodRuntimeAfterValidationFailure() {
+        if (router.isRunning()) {
+            log.info("Keeping the previous YAML runtime because reload validation failed before shutdown.");
+            return true;
+        }
+        log.error("Reload validation failed before shutdown, but no previous YAML runtime is running.");
+        return false;
+    }
+
+    private boolean restoreLastKnownGoodRuntime(YamlConfigurationSource yamlSource, Exception reloadFailure) {
         try {
-            loadIntoRouter(candidate, location);
+            cleanupFailedRuntime(reloadFailure);
+            router.resetRuntime();
+            YamlConfigurationSource restoredSource = loadSnapshotIntoRouter(router, yamlSource);
+            router.start();
+            setSource(restoredSource);
+            log.warn("Reload failed after shutdown; restored previous YAML runtime.");
+            return true;
+        } catch (Exception rollbackError) {
+            rollbackError.addSuppressed(reloadFailure);
+            cleanupFailedRuntime(rollbackError);
+            log.error("Reload failed and previous YAML runtime could not be restored.", rollbackError);
+            return false;
+        }
+    }
+
+    private void cleanupFailedRuntime(Exception failure) {
+        try {
+            router.stopRuntimeForReload();
+        } catch (Exception cleanupError) {
+            failure.addSuppressed(cleanupError);
+            log.error("Could not clean up failed YAML runtime.", cleanupError);
+        }
+    }
+
+    private YamlConfigurationSource validate(String location) throws Exception {
+        DefaultRouter candidate = new DefaultRouter();
+        Exception validationFailure = null;
+        try {
+            return loadIntoRouter(candidate, location);
+        } catch (Exception e) {
+            validationFailure = e;
+            throw e;
         } finally {
+            cleanupValidationCandidate(candidate, validationFailure);
+        }
+    }
+
+    private void cleanupValidationCandidate(DefaultRouter candidate, Exception validationFailure) {
+        try {
             candidate.shutdownRuntimeComponents();
+        } catch (Exception cleanupError) {
+            if (validationFailure != null) {
+                validationFailure.addSuppressed(cleanupError);
+            }
+            log.error("Could not clean up YAML validation runtime.", cleanupError);
         }
     }
 
     private synchronized YamlConfigurationSource getSource() {
+        return source;
+    }
+
+    private YamlConfigurationSource getRequiredSource() {
+        YamlConfigurationSource source = getSource();
+        if (source == null || source.location() == null || source.location().isBlank()) {
+            throw new IllegalStateException("No YAML configuration location is known.");
+        }
         return source;
     }
 
