@@ -588,6 +588,18 @@ class JsonRPCProtectionInterceptorTest {
                         9
                 ),
                 responseRejects(
+                        "unknown error response ids are rejected",
+                        ERROR_LOCATION_CONFIG,
+                        """
+                        {"jsonrpc":"2.0","id":1,"method":"rpc.echo"}
+                        """,
+                        """
+                        {"jsonrpc":"2.0","id":9,"error":{"code":-32000,"message":"broken","data":{"reason":"timeout"}}}
+                        """,
+                        "JSON-RPC response id '9' does not match any request.",
+                        9
+                ),
+                responseRejects(
                         "batch response validation resolves methods by request id",
                         BATCH_RESPONSE_CONFIG,
                         """
