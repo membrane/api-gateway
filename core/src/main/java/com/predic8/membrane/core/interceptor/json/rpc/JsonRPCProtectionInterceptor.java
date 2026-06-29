@@ -182,9 +182,10 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         this.methods = methods;
     }
 
-
-
-    @MCChildElement(order = 4)
+    /**
+     * @description Configures JSON Schema validation for params, responses, and error objects.
+     */
+    @MCChildElement(order = 2)
     public void setSchemaValidation(JsonRPCSchemaValidation schemaValidation) {
         this.schemaValidation = schemaValidation == null ? new JsonRPCSchemaValidation() : schemaValidation;
     }

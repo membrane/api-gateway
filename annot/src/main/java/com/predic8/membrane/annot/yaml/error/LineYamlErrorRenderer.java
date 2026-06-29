@@ -282,7 +282,7 @@ public class LineYamlErrorRenderer {
         return indent;
     }
 
-    private static String getParentPath(String jsonPath) {
+    static String getParentPath(String jsonPath) {
         return jsonPath.substring(0, findLastSegmentStart(jsonPath));
     }
 
@@ -293,7 +293,7 @@ public class LineYamlErrorRenderer {
      * `$.api.methods['rpc.echo']` -> `rpc.echo`
      * `$.api.methods[0]` -> `0`
      */
-    private static String getLastSegment(String jsonPath) {
+    static String getLastSegment(String jsonPath) {
         String segment = jsonPath.substring(findLastSegmentStart(jsonPath));
 
         if (isPropertySegment(segment)) {
@@ -330,14 +330,17 @@ public class LineYamlErrorRenderer {
     }
 
     private static int findLastSegmentStart(String jsonPath) {
-        int lastBracket = jsonPath.lastIndexOf('[');
-        int lastDot = jsonPath.lastIndexOf('.');
-
-        if (lastBracket > lastDot) {
-            return lastBracket;
-        }
-        if (lastDot >= 0) {
-            return lastDot;
+        int depth = 0;
+        for (int i = jsonPath.length() - 1; i >= 0; i--) {
+            char c = jsonPath.charAt(i);
+            if (c == ']') {
+                depth++;
+            } else if (c == '[') {
+                depth--;
+            }
+            if (depth == 0 && (c == '.' || c == '[')) {
+                return i;
+            }
         }
         throw new IllegalArgumentException("Cannot determine parent path of: " + jsonPath);
     }
