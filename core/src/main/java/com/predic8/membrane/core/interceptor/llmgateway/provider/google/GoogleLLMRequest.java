@@ -17,16 +17,20 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.google;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 
-public class GoogleLLMRequest extends AbstractLLMRequest {
+import java.io.IOException;
+import java.util.List;
+
+public class GoogleLLMRequest extends AbstractModelInputRequest implements ModelInputRequest {
 
     /**
      * x-goog-api-key is correct it is not google
      */
     public static final String X_GOOG_API_KEY = "x-goog-api-key";
 
-    public GoogleLLMRequest(Exchange exchange) {
+    public GoogleLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
     }
 
@@ -117,15 +121,18 @@ public class GoogleLLMRequest extends AbstractLLMRequest {
     }
 
     /**
-     * Sets {@code systemInstruction} to a single text part carrying {@code systemPrompt}.
-     * Replaces any existing system instruction.
+     * Concatenates all prompts (newline-separated) into a single text part under
+     * {@code systemInstruction}. Replaces any existing system instruction.
+     *
+     * <p>Gemini API wire format:
+     * <pre>{@code { "systemInstruction": { "parts": [{ "text": "prompt 1\nprompt 2" }] } }}</pre>
      */
     @Override
-    public void setSystemPrompt(String systemPrompt) {
+    public void setSystemPrompts(List<String> prompts) {
         json.putObject("systemInstruction")
                 .putArray("parts")
                 .addObject()
-                .put("text", systemPrompt);
+                .put("text", String.join("\n", prompts));
     }
 
     /**
@@ -135,11 +142,6 @@ public class GoogleLLMRequest extends AbstractLLMRequest {
     @Override
     public void removeSystemPrompt() {
         json.remove("systemInstruction");
-    }
-
-    @Override
-    public boolean isChatCompletion() {
-        return exchange.getRequest().getUri().contains("/chat/completions");
     }
 
     private long countText(JsonNode node) {

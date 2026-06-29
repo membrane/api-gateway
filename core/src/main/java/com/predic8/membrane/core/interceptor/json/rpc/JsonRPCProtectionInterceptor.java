@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType;
 import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.RequestValidationResult;
 import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.ResponseValidationContext;
 import com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.ValidationError;
@@ -40,6 +41,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.BATCH;
 import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.PayloadType.SINGLE;
+import static com.predic8.membrane.core.interceptor.json.rpc.JsonRPCValidator.getPayloadType;
 import static java.util.EnumSet.of;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
 
@@ -114,7 +116,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
         if (!exc.getRequest().isJSON()) {
             return rejectRequest(exc, new ValidationError(
-                    payloadType(exc.getRequest().getBodyAsStringDecoded()),
+                    getPayloadType(exc.getRequest().getBodyAsStringDecoded()),
                     null,
                     415,
                     ERR_INVALID_REQUEST,
@@ -137,7 +139,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
         ResponseValidationContext context = exc.getProperty(RESPONSE_VALIDATION_CONTEXT, ResponseValidationContext.class);
         if (context == null && schemaValidation.hasErrorValidation()) {
-            context = new ResponseValidationContext(payloadType(exc.getResponse().getBodyAsStringDecoded()), java.util.Map.of());
+            context = new ResponseValidationContext(getPayloadType(exc.getResponse().getBodyAsStringDecoded()), java.util.Map.of());
         }
 
         return rejectResponse(exc, getValidator().validateResponse(exc.getResponse().getBodyAsStringDecoded(), context));
@@ -180,9 +182,10 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         this.methods = methods;
     }
 
-
-
-    @MCChildElement(order = 4)
+    /**
+     * @description Configures JSON Schema validation for params, responses, and error objects.
+     */
+    @MCChildElement(order = 2)
     public void setSchemaValidation(JsonRPCSchemaValidation schemaValidation) {
         this.schemaValidation = schemaValidation == null ? new JsonRPCSchemaValidation() : schemaValidation;
     }
@@ -229,10 +232,4 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
         }
     }
 
-    private JsonRPCValidator.PayloadType payloadType(String body) {
-        if (body == null) {
-            return SINGLE;
-        }
-        return body.trim().startsWith("[") ? BATCH : SINGLE;
-    }
 }

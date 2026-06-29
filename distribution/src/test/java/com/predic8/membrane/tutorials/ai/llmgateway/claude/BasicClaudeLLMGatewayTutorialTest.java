@@ -62,6 +62,7 @@ public class BasicClaudeLLMGatewayTutorialTest extends AbstractAiTutorialTest {
         .when()
             .post(LOCALHOST_2000 + "/v1/messages")
         .then()
+            .log().ifValidationFails()
             .statusCode(200)
             .body("type", equalTo("message"))
             .body("content[0].type", equalTo("text"));
@@ -106,6 +107,7 @@ public class BasicClaudeLLMGatewayTutorialTest extends AbstractAiTutorialTest {
         .when()
             .post(LOCALHOST_2000 + "/v1/messages")
         .then()
+            .log().everything()
             .statusCode(200);
         // @formatter:on
 

@@ -14,25 +14,28 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.balancer.Node.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.balancer.Node.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.Serial;
 import java.util.*;
 
 /**
- * @description Represents a load-balancing cluster (a named group of {@link Node}s).
- * Provides status management (UP/DOWN/TAKEOUT), node lookup, and simple session tracking.
+ * @description A named group of nodes within a balancer that share session state. Sticky sessions are tracked at the
+ * cluster level, so a session stays on its node as long as that node is up. Each node carries a status of UP, DOWN, or
+ * TAKEOUT; only UP nodes receive traffic.
  * @yaml <pre><code>
  * balancer:
  *   name: DemoBalancer
- *   priorityStrategy: {}
  *   clusters:
  *     - name: PROD
- *     	 nodes:
+ *       nodes:
  *         - host: node1.predic8.com
- *       	 port: 8080
+ *           port: 8080
  *         - host: node2.predic8.com
  *           port: 8090
  * </code></pre>
@@ -126,7 +129,7 @@ public class Cluster {
 	}
 
     /**
-     * @description Specifies the child nodes of this cluster.
+     * @description The backend nodes that make up this cluster.
      */
 	@MCChildElement
 	public void setNodes(List<Node> nodes) {
@@ -139,7 +142,8 @@ public class Cluster {
 	}
 
 	/**
-	 * @description Sets the name of the cluster.
+	 * @description Name of the cluster, used to address it from the administration interface and the lbclient.
+	 * @example PROD
 	 * @default Default
 	 */
 	@MCAttribute

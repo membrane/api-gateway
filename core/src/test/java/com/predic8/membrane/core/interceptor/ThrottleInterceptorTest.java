@@ -13,63 +13,101 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import org.junit.jupiter.api.Test;
+
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static java.lang.System.currentTimeMillis;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Test;
-
-import com.predic8.membrane.core.exchange.Exchange;
 public class ThrottleInterceptorTest {
 
-	boolean success;
+	volatile boolean success;
 
 	@Test
-	public void testProtocolSet() throws Exception {
-		final ThrottleInterceptor i = new ThrottleInterceptor();
-		final Exchange exc = new Exchange(null);
+	public void delaysEveryRequest() throws Exception {
+		ThrottleInterceptor i = new ThrottleInterceptor();
 
 		long t = currentTimeMillis();
-		i.handleRequest(exc);
+		i.handleRequest(new Exchange(null));
 		assertTrue(currentTimeMillis() - t < 200);
 
-		t = currentTimeMillis();
 		i.setDelay(300);
-		i.handleRequest(exc);
-		assertTrue(currentTimeMillis() - t > 200);
-
-		i.setDelay(0);
-
-		i.setMaxThreads(3);
-		assertEquals(CONTINUE, i.handleRequest(exc));
-
-		assertEquals(ABORT, i.handleRequest(exc));
-		assertEquals(503, exc.getResponse().getStatusCode());
-
-		i.handleResponse(exc);
-		assertEquals(CONTINUE, i.handleRequest(exc));
-
-		i.setBusyDelay(300);
 		t = currentTimeMillis();
-		assertEquals(ABORT, i.handleRequest(exc));
+		i.handleRequest(new Exchange(null));
 		assertTrue(currentTimeMillis() - t > 200);
+	}
 
-		Thread thread1 = new Thread(() -> {
-            try {
-                success = (CONTINUE == i.handleRequest(exc));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
+	@Test
+	public void limitsConcurrentRequests() {
+		var i = new ThrottleInterceptor();
+		i.setMaxThreads(2);
 
-		thread1.start();
+		assertEquals(CONTINUE, i.handleRequest(new Exchange(null)));
+		Exchange held = new Exchange(null);
+		assertEquals(CONTINUE, i.handleRequest(held));
 
-		Thread.sleep(100);
-		i.handleResponse(exc);
+		// limit reached, busyDelay = 0 -> immediate rejection
+		Exchange rejected = new Exchange(null);
+		assertEquals(ABORT, i.handleRequest(rejected));
+		assertEquals(503, rejected.getResponse().getStatusCode());
 
-		thread1.join();
+		// freeing a slot admits the next request
+		i.handleResponse(held);
+		assertEquals(CONTINUE, i.handleRequest(new Exchange(null)));
+	}
 
+	@Test
+	public void doesNotOverOrDoubleRelease() throws Exception {
+		var i = new ThrottleInterceptor();
+		i.setMaxThreads(1);
+
+		var holder = new Exchange(null);
+		assertEquals(CONTINUE, i.handleRequest(holder));
+
+		// a rejected request never acquired a slot, so completing it must not release one
+		Exchange rejected = new Exchange(null);
+		assertEquals(ABORT, i.handleRequest(rejected));
+		i.handleResponse(rejected);
+		i.handleAbort(rejected);
+		assertEquals(ABORT, i.handleRequest(new Exchange(null)));
+
+		// releasing the real holder twice frees exactly one slot
+		i.handleResponse(holder);
+		i.handleResponse(holder);
+		assertEquals(CONTINUE, i.handleRequest(new Exchange(null)));
+		assertEquals(ABORT, i.handleRequest(new Exchange(null)));
+	}
+
+	@Test
+	public void waitsUpToBusyDelayThenProceedsWhenSlotFrees() throws Exception {
+		final var i = new ThrottleInterceptor();
+		i.setMaxThreads(1);
+		i.setBusyDelay(30);
+
+		var holder = new Exchange(null);
+		assertEquals(CONTINUE, i.handleRequest(holder));
+
+		// no slot frees within busyDelay -> rejected after the wait
+		long t = currentTimeMillis();
+		assertEquals(ABORT, i.handleRequest(new Exchange(null)));
+		assertTrue(currentTimeMillis() - t > 20);
+
+		// a concurrent release lets a waiting request proceed
+		success = false;
+		var waiter = new Thread(() -> {
+			try {
+				success = CONTINUE == i.handleRequest(new Exchange(null));
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		});
+		waiter.start();
+		Thread.sleep(10);
+		i.handleResponse(holder);
+		waiter.join();
 		assertTrue(success);
 	}
 

@@ -130,3 +130,4 @@ maven-plugin/target/surefire/
 /distribution/conf/apis.yaml
 /distribution/conf/membrane.log
 /.codex
+/.claude

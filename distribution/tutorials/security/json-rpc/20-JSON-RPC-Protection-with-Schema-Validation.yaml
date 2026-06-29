@@ -15,27 +15,27 @@
 # - This tutorial shows both schema styles: inline `schema` and file-based `location`.
 # - The mock upstream below returns one fixed JSON-RPC success response.
 #
-# 1.) Send an allowed request
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"rpc.health"}' -H "Content-Type: application/json" http://localhost:2000
+# 1.) Send an allowed read-only request
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' -H "Content-Type: application/json" http://localhost:2000
 #
-# 2.) Try a blocked method
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"rpc.admin.shutdown"}' -H "Content-Type: application/json" http://localhost:2000
+# 2.) Try a blocked write method
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"setMaintenanceMode"}' -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC error explaining that the method is not allowed.
 #
 # 3.) Try invalid params
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{}}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"getEcho","params":{}}' -H "Content-Type: application/json" http://localhost:2000
 #
 #     The inline schema requires params.message.
 #
 # 4.) Send a valid request
-#     curl -d '{"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"message":"Hello"}}' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"getEcho","params":{"message":"Hello"}}' -H "Content-Type: application/json" http://localhost:2000
 #
 #     The request should be forwarded to the mock upstream on port 2001 and the
 #     JSON-RPC result should pass response validation.
 #
 # 5.) Try a batch that is too large
-#     curl -d '[{"jsonrpc":"2.0","id":5,"method":"rpc.health"},{"jsonrpc":"2.0","id":6,"method":"rpc.echo","params":{"message":"Hi"}},{"jsonrpc":"2.0","id":7,"method":"rpc.health"}]' -H "Content-Type: application/json" http://localhost:2000
+#     curl -d '[{"jsonrpc":"2.0","id":5,"method":"getHealth"},{"jsonrpc":"2.0","id":6,"method":"getEcho","params":{"message":"Hi"}},{"jsonrpc":"2.0","id":7,"method":"getHealth"}]' -H "Content-Type: application/json" http://localhost:2000
 #
 #     Should return a JSON-RPC batch error because maxSize is 2.
 
@@ -47,13 +47,13 @@ api:
             enabled: true
             maxSize: 2 # At most two calls per batch
           methods:
-            - allow: '^rpc\.(health|echo)$'
+            - allow: '^get.*' # Allow read-only methods following the get* naming convention
             - deny: '.*' # deny for everything else
           schemaValidation:
             methods:
-              'rpc.echo':
+              'getEcho':
                 params:
-                  schema: # Inline schema for rpc.echo params
+                  schema: # Inline schema for getEcho params
                     type: object
                     required:
                       - message
@@ -61,7 +61,7 @@ api:
                       message:
                         type: string
                 response:
-                  location: echo-result.schema.json # Validate result for rpc.echo
+                  location: echo-result.schema.json # Validate result for getEcho
   target:
     url: http://localhost:2001
 

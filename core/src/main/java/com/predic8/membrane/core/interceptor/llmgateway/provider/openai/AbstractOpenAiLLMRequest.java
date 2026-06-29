@@ -16,11 +16,13 @@ package com.predic8.membrane.core.interceptor.llmgateway.provider.openai;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractLLMRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.AbstractModelInputRequest;
 
-public abstract class AbstractOpenAiLLMRequest extends AbstractLLMRequest {
+import java.io.IOException;
 
-    public AbstractOpenAiLLMRequest(Exchange exchange) {
+public abstract class AbstractOpenAiLLMRequest extends AbstractModelInputRequest {
+
+    public AbstractOpenAiLLMRequest(Exchange exchange) throws IOException {
         super(exchange);
     }
 
@@ -31,8 +33,9 @@ public abstract class AbstractOpenAiLLMRequest extends AbstractLLMRequest {
 
         chars += estimateChatCompletitions();
 
-        // system instructions
+        // system instructions: "system" (chat completions) or "instructions" (responses API)
         chars += countText(json.path("system"));
+        chars += countText(json.path("instructions"));
 
         // tools/functions contribute significantly
         chars += countJsonSize(json.path("tools"));

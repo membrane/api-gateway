@@ -118,10 +118,6 @@ public class JsonRPCSchemaValidation {
         }
     }
 
-    public boolean hasRequestValidation() {
-        return !paramSchemas.isEmpty();
-    }
-
     public boolean hasMethodResponseValidation() {
         return !responseSchemas.isEmpty();
     }
@@ -132,10 +128,6 @@ public class JsonRPCSchemaValidation {
 
     public boolean hasResponseValidation() {
         return hasMethodResponseValidation() || hasErrorValidation();
-    }
-
-    public boolean isEmpty() {
-        return !hasRequestValidation() && !hasResponseValidation();
     }
 
     public Schema getParamSchema(String methodName) {

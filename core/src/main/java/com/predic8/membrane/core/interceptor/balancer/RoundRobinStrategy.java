@@ -13,19 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import javax.xml.stream.*;
-
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.router.*;
+import com.predic8.membrane.core.router.Router;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import java.util.List;
 
 /**
- * Strategy that iterates the endpoints according to <a href="https://en.wikipedia.org/wiki/Round-robin">...</a>
- * This strategy is agnostic to every other factor, such as sessions and endpoint performance.
- * All endpoints that are considered to be UP are in.
+ * @description Dispatches requests to the available nodes in rotation, one after another. It ignores sessions and node
+ * load; only nodes currently up take part. This is the balancer's default strategy when none is configured.
+ * @yaml <pre><code>
+ * balancer:
+ *   roundRobinStrategy: {}
+ *   clusters:
+ *     - nodes:
+ *         - host: node1.predic8.com
+ *           port: 8080
+ *         - host: node2.predic8.com
+ *           port: 8080
+ * </code></pre>
  */
 @MCElement(name="roundRobinStrategy")
 public class RoundRobinStrategy extends AbstractXmlElement implements DispatchingStrategy {

@@ -1,0 +1,87 @@
+openapi: 3.1.0
+info:
+  title: XML Order API
+  version: 1.0.0
+
+paths:
+  /orders:
+    post:
+      summary: Create an order using XML
+      requestBody:
+        required: true
+        content:
+          application/xml:
+            schema:
+              $ref: "#/components/schemas/Order"
+            example: |
+              <order>
+                <id>4711</id>
+                <customer>Anna Müller</customer>
+                <items>
+                  <item>
+                    <productId>P10</productId>
+                    <quantity>2</quantity>
+                  </item>
+                  <item>
+                    <productId>P11</productId>
+                    <quantity>1</quantity>
+                  </item>
+                </items>
+              </order>
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/OrderConfirmation"
+              example: |
+                <orderConfirmation>
+                  <orderId>4711</orderId>
+                  <status>created</status>
+                </orderConfirmation>
+
+components:
+  schemas:
+    Order:
+      type: object
+      xml:
+        name: order
+      properties:
+        id:
+          type: integer
+          example: 4711
+        customer:
+          type: string
+          example: Anna Müller
+        items:
+          type: array
+          xml:
+            wrapped: true
+            name: items
+          items:
+            $ref: "#/components/schemas/Item"
+
+    Item:
+      type: object
+      xml:
+        name: item
+      properties:
+        productId:
+          type: string
+          example: P10
+        quantity:
+          type: integer
+          example: 2
+
+    OrderConfirmation:
+      type: object
+      xml:
+        name: orderConfirmation
+      properties:
+        orderId:
+          type: integer
+          example: 4711
+        status:
+          type: string
+          example: created

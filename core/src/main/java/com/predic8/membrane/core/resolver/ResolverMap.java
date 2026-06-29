@@ -15,22 +15,28 @@
 package com.predic8.membrane.core.resolver;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.kubernetes.*;
-import com.predic8.membrane.core.kubernetes.client.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.kubernetes.KubernetesSchemaResolver;
+import com.predic8.membrane.core.kubernetes.client.KubernetesClientFactory;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.HttpClientFactory;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.functionalInterfaces.*;
-import org.slf4j.*;
-import org.w3c.dom.ls.*;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.ls.LSResourceResolver;
 
-import java.io.*;
-import java.net.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
-import java.security.*;
-import java.util.*;
+import java.net.URISyntaxException;
+import java.security.InvalidParameterException;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.util.URIFactory.DEFAULT_URI_FACTORY;
 import static com.predic8.membrane.core.util.URIUtil.*;
@@ -111,9 +117,20 @@ public class ResolverMap implements Cloneable, Resolver {
         return combineInternal2( factory, locations,locations[1], locations[0]);
     }
 
+    /**
+     * Matches a leading URI scheme followed by "/" or "\", e.g. "http://", "file:/" or "classpath:\".
+     * Only the part before any path or query is considered, so a scheme appearing inside a query
+     * parameter (e.g. "/foo?a=http://dummy") is not mistaken for the child's own scheme.
+     */
+    private static final Pattern SCHEME = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*:[/\\\\]");
+
+    static boolean hasScheme(String location) {
+        return SCHEME.matcher(location).find();
+    }
+
     private static String combineInternal2(URIFactory uriFactory, String[] locations, String relativeChild, String parent) {
 
-        if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.isEmpty())
+        if (hasScheme(relativeChild) || parent == null || parent.isEmpty())
             return relativeChild;
 
         // parent is file

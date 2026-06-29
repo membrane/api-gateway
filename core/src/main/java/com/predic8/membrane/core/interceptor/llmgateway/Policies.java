@@ -17,11 +17,11 @@ package com.predic8.membrane.core.interceptor.llmgateway;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMErrorCreator;
-import com.predic8.membrane.core.interceptor.llmgateway.provider.LLMRequest;
+import com.predic8.membrane.core.interceptor.llmgateway.provider.ModelInputRequest;
 
 public interface Policies {
 
-    Outcome handleRequest(LLMRequest aiReq, Exchange exc);
+    Outcome handleRequest(ModelInputRequest mir, Exchange exc);
 
     void init(LLMErrorCreator errorCreator);
 

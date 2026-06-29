@@ -1,6 +1,6 @@
-# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.3.json
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
 #
-# Tutorial: Basic LLM Gateway (Antropic Claude)
+# Tutorial: Basic LLM Gateway (Anthropic Claude)
 #
 # Replace <<API_KEY>> with your Claude API key.
 #
