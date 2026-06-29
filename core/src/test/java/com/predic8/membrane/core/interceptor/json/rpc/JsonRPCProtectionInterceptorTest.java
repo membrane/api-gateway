@@ -93,6 +93,28 @@ class JsonRPCProtectionInterceptorTest {
                         ok:
                           type: boolean
             """;
+    private static final String COLLIDING_INLINE_RESPONSE_CONFIG = """
+            schemaValidation:
+              methods:
+                'rpc/a':
+                  response:
+                    schema:
+                      type: object
+                      required:
+                        - ok
+                      properties:
+                        ok:
+                          type: boolean
+                'rpc_a':
+                  response:
+                    schema:
+                      type: object
+                      required:
+                        - message
+                      properties:
+                        message:
+                          type: string
+            """;
     private static final String BATCH_RESPONSE_CONFIG = """
             schemaValidation:
               methods:
@@ -519,6 +541,18 @@ class JsonRPCProtectionInterceptorTest {
                         {"jsonrpc":"2.0","id":1,"result":{}}
                         """,
                         "Invalid result for method 'rpc.inline'",
+                        1
+                ),
+                responseRejects(
+                        "inline response schemas keep distinct locations for method names with same sanitized form",
+                        COLLIDING_INLINE_RESPONSE_CONFIG,
+                        """
+                        {"jsonrpc":"2.0","id":1,"method":"rpc_a"}
+                        """,
+                        """
+                        {"jsonrpc":"2.0","id":1,"result":{"ok":true}}
+                        """,
+                        "Invalid result for method 'rpc_a'",
                         1
                 ),
                 responseContinues(
