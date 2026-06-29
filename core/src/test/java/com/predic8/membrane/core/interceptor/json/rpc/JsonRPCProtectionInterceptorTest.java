@@ -588,6 +588,16 @@ class JsonRPCProtectionInterceptorTest {
                         """
                 ),
                 responseContinues(
+                        "notification responses are ignored when error and success schemas are configured",
+                        ERROR_LOCATION_CONFIG + RESPONSE_LOCATION_CONFIG,
+                        """
+                        {"jsonrpc":"2.0","method":"rpc.echo"}
+                        """,
+                        """
+                        {"jsonrpc":"2.0","id":1,"result":{"message":"hello"}}
+                        """
+                ),
+                responseContinues(
                         "location-based error schema accepts matching error payload",
                         ERROR_LOCATION_CONFIG,
                         """

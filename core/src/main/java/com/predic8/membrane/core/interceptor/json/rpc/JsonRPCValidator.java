@@ -166,7 +166,7 @@ public class JsonRPCValidator {
             return validateErrorResponse(node, payloadType, response.getId());
         }
 
-        if (!schemaValidation.hasMethodResponseValidation()) {
+        if (!schemaValidation.hasMethodResponseValidation() || !context.expectsResponses()) {
             return null;
         }
 
