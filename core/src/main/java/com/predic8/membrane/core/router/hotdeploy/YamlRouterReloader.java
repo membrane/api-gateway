@@ -82,7 +82,6 @@ public final class YamlRouterReloader implements ConfigurationReloader {
             }
             try {
                 router.stopRuntimeForReload();
-                router.disposeRuntime();
             } catch (Exception cleanupError) {
                 cleanupError.addSuppressed(e);
                 log.error("Could not clean up the failed YAML runtime after reload failure.", cleanupError);
@@ -107,7 +106,7 @@ public final class YamlRouterReloader implements ConfigurationReloader {
         try {
             loadIntoRouter(candidate, location);
         } finally {
-            candidate.disposeRuntime();
+            candidate.shutdownRuntimeComponents();
         }
     }
 

@@ -486,8 +486,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     public void stopRuntimeForReload() {
         getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::stop);
 
-        if (reinitializer != null)
-            reinitializer.stop();
+        shutdownRuntimeComponents();
         if (mainComponents.getTransport() != null)
             mainComponents.getTransport().closeAll(false);
 
@@ -506,7 +505,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         }
     }
 
-    public void disposeRuntime() {
+    public void shutdownRuntimeComponents() {
         if (reinitializer != null)
             reinitializer.stop();
         mainComponents.getTimerManager().shutdown();
