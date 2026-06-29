@@ -471,7 +471,6 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
                 return false;
             }
             reloading = true;
-            lock.notifyAll();
             return true;
         }
     }

@@ -63,6 +63,27 @@ class YamlHotDeploymentTest {
     }
 
     @Test
+    void shouldReloadSuccessfully() throws Exception {
+        Path config = tempDir.resolve("apis.yaml");
+        Files.writeString(config, configWithInternal("first", "https://example.com"));
+
+        DefaultRouter router = new DefaultRouter();
+        try {
+            YamlRouterReloader reloader = new YamlRouterReloader(router, loadIntoRouter(router, config.toString()));
+            router.setConfigurationReloader(reloader);
+            router.start();
+
+            Files.writeString(config, configWithInternal("second", "https://example.org"));
+
+            assertTrue(reloader.reload());
+            assertTrue(router.isRunning());
+            assertEquals(List.of("second"), getRuleNames(router));
+        } finally {
+            router.stop();
+        }
+    }
+
+    @Test
     void shouldRestorePreviousRuntimeWhenReloadFailsAfterShutdown() throws Exception {
         Path config = tempDir.resolve("apis.yaml");
         Files.writeString(config, configWithInternal("first", "https://example.com"));

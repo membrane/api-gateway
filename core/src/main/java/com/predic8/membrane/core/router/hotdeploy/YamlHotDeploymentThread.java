@@ -50,8 +50,12 @@ public class YamlHotDeploymentThread extends Thread {
         while (!isInterrupted() && enabled.getAsBoolean()) {
             try {
                 while (!snapshot.hasChanged()) {
-                    if (isInterrupted() || !enabled.getAsBoolean()) {
+                    if (isInterrupted()) {
                         log.debug("YAML Hot Deployment Thread interrupted.");
+                        return;
+                    }
+                    if (!enabled.getAsBoolean()) {
+                        log.debug("YAML Hot Deployment Thread stopped because hot deployment was disabled.");
                         return;
                     }
 
@@ -62,23 +66,31 @@ public class YamlHotDeploymentThread extends Thread {
                 log.info("Configuration Changed.");
 
                 if (!reloader.reload()) {
-                    break;
+                    log.debug("YAML Hot Deployment Thread stopped after reload failure.");
+                    return;
                 }
 
                 if (!enabled.getAsBoolean()) {
-                    break;
+                    log.debug("YAML Hot Deployment Thread stopped because hot deployment was disabled.");
+                    return;
                 }
 
                 refreshTrackedFiles();
             } catch (InterruptedException e) {
                 interrupt();
+                log.debug("YAML Hot Deployment Thread interrupted.");
+                return;
             } catch (Exception e) {
                 log.error("Could not redeploy YAML configuration.", e);
-                break;
+                return;
             }
         }
 
-        log.debug("YAML Hot Deployment Thread interrupted.");
+        if (isInterrupted()) {
+            log.debug("YAML Hot Deployment Thread interrupted.");
+        } else {
+            log.debug("YAML Hot Deployment Thread stopped because hot deployment was disabled.");
+        }
     }
 
     public void stopASAP() {
