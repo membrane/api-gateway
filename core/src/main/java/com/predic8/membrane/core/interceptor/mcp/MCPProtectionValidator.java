@@ -86,7 +86,7 @@ final class MCPProtectionValidator {
             );
         }
 
-        if (isPermitted(toolsCall.getName(), toolRules)) {
+        if (isToolPermitted(toolsCall.getName())) {
             return null;
         }
 
@@ -99,9 +99,9 @@ final class MCPProtectionValidator {
         );
     }
 
-    private boolean isPermitted(String value, List<Rule> rules) {
-        for (Rule rule : rules) {
-            if (rule.matches(value)) {
+    boolean isToolPermitted(String name) {
+        for (Rule rule : toolRules) {
+            if (rule.matches(name)) {
                 return rule.permits();
             }
         }

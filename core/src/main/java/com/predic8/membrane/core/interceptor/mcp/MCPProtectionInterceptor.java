@@ -1,5 +1,9 @@
 package com.predic8.membrane.core.interceptor.mcp;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -18,11 +22,14 @@ import java.util.List;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.Request.METHOD_POST;
 import static com.predic8.membrane.core.http.Response.statusCode;
+import static com.predic8.membrane.core.jsonrpc.JSONRPCRequest.parse;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.ERR_INVALID_REQUEST;
 import static com.predic8.membrane.core.jsonrpc.JSONRPCResponse.error;
+import static com.predic8.membrane.core.mcp.MCPToolsList.METHOD;
 import static java.util.EnumSet.of;
 
 /**
@@ -44,6 +51,9 @@ import static java.util.EnumSet.of;
  * are allowed when <code>tools</code> is omitted. Add a final
  * <code>deny: ".*"</code> rule to change this into an allowlist.</p>
  *
+ * <p>Denied tools are also removed from <code>tools/list</code> responses so
+ * clients do not discover tools they are not allowed to call.</p>
+ *
  * @yaml
  * <pre><code>
  * - mcpProtection:
@@ -63,13 +73,15 @@ public class MCPProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(MCPProtectionInterceptor.class);
 
+    private static final ObjectMapper OM = new ObjectMapper();
     private MCPProtectionMethods methods = new MCPProtectionMethods();
+    private static final String TOOLS_LIST_REQUEST = MCPProtectionInterceptor.class.getName() + ".toolsListRequest";
     private List<Rule> tools = List.of();
     private MCPProtectionValidator validator;
 
     public MCPProtectionInterceptor() {
         name = "MCP protection";
-        setAppliedFlow(of(REQUEST));
+        setAppliedFlow(of(REQUEST, RESPONSE));
     }
 
     @Override
@@ -102,11 +114,55 @@ public class MCPProtectionInterceptor extends AbstractInterceptor {
             ), false);
         }
 
-        return reject(
-                exc,
-                getValidator().validate(exc.getRequest().getBodyAsStringDecoded()),
-                false
-        );
+        String body = exc.getRequest().getBodyAsStringDecoded();
+        ValidationError error = getValidator().validate(body);
+        if (error == null && isToolsListRequest(body)) {
+            exc.setProperty(TOOLS_LIST_REQUEST, Boolean.TRUE);
+        }
+        return reject(exc, error, false);
+    }
+
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        if (exc.getResponse() == null || !Boolean.TRUE.equals(exc.getProperty(TOOLS_LIST_REQUEST))) {
+            return CONTINUE;
+        }
+
+        try {
+            JsonNode response = OM.readTree(exc.getResponse().getBodyAsStringDecoded());
+            JsonNode resultNode = response == null ? null : response.get("result");
+            if (!(resultNode instanceof ObjectNode result)) {
+                return CONTINUE;
+            }
+
+            JsonNode listedTools = result.get("tools");
+            if (listedTools == null || !listedTools.isArray()) {
+                return CONTINUE;
+            }
+
+            var filteredTools = OM.createArrayNode();
+            listedTools.forEach(tool -> {
+                JsonNode name = tool.get("name");
+                if (name == null || !name.isTextual() || getValidator().isToolPermitted(name.textValue())) {
+                    filteredTools.add(tool);
+                }
+            });
+            if (filteredTools.size() != listedTools.size()) {
+                result.set("tools", filteredTools);
+                exc.getResponse().setBodyContent(OM.writeValueAsBytes(response));
+            }
+        } catch (JsonProcessingException e) {
+            log.debug("Could not filter MCP tools/list response.", e);
+        }
+        return CONTINUE;
+    }
+
+    private boolean isToolsListRequest(String body) {
+        try {
+            return METHOD.equals(parse(body).getMethod());
+        } catch (IOException | RuntimeException e) {
+            return false;
+        }
     }
 
     /**
@@ -122,8 +178,9 @@ public class MCPProtectionInterceptor extends AbstractInterceptor {
     /**
      * @description
      * <p>Configures ordered allow and deny rules for tool names used by
-     * <code>tools/call</code>. Rules support regular expressions. The first
-     * matching rule wins; tools unmatched by any rule are allowed.</p>
+     * <code>tools/call</code> and advertised by <code>tools/list</code>.
+     * Rules support regular expressions. The first matching rule wins; tools
+     * unmatched by any rule are allowed.</p>
      *
      * <p>When no rules are configured, all tools are allowed. To allow only
      * explicitly listed tools, place their <code>allow</code> rules first and
