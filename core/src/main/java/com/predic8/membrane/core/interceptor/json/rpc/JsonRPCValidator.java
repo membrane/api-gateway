@@ -51,10 +51,6 @@ public class JsonRPCValidator {
         this.schemaValidation = schemaValidation;
     }
 
-    public ValidationError validate(String body) {
-        return validateRequest(body).error();
-    }
-
     public RequestValidationResult validateRequest(String body) {
         if (body == null || body.isBlank()) {
             return new RequestValidationResult(null, null);
@@ -333,7 +329,7 @@ public class JsonRPCValidator {
         return om.valueToTree(result);
     }
 
-    private PayloadType getPayloadType(String body) {
+    public static PayloadType getPayloadType(String body) {
         if (body == null) {
             return SINGLE;
         }
