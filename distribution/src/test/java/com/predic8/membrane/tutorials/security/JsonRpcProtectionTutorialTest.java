@@ -36,12 +36,12 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
     }
 
     @Test
-    void allowsConfiguredMethods() {
+    void allowsReadOnlyMethods() {
         // @formatter:off
         given()
             .contentType(JSON)
             .body("""
-                {"jsonrpc":"2.0","id":1,"method":"rpc.health"}
+                {"jsonrpc":"2.0","id":1,"method":"getHealth"}
                 """)
         .when()
             .post("http://localhost:2000")
@@ -60,7 +60,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
         given()
             .contentType(JSON)
             .body("""
-                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{"message":"Hello"}}
+                {"jsonrpc":"2.0","id":1,"method":"getEcho","params":{"message":"Hello"}}
                 """)
         .when()
             .post("http://localhost:2000")
@@ -79,7 +79,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
         given()
             .contentType(JSON)
             .body("""
-                {"jsonrpc":"2.0","id":1,"method":"rpc.admin.shutdown"}
+                {"jsonrpc":"2.0","id":1,"method":"setMaintenanceMode"}
                 """)
         .when()
             .post("http://localhost:2000")
@@ -89,7 +89,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
             .body("jsonrpc", equalTo("2.0"))
             .body("id", equalTo(1))
             .body("error.code", equalTo(-32601))
-            .body("error.message", containsString("rpc.admin.shutdown"));
+            .body("error.message", containsString("setMaintenanceMode"));
         // @formatter:on
     }
 
@@ -99,7 +99,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
         given()
             .contentType(JSON)
             .body("""
-                {"jsonrpc":"2.0","id":1,"method":"rpc.echo","params":{}}
+                {"jsonrpc":"2.0","id":1,"method":"getEcho","params":{}}
                 """)
         .when()
             .post("http://localhost:2000")
@@ -109,7 +109,7 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
             .body("jsonrpc", equalTo("2.0"))
             .body("id", equalTo(1))
             .body("error.code", equalTo(-32602))
-            .body("error.message", containsString("Invalid params for method 'rpc.echo'"));
+            .body("error.message", containsString("Invalid params for method 'getEcho'"));
         // @formatter:on
     }
 
@@ -120,9 +120,9 @@ public class JsonRpcProtectionTutorialTest extends AbstractJsonTutorialTest {
             .contentType(JSON)
             .body("""
                 [
-                  {"jsonrpc":"2.0","id":5,"method":"rpc.health"},
-                  {"jsonrpc":"2.0","id":6,"method":"rpc.echo","params":{"message":"Hi"}},
-                  {"jsonrpc":"2.0","id":7,"method":"rpc.health"}
+                  {"jsonrpc":"2.0","id":5,"method":"getHealth"},
+                  {"jsonrpc":"2.0","id":6,"method":"getEcho","params":{"message":"Hi"}},
+                  {"jsonrpc":"2.0","id":7,"method":"getHealth"}
                 ]
                 """)
         .when()
