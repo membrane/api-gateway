@@ -39,4 +39,5 @@ jobs:
             --batch-mode \
             -Pcentral \
             -DskipTests \
+            -X \
             deploy
