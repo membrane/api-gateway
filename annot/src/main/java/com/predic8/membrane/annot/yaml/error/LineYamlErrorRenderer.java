@@ -25,6 +25,8 @@ import com.predic8.membrane.annot.yaml.*;
 
 import java.nio.file.Path;
 
+import static com.predic8.membrane.annot.util.JsonPathUtil.getLastSegment;
+import static com.predic8.membrane.annot.util.JsonPathUtil.getParentPath;
 import static com.predic8.membrane.common.TerminalColorsMini.*;
 
 /**
@@ -58,6 +60,12 @@ public class LineYamlErrorRenderer {
         return renderErrorReport(pc, null);
     }
 
+    /**
+     * Renders a YAML representation of the JSON node with line-based error markers
+     * and, if available, the source file path.
+     *
+     * @return YAML string with ">" prefixes and red color for error lines
+     */
     public static String renderErrorReport(ParsingContext pc, Path sourceFile) throws JsonProcessingException {
 
         JsonNode node = pc.getNode();
@@ -270,6 +278,9 @@ public class LineYamlErrorRenderer {
         return result.toString().trim();
     }
 
+    /**
+     * Counts the leading spaces in a YAML line.
+     */
     private static int getIndentation(String line) {
         int indent = 0;
         for (char c : line.toCharArray()) {
@@ -280,68 +291,5 @@ public class LineYamlErrorRenderer {
             }
         }
         return indent;
-    }
-
-    static String getParentPath(String jsonPath) {
-        return jsonPath.substring(0, findLastSegmentStart(jsonPath));
-    }
-
-    /**
-     * Returns the last part of a JSONPath created by {@link ParsingContext}.
-     * Examples:
-     * `$.api.methods` -> `methods`
-     * `$.api.methods['rpc.echo']` -> `rpc.echo`
-     * `$.api.methods[0]` -> `0`
-     */
-    static String getLastSegment(String jsonPath) {
-        String segment = jsonPath.substring(findLastSegmentStart(jsonPath));
-
-        if (isPropertySegment(segment)) {
-            return segment.substring(1);
-        }
-
-        if (isQuotedPropertySegment(segment)) {
-            return decodeQuotedPropertySegment(segment);
-        }
-
-        if (isArrayIndexSegment(segment)) {
-            return segment.substring(1, segment.length() - 1);
-        }
-
-        throw new IllegalArgumentException("Unsupported JSONPath segment: " + segment);
-    }
-
-    private static boolean isPropertySegment(String segment) {
-        return segment.startsWith(".");
-    }
-
-    private static boolean isQuotedPropertySegment(String segment) {
-        return segment.startsWith("['") && segment.endsWith("']");
-    }
-
-    private static String decodeQuotedPropertySegment(String segment) {
-        return segment.substring(2, segment.length() - 2)
-                .replace("\\'", "'")
-                .replace("\\\\", "\\");
-    }
-
-    private static boolean isArrayIndexSegment(String segment) {
-        return segment.startsWith("[") && segment.endsWith("]");
-    }
-
-    private static int findLastSegmentStart(String jsonPath) {
-        int depth = 0;
-        for (int i = jsonPath.length() - 1; i >= 0; i--) {
-            char c = jsonPath.charAt(i);
-            if (c == ']') {
-                depth++;
-            } else if (c == '[') {
-                depth--;
-            }
-            if (depth == 0 && (c == '.' || c == '[')) {
-                return i;
-            }
-        }
-        throw new IllegalArgumentException("Cannot determine parent path of: " + jsonPath);
     }
 }
