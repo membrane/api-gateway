@@ -45,7 +45,7 @@ public class IssuingAndValidatingJwtsTutorialTest extends AbstractSecurityJwtTut
         .when()
             .get("http://localhost:2000/resource")
         .then()
-            .statusCode(400);
+            .statusCode(401);
         // @formatter:on
 
         // 3) The authenticated user gets a token whose "sub" is their own username.
