@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
@@ -387,12 +389,78 @@ class MCPProtectionInterceptorTest {
                 .build());
 
         assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(List.of("safe.read"), toolNames(exc));
+
         JsonNode response = OM.readTree(exc.getResponse().getBodyAsStringDecoded());
-        JsonNode listedTools = response.path("result").path("tools");
-        assertEquals(1, listedTools.size());
-        assertEquals("safe.read", listedTools.get(0).path("name").asText());
         assertEquals("page-2", response.path("result").path("nextCursor").asText());
         assertTrue(response.path("result").path("untouched").asBoolean());
+    }
+
+    @Test
+    void hidesDeniedToolsFromToolsListResponseWhenUnmatchedToolsAreAllowedByDefault() throws Exception {
+        String config = """
+                tools:
+                  - deny: '^private\\..*$'
+                """;
+
+        var interceptor = interceptor(config);
+        var exc = toolsListExchange(23);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(Response.ok()
+                .contentType(APPLICATION_JSON)
+                .body("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 23,
+                          "result": {
+                            "tools": [
+                              {"name": "public.info"},
+                              {"name": "private.delete"},
+                              {"name": "unmatched.tool"}
+                            ]
+                          }
+                        }
+                        """)
+                .build());
+
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(List.of("public.info", "unmatched.tool"), toolNames(exc));
+    }
+
+    @Test
+    void hidesToolsDeniedByFirstMatchingRuleFromToolsListResponse() throws Exception {
+        String config = """
+                tools:
+                  - deny: '^admin\\..*$'
+                  - allow: '^admin\\.status$'
+                  - allow: '^public\\..*$'
+                """;
+
+        var interceptor = interceptor(config);
+        var exc = toolsListExchange(24);
+
+        assertEquals(CONTINUE, interceptor.handleRequest(exc));
+        exc.setResponse(Response.ok()
+                .contentType(APPLICATION_JSON)
+                .body("""
+                        {
+                          "jsonrpc": "2.0",
+                          "id": 24,
+                          "result": {
+                            "tools": [
+                              {"name": "admin.status"},
+                              {"name": "admin.delete"},
+                              {"name": "public.info"},
+                              {"name": "unmatched.tool"}
+                            ]
+                          }
+                        }
+                        """)
+                .build());
+
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(List.of("public.info", "unmatched.tool"), toolNames(exc));
     }
 
     @Test
@@ -420,5 +488,25 @@ class MCPProtectionInterceptorTest {
                 .build());
 
         assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(body, exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    private Exchange toolsListExchange(int id) {
+        return exchange(
+                METHOD_POST,
+                APPLICATION_JSON,
+                """
+                        {"jsonrpc":"2.0","id":%s,"method":"tools/list","params":{}}
+                        """.formatted(id)
+        );
+    }
+
+    private List<String> toolNames(Exchange exc) throws Exception {
+        var names = new ArrayList<String>();
+        OM.readTree(exc.getResponse().getBodyAsStringDecoded())
+                .path("result")
+                .path("tools")
+                .forEach(tool -> names.add(tool.path("name").asText()));
+        return names;
     }
 }
