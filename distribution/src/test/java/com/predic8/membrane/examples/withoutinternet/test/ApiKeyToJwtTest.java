@@ -73,7 +73,7 @@ public class ApiKeyToJwtTest extends AbstractSampleMembraneStartStopTestcase {
         .when()
             .get("http://localhost:2001")
         .then().assertThat()
-            .body(containsString("JWT validation failed")).statusCode(400);
+            .body(containsString("JWT signature is invalid.")).statusCode(401);
     }
 
     @Test
