@@ -282,32 +282,66 @@ public class LineYamlErrorRenderer {
         return indent;
     }
 
-    private static String getParentPath(String jsonPath) {
-        // Handle both $.parent.child and $.parent[0] formats
-        int lastDot = jsonPath.lastIndexOf('.');
-        int lastBracket = jsonPath.lastIndexOf('[');
-
-        if (lastBracket > lastDot) {
-            // Last segment is array index like [0]
-            return jsonPath.substring(0, lastBracket);
-        } else {
-            // Last segment is object key like .field
-            return jsonPath.substring(0, lastDot);
-        }
+    static String getParentPath(String jsonPath) {
+        return jsonPath.substring(0, findLastSegmentStart(jsonPath));
     }
 
-    private static String getLastSegment(String jsonPath) {
-        // Handle both $.parent.child and $.parent[0] formats
-        int lastDot = jsonPath.lastIndexOf('.');
-        int lastBracket = jsonPath.lastIndexOf('[');
+    /**
+     * Returns the last part of a JSONPath created by {@link ParsingContext}.
+     * Examples:
+     * `$.api.methods` -> `methods`
+     * `$.api.methods['rpc.echo']` -> `rpc.echo`
+     * `$.api.methods[0]` -> `0`
+     */
+    static String getLastSegment(String jsonPath) {
+        String segment = jsonPath.substring(findLastSegmentStart(jsonPath));
 
-        if (lastBracket > lastDot) {
-            // Array index like [0]
-            String bracket = jsonPath.substring(lastBracket);
-            return bracket.substring(1, bracket.length() - 1); // Extract "0" from "[0]"
-        } else {
-            // Object key like .field
-            return jsonPath.substring(lastDot + 1);
+        if (isPropertySegment(segment)) {
+            return segment.substring(1);
         }
+
+        if (isQuotedPropertySegment(segment)) {
+            return decodeQuotedPropertySegment(segment);
+        }
+
+        if (isArrayIndexSegment(segment)) {
+            return segment.substring(1, segment.length() - 1);
+        }
+
+        throw new IllegalArgumentException("Unsupported JSONPath segment: " + segment);
+    }
+
+    private static boolean isPropertySegment(String segment) {
+        return segment.startsWith(".");
+    }
+
+    private static boolean isQuotedPropertySegment(String segment) {
+        return segment.startsWith("['") && segment.endsWith("']");
+    }
+
+    private static String decodeQuotedPropertySegment(String segment) {
+        return segment.substring(2, segment.length() - 2)
+                .replace("\\'", "'")
+                .replace("\\\\", "\\");
+    }
+
+    private static boolean isArrayIndexSegment(String segment) {
+        return segment.startsWith("[") && segment.endsWith("]");
+    }
+
+    private static int findLastSegmentStart(String jsonPath) {
+        int depth = 0;
+        for (int i = jsonPath.length() - 1; i >= 0; i--) {
+            char c = jsonPath.charAt(i);
+            if (c == ']') {
+                depth++;
+            } else if (c == '[') {
+                depth--;
+            }
+            if (depth == 0 && (c == '.' || c == '[')) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("Cannot determine parent path of: " + jsonPath);
     }
 }

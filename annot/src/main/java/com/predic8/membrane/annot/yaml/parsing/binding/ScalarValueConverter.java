@@ -22,10 +22,12 @@ import com.predic8.membrane.annot.yaml.WrongEnumConstantException;
 import com.predic8.membrane.annot.yaml.parsing.support.SpelEvaluator;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Map;
 
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.hasOtherAttributes;
-import static com.predic8.membrane.annot.yaml.McYamlIntrospector.isReferenceAttribute;
+import static com.predic8.membrane.annot.yaml.McYamlIntrospector.*;
+import static com.predic8.membrane.annot.yaml.parsing.binding.ObjectBinder.bind;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
@@ -73,7 +75,7 @@ public final class ScalarValueConverter {
         if (isNumber(wanted))
             return parseNumericOrThrow(ctx, key, wanted, evaluated, node);
         if (wanted == Map.class && setter != null && hasOtherAttributes(setter))
-            return Map.of(key, evaluated);
+            return Map.of(key, convertAnySetterValue(ctx, setter, node, key));
         if (isBeanReference(wanted))
             return referenceResolver.resolveReference(ctx, value, key, wanted);
         if (setter != null && isReferenceAttribute(setter))
@@ -92,10 +94,46 @@ public final class ScalarValueConverter {
         if (isBoolean(wanted))
             return node.isBoolean() ? node.booleanValue() : parseBoolean(node.asText());
         if (wanted.equals(Map.class) && setter != null && hasOtherAttributes(setter))
-            return Map.of(key, node.asText());
+            return Map.of(key, convertAnySetterValue(ctx, setter, node, key));
         if (setter != null && isReferenceAttribute(setter))
             return resolveRegistryReference(ctx, node.asText(), key);
         throw unsupported(wanted, key, node);
+    }
+
+    /**
+     * Converts the value of one entry from an {@code @MCOtherAttributes} map.
+     * Example: for `methods: { 'rpc.echo': { params: ... } }` the key is `rpc.echo`.
+     * The nested object is then bound as the configured Java type for the map value,
+     * not left as a raw map. Plain scalar values such as `timeout: 5` stay plain values.
+     */
+    private Object convertAnySetterValue(ParsingContext<?> ctx, Method setter, JsonNode node, String key) {
+        Class<?> valueType = getMapValueType(setter);
+        if (valueType == null || valueType == Object.class) {
+            return SCALAR_MAPPER.convertValue(node, Object.class);
+        }
+        if (valueType == String.class) {
+            return node.isTextual() ? evaluateSpelForString(key, node.asText()) : node.asText();
+        }
+        return bind(
+                ctx.updateContext(getElementName(valueType)).addProperty(key),
+                valueType,
+                node
+        );
+    }
+
+    private static Class<?> getMapValueType(Method setter) {
+        Type genericType = setter.getGenericParameterTypes()[0];
+        if (!(genericType instanceof ParameterizedType parameterizedType)) {
+            return Object.class;
+        }
+        Type valueType = parameterizedType.getActualTypeArguments()[1];
+        if (valueType instanceof Class<?> clazz) {
+            return clazz;
+        }
+        if (valueType instanceof ParameterizedType nested && nested.getRawType() instanceof Class<?> clazz) {
+            return clazz;
+        }
+        return Object.class;
     }
 
     private Object resolveRegistryReference(ParsingContext<?> ctx, String ref, String key) {

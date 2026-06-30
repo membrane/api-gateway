@@ -38,6 +38,10 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
         return new ParsingContext(context, registry,grammar,topLevel, this.path + path,key);
     }
 
+    public ParsingContext<?> addProperty(String property) {
+        return new ParsingContext(context, registry, grammar, topLevel, path + toJsonPathProperty(property), key);
+    }
+
     public ParsingContext<?> child(String childContext, String pathSegment) {
         return new ParsingContext(childContext, registry, grammar, topLevel, path + pathSegment, null);
     }
@@ -82,6 +86,23 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
 
     public String getPath() {
         return path;
+    }
+
+    /**
+     * Appends a property name to a Jayway JSONPath.
+     * `foo` becomes `.foo`.
+     * `rpc.echo` becomes `['rpc.echo']`.
+     * The `[]` form is needed when the property name itself contains characters
+     * such as `.` or `'` that JSONPath would otherwise interpret as syntax.
+     */
+    private static String toJsonPathProperty(String property) {
+        if (property.matches("[A-Za-z_][A-Za-z0-9_]*")) {
+            return "." + property;
+        }
+        return "['" + property
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                + "']";
     }
 
     @Override

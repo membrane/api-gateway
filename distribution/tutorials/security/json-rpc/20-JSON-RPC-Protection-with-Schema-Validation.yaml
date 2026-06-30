@@ -1,0 +1,88 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.2.json
+#
+# Tutorial: JSON-RPC Protection with Schema Validation
+#
+# Protect a JSON-RPC endpoint by:
+# - allowing only selected methods
+# - rejecting all other methods
+# - validating params and responses with JSON Schema
+# - limiting batch requests
+#
+# Notes:
+# - Method rules are evaluated top-down.
+# - The first matching rule wins.
+# - schemaValidation.methods keys are exact JSON-RPC method names.
+# - This tutorial shows both schema styles: inline `schema` and file-based `location`.
+# - The mock upstream below returns one fixed JSON-RPC success response.
+#
+# 1.) Send an allowed read-only request
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' -H "Content-Type: application/json" http://localhost:2000
+#
+# 2.) Try a blocked write method
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"setMaintenanceMode"}' -H "Content-Type: application/json" http://localhost:2000
+#
+#     Should return a JSON-RPC error explaining that the method is not allowed.
+#
+# 3.) Try invalid params
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"getEcho","params":{}}' -H "Content-Type: application/json" http://localhost:2000
+#
+#     The inline schema requires params.message.
+#
+# 4.) Send a valid request
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"getEcho","params":{"message":"Hello"}}' -H "Content-Type: application/json" http://localhost:2000
+#
+#     The request should be forwarded to the mock upstream on port 2001 and the
+#     JSON-RPC result should pass response validation.
+#
+# 5.) Try a batch that is too large
+#     curl -d '[{"jsonrpc":"2.0","id":5,"method":"getHealth"},{"jsonrpc":"2.0","id":6,"method":"getEcho","params":{"message":"Hi"}},{"jsonrpc":"2.0","id":7,"method":"getHealth"}]' -H "Content-Type: application/json" http://localhost:2000
+#
+#     Should return a JSON-RPC batch error because maxSize is 2.
+
+api:
+  port: 2000
+  flow:
+      - jsonRPCProtection:
+          batch:
+            enabled: true
+            maxSize: 2 # At most two calls per batch
+          methods:
+            - allow: '^get.*' # Allow read-only methods following the get* naming convention
+            - deny: '.*' # deny for everything else
+          schemaValidation:
+            methods:
+              'getEcho':
+                params:
+                  schema: # Inline schema for getEcho params
+                    type: object
+                    required:
+                      - message
+                    properties:
+                      message:
+                        type: string
+                response:
+                  location: echo-result.schema.json # Validate result for getEcho
+  target:
+    url: http://localhost:2001
+
+---
+api:
+  port: 2001
+  flow:
+    - request:
+        - log:
+            message: "Accepted JSON-RPC request reached the upstream."
+    - response:
+        - static:
+            contentType: application/json
+            pretty: true
+            src: |
+              {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "result": {
+                  "message": "Hello"
+                }
+              }
+    - return:
+        status: 200
