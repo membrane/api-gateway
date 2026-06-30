@@ -23,7 +23,7 @@ public class ApiKeyAuthenticationTutorialTest extends AbstractSecurityTutorialTe
 
     @Override
     protected String getTutorialYaml() {
-        return "100-API-Key-Authentication.yaml";
+        return "100-API-Key-Simple.yaml";
     }
 
     @Test

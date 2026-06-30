@@ -28,7 +28,7 @@
 #     curl -i localhost:2000/shop/v2/products -X POST -H "X-Api-Key: 222" \
 #          -H "Content-Type: application/json" -d '{"name":"Mango","price":1.99}'
 #
-# Continue with 130-JDBC-API-Key-Store.yaml
+# Continue with 130-API-Key-JDBC-Store.yaml
 
 api:
   port: 2000

@@ -14,7 +14,7 @@
 #     docker run --rm --name postgres -e POSTGRES_PASSWORD=secret -p 5432:5432 postgres
 #
 # 3.) Start Membrane:
-#     ./membrane.sh -c 130-JDBC-API-Key-Store.yaml
+#     ./membrane.sh -c 130-API-Key-JDBC-Store.yaml
 #
 #     Membrane connects to PostgreSQL and creates the key and scope tables.
 #
