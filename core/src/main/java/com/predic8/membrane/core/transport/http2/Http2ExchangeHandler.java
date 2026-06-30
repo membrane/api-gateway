@@ -117,6 +117,14 @@ public class Http2ExchangeHandler implements Runnable {
     }
 
     private void process() throws Exception {
+        if (!transport.getMethodValidator().isValid(exchange.getRequest().getMethod())) {
+            log.debug("Rejecting HTTP/2 request with invalid method: {}", exchange.getRequest().getMethod());
+            Response response = Response.notImplemented().build();
+            exchange.setResponse(response);
+            writeResponse(response);
+            return;
+        }
+
         try {
             invokeHandlers();
         } catch (AbortException e) {
