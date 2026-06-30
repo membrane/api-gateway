@@ -26,7 +26,7 @@ jobs:
       - name: Check GPG key expiry
         run: |
           EXPIRY=$(gpg --list-secret-keys --keyid-format LONG \
-            | grep -oP '(?<=expires: )\S+' | head -1 || true)
+            | grep -oP '(?<=expires: )\d{4}-\d{2}-\d{2}' | head -1 || true)
           if [ -z "$EXPIRY" ]; then
             echo "GPG key has no expiry date set."
           else
