@@ -30,7 +30,7 @@ jobs:
           if [ -z "$EXPIRY" ]; then
             echo "GPG key has no expiry date set."
           else
-            EXPIRY_TS=$(date -d "$EXPIRY" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$EXPIRY" +%s)
+            EXPIRY_TS=$(date -d "$EXPIRY" +%s)
             NOW_TS=$(date +%s)
             if [ "$EXPIRY_TS" -lt "$NOW_TS" ]; then
               echo "ERROR: GPG key expired on $EXPIRY" >&2
