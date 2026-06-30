@@ -83,7 +83,7 @@ else
   DISABLE_COLORS="true"
 fi
 
-JAVA_OPTS="${JAVA_OPTS:-} -Dmembrane.disable.term.colors=$DISABLE_COLORS"
+JAVA_OPTS="${JAVA_OPTS:-} -Dmembrane.disable.term.colors=$DISABLE_COLORS -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0"
 
 java ${JAVA_OPTS:-} -cp "$CLASSPATH" com.predic8.membrane.core.cli.RouterCLI "$@"
 s=$?
