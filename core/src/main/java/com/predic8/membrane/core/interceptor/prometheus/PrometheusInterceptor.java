@@ -16,32 +16,60 @@
 
 package com.predic8.membrane.core.interceptor.prometheus;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.balancer.Cluster;
+import com.predic8.membrane.core.interceptor.balancer.Node;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.ValidationStatsKey;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.proxies.TimeCollector;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.regex.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.annot.Constants.VERSION;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.*;
-import static com.predic8.membrane.core.interceptor.balancer.Node.Status.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.util.stream.Collectors.*;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.interceptor.balancer.BalancerUtil.collectClusters;
+import static com.predic8.membrane.core.interceptor.balancer.Node.Status.UP;
+import static com.predic8.membrane.core.openapi.util.Utils.joinByComma;
+import static java.util.stream.Collectors.toList;
 
 /**
- * @description Exposes some of Membrane's internal metrics in the Prometheus format.
- *
- * See also examples/monitoring-tracing/prometheus for a demo, including a screenshot.
+ * @description Prometheus is an open-source monitoring system that collects metrics by scraping
+ * HTTP endpoints at regular intervals. Deploy this element on a dedicated endpoint to expose
+ * Membrane's internal metrics in the Prometheus text exposition format (v0.0.4).
+ * <p>
+ * Metrics reported (all prefixed <code>membrane_</code>):
+ * </p>
+ * <ul>
+ *   <li><code>count / good_count / good_time / good_bytes_req_body / good_bytes_res_body</code>
+ *       — request counters and totals per proxy, labeled by HTTP status code range.</li>
+ *   <li><code>rule_active</code> — whether a proxy is active (1) or inactive (0).</li>
+ *   <li><code>ssl_haskeyandcert / ssl_validfrom_ms / ssl_validuntil_ms</code> — TLS certificate
+ *       presence and validity window in Unix milliseconds.</li>
+ *   <li><code>openapi_validation</code> — validation pass/fail counts, present on
+ *       <code>api</code> proxies with an OpenAPI validator configured.</li>
+ *   <li><code>lb_node_status{node,cluster}</code> — load balancer node health (1 = UP, 0 = DOWN).</li>
+ *   <li>Response time histograms per proxy and status code range.</li>
+ * </ul>
+ * See examples/monitoring-tracing/prometheus-grafana for a runnable demo including Grafana dashboards.
  * @topic 4. Monitoring, Logging and Statistics
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - prometheus: {}
+ * </code></pre>
  */
 @MCElement(name = "prometheus")
 public class PrometheusInterceptor extends AbstractInterceptor {
@@ -384,6 +412,13 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
     }
 
+    /**
+     * @description Comma-separated response-time histogram bucket boundaries in milliseconds,
+     * applied globally to all proxies. Requests with a response time at or below each boundary
+     * are counted in that bucket.
+     * @default 500,1000,2000,4000,10000
+     * @example 100,500,1000,5000
+     */
     @MCAttribute
     public void setBuckets(String buckets) {
         TimeCollector.setBuckets(Arrays.stream(buckets

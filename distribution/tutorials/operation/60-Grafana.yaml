@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: Grafana Dashboard for Membrane Metrics
+#
+# This tutorial extends the Prometheus tutorial. If you haven't done it yet,
+# start there: tutorials/operation/50-Prometheus.yaml
+#
+# 1.) Start Membrane:
+#       Linux/Mac:  ./membrane.sh -c 60-Grafana.yaml
+#       Windows:    membrane.cmd  -c 60-Grafana.yaml
+#
+# 2.) Start Prometheus and Grafana:
+#       docker compose -f grafana/docker-compose.yml up -d
+#
+# 3.) Generate traffic on the two backend APIs:
+#       curl http://localhost:2001
+#       curl http://localhost:2002
+#
+# 4.) Open Grafana at http://localhost:3000
+#     Log in with admin / admin
+#
+# 5.) Open the pre-provisioned dashboard:
+#     Dashboards → Membrane Minimal
+#
+#     You should see live panels for requests per minute, incoming traffic,
+#     status code distribution, and average response time.
+
+api:
+  name: Metrics Endpoint for Scraping
+  port: 2000
+  path:
+    uri: /metrics
+  flow:
+    - prometheus: {}
+
+---
+api:
+  name: Backend A
+  port: 2001
+  flow:
+    - return:
+        status: 200
+
+---
+api:
+  name: Backend B
+  port: 2002
+  flow:
+    - return:
+        status: 404
