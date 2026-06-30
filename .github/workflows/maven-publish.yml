@@ -21,10 +21,25 @@ jobs:
       - id: install-secret-key
         name: Install gpg secret key
         run: |
-          # Install gpg secret key
           cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
-          # Verify gpg secret key
           gpg --list-secret-keys --keyid-format LONG
+      - name: Check GPG key expiry
+        run: |
+          EXPIRY=$(gpg --list-secret-keys --keyid-format LONG \
+            | grep -oP '(?<=expires: )\S+' | head -1 || true)
+          if [ -z "$EXPIRY" ]; then
+            echo "GPG key has no expiry date set."
+          else
+            EXPIRY_TS=$(date -d "$EXPIRY" +%s 2>/dev/null || date -j -f "%Y-%m-%d" "$EXPIRY" +%s)
+            NOW_TS=$(date +%s)
+            if [ "$EXPIRY_TS" -lt "$NOW_TS" ]; then
+              echo "ERROR: GPG key expired on $EXPIRY" >&2
+              exit 1
+            else
+              DAYS=$(( (EXPIRY_TS - NOW_TS) / 86400 ))
+              echo "GPG key valid. Expires: $EXPIRY (in $DAYS days)"
+            fi
+          fi
       - id: publish-to-central
         name: Publish to Central Repository
         env:
