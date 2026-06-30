@@ -176,7 +176,7 @@ public class JwksRefreshTest {
                     .header("Authorization", "Bearer " + createJwt(privateKey1))
                     .buildExchange();
             hc.call(exc2);
-            assertEquals(400, exc2.getResponse().getStatusCode());
+            assertEquals(401, exc2.getResponse().getStatusCode());
         }
     }
 
