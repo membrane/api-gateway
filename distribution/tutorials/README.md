@@ -32,7 +32,7 @@ Run and observe Membrane in production.
 
 ## [AI / MCP](ai/mcp)
 
-Expose Membrane as an MCP server for AI clients, inspect recent API traffic, and protect the MCP endpoint with an API key.
+Expose Membrane as an MCP server for AI clients, inspect recent API traffic, restrict MCP tools, and protect the endpoint with an API key.
 
 
 ## [Security](security)
