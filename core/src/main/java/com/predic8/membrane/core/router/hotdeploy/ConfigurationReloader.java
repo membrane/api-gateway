@@ -1,4 +1,4 @@
-/* Copyright 2025 predic8 GmbH, www.predic8.com
+/* Copyright 2026 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,20 +14,12 @@
 
 package com.predic8.membrane.core.router.hotdeploy;
 
-import com.predic8.membrane.core.router.*;
+import java.nio.file.Path;
+import java.util.List;
 
-public interface HotDeployer {
+public interface ConfigurationReloader {
 
-    void start(DefaultRouter defaultRouter);
+    boolean reload();
 
-    void stop();
-
-    void setEnabled(boolean enabled);
-
-    default void setConfigurationReloader(ConfigurationReloader configurationReloader) {}
-
-    default boolean isEnabled() {
-        return false;
-    }
-
+    List<Path> trackedFiles();
 }
