@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 
@@ -76,7 +77,7 @@ public class SqlInjectionProtection {
         if (!message.isBodyEmpty()) {
             String contentType = message.getHeader().getContentType();
             if (message.isJSON()) {
-                hit = inspectJson(message.getBodyAsStringDecoded());
+                hit = inspectJsonOrText(message.getBodyAsStringDecoded());
                 if (hit.isPresent()) return hit;
             } else if (MimeType.isWWWFormUrlEncoded(contentType)) {
                 hit = inspectParams("form", message.getBodyAsStringDecoded());
@@ -101,11 +102,24 @@ public class SqlInjectionProtection {
 
     private Optional<Detection> inspectParams(String location, String queryString) {
         return parseQueryString(queryString).entrySet().stream()
-                .flatMap(e -> e.getValue().stream())
+                .flatMap(e -> Stream.concat(Stream.of(e.getKey()), e.getValue().stream()))
                 .map(v -> inspect(location, v))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst();
+    }
+
+    /**
+     * Inspects a body whose Content-Type claims JSON. If the body does not actually parse as JSON
+     * ({@link Message#isJSON()} only inspects the header), fall back to scanning it as raw text so a
+     * malformed body never breaks inspection.
+     */
+    private Optional<Detection> inspectJsonOrText(String body) {
+        try {
+            return inspectJson(body);
+        } catch (IOException e) {
+            return inspect("body", body);
+        }
     }
 
     private Optional<Detection> inspectJson(String body) throws IOException {

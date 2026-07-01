@@ -219,5 +219,6 @@ The OWASP Core Rule Set is:
     Licensed under the Apache License, Version 2.0.
     Source: https://github.com/coreruleset/coreruleset
 
-The unmodified CRS source file and the transpiler that derives the bundled
-resource from it are located under distribution/crs-sqli-rules/.
+The unmodified CRS source file is located under distribution/crs-sqli-rules/.
+The transpiler that derives the bundled resource from it is located under
+distribution/src/main/java/com/predic8/membrane/build/.

@@ -37,7 +37,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * <p>
  * Only the {@code @rx} (plain regex) rules are extracted; the two {@code @detectSQLi} (libinjection) rules and
  * the CRS anomaly-scoring machinery are intentionally dropped. Every CRS regex compiles unchanged under
- * {@link java.util.regex.Pattern}.
+ * {@link java.util.regex.Pattern}. Chained rules whose second condition cannot be represented — i.e. anything
+ * other than a positive {@code @rx} against the same request content (CRS chains on {@code TX:n} /
+ * {@code MATCHED_VARS} with {@code @streq} / {@code !@streq} / {@code !@rx}) — are dropped whole rather than
+ * emitted without their constraint.
  * <p>
  * Two modes, wired into the distribution build:
  * <ul>
@@ -56,8 +59,11 @@ public class CrsSqliRuleTranspiler {
             "urlDecodeUni", "replaceComments", "removeCommentsChar", "removeWhitespace", "utf8toUnicode");
 
     private static final Pattern CONTINUATION = Pattern.compile("\\\\\\n\\s*");
-    private static final Pattern DIRECTIVE = Pattern.compile("^SecRule.*$", Pattern.MULTILINE);
+    // Chained second conditions are written as indented SecRule lines, so allow leading whitespace.
+    private static final Pattern DIRECTIVE = Pattern.compile("^[ \\t]*SecRule.*$", Pattern.MULTILINE);
     private static final Pattern OPERATOR = Pattern.compile("\"@rx (.*)\" \"(.*)\"\\s*$");
+    // Variable list a SecRule targets (the token right after SecRule), used to spot capture-based chains.
+    private static final Pattern TARGET = Pattern.compile("SecRule\\s+(\\S+)");
     private static final Pattern ID = Pattern.compile("id:(\\d+)");
     private static final Pattern CHAIN = Pattern.compile("(?:^|,)chain(?:,|$)");
     private static final Pattern TRANSFORM = Pattern.compile("t:(\\w+)");
@@ -134,10 +140,19 @@ public class CrsSqliRuleTranspiler {
             String actions = regex != null ? op.group(2) : null;
 
             if (pendingChain != null) {
-                // This directive is the chained second condition of the previous rule.
-                if (regex != null)
+                // This directive is the chained second condition of the previous rule. Membrane can only
+                // represent a chained condition that is another positive @rx applied to the *same request
+                // content* (stored as "requires"). CRS REQUEST-942 instead chains on captured variables
+                // (TX:n / MATCHED_VARS) with @streq / !@streq / !@rx, which have no Membrane equivalent.
+                // Emitting the broad first predicate without its constraint would cause false positives,
+                // so drop the whole rule instead of letting it through weakened.
+                if (regex != null && !chainsOnCapturedVariable(directive)) {
                     pendingChain.put("requires", regex);
-                rules.add(pendingChain);
+                    rules.add(pendingChain);
+                } else {
+                    System.err.println("WARNING: dropping chained rule " + pendingChain.get("id").asText()
+                            + " — unsupported chained condition (only a plain @rx on request content can be represented)");
+                }
                 pendingChain = null;
                 continue;
             }
@@ -167,6 +182,19 @@ public class CrsSqliRuleTranspiler {
         ArrayNode array = MAPPER.createArrayNode();
         rules.forEach(array::add);
         return array;
+    }
+
+    /**
+     * @return true if the chained condition targets a captured/internal ModSecurity variable (TX:n,
+     * MATCHED_VARS, ...). Such conditions compare captures rather than scanning the request content and
+     * therefore cannot be expressed as a Membrane {@code requires} pattern.
+     */
+    private static boolean chainsOnCapturedVariable(String directive) {
+        Matcher m = TARGET.matcher(directive);
+        if (!m.find())
+            return true; // unknown shape -> treat as unsupported
+        String vars = m.group(1);
+        return vars.contains("TX:") || vars.contains("MATCHED_VAR");
     }
 
     private static ArrayNode transforms(String actions) {

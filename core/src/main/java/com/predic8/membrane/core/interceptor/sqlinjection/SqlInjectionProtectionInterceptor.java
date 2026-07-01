@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -115,7 +115,7 @@ public class SqlInjectionProtectionInterceptor extends AbstractInterceptor {
             return ABORT;
         } catch (Exception e) {
             log.error("Error inspecting {} for SQL injection", flow, e);
-            user(router.getConfiguration().isProduction(), getDisplayName())
+            internal(router.getConfiguration().isProduction(), getDisplayName())
                     .status(500)
                     .detail("Error inspecting " + flow + "!")
                     .exception(e)
@@ -153,8 +153,8 @@ public class SqlInjectionProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description What to do on detection: <code>block</code> rejects the request with HTTP 400;
-     * <code>warn</code> only logs, allowing the request through (useful while tuning).
+     * @description What to do on detection: <code>block</code> rejects a detected request with HTTP 400 and a
+     * detected response with HTTP 502; <code>warn</code> only logs, allowing the message through (useful while tuning).
      * @default block
      */
     @MCAttribute

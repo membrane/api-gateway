@@ -80,7 +80,7 @@ class SqlInjectionProtectionInterceptorTest {
         warn.setOnDetect(OnDetect.WARN);
         warn.init(new DefaultRouter());
 
-        Exchange exc = get("/search?q=information_schema").buildExchange();
+        Exchange exc = get("/search?q=%27%20UNION%20SELECT%20pw%20FROM%20users").buildExchange();
         assertEquals(CONTINUE, warn.handleRequest(exc));
     }
 
