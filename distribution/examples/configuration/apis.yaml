@@ -75,6 +75,23 @@ components:
       maxSize: 100000
       maxBodySize: 1000
       bodyExceedingMaxSizeStrategy: truncate
+
+  # Controls which HTTP methods (verbs) the gateway accepts on the request line.
+  # If exactly one method validator is defined here, it is applied to every transport
+  # automatically. A rejected method is answered with `501 Not Implemented` before the
+  # request reaches any API. Pick one of three policies:
+  #
+  #   knownMethodValidator     only the methods Membrane knows:
+  #                            GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, CONNECT, TRACE
+  #   rfc9110MethodValidator   any method matching the RFC 9110 token grammar
+  #                            (this is the default applied when no validator is declared)
+  #   uppercaseMethodValidator only uppercase letters A-Z
+  #
+  # `maxLength` (default 20) caps the accepted method length in every policy and guards
+  # against oversized method strings.
+  methodValidator:
+    knownMethodValidator:
+      maxLength: 16
 ---
 
 # Internal proxy, accessible only from within the gateway.

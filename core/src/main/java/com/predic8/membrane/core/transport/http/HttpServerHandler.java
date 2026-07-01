@@ -224,8 +224,22 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
 
         readAndParseRequest();
+
+        if (!getTransport().getMethodValidator().isValid(srcReq.getMethod()))
+            return rejectInvalidMethod();
+
         process();
         return determineConnectionContinuation();
+    }
+
+    private RequestProcessingResult rejectInvalidMethod() throws IOException {
+        log.debug("Rejecting request with invalid method: {}", maskNonPrintableCharacters(truncateAfter(srcReq.getMethod(), 80)));
+        Response response = Response.notImplemented().build();
+        response.getHeader().setConnection(Header.CLOSE);
+        // Write directly: the request was not routed yet, so no proxy/statistics are available.
+        response.write(srcOut, false);
+        srcOut.flush();
+        return RequestProcessingResult.terminate();
     }
 
     private void readAndParseRequest() throws IOException, EndOfStreamException {

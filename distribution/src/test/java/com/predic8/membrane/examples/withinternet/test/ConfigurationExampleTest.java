@@ -58,4 +58,29 @@ public class ConfigurationExampleTest extends AbstractSampleMembraneStartStopTes
         }
     }
 
+    @Test
+    void knownMethodIsAccepted() {
+        // GET is one of the methods the configured knownMethodValidator accepts.
+        // @formatter:off
+        given()
+                .when()
+                .request("GET", "http://localhost:2000")
+                .then()
+                .statusCode(200);
+        // @formatter:on
+    }
+
+    @Test
+    void unknownMethodIsRejected() {
+        // BREW is a valid token, so the default policy would forward it. The example configures a
+        // knownMethodValidator, so the method is rejected with 501 before reaching the API.
+        // @formatter:off
+        given()
+                .when()
+                .request("BREW", "http://localhost:2000")
+                .then()
+                .statusCode(501);
+        // @formatter:on
+    }
+
 }
