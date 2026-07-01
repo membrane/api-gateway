@@ -11,14 +11,14 @@ Visual Studio Code or IntelliJ IDEA.
 
 The tutorials build on each other, from simple to advanced:
 
-1. [40-Requesting-a-JWT.md](40-Requesting-a-JWT.md) — a `curl`-only walkthrough of the
+1. [40-JWT-Requesting-Token.md](40-JWT-Requesting-Token.md) — a `curl`-only walkthrough of the
    hosted [Membrane demo](https://www.membrane-api.io/jwt/jwt-api-authentication-authorization-tutorial.html):
    request a token via the OAuth2 Client Credentials flow and use it to call a
    protected API. Nothing to run locally.
-2. [50-Issuing-and-Validating-JWTs.yaml](50-Issuing-and-Validating-JWTs.yaml) — let Membrane itself
+2. [41-JWT-Issuing-and-Validating.yaml](41-JWT-Issuing-and-Validating.yaml) — let Membrane itself
    issue and validate the tokens, fully offline.
 
 ## Next Steps
 
-Start with [40-Requesting-a-JWT.md](40-Requesting-a-JWT.md), then run
-[50-Issuing-and-Validating-JWTs.yaml](50-Issuing-and-Validating-JWTs.yaml).
+Start with [40-JWT-Requesting-Token.md](40-JWT-Requesting-Token.md), then run
+[41-JWT-Issuing-and-Validating.yaml](41-JWT-Issuing-and-Validating.yaml).

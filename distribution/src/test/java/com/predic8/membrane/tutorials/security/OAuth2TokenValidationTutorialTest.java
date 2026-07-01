@@ -19,39 +19,47 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 
-public class OAuth2ClientCredentialsTutorialTest extends AbstractSecurityTutorialTest {
+/**
+ * Validates tokens issued by the hosted Membrane demo at api.predic8.de: the gateway
+ * blocks requests without a token, and accepts a token obtained from the demo's
+ * client-credentials endpoint. Requires internet access to api.predic8.de.
+ */
+public class OAuth2TokenValidationTutorialTest extends AbstractSecurityTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "52-OAuth2-Client-Credentials.yaml";
+        return "50-OAuth2-Token-Validation.yaml";
     }
 
     @Test
-    void blocksRequestsWithoutTokenAndGrantsAccessWithClientCredentials() {
+    void blocksWithoutTokenAndAcceptsHostedDemoToken() {
         // @formatter:off
+        // 1) Without a token the gateway blocks the request.
         given()
         .when()
             .get("http://localhost:2000")
         .then()
             .statusCode(400);
 
-        String token = given()
+        // 2) Get an access token from the hosted demo (client credentials).
+        String token =
+        given()
+            .auth().preemptive().basic("my-client", "my-secret")
             .formParam("grant_type", "client_credentials")
-            .formParam("client_id", "abc")
-            .formParam("client_secret", "def")
         .when()
-            .post("http://localhost:7007/oauth2/token")
+            .post("https://api.predic8.de/demo/oauth2/token")
         .then()
             .statusCode(200)
-            .extract().path("access_token");
+        .extract().path("access_token");
 
+        // 3) With a valid token the gateway validates it and forwards to the backend.
         given()
             .header("Authorization", "Bearer " + token)
         .when()
             .get("http://localhost:2000")
         .then()
             .statusCode(200)
-            .body(containsString("Service accessed!"));
+            .body(containsString("Secret resource accessed!"));
         // @formatter:on
     }
 }

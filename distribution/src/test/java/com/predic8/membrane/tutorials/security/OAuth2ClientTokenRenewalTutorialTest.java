@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.tutorials.security;
 
+import com.predic8.membrane.examples.util.BufferLogger;
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
 import org.junit.jupiter.api.AfterEach;
@@ -21,16 +22,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class OAuth2ClientTokenRenewalTutorialTest extends DistributionExtractingTestcase {
 
-    private static final String YAML = "55-OAuth2-Client-Token-Renewal.yaml";
+    private static final String YAML = "53-OAuth2-Client-Token-Renewal.yaml";
+
+    /** The auth server logs this line whenever the gateway fetches a token. */
+    private static final Pattern TOKEN_FETCH = Pattern.compile("POST /oauth2/token");
+    /** The backend logs "Gateway forwarded token ...<last6>" for each forwarded request. */
+    private static final Pattern FORWARDED_TOKEN = Pattern.compile("Gateway forwarded token \\.\\.\\.(\\S+)");
 
     protected Process2 process;
+    private final BufferLogger logger = new BufferLogger();
 
     @Override
     protected String getExampleDirName() {
@@ -44,13 +54,16 @@ public class OAuth2ClientTokenRenewalTutorialTest extends DistributionExtracting
 
     /**
      * Runs after {@code DistributionExtractingTestcase.init()} sets {@code baseDir}.
-     * Shortens the token lifetime from 60 s to 1 s so the test finishes quickly,
-     * then starts Membrane with the patched config.
+     * Shortens the token lifetime from 60 s to 3 s so the test is quick. The client's
+     * cache window is then ~2 s (refresh buffer = expiry/10, min 1 s), leaving a
+     * comfortable margin so a reused token never validates right at its expiry.
+     * Membrane's console is captured so we can read token fetches and the forwarded
+     * token suffix from the log.
      */
     @BeforeEach
     void startGateway() throws IOException, InterruptedException {
-        replaceInFile2(YAML, "expiration: 60", "expiration: 1");
-        process = startServiceProxyScript();
+        replaceInFile2(YAML, "expiration: 60", "expiration: 3");
+        process = startServiceProxyScript(logger);
     }
 
     @AfterEach
@@ -60,31 +73,53 @@ public class OAuth2ClientTokenRenewalTutorialTest extends DistributionExtracting
     }
 
     @Test
-    void gatewayRenewsTokenAfterExpiry() throws InterruptedException {
+    void reusesCachedTokenThenRenewsAfterExpiry() throws InterruptedException {
+        // 1) First call: the gateway fetches a token, and the response never leaks it.
         // @formatter:off
-        String firstBody = given()
+        given()
         .when()
             .get("http://localhost:2000")
         .then()
             .statusCode(200)
             .body(containsString("Service accessed!"))
-            .extract().body().asString();
-
-        // Token lifetime is 1 s (patched from 60 s for test speed).
-        // The client cache expires after ~0.9 s (1 s refresh buffer), so
-        // sleeping 1 s is enough to force a new token fetch.
-        Thread.sleep(1500);
-
-        String secondBody = given()
-        .when()
-            .get("http://localhost:2000")
-        .then()
-            .statusCode(200)
-            .body(containsString("Service accessed!"))
-            .extract().body().asString();
+            .body(not(containsString("Bearer")));
         // @formatter:on
+        Thread.sleep(200);
+        int fetchesAfterFirstCall = countTokenFetches();
+        String firstSuffix = lastForwardedSuffix();
+        assertTrue(fetchesAfterFirstCall >= 1, "the gateway must fetch a token on the first call");
 
-        assertNotEquals(firstBody, secondBody,
-                "oauth2Client must re-fetch a new token after the cached one expires");
+        // 2) Immediate second call: the cached token is reused — no new fetch, same token.
+        given().when().get("http://localhost:2000").then().statusCode(200);
+        Thread.sleep(200);
+        assertEquals(fetchesAfterFirstCall, countTokenFetches(),
+                "an immediate second call must reuse the cached token (no new POST /oauth2/token)");
+        assertEquals(firstSuffix, lastForwardedSuffix(),
+                "the reused token must be identical");
+
+        // 3) After the cache window (~2 s) passes, the next call renews the token.
+        Thread.sleep(2500);
+        given().when().get("http://localhost:2000").then().statusCode(200);
+        Thread.sleep(200);
+        assertTrue(countTokenFetches() > fetchesAfterFirstCall,
+                "after expiry the gateway must fetch a new token (POST /oauth2/token)");
+        assertNotEquals(firstSuffix, lastForwardedSuffix(),
+                "after expiry the forwarded token must change");
+    }
+
+    private int countTokenFetches() {
+        int count = 0;
+        Matcher m = TOKEN_FETCH.matcher(logger.toString());
+        while (m.find())
+            count++;
+        return count;
+    }
+
+    private String lastForwardedSuffix() {
+        String suffix = null;
+        Matcher m = FORWARDED_TOKEN.matcher(logger.toString());
+        while (m.find())
+            suffix = m.group(1);
+        return suffix;
     }
 }

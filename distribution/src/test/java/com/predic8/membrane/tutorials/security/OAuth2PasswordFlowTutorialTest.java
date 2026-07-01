@@ -23,7 +23,7 @@ public class OAuth2PasswordFlowTutorialTest extends AbstractSecurityTutorialTest
 
     @Override
     protected String getTutorialYaml() {
-        return "40-OAuth2-Password-Flow.yaml";
+        return "51-OAuth2-Password-Flow.yaml";
     }
 
     @Test

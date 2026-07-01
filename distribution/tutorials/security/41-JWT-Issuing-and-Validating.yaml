@@ -1,29 +1,28 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
 #
-# Tutorial: Issuing and Validating JWTs with Membrane
+# Tutorial: Issuing and Validating JWTs
 #
-# Membrane acts as both token server and protected resource - no external server needed.
+# Where 40-JWT-Requesting-Token.md put you in the client's seat, this tutorial builds
+# the server side: Membrane issues the JWTs AND validates them, so you run a complete,
+# self-contained setup with no external authorization server.
+#
+# You will learn how to:
+#   - turn a login into a signed JWT with jwtSign (the token endpoint on /token),
+#   - protect an API with jwtAuth so only requests carrying a valid, unexpired,
+#     correctly-signed token get through,
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 20-Issuing-and-Validating-JWTs.yaml
+#     ./membrane.sh -c 41-JWT-Issuing-and-Validating.yaml
 #
 # 2.) Request a token:
-#     curl -X POST localhost:2000/token -u "alice:alice-secret"
+#     curl -v localhost:2000/token -u "alice:alice-secret"
 #
 #     {"access_token":"eyJ0eXAiOiJKV1Qi...","token_type":"bearer","expires_in":300}
 #
-# 3.) Paste the token into https://jwt.io - notice sub, aud, scopes, exp.
-#
-# 4.) Call the resource without a token (rejected):
-#     curl -i localhost:2000/resource
-#
-# 5.) Call it with the token:
-#     curl localhost:2000/resource -H "Authorization: Bearer eyJ0eXAiOiJKV1Qi..."
+# 3.) Call the resource with the token:
+#     curl -v localhost:2000/resource -H "Authorization: Bearer eyJ0eXAiOiJKV1Qi..."
 #
 #     {"client":"alice","scopes":"read write"}
-#
-# NOTE: jwk.json contains a demo key (private+public) - generate your own for production.
-#       jwk-public.json holds only the public parameters and is used by jwtAuth for validation.
 
 api:
   port: 2000
@@ -80,3 +79,6 @@ api:
           }
     - return:
         status: 200
+
+# NOTE: jwk.json contains a demo key (private+public). Generate your own for production.
+#       jwk-public.json holds only the public parameters and is used by jwtAuth for validation.
