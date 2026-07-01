@@ -41,7 +41,7 @@ public abstract class Transport {
     private Router router;
     private boolean reverseDNS = true;
 
-    private MethodValidator methodValidator;
+    private MethodValidator methodValidator = MethodValidator.permissive();
 
     private int concurrentConnectionLimitPerIp = -1;
 
@@ -60,6 +60,9 @@ public abstract class Transport {
 
     public void init(Router router) {
         this.router = router;
+
+        if (router != null && router.getRegistry() != null)
+            router.getRegistry().getBean(MethodValidator.class).ifPresent(v -> methodValidator = v);
 
         if (interceptors.isEmpty()) {
             interceptors.add(getInterceptor(RuleMatchingInterceptor.class));
@@ -121,12 +124,6 @@ public abstract class Transport {
      * declared, otherwise the {@link MethodValidator#permissive() permissive default}.
      */
     public MethodValidator getMethodValidator() {
-        if (methodValidator == null) {
-            MethodValidator configured = null;
-            if (router != null && router.getRegistry() != null)
-                configured = router.getRegistry().getBean(MethodValidator.class).orElse(null);
-            methodValidator = configured != null ? configured : MethodValidator.permissive();
-        }
         return methodValidator;
     }
 
