@@ -163,6 +163,9 @@ public class JsonRPCValidator {
         }
 
         if (response.isError()) {
+            if (context.methodFor(response.getId()) == null) {
+                return invalidResponse(payloadType, response.getId(), "JSON-RPC response id '%s' does not match any request.".formatted(response.getId()));
+            }
             return validateErrorResponse(node, payloadType, response.getId());
         }
 

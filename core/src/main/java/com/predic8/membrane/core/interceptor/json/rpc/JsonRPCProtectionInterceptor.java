@@ -90,6 +90,7 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(JsonRPCProtectionInterceptor.class);
     private static final ObjectMapper OM = new ObjectMapper();
+    private static final String JSON_RPC_ELIGIBLE = JsonRPCProtectionInterceptor.class.getName() + ".jsonRpcEligible";
     private static final String RESPONSE_VALIDATION_CONTEXT = JsonRPCProtectionInterceptor.class.getName() + ".responseValidationContext";
 
     private BatchRule batchRule = new BatchRule();
@@ -124,7 +125,9 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
             ));
         }
 
-        RequestValidationResult validation = getValidator().validateRequest(exc.getRequest().getBodyAsStringDecoded());
+        exc.setProperty(JSON_RPC_ELIGIBLE, Boolean.TRUE);
+
+        RequestValidationResult validation = validator.validateRequest(exc.getRequest().getBodyAsStringDecoded());
         if (validation.responseValidationContext() != null) {
             exc.setProperty(RESPONSE_VALIDATION_CONTEXT, validation.responseValidationContext());
         }
@@ -137,12 +140,16 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
             return CONTINUE;
         }
 
+        if (!Boolean.TRUE.equals(exc.getProperty(JSON_RPC_ELIGIBLE, Boolean.class))) {
+            return CONTINUE;
+        }
+
         ResponseValidationContext context = exc.getProperty(RESPONSE_VALIDATION_CONTEXT, ResponseValidationContext.class);
         if (context == null && schemaValidation.hasErrorValidation()) {
             context = new ResponseValidationContext(getPayloadType(exc.getResponse().getBodyAsStringDecoded()), java.util.Map.of());
         }
 
-        return rejectResponse(exc, getValidator().validateResponse(exc.getResponse().getBodyAsStringDecoded(), context));
+        return rejectResponse(exc, validator.validateResponse(exc.getResponse().getBodyAsStringDecoded(), context));
     }
 
     private Outcome rejectRequest(Exchange exc, ValidationError error) {
@@ -200,13 +207,6 @@ public class JsonRPCProtectionInterceptor extends AbstractInterceptor {
 
     public List<Rule> getMethods() {
         return methods;
-    }
-
-    private JsonRPCValidator getValidator() {
-        if (validator == null) {
-            validator = createValidator();
-        }
-        return validator;
     }
 
     private JsonRPCValidator createValidator() {

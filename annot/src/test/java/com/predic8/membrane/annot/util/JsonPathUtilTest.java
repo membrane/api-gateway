@@ -12,15 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.annot.yaml.error;
+package com.predic8.membrane.annot.util;
 
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.annot.yaml.error.LineYamlErrorRenderer.getLastSegment;
+import static com.predic8.membrane.annot.util.JsonPathUtil.getLastSegment;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class LineYamlErrorRendererTest {
+class JsonPathUtilTest {
 
     @Test
     void splitsJsonPathSegments() {
@@ -48,6 +48,6 @@ class LineYamlErrorRendererTest {
 
     private static void assertPath(String jsonPath, String expectedParentPath, String expectedLastSegment) {
         assertEquals(expectedLastSegment, getLastSegment(jsonPath));
-        assertEquals(expectedParentPath, LineYamlErrorRenderer.getParentPath(jsonPath));
+        assertEquals(expectedParentPath, JsonPathUtil.getParentPath(jsonPath));
     }
 }

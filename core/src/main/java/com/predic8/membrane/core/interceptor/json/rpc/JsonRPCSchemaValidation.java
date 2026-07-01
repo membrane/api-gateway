@@ -28,6 +28,8 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -36,6 +38,8 @@ import static com.networknt.schema.InputFormat.YAML;
 import static com.networknt.schema.SchemaRegistry.withDefaultDialect;
 import static com.networknt.schema.SpecificationVersion.DRAFT_2020_12;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static java.nio.charset.StandardCharsets.*;
+import static java.util.Base64.getUrlEncoder;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -196,15 +200,15 @@ public class JsonRPCSchemaValidation {
     }
 
     private String createInlineSchemaLocation(String methodName, String schemaRole, URIFactory uriFactory, String beanBaseLocation) {
-        String syntheticFile = "__jsonrpc_%s_%s.schema.json".formatted(sanitize(methodName), sanitize(schemaRole));
+        String syntheticFile = "__jsonrpc_%s_%s.schema.json".formatted(encodeLocationToken(methodName), encodeLocationToken(schemaRole));
         if (beanBaseLocation == null || beanBaseLocation.isBlank()) {
             return "membrane:%s".formatted(syntheticFile);
         }
         return combine(uriFactory, beanBaseLocation, syntheticFile);
     }
 
-    private static String sanitize(String value) {
-        return value.replaceAll("[^A-Za-z0-9._-]", "_");
+    private static String encodeLocationToken(String value) {
+        return getUrlEncoder().withoutPadding().encodeToString(value.getBytes(UTF_8));
     }
 
     private Schema loadSchema(String description, SchemaRegistry registry, SchemaLocation schemaLocation, Resolver resolver, String configuredLocation) {

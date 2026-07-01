@@ -93,6 +93,28 @@ class JsonRPCProtectionInterceptorTest {
                         ok:
                           type: boolean
             """;
+    private static final String COLLIDING_INLINE_RESPONSE_CONFIG = """
+            schemaValidation:
+              methods:
+                'rpc/a':
+                  response:
+                    schema:
+                      type: object
+                      required:
+                        - ok
+                      properties:
+                        ok:
+                          type: boolean
+                'rpc_a':
+                  response:
+                    schema:
+                      type: object
+                      required:
+                        - message
+                      properties:
+                        message:
+                          type: string
+            """;
     private static final String BATCH_RESPONSE_CONFIG = """
             schemaValidation:
               methods:
@@ -252,6 +274,20 @@ class JsonRPCProtectionInterceptorTest {
         );
 
         assertTrue(exception.getMessage().contains("batch maxSize must be greater than 0"));
+    }
+
+    @Test
+    void skipsResponseValidationWithoutEligibleRequestMarker() throws Exception {
+        var interceptor = interceptor(ERROR_INLINE_CONFIG);
+        var exc = exchange(METHOD_GET, TEXT_PLAIN, null);
+        String responseBody = """
+                {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"broken"}}
+                """;
+
+        exc.setResponse(jsonResponse(responseBody));
+
+        assertEquals(CONTINUE, interceptor.handleResponse(exc));
+        assertEquals(responseBody, exc.getResponse().getBodyAsStringDecoded());
     }
 
     private static Stream<RequestCase> requestCases() {
@@ -507,6 +543,18 @@ class JsonRPCProtectionInterceptorTest {
                         "Invalid result for method 'rpc.inline'",
                         1
                 ),
+                responseRejects(
+                        "inline response schemas keep distinct locations for method names with same sanitized form",
+                        COLLIDING_INLINE_RESPONSE_CONFIG,
+                        """
+                        {"jsonrpc":"2.0","id":1,"method":"rpc_a"}
+                        """,
+                        """
+                        {"jsonrpc":"2.0","id":1,"result":{"ok":true}}
+                        """,
+                        "Invalid result for method 'rpc_a'",
+                        1
+                ),
                 responseContinues(
                         "response validation uses exact method names",
                         RESPONSE_LOCATION_CONFIG,
@@ -535,6 +583,18 @@ class JsonRPCProtectionInterceptorTest {
                         """,
                         """
                         {"jsonrpc":"2.0","id":9,"result":{"message":"hello"}}
+                        """,
+                        "JSON-RPC response id '9' does not match any request.",
+                        9
+                ),
+                responseRejects(
+                        "unknown error response ids are rejected",
+                        ERROR_LOCATION_CONFIG,
+                        """
+                        {"jsonrpc":"2.0","id":1,"method":"rpc.echo"}
+                        """,
+                        """
+                        {"jsonrpc":"2.0","id":9,"error":{"code":-32000,"message":"broken","data":{"reason":"timeout"}}}
                         """,
                         "JSON-RPC response id '9' does not match any request.",
                         9
@@ -641,15 +701,13 @@ class JsonRPCProtectionInterceptorTest {
                         "Invalid error response",
                         1
                 ),
-                responseRejects(
-                        "error validation also works without prior request context",
+                responseContinues(
+                        "error validation is skipped without prior request context",
                         ERROR_INLINE_CONFIG,
                         null,
                         """
                         {"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"broken"}}
-                        """,
-                        "Invalid error response",
-                        1
+                        """
                 )
         );
     }

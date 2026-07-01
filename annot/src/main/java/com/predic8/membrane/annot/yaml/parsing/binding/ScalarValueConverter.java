@@ -42,6 +42,9 @@ public final class ScalarValueConverter {
     private final SpelEvaluator spelEvaluator = new SpelEvaluator();
     private final ReferenceResolver referenceResolver = new ReferenceResolver();
 
+    /**
+     * Converts a YAML scalar node to the setter target type or resolves a reference.
+     */
     public Object coerceScalarOrReference(ParsingContext<?> ctx, Method setter, JsonNode node, String key, Class<?> wanted) throws WrongEnumConstantException {
         if (wanted.equals(String.class))
             return node.isTextual() ? spelEvaluator.resolve(node.asText(), String.class) : node.asText();
@@ -55,12 +58,18 @@ public final class ScalarValueConverter {
         return coerceNonTextual(ctx, setter, node, key, wanted);
     }
 
+    /**
+     * Converts a scalar node directly, evaluating SpEL first for textual values.
+     */
     public static Object convertScalarOrSpel(JsonNode node, Class<?> targetType) {
         if (node == null || !node.isTextual())
             return SCALAR_MAPPER.convertValue(node, targetType);
         return STATIC_SPEL_EVALUATOR.resolve(node.asText(), targetType);
     }
 
+    /**
+     * Handles textual YAML values, including SpEL, numbers, references, and maps.
+     */
     private Object coerceTextual(ParsingContext<?> ctx, Method setter, JsonNode node, String key, Class<?> wanted) {
         String evaluated = evaluateSpelForString(key, node.asText());
         if (evaluated == null) {
@@ -84,6 +93,9 @@ public final class ScalarValueConverter {
         throw unsupported(wanted, key, node);
     }
 
+    /**
+     * Handles already typed JSON values such as booleans and numbers.
+     */
     private Object coerceNonTextual(ParsingContext<?> ctx, Method setter, JsonNode node, String key, Class<?> wanted) {
         if (isInteger(wanted))
             return node.isInt() ? node.intValue() : parseInt(node.asText());
@@ -102,9 +114,9 @@ public final class ScalarValueConverter {
 
     /**
      * Converts the value of one entry from an {@code @MCOtherAttributes} map.
-     * Example: for `methods: { 'rpc.echo': { params: ... } }` the key is `rpc.echo`.
+     * Example: for {@code methods: { 'rpc.echo': { params: ... } }} the key is {@code rpc.echo}.
      * The nested object is then bound as the configured Java type for the map value,
-     * not left as a raw map. Plain scalar values such as `timeout: 5` stay plain values.
+     * not left as a raw map. Plain scalar values such as {@code timeout: 5} stay plain values.
      */
     private Object convertAnySetterValue(ParsingContext<?> ctx, Method setter, JsonNode node, String key) {
         Class<?> valueType = getMapValueType(setter);
@@ -112,7 +124,14 @@ public final class ScalarValueConverter {
             return SCALAR_MAPPER.convertValue(node, Object.class);
         }
         if (valueType == String.class) {
-            return node.isTextual() ? evaluateSpelForString(key, node.asText()) : node.asText();
+            if (node.isTextual())
+                return evaluateSpelForString(key, node.asText());
+            if (node.isObject() || node.isArray())
+                throw unsupported(valueType, key, node);
+            return SCALAR_MAPPER.convertValue(node, valueType);
+        }
+        if (isScalarCompatible(valueType)) {
+            return SCALAR_MAPPER.convertValue(node, valueType);
         }
         return bind(
                 ctx.updateContext(getElementName(valueType)).addProperty(key),
@@ -121,6 +140,9 @@ public final class ScalarValueConverter {
         );
     }
 
+    /**
+     * Returns the runtime class used as the value type of a map setter parameter.
+     */
     private static Class<?> getMapValueType(Method setter) {
         Type genericType = setter.getGenericParameterTypes()[0];
         if (!(genericType instanceof ParameterizedType parameterizedType)) {
@@ -150,6 +172,9 @@ public final class ScalarValueConverter {
         }
     }
 
+    /**
+     * Parses numeric text and reports invalid values as configuration errors.
+     */
     private Object parseNumericOrThrow(ParsingContext<?> ctx, String key, Class<?> wanted, String value, JsonNode node) {
         try {
             if (isInteger(wanted))
@@ -167,12 +192,18 @@ public final class ScalarValueConverter {
         throw unsupported(wanted, key, node);
     }
 
+    /**
+     * Checks whether the target type should be treated as a bean reference.
+     */
     private static boolean isBeanReference(Class<?> wanted) {
         if (wanted == Integer.TYPE || wanted == Long.TYPE || wanted == Float.TYPE || wanted == Double.TYPE || wanted == Boolean.TYPE || wanted == String.class)
             return false;
         return !wanted.isEnum();
     }
 
+    /**
+     * Parses enum values case-insensitively.
+     */
     @SuppressWarnings("unchecked")
     private static <E extends Enum<E>> E parseEnum(Class<?> enumClass, JsonNode node) throws WrongEnumConstantException {
         String value = node.asText().toUpperCase(ROOT);
@@ -201,6 +232,31 @@ public final class ScalarValueConverter {
 
     private static boolean isNumber(Class<?> wanted) {
         return isInteger(wanted) || isLong(wanted) || isDouble(wanted);
+    }
+
+    /**
+     * Checks whether Jackson can convert the node as a scalar value.
+     */
+    private static boolean isScalarCompatible(Class<?> wanted) {
+        return wanted.isEnum()
+                || isPrimitiveScalar(wanted)
+                || isPrimitiveWrapper(wanted)
+                || Number.class.isAssignableFrom(wanted);
+    }
+
+    private static boolean isPrimitiveScalar(Class<?> wanted) {
+        return wanted.isPrimitive() && wanted != void.class;
+    }
+
+    private static boolean isPrimitiveWrapper(Class<?> wanted) {
+        return wanted == Boolean.class
+                || wanted == Character.class
+                || wanted == Byte.class
+                || wanted == Short.class
+                || wanted == Integer.class
+                || wanted == Long.class
+                || wanted == Float.class
+                || wanted == Double.class;
     }
 
     private static ConfigurationParsingException unsupported(Class<?> wanted, String key, JsonNode node) {

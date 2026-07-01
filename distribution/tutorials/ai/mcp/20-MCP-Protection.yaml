@@ -1,0 +1,87 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.0.json
+#
+# Tutorial: MCP Protection
+#
+# Small MCP protection example:
+# - exposes the protected MCP endpoint on http://localhost:2000
+# - forwards accepted MCP requests to the local Membrane MCP server on port 3000
+# - allows only the tools `listProxies` and `getStatistics`
+# - hides all other tools from `tools/list`
+#
+# Notes:
+# - `initialize` and `ping` are always allowed.
+# - Tool rules are evaluated top-down.
+# - The first matching rule wins.
+#
+# Try:
+#
+# 1.) Start Membrane:
+#
+#     Linux/Mac:
+#       ./membrane.sh -c 20-MCP-Protection.yaml
+#     Windows:
+#       membrane.cmd -c 20-MCP-Protection.yaml
+#
+# 2.) Start the MCP Inspector in a second terminal. It usually opens the
+#     browser automatically:
+#
+#     npx @modelcontextprotocol/inspector
+#
+# 3.) In the Inspector, connect to this MCP endpoint:
+#     Transport Type: Streamable HTTP
+#     URL: http://localhost:2000
+#
+#     Then click Connect.
+#
+# 4.) Open the Tools tab and list tools.
+#
+#     The list should contain only `listProxies` and `getStatistics`.
+#
+# 5.) Call `listProxies`.
+#
+# 6.) `getExchanges` is also provided by the Membrane MCP server on port 3000,
+#     but it is hidden from the Inspector and blocked by `mcpProtection`.
+#     To verify the block, send a manual JSON-RPC request:
+#
+#     curl -i -d '{"jsonrpc":"2.0","id":99,"method":"tools/call","params":{"name":"getExchanges","arguments":{}}}' -H "Content-Type: application/json" http://localhost:2000
+#
+#     The response should be 403 with a JSON-RPC error explaining that the tool
+#     is not allowed.
+
+api:
+  port: 2000
+  name: Protected-MCP-Endpoint
+  flow:
+    - mcpProtection:
+        tools:
+          - allow: '^(listProxies|getStatistics)$'
+          - deny: '.*'
+  target:
+    url: http://localhost:3000
+
+---
+# Local MCP server protected by the API above.
+api:
+  port: 3000
+  name: MCP-Server
+  flow:
+    - membraneMCPServer:
+        maxExchanges: 100
+
+---
+# Demo API that makes `listProxies` return something useful.
+api:
+  port: 3001
+  name: Fruitshop
+  path:
+    uri: /shop/v2/
+  target:
+    url: https://api.predic8.de
+
+---
+# Second demo API, also visible through the allowed `listProxies` tool.
+api:
+  port: 3002
+  name: ApiBin
+  target:
+    url: https://apibin.io/
