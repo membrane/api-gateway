@@ -210,6 +210,30 @@
                 <artifactId>maven-antrun-plugin</artifactId>
                 <version>3.1.0</version>
                 <executions>
+                    <!--
+                    Verify the SQL injection rule resource shipped in core is in sync with the committed
+                    OWASP CRS source; fails the build on drift. Regenerate via the 'generate-sqli-rules' profile.
+                    -->
+                    <execution>
+                        <id>check-sqli-rules</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <java classname="com.predic8.membrane.build.CrsSqliRuleTranspiler" failonerror="true" fork="true">
+                                    <arg value="check"/>
+                                    <arg value="${project.basedir}/crs-sqli-rules"/>
+                                    <arg value="${project.basedir}/../core/src/main/resources/com/predic8/membrane/core/interceptor/sqlinjection/crs-sqli-rules.json"/>
+                                    <classpath>
+                                        <pathelement path="${project.build.outputDirectory}"/>
+                                        <path refid="maven.runtime.classpath"/>
+                                    </classpath>
+                                </java>
+                            </target>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>prepare-examples-without-proxies</id>
                         <phase>prepare-package</phase>
@@ -233,6 +257,51 @@
         </plugins>
     </build>
     <profiles>
+        <profile>
+            <!--
+            Regenerate core's crs-sqli-rules.json from the committed OWASP CRS source.
+            Run after updating crs-sqli-rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf:
+              mvn -pl distribution -Pgenerate-sqli-rules process-classes
+            then commit the updated core resource.
+            -->
+            <id>generate-sqli-rules</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <!-- Don't run the drift check while regenerating: it would fail on the very drift
+                                 we are about to fix, before the generation runs. -->
+                            <execution>
+                                <id>check-sqli-rules</id>
+                                <phase>none</phase>
+                            </execution>
+                            <execution>
+                                <id>generate-sqli-rules</id>
+                                <phase>process-classes</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <java classname="com.predic8.membrane.build.CrsSqliRuleTranspiler" failonerror="true" fork="true">
+                                            <arg value="generate"/>
+                                            <arg value="${project.basedir}/crs-sqli-rules"/>
+                                            <arg value="${project.basedir}/../core/src/main/resources/com/predic8/membrane/core/interceptor/sqlinjection/crs-sqli-rules.json"/>
+                                            <classpath>
+                                                <pathelement path="${project.build.outputDirectory}"/>
+                                                <path refid="maven.runtime.classpath"/>
+                                            </classpath>
+                                        </java>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>no-internet</id>
             <build>
