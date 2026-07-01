@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: Membrane as a JWT Issuer (Part 1 of 2, Authorization Server)
+#
+# Learn how a JWT issuer publishes its signing keys so anyone can verify its tokens.
+# This Membrane is an OAuth2 authorization server: it issues signed JWTs and exposes
+# the matching public keys at a JWKS endpoint (/oauth2/certs). In 42b a second Membrane
+# validates those tokens by fetching the keys from there. No shared secret needed.
+#
+# Instead of Membrane you could use any OAuth2 provider here: Azure Entra ID,
+# Keycloak, Google, etc. They all publish a JWKS endpoint, so the validator in 42b
+# works the same way; only the issuer URL and client credentials change.
+#
+# Run this in terminal 1:
+#
+# 1.) Start the authorization server:
+#     ./membrane.sh -c 42a-JWKS-Issuer.yaml
+#
+# 2.) Get a signed JWT access token:
+#     curl -v -s -d "grant_type=password&username=john&password=password&client_id=abc&client_secret=def" localhost:7007/oauth2/token
+#
+#     {"access_token":"eyJ...","token_type":"Bearer","expires_in":300}
+#
+#     Paste the access_token into https://jwt.io
+#     Note sub, clientId, exp and the kid "membrane" in the header.
+#
+# 3.) Inspect the published keys (the validator fetches these):
+#     curl -s localhost:7007/oauth2/certs
+#
+# Now start the validator in terminal 2 — see 42b-JWKS-Validation.yaml.
+
+api:
+  name: Authorization Server
+  port: 7007
+  flow:
+    - oauth2authserver:
+        issuer: http://localhost:7007
+        staticUserDataProvider:
+          users:
+            - username: john
+              password: password
+        staticClientList:
+          clients:
+            - clientId: abc
+              clientSecret: def
+              callbackUrl: http://localhost:2000/oauth2callback
+        # Issue signed JWT access tokens, signed with jwk.json. The matching public
+        # key is published at http://localhost:7007/oauth2/certs for validators to fetch.
+        bearerJwtToken:
+          expiration: 300
+          jwk:
+            location: jwk.json
+        claims:
+          value: sub
+          scopes:
+            - id: read
+              claims: sub

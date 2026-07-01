@@ -98,3 +98,57 @@ PRIO 3:
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
+
+  
+
+### oauth2Resource2
+
+making oauth2Resource2 tolerate a not-yet-ready provider
+
+### Startup error when auth server is not available
+
+Display a more helpful error message when the authorization server is not available.
+
+    - oauth2Resource2:
+        logoutUrl: /logout
+        membrane:
+          src: http://localhost:8000
+          clientId: abc
+          clientSecret: def
+          scope: openid profile      # "openid" makes this OIDC and yields an id_token
+          claims: username email     # userinfo claims to expose to the app
+          claimsIdt: sub
+
+
+❯ ./membrane.sh -c 54b-OpenID-Connect-Login.yaml
+07:39:00,552 ERROR 3 main OAuth2Resource2Interceptor:94 {} -
+java.net.ConnectException: Connection refused
+at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:639)
+at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:543)
+at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:594)
+at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:284)
+at java.base/java.net.Socket.connect(Socket.java:659)
+at com.predic8.membrane.core.transport.http.Connection.open(Connection.java:118)
+at com.predic8.membrane.core.transport.http.ConnectionManager.getConnection(ConnectionManager.java:136)
+at com.predic8.membrane.core.transport.http.ConnectionFactory.getConnection(ConnectionFactory.java:75)
+at com.predic8.membrane.core.transport.http.HttpClient.dispatchCall(HttpClient.java:80)
+at com.predic8.membrane.core.transport.http.client.RetryHandler.executeWithRetries(RetryHandler.java:93)
+at com.predic8.membrane.core.transport.http.HttpClient.call(HttpClient.java:72)
+at com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.resolve(AuthorizationService.java:327)
+at com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService.resolve(MembraneAuthorizationService.java:100)
+at com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService.init(MembraneAuthorizationService.java:82)
+at com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService.init(AuthorizationService.java:94)
+at com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor.init(OAuth2Resource2Interceptor.java:92)
+at com.predic8.membrane.core.interceptor.AbstractInterceptor.init(AbstractInterceptor.java:111)
+at com.predic8.membrane.core.interceptor.AbstractInterceptor.init(AbstractInterceptor.java:117)
+at com.predic8.membrane.core.proxies.AbstractProxy.init(AbstractProxy.java:101)
+at com.predic8.membrane.core.router.AbstractRouter.initProxies(AbstractRouter.java:28)
+at com.predic8.membrane.core.router.DefaultRouter.init(DefaultRouter.java:146)
+at com.predic8.membrane.core.router.DefaultRouter.start(DefaultRouter.java:168)
+at com.predic8.membrane.core.cli.RouterCLI.initRouterByYAML(RouterCLI.java:256)
+at com.predic8.membrane.core.cli.RouterCLI.initRouterByConfig(RouterCLI.java:219)
+at com.predic8.membrane.core.cli.RouterCLI.getRouter(RouterCLI.java:185)
+at com.predic8.membrane.core.cli.RouterCLI.start(RouterCLI.java:110)
+at com.predic8.membrane.core.cli.RouterCLI.main(RouterCLI.java:76)
+************** Configuration Error ***********************************

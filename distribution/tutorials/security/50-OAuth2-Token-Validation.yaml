@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: OAuth2 Token Validation
+#
+# Validate access tokens at the gateway. The tokens are issued by an authorization
+# server, which can be self-hosted: Keycloak, Membrane, or a cloud service such
+# as Microsoft Entra ID or Google. Membrane's tokenValidator checks each token
+# against that server before letting the request through.
+#
+# This tutorial uses a token server we host at api.predic8.de
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 50-OAuth2-Token-Validation.yaml
+#
+# 2.) Get an access token from the hosted demo (client credentials):
+#     curl -v -s https://api.predic8.de/demo/oauth2/token -u "my-client:my-secret" -d "grant_type=client_credentials"
+#
+#     {"access_token":"<token>","token_type":"bearer","expires_in":300}
+#
+# 3.) Call the API with the token (replace <token>):
+#     curl -v -H "Authorization: Bearer <token>" localhost:2000
+#
+#     Secret resource accessed!
+#
+# Next: run your own authorization server with 51-OAuth2-Password-Flow.yaml
+
+api:
+  name: Protected API
+  port: 2000
+  flow:
+    - tokenValidator:
+        endpoint: https://api.predic8.de/demo/resource
+  target:
+    url: http://localhost:3000
+
+---
+api:
+  name: Backend
+  port: 3000
+  flow:
+    - static:
+        src: Secret resource accessed!
+    - return:
+        status: 200
+
+# Using your own authorization server
+#
+# To swap the hosted demo for your own provider (Keycloak, Microsoft Entra ID,
+# Google, Membrane, ...), do the following. The steps are the same everywhere,
+# only the URLs and names differ:
+#
+# 1.) Register a client in the authorization server. Note its client ID and
+#     client secret (for the client_credentials grant used above).
+#
+# 2.) Look up the server's endpoints. Most providers publish them at
+#     /.well-known/openid-configuration, e.g.
+#       https://<auth-server>/.well-known/openid-configuration
+#     Take the `token_endpoint` (to request tokens) and the `userinfo_endpoint`
+#     (to validate them).
+#
+# 3.) Point step 2.) above at the token_endpoint and your client credentials.
+#
+# 4.) Set the tokenValidator `endpoint` (line 33) to the userinfo_endpoint — any
+#     URL that returns 2xx for a valid token and an error otherwise works.
+#
+# Example endpoints:
+#   Keycloak    https://<host>/realms/<realm>/protocol/openid-connect/userinfo
+#   Entra ID    https://graph.microsoft.com/oidc/userinfo
+#   Google      https://openidconnect.googleapis.com/v1/userinfo
+#   Membrane    http://<host>/oauth2/userinfo   (see 51-OAuth2-Password-Flow.yaml)
+
