@@ -65,7 +65,7 @@ public class RequestingTokenTutorialTest {
         .when()
             .get(RESOURCE)
         .then()
-            .statusCode(400);
+            .statusCode(401);
         // @formatter:on
     }
 }
