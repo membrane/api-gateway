@@ -18,16 +18,18 @@ package com.predic8.membrane.core.transport.http.method;
  * Decides which HTTP request methods (verbs) Membrane accepts on the request line. A request whose method is
  * rejected is answered with {@code 501 Not Implemented} and never reaches the API flow.
  * <p>
- * Declare one of the implementations ({@link KnownMethodValidator}, {@link RFC9110MethodValidator},
- * {@link UppercaseMethodValidator}) as a top-level component to override the policy for every transport. When
- * none is declared, the {@link #permissive() permissive default} applies.
+ * Declare one of the implementations ({@link DefaultMethodValidator}, {@link KnownMethodValidator},
+ * {@link RFC9110MethodValidator}, {@link UppercaseMethodValidator}) as a top-level component to override the
+ * policy for every transport. When none is declared, {@link com.predic8.membrane.core.transport.Transport} falls
+ * back to a {@link DefaultMethodValidator}.
  */
 public interface MethodValidator {
 
     boolean isValid(String method);
 
     /**
-     * The policy used when no validator component is declared: any RFC 9110 token up to 20 characters.
+     * The most permissive built-in policy: any RFC 9110 token up to 20 characters. Not applied automatically;
+     * declare {@link RFC9110MethodValidator} as a component to use it.
      */
     static MethodValidator permissive() {
         return new RFC9110MethodValidator();

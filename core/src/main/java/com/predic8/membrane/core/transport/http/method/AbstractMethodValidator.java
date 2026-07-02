@@ -50,6 +50,7 @@ public abstract class AbstractMethodValidator implements MethodValidator {
     /**
      * @description Maximum length of an accepted method. Methods longer than this are rejected.
      * @default 20
+     * @example 16
      */
     @MCAttribute
     public void setMaxLength(int maxLength) {
@@ -61,8 +62,10 @@ public abstract class AbstractMethodValidator implements MethodValidator {
     }
 
     /**
-     * @description Whether to allow the TRACE HTTP method.
+     * @description Whether to allow the TRACE HTTP method. TRACE echoes the request back in the response body
+     * and is a classic vector for cross-site tracing attacks, so it is rejected unless explicitly allowed.
      * @default false
+     * @example true
      */
     @MCAttribute
     public void setAllowTrace(boolean allowTrace) {

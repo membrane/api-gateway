@@ -24,7 +24,16 @@ import static com.predic8.membrane.core.http.Request.*;
 
 /**
  * @description Accepts only the request methods Membrane knows: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS,
- * CONNECT, TRACE. Every other method is answered with <code>501 Not Implemented</code>.
+ * CONNECT, TRACE. Every other method, e.g. the WebDAV verb <code>PROPFIND</code> or a made-up
+ * <code>FOOBAR</code>, is answered with <code>501 Not Implemented</code>. See
+ * examples/configuration for a runnable config.
+ * @yaml <pre><code>
+ * components:
+ *   methodValidator:
+ *     knownMethodValidator:
+ *       allowTrace: false
+ *       maxLength: 16
+ * </code></pre>
  */
 @MCElement(name = "knownMethodValidator")
 public class KnownMethodValidator implements MethodValidator {

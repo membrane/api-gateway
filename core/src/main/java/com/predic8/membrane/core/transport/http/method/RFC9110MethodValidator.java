@@ -20,7 +20,16 @@ import java.util.regex.Pattern;
 
 /**
  * @description Accepts any method matching the RFC 9110 token grammar (the spec's definition of a valid method),
- * up to <code>maxLength</code> characters. This is the permissive default applied when no validator is declared.
+ * up to <code>maxLength</code> characters. The most permissive of the built-in policies: it also accepts
+ * lowercase methods and punctuation tchars such as <code>PROPFIND</code> or <code>my.method</code>. Declare it
+ * explicitly to widen validation beyond the {@link DefaultMethodValidator built-in default}. See
+ * examples/configuration for a runnable config.
+ * @yaml <pre><code>
+ * components:
+ *   methodValidator:
+ *     rfc9110MethodValidator:
+ *       maxLength: 32
+ * </code></pre>
  */
 @MCElement(name = "rfc9110MethodValidator")
 public class RFC9110MethodValidator extends AbstractMethodValidator {
