@@ -17,7 +17,7 @@
 # 3.) Call the API again with the token (replace <token>):
 #     curl -v -H "Authorization: Bearer <token>" localhost:2000
 #
-#     Secret resource accessed!
+#     Protected resource accessed!
 
 api:
   name: Authorization Server
