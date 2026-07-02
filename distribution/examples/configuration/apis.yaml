@@ -93,9 +93,9 @@ components:
   # against oversized method strings. `allowTrace` (default false) allows the TRACE method,
   # which is rejected by default because it can be used for cross-site tracing attacks.
   methodValidator:
-    knownMethodValidator:
+    rfc9110MethodValidator:
       allowTrace: false
-      maxLength: 16
+      maxLength: 15
 ---
 
 # Internal proxy, accessible only from within the gateway.

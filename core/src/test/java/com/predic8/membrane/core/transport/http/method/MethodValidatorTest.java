@@ -12,12 +12,8 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.transport.http;
+package com.predic8.membrane.core.transport.http.method;
 
-import com.predic8.membrane.core.transport.http.method.KnownMethodValidator;
-import com.predic8.membrane.core.transport.http.method.MethodValidator;
-import com.predic8.membrane.core.transport.http.method.RFC9110MethodValidator;
-import com.predic8.membrane.core.transport.http.method.UppercaseMethodValidator;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

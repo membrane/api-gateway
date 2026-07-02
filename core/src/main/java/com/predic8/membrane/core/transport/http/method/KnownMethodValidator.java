@@ -36,7 +36,7 @@ import static com.predic8.membrane.core.http.Request.*;
  * </code></pre>
  */
 @MCElement(name = "knownMethodValidator")
-public class KnownMethodValidator implements MethodValidator {
+public class KnownMethodValidator extends AbstractMethodValidator {
 
     /**
      * The set of methods named by the {@code METHOD_*} constants in {@link Request}.
@@ -47,7 +47,7 @@ public class KnownMethodValidator implements MethodValidator {
             METHOD_TRACE);
 
     @Override
-    public boolean isValid(String method) {
+    protected boolean matches(String method) {
         return KNOWN_METHODS.contains(method);
     }
 
