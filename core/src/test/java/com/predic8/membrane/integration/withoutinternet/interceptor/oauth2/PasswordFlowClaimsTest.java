@@ -110,6 +110,30 @@ public class PasswordFlowClaimsTest {
     }
 
     @Test
+    void presentedRefreshTokenIsSingleUse() throws Exception {
+        Exchange exc = tokenRequest("grant_type=password&username=pickle&password=qwertz"
+                                    + "&client_id=demo-client&client_secret=demo-secret");
+        assertEquals(200, exc.getResponse().getStatusCode());
+        String refreshToken = Util.parseSimpleJSONResponse(exc.getResponse()).get("refresh_token");
+
+        Exchange firstRefresh = tokenRequest("grant_type=refresh_token&refresh_token=" + refreshToken
+                                             + "&client_id=demo-client&client_secret=demo-secret");
+        assertEquals(200, firstRefresh.getResponse().getStatusCode());
+
+        // Rotation: reusing the already-consumed refresh token must fail ...
+        Exchange reuse = tokenRequest("grant_type=refresh_token&refresh_token=" + refreshToken
+                                      + "&client_id=demo-client&client_secret=demo-secret");
+        assertEquals(400, reuse.getResponse().getStatusCode());
+        assertEquals("invalid_grant", Util.parseSimpleJSONResponse(reuse.getResponse()).get("error"));
+
+        // ... while the newly issued refresh token works.
+        String rotated = Util.parseSimpleJSONResponse(firstRefresh.getResponse()).get("refresh_token");
+        Exchange secondRefresh = tokenRequest("grant_type=refresh_token&refresh_token=" + rotated
+                                              + "&client_id=demo-client&client_secret=demo-secret");
+        assertEquals(200, secondRefresh.getResponse().getStatusCode());
+    }
+
+    @Test
     void scopesAttributeSurvivesRefresh() throws Exception {
         Exchange exc = tokenRequest("grant_type=password&username=pickle&password=qwertz"
                                     + "&client_id=demo-client&client_secret=demo-secret");

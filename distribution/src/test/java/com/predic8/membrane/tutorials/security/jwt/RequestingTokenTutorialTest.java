@@ -14,21 +14,37 @@
 
 package com.predic8.membrane.tutorials.security.jwt;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.net.InetSocketAddress;
+import java.net.Socket;
+
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Verifies that the hosted Membrane demo at api.predic8.de still behaves as the
  * 40-JWT-Requesting-Token.md walkthrough documents. That tutorial has no local
  * config — it drives the public demo directly — so this test needs internet, not a
  * running gateway. It exists to catch drift if the hosted demo ever changes.
+ * Skipped (not failed) when api.predic8.de is unreachable, so offline runs stay green.
  */
 public class RequestingTokenTutorialTest {
 
     private static final String TOKEN_ENDPOINT = "https://api.predic8.de/demo/oauth2/token";
     private static final String RESOURCE = "https://api.predic8.de/demo/resource";
+
+    @BeforeAll
+    static void requiresInternet() {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress("api.predic8.de", 443), 3000);
+        } catch (Exception e) {
+            assumeTrue(false, "api.predic8.de is not reachable - skipping hosted-demo test");
+        }
+    }
 
     @Test
     void requestsTokenAndCallsProtectedResource() {
@@ -48,17 +64,15 @@ public class RequestingTokenTutorialTest {
         .extract().path("access_token");
 
         // 2) The token grants access to the protected resource (step 3 of the tutorial).
-        //    Asserted via substrings on the raw body: the demo's success response is not
-        //    strictly valid JSON, so JSON-path matchers cannot be used here.
         given()
             .header("Authorization", "Bearer " + token)
         .when()
             .get(RESOURCE)
         .then()
             .statusCode(200)
-            .body(containsString("\"success\": true"))
-            .body(containsString("my-client"))
-            .body(containsString("read write"));
+            .body("success", equalTo(true))
+            .body("user", equalTo("my-client"))
+            .body("scopes", equalTo("read write"));
 
         // 3) Without the token the request is rejected.
         given()

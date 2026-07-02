@@ -100,7 +100,8 @@ public class Jwks {
         try {
             setJwks(loadJwks(false));
         } catch (Exception e) {
-            log.warn("Could not load JWKs from {}. Maybe the server is not yet available. I'll try it later. Ignore when token server and resource are served from the same configuration.", jwksUris);
+            log.warn("Could not load JWKs from {} ({}). Maybe the server is not yet available. I'll try it later. Ignore when token server and resource are served from the same configuration.", jwksUris, e.getMessage());
+            log.debug("JWKS load failure", e);
         }
 
         if (authorizationService != null && authorizationService.getJwksRefreshInterval() > 0) {
@@ -112,8 +113,9 @@ public class Jwks {
      * The JWKS URIs may be unreachable during init() (e.g. Membrane starts before the issuer);
      * init() only logs that failure, so the load is retried here on first use. If the keys still
      * cannot be retrieved, this throws and the current request fails; the next request retries.
+     * Synchronized so concurrent first requests do not fetch the JWKS multiple times.
      */
-    private void reloadJwksIfNeeded() {
+    private synchronized void reloadJwksIfNeeded() {
         if (jwks != null && !jwks.isEmpty())
             return;
         setJwks(loadJwks(false));

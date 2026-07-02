@@ -95,6 +95,10 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
             claims.setExpirationTimeMinutesInTheFuture(expiration / 60.0f);
         if (additionalClaims != null)
             additionalClaims.forEach(claims::setClaim);
+        // Set last so a stale jti from additionalClaims cannot survive: every token must be
+        // unique (RFC 9068 requires jti), otherwise e.g. refresh token rotation is a no-op
+        // when two tokens with identical claims are issued within the same second.
+        claims.setGeneratedJwtId();
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
         jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
@@ -136,7 +140,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     }
 
     private boolean isNormalClaim(String key) {
-        return "sub".equals(key) || "clientId".equals(key) || "exp".equals(key) || "iss".equals(key);
+        return "sub".equals(key) || "clientId".equals(key) || "exp".equals(key) || "iss".equals(key) || "jti".equals(key);
     }
 
     @Override

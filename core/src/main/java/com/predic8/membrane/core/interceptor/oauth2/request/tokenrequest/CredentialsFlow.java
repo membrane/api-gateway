@@ -67,7 +67,7 @@ public class CredentialsFlow extends TokenRequest {
 
         String grantTypes = client.getGrantTypes();
         if (!grantTypes.contains(getGrantType())) {
-            log.info("Invalid grant type: " + getGrantType());
+            log.info("Invalid grant type: {}", getGrantType());
 			return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant_type");
         }
 

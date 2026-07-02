@@ -21,14 +21,13 @@ import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
+import org.jose4j.lang.JoseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
-import org.jose4j.lang.JoseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RefreshTokenFlow extends TokenRequest {
 
@@ -101,6 +100,9 @@ public class RefreshTokenFlow extends TokenRequest {
             session.getUserAttributes().put(ACCESS_TOKEN, token);
         }
         authServer.getSessionFinder().addSessionForToken(token, session);
+        // Rotate: the presented refresh token is single-use (OAuth2 Security BCP), only
+        // the newly issued one stays valid.
+        authServer.getSessionFinder().removeSessionForRefreshToken(getRefreshToken());
         authServer.getSessionFinder().addSessionForRefreshToken(refreshToken, session);
         if (OAuth2Util.isOpenIdScope(scope)) {
             idToken = createSignedIdToken(session, username, client);
