@@ -103,6 +103,8 @@ public abstract class ParameterizedRequest {
     }
 
     protected Map<String, String> verifyUserThroughParams(){
+        if (authServer.getUserDataProvider() == null)
+            return null;
         try {
             return authServer.getUserDataProvider().verify(params);
         }catch (Exception ignored){
