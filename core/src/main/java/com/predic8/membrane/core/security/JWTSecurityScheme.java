@@ -18,18 +18,18 @@ import java.util.*;
 public class JWTSecurityScheme extends AbstractSecurityScheme {
 
     /**
-     * TODO
-     * @param jwt JSON Web Token
+     * Reads the scopes from the "scp" claim (Microsoft Entra ID style) or, if absent,
+     * from the "scope" claim (RFC 9068). Both may be a space separated string or a list.
+     *
+     * @param jwt claims of the validated JSON Web Token
      */
     public JWTSecurityScheme(Map<String, Object> jwt) {
-        var scopes = jwt.get("scp");
-        if (scopes != null) {
-            if (scopes instanceof String scopeString) {
-                this.scopes = new HashSet<>(Arrays.asList(scopeString.split(" +")));
-            }
-            if (scopes instanceof List scopeList) {
-                this.scopes = new HashSet<>(scopeList);
-            }
+        var scopes = jwt.containsKey("scp") ? jwt.get("scp") : jwt.get("scope");
+        if (scopes instanceof String scopeString) {
+            this.scopes = new HashSet<>(Arrays.asList(scopeString.split(" +")));
+        }
+        if (scopes instanceof List<?> scopeList) {
+            this.scopes = new HashSet<>(scopeList.stream().map(Object::toString).toList());
         }
     }
 

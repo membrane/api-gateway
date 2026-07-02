@@ -25,6 +25,7 @@ import org.junit.jupiter.api.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.http.Request.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class JWTSecuritySchemeTest {
 
@@ -92,4 +93,28 @@ class JWTSecuritySchemeTest {
         return jws.getCompactSerialization();
     }
 
+    @Test
+    void scopesFromScpString() {
+        assertEquals(Set.of("read", "write"), new JWTSecurityScheme(Map.of("scp", "read write")).getScopes());
+    }
+
+    @Test
+    void scopesFromScpList() {
+        assertEquals(Set.of("read", "write"), new JWTSecurityScheme(Map.of("scp", List.of("read", "write"))).getScopes());
+    }
+
+    @Test
+    void scopesFromScopeClaim() {
+        assertEquals(Set.of("read", "write"), new JWTSecurityScheme(Map.of("scope", "read write")).getScopes());
+    }
+
+    @Test
+    void scpWinsOverScope() {
+        assertEquals(Set.of("fromScp"), new JWTSecurityScheme(Map.of("scp", "fromScp", "scope", "fromScope")).getScopes());
+    }
+
+    @Test
+    void noScopeClaimsMeansEmptyScopes() {
+        assertEquals(Set.of(), new JWTSecurityScheme(Map.of("sub", "john")).getScopes());
+    }
 }
