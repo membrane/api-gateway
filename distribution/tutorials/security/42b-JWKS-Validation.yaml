@@ -28,8 +28,8 @@ api:
   port: 2000
   flow:
     # Fetch the issuer's public keys over HTTP and validate the JWT offline.
-    # jwtAuth resolves the JWKS at startup, so the issuer (port 7007) must already
-    # be running before this instance starts.
+    # jwtAuth resolves the JWKS at startup. If the issuer (port 7007) is not running
+    # yet, this instance still starts and fetches the keys on the first request.
     - jwtAuth:
         jwks:
           jwksUris: http://localhost:7007/oauth2/certs
