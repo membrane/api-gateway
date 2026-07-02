@@ -37,6 +37,7 @@ import static org.apache.commons.text.StringEscapeUtils.*;
  * <pre><code>
  *  jwtAuth:
  *    expectedAud: my-audience
+ *    expectedIss: https://auth.example.com
  *    expectedTid: 67c859d3-0cd4-4a99-86db-088bed1a9601
  *    jwks: {}
  * </code></pre>
@@ -65,6 +66,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     Jwks jwks;
     String expectedAud;
     String expectedTid;
+    String expectedIss;
 
 
     public JwtAuthInterceptor() {
@@ -165,6 +167,10 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
             jwtConsumerBuilder
                     .registerValidator(new TidValidator(expectedTid));
 
+        if (expectedIss != null && !expectedIss.isEmpty())
+            jwtConsumerBuilder
+                    .setExpectedIssuer(expectedIss);
+
         return jwtConsumerBuilder.build();
     }
 
@@ -217,6 +223,22 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setExpectedTid(String expectedTid) {
         this.expectedTid = expectedTid;
+    }
+
+    public String getExpectedIss() {
+        return expectedIss;
+    }
+
+    /**
+     * @description
+     * <p>Expected issuer ('iss') value of the token. If set, tokens without an 'iss' claim or with a
+     * different issuer are rejected.</p>
+     * @default not set
+     * @example https://auth.example.com
+     */
+    @MCAttribute
+    public void setExpectedIss(String expectedIss) {
+        this.expectedIss = expectedIss;
     }
 
     @Override
