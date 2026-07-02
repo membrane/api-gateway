@@ -44,6 +44,8 @@ public class IncludeListClassGenerator extends ClassGenerator {
                  * Include entries are resolved in the order they are listed. If an entry points to a directory,
                  * all matching <code>*.apis.yaml</code> / <code>*.apis.yml</code> files in that directory are included
                  * in lexicographical order. Includes are resolved recursively and cyclic include chains are rejected.
+                 * Directory includes are not watched for YAML hot deployment; adding or removing files there does not
+                 * trigger a reload automatically.
                  * </p>
                  * @yaml <pre><code>
                  * include:
@@ -62,7 +64,8 @@ public class IncludeListClassGenerator extends ClassGenerator {
                      * </p>
                      * <p>
                      * Each string is a path to either a YAML file or a directory. Relative paths are resolved
-                     * against the directory of the including file. Absolute paths are also supported.
+                     * against the directory of the including file. Absolute paths are also supported. Directory
+                     * entries are loaded during parsing, but they are not watched for YAML hot deployment.
                      * </p>
                      */
                     @MCChildElement(allowForeign = true)

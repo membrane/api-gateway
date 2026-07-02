@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: API Key Security with OpenAPI
+#
+# OpenAPI security schemes drive API key enforcement. The gateway reads
+# which endpoints require a key and which scopes from the OpenAPI document.
+#
+# Before starting, look at:
+#   - demo-keys.txt for the available keys and their scopes
+#   - fruitshop-api-v2-openapi-3-security.yml → components.securitySchemes
+#     to see how the security scheme is defined
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 120-API-Key-OpenAPI.yaml
+#
+# 2.) No key → 401:
+#     curl -i localhost:2000/shop/v2/products
+#
+#     401 Unauthorized
+#
+# 3.) Key without write scope on a write endpoint → 403:
+#     curl -i localhost:2000/shop/v2/products -X POST -H "X-Api-Key: 111" \
+#          -H "Content-Type: application/json" -d '{}'
+#
+#     403 Forbidden
+#
+# 4.) Key with write scope on a write endpoint → forwarded to backend:
+#     curl -i localhost:2000/shop/v2/products -X POST -H "X-Api-Key: 222" \
+#          -H "Content-Type: application/json" -d '{"name":"Mango","price":1.99}'
+#
+# Continue with 130-API-Key-JDBC-Store.yaml
+
+api:
+  port: 2000
+  openapi:
+    - location: fruitshop-api-v2-openapi-3-security.yml
+      validateSecurity: true
+  flow:
+    - apiKey:
+        required: false  # key is optional here; OpenAPI validator enforces requirements per endpoint
+        stores:
+          - apiKeyFileStore:
+              location: ./demo-keys.txt
+        extractors:
+          - header: X-Api-Key
+    # apiKey must run before openapiValidator to populate the security context.
+    # Placing openapiValidator here overrides the default pre-flow validation order.
+    - openapiValidator: {}
