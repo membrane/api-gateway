@@ -12,26 +12,24 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.transport.http;
+package com.predic8.membrane.core.transport.http.method;
 
 import com.predic8.membrane.annot.MCElement;
 
 import java.util.regex.Pattern;
 
 /**
- * @description Accepts any method matching the RFC 9110 token grammar (the spec's definition of a valid method),
- * up to <code>maxLength</code> characters. This is the permissive default applied when no validator is declared.
+ * @description Accepts only methods consisting of uppercase letters A-Z, up to <code>maxLength</code> characters.
+ * The strictest policy: anything with digits, punctuation or lowercase is answered with
+ * <code>501 Not Implemented</code>.
  */
-@MCElement(name = "rfc9110MethodValidator")
-public class RFC9110MethodValidator extends AbstractMethodValidator {
+@MCElement(name = "uppercaseMethodValidator")
+public class UppercaseMethodValidator extends AbstractMethodValidator {
 
-    /**
-     * RFC 9110 §5.6.2 token: {@code 1*tchar}.
-     */
-    private static final Pattern TOKEN = Pattern.compile("[-!#$%&'*+.^_`|~0-9A-Za-z]+");
+    private static final Pattern UPPERCASE = Pattern.compile("[A-Z]+");
 
     @Override
     protected boolean matches(String method) {
-        return TOKEN.matcher(method).matches();
+        return UPPERCASE.matcher(method).matches();
     }
 }

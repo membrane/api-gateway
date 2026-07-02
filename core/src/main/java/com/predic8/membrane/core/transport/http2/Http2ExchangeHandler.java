@@ -37,6 +37,7 @@ import java.util.List;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exchange.ExchangeState.COMPLETED;
+import static com.predic8.membrane.core.http.Response.notImplemented;
 import static com.predic8.membrane.core.transport.http2.frame.Error.ERROR_INTERNAL_ERROR;
 import static com.predic8.membrane.core.transport.http2.frame.Frame.*;
 import static com.predic8.membrane.core.transport.http2.frame.HeadersFrame.FLAG_END_HEADERS;
@@ -119,7 +120,7 @@ public class Http2ExchangeHandler implements Runnable {
     private void process() throws Exception {
         if (!transport.getMethodValidator().isValid(exchange.getRequest().getMethod())) {
             log.debug("Rejecting HTTP/2 request with invalid method: {}", exchange.getRequest().getMethod());
-            Response response = Response.notImplemented().build();
+            var response = notImplemented().build();
             exchange.setResponse(response);
             writeResponse(response);
             return;

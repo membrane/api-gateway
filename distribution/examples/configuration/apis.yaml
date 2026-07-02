@@ -91,6 +91,7 @@ components:
   # against oversized method strings.
   methodValidator:
     knownMethodValidator:
+      allowTrace: false
       maxLength: 16
 ---
 

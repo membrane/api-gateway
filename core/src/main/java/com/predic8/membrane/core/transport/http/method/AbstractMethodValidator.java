@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.transport.http;
+package com.predic8.membrane.core.transport.http.method;
 
 import com.predic8.membrane.annot.MCAttribute;
 
@@ -23,6 +23,7 @@ import com.predic8.membrane.annot.MCAttribute;
 public abstract class AbstractMethodValidator implements MethodValidator {
 
     protected int maxLength = 20;
+    protected boolean allowTrace = false;
 
     @Override
     public boolean isValid(String method) {
@@ -30,6 +31,8 @@ public abstract class AbstractMethodValidator implements MethodValidator {
             return false;
         int length = method.length();
         if (length == 0 || length > maxLength)
+            return false;
+        if (!allowTrace && method.equalsIgnoreCase("TRACE"))
             return false;
         return matches(method);
     }
@@ -51,5 +54,18 @@ public abstract class AbstractMethodValidator implements MethodValidator {
     @MCAttribute
     public void setMaxLength(int maxLength) {
         this.maxLength = maxLength;
+    }
+
+    public boolean isAllowTrace() {
+        return allowTrace;
+    }
+
+    /**
+     * @description Whether to allow the TRACE HTTP method.
+     * @default false
+     */
+    @MCAttribute
+    public void setAllowTrace(boolean allowTrace) {
+        this.allowTrace = allowTrace;
     }
 }

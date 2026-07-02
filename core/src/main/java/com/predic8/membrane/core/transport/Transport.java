@@ -20,7 +20,8 @@ import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptor;
 import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.router.Router;
-import com.predic8.membrane.core.transport.http.MethodValidator;
+import com.predic8.membrane.core.transport.http.method.DefaultMethodValidator;
+import com.predic8.membrane.core.transport.http.method.MethodValidator;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
@@ -41,7 +42,7 @@ public abstract class Transport {
     private Router router;
     private boolean reverseDNS = true;
 
-    private MethodValidator methodValidator = MethodValidator.permissive();
+    private MethodValidator methodValidator = new DefaultMethodValidator();
 
     private int concurrentConnectionLimitPerIp = -1;
 
@@ -121,7 +122,7 @@ public abstract class Transport {
 
     /**
      * The policy deciding which request methods are accepted. Uses a {@code <methodValidator>} component if one is
-     * declared, otherwise the {@link MethodValidator#permissive() permissive default}.
+     * declared.
      */
     public MethodValidator getMethodValidator() {
         return methodValidator;

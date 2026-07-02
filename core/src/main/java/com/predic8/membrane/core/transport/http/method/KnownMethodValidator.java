@@ -12,30 +12,34 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.transport.http;
+package com.predic8.membrane.core.transport.http.method;
 
+import com.google.common.collect.ImmutableSet;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.http.Request;
 
 import java.util.Set;
+
+import static com.predic8.membrane.core.http.Request.*;
 
 /**
  * @description Accepts only the request methods Membrane knows: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS,
  * CONNECT, TRACE. Every other method is answered with <code>501 Not Implemented</code>.
  */
 @MCElement(name = "knownMethodValidator")
-public class KnownMethodValidator extends AbstractMethodValidator {
+public class KnownMethodValidator implements MethodValidator {
 
     /**
      * The set of methods named by the {@code METHOD_*} constants in {@link Request}.
      */
-    private static final Set<String> KNOWN_METHODS = Set.of(
-            Request.METHOD_GET, Request.METHOD_POST, Request.METHOD_PUT, Request.METHOD_PATCH,
-            Request.METHOD_DELETE, Request.METHOD_HEAD, Request.METHOD_OPTIONS, Request.METHOD_CONNECT,
-            Request.METHOD_TRACE);
+    private static final Set<String> KNOWN_METHODS = ImmutableSet.of(
+            METHOD_GET, METHOD_QUERY, METHOD_POST, METHOD_PUT, METHOD_PATCH,
+            METHOD_DELETE, METHOD_HEAD, METHOD_OPTIONS, METHOD_CONNECT,
+            METHOD_TRACE);
 
     @Override
-    protected boolean matches(String method) {
+    public boolean isValid(String method) {
         return KNOWN_METHODS.contains(method);
     }
+
 }
