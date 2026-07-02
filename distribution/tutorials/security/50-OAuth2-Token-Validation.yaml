@@ -60,8 +60,8 @@ api:
 #
 # 3.) Point step 2.) above at the token_endpoint and your client credentials.
 #
-# 4.) Set the tokenValidator `endpoint` (line 33) to the userinfo_endpoint — any
-#     URL that returns 2xx for a valid token and an error otherwise works.
+# 4.) Set the `endpoint` under `tokenValidator` (in the `api` flow above) to the
+#     userinfo_endpoint.
 #
 # Example endpoints:
 #   Keycloak    https://<host>/realms/<realm>/protocol/openid-connect/userinfo
