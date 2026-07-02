@@ -23,6 +23,7 @@ api:
   name: Authorization Server
   port: 7007
   flow:
+    - beautifier: {}
     - oauth2authserver:
         issuer: http://localhost:7007
         staticClientList:

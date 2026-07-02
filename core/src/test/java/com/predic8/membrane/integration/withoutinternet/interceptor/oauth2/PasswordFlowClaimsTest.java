@@ -94,6 +94,22 @@ public class PasswordFlowClaimsTest {
     }
 
     @Test
+    void refreshWorksAfterCleanupSweep() throws Exception {
+        Exchange exc = tokenRequest("grant_type=password&username=pickle&password=qwertz"
+                                    + "&client_id=demo-client&client_secret=demo-secret");
+        assertEquals(200, exc.getResponse().getStatusCode());
+        String refreshToken = Util.parseSimpleJSONResponse(exc.getResponse()).get("refresh_token");
+
+        // The cleanup thread sweeps every 60s; a fresh, never-touched session must survive
+        // it, otherwise refresh tokens die within a minute of being issued.
+        oasi.getSessionManager().cleanup();
+
+        Exchange refreshExc = tokenRequest("grant_type=refresh_token&refresh_token=" + refreshToken
+                                           + "&client_id=demo-client&client_secret=demo-secret");
+        assertEquals(200, refreshExc.getResponse().getStatusCode());
+    }
+
+    @Test
     void scopesAttributeSurvivesRefresh() throws Exception {
         Exchange exc = tokenRequest("grant_type=password&username=pickle&password=qwertz"
                                     + "&client_id=demo-client&client_secret=demo-secret");
