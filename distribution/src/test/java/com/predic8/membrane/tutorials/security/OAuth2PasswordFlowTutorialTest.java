@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.tutorials.security;
 
+import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -23,19 +24,21 @@ public class OAuth2PasswordFlowTutorialTest extends AbstractSecurityTutorialTest
 
     @Override
     protected String getTutorialYaml() {
-        return "51-OAuth2-Password-Flow.yaml";
+        return "52-OAuth2-Password-Flow.yaml";
     }
 
     @Test
-    void blocksRequestsWithoutTokenAndGrantsAccessWithValidToken() {
+    void blocksRequestsWithoutTokenAndGrantsAccessWithUserLogin() {
         // @formatter:off
+        // 1) Without a token the API rejects the request.
         given()
         .when()
             .get("http://localhost:2000")
         .then()
-            .statusCode(400);
+            .statusCode(401);
 
-        String token = given()
+        // 2) The user logs in through the client application.
+        Response login = given()
             .formParam("grant_type", "password")
             .formParam("username", "john")
             .formParam("password", "password")
@@ -45,15 +48,41 @@ public class OAuth2PasswordFlowTutorialTest extends AbstractSecurityTutorialTest
             .post("http://localhost:7007/oauth2/token")
         .then()
             .statusCode(200)
-            .extract().path("access_token");
+            .extract().response();
+        String token = login.path("access_token");
+        String refreshToken = login.path("refresh_token");
 
+        // 3) The API validates the JWT and sees the user's claims.
         given()
             .header("Authorization", "Bearer " + token)
         .when()
             .get("http://localhost:2000")
         .then()
             .statusCode(200)
-            .body(containsString("Secret resource accessed!"));
+            .body(containsString("\"user\": \"john\""))
+            .body(containsString("\"scope\": \"read write\""));
+
+        // 4) The refresh token yields a fresh access token — no password needed —
+        //    and the new token still carries the user's claims.
+        String refreshedToken = given()
+            .formParam("grant_type", "refresh_token")
+            .formParam("refresh_token", refreshToken)
+            .formParam("client_id", "abc")
+            .formParam("client_secret", "def")
+        .when()
+            .post("http://localhost:7007/oauth2/token")
+        .then()
+            .statusCode(200)
+            .extract().path("access_token");
+
+        given()
+            .header("Authorization", "Bearer " + refreshedToken)
+        .when()
+            .get("http://localhost:2000")
+        .then()
+            .statusCode(200)
+            .body(containsString("\"user\": \"john\""))
+            .body(containsString("\"scope\": \"read write\""));
         // @formatter:on
     }
 }

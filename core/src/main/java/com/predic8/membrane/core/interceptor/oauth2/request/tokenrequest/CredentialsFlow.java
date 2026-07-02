@@ -17,14 +17,13 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
+import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
+import org.jose4j.lang.JoseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -34,11 +33,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.jose4j.lang.JoseException;
-
 import static java.util.Arrays.stream;
 
 public class CredentialsFlow extends TokenRequest {
+
+    private static final Logger log = LoggerFactory.getLogger(CredentialsFlow.class);
 
     public CredentialsFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
@@ -68,14 +67,19 @@ public class CredentialsFlow extends TokenRequest {
 
         String grantTypes = client.getGrantTypes();
         if (!grantTypes.contains(getGrantType())) {
+            log.info("Invalid grant type: " + getGrantType());
 			return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant_type");
         }
 
-        if (!requestedResourcesAllowed(client))
+        if (!requestedResourcesAllowed(client)) {
+            log.info("Invalid target: {}", getResource());
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_target");
+        }
 
-        if (!requestedScopesAllowed(client))
+        if (!requestedScopesAllowed(client)) {
+            log.info("Invalid scope: {}",getScope());
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_scope");
+        }
 
         String[] audiences = getAudiences(client);
         List<String> grantedScopes = getGrantedScopes(client);

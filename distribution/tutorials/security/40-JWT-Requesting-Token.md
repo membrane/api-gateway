@@ -1,9 +1,9 @@
 # Requesting a JWT
 
-This tutorial shows the **client side** of JWT authentication: how a client obtains a
-JSON Web Token from an authorization server and uses it to call a protected API.
+This tutorial shows how a client obtains a JSON Web Token from an authorization server and uses 
+it to call a protected API.
 
-You request a token, look inside it, and send it as a Bearer token on a request. 
+You request a token, inspect it, and send it as a Bearer token on a request. 
 The gateway that *issues and validates* those tokens is covered in the following tutorials. 
 Here you only consume them.
 
@@ -56,5 +56,5 @@ curl -v https://api.predic8.de/demo/resource -H "Authorization: Bearer eyJ0eXAiO
 
 ## Next
 
-Continue with [41-JWT-Issuing-and-Validating.yaml](41-JWT-Issuing-and-Validating.yaml)
+Continue with [41-JWT-Signing.yaml](41-JWT-Signing.yaml)
 where Membrane issues and validates the tokens itself.

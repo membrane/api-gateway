@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.tutorials.security.jwt;
+package com.predic8.membrane.tutorials.security;
 
 import com.predic8.membrane.examples.util.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.util.Process2;
@@ -24,12 +24,12 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 
 /**
- * Two-instance tutorial (42a + 42b): 42a issues signed JWTs and publishes its public
- * keys at a JWKS endpoint, 42b validates those tokens by fetching the keys over HTTP.
+ * Two-instance tutorial (54a + 54b): 54a issues signed JWTs and publishes its public
+ * keys at a JWKS endpoint, 54b validates those tokens by fetching the keys over HTTP.
  * The issuer must be up before the validator starts, because jwtAuth resolves the
  * JWKS at startup — hence starting the issuer first with waitForMembrane().
  */
-public class JwksIssuerAndValidationTutorialTest extends DistributionExtractingTestcase {
+public class OAuth2DistributedValidationTutorialTest extends DistributionExtractingTestcase {
 
     @Override
     protected String getExampleDirName() {
@@ -42,9 +42,9 @@ public class JwksIssuerAndValidationTutorialTest extends DistributionExtractingT
     @BeforeEach
     void startInstances() throws Exception {
         issuer = new Process2.Builder().in(baseDir).script("membrane")
-                .withParameters("-c 42a-JWKS-Issuer.yaml").waitForMembrane().start();
+                .withParameters("-c 54a-OAuth2-Distributed-Issuer.yaml").waitForMembrane().start();
         validator = new Process2.Builder().in(baseDir).script("membrane")
-                .withParameters("-c 42b-JWKS-Validation.yaml").waitForMembrane().start();
+                .withParameters("-c 54b-OAuth2-Distributed-Validation.yaml").waitForMembrane().start();
     }
 
     @AfterEach
@@ -63,7 +63,7 @@ public class JwksIssuerAndValidationTutorialTest extends DistributionExtractingT
         .when()
             .get("http://localhost:2000")
         .then()
-            .statusCode(400);
+            .statusCode(401);
 
         // 2) Get a signed JWT access token from the issuer (password grant).
         String token =

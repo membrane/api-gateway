@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor.ERROR_JWT_INVALID_SIGNATURE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JwtAuthInterceptorTest{
@@ -119,7 +118,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertTrue(unpackBody(exc).get("detail").toString().contains("invalid signature"));
+                    assertEquals(JwtAuthInterceptor.ERROR_JWT_INVALID_SIGNATURE, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -171,7 +170,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertTrue(unpackBody(exc).get("detail").toString().contains("Invalid JWS Signature"));
+                    assertEquals(JwtAuthInterceptor.ERROR_JWT_INVALID_SIGNATURE, unpackBody(exc).get("detail"));
                 }
         );
     }

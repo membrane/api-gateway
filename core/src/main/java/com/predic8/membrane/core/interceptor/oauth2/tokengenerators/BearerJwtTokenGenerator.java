@@ -19,7 +19,6 @@ import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import com.predic8.membrane.core.router.Router;
 import org.jose4j.json.JsonUtil;
-import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
@@ -43,7 +42,9 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 
 @MCElement(name = "bearerJwtToken")
 public class BearerJwtTokenGenerator implements TokenGenerator {
-    private static final Logger LOG = LoggerFactory.getLogger(BearerJwtTokenGenerator.class);
+
+    private static final Logger log = LoggerFactory.getLogger(BearerJwtTokenGenerator.class);
+
     private final SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
 
@@ -56,10 +57,10 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
         if (jwk == null) {
             rsaJsonWebKey = generateKey();
             if (warningGeneratedKey)
-                LOG.warn("bearerJwtToken uses a generated key ('{}'). Sessions of this instance will not be compatible " +
+                log.warn("bearerJwtToken uses a generated key ('{}'). Sessions of this instance will not be compatible " +
                                 "with sessions of other (e.g. restarted) instances. To solve this, write the JWK into a file and " +
-                                "reference it using <bearerJwtToken><jwk location=\"...\">.",
-                        rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
+                                "reference it using bearerJwtToken/jwk/location: ...",
+                        rsaJsonWebKey.getKeyId());
         } else {
             rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), resolveBaseLocation(this, router))));
         }

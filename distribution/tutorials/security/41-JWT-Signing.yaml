@@ -1,20 +1,22 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
 #
-# Tutorial: Issuing and Validating JWTs
+# Tutorial: Signing and Validating JWTs
 #
-# Where 40-JWT-Requesting-Token.md put you in the client's seat, this tutorial builds
-# the server side: Membrane issues the JWTs AND validates them, so you run a complete,
-# self-contained setup with no external authorization server.
+# There are two ways in Membrane to issue JWTs:
+#   - by a built-in OAuth token endpoint (as described in 51-OAuth2-Client-Credentials.yaml),
+#   - using the jwtSign interceptor as described here
 #
-# You will learn how to:
-#   - turn a login into a signed JWT with jwtSign (the token endpoint on /token),
-#   - protect an API with jwtAuth so only requests carrying a valid, unexpired,
-#     correctly-signed token get through,
+# The jwtSign interceptor is a flexible and simple alternative to OAuth.
+# Basically, it takes a JSON document from the message body and signs it with a private key.
+#
+# With jwtSign you can:
+#   - Set up a simple endpoint that issues JWTs
+#   - Exchange a token for a different token (e.g. Basic Auth with a JWT, a JWT for a different JWT, ...)
 #
 # 1.) Start Membrane:
-#     ./membrane.sh -c 41-JWT-Issuing-and-Validating.yaml
+#     ./membrane.sh -c 41-JWT-Signing.yaml
 #
-# 2.) Request a token:
+# 2.) Request a token with Basic Auth:
 #     curl -v localhost:2000/token -u "alice:alice-secret"
 #
 #     {"access_token":"eyJ0eXAiOiJKV1Qi...","token_type":"bearer","expires_in":300}
@@ -22,7 +24,7 @@
 # 3.) Call the resource with the token:
 #     curl -v localhost:2000/resource -H "Authorization: Bearer eyJ0eXAiOiJKV1Qi..."
 #
-#     {"client":"alice","scopes":"read write"}
+#     {"client":"alice","scope":"read write"}
 
 api:
   port: 2000
@@ -42,8 +44,9 @@ api:
               {
                 "sub": ${user()},
                 "aud": "demo-resource",
-                "scopes": "read write"
+                "scope": "read write"
               }
+        # Signs the request body with the private key in jwk.json and puts it into the token property.
         - jwtSign:
             property: token
             jwk:
@@ -58,6 +61,7 @@ api:
               }
     - return:
         status: 200
+
 ---
 api:
   port: 2000
@@ -74,8 +78,8 @@ api:
         contentType: application/json
         src: |
           {
-            "client": ${property.jwt.get("sub")},
-            "scopes": ${property.jwt.get("scopes")}
+            "client": ${property.jwt.sub},
+            "scope": ${property.jwt.scope}
           }
     - return:
         status: 200

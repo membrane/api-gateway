@@ -10,7 +10,7 @@
 #     ./membrane.sh -c 53-OAuth2-Client-Token-Renewal.yaml
 #
 # 2.) Call the gateway — no token needed from the caller:
-#     curl localhost:2000
+#     curl -v localhost:2000
 #
 #     Service accessed!
 #
@@ -19,16 +19,18 @@
 #       {api=Backend} Gateway forwarded token ...abc123
 #
 # 3.) Call it again right away:
-#     curl localhost:2000
+#     curl -v localhost:2000
 #
 #     No new "POST /oauth2/token" line appears. The gateway reuses its cached token
 #     and the forwarded token is still the same as in step 2.
 #
 # 4.) Wait about a minute for the token to expire, then call once more:
-#     curl localhost:2000
+#     curl -v localhost:2000
 #
 #     Now "POST /oauth2/token" appears again in the log and the forwarded token ends differently.
 #     Membrane renewed the token automatically.
+#
+# 5.) Continue with file 54a-OAuth2-Distributed-Issuer.yaml
 
 api:
   name: Authorization Server

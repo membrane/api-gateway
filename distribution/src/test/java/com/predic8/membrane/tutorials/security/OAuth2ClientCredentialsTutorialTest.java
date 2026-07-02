@@ -18,40 +18,60 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 
 public class OAuth2ClientCredentialsTutorialTest extends AbstractSecurityTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "52-OAuth2-Client-Credentials.yaml";
+        return "51-OAuth2-Client-Credentials.yaml";
     }
 
     @Test
-    void blocksRequestsWithoutTokenAndGrantsAccessWithClientCredentials() {
+    void issuesJwtWithClaimsAndValidatesIt() {
         // @formatter:off
+        // 1) Without a token the API rejects the request.
         given()
         .when()
             .get("http://localhost:2000")
         .then()
-            .statusCode(400);
+            .statusCode(401);
 
-        String token = given()
+        // 2) Get a JWT; the granted scopes are echoed in the response.
+        String token =
+        given()
             .formParam("grant_type", "client_credentials")
-            .formParam("client_id", "abc")
-            .formParam("client_secret", "def")
+            .formParam("client_id", "order-service")
+            .formParam("client_secret", "secret")
         .when()
             .post("http://localhost:7007/oauth2/token")
         .then()
             .statusCode(200)
-            .extract().path("access_token");
+            .body("scope", equalTo("read write"))
+        .extract().path("access_token");
 
+        // 3) The API validates the JWT and sees the claims.
         given()
             .header("Authorization", "Bearer " + token)
         .when()
             .get("http://localhost:2000")
         .then()
             .statusCode(200)
-            .body(containsString("Service accessed!"));
+            .body(containsString("\"client\": \"order-service\""))
+            .body(containsString("\"scope\": \"read write\""))
+            .body(containsString("\"aud\": \"order-api\""));
+
+        // 4) Scopes outside the client's allowlist are rejected.
+        given()
+            .formParam("grant_type", "client_credentials")
+            .formParam("client_id", "order-service")
+            .formParam("client_secret", "secret")
+            .formParam("scope", "admin")
+        .when()
+            .post("http://localhost:7007/oauth2/token")
+        .then()
+            .statusCode(400)
+            .body("error", equalTo("invalid_scope"));
         // @formatter:on
     }
 }

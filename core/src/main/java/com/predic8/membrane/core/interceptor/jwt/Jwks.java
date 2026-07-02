@@ -100,7 +100,7 @@ public class Jwks {
         try {
             setJwks(loadJwks(false));
         } catch (Exception e) {
-            log.error("Could not load JWKs from {}. Maybe the server is not available now. I'll try it again later.", jwksUris);
+            log.warn("Could not load JWKs from {}. Maybe the server is not yet available. I'll try it later. Ignore when token server and resource are served from the same configuration.", jwksUris);
         }
 
         if (authorizationService != null && authorizationService.getJwksRefreshInterval() > 0) {

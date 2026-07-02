@@ -19,20 +19,15 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 
-/**
- * Validates tokens issued by the hosted Membrane demo at api.predic8.de: the gateway
- * blocks requests without a token, and accepts a token obtained from the demo's
- * client-credentials endpoint. Requires internet access to api.predic8.de.
- */
-public class OAuth2TokenValidationTutorialTest extends AbstractSecurityTutorialTest {
+public class OAuth2BasicsTutorialTest extends AbstractSecurityTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "50-OAuth2-Token-Validation.yaml";
+        return "50-OAuth2-Basics.yaml";
     }
 
     @Test
-    void blocksWithoutTokenAndAcceptsHostedDemoToken() {
+    void blocksWithoutTokenAndAcceptsIssuedToken() {
         // @formatter:off
         // 1) Without a token the gateway blocks the request.
         given()
@@ -41,25 +36,26 @@ public class OAuth2TokenValidationTutorialTest extends AbstractSecurityTutorialT
         .then()
             .statusCode(400);
 
-        // 2) Get an access token from the hosted demo (client credentials).
+        // 2) Get an access token (client credentials, no user involved).
         String token =
         given()
-            .auth().preemptive().basic("my-client", "my-secret")
             .formParam("grant_type", "client_credentials")
+            .formParam("client_id", "abc")
+            .formParam("client_secret", "def")
         .when()
-            .post("https://api.predic8.de/demo/oauth2/token")
+            .post("http://localhost:7007/oauth2/token")
         .then()
             .statusCode(200)
         .extract().path("access_token");
 
-        // 3) With a valid token the gateway validates it and forwards to the backend.
+        // 3) With the token the gateway lets the request through.
         given()
             .header("Authorization", "Bearer " + token)
         .when()
             .get("http://localhost:2000")
         .then()
             .statusCode(200)
-            .body(containsString("Secret resource accessed!"));
+            .body(containsString("Protected resource accessed!"));
         // @formatter:on
     }
 }

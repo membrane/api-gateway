@@ -22,7 +22,10 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInt
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -152,7 +155,7 @@ public abstract class ParameterizedRequest {
         if (userParams.containsKey("aud"))
             claims.put("aud", userParams.get("aud").split(" "));
         if (userParams.containsKey("scopes"))
-            claims.put("scopes", userParams.get("scopes"));
+            claims.put("scope", userParams.get("scopes"));
         return claims;
     }
 
@@ -161,7 +164,7 @@ public abstract class ParameterizedRequest {
         if (userParams.containsKey("aud"))
             claims.put("i-aud", userParams.get("aud").split(" "));
         if (userParams.containsKey("scopes"))
-            claims.put("i-scopes", userParams.get("scopes"));
+            claims.put("i-scope", userParams.get("scopes"));
         return claims;
     }
 
@@ -169,8 +172,6 @@ public abstract class ParameterizedRequest {
         Map<String, Object> claims = new HashMap<>();
         if (refreshClaims.containsKey("i-aud"))
             claims.put("aud", refreshClaims.get("i-aud"));
-        if (refreshClaims.containsKey("i-scopes"))
-            claims.put("scopes", refreshClaims.get("i-scopes"));
         if (refreshClaims.containsKey("i-scope"))
             claims.put("scope", refreshClaims.get("i-scope"));
         return claims;

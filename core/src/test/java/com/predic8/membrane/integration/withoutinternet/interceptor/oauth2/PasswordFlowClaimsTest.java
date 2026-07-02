@@ -89,7 +89,7 @@ public class PasswordFlowClaimsTest {
                                     + "&client_id=demo-client&client_secret=demo-secret");
         assertEquals(200, exc.getResponse().getStatusCode());
         JwtClaims claims = accessTokenClaims(exc);
-        assertEquals("read write", claims.getClaimValue("scopes", String.class));
+        assertEquals("read write", claims.getClaimValue("scope", String.class));
         assertEquals(List.of("demo-resource"), claims.getAudience());
     }
 
@@ -104,7 +104,7 @@ public class PasswordFlowClaimsTest {
                                            + "&client_id=demo-client&client_secret=demo-secret");
         assertEquals(200, refreshExc.getResponse().getStatusCode());
         JwtClaims claims = accessTokenClaims(refreshExc);
-        assertEquals("read write", claims.getClaimValue("scopes", String.class));
+        assertEquals("read write", claims.getClaimValue("scope", String.class));
         assertEquals(List.of("demo-resource"), claims.getAudience());
     }
 
