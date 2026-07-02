@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static java.util.EnumSet.*;
@@ -86,14 +87,14 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
             var jwt = jwtRetriever.get(exc);
             return handleJwt(exc, jwt);
         } catch (JWTException e) {
-            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
+            security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(e.getMessage())
                     .stacktrace(true)
                     .status(400)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (JsonProcessingException e) {
-            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
+            security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(ERROR_DECODED_HEADER_NOT_JSON)
                     .addSubSee(ERROR_DECODED_HEADER_NOT_JSON_ID)
                     .stacktrace(true)
@@ -101,15 +102,16 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (InvalidJwtException e) {
-            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
-                    .detail(ERROR_VALIDATION_FAILED)
+            log.debug("JWT validation failed: {}", e.getMessage());
+            security(router.getConfiguration().isProduction(), "jwt-auth")
+                    .detail(ERROR_VALIDATION_FAILED + " " + e.getMessage())
                     .addSubSee(ERROR_VALIDATION_FAILED_ID)
                     .stacktrace(false)
                     .status(400)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (Exception e) {
-            ProblemDetails.security(router.getConfiguration().isProduction(), "jwt-auth")
+            security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(ERROR_JWT_NOT_FOUND)
                     .addSubSee(ERROR_JWT_NOT_FOUND_ID)
                     .stacktrace(true)
@@ -120,15 +122,20 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     }
 
     public Outcome handleJwt(Exchange exc, String jwt) throws JWTException, JsonProcessingException, InvalidJwtException {
-        if (jwt == null)
+        if (jwt == null) {
+            log.info("JWT not found in request.");
             throw new JWTException(ERROR_JWT_NOT_FOUND, ERROR_JWT_NOT_FOUND_ID);
+        }
 
         var decodedJwt = new JsonWebToken(jwt);
         var kid = decodedJwt.getHeader().kid();
 
         // we could make it possible that every key is checked instead of having the "kid" field mandatory
         // this would then need up to n checks per incoming JWT - could be a performance problem
-        RsaJsonWebKey key = jwks.getKeyByKid(kid).orElseThrow(() -> new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID));
+        var key = jwks.getKeyByKid(kid).orElseThrow(() -> {
+            log.info("JWT signed by unknown key: {}",kid);
+            return new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID);
+        });
 
         Map<String, Object> jwtClaims = createValidator(key).processToClaims(jwt).getClaimsMap();
 

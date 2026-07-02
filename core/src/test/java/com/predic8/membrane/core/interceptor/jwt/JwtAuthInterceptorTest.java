@@ -112,7 +112,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                    assertTrue(unpackBody(exc).get("detail").toString().contains("invalid signature"));
                 }
         );
     }
@@ -164,7 +164,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                    assertTrue(unpackBody(exc).get("detail").toString().contains("Invalid JWS Signature"));
                 }
         );
     }
@@ -179,7 +179,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                    assertTrue(unpackBody(exc).get("detail").toString().contains("Expected AusgestelltFuer as an aud value"));
                 }
         );
     }
@@ -194,7 +194,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                    assertTrue(unpackBody(exc).get("detail").toString().contains("doesn't match the expected value 'Tenant12345'"));
                 }
         );
     }

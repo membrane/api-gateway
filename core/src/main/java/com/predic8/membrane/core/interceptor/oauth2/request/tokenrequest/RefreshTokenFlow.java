@@ -27,9 +27,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.jose4j.lang.JoseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RefreshTokenFlow extends TokenRequest {
 
+    private static final Logger log = LoggerFactory.getLogger(RefreshTokenFlow.class);
 
     public RefreshTokenFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
@@ -54,6 +57,7 @@ public class RefreshTokenFlow extends TokenRequest {
             username = authServer.getRefreshTokenGenerator().getUsername(getRefreshToken());
             additionalClaims = authServer.getRefreshTokenGenerator().getAdditionalClaims(getRefreshToken());
         }catch(NoSuchElementException ex){
+            log.info("Refresh token not accepted: token could not be resolved to a user.");
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_request");
         }
 
@@ -90,6 +94,7 @@ public class RefreshTokenFlow extends TokenRequest {
         SessionManager.Session session = authServer.getSessionFinder().getSessionForRefreshToken(getRefreshToken());
         if(session == null) {
             // client sends unknown refresh token
+            log.info("Refresh token not accepted: no session found for the presented refresh token.");
             return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant");
         }
         synchronized(session) {
