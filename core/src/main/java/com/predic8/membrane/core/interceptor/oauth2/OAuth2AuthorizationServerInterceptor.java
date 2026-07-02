@@ -97,6 +97,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("Could not create token generators.",e);
         }
 
+        tokenGenerator.setIssuer(issuer);
+        refreshTokenGenerator.setIssuer(issuer);
+
         addSupportedAuthorizationGrants();
 
         try {

@@ -91,6 +91,12 @@ public class CredentialsFlowResourceTest {
         assertFalse(accessTokenClaims(exc).hasAudience());
     }
 
+    @Test
+    void accessTokenCarriesIssuer() throws Exception {
+        Exchange exc = tokenRequest("grant_type=client_credentials&client_id=unrestricted&client_secret=secret");
+        assertEquals(200, exc.getResponse().getStatusCode());
+        assertEquals("http://localhost:2001", accessTokenClaims(exc).getIssuer());
+    }
 
     @Test
     void noResourceParamIssuesTokenWithAllAllowedResourcesAsAud() throws Exception {

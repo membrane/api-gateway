@@ -50,6 +50,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     private JwtSessionManager.Jwk jwk;
     private long expiration;
     private boolean warningGeneratedKey = true;
+    private String issuer;
 
     public void init(Router router) throws Exception {
         if (jwk == null) {
@@ -78,10 +79,17 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     }
 
     @Override
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
+    @Override
     public String getToken(String username, String clientId, String clientSecret, Map<String, Object> additionalClaims) {
         JwtClaims claims = new JwtClaims();
         claims.setSubject(username);
         claims.setClaim("clientId", clientId);
+        if (issuer != null)
+            claims.setIssuer(issuer);
         if (expiration != 0)
             claims.setExpirationTimeMinutesInTheFuture(expiration / 60.0f);
         if (additionalClaims != null)
@@ -127,7 +135,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     }
 
     private boolean isNormalClaim(String key) {
-        return "sub".equals(key) || "clientId".equals(key) || "exp".equals(key);
+        return "sub".equals(key) || "clientId".equals(key) || "exp".equals(key) || "iss".equals(key);
     }
 
     @Override
