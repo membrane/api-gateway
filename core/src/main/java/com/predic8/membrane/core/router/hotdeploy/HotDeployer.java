@@ -24,9 +24,10 @@ public interface HotDeployer {
 
     void setEnabled(boolean enabled);
 
+    default void setConfigurationReloader(ConfigurationReloader configurationReloader) {}
+
     default boolean isEnabled() {
         return false;
     }
 
 }
-

@@ -21,16 +21,20 @@ import org.slf4j.*;
 
 import javax.annotation.concurrent.*;
 
+import static java.lang.Thread.currentThread;
+
 public class DefaultHotDeployer implements HotDeployer {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultHotDeployer.class.getName());
 
     @GuardedBy("lock")
-    private HotDeploymentThread hdt;
+    private Thread hdt;
 
     private DefaultRouter router;
+    private ConfigurationReloader configurationReloader;
 
     private final Object lock = new Object();
+    private volatile boolean enabled = true;
 
     @Override
     public void start(@NotNull DefaultRouter defaultRouter) {
@@ -41,8 +45,19 @@ public class DefaultHotDeployer implements HotDeployer {
     private void startInternal() {
         // Prevent multiple threads from starting hot deployment at the same time.
         synchronized (lock) {
+            if (!enabled) {
+                return;
+            }
+
             if (hdt != null) {
-                log.warn("Hot deployment already started.");
+                if (!hdt.isAlive()) {
+                    hdt = null;
+                } else {
+                    return;
+                }
+            }
+
+            if (router == null) {
                 return;
             }
 
@@ -54,38 +69,75 @@ public class DefaultHotDeployer implements HotDeployer {
                             """);
                     return;
                 }
-                hdt = new HotDeploymentThread(router.getRef());
-                hdt.setFiles(tac.getFiles());
+                HotDeploymentThread hotDeploymentThread = new HotDeploymentThread(router.getRef());
+                hotDeploymentThread.setFiles(tac.getFiles());
+                hdt = hotDeploymentThread;
+                hotDeploymentThread.start();
+                return;
+            }
+
+            // Start from YAML
+            if (configurationReloader != null && !configurationReloader.trackedFiles().isEmpty()) {
+                hdt = new YamlHotDeploymentThread(configurationReloader, this::isEnabled);
                 hdt.start();
                 return;
             }
 
-            log.debug("Hot deployment is not yet supported for the YAML configuration.");
+            log.debug("Hot deployment skipped because no local YAML files are known.");
         }
     }
 
     @Override
     public void stop() {
+        Thread threadToStop;
         synchronized (lock) {
             if (hdt == null)
                 return;
-
-            router.getReinitializer().stop();
-            hdt.stopASAP();
+            threadToStop = hdt;
             hdt = null;
+        }
+
+        // A watcher can stop itself after a failed reload; joining the current thread would deadlock here.
+        if (threadToStop == currentThread()) {
+            return;
+        }
+
+        if (threadToStop instanceof HotDeploymentThread hotDeploymentThread) {
+            hotDeploymentThread.stopASAP();
+        } else if (threadToStop instanceof YamlHotDeploymentThread yamlHotDeploymentThread) {
+            yamlHotDeploymentThread.stopASAP();
+        } else {
+            threadToStop.interrupt();
+        }
+
+        try {
+            threadToStop.join(2000);
+        } catch (InterruptedException e) {
+            currentThread().interrupt();
         }
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        if (enabled && router != null)
-            startInternal();
-        else
+        this.enabled = enabled;
+
+        if (!enabled) {
             stop();
+            return;
+        }
+
+        if (router != null) {
+            startInternal();
+        }
     }
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
+    }
+
+    @Override
+    public void setConfigurationReloader(ConfigurationReloader configurationReloader) {
+        this.configurationReloader = configurationReloader;
     }
 }

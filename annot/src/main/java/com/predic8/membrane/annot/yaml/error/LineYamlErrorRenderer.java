@@ -25,6 +25,8 @@ import com.predic8.membrane.annot.yaml.*;
 
 import java.nio.file.Path;
 
+import static com.predic8.membrane.annot.util.JsonPathUtil.getLastSegment;
+import static com.predic8.membrane.annot.util.JsonPathUtil.getParentPath;
 import static com.predic8.membrane.common.TerminalColorsMini.*;
 
 /**
@@ -58,6 +60,12 @@ public class LineYamlErrorRenderer {
         return renderErrorReport(pc, null);
     }
 
+    /**
+     * Renders a YAML representation of the JSON node with line-based error markers
+     * and, if available, the source file path.
+     *
+     * @return YAML string with ">" prefixes and red color for error lines
+     */
     public static String renderErrorReport(ParsingContext pc, Path sourceFile) throws JsonProcessingException {
 
         JsonNode node = pc.getNode();
@@ -270,6 +278,9 @@ public class LineYamlErrorRenderer {
         return result.toString().trim();
     }
 
+    /**
+     * Counts the leading spaces in a YAML line.
+     */
     private static int getIndentation(String line) {
         int indent = 0;
         for (char c : line.toCharArray()) {
@@ -280,34 +291,5 @@ public class LineYamlErrorRenderer {
             }
         }
         return indent;
-    }
-
-    private static String getParentPath(String jsonPath) {
-        // Handle both $.parent.child and $.parent[0] formats
-        int lastDot = jsonPath.lastIndexOf('.');
-        int lastBracket = jsonPath.lastIndexOf('[');
-
-        if (lastBracket > lastDot) {
-            // Last segment is array index like [0]
-            return jsonPath.substring(0, lastBracket);
-        } else {
-            // Last segment is object key like .field
-            return jsonPath.substring(0, lastDot);
-        }
-    }
-
-    private static String getLastSegment(String jsonPath) {
-        // Handle both $.parent.child and $.parent[0] formats
-        int lastDot = jsonPath.lastIndexOf('.');
-        int lastBracket = jsonPath.lastIndexOf('[');
-
-        if (lastBracket > lastDot) {
-            // Array index like [0]
-            String bracket = jsonPath.substring(lastBracket);
-            return bracket.substring(1, bracket.length() - 1); // Extract "0" from "[0]"
-        } else {
-            // Object key like .field
-            return jsonPath.substring(lastDot + 1);
-        }
     }
 }
