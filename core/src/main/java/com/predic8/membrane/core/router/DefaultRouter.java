@@ -36,9 +36,9 @@ import com.predic8.membrane.core.proxies.RuleManager;
 import com.predic8.membrane.core.proxies.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.proxies.SSLableProxy;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.router.hotdeploy.ConfigurationReloader;
 import com.predic8.membrane.core.router.hotdeploy.DefaultHotDeployer;
 import com.predic8.membrane.core.router.hotdeploy.HotDeployer;
-import com.predic8.membrane.core.router.hotdeploy.NullHotDeployer;
 import com.predic8.membrane.core.transport.PortOccupiedException;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -110,6 +110,9 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     @GuardedBy("lock")
     private boolean initialized;
+
+    @GuardedBy("lock")
+    private boolean reloading;
 
     /**
      * HotDeployer for changes on the configuration file.
@@ -299,12 +302,16 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
         getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::stop);
         hotDeployer.stop();
 
-         if (mainComponents.getTransport() != null)
+        if (reinitializer != null)
+            reinitializer.stop();
+        if (mainComponents.getTransport() != null)
             mainComponents.getTransport().closeAll();
         mainComponents.getTimerManager().shutdown();
+        closeRegistryIfSupported();
 
         synchronized (lock) {
             running = false;
+            reloading = false;
             lock.notifyAll();
         }
     }
@@ -347,7 +354,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
      */
     public void waitFor() {
         synchronized (lock) {
-            while (running) {
+            while (running || reloading) {
                 try {
                     lock.wait();
                 } catch (InterruptedException ignored) {
@@ -430,7 +437,7 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
     }
 
     public void applyConfiguration(Configuration configuration) {
-        hotDeployer = configuration.isHotDeploy() ? new DefaultHotDeployer() : new NullHotDeployer();
+        hotDeployer.setEnabled(configuration.isHotDeploy());
         this.configuration = configuration;
     }
 
@@ -452,6 +459,66 @@ public class DefaultRouter extends AbstractRouter implements ApplicationContextA
 
     public RuleReinitializer getReinitializer() {
         return reinitializer;
+    }
+
+    public void setConfigurationReloader(ConfigurationReloader configurationReloader) {
+        hotDeployer.setConfigurationReloader(configurationReloader);
+    }
+
+    public boolean markReloading() {
+        synchronized (lock) {
+            if (reloading) {
+                return false;
+            }
+            reloading = true;
+            return true;
+        }
+    }
+
+    public void clearReloading() {
+        synchronized (lock) {
+            reloading = false;
+            lock.notifyAll();
+        }
+    }
+
+    public void stopRuntimeForReload() {
+        getRegistry().getBean(KubernetesWatcher.class).ifPresent(KubernetesWatcher::stop);
+
+        if (mainComponents.getTransport() != null)
+            mainComponents.getTransport().closeAll();
+        shutdownRuntimeComponents();
+
+        synchronized (lock) {
+            running = false;
+            lock.notifyAll();
+        }
+    }
+
+    public void resetRuntime() {
+        synchronized (lock) {
+            mainComponents = new DefaultMainComponents(this);
+            configuration = new Configuration();
+            initialized = false;
+            reinitializer = null;
+        }
+    }
+
+    public void shutdownRuntimeComponents() {
+        if (reinitializer != null)
+            reinitializer.stop();
+        mainComponents.getTimerManager().shutdown();
+        closeRegistryIfSupported();
+    }
+
+    private void closeRegistryIfSupported() {
+        closeRegistryIfSupported(getRegistry());
+    }
+
+    private void closeRegistryIfSupported(BeanRegistry registry) {
+        if (registry instanceof BeanRegistryImplementation beanRegistry) {
+            beanRegistry.close();
+        }
     }
 
     private static void handleOpenAPIParsingException(OpenAPIParsingException e) {

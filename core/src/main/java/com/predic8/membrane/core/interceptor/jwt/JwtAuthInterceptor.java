@@ -12,18 +12,23 @@
  */
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.core.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.ProblemDetails;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.security.*;
-import org.jose4j.jwk.*;
-import org.jose4j.jwt.consumer.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.security.JWTSecurityScheme;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.InvalidJwtSignatureException;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Map;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
@@ -55,6 +60,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     public static final String ERROR_VALIDATION_FAILED_ID = "jwt-validation-failed";
     public static final String ERROR_MALFORMED_COMPACT_SERIALIZATION = "JWTs compact serialization not valid.";
     public static final String ERROR_MALFORMED_COMPACT_SERIALIZATION_ID = "jwt-compact-serialization-not-valid";
+    public static final String ERROR_JWT_INVALID_SIGNATURE = "JWT signature is invalid.";
 
     public static String ERROR_JWT_VALUE_NOT_PRESENT(String key) {
         return "JWT does not contain '" + key + "'";
@@ -92,7 +98,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
             security(router.getConfiguration().isProduction(), "jwt-auth")
                     .detail(e.getMessage())
                     .stacktrace(true)
-                    .status(400)
+                    .status(401)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (JsonProcessingException e) {
@@ -100,24 +106,35 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
                     .detail(ERROR_DECODED_HEADER_NOT_JSON)
                     .addSubSee(ERROR_DECODED_HEADER_NOT_JSON_ID)
                     .stacktrace(true)
-                    .status(400)
+                    .status(401)
                     .buildAndSetResponse(exc);
             return RETURN;
-        } catch (InvalidJwtException e) {
-            log.debug("JWT validation failed: {}", e.getMessage());
+        } catch (InvalidJwtSignatureException e) {
+            log.info("JWT signature is invalid.");
             security(router.getConfiguration().isProduction(), "jwt-auth")
-                    .detail(ERROR_VALIDATION_FAILED + " " + e.getMessage())
+                    .detail(ERROR_JWT_INVALID_SIGNATURE)
                     .addSubSee(ERROR_VALIDATION_FAILED_ID)
                     .stacktrace(false)
-                    .status(400)
+                    .status(401)
+                    .buildAndSetResponse(exc);
+            return RETURN;
+        }
+        catch (InvalidJwtException e) {
+            log.info("JWT validation failed: {}", e.getErrorDetails());
+            security(router.getConfiguration().isProduction(), "jwt-auth")
+                    .detail(ERROR_VALIDATION_FAILED + ": " + e.getMessage())
+                    .addSubSee(ERROR_VALIDATION_FAILED_ID)
+                    .stacktrace(false)
+                    .status(401)
                     .buildAndSetResponse(exc);
             return RETURN;
         } catch (Exception e) {
+            log.info("Could not retrieve JWT: {}", e.getMessage());
             security(router.getConfiguration().isProduction(), "jwt-auth")
-                    .detail(ERROR_JWT_NOT_FOUND)
+                    .detail(e.getMessage())
                     .addSubSee(ERROR_JWT_NOT_FOUND_ID)
                     .stacktrace(true)
-                    .status(400)
+                    .status(401)
                     .buildAndSetResponse(exc);
             return RETURN;
         }

@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: MongoDB API Key Store
+#
+# Store API keys and scopes in a MongoDB collection. Each document uses
+# the key value as _id and an optional scopes array.
+#
+# 1.) Install the MongoDB driver:
+#     Membrane does not bundle the MongoDB driver. Download the following JARs
+#     from https://repo1.maven.org/maven2/org/mongodb/ and place them in
+#     Membrane's lib/ directory:
+#       mongodb-driver-sync-<version>.jar
+#       mongodb-driver-core-<version>.jar
+#       bson-<version>.jar
+#
+# 2.) Start MongoDB:
+#     docker run --rm --name mongodb -p 27017:27017 mongo
+#
+# 3.) Start Membrane:
+#     ./membrane.sh -c 140-MongoDB-API-Key-Store.yaml
+#
+# 4.) Insert test keys:
+#     docker exec mongodb mongosh --eval "
+#       use('apiKeyDB');
+#       db.apikey.insertMany([
+#         { _id: 'demo-key' },
+#         { _id: 'admin-key', scopes: ['admin'] }
+#       ]);"
+#
+# 5.) Test:
+#
+#     No key → 401:
+#     curl -i localhost:2000
+#
+#     Valid key (no scopes):
+#     curl localhost:2000 -H "X-Api-Key: demo-key"
+#
+#     Valid key with admin scope:
+#     curl localhost:2000 -H "X-Api-Key: admin-key"
+
+api:
+  port: 2000
+  target:
+    url: https://api.predic8.de
+  flow:
+    - apiKey:
+        stores:
+          - mongoDBApiKeyStore:
+              connection: mongodb://localhost:27017/
+              database: apiKeyDB
+              collection: apikey
+        extractors:
+          - header: X-Api-Key

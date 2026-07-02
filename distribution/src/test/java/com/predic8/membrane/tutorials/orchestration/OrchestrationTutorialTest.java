@@ -14,11 +14,13 @@
 
 package com.predic8.membrane.tutorials.orchestration;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
+@Disabled("Target API is unstable.")
 public class OrchestrationTutorialTest extends AbstractOrchestrationTutorialTest {
 
     @Override

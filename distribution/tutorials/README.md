@@ -12,7 +12,7 @@ Complete this tutorial before moving on to the JSON or XML tutorials.
 
 ## [JSON](json)
 
-This tutorial builds on 'Getting Started'. It explains how to read, create and transform JSON data, and how to use JsonPath to extract information or compute values.
+This tutorial builds on 'Getting Started'. It explains how to read, create and transform JSON data, how to use JsonPath to extract information or compute values.
 
 
 ## [XML](xml)
@@ -32,7 +32,7 @@ Run and observe Membrane in production.
 
 ## [AI / MCP](ai/mcp)
 
-Expose Membrane as an MCP server for AI clients, inspect recent API traffic, and protect the MCP endpoint with an API key.
+Expose Membrane as an MCP server for AI clients, inspect recent API traffic, restrict MCP tools, and protect the endpoint with an API key.
 
 
 ## [Security](security)
