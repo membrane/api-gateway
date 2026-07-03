@@ -59,8 +59,8 @@ public class ConfigurationExampleTest extends AbstractSampleMembraneStartStopTes
     }
 
     @Test
-    void knownMethodIsAccepted() {
-        // GET is one of the methods the configured knownMethodValidator accepts.
+    void validMethodIsAccepted() {
+        // GET matches the RFC 9110 token grammar accepted by the configured rfc9110MethodValidator.
         // @formatter:off
         given()
                 .when()
@@ -71,13 +71,26 @@ public class ConfigurationExampleTest extends AbstractSampleMembraneStartStopTes
     }
 
     @Test
-    void unknownMethodIsRejected() {
-        // BREW is a valid token, so the default policy would forward it. The example configures a
-        // knownMethodValidator, so the method is rejected with 501 before reaching the API.
+    void overlongMethodIsRejected() {
+        // AVERYLONGMETHODNAME is a valid RFC 9110 token, but the example caps methods at maxLength 15,
+        // so it is rejected with 501 before reaching the API.
         // @formatter:off
         given()
                 .when()
-                .request("BREW", "http://localhost:2000")
+                .request("AVERYLONGMETHODNAME", "http://localhost:2000")
+                .then()
+                .statusCode(501);
+        // @formatter:on
+    }
+
+    @Test
+    void traceMethodIsRejected() {
+        // TRACE is a valid RFC 9110 token, but the example configures allowTrace: false, so it is
+        // rejected with 501 before reaching the API.
+        // @formatter:off
+        given()
+                .when()
+                .request("TRACE", "http://localhost:2000")
                 .then()
                 .statusCode(501);
         // @formatter:on
