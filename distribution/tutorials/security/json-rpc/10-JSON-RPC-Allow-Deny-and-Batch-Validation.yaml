@@ -1,0 +1,92 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.2.json
+#
+# Tutorial: JSON-RPC Allow/Deny and Batch Validation
+#
+# Small JSON-RPC protection example:
+# - allows only the methods `ping` and `sum`
+# - rejects every other method
+# - limits batch requests to at most 2 calls
+#
+# Notes:
+# - Method rules are evaluated top-down.
+# - The first matching rule wins.
+#
+# Try:
+#
+# 1.) Allowed request
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' -H "Content-Type: application/json" http://localhost:2000
+#
+# 2.) Blocked method
+#     curl -d '{"jsonrpc":"2.0","id":1,"method":"shutdown"}' -H "Content-Type: application/json" http://localhost:2000
+#
+#     Should return a JSON-RPC error explaining that the method is not allowed.
+#
+# 3.) Valid batch with 2 calls
+#     curl -d '[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","id":2,"method":"sum","params":[1,2]}]' -H "Content-Type: application/json" http://localhost:2000
+#
+#     Should return a JSON-RPC batch response with one success entry per request.
+#
+# 4.) Batch too large
+#     curl -d '[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","id":2,"method":"sum","params":[1,2]},{"jsonrpc":"2.0","id":3,"method":"ping"}]' -H "Content-Type: application/json" http://localhost:2000
+#
+#     Should return a JSON-RPC batch error because maxSize is 2.
+
+api:
+  port: 2000
+  flow:
+    - jsonRPCProtection:
+        batch:
+          enabled: true
+          maxSize: 2
+        methods:
+          - allow: ping
+          - allow: sum
+          - deny: .*
+  target:
+    url: http://localhost:3000
+
+---
+# Demo backend.
+# Returns a success response for every request (depending on the request type single or batch).
+api:
+  port: 3000
+  flow:
+    - if:
+        test: body.toString().trim().startsWith('[')
+        flow:
+          - static:
+              contentType: application/json
+              pretty: true
+              src: |
+                [
+                  {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "result": {
+                      "ok": true
+                    }
+                  },
+                  {
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "result": {
+                      "ok": true
+                    }
+                  }
+                ]
+          - return:
+              status: 200
+        else:
+          - static:
+              contentType: application/json
+              pretty: true
+              src: |
+                {
+                  "jsonrpc": "2.0",
+                  "id": 1,
+                  "result": {
+                    "ok": true
+                  }
+                }
+          - return:
+              status: 200

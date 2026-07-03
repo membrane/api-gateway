@@ -54,10 +54,11 @@ public class OtherAttributesInfo extends AbstractJavadocedInfo {
 		if (mapValueType.getQualifiedName().toString().equals("java.lang.String")) {
 			return ValueType.STRING;
 		}
-		if (mapValueType.getQualifiedName().toString().equals("java.lang.Object")) {
-			return ValueType.OBJECT;
-		}
-		throw new ProcessingException("Not supported: @McOtherAttributes void setAttr(Map<String, T> attrs) where T is neither String nor Object.");
+		return ValueType.OBJECT;
+	}
+
+	public TypeElement getMapValueType() {
+		return mapValueType;
 	}
 
 	public enum ValueType {

@@ -75,8 +75,8 @@ public class MethodSetter {
         // Structured objects
         if (McYamlIntrospector.isStructured(setter)) {
             if (beanClass != null)
-                return ObjectBinder.bind(ctx.updateContext(key).addPath("." + key), beanClass, node);
-            return ObjectBinder.bind(ctx.updateContext(key).addPath("." + key), wanted, node);
+                return ObjectBinder.bind(ctx.updateContext(key).addProperty(key), beanClass, node);
+            return ObjectBinder.bind(ctx.updateContext(key).addProperty(key), wanted, node);
         }
 
         return coerceScalarOrReference(ctx, node, key, wanted);
@@ -103,7 +103,7 @@ public class MethodSetter {
             return null;
 
         Class<?> elemType = getCollectionElementType(setter);
-        List<Object> list = CollectionBinder.parseListIncludingStartEvent(ctx.addPath("." + key), node, elemType);
+        List<Object> list = CollectionBinder.parseListIncludingStartEvent(ctx.addProperty(key), node, elemType);
         if (elemType != null) {
             for (Object o : list) {
                 if (o == null) continue;
