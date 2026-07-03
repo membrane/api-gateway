@@ -75,6 +75,27 @@ components:
       maxSize: 100000
       maxBodySize: 1000
       bodyExceedingMaxSizeStrategy: truncate
+
+  # Controls which HTTP methods (verbs) the gateway accepts on the request line.
+  # If exactly one method validator is defined here, it is applied to every transport
+  # automatically. A rejected method is answered with `501 Not Implemented` before the
+  # request reaches any API. Pick one of four policies:
+  #
+  #   defaultMethodValidator   letters, digits, hyphens and underscores, e.g. GET, PROPFIND, X-CUSTOM_2
+  #                            (this is the built-in default applied when no validator is declared)
+  #   knownMethodValidator     only the methods Membrane knows:
+  #                            GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, CONNECT, TRACE
+  #   rfc9110MethodValidator   any method matching the RFC 9110 token grammar, e.g. PROPFIND or my.method
+  #                            (the most permissive policy)
+  #   uppercaseMethodValidator only uppercase letters A-Z, e.g. GET but not get or PROPFIND2
+  #
+  # `maxLength` (default 20) caps the accepted method length in every policy and guards
+  # against oversized method strings. `allowTrace` (default false) allows the TRACE method,
+  # which is rejected by default because it can be used for cross-site tracing attacks.
+  methodValidator:
+    rfc9110MethodValidator:
+      allowTrace: false
+      maxLength: 15
 ---
 
 # Internal proxy, accessible only from within the gateway.
