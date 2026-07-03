@@ -43,4 +43,4 @@ api:
 
 # NOTE: This tutorial is intentionally kept simple. In production, run all
 # endpoints behind TLS. Otherwise, OAuth2 transmits credentials and bearer
-# tokens in the clear. See 10-TLS-Termination.yaml for how to enable TLS.
+# tokens in plain text. See 10-TLS-Termination.yaml for how to enable TLS.

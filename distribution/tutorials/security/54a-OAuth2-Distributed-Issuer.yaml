@@ -2,7 +2,7 @@
 #
 # Tutorial: OAuth2 with a Separate Issuer and Validator (Part 1 of 2, Issuer)
 #
-# In a real deployment the authorization server and the API gateway are separate
+# In a real deployment, the authorization server and the API gateway are separate
 # processes, often on separate machines. This tutorial runs them as two Membrane
 # instances: this one issues signed JWTs, 54b validates them. The validator needs
 # no shared secret. It fetches this server's public keys from its JWKS endpoint
@@ -58,4 +58,4 @@ api:
 
 # NOTE: This tutorial is intentionally kept simple. In production, run all
 # endpoints behind TLS. Otherwise, OAuth2 transmits credentials and bearer
-# tokens in the clear. See 10-TLS-Termination.yaml for how to enable TLS.
+# tokens in plain text. See 10-TLS-Termination.yaml for how to enable TLS.
