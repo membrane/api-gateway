@@ -45,7 +45,7 @@ import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapCon
 import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.continueWithConnection;
 import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.terminateWithConnection;
 import static com.predic8.membrane.core.transport.http.HttpServerThreadFactory.DEFAULT_THREAD_NAME;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintable;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 import static java.lang.Thread.currentThread;
 
@@ -167,7 +167,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
     }
 
     private static @NotNull String getLineMaskedAndTruncated(EOFWhileReadingLineException e) {
-        return maskNonPrintableCharacters(truncateAfter(e.getLineSoFar(), 80));
+        return maskNonPrintable(truncateAfter(e.getLineSoFar(), 80));
     }
 
     record RequestProcessingResult(boolean shouldTerminate, Connection boundConnection) {

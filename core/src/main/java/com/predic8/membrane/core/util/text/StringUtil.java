@@ -14,11 +14,32 @@
 
 package com.predic8.membrane.core.util.text;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static java.lang.Math.min;
 
 public class StringUtil {
+
+    /**
+     * Truncates a string after 100 characters and masks non-printable characters.
+     * @param s
+     * @return
+     */
+    public static String truncateAndMaskNonPrintable(String s) {
+       return truncateAndMaskNonPrintable(s, 100);
+    }
+
+    /**
+     * Truncates a string after a given length and masks non-printable characters.
+     * @param s
+     * @param length
+     * @return
+     */
+    public static String truncateAndMaskNonPrintable(String s, int length) {
+        return maskNonPrintable(truncateAfter(s,length));
+    }
 
     /**
      * Truncates a string after a given length.
@@ -50,8 +71,8 @@ public class StringUtil {
      * @param s the input string to be sanitized
      * @return a new string with non-printable characters replaced by underscores
      */
-    public static String maskNonPrintableCharacters(String s) {
-        StringBuilder sb = new StringBuilder();
+    public static String maskNonPrintable(String s) {
+        var sb = new StringBuilder();
         for (char c : s.toCharArray()) {
             if (c >= 32 && c <= 126) {
                 sb.append(c);

@@ -20,12 +20,13 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.openapi.util.UriUtil;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.interceptor.lang.Polyglot;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
@@ -40,7 +41,7 @@ import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.lang.ExchangeExpression.expression;
 import static com.predic8.membrane.core.openapi.util.UriUtil.ensureTrailingSlash;
 import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintable;
 
 /**
  * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
@@ -151,7 +152,7 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         String apiName = "Unnamed OpenAPI";
 
         if (title != null && !title.isBlank()) {
-            apiName = maskNonPrintableCharacters(title);
+            apiName = maskNonPrintable(title);
             if (apiName.length() > 32)
                 apiName = apiName.substring(0, 32);
         }

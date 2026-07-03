@@ -28,6 +28,7 @@ import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.validators.ValidationErrors;
 import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.text.StringUtil;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.servers.Server;
 import jakarta.mail.internet.ParseException;
@@ -40,7 +41,6 @@ import java.util.*;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
@@ -50,7 +50,8 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.empty;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintable;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAndMaskNonPrintable;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
@@ -106,7 +107,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        String basePath = getMatchingBasePath(exc);
+        var basePath = getMatchingBasePath(exc);
         // No matching API found
         if (basePath == null) {
             // Do not log: 404 is too common
@@ -120,7 +121,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return RETURN;
         }
 
-        OpenAPIRecord rec = apiProxy.getBasePaths().get(basePath);
+        var rec = apiProxy.getBasePaths().get(basePath);
 
         // If OpenAPIProxy has a <target> Element use this for routing otherwise
         // take the urls from the info.servers field in the OpenAPI document.
@@ -128,12 +129,14 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             setDestinationsFromOpenAPI(rec, exc);
 
         try {
-            ValidationErrors errors = validateRequest(rec, exc);
+            var errors = validateRequest(rec, exc);
 
             if (!errors.isEmpty()) {
                 log.info("OpenAPI request validation failed for {} {} against '{}': {}",
-                        maskNonPrintableCharacters(exc.getRequest().getMethod()), exc.getRequest().getUri(),
-                        rec.api.getInfo().getTitle(), errors);
+                        StringUtil.truncateAndMaskNonPrintable(exc.getRequest().getMethod(),20),
+                        truncateAndMaskNonPrintable(exc.getRequest().getUri()),
+                        rec.api.getInfo().getTitle(),
+                        errors);
                 apiProxy.statisticCollector.collect(errors);
                 createErrorResponse(exc, errors, ValidationErrors.Direction.REQUEST, validationDetails(rec.api));
                 return RETURN;
@@ -143,7 +146,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             log.warn(detail);
             internal(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("openapi-parsing")
-                    .flow(REQUEST)
+                    .flow(Flow.REQUEST)
                     .detail(detail)
                     .exception(e)
                     .buildAndSetResponse(exc);
@@ -151,7 +154,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         } catch (ReadingBodyException e) {
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("reading-body")
-                    .flow(REQUEST)
+                    .flow(Flow.REQUEST)
                     .detail("Connection problem: %s . Maybe the peer or the network closed the connection?".formatted(e.getMessage()))
                     .buildAndSetResponse(exc);
 
@@ -161,7 +164,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             log.error(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()), t);
             user(router.getConfiguration().isProduction(), getDisplayName())
                     .addSubSee("generic")
-                    .flow(REQUEST)
+                    .flow(Flow.REQUEST)
                     .detail(LOG_MESSAGE.formatted(rec.api.getInfo().getTitle()))
                     .exception(t)
                     .buildAndSetResponse(exc);
@@ -188,7 +191,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
             if (errors != null && errors.hasErrors()) {
                 log.info("OpenAPI response validation failed for {} {} against '{}': {}",
-                        maskNonPrintableCharacters(exc.getRequest().getMethod()), exc.getRequest().getUri(),
+                        maskNonPrintable(exc.getRequest().getMethod()), exc.getRequest().getUri(),
                         rec.api.getInfo().getTitle(), errors);
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
                 apiProxy.statisticCollector.collect(errors);
@@ -430,7 +433,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
     private Flow getFlowFromDirection(ValidationErrors.Direction direction) {
         return switch (direction) {
-            case ValidationErrors.Direction.REQUEST -> REQUEST;
+            case REQUEST -> Flow.REQUEST;
             case ValidationErrors.Direction.RESPONSE -> RESPONSE;
         };
     }

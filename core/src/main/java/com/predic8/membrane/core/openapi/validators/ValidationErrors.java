@@ -92,8 +92,8 @@ public class ValidationErrors {
             return root;
         }
 
-        Map<String, List<Map<String, Object>>> m = getValidationErrorsGroupedByLocation(direction);
-        ValidationContext ctx = errors.getFirst().getContext();
+        var m = getValidationErrorsGroupedByLocation(direction);
+        var ctx = errors.getFirst().getContext();
         setFieldIfNotNull(root, "uriTemplate", ctx.getUriTemplate());
         setFieldIfNotNull(root, "path", ctx.getPath());
         setFieldIfNotNull(root, "parameter", ctx.getParameter());

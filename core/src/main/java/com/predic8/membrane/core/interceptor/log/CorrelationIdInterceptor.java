@@ -25,7 +25,7 @@ import java.util.UUID;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
+import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintable;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
 
 /**
@@ -60,7 +60,7 @@ public class CorrelationIdInterceptor extends AbstractExchangeExpressionIntercep
         } else {
             // Sanitize attacker-controlled header input before it reaches the MDC to prevent
             // CR/LF log forging and to cap excessive length.
-            value = maskNonPrintableCharacters(truncateAfter(value, MAX_HEADER_VALUE_LENGTH));
+            value = maskNonPrintable(truncateAfter(value, MAX_HEADER_VALUE_LENGTH));
         }
         if (value != null)
             MDC.put(logField, value);

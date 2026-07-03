@@ -40,6 +40,7 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.normalizeUri;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.METHOD;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.PATH;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.fromRequest;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAndMaskNonPrintable;
 import static java.lang.String.format;
 
 public class OpenAPIValidator {
@@ -118,7 +119,7 @@ public class OpenAPIValidator {
         } catch (MethodNotAllowException e) {
             return ValidationPlan.error(ValidationErrors.error(ctx.statusCode(405)
                     .entity(request.getMethod())
-                    .entityType(METHOD), format("Method %s is not allowed", request.getMethod())));
+                    .entityType(METHOD), format("Method %s is not allowed", truncateAndMaskNonPrintable(request.getMethod()))));
         }
     }
 

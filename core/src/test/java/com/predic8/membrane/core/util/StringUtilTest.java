@@ -14,12 +14,13 @@
 
 package com.predic8.membrane.core.util;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
 
 import static com.predic8.membrane.core.util.text.StringUtil.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class StringUtilTest {
 
@@ -95,27 +96,27 @@ class StringUtilTest {
         @Test
         void shouldReturnSameStringWhenOnlyPrintableCharactersExist() {
             String input = "Hello, World! 123";
-            assertEquals(input, maskNonPrintableCharacters(input));
+            assertEquals(input, maskNonPrintable(input));
         }
 
         @Test
         void shouldMaskNonPrintableCharacters() {
-            assertEquals("_?U__Z___huv_D", maskNonPrintableCharacters("\u00e6?\u0055\u00d6\u00ff\u005a\u00a9\u00ae\u00a7huv\u00a8D"));
+            assertEquals("_?U__Z___huv_D", maskNonPrintable("\u00e6?\u0055\u00d6\u00ff\u005a\u00a9\u00ae\u00a7huv\u00a8D"));
         }
 
         @Test
         void shouldMaskOnlyNonPrintableCharacters() {
-            assertEquals("____", maskNonPrintableCharacters("\n\r\t\b"));
+            assertEquals("____", maskNonPrintable("\n\r\t\b"));
         }
 
         @Test
         void shouldMaskMixedCharactersCorrectly() {
-            assertEquals("A_B_C", maskNonPrintableCharacters("A\tB\nC"));
+            assertEquals("A_B_C", maskNonPrintable("A\tB\nC"));
         }
 
         @Test
         void shouldReturnEmptyWhenInputIsEmpty() {
-            assertEquals("", maskNonPrintableCharacters(""));
+            assertEquals("", maskNonPrintable(""));
         }
     }
 }
