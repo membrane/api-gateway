@@ -6,6 +6,11 @@
 # patterns, using detection rules derived from the OWASP Core Rule Set (CRS).
 # The rules are bundled - nothing to download.
 #
+# This is a defense-in-depth layer, not a guarantee. Signature-based filtering
+# can be bypassed (encoding tricks, novel payloads) and always risks false
+# positives. It does NOT replace parameterized queries / prepared statements in
+# your backend. Those remain the primary defense against SQL injection.
+#
 # 1.) Start Membrane:
 #     ./membrane.sh -c 100-SQL-Injection-Protection.yaml
 #

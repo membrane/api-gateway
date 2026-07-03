@@ -3,6 +3,9 @@
 
 
 PRIO 1:
+- When released:
+  - Add SqlProtection to README.md
+  - Udate OAuth2 sections in README.md
 - Proxy Server Configuration Sample 
   - explains how to configure a proxy server
 - HotReload for YAML

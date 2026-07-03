@@ -53,6 +53,9 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * - sqlInjectionProtection:
  *     level: 1
  * </code></pre>
+ * <p>This is a defense-in-depth filter, not a complete guarantee. Signature-based detection can be bypassed
+ * and always carries a false-positive risk; it does not replace parameterized queries (prepared statements) in
+ * the backend, which remain the primary protection against SQL injection.</p>
  * <p>The detection rules are derived from the OWASP Core Rule Set (Apache-2.0). See
  * https://coreruleset.org/ .</p>
  * @topic 3. Security and Validation
