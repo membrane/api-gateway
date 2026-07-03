@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.sqlinjection;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -88,6 +89,6 @@ class SqlInjectionProtectionInterceptorTest {
     void invalidLevelRejected() {
         SqlInjectionProtectionInterceptor i = new SqlInjectionProtectionInterceptor();
         i.setLevel(5);
-        assertThrows(IllegalArgumentException.class, () -> i.init(new DefaultRouter()));
+        assertThrows(ConfigurationException.class, () -> i.init(new DefaultRouter()));
     }
 }

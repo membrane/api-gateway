@@ -56,10 +56,10 @@ class SqlInjectionRuleSetTest {
     }
 
     @Test
-    void detectsDoubleUrlEncodedPayload() {
-        // %2553 -> (urlDecodeUni) -> %53 -> 'S'; here a fully double-encoded "' UNION SELECT"
-        String once = "%27%20UNION%20SELECT"; // what reaches us after one decode of %2527...
-        assertTrue(RULES.firstMatch(once).isPresent(), "urlDecodeUni transform should expose the payload");
+    void urlEncodedPayloadDetectedViaTransform() {
+        // The rule set itself sees the still-encoded string; the urlDecodeUni transform must expose it.
+        assertTrue(RULES.firstMatch("%27%20UNION%20SELECT").isPresent(),
+                "urlDecodeUni transform should expose the payload");
     }
 
     @Test

@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.sqlinjection.SqlInjectionProtection.Detection;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +44,15 @@ import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
  * (egress/forward) gateway, inspecting responses guards untrusted upstreams and stops SQL error fragments
  * leaking back to clients. Scope it to one direction by placing it inside a <code>request</code> or
  * <code>response</code> flow element.</p>
+ * <p>Scanning is not free: the message body is read into memory and matched against every active rule.
+ * Cost grows with body size and paranoia level. Pair this plugin with a <code>limit</code> plugin placed
+ * before it, so oversized bodies are rejected before they are buffered and scanned:</p>
+ * <pre><code>
+ * - limit:
+ *     maxBodyLength: 100000
+ * - sqlInjectionProtection:
+ *     level: 1
+ * </code></pre>
  * <p>The detection rules are derived from the OWASP Core Rule Set (Apache-2.0). See
  * https://coreruleset.org/ .</p>
  * @topic 3. Security and Validation
@@ -71,7 +81,7 @@ public class SqlInjectionProtectionInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
         if (level < 1 || level > 4)
-            throw new IllegalArgumentException("sqlInjectionProtection: level must be between 1 and 4, was " + level);
+            throw new ConfigurationException("sqlInjectionProtection: level must be between 1 and 4, was " + level);
         SqlInjectionRuleSet ruleSet = SqlInjectionRuleSet.loadCrsRules(level);
         protection = new SqlInjectionProtection(ruleSet, inspectHeaders, router.getConfiguration().getUriFactory());
         log.debug("Loaded {} SQL injection rules (paranoia level <= {})", ruleSet.size(), level);
@@ -139,8 +149,10 @@ public class SqlInjectionProtectionInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description Whether request headers are inspected. Off by default because legitimate headers (User-Agent,
-     * Referer, ...) trigger false positives more readily than parameters.
+     * @description Whether headers are inspected. Applies to the message being scanned: request headers in the
+     * request flow, response headers (e.g. from an untrusted upstream behind an outbound gateway) in the response
+     * flow. Off by default because legitimate headers (User-Agent, Referer, Set-Cookie, ...) trigger false
+     * positives more readily than parameters.
      * @default false
      */
     @MCAttribute

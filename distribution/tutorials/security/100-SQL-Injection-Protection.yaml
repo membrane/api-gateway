@@ -37,9 +37,13 @@
 api:
   port: 2000
   flow:
+    # Scanning buffers the body and matches it against every rule. Pair with a limit
+    # plugin so oversized bodies are rejected before they are buffered and scanned:
+    # - limit:
+    #     maxBodyLength: 100000
     - sqlInjectionProtection:
         level: 1          # OWASP CRS paranoia level 1-4; higher catches more but raises false positives
         # onDetect: warn  # only log the hit and let the request through - use while tuning a deployment
-        # inspectHeaders: true  # also scan request headers (off by default: headers cause more false positives)
+        # inspectHeaders: true  # also scan headers (off by default: headers cause more false positives)
     - return:
         status: 200
