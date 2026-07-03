@@ -16,9 +16,7 @@ package com.predic8.membrane.core.interceptor.sqlinjection;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
@@ -31,15 +29,16 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.http.MimeType.isWWWFormUrlEncoded;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 
 /**
  * Inspects an HTTP {@link Message} (request or response) for SQL injection signatures.
  * <p>
- * This is the detection engine, deliberately free of any gateway/configuration concerns: given a rule set it
+ * Detection engine: given a rule set it
  * scans the path, query parameters, body (JSON / form / raw text) and optionally the headers of a message and
  * reports the first rule violated. {@link SqlInjectionProtectionInterceptor} owns configuration, lifecycle and
- * what to do with a {@link Detection}; keeping the two apart makes the scanning logic unit-testable on its own.
+ * what to do with a {@link Detection};
  */
 public class SqlInjectionProtection {
 
@@ -79,7 +78,7 @@ public class SqlInjectionProtection {
             if (message.isJSON()) {
                 hit = inspectJsonOrText(message.getBodyAsStringDecoded());
                 if (hit.isPresent()) return hit;
-            } else if (MimeType.isWWWFormUrlEncoded(contentType)) {
+            } else if (isWWWFormUrlEncoded(contentType)) {
                 hit = inspectParams("form", message.getBodyAsStringDecoded());
                 if (hit.isPresent()) return hit;
             } else if (!message.isBinary() && !message.isImage()) {
@@ -91,7 +90,7 @@ public class SqlInjectionProtection {
 
         // Headers (opt-in: higher false-positive risk)
         if (inspectHeaders) {
-            for (HeaderField f : message.getHeader().getAllHeaderFields()) {
+            for (var f : message.getHeader().getAllHeaderFields()) {
                 hit = inspect("header " + f.getHeaderName(), f.getValue());
                 if (hit.isPresent()) return hit;
             }

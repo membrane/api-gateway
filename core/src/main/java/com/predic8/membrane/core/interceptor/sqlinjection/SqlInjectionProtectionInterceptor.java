@@ -24,8 +24,6 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
-
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
@@ -33,7 +31,7 @@ import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
- * @description <p>Detects SQL injection attempts in incoming requests and blocks them before they reach the backend.
+ * @description <p>Detects SQL injection patterns in incoming requests and blocks them before they reach the backend.
  * Inspects query parameters, the request path, form and JSON bodies (and optionally headers) against a set of
  * detection rules transpiled from the OWASP Core Rule Set (CRS) REQUEST-942 SQL-injection rules.</p>
  * <p>The rule set is bundled; no download or configuration is required. The <code>level</code> attribute selects
@@ -85,7 +83,7 @@ public class SqlInjectionProtectionInterceptor extends AbstractInterceptor {
         super.init();
         if (level < 1 || level > 4)
             throw new ConfigurationException("sqlInjectionProtection: level must be between 1 and 4, was " + level);
-        SqlInjectionRuleSet ruleSet = SqlInjectionRuleSet.loadCrsRules(level);
+        var ruleSet = SqlInjectionRuleSet.loadCrsRules(level);
         protection = new SqlInjectionProtection(ruleSet, inspectHeaders, router.getConfiguration().getUriFactory());
         log.debug("Loaded {} SQL injection rules (paranoia level <= {})", ruleSet.size(), level);
     }
@@ -102,7 +100,7 @@ public class SqlInjectionProtectionInterceptor extends AbstractInterceptor {
 
     private Outcome handle(Exchange exc, Flow flow) {
         try {
-            Optional<Detection> hit = protection.scan(getMessage(exc, flow));
+            var hit = protection.scan(getMessage(exc, flow));
             if (hit.isEmpty())
                 return CONTINUE;
 

@@ -4,7 +4,7 @@
 #
 # Blocks requests whose query parameters, path or body contain SQL injection
 # patterns, using detection rules derived from the OWASP Core Rule Set (CRS).
-# The rules are bundled - nothing to download.
+# The rules are bundled. Nothing to download.
 #
 # This is a defense-in-depth layer, not a guarantee. Signature-based filtering
 # can be bypassed (encoding tricks, novel payloads) and always risks false
@@ -44,11 +44,11 @@ api:
   flow:
     # Scanning buffers the body and matches it against every rule. Pair with a limit
     # plugin so oversized bodies are rejected before they are buffered and scanned:
-    # - limit:
-    #     maxBodyLength: 100000
+    - limit:
+        maxBodyLength: 100000
     - sqlInjectionProtection:
-        level: 1          # OWASP CRS paranoia level 1-4; higher catches more but raises false positives
-        # onDetect: warn  # only log the hit and let the request through - use while tuning a deployment
-        # inspectHeaders: true  # also scan headers (off by default: headers cause more false positives)
+        level: 1               # OWASP CRS paranoia level 1-4; higher catches more but raises false positives
+        onDetect: block        # only log the hit and let the request through - use while tuning a deployment
+        inspectHeaders: false  # also scan headers (off by default: headers cause more false positives)
     - return:
         status: 200

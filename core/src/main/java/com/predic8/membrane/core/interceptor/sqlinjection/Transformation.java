@@ -32,7 +32,7 @@ public enum Transformation {
     urlDecodeUni {
         @Override
         String apply(String s) {
-            StringBuilder out = new StringBuilder(s.length());
+            var out = new StringBuilder(s.length());
             for (int i = 0; i < s.length(); ) {
                 char c = s.charAt(i);
                 if (c == '+') {

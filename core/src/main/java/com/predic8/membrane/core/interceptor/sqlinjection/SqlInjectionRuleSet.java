@@ -16,6 +16,8 @@ package com.predic8.membrane.core.interceptor.sqlinjection;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,19 +69,26 @@ public class SqlInjectionRuleSet {
             int pl = n.path("paranoiaLevel").asInt(1);
             if (pl > maxParanoiaLevel)
                 continue;
-            List<Transformation> transforms = new ArrayList<>();
-            for (JsonNode t : n.path("transforms"))
-                transforms.add(Transformation.valueOf(t.asText()));
-            Pattern requires = n.hasNonNull("requires") ? Pattern.compile(n.get("requires").asText()) : null;
             result.add(new SqlInjectionRule(
                     n.path("id").asText(),
                     pl,
-                    List.copyOf(transforms),
+                    List.copyOf(getTransformations(n)),
                     n.path("message").asText(),
                     Pattern.compile(n.path("regex").asText()),
-                    requires));
+                    getRequires(n)));
         }
         return result;
+    }
+
+    private static @NotNull List<Transformation> getTransformations(JsonNode n) {
+        List<Transformation> transforms = new ArrayList<>();
+        for (var t : n.path("transforms"))
+            transforms.add(Transformation.valueOf(t.asText()));
+        return transforms;
+    }
+
+    private static @Nullable Pattern getRequires(JsonNode n) {
+        return n.hasNonNull("requires") ? Pattern.compile(n.get("requires").asText()) : null;
     }
 
     /**
