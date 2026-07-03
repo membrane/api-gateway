@@ -127,7 +127,7 @@ class OAuth2Test {
         JSONObject jsonObject = new JSONObject(json);
         assertEquals("Bearer", jsonObject.getString("token_type"));
         assertNotNull(jsonObject.getString("refresh_token"));
-        assertEquals("Bad Request", sendRequestToTarget(parseTokenRequestResponse("refresh_token", json)));
+        assertEquals("Unauthorized", sendRequestToTarget(parseTokenRequestResponse("refresh_token", json)));
     }
 
     private static OAuth2AuthorizationServerInterceptor createOAuth2AuthServerInterceptor() {

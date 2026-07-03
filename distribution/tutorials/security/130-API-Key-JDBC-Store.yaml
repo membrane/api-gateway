@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: JDBC API Key Store
+#
+# Store API keys and scopes in a PostgreSQL database. Membrane reads them via JDBC
+# and auto-creates the required tables on first start.
+#
+# 1.) Install the PostgreSQL JDBC driver:
+#     Membrane does not bundle database drivers. Download the driver (a single .jar)
+#     from https://jdbc.postgresql.org/download/ and place it in Membrane's lib/
+#     directory. Membrane picks up every .jar in lib/ on startup automatically.
+#
+# 2.) Start PostgreSQL:
+#     docker run --rm --name postgres -e POSTGRES_PASSWORD=secret -p 5432:5432 postgres
+#
+# 3.) Start Membrane:
+#     ./membrane.sh -c 130-API-Key-JDBC-Store.yaml
+#
+#     Membrane connects to PostgreSQL and creates the key and scope tables.
+#
+# 4.) Insert test keys:
+#     docker exec -i postgres psql -U postgres -d postgres \
+#       -c "INSERT INTO key (apikey) VALUES ('demo-key'), ('admin-key')"
+#     docker exec -i postgres psql -U postgres -d postgres \
+#       -c "INSERT INTO scope (apikey, scope) VALUES ('admin-key', 'admin')"
+#
+# Continue with 140-MongoDB-API-Key-Store.yaml
+#
+# 5.) Test:
+#
+#     No key → 401:
+#     curl -i localhost:2000
+#
+#     Valid key (no scopes):
+#     curl localhost:2000 -H "X-Api-Key: demo-key"
+#
+#     Valid key with admin scope:
+#     curl localhost:2000 -H "X-Api-Key: admin-key"
+
+components:
+  dataSource:
+    bean:
+      class: org.apache.commons.dbcp2.BasicDataSource
+      properties:
+        - name: driverClassName
+          value: org.postgresql.Driver
+        - name: url
+          value: jdbc:postgresql://localhost:5432/postgres
+        - name: username
+          value: postgres
+        - name: password
+          value: secret
+
+---
+api:
+  port: 2000
+  target:
+    url: https://api.predic8.de
+  flow:
+    - apiKey:
+        stores:
+          - databaseApiKeyStore:
+              datasource: '#/components/dataSource'
+              keyTable: key      # Membrane creates these tables automatically
+              scopeTable: scope  # if they don't exist (autoCreate: true)
+        extractors:
+          - header: X-Api-Key

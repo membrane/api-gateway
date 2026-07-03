@@ -20,6 +20,9 @@ import com.predic8.membrane.annot.beanregistry.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Immutable parsing state passed down while traversing YAML.
  * - context: current element scope used for local type resolution in {@link Grammar}.
@@ -29,6 +32,7 @@ import org.slf4j.*;
 public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(String context, T registry, Grammar grammar, JsonNode topLevel, String path, String key) {
 
     private static final Logger log = LoggerFactory.getLogger(ParsingContext.class);
+    public static final Pattern VALID_PROPERTY_NAME = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     public ParsingContext<T> updateContext(String context) {
         return new ParsingContext<>(context, registry, grammar, topLevel, path,key);
@@ -36,6 +40,10 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
 
     public ParsingContext<?> addPath(String path) {
         return new ParsingContext(context, registry,grammar,topLevel, this.path + path,key);
+    }
+
+    public ParsingContext<?> addProperty(String property) {
+        return new ParsingContext(context, registry, grammar, topLevel, path + toJsonPathProperty(property), key);
     }
 
     public ParsingContext<?> child(String childContext, String pathSegment) {
@@ -82,6 +90,23 @@ public record ParsingContext<T extends BeanRegistry & BeanLifecycleManager>(Stri
 
     public String getPath() {
         return path;
+    }
+
+    /**
+     * Appends a property name to a Jayway JSONPath.
+     * `foo` becomes `.foo`.
+     * `rpc.echo` becomes `['rpc.echo']`.
+     * The `[]` form is needed when the property name itself contains characters
+     * such as `.` or `'` that JSONPath would otherwise interpret as syntax.
+     */
+    private static String toJsonPathProperty(String property) {
+        if (VALID_PROPERTY_NAME.matcher(property).matches()) {
+            return "." + property;
+        }
+        return "['" + property
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                + "']";
     }
 
     @Override

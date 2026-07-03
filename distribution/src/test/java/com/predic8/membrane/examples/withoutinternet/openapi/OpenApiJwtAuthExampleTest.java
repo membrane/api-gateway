@@ -91,7 +91,7 @@ public class OpenApiJwtAuthExampleTest extends DistributionExtractingTestcase {
         .when()
             .get("http://localhost:2001/shop/v2/products")
         .then()
-            .statusCode(400)
+            .statusCode(401)
             .body("type", equalTo("https://membrane-api.io/problems/security"))
             .body("detail", containsString("Could not retrieve JWT"));
         // @formatter:on

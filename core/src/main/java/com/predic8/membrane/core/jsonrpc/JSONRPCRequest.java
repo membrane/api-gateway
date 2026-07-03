@@ -109,7 +109,7 @@ public class JSONRPCRequest {
         return fromNode(OM.readTree(json));
     }
 
-    private static JSONRPCRequest fromNode(JsonNode root) throws IOException {
+    public static JSONRPCRequest fromNode(JsonNode root) throws IOException {
         if (root == null || !root.isObject()) throw new IOException("Invalid JSON-RPC request: expected JSON object");
 
         JSONRPCRequest req = new JSONRPCRequest();

@@ -13,24 +13,28 @@
 
 package com.predic8.membrane.core.interceptor.jwt;
 
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.functionalInterfaces.*;
-import org.jose4j.jwk.*;
-import org.jose4j.jws.*;
-import org.jose4j.jwt.*;
-import org.jose4j.lang.*;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.params.*;
-import org.junit.jupiter.params.provider.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwk.RsaJwkGenerator;
+import org.jose4j.jws.AlgorithmIdentifiers;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.lang.JoseException;
+import org.junit.jupiter.api.Named;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.*;
-import java.util.*;
-import java.util.stream.*;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor.ERROR_JWT_INVALID_SIGNATURE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JwtAuthInterceptorTest{
@@ -112,7 +116,8 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                    var detail = (String) unpackBody(exc).get("detail");
+                    assertTrue(detail.startsWith(ERROR_JWT_INVALID_SIGNATURE));
                 }
         );
     }
@@ -164,7 +169,8 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                    var detail = (String) unpackBody(exc).get("detail");
+                    assertTrue(detail.startsWith(ERROR_JWT_INVALID_SIGNATURE));
                 }
         );
     }
@@ -179,7 +185,8 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                    String detail = (String) unpackBody(exc).get("detail");
+                    assertTrue(detail.startsWith(JwtAuthInterceptor.ERROR_VALIDATION_FAILED));
                 }
         );
     }
@@ -194,7 +201,8 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    assertEquals(JwtAuthInterceptor.ERROR_VALIDATION_FAILED, unpackBody(exc).get("detail"));
+                    var detail = (String) unpackBody(exc).get("detail");
+                    assertTrue(detail.startsWith(JwtAuthInterceptor.ERROR_VALIDATION_FAILED));
                 }
         );
     }
