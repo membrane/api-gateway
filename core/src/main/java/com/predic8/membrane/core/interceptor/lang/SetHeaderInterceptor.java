@@ -21,11 +21,25 @@ import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import static com.predic8.membrane.core.util.text.SerializationFunction.HEADERVALUE_SERIALIZATION;
 
 /**
- * @description Set HTTP header on the current message.
+ * @description Sets an HTTP header field on the current message to a constant string or a computed value.
+ * SpEL template expressions are supported by default; Groovy, JsonPath, and XPath are also available.
+ * See tutorials/getting-started/60-SetHeader.yaml.
+ * @topic 2. Enterprise Integration Patterns
  * @yaml
- * setHeader:
- *   name: X-Foo
- *   value: 42
+ * <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - response:
+ *         - setHeader:
+ *             name: X-Powered-By
+ *             value: Membrane
+ *         - setHeader:
+ *             name: X-Method
+ *             value: ${method}
+ *     - return:
+ *         status: 200
+ * </code></pre>
  */
 @MCElement(name = "setHeader")
 public class SetHeaderInterceptor extends AbstractSetterInterceptor {
