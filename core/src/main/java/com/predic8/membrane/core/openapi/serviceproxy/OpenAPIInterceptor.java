@@ -28,7 +28,6 @@ import com.predic8.membrane.core.openapi.model.Request;
 import com.predic8.membrane.core.openapi.validators.ValidationErrors;
 import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.text.StringUtil;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.servers.Server;
 import jakarta.mail.internet.ParseException;
@@ -50,7 +49,6 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.empty;
-import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintable;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAndMaskNonPrintable;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
@@ -115,7 +113,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                     .title("No matching API found!")
                     .status(404)
                     .addSubSee("not-found")
-                    .detail("There is no API on the path %s deployed. Please check the path.".formatted(exc.getOriginalRequestUri()))
+                    .detail("There is no API on the path %s deployed. Please check the path.".formatted(truncateAndMaskNonPrintable(exc.getOriginalRequestUri())))
                     .topLevel("path", exc.getOriginalRequestUri())
                     .buildAndSetResponse(exc);
             return RETURN;
@@ -133,7 +131,7 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
             if (!errors.isEmpty()) {
                 log.info("OpenAPI request validation failed for {} {} against '{}': {}",
-                        StringUtil.truncateAndMaskNonPrintable(exc.getRequest().getMethod(),20),
+                        truncateAndMaskNonPrintable(exc.getRequest().getMethod(),15),
                         truncateAndMaskNonPrintable(exc.getRequest().getUri()),
                         rec.api.getInfo().getTitle(),
                         errors);
@@ -191,7 +189,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
 
             if (errors != null && errors.hasErrors()) {
                 log.info("OpenAPI response validation failed for {} {} against '{}': {}",
-                        maskNonPrintable(exc.getRequest().getMethod()), exc.getRequest().getUri(),
+                        truncateAndMaskNonPrintable(exc.getRequest().getMethod(),15),
+                        truncateAndMaskNonPrintable( exc.getRequest().getUri()),
                         rec.api.getInfo().getTitle(), errors);
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
                 apiProxy.statisticCollector.collect(errors);

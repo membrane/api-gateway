@@ -16,9 +16,11 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.util.Utils.setFieldIfNotNull;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAndMaskNonPrintable;
 
 public class ValidationError {
 
@@ -60,6 +62,9 @@ public class ValidationError {
     public String toString() {
         if (ctx == null)
             return message;
-        return String.format("%s %s %s: %s",ctx.getMethod(), ctx.getPath(), ctx.getJSONpointer(), message);
+        return String.format("%s %s %s: %s",
+                truncateAndMaskNonPrintable(ctx.getMethod(),15),
+                truncateAndMaskNonPrintable(ctx.getPath()),
+                ctx.getJSONpointer(), message);
     }
 }

@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.openapi.util.Utils.setFieldIfNotNull;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
+import static com.predic8.membrane.core.util.text.StringUtil.truncateAndMaskNonPrintable;
 
 public class ValidationErrors {
 
@@ -94,8 +95,9 @@ public class ValidationErrors {
 
         var m = getValidationErrorsGroupedByLocation(direction);
         var ctx = errors.getFirst().getContext();
+        setFieldIfNotNull(root, "method", truncateAndMaskNonPrintable(ctx.getMethod(),15));
         setFieldIfNotNull(root, "uriTemplate", ctx.getUriTemplate());
-        setFieldIfNotNull(root, "path", ctx.getPath());
+        setFieldIfNotNull(root, "path",  truncateAndMaskNonPrintable(ctx.getPath()));
         setFieldIfNotNull(root, "parameter", ctx.getParameter());
         setFieldIfNotNull(root, "schemaType", ctx.getSchemaType());
         root.put("errors", m);

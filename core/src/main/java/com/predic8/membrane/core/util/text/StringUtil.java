@@ -48,6 +48,8 @@ public class StringUtil {
      * @return truncated string
      */
     public static String truncateAfter(String s, int maxLength) {
+        if (s == null)
+            return null;
         return s.substring(0, min(s.length(), maxLength));
     }
 
@@ -72,6 +74,8 @@ public class StringUtil {
      * @return a new string with non-printable characters replaced by underscores
      */
     public static String maskNonPrintable(String s) {
+        if (s == null)
+            return null;
         var sb = new StringBuilder();
         for (char c : s.toCharArray()) {
             if (c >= 32 && c <= 126) {
