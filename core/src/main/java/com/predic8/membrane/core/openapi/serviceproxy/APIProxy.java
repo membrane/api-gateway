@@ -50,7 +50,7 @@ import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCha
  * matches the request will process it.</p>
  * <b>OpenAPI Support</b>
  * <p>When <code>openapi</code> children are present, Membrane auto-wires a publisher at
- * <code>/api-doc</code> and an OpenAPI rewriter; see <code>tutorials/getting-started/80-OpenAPI.yaml</code>
+ * <code>/api-docs</code> and an OpenAPI rewriter; see <code>tutorials/getting-started/80-OpenAPI.yaml</code>
  * and <code>tutorials/getting-started/90-OpenAPI-Validation.yaml</code>.</p>
  *
  * @topic 1. Proxies and Flow
