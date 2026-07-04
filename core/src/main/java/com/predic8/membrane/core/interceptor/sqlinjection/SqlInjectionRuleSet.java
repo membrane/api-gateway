@@ -106,4 +106,12 @@ public class SqlInjectionRuleSet {
     public int size() {
         return rules.size();
     }
+
+    /**
+     * @return the loaded rules in match order (immutable). Useful for testing an individual rule's
+     * pattern in isolation, e.g. when a stricter rule is shadowed by a lower-numbered one during {@link #firstMatch}.
+     */
+    public List<SqlInjectionRule> rules() {
+        return rules;
+    }
 }
