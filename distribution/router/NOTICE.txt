@@ -24,3 +24,8 @@ Joda.org (http://www.joda.org/).
 See META-INF/NOTICE in the jar for the complete history of Apache Derby development.
 
 See META-INF/NOTICE in the jar for credits concerning the Woodstox parser.
+
+This product bundles a derivative of the OWASP Core Rule Set (CRS),
+Copyright (c) 2006-2020 Trustwave and contributors, Copyright (c) 2021-2026
+CRS project. Licensed under the Apache License, Version 2.0.
+Source: https://github.com/coreruleset/coreruleset
