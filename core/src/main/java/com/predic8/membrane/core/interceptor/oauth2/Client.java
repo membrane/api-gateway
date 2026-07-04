@@ -17,12 +17,16 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 
+import java.util.List;
+
 @MCElement(name="client", component =false, id="staticClientList-client")
 public class Client {
     private String clientId;
     private String clientSecret;
     private String callbackUrl;
     private String grantTypes = "authorization_code,password,client_credentials,refresh_token,implicit";
+    private String resources;
+    private String scopes;
 
     public Client(){
     }
@@ -64,7 +68,6 @@ public class Client {
         return callbackUrl;
     }
 
-    @Required
     @MCAttribute
     public void setCallbackUrl(String callbackUrl) {
         this.callbackUrl = callbackUrl;
@@ -83,4 +86,50 @@ public class Client {
 		this.grantTypes = grantTypes;
 	}
 
+    public String getResources() {
+        return resources;
+    }
+
+    /**
+     * @description Space separated list of resource URIs (audiences) this client may request tokens for,
+     *              see RFC 8707. In the client_credentials grant, the "resource" request parameter is
+     *              checked against this list, and the granted resources become the "aud" claim of the
+     *              issued token (requires a JWT token generator such as bearerJwtToken). If the request
+     *              contains no "resource" parameter, all resources listed here are granted.
+     */
+    @MCAttribute
+    public void setResources(String resources) {
+        this.resources = resources;
+    }
+
+    public List<String> getResourceList() {
+        return splitList(resources);
+    }
+
+    public String getScopes() {
+        return scopes;
+    }
+
+    /**
+     * @description Space separated list of scopes this client may request in the client_credentials
+     *              grant. The "scope" request parameter is checked against this list, and the granted
+     *              scopes become the "scope" claim of the issued token (requires a JWT token generator
+     *              such as bearerJwtToken). If the request contains no "scope" parameter, all scopes
+     *              listed here are granted. Without this attribute, the "scope" parameter is passed
+     *              through unchecked and no "scope" claim is issued.
+     */
+    @MCAttribute
+    public void setScopes(String scopes) {
+        this.scopes = scopes;
+    }
+
+    public List<String> getScopeList() {
+        return splitList(scopes);
+    }
+
+    private static List<String> splitList(String value) {
+        if (value == null || value.isBlank())
+            return List.of();
+        return List.of(value.trim().split(" +"));
+    }
 }

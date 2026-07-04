@@ -13,18 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.security;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.jwt.*;
-import com.predic8.membrane.core.router.*;
-import org.jose4j.jwk.*;
-import org.jose4j.jws.*;
-import org.jose4j.jwt.*;
-import org.jose4j.lang.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.jwt.Jwks;
+import com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import org.jose4j.jwk.RsaJsonWebKey;
+import org.jose4j.jwk.RsaJwkGenerator;
+import org.jose4j.jws.AlgorithmIdentifiers;
+import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.lang.JoseException;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static com.predic8.membrane.core.http.Request.*;
+import static com.predic8.membrane.core.http.Request.get;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class JWTSecuritySchemeTest {
 
@@ -92,4 +98,30 @@ class JWTSecuritySchemeTest {
         return jws.getCompactSerialization();
     }
 
+    @Test
+    void scopesFromString() {
+        assertEquals(Set.of("read", "write"), new JWTSecurityScheme(Map.of("scp", "read write"), "scp").getScopes());
+    }
+
+    @Test
+    void scopesFromList() {
+        assertEquals(Set.of("read", "write"), new JWTSecurityScheme(Map.of("scp", List.of("read", "write")), "scp").getScopes());
+    }
+
+    @Test
+    void scopesFromConfiguredScopeClaim() {
+        assertEquals(Set.of("read", "write"), new JWTSecurityScheme(Map.of("scope", "read write"), "scope").getScopes());
+    }
+
+    @Test
+    void onlyConfiguredClaimIsRead() {
+        var jwt = Map.<String, Object>of("scp", "fromScp", "scope", "fromScope");
+        assertEquals(Set.of("fromScp"), new JWTSecurityScheme(jwt, "scp").getScopes());
+        assertEquals(Set.of("fromScope"), new JWTSecurityScheme(jwt, "scope").getScopes());
+    }
+
+    @Test
+    void missingClaimMeansEmptyScopes() {
+        assertEquals(Set.of(), new JWTSecurityScheme(Map.of("sub", "john"), "scp").getScopes());
+    }
 }

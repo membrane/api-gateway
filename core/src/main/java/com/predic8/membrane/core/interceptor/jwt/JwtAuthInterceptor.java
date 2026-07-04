@@ -43,6 +43,7 @@ import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
  * <pre><code>
  *  jwtAuth:
  *    expectedAud: my-audience
+ *    expectedIss: https://auth.example.com
  *    expectedTid: 67c859d3-0cd4-4a99-86db-088bed1a9601
  *    jwks: {}
  * </code></pre>
@@ -72,6 +73,8 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     Jwks jwks;
     String expectedAud;
     String expectedTid;
+    String expectedIss;
+    String scopesClaim = "scp";
 
 
     public JwtAuthInterceptor() {
@@ -130,7 +133,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             log.info("Could not retrieve JWT: {}", e.getMessage());
             security(router.getConfiguration().isProduction(), "jwt-auth")
-                    .detail(ERROR_JWT_NOT_FOUND)
+                    .detail(e.getMessage())
                     .addSubSee(ERROR_JWT_NOT_FOUND_ID)
                     .stacktrace(true)
                     .status(401)
@@ -150,13 +153,16 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
         // we could make it possible that every key is checked instead of having the "kid" field mandatory
         // this would then need up to n checks per incoming JWT - could be a performance problem
-        RsaJsonWebKey key = jwks.getKeyByKid(kid).orElseThrow(() -> new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID));
+        var key = jwks.getKeyByKid(kid).orElseThrow(() -> {
+            log.info("JWT signed by unknown key: {}",kid);
+            return new JWTException(ERROR_UNKNOWN_KEY, ERROR_UNKNOWN_KEY_ID);
+        });
 
         Map<String, Object> jwtClaims = createValidator(key).processToClaims(jwt).getClaimsMap();
 
         exc.getProperties().put("jwt",jwtClaims);
 
-        new JWTSecurityScheme(jwtClaims).add(exc);
+        new JWTSecurityScheme(jwtClaims, scopesClaim).add(exc);
 
         return CONTINUE;
     }
@@ -179,6 +185,10 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
         if (expectedTid != null && !expectedTid.isEmpty())
             jwtConsumerBuilder
                     .registerValidator(new TidValidator(expectedTid));
+
+        if (expectedIss != null && !expectedIss.isEmpty())
+            jwtConsumerBuilder
+                    .setExpectedIssuer(expectedIss);
 
         return jwtConsumerBuilder.build();
     }
@@ -232,6 +242,39 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setExpectedTid(String expectedTid) {
         this.expectedTid = expectedTid;
+    }
+
+    public String getExpectedIss() {
+        return expectedIss;
+    }
+
+    /**
+     * @description
+     * <p>Expected issuer ('iss') value of the token. If set, tokens without an 'iss' claim or with a
+     * different issuer are rejected.</p>
+     * @default not set
+     * @example https://auth.example.com
+     */
+    @MCAttribute
+    public void setExpectedIss(String expectedIss) {
+        this.expectedIss = expectedIss;
+    }
+
+    public String getScopesClaim() {
+        return scopesClaim;
+    }
+
+    /**
+     * @description
+     * <p>Name of the claim that carries the token's scopes, e.g. "scp" (Microsoft Entra ID)
+     * or "scope" (RFC 9068). The claim may hold a space separated string or a list of strings.
+     * The scopes are used by the OpenAPI security validation.</p>
+     * @default scp
+     * @example scope
+     */
+    @MCAttribute
+    public void setScopesClaim(String scopesClaim) {
+        this.scopesClaim = scopesClaim;
     }
 
     @Override

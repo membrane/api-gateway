@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.interceptor.jwt.JwtAuthInterceptor.ERROR_JWT_INVALID_SIGNATURE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JwtAuthInterceptorTest{
@@ -43,11 +42,14 @@ public class JwtAuthInterceptorTest{
     public static final String SUB_CLAIM_CONTENT = "Till, der fleissige Programmierer";
     private static final String AUDIENCE = "AusgestelltFuer";
     private static final String TENANT_ID = "Tenant12345";
+    private static final String ISSUER = "https://auth.example.com";
 
     public static Stream<Named<TestData>> data() throws Exception {
         return Stream.of(happyPath(),
                 wrongAudience(),
                 wrongTenantId(),
+                wrongIssuer(),
+                missingIssuer(),
                 manipulatedSignature(),
                 unknownKey(),
                 wrongKId(),
@@ -116,8 +118,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    var detail = (String) unpackBody(exc).get("detail");
-                    assertTrue(detail.startsWith(ERROR_JWT_INVALID_SIGNATURE));
+                    assertEquals(JwtAuthInterceptor.ERROR_JWT_INVALID_SIGNATURE, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -169,8 +170,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    var detail = (String) unpackBody(exc).get("detail");
-                    assertTrue(detail.startsWith(ERROR_JWT_INVALID_SIGNATURE));
+                    assertEquals(JwtAuthInterceptor.ERROR_JWT_INVALID_SIGNATURE, unpackBody(exc).get("detail"));
                 }
         );
     }
@@ -185,8 +185,7 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    String detail = (String) unpackBody(exc).get("detail");
-                    assertTrue(detail.startsWith(JwtAuthInterceptor.ERROR_VALIDATION_FAILED));
+                    assertTrue(unpackBody(exc).get("detail").toString().contains("Expected AusgestelltFuer as an aud value"));
                 }
         );
     }
@@ -201,8 +200,37 @@ public class JwtAuthInterceptorTest{
                 (Exchange exc) -> {
                     assertTrue(exc.getResponse().isUserError());
                     assertNull(exc.getProperties().get("jwt"));
-                    var detail = (String) unpackBody(exc).get("detail");
-                    assertTrue(detail.startsWith(JwtAuthInterceptor.ERROR_VALIDATION_FAILED));
+                    assertTrue(unpackBody(exc).get("detail").toString().contains("doesn't match the expected value 'Tenant12345'"));
+                }
+        );
+    }
+
+    private static TestData wrongIssuer() {
+        return new TestData(
+                "wrongIssuer",
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
+                        .get("")
+                        .header("Authorization", "Bearer " + getSignedJwt(privateKey, getClaimsWithWrongIssuer()))
+                        .buildExchange(),
+                (Exchange exc) -> {
+                    assertTrue(exc.getResponse().isUserError());
+                    assertNull(exc.getProperties().get("jwt"));
+                    assertTrue(unpackBody(exc).get("detail").toString().contains("Issuer (iss) claim"));
+                }
+        );
+    }
+
+    private static TestData missingIssuer() {
+        return new TestData(
+                "missingIssuer",
+                (RsaJsonWebKey privateKey) -> new Request.Builder()
+                        .get("")
+                        .header("Authorization", "Bearer " + getSignedJwt(privateKey, getClaimsWithoutIssuer()))
+                        .buildExchange(),
+                (Exchange exc) -> {
+                    assertTrue(exc.getResponse().isUserError());
+                    assertNull(exc.getProperties().get("jwt"));
+                    assertTrue(unpackBody(exc).get("detail").toString().contains("Issuer (iss) claim"));
                 }
         );
     }
@@ -277,6 +305,7 @@ public class JwtAuthInterceptorTest{
         interceptor.setJwks(jwks);
         interceptor.setExpectedAud(AUDIENCE);
         interceptor.setExpectedTid(TENANT_ID);
+        interceptor.setExpectedIss(ISSUER);
         return interceptor;
     }
 
@@ -301,6 +330,7 @@ public class JwtAuthInterceptorTest{
         claims.setSubject(SUB_CLAIM_CONTENT);
         claims.setAudience(audience);
         claims.setClaim("tid", tenantId);
+        claims.setIssuer(ISSUER);
         return claims;
     }
 
@@ -310,5 +340,17 @@ public class JwtAuthInterceptorTest{
 
     private static JwtClaims getClaimsWithWrongTenantId() {
         return createClaims(AUDIENCE, TENANT_ID + "1");
+    }
+
+    private static JwtClaims getClaimsWithWrongIssuer() {
+        JwtClaims claims = createClaims(AUDIENCE, TENANT_ID);
+        claims.setIssuer(ISSUER + "1");
+        return claims;
+    }
+
+    private static JwtClaims getClaimsWithoutIssuer() {
+        JwtClaims claims = createClaims(AUDIENCE, TENANT_ID);
+        claims.unsetClaim("iss");
+        return claims;
     }
 }

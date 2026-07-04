@@ -13,17 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
 import com.predic8.membrane.core.interceptor.oauth2.SessionFinder;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import org.apache.commons.lang3.*;
-import org.jetbrains.annotations.*;
+import com.predic8.membrane.core.proxies.Proxy;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.router.Router;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamReader;
 import java.util.*;
 
 /**
@@ -113,7 +115,10 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 
 		private Map<String, String> userAttributes = new HashMap<>();
 		private int level = 0;
-		private long lastUse;
+		// Initialized to the creation time: cleanup() treats lastUse as the staleness
+		// timestamp, and a 0 here would make every never-touched session (e.g. one only
+		// backing a refresh token) die on the first cleanup sweep.
+		private long lastUse = System.currentTimeMillis();
 		private String userName;
 
 		public synchronized boolean isAuthorized() {

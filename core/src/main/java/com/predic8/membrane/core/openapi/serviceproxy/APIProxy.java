@@ -44,19 +44,42 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintable;
 
 /**
- * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
+ * @description <p>API proxy with several routing options.</p>
+ * <p>Multiple APIs on the same port are discriminated by host, path, or a <code>test</code>
+ * expression. Incoming requests are probed from the top API to the bottom. The first API that
+ * matches the request will process it.</p>
+ * <b>OpenAPI Support</b>
+ * <p>When <code>openapi</code> children are present, Membrane auto-wires a publisher at
+ * <code>/api-docs</code> and an OpenAPI rewriter; see <code>tutorials/getting-started/80-OpenAPI.yaml</code>
+ * and <code>tutorials/getting-started/90-OpenAPI-Validation.yaml</code>.</p>
+ *
+ * @topic 1. Proxies and Flow
  * @yaml <pre><code>
  * api:
  *   port: 2000
+ *   path:
+ *      uri: /orders/{id}
+ *   target:
+ *     url: https://api.predic8.de/shop/orders/{pathParam.id}
+ * ---
+ * api:
+ *   port: 2000
+ *   path:
+ *     uri: /orders/
+ *   target:
+ *     url: https://api.predic8.de
+ * ---
+ * api:
+ *   port: 2000
+ *   test: header.SOAPAction == 'https://predic8.de/city-service/get'
  *   target:
  *     url: https://api.predic8.de
  * ---
  * api:
  *   port: 2000
  *   openapi:
- *     - location: fruitshop-api-v1.oas.yaml
+ *     - location: openapi/fruitshop-api.yaml
  * </code></pre>
- * @topic 1. Proxies and Flow
  */
 @MCElement(name = "api", topLevel = true, component = false)
 public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {

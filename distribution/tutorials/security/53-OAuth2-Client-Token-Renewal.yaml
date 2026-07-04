@@ -1,0 +1,99 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: OAuth2 Client — Automatic Token Management
+#
+# The gateway can fetch and renew access tokens transparently.
+# Callers need no credentials. Membrane handles the full token lifecycle.
+# Tokens expire after 60 seconds; the gateway re-fetches automatically.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 53-OAuth2-Client-Token-Renewal.yaml
+#
+# 2.) Call the gateway — no token needed from the caller:
+#     curl -v localhost:2000
+#
+#     Service accessed!
+#
+#     Watch Membrane's console. On this first call the gateway fetches a token:
+#       {api=Authorization Server} POST /oauth2/token
+#       {api=Backend} Gateway forwarded token ...abc123
+#
+# 3.) Call it again right away:
+#     curl -v localhost:2000
+#
+#     No new "POST /oauth2/token" line appears. The gateway reuses its cached token
+#     and the forwarded token is still the same as in step 2.
+#
+# 4.) Wait about a minute for the token to expire, then call once more:
+#     curl -v localhost:2000
+#
+#     Now "POST /oauth2/token" appears again in the log and the forwarded token ends differently.
+#     Membrane renewed the token automatically.
+
+api:
+  name: Authorization Server
+  port: 7007
+  flow:
+    - request:
+        - log:
+            message: "${method} ${path}"
+    - oauth2authserver:
+        issuer: http://localhost:7007
+        staticUserDataProvider:
+          users:
+            - username: john
+              password: password
+        staticClientList:
+          clients:
+            - clientId: abc
+              clientSecret: def
+              callbackUrl: http://localhost:2000/oauth2callback
+        bearerJwtToken:
+          expiration: 60
+        claims:
+          value: sub
+          scopes:
+            - id: read
+              claims: sub
+
+---
+api:
+  name: Gateway
+  port: 2000
+  flow:
+    # Fetches a token from the auth server, caches it, and re-fetches before expiry.
+    - oauth2Client:
+        tokenUrl: http://localhost:7007/oauth2/token
+        clientId: abc
+        clientSecret: def
+  target:
+    url: http://localhost:3000
+
+---
+api:
+  name: Protected API
+  port: 3000
+  flow:
+    - tokenValidator:
+        endpoint: http://localhost:7007/oauth2/userinfo
+  target:
+    url: http://localhost:4000
+
+---
+api:
+  name: Backend
+  port: 4000
+  flow:
+    # The gateway added the bearer token when forwarding. Log only its last 6 chars
+    # so renewal is observable in Membrane's console without dumping the whole token.
+    - request:
+        - log:
+            message: "Gateway forwarded token ...${headers['Authorization'].substring(headers['Authorization'].length() - 6)}"
+    - static:
+        src: Service accessed!
+    - return:
+        status: 200
+
+# NOTE: This tutorial is intentionally kept simple. In production, run all
+# endpoints behind TLS. Otherwise, OAuth2 transmits credentials and bearer
+# tokens in plain text. See 10-TLS-Termination.yaml for how to enable TLS.

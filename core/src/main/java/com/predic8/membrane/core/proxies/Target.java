@@ -14,34 +14,42 @@
 
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.text.*;
-import com.predic8.membrane.core.util.text.SerializationUtil.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
+import com.predic8.membrane.core.lang.TemplateExchangeExpression;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.text.SerializationFunction;
+import com.predic8.membrane.core.util.text.SerializationUtil.Serialization;
+import com.predic8.membrane.core.util.text.TerminalColors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.stream.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.*;
-import static com.predic8.membrane.core.util.TemplateUtil.*;
-import static com.predic8.membrane.core.util.text.TerminalColors.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.util.TemplateUtil.containsTemplateMarker;
 import static com.predic8.membrane.core.util.text.SerializationUtil.getSerialization;
+import static com.predic8.membrane.core.util.text.TerminalColors.RESET;
 
 /**
- * @description <p>
- * The destination where the service proxy will send messages to.
- * Use the target element if you want to send the messages to a target.
- * Supports dynamic destinations through expressions.
- * </p>
+ * @description Defines the backend a proxy forwards messages to, given either as a <code>host</code>
+ *              with a <code>port</code> or as a full <code>url</code>. The destination can be computed
+ *              per request with inline <code>${expression}</code> templates; outbound TLS and an
+ *              overriding HTTP method can also be configured here.
+ * @yaml <pre><code>
+ * target:
+ *   url: https://api.predic8.de
+ * </code></pre>
  */
 @MCElement(name = "target", component = false)
 public class Target implements XMLSupport {
@@ -147,8 +155,8 @@ public class Target implements XMLSupport {
     }
 
     /**
-     * @description Host address of the target.
-     * @example localhost, 192.168.1.1
+     * @description Host name or IP address of the target. Ignored when <code>url</code> is set.
+     * @example localhost
      */
     @MCAttribute
     public void setHost(String host) {
@@ -160,8 +168,8 @@ public class Target implements XMLSupport {
     }
 
     /**
-     * @description Port number of the target.
-     * @default 80
+     * @description Port number of the target. Ignored when <code>url</code> is set.
+     * @default 80, or 443 when the target uses TLS
      * @example 8080
      */
     @MCAttribute
@@ -174,9 +182,12 @@ public class Target implements XMLSupport {
     }
 
     /**
-     * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
-     * Supports inline expressions through <code>${&lt;expression&gt;}</code> elements.
-     * @example <a href="http://membrane-soa.org">http://membrane-soa.org</a>
+     * @description Absolute URL of the target. When set, <code>host</code> and <code>port</code> are
+     *              ignored. Supports inline <code>${&lt;expression&gt;}</code> templates. If the URL
+     *              contains a path, that path replaces the request path; usually the request path
+     *              should be kept, so give a URL without a path such as
+     *              <code>https://api.predic8.de</code>.
+     * @example https://api.predic8.de
      */
     @MCAttribute
     public void setUrl(String url) {
@@ -188,7 +199,7 @@ public class Target implements XMLSupport {
     }
 
     /**
-     * @description Configures outbound SSL (HTTPS).
+     * @description Configures outbound TLS for the connection to the target (HTTPS).
      */
     @MCChildElement(allowForeign = true)
     public void setSslParser(SSLParser sslParser) {
@@ -199,6 +210,12 @@ public class Target implements XMLSupport {
         return adjustHostHeader;
     }
 
+    /**
+     * @description Rewrites the outgoing <code>Host</code> header to the target host. Disable to
+     *              forward the client's original <code>Host</code> header unchanged.
+     * @default true
+     * @example false
+     */
     @MCAttribute
     public void setAdjustHostHeader(boolean adjustHostHeader) {
         this.adjustHostHeader = adjustHostHeader;
@@ -209,9 +226,9 @@ public class Target implements XMLSupport {
     }
 
     /**
-     * @param method
-     * @description The method that should be used to make the call to the backend.
-     * Overwrites the original method.
+     * @description Overrides the HTTP method used for the backend call, replacing the method of the
+     *              incoming request. When not set, the original method is kept.
+     * @example POST
      */
     @MCAttribute
     public void setMethod(String method) {
@@ -223,9 +240,9 @@ public class Target implements XMLSupport {
     }
 
     /**
-     * @description the language of the inline expressions
+     * @description Expression language used to evaluate inline <code>${...}</code> templates in the URL.
      * @default SpEL
-     * @example SpEL, groovy, jsonpath, xpath
+     * @example groovy
      */
     @MCAttribute
     public void setLanguage(Language language) {
@@ -237,10 +254,11 @@ public class Target implements XMLSupport {
     }
 
     /**
-     * @param escaping NONE, URL, SEGMENT
-     * @description When url contains placeholders ${}, the computed values should be escaped
-     * to prevent injection attacks.
+     * @description How values computed from <code>${...}</code> templates are escaped before being
+     *              inserted into the URL, to prevent injection. <code>URL</code> escapes a whole URL,
+     *              <code>SEGMENT</code> a single path segment, <code>NONE</code> disables escaping.
      * @default URL
+     * @example SEGMENT
      */
     @MCAttribute
     public void setEscaping(Serialization escaping) {

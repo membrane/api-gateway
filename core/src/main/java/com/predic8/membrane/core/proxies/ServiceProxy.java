@@ -14,14 +14,25 @@
 
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 
 /**
- * @description <p>
- *              A service proxy can be deployed on front of a Web server, Web Service or a REST resource. It conceals
- *              the server and offers the same interface as the target server to its clients.
- *              </p>
+ * @description A proxy server sits between clients and a backend: it accepts requests, forwards them
+ *              to the real server, and returns the response, so clients see only the gateway's
+ *              address while the target stays concealed behind it. The <code>serviceProxy</code> is
+ *              Membrane's most basic proxy. It accepts HTTP requests on a port, optionally matched by
+ *              host, path and method, runs them through the configured flow of plugins, and forwards
+ *              them to a target. The other proxies build on it for specific protocols: <code>api</code>
+ *              adds REST and OpenAPI support, <code>soapProxy</code> exposes SOAP Web Services from a
+ *              WSDL.
  * @topic 1. Proxies and Flow
+ * @yaml <pre><code>
+ * serviceProxy:
+ *   port: 2000
+ *   target:
+ *     url: https://www.predic8.de
+ * </code></pre>
  */
 @MCElement(name="serviceProxy")
 public class ServiceProxy extends AbstractServiceProxy {
@@ -41,8 +52,8 @@ public class ServiceProxy extends AbstractServiceProxy {
 	}
 
 	/**
-	 * @description If set, Membrane will only consider this rule, if the method (GET, PUT, POST, DELETE, etc.)
-	 *              header of incoming HTTP requests matches. The asterisk '*' matches any method.
+	 * @description Restricts this proxy to requests whose HTTP method (GET, POST, etc.)
+	 *              matches. The asterisk <code>*</code> matches any method.
 	 * @default *
 	 * @example GET
 	 */

@@ -22,6 +22,14 @@ public interface TokenGenerator {
     void init(Router router) throws Exception;
 
     /**
+     * Sets the issuer that generated tokens should carry as their "iss" claim. Token generators that
+     * cannot carry claims (e.g. opaque tokens) ignore this.
+     */
+    default void setIssuer(String issuer) {
+        // no-op by default
+    }
+
+    /**
      * @return the token type used, probably "Bearer".
      */
     String getTokenType();

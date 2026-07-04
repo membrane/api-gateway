@@ -43,21 +43,24 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 
 @MCElement(name = "bearerJwtToken")
 public class BearerJwtTokenGenerator implements TokenGenerator {
-    private static final Logger LOG = LoggerFactory.getLogger(BearerJwtTokenGenerator.class);
+
+    private static final Logger log = LoggerFactory.getLogger(BearerJwtTokenGenerator.class);
+
     private final SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
 
     private JwtSessionManager.Jwk jwk;
     private long expiration;
     private boolean warningGeneratedKey = true;
+    private String issuer;
 
     public void init(Router router) throws Exception {
         if (jwk == null) {
             rsaJsonWebKey = generateKey();
             if (warningGeneratedKey)
-                LOG.warn("bearerJwtToken uses a generated key ('{}'). Sessions of this instance will not be compatible " +
+                log.warn("bearerJwtToken uses a generated key ('{}'). Sessions of this instance will not be compatible " +
                                 "with sessions of other (e.g. restarted) instances. To solve this, write the JWK into a file and " +
-                                "reference it using <bearerJwtToken><jwk location=\"...\">.",
+                                "reference it using bearerJwtToken/jwk/location: ...",
                         rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         } else {
             rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), resolveBaseLocation(this, router))));
@@ -78,14 +81,25 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     }
 
     @Override
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
+    @Override
     public String getToken(String username, String clientId, String clientSecret, Map<String, Object> additionalClaims) {
         JwtClaims claims = new JwtClaims();
         claims.setSubject(username);
         claims.setClaim("clientId", clientId);
+        if (issuer != null)
+            claims.setIssuer(issuer);
         if (expiration != 0)
             claims.setExpirationTimeMinutesInTheFuture(expiration / 60.0f);
         if (additionalClaims != null)
             additionalClaims.forEach(claims::setClaim);
+        // Set last so a stale jti from additionalClaims cannot survive: every token must be
+        // unique (RFC 9068 requires jti), otherwise e.g. refresh token rotation is a no-op
+        // when two tokens with identical claims are issued within the same second.
+        claims.setGeneratedJwtId();
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
         jws.setKey(rsaJsonWebKey.getRsaPrivateKey());
@@ -127,7 +141,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
     }
 
     private boolean isNormalClaim(String key) {
-        return "sub".equals(key) || "clientId".equals(key) || "exp".equals(key);
+        return "sub".equals(key) || "clientId".equals(key) || "exp".equals(key) || "iss".equals(key) || "jti".equals(key);
     }
 
     @Override

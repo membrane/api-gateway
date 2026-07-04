@@ -1,0 +1,92 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: Signing and Validating JWTs
+#
+# There are two ways in Membrane to issue JWTs:
+#   - by a built-in OAuth token endpoint (as described in 51-OAuth2-Client-Credentials.yaml),
+#   - using the jwtSign interceptor as described here
+#
+# The jwtSign interceptor is a flexible and simple alternative to OAuth.
+# Basically, it takes a JSON document from the message body and signs it with a private key.
+#
+# With jwtSign you can:
+#   - Set up a simple endpoint that issues JWTs
+#   - Exchange a token for a different token (e.g. Basic Auth with a JWT, a JWT for a different JWT, ...)
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 41-JWT-Signing.yaml
+#
+# 2.) Request a token with Basic Auth:
+#     curl -v localhost:2000/token -u "alice:alice-secret"
+#
+#     {"access_token":"eyJ0eXAiOiJKV1Qi...","token_type":"bearer","expires_in":300}
+#
+# 3.) Call the resource with the token:
+#     curl -v localhost:2000/resource -H "Authorization: Bearer eyJ0eXAiOiJKV1Qi..."
+#
+#     {"client":"alice","scope":"read write"}
+
+api:
+  port: 2000
+  name: Token Server
+  path:
+    uri: /token
+  flow:
+    - basicAuthentication:
+        users:
+          - username: alice
+            password: alice-secret
+    - request:
+        # user() returns the authenticated username; jwtSign adds iat/exp/nbf.
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "sub": ${user()},
+                "aud": "demo-resource",
+                "scope": "read write"
+              }
+        # Signs the request body with the private key in jwk.json and puts it into the token property.
+        - jwtSign:
+            property: token
+            jwk:
+              location: jwk.json
+        - template:
+            contentType: application/json
+            src: |
+              {
+                "access_token": ${property.token},
+                "token_type": "bearer",
+                "expires_in": 300
+              }
+    - return:
+        status: 200
+
+---
+api:
+  port: 2000
+  name: Protected Resource
+  path:
+    uri: /resource
+  flow:
+    - jwtAuth:
+        expectedAud: demo-resource
+        jwks:
+          jwks:
+            - location: jwk-public.json
+    - template:
+        contentType: application/json
+        src: |
+          {
+            "client": ${property.jwt.sub},
+            "scope": ${property.jwt.scope}
+          }
+    - return:
+        status: 200
+
+# NOTE: jwk.json contains a demo key (private+public). Generate your own for production.
+#       jwk-public.json holds only the public parameters and is used by jwtAuth for validation.
+#
+# NOTE: This tutorial is intentionally kept simple. In production, run all
+# endpoints behind TLS. Otherwise, the login credentials and bearer tokens are
+# transmitted in plain text. See 10-TLS-Termination.yaml for how to enable TLS.

@@ -414,7 +414,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <test>**/UnitTests.java</test>
-                    <argLine>-Dfile.encoding=UTF-8</argLine>
+                    <argLine>-Dfile.encoding=UTF-8 -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0</argLine>
                 </configuration>
             </plugin>
 

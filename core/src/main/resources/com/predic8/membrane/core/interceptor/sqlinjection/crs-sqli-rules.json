@@ -1,0 +1,319 @@
+[ {
+  "id" : "942120",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "utf8toUnicode", "urlDecodeUni" ],
+  "message" : "SQL Injection Attack: SQL Operator Detected",
+  "regex" : "(?i)[!=]=|&&|\\|\\||->|>[=>]|<(?:[<=]|>(?:[\\s\\x0b]+binary)?)|\\b(?:(?:xor|r(?:egexp|like)|i(?:snull|like)|notnull)\\b|collate(?:[^0-9A-Z_a-z]*?(?:U&)?[\\\"'`]|[^0-9A-Z_a-z]+(?:(?:binary|nocase|rtrim)\\b|[0-9A-Z_a-z]*?_))|(?:likel(?:ihood|y)|unlikely)[\\s\\x0b]*\\()|r(?:egexp|like)[\\s\\x0b]+binary|not[\\s\\x0b]+between[\\s\\x0b]+(?:0[\\s\\x0b]+and|(?:'[^']*'|\\\"[^\\\"]*\\\")[\\s\\x0b]+and[\\s\\x0b]+(?:'[^']*'|\\\"[^\\\"]*\\\"))|is[\\s\\x0b]+null|like[\\s\\x0b]+(?:null|[0-9A-Z_a-z]+[\\s\\x0b]+escape\\b)|(?:^|[^0-9A-Z_a-z])in[\\s\\x0b\\+]*\\([\\s\\x0b\\\"0-9]+[^\\(\\)]*\\)|[!<->][\\s\\x0b]*all\\b"
+}, {
+  "id" : "942140",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack: Common DB Names Detected",
+  "regex" : "(?i)\\b(?:d(?:atabas|b_nam)e[^0-9A-Z_a-z]*\\(|(?:information_schema|m(?:aster\\.\\.sysdatabases|s(?:db|ys(?:ac(?:cess(?:objects|storage|xml)|es)|modules2?|(?:object|querie|relationship)s))|ysql\\.db)|northwind|pg_(?:catalog|toast)|tempdb)\\b|s(?:chema(?:_name\\b|[^0-9A-Z_a-z]*\\()|(?:qlite_(?:temp_)?master|ys(?:aux|\\.database_name))\\b))"
+}, {
+  "id" : "942150",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack: SQL function name detected",
+  "regex" : "(?i)\\b(?:json(?:_[0-9A-Z_a-z]+)?|a(?:bs|(?:cos|sin)h?|tan[2h]?|vg)|c(?:eil(?:ing)?|h(?:a(?:nges|r(?:set)?)|r)|o(?:alesce|sh?|unt)|ast)|d(?:e(?:grees|fault)|a(?:te|y))|exp|f(?:loor(?:avg)?|ormat|ield)|g(?:lob|roup_concat)|h(?:ex|our)|i(?:f(?:null)?|if|n(?:str)?)|l(?:ast(?:_insert_rowid)?|ength|ike(?:l(?:ihood|y))?|n|o(?:ad_extension|g(?:10|2)?|wer(?:pi)?|cal)|trim)|m(?:ax|in(?:ute)?|o(?:d|nth))|n(?:ullif|ow)|p(?:i|ow(?:er)?|rintf|assword)|quote|r(?:a(?:dians|ndom(?:blob)?)|e(?:p(?:lace|eat)|verse)|ound|trim|ight)|s(?:i(?:gn|nh?)|oundex|q(?:lite_(?:compileoption_(?:get|used)|offset|source_id|version)|rt)|u(?:bstr(?:ing)?|m)|econd|leep)|t(?:anh?|otal(?:_changes)?|r(?:im|unc)|ypeof|ime)|u(?:n(?:icode|likely)|(?:pp|s)er)|zeroblob|bin|v(?:alues|ersion)|week|year)[^0-9A-Z_a-z]*\\("
+}, {
+  "id" : "942151",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack: SQL function name detected",
+  "regex" : "(?i)\\b(?:a(?:dd(?:dat|tim)e|es_(?:de|en)crypt|s(?:cii(?:str)?|in)|tan2?)|b(?:enchmark|i(?:n_to_num|t_(?:and|count|length|x?or)))|c(?:har(?:acter)?_length|eil(?:ing)?|o(?:alesce|ercibility|llation|(?:mpres)?s|n(?:cat(?:_ws)?|nection_id|v(?:ert_tz)?)|t)|rc32|ur(?:(?:dat|tim)e|rent_(?:date|setting|time(?:stamp)?|user)))|d(?:a(?:t(?:abase(?:_to_xml)?|e(?:_(?:add|format|sub)|diff))|y(?:name|of(?:month|week|year)))|count|e(?:code|s_(?:de|en)crypt)|ump)|e(?:n(?:c(?:ode|rypt)|ds_?with)|x(?:p(?:ort_set)?|tract(?:value)?))|f(?:i(?:el|n)d_in_set|ound_rows|rom_(?:base64|days|unixtime))|g(?:e(?:ometrycollection|t(?:_(?:format|lock)|pgusername))|(?:r(?:eates|oup_conca)|tid_subse)t)|hex(?:toraw)?|i(?:fnull|n(?:et6?_(?:aton|ntoa)|s(?:ert|tr)|terval)|s(?:_(?:(?:free|used)_lock|ipv(?:4(?:_(?:compat|mapped))?|6)|n(?:ot(?:_null)?|ull)|superuser)|null))|json(?:_(?:a(?:gg|rray(?:_(?:elements(?:_text)?|length))?)|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|object(?:_(?:agg|keys))?|populate_record(?:set)?|strip_nulls|t(?:o_record(?:set)?|ypeof))|b(?:_(?:array(?:_(?:elements(?:_text)?|length))?|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|insert|object(?:_(?:agg|keys))?|p(?:ath_(?:(?:exists|match)(?:_tz)?|query(?:_(?:(?:array|first)(?:_tz)?|tz))?)|opulate_record(?:set)?|retty)|s(?:et(?:_lax)?|trip_nulls)|t(?:o_record(?:set)?|ypeof)))?|path)?|l(?:ast_(?:day|insert_id)|case|east|i(?:kely|nestring)|o(?:_(?:from_bytea|put)|ad_file|ca(?:ltimestamp|te)|g(?:10|2))|pad|trim)|m(?:a(?:ke(?:_set|date)|ster_pos_wait)|d5|i(?:crosecon)?d|onthname|ulti(?:linestring|po(?:int|lygon)))|n(?:ame_const|ot_in|ullif)|o(?:ct(?:et_length)?|(?:ld_passwo)?rd)|p(?:eriod_(?:add|diff)|g_(?:client_encoding|(?:databas|read_fil)e|l(?:argeobject|s_dir)|sleep|user)|o(?:lygon|w)|rocedure_analyse)|qu(?:ery_to_xml|ote)|r(?:a(?:dians|nd|wtohex)|elease_lock|ow_(?:count|to_json)|pad|trim)|s(?:chema|e(?:c_to_time|ssion_user)|ha[12]?|in|oundex|q(?:lite_(?:compileoption_(?:get|used)|source_id)|rt)|t(?:arts_?with|d(?:dev_(?:po|sam)p)?|r(?:_to_date|cmp))|ub(?:(?:dat|tim)e|str(?:ing(?:_index)?)?)|ys(?:date|tem_user))|t(?:ime(?:_(?:format|to_sec)|diff|stamp(?:add|diff)?)|o(?:_(?:base64|jsonb?)|n?char|(?:day|second)s)|r(?:im|uncate))|u(?:case|n(?:compress(?:ed_length)?|hex|i(?:str|x_timestamp))|(?:pdatexm|se_json_nul)l|tc_(?:date|time(?:stamp)?)|uid(?:_short)?)|var(?:_(?:po|sam)p|iance)|we(?:ek(?:day|ofyear)|ight_string)|xmltype|yearweek)[^0-9A-Z_a-z]*\\("
+}, {
+  "id" : "942152",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack: SQL function name detected",
+  "regex" : "(?i)\\b(?:a(?:dd(?:dat|tim)e|es_(?:de|en)crypt|s(?:cii(?:str)?|in)|tan2?)|b(?:enchmark|i(?:n_to_num|t_(?:and|count|length|x?or)))|c(?:har(?:acter)?_length|eil(?:ing)?|o(?:alesce|ercibility|llation|(?:mpres)?s|n(?:cat(?:_ws)?|nection_id|v(?:ert(?:_tz)?)?)|t)|rc32|ur(?:(?:dat|tim)e|rent_(?:date|setting|time(?:stamp)?|user)))|d(?:a(?:t(?:abase(?:_to_xml)?|e(?:_(?:add|format|sub)|diff))|y(?:name|of(?:month|week|year)))|count|e(?:code|grees|s_(?:de|en)crypt)|ump)|e(?:lt|n(?:c(?:ode|rypt)|ds_?with)|x(?:p(?:ort_set)?|tract(?:value)?))|f(?:i(?:el|n)d_in_set|ound_rows|rom_(?:base64|days|unixtime))|g(?:e(?:ometrycollection|t(?:_(?:format|lock)|pgusername))|(?:r(?:eates|oup_conca)|tid_subse)t)|hex(?:toraw)?|i(?:fnull|n(?:et6?_(?:aton|ntoa)|s(?:ert|tr)|terval)|s(?:_(?:(?:free|used)_lock|ipv(?:4(?:_(?:compat|mapped))?|6)|n(?:ot(?:_null)?|ull)|superuser)|null))|json(?:_(?:a(?:gg|rray(?:_(?:elements(?:_text)?|length))?)|build_(?:array|object)|e(?:ac|xtract_pat)h(?:_text)?|object(?:_(?:agg|keys))?|populate_record(?:set)?|strip_nulls|t(?:o_record(?:set)?|ypeof))|b(?:_(?:array(?:_(?:elements(?:_text)?|length))?|build_(?:array|object)|object(?:_(?:agg|keys))?|e(?:ac|xtract_pat)h(?:_text)?|insert|p(?:ath_(?:(?:exists|match)(?:_tz)?|query(?:_(?:(?:array|first)(?:_tz)?|tz))?)|opulate_record(?:set)?|retty)|s(?:et(?:_lax)?|trip_nulls)|t(?:o_record(?:set)?|ypeof)))?|path)?|l(?:ast_(?:day|insert_id)|case|e(?:as|f)t|i(?:kel(?:ihood|y)|nestring)|o(?:_(?:from_bytea|put)|ad_file|ca(?:ltimestamp|te)|g(?:10|2)|wer)|pad|trim)|m(?:a(?:ke(?:_set|date)|ster_pos_wait)|d5|i(?:crosecon)?d|onthname|ulti(?:linestring|po(?:int|lygon)))|n(?:ame_const|ot_in|ullif)|o(?:ct(?:et_length)?|(?:ld_passwo)?rd)|p(?:eriod_(?:add|diff)|g_(?:client_encoding|(?:databas|read_fil)e|l(?:argeobject|s_dir)|sleep|user)|o(?:(?:lyg|siti)on|w)|rocedure_analyse)|qu(?:arter|ery_to_xml|ote)|r(?:a(?:dians|nd|wtohex)|elease_lock|ow_(?:count|to_json)|pad|trim)|s(?:chema|e(?:c_to_time|ssion_user)|ha[12]?|in|oundex|pace|q(?:lite_(?:compileoption_(?:get|used)|source_id)|rt)|t(?:arts_?with|d(?:dev_(?:po|sam)p)?|r(?:_to_date|cmp))|ub(?:(?:dat|tim)e|str(?:ing(?:_index)?)?)|ys(?:date|tem_user))|t(?:ime(?:_(?:format|to_sec)|diff|stamp(?:add|diff)?)|o(?:_(?:base64|jsonb?)|n?char|(?:day|second)s)|r(?:im|uncate))|u(?:case|n(?:compress(?:ed_length)?|hex|i(?:str|x_timestamp)|likely)|(?:pdatexm|se_json_nul)l|tc_(?:date|time(?:stamp)?)|uid(?:_short)?)|var(?:_(?:po|sam)p|iance)|we(?:ek(?:day|ofyear)|ight_string)|xmltype|yearweek)[^0-9A-Z_a-z]*\\("
+}, {
+  "id" : "942160",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni", "replaceComments" ],
+  "message" : "Detects blind sqli tests using sleep() or benchmark()",
+  "regex" : "(?i:sleep\\s*?\\(.*?\\)|benchmark\\s*?\\(.*?\\,.*?\\))"
+}, {
+  "id" : "942170",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects SQL benchmark and sleep injection attempts including conditional queries",
+  "regex" : "(?i)(?:select|;)[\\s\\x0b]+(?:benchmark|if|sleep)[\\s\\x0b]*?\\([\\s\\x0b]*?\\(?[\\s\\x0b]*?[0-9A-Z_a-z]+"
+}, {
+  "id" : "942180",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects basic SQL authentication bypass attempts 1/3",
+  "regex" : "(?i)(?:/\\*)+[\\\"'`]+[\\s\\x0b]?(?:--|[#\\{]|/\\*)?|[\\\"'`](?:[\\s\\x0b]*(?:(?:x?or|and|div|like|between)[\\s\\x0b\\-0-9A-Z_a-z]+[\\(\\)\\+-\\-<->][\\s\\x0b]*[\\\"'0-9`]|[!=\\|](?:[\\s\\x0b!\\+\\-0-9=]+[^\\[]*[\\\"'\\(`].*|[\\s\\x0b!0-9=]+[^0-9]*[0-9]+)$|(?:like|print)[^0-9A-Z_a-z]+[\\\"'\\(0-9A-Z_-z]|;)|(?:[<>~]+|[\\s\\x0b]*[^\\s\\x0b0-9A-Z_a-z]?=[\\s\\x0b]*|[^0-9A-Z_a-z]*?[\\+=]+[^0-9A-Z_a-z]*?)[\\\"'`])|[0-9][\\\"'`][\\s\\x0b]+[\\\"'`][\\s\\x0b]+[0-9]|^(?:json\\.)?admin[\\s\\x0b]*?[\\\"'`]|[\\s\\x0b\\\"'\\(`][\\s\\x0b]*?glob[^0-9A-Z_a-z]+[\\\"'\\(0-9A-Z_-z]|[\\s\\x0b]is[\\s\\x0b]*?0[^0-9A-Z_a-z]|where[\\s\\x0b][\\s\\x0b,-\\.0-9A-Z_a-z]+[\\s\\x0b]="
+}, {
+  "id" : "942190",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni", "removeCommentsChar" ],
+  "message" : "Detects MSSQL code execution and information gathering attempts",
+  "regex" : "(?i)[\\\"'`](?:[\\s\\x0b]*![\\s\\x0b]*[\\\"'0-9A-Z_-z]|;?[\\s\\x0b]*(?:having|select|union\\b[\\s\\x0b]*(?:all|(?:distin|sele)ct))\\b[\\s\\x0b]*[^\\s\\x0b])|\\b(?:(?:(?:c(?:onnection_id|urrent_user)|database|schema|user)[\\s\\x0b]*?|select.*?[0-9A-Z_a-z]?user)\\(|exec(?:ute)?[\\s\\x0b]+master\\.|from[^0-9A-Z_a-z]+information_schema[^0-9A-Z_a-z]|into[\\s\\x0b\\+]+(?:dump|out)file[\\s\\x0b]*?[\\\"'`]|union(?:[\\s\\x0b]select[\\s\\x0b]@|[\\s\\x0b\\(0-9A-Z_a-z]*?select))|[\\s\\x0b]*?exec(?:ute)?.*?[^0-9A-Z_a-z]xp_cmdshell|[^0-9A-Z_a-z]iif[\\s\\x0b]*?\\("
+}, {
+  "id" : "942210",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects chained SQL injection attempts 1/2",
+  "regex" : "(?i)(?:&&|\\|\\||and|between|div|like|n(?:and|ot)|(?:xx?)?or)[\\s\\x0b\\(]+[0-9A-Z_a-z]+[\\s\\x0b\\)]*?[!\\+=]+[\\s\\x0b0-9]*?[\\\"'-\\)=`]|[0-9](?:[\\s\\x0b]*?(?:and|between|div|like|x?or)[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?[\\+\\-]|[\\s\\x0b]+group[\\s\\x0b]+by.+\\()|/[0-9A-Z_a-z]+;?[\\s\\x0b]+(?:and|between|div|having|like|x?or|select)[^0-9A-Z_a-z]|(?:[#;]|--)[\\s\\x0b]*?(?:alter|drop|(?:insert|update)[\\s\\x0b]*?[0-9A-Z_a-z]{2,})|@.+=[\\s\\x0b]*?\\([\\s\\x0b]*?select|[^0-9A-Z_a-z]SET[\\s\\x0b]*?@[0-9A-Z_a-z]+"
+}, {
+  "id" : "942220",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Looking for integer overflow attacks, these are taken from skipfish, except 2.2.2250738585072011e-308 is the \\\"magic number\\\" crash",
+  "regex" : "(?i)^(?:json\\.)?(?:429496729[56]|2(?:14748364[78]|.22507385850720(?:07|11)e-308)|-(?:214748364[89]|0000023456)|00000(?:12345|23456)|1e309)$"
+}, {
+  "id" : "942230",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects conditional SQL injection attempts",
+  "regex" : "(?i)[\\s\\x0b\\(\\)]case[\\s\\x0b]+when.*?then|\\)[\\s\\x0b]*?like[\\s\\x0b]*?\\(|select.*?having[\\s\\x0b]*?[^\\s\\x0b]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]|if[\\s\\x0b]?\\([0-9A-Z_a-z]+[\\s\\x0b]*?[<->~]"
+}, {
+  "id" : "942240",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects MySQL charset switch and MSSQL DoS attempts",
+  "regex" : "(?i)alter[\\s\\x0b]*?[0-9A-Z_a-z]+.*?char(?:acter)?[\\s\\x0b]+set[\\s\\x0b]+[0-9A-Z_a-z]+|[\\\"'`](?:;*?[\\s\\x0b]*?waitfor[\\s\\x0b]+(?:time|delay)[\\s\\x0b]+[\\\"'`]|;.*?:[\\s\\x0b]*?goto)"
+}, {
+  "id" : "942250",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects MATCH AGAINST, MERGE and EXECUTE IMMEDIATE injections",
+  "regex" : "(?i)m(?:erge.*?using|atch[\\s\\x0b]*?[\\(\\)\\+-\\-0-9A-Z_a-z]+[\\s\\x0b]*?against)[\\s\\x0b]*?\\(|execute[\\s\\x0b]*?immediate[\\s\\x0b]*?[\\\"'`]"
+}, {
+  "id" : "942251",
+  "paranoiaLevel" : 3,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects HAVING injections",
+  "regex" : "(?i)\\W+\\d*?\\s*?\\bhaving\\b\\s*?[^\\s\\-]"
+}, {
+  "id" : "942260",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects basic SQL authentication bypass attempts 2/3",
+  "regex" : "(?i)[\\\"'`][\\s\\x0b]*?(?:(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|\\|\\||&&)[\\s\\x0b]+[\\s\\x0b0-9A-Z_a-z]+=[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?having[\\s\\x0b]+|like[^0-9A-Z_a-z]*?[\\\"'0-9`])|[0-9A-Z_a-z][\\s\\x0b]+like[\\s\\x0b]+[\\\"'`]|like[\\s\\x0b]*?[\\\"'`]%|select[\\s\\x0b]+?[\\s\\x0b\\\"'-\\),-\\.0-9A-\\[\\]_-z]+from[\\s\\x0b]+"
+}, {
+  "id" : "942270",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Looking for basic sql injection. Common attack string for mysql, oracle and others",
+  "regex" : "(?i)union.*?select.*?from"
+}, {
+  "id" : "942280",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects Postgres pg_sleep injection, waitfor delay attacks and database shutdown attempts",
+  "regex" : "(?i)select[\\s\\x0b]*?pg_sleep|waitfor[\\s\\x0b]*?delay[\\s\\x0b]?[\\\"'`]+[\\s\\x0b]?[0-9]|;[\\s\\x0b]*?shutdown[\\s\\x0b]*?(?:[#;\\{]|/\\*|--)"
+}, {
+  "id" : "942290",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Finds basic MongoDB SQL injection attempts",
+  "regex" : "(?i)\\[?\\$(?:a(?:bs|c(?:cumulator|osh?)|dd(?:ToSet)?|ll(?:ElementsTrue)?|n(?:d|yElementTrue)|rray(?:ElemA|ToObjec)t|sinh?|tan[2h]?|vg)|b(?:etween|i(?:narySize|t(?:And|Not|(?:O|Xo)r)?)|ottomN?|sonSize|ucket(?:Auto)?)|c(?:eil|mp|o(?:n(?:cat(?:Arrays)?|d|vert)|sh?|unt|variance(?:Po|Sam)p)|urrentDate)|d(?:a(?:te(?:Add|Diff|From(?:Parts|String)|Subtract|T(?:o(?:Parts|String)|runc))|yOf(?:Month|Week|Year))|e(?:greesToRadians|nseRank|rivative)|iv(?:ide)?|ocumentNumber)|e(?:(?:a|lemMat)ch|q|x(?:ists|p(?:MovingAvg|r)?))|f(?:i(?:lter|rstN?)|loor|unction)|g(?:etField|roup|te?)|(?:hou|xo|yea)r|i(?:fNull|n(?:c|dexOf(?:Array|Bytes|CP)|tegral)?|s(?:Array|Number|o(?:DayOfWeek|Week(?:Year)?)))|jsonSchema|l(?:astN?|et|i(?:ke|(?:nearFil|tera)l)|n|o(?:cf|g(?:10)?)|t(?:e|rim)?)|m(?:a(?:p|xN?)|e(?:dian|rgeObjects|ta)|i(?:llisecond|n(?:N|ute)?)|o(?:d|nth)|ul(?:tiply)?)|n(?:atural|e|in|o[rt])|o(?:bjectToArray|r)|p(?:ercentile|o(?:[pw]|sition)|roject|u(?:ll(?:All)?|sh))|r(?:a(?:diansToDegrees|n(?:[dk]|ge))|e(?:(?:duc|nam)e|gex(?:Find(?:All)?|Match)?|place(?:All|One)|verseArray)|ound|trim)|s(?:(?:ampleRat|lic)e|e(?:cond|t(?:Difference|(?:Equal|WindowField)s|Field|I(?:ntersection|sSubset)|OnInsert|Union)?)|(?:hif|pli|qr)t|i(?:nh?|ze)|ort(?:Array)?|t(?:dDev(?:Po|Sam)p|r(?:Len(?:Bytes|CP)|casecmp))|u(?:b(?:str(?:Bytes|CP)?|tract)|m)|witch)|t(?:anh?|ext|o(?:Bool|D(?:(?:at|oubl)e|ecimal)|HashedIndexKey|Int|Lo(?:ng|wer)|ObjectId|String|U(?:UID|pper)|pN?)|r(?:im|unc)|s(?:Increment|Second)|ype)|unset|w(?:eek|here)|zip)\\b\\]?"
+}, {
+  "id" : "942300",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects MySQL comments, conditions and ch(a)r injections",
+  "regex" : "(?i)\\)[\\s\\x0b]*?when[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?then|[\\\"'`][\\s\\x0b]*?(?:[#\\{]|--)|/\\*![\\s\\x0b]?[0-9]+|\\b(?:(?:binary|cha?r)[\\s\\x0b]*?\\([\\s\\x0b]*?[0-9]|(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|r(?:egexp|like))[\\s\\x0b]+[0-9A-Z_a-z]+\\()|(?:\\|\\||&&)[\\s\\x0b]*?[0-9A-Z_a-z]+\\("
+}, {
+  "id" : "942310",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects chained SQL injection attempts 2/2",
+  "regex" : "(?i)(?:\\([\\s\\x0b]*?select[\\s\\x0b]*?[0-9A-Z_a-z]+|coalesce|order[\\s\\x0b]+by[\\s\\x0b]+if[0-9A-Z_a-z]*?)[\\s\\x0b]*?\\(|\\*/from|\\+[\\s\\x0b]*?[0-9]+[\\s\\x0b]*?\\+[\\s\\x0b]*?@|[0-9A-Z_a-z][\\\"'`][\\s\\x0b]*?(?:(?:[\\+\\-=@\\|]+[\\s\\x0b]+?)+|[\\+\\-=@\\|]+)[\\(0-9]|@@[0-9A-Z_a-z]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]|[^0-9A-Z_a-z]!+[\\\"'`][0-9A-Z_a-z]|[\\\"'`](?:;[\\s\\x0b]*?(?:if|while|begin)|[\\s\\x0b0-9]+=[\\s\\x0b]*?[0-9])|[\\s\\x0b\\(]+case[0-9]*?[^0-9A-Z_a-z].+[tw]hen[\\s\\x0b\\(]"
+}, {
+  "id" : "942320",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects MySQL and PostgreSQL stored procedure/function injections",
+  "regex" : "(?i)create[\\s\\x0b]+(?:function|procedure)[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?\\([\\s\\x0b]*?\\)[\\s\\x0b]*?-|d(?:eclare[^0-9A-Z_a-z]+[#@][\\s\\x0b]*?[0-9A-Z_a-z]+|iv[\\s\\x0b]*?\\([\\+\\-]*[\\s\\x0b\\.0-9]+,[\\+\\-]*[\\s\\x0b\\.0-9]+\\))|exec[\\s\\x0b]*?\\([\\s\\x0b]*?@|(?:lo_(?:impor|ge)t|procedure[\\s\\x0b]+analyse)[\\s\\x0b]*?\\(|;[\\s\\x0b]*?(?:declare|open)[\\s\\x0b]+[\\-0-9A-Z_a-z]+|::(?:b(?:igint|ool)|double[\\s\\x0b]+precision|int(?:eger)?|numeric|oid|real|(?:tex|smallin)t)"
+}, {
+  "id" : "942321",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects MySQL and PostgreSQL stored procedure/function injections",
+  "regex" : "(?i)create[\\s\\x0b]+(?:function|procedure)[\\s\\x0b]*?[0-9A-Z_a-z]+[\\s\\x0b]*?\\([\\s\\x0b]*?\\)[\\s\\x0b]*?-|d(?:eclare[^0-9A-Z_a-z]+[#@][\\s\\x0b]*?[0-9A-Z_a-z]+|iv[\\s\\x0b]*?\\([\\+\\-]*[\\s\\x0b\\.0-9]+,[\\+\\-]*[\\s\\x0b\\.0-9]+\\))|exec[\\s\\x0b]*?\\([\\s\\x0b]*?@|(?:lo_(?:impor|ge)t|procedure[\\s\\x0b]+analyse)[\\s\\x0b]*?\\(|;[\\s\\x0b]*?(?:declare|open)[\\s\\x0b]+[\\-0-9A-Z_a-z]+|::(?:b(?:igint|ool)|double[\\s\\x0b]+precision|int(?:eger)?|numeric|oid|real|(?:tex|smallin)t)"
+}, {
+  "id" : "942330",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects classic SQL injection probings 1/3",
+  "regex" : "(?i)[\\\"'`][\\s\\x0b]*?\\b(?:x?or|div|like|between|and)\\b[\\s\\x0b]*?[\\\"'`]?[0-9]|\\x5cx(?:2[37]|3d)|^(?:.?[\\\"'`]$|[\\\"'\\x5c`]*?(?:[\\\"'0-9`]+|[^\\\"'`]+[\\\"'`])[\\s\\x0b]*?\\b(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between|\\|\\||&&)\\b[\\s\\x0b]*?[\\\"'0-9A-Z_-z][!&\\(\\)\\+-\\.@])|[^\\s\\x0b0-9A-Z_a-z][0-9A-Z_a-z]+[\\s\\x0b]*?[\\-\\|][\\s\\x0b]*?[\\\"'`][\\s\\x0b]*?[0-9A-Z_a-z]|@(?:[0-9A-Z_a-z]+[\\s\\x0b]+(?:and|x?or|div|like|between)\\b[\\s\\x0b]*?[\\\"'0-9`]+|[\\-0-9A-Z_a-z]+[\\s\\x0b](?:and|x?or|div|like|between)\\b[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z])|[^\\s\\x0b0-:A-Z_a-z][\\s\\x0b]*?[0-9][^0-9A-Z_a-z]+[^\\s\\x0b0-9A-Z_a-z][\\s\\x0b]*?[\\\"'`].|[^0-9A-Z_a-z]information_schema|table_name[^0-9A-Z_a-z]"
+}, {
+  "id" : "942340",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects basic SQL authentication bypass attempts 3/3",
+  "regex" : "(?i)in[\\s\\x0b]*?\\(+[\\s\\x0b]*?select|(?:(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between)[\\s\\x0b]+|(?:\\|\\||&&)[\\s\\x0b]*?)[\\s\\x0b\\+0-9A-Z_a-z]+(?:regexp[\\s\\x0b]*?\\(|sounds[\\s\\x0b]+like[\\s\\x0b]*?[\\\"'`]|[0-9=]+x)|[\\\"'`](?:[\\s\\x0b]*?(?:(?:[0-9]+[\\s\\x0b]*?(?:--|#)|is[\\s\\x0b]*?(?:[0-9][^\\\"'`]+[\\\"'`]?[0-9A-Z_a-z]|[\\.0-9]+[\\s\\x0b]*?[^0-9A-Z_a-z][^\\\"'`]*[\\\"'`])|(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between)[\\s\\x0b]+|(?:\\|\\||&&)[\\s\\x0b]*?)(?:array[\\s\\x0b]*?\\[|(?:tru|fals)e\\b|[0-9A-Z_a-z]+(?:[\\s\\x0b]*?!?~|[\\s\\x0b]+(?:not[\\s\\x0b]+)?similar[\\s\\x0b]+to[\\s\\x0b]+))|[%&<->\\^]+[0-9]+[\\s\\x0b]*?(?:and|n(?:and|ot)|(?:xx?)?or|div|like|between)=)|(?:[^0-9A-Z_a-z]+[\\+\\-0-9A-Z_a-z]+[\\s\\x0b]*?=[\\s\\x0b]*?[0-9][^0-9A-Z_a-z]+|\\|?[\\-0-9A-Z_a-z]{3,}[^\\s\\x0b,\\.0-9A-Z_a-z]+)[\\\"'`])|\\bexcept[\\s\\x0b]+(?:select\\b|values[\\s\\x0b]*?\\()"
+}, {
+  "id" : "942350",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni", "replaceComments" ],
+  "message" : "Detects MySQL UDF injection and other data/structure manipulation attempts",
+  "regex" : "(?i)create[\\s\\x0b]+function[\\s\\x0b].+[\\s\\x0b]returns|;[\\s\\x0b]*?(?:alter|(?:(?:cre|trunc|upd)at|re(?:nam|plac))e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)\\b[\\s\\x0b]*?[\\(\\[]?[0-9A-Z_a-z]{2,}"
+}, {
+  "id" : "942360",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects concatenated basic SQL injection and SQLLFI attempts",
+  "regex" : "(?i)\\b(?:(?:alter|(?:(?:cre|trunc|upd)at|renam)e|de(?:lete|sc)|(?:inser|selec)t|load)[\\s\\x0b]+(?:char|group_concat|load_file)\\b[\\s\\x0b]*\\(?|end[\\s\\x0b]*?\\);)|[\\s\\x0b\\(]load_file[\\s\\x0b]*?\\(|[\\\"'`][\\s\\x0b]+regexp[^0-9A-Z_a-z]|[\\\"'0-9A-Z_-z][\\s\\x0b]+as\\b[\\s\\x0b]*[\\\"'0-9A-Z_-z]+[\\s\\x0b]*\\bfrom|^(?:json\\.)?[^A-Z_a-z]+[\\s\\x0b]*?(?:(?:(?:(?:cre|trunc)at|renam)e|d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load)[\\s\\x0b]+[0-9A-Z_a-z]+|u(?:pdate[\\s\\x0b]+[0-9A-Z_a-z]+|nion[\\s\\x0b]*(?:all|(?:sele|distin)ct)\\b)|alter[\\s\\x0b]*(?:a(?:(?:ggregat|pplication[\\s\\x0b]*rol)e|s(?:sembl|ymmetric[\\s\\x0b]*ke)y|u(?:dit|thorization)|vailability[\\s\\x0b]*group)|b(?:roker[\\s\\x0b]*priority|ufferpool)|c(?:ertificate|luster|o(?:l(?:latio|um)|nversio)n|r(?:edential|yptographic[\\s\\x0b]*provider))|d(?:atabase|efault|i(?:mension|skgroup)|omain)|e(?:(?:ndpoi|ve)nt|xte(?:nsion|rnal))|f(?:lashback|oreign|u(?:lltext|nction))|hi(?:erarchy|stogram)|group|in(?:dex(?:type)?|memory|stance)|java|l(?:a(?:ngua|r)ge|ibrary|o(?:ckdown|g(?:file[\\s\\x0b]*group|in)))|m(?:a(?:s(?:k|ter[\\s\\x0b]*key)|terialized)|e(?:ssage[\\s\\x0b]*type|thod)|odule)|(?:nicknam|queu)e|o(?:perator|utline)|p(?:a(?:ckage|rtition)|ermission|ro(?:cedur|fil)e)|r(?:e(?:mot|sourc)e|o(?:l(?:e|lback)|ute))|s(?:chema|e(?:arch|curity|rv(?:er|ice)|quence|ssion)|y(?:mmetric[\\s\\x0b]*key|nonym)|togroup)|t(?:able(?:space)?|ext|hreshold|r(?:igger|usted)|ype)|us(?:age|er)|view|w(?:ork(?:load)?|rapper)|x(?:ml[\\s\\x0b]*schema|srobject))\\b)"
+}, {
+  "id" : "942361",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects basic SQL injection based on keyword alter or union",
+  "regex" : "(?i:^(?:json\\.)?[\\W\\d]+\\s*?(?:alter|union)\\b)"
+}, {
+  "id" : "942362",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects concatenated basic SQL injection and SQLLFI attempts",
+  "regex" : "(?i)(?:alter|(?:(?:cre|trunc|upd)at|renam)e|de(?:lete|sc)|(?:inser|selec)t|load)[\\s\\x0b]+(?:char|group_concat|load_file)[\\s\\x0b]?\\(?|end[\\s\\x0b]*?\\);|[\\s\\x0b\\(]load_file[\\s\\x0b]*?\\(|[\\\"'`][\\s\\x0b]+regexp[^0-9A-Z_a-z]|[^A-Z_a-z][\\s\\x0b]+as\\b[\\s\\x0b]*[\\\"'0-9A-Z_-z]+[\\s\\x0b]*\\bfrom|^(?:json\\.)?[^A-Z_a-z]+[\\s\\x0b]*?(?:create[\\s\\x0b]+[0-9A-Z_a-z]+|(?:d(?:e(?:lete|sc)|rop)|(?:inser|selec)t|load|(?:renam|truncat)e|u(?:pdate|nion[\\s\\x0b]*(?:all|(?:sele|distin)ct))|alter[\\s\\x0b]*(?:a(?:(?:ggregat|pplication[\\s\\x0b]*rol)e|s(?:sembl|ymmetric[\\s\\x0b]*ke)y|u(?:dit|thorization)|vailability[\\s\\x0b]*group)|b(?:roker[\\s\\x0b]*priority|ufferpool)|c(?:ertificate|luster|o(?:l(?:latio|um)|nversio)n|r(?:edential|yptographic[\\s\\x0b]*provider))|d(?:atabase|efault|i(?:mension|skgroup)|omain)|e(?:(?:ndpoi|ve)nt|xte(?:nsion|rnal))|f(?:lashback|oreign|u(?:lltext|nction))|hi(?:erarchy|stogram)|group|in(?:dex(?:type)?|memory|stance)|java|l(?:a(?:ngua|r)ge|ibrary|o(?:ckdown|g(?:file[\\s\\x0b]*group|in)))|m(?:a(?:s(?:k|ter[\\s\\x0b]*key)|terialized)|e(?:ssage[\\s\\x0b]*type|thod)|odule)|(?:nicknam|queu)e|o(?:perator|utline)|p(?:a(?:ckage|rtition)|ermission|ro(?:cedur|fil)e)|r(?:e(?:mot|sourc)e|o(?:l(?:e|lback)|ute))|s(?:chema|e(?:arch|curity|rv(?:er|ice)|quence|ssion)|y(?:mmetric[\\s\\x0b]*key|nonym)|togroup)|t(?:able(?:space)?|ext|hreshold|r(?:igger|usted)|ype)|us(?:age|er)|view|w(?:ork(?:load)?|rapper)|x(?:ml[\\s\\x0b]*schema|srobject)))\\b)"
+}, {
+  "id" : "942370",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects classic SQL injection probings 2/3",
+  "regex" : "(?i)[\\\"'`](?:[\\s\\x0b]*?(?:(?:\\*.+(?:x?or|div|like|between|(?:an|i)d)[^0-9A-Z_a-z]*?[\\\"'`]|(?:x?or|div|like|between|and)[\\s\\x0b][^0-9]+[\\-0-9A-Z_a-z]+[^0-9]*)[0-9]|[^\\s\\x0b0-9\\?A-Z_a-z]+[\\s\\x0b]*?[^\\s\\x0b0-9A-Z_a-z]+[\\s\\x0b]*?[\\\"'`]|[^\\s\\x0b0-9A-Z_a-z]+[\\s\\x0b]*?[^A-Z_a-z](?:[^#]*#|.*?--))|[^\\*]*\\*[\\s\\x0b]*?[0-9])|\\^[\\\"'`]|[%\\(-\\+\\-<>][\\-0-9A-Z_a-z]+[^\\s\\x0b0-9A-Z_a-z]+[\\\"'`][^,]"
+}, {
+  "id" : "942380",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack",
+  "regex" : "(?i)\\b(?:having\\b(?:[\\s\\x0b]+(?:[0-9]{1,10}|'[^=]{1,10}')[\\s\\x0b]*?[<->]| ?(?:[0-9]{1,10} ?[<->]+|[\\\"'][^=]{1,10}[ \\\"'<-\\?\\[]+))|ex(?:ecute(?:\\(|[\\s\\x0b]{1,5}[\\$\\.0-9A-Z_a-z]{1,5}[\\s\\x0b]{0,3})|ists[\\s\\x0b]*?\\([\\s\\x0b]*?select\\b)|(?:create[\\s\\x0b]+?table.{0,20}?|like[^0-9A-Z_a-z]*?char[^0-9A-Z_a-z]*?)\\()|select.*?case|from.*?limit|order[\\s\\x0b]by|exists[\\s\\x0b](?:[\\s\\x0b]select|s(?:elect[^\\s\\x0b](?:if(?:null)?[\\s\\x0b]\\(|top|concat)|ystem[\\s\\x0b]\\()|\\bhaving\\b[\\s\\x0b]+[0-9]{1,10}|'[^=]{1,10}')"
+}, {
+  "id" : "942390",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack using (X)OR",
+  "regex" : "(?i)\\bx?or\\b(?:[\\s\\x0b]+[0-9]{1,10}(?:[\\s\\x0b]*[<->])?|[\\s\\x0b]*[\\\"'][^=]{1,10}[\\\"'])|[\\\"'][\\s\\x0b]+\\bx?or\\b[\\s\\x0b]+[^!\\+\\-<->]{1,20}[!\\+\\-<->]"
+}, {
+  "id" : "942400",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack",
+  "regex" : "(?i)\\band\\b(?:[\\s\\x0b]+(?:[0-9]{1,10}[\\s\\x0b]*?[<->]|'[^=]{1,10}')| ?(?:[0-9]{1,10}|[\\\"'][^=]{1,10}[\\\"']) ?[<->]+)"
+}, {
+  "id" : "942410",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack",
+  "regex" : "(?i)\\b(?:a(?:(?:b|co)s|vg)|bin|c(?:(?:as|o(?:nver|un))t|h(?:ar(?:set)?|r))|d(?:a(?:te|y)|e(?:fault|grees))|elt|f(?:ield|loor|ormat)|(?:hou|quarte|yea)r|i[fns]|l(?:ast|e(?:ft|ngth)|n|ikelihood|o(?:cal|g|wer))|m(?:ax|in(?:ute)?|o(?:d|nth))|now|p(?:assword|i|o(?:sition|wer))|r(?:awtonhex(?:toraw)?|e(?:p(?:eat|lace)|verse)|ight|ound)|s(?:econd|ign|leep|pace|tddev|um)|t(?:an|ime|o_(?:n?char|(?:day|second)s))|u(?:nlikely|(?:pp|s)er)|v(?:alues|ersion)|week)[^0-9A-Z_a-z]*?\\("
+}, {
+  "id" : "942420",
+  "paranoiaLevel" : 3,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Restricted SQL Character Anomaly Detection (cookies): # of special characters exceeded (8)",
+  "regex" : "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){8})"
+}, {
+  "id" : "942421",
+  "paranoiaLevel" : 4,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Restricted SQL Character Anomaly Detection (cookies): # of special characters exceeded (3)",
+  "regex" : "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){3})"
+}, {
+  "id" : "942430",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (12)",
+  "regex" : "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){12})"
+}, {
+  "id" : "942431",
+  "paranoiaLevel" : 3,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (6)",
+  "regex" : "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){6})"
+}, {
+  "id" : "942432",
+  "paranoiaLevel" : 4,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Restricted SQL Character Anomaly Detection (args): # of special characters exceeded (2)",
+  "regex" : "((?:(?:[!-\\+\\-:->@\\[\\]\\^`\\{-~]|\\x{c2}\\x{b4}|\\x{e2}\\x80[\\x98\\x99])[^!-\\+\\-:->@\\[\\]\\^`\\{-~]*?){2})"
+}, {
+  "id" : "942450",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Bin or Hex Encoding Identified",
+  "regex" : "(?i)\\b0x[0-9a-f]{3,}|(?:x'[0-9a-f]{3,}|b'[01]{10,})'"
+}, {
+  "id" : "942460",
+  "paranoiaLevel" : 3,
+  "transforms" : [ ],
+  "message" : "Meta-Character Anomaly Detection Alert - Repetitive Non-Word Characters",
+  "regex" : "\\W{4}"
+}, {
+  "id" : "942470",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack",
+  "regex" : "(?i)autonomous_transaction|(?:current_use|n?varcha|tbcreato)r|db(?:a_users|ms_java)|open(?:owa_util|query|rowset)|s(?:p_(?:(?:addextendedpro|sqlexe)c|execute(?:sql)?|help|is_srvrolemember|makewebtask|oacreate|p(?:assword|repare)|replwritetovarbin)|ql_(?:longvarchar|variant))|utl_(?:file|http)|xp_(?:availablemedia|(?:cmdshel|servicecontro)l|dirtree|e(?:numdsn|xecresultset)|filelist|loginconfig|makecab|ntsec(?:_enumdomains)?|reg(?:addmultistring|delete(?:key|value)|enum(?:key|value)s|re(?:ad|movemultistring)|write)|terminate(?:_process)?)"
+}, {
+  "id" : "942480",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQL Injection Attack",
+  "regex" : "(?i)\\b(?:(?:d(?:bms_[0-9A-Z_a-z]+\\.|elete\\b[^0-9A-Z_a-z]*?\\bfrom)|(?:group\\b.*?\\bby\\b.{1,100}?\\bhav|overlay\\b[^0-9A-Z_a-z]*?\\(.*?\\b[^0-9A-Z_a-z]*?plac)ing|in(?:ner\\b[^0-9A-Z_a-z]*?\\bjoin|sert\\b[^0-9A-Z_a-z]*?\\binto|to\\b[^0-9A-Z_a-z]*?\\b(?:dump|out)file)|load\\b[^0-9A-Z_a-z]*?\\bdata\\b.*?\\binfile|s(?:elect\\b.{1,100}?\\b(?:(?:.*?\\bdump\\b.*|(?:count|length)\\b.{1,100}?)\\bfrom|(?:data_typ|from\\b.{1,100}?\\bwher)e|instr|to(?:_(?:cha|numbe)r|p\\b.{1,100}?\\bfrom))|ys_context)|u(?:nion\\b.{1,100}?\\bselect|tl_inaddr))\\b|print\\b[^0-9A-Z_a-z]*?@@)|(?:collation[^0-9A-Z_a-z]*?\\(a|@@version|;[^0-9A-Z_a-z]*?\\b(?:drop|shutdown))\\b|'(?:dbo|msdasql|s(?:a|qloledb))'"
+}, {
+  "id" : "942490",
+  "paranoiaLevel" : 3,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects classic SQL injection probings 3/3",
+  "regex" : "[\\\"'`][\\s\\d]*?[^\\w\\s]\\W*?\\d\\W*?.*?[\\\"'`\\d]"
+}, {
+  "id" : "942500",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "MySQL in-line comment detected",
+  "regex" : "(?i)/\\*[\\s\\x0b]*?[!\\+](?:[\\s\\x0b\\(\\)\\-0-9=A-Z_a-z]+)?\\*/"
+}, {
+  "id" : "942510",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQLi bypass attempt by ticks or backticks detected",
+  "regex" : "`(?:[\\s\\x0b\\(\\)\\+\\-0-9<=@-Z_a-\\{\\}]{2,29}|(?:[\\+/-9A-Za-z]{4})+(?:(?:[\\+/-9A-Za-z]{2}=|[\\+/-9A-Za-z]{3})=)?)`"
+}, {
+  "id" : "942511",
+  "paranoiaLevel" : 3,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQLi bypass attempt by ticks detected",
+  "regex" : "'(?:[\\s\\x0b\\(\\)\\+\\-0-9<=@-Z_a-\\{\\}]{2,29}|(?:[\\+/-9A-Za-z]{4})+(?:(?:[\\+/-9A-Za-z]{2}=|[\\+/-9A-Za-z]{3})=)?)'"
+}, {
+  "id" : "942520",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects basic SQL authentication bypass attempts 4.0/4",
+  "regex" : "(?i)[\\\"'`][\\s\\x0b]*?(?:(?:is[\\s\\x0b]+not|not[\\s\\x0b]+(?:like|glob|(?:betwee|i)n|null|regexp|match)|mod|div|sounds[\\s\\x0b]+like)\\b|[%&\\*\\+\\-/<->\\^\\|]{1,3})"
+}, {
+  "id" : "942522",
+  "paranoiaLevel" : 2,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "Detects basic SQL authentication bypass attempts 4.1/4",
+  "regex" : "\\x5c['\\\"`](?:.*?['\\\"`])?\\s*(?:and|or)\\b"
+}, {
+  "id" : "942530",
+  "paranoiaLevel" : 3,
+  "transforms" : [ "urlDecodeUni" ],
+  "message" : "SQLi query termination detected",
+  "regex" : "';"
+}, {
+  "id" : "942540",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni", "replaceComments" ],
+  "message" : "SQL Authentication bypass (split query)",
+  "regex" : "^(?:[^']*'|[^\\\"]*\\\"|[^`]*`)[\\s\\x0b]*;"
+}, {
+  "id" : "942550",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni", "removeWhitespace" ],
+  "message" : "JSON-Based SQL Injection",
+  "regex" : "(?i)[\\\"'`][\\[\\{][^#\\]\\}]*[\\]\\}]+[\\\"'`]|(?:[\\-@]>?|<@|@[\\?@]|\\?(?:(?:)|&|\\|#>)|#(?:>>|-)|->>|[<>])[\\\"'`](?:[\\[\\{][^#\\]\\}]*[\\]\\}]+[\\\"'`]|\\$[\\.\\[])|\\bjson_extract\\b[^\\(]*\\([^\\)]*\\)"
+}, {
+  "id" : "942560",
+  "paranoiaLevel" : 1,
+  "transforms" : [ "urlDecodeUni", "replaceComments" ],
+  "message" : "MySQL Scientific Notation payload detected",
+  "regex" : "(?i)1\\.e(?:[\\(\\),]|\\.[\\$0-9A-Z_a-z])"
+} ]

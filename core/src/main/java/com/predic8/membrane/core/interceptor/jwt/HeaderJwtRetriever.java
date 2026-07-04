@@ -17,9 +17,13 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.annot.Required;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @MCElement(name = "headerJwtRetriever")
 public class HeaderJwtRetriever implements JwtRetriever{
+
+    private static final Logger log = LoggerFactory.getLogger(HeaderJwtRetriever.class);
 
     String header;
     String removeFromValue;
@@ -36,8 +40,10 @@ public class HeaderJwtRetriever implements JwtRetriever{
     public String get(Exchange exc) {
         String[] replace = removeFromValue.split(" ");
         String header = exc.getRequest().getHeader().getFirstValue(this.header);
-        if(header == null)
+        if(header == null) {
+            log.info("Header {} not found in request", this.header);
             return null;
+        }
 
         for (String replaceMe : replace) {
             header = header.replaceAll("(?i)" + replaceMe.trim(),"");

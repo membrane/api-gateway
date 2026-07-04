@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: OAuth2 with a Separate Issuer and Validator (Part 2 of 2, Validator)
+#
+# This SECOND Membrane instance protects an API by validating the JWTs issued by the
+# authorization server from 54a-OAuth2-Distributed-Issuer.yaml. It never sees a key
+# file: jwtAuth fetches the public keys over HTTP from the issuer's JWKS endpoint.
+#
+# 1.) Make sure 54a-OAuth2-Distributed-Issuer.yaml is already running in terminal 1.
+#     Run this in terminal 2:
+#     ./membrane.sh -c 54b-OAuth2-Distributed-Validation.yaml
+#
+# 2.) Get a token from the issuer:
+#     curl -v -s -d "grant_type=password&username=john&password=password&client_id=abc&client_secret=def" localhost:7007/oauth2/token
+#
+#     {"access_token":"eyJ...","token_type":"Bearer","expires_in":300}
+#
+# 3.) Call the API with the token (replace <token>):
+#     curl -v -H "Authorization: Bearer <token>" localhost:2000
+#
+#     Hello, john!
+#
+# To trust Microsoft Entra ID instead, point jwksUris at
+# https://login.microsoftonline.com/common/discovery/keys and set expectedAud.
+
+api:
+  name: Protected API
+  port: 2000
+  flow:
+    # Fetch the issuer's public keys over HTTP and validate the JWT offline.
+    # jwtAuth resolves the JWKS at startup. If the issuer (port 7007) is not running
+    # yet, this instance still starts and fetches the keys on the first request.
+    - jwtAuth:
+        jwks:
+          jwksUris: http://localhost:7007/oauth2/certs
+    # The verified claims are available as the 'jwt' exchange property.
+    - setBody:
+        language: SpEL
+        contentType: text/plain
+        value: "Hello, ${properties['jwt']['sub']}!"
+    - return:
+        status: 200
+
+# NOTE: This tutorial is intentionally kept simple. In production, run all
+# endpoints behind TLS. Otherwise, OAuth2 transmits credentials and bearer
+# tokens in plain text. See 10-TLS-Termination.yaml for how to enable TLS.

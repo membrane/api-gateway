@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: OAuth2 with a Separate Issuer and Validator (Part 1 of 2, Issuer)
+#
+# In a real deployment, the authorization server and the API gateway are separate
+# processes, often on separate machines. This tutorial runs them as two Membrane
+# instances: this one issues signed JWTs, 54b validates them. The validator needs
+# no shared secret. It fetches this server's public keys from its JWKS endpoint
+# (/oauth2/certs).
+#
+# Unlike the earlier one-instance tutorials, this server signs with a fixed key
+# from jwk.json, so its tokens stay valid across restarts.
+#
+# Run this in terminal 1:
+#
+# 1.) Start the authorization server:
+#     ./membrane.sh -c 54a-OAuth2-Distributed-Issuer.yaml
+#
+#     Ignore the warnings.
+#
+# 2.) Get a signed JWT access token:
+#     curl -v -s -d "grant_type=password&username=john&password=password&client_id=abc&client_secret=def" localhost:7007/oauth2/token
+#
+#     {"access_token":"eyJ...","token_type":"Bearer","expires_in":300}
+#
+#     Paste the access_token into https://jwt.io
+#     Note sub, clientId, iss, exp and the kid "membrane" in the header.
+#
+# 3.) Inspect the published keys (the validator fetches these):
+#     curl -s localhost:7007/oauth2/certs
+#
+# Now start the validator in terminal 2 — see 54b-OAuth2-Distributed-Validation.yaml.
+
+api:
+  name: Authorization Server
+  port: 7007
+  flow:
+    - beautifier: {}
+    - oauth2authserver:
+        issuer: http://localhost:7007
+        staticUserDataProvider:
+          users:
+            - username: john
+              password: password
+        staticClientList:
+          clients:
+            - clientId: abc
+              clientSecret: def
+              grantTypes: password
+        # Sign with a fixed key from jwk.json, so tokens survive a restart. The
+        # matching public key is published at /oauth2/certs for validators to fetch.
+        bearerJwtToken:
+          expiration: 300
+          jwk:
+            location: jwk.json
+        claims:
+          value: sub iss
+
+# NOTE: This tutorial is intentionally kept simple. In production, run all
+# endpoints behind TLS. Otherwise, OAuth2 transmits credentials and bearer
+# tokens in plain text. See 10-TLS-Termination.yaml for how to enable TLS.
