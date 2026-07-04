@@ -1,3 +1,8 @@
+# 7.3.0
+
+## New Features
+- Add configurable HTTP method validation via a `methodValidator` component, with `defaultMethodValidator`, `knownMethodValidator`, `rfc9110MethodValidator` and `uppercaseMethodValidator` policies; requests with a disallowed method are rejected with `501 Not Implemented` before reaching the flow [#3032](https://github.com/membrane/api-gateway/pull/3032)
+
 # 6.0.0
 
 Membrane Version 6 is a big step forward from Membrane 5. Big parts of the code base were refactored and improved.

@@ -40,10 +40,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.predic8.membrane.core.http.Header.CONNECTION;
 import static com.predic8.membrane.core.http.Header.PROXY_CONNECTION;
+import static com.predic8.membrane.core.http.Response.notImplemented;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionInputStream;
 import static com.predic8.membrane.core.transport.http.ByteStreamLogging.wrapConnectionOutputStream;
-import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.continueWithConnection;
-import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.terminateWithConnection;
+import static com.predic8.membrane.core.transport.http.HttpServerHandler.RequestProcessingResult.*;
 import static com.predic8.membrane.core.transport.http.HttpServerThreadFactory.DEFAULT_THREAD_NAME;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 import static com.predic8.membrane.core.util.text.StringUtil.truncateAfter;
@@ -224,8 +224,23 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
         }
 
         readAndParseRequest();
+
+        if (!getTransport().getMethodValidator().isValid(srcReq.getMethod()))
+            return rejectInvalidMethod();
+
         process();
         return determineConnectionContinuation();
+    }
+
+    private RequestProcessingResult rejectInvalidMethod() throws IOException {
+        log.debug("Rejecting invalid method: {}", maskNonPrintableCharacters(truncateAfter(srcReq.getMethod(), 80)));
+        var response = notImplemented()
+                .header(CONNECTION, Header.CLOSE)
+                .build();
+        // Write directly: the request was not routed yet, so no proxy/statistics are available.
+        response.write(srcOut, false);
+        srcOut.flush();
+        return terminate();
     }
 
     private void readAndParseRequest() throws IOException, EndOfStreamException {
@@ -245,7 +260,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
         if (srcReq.isCONNECTRequest()) {
             log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
-            return RequestProcessingResult.terminate();
+            return terminate();
         }
         Connection con = exchange.getTargetConnection();
         exchange.setTargetConnection(null);

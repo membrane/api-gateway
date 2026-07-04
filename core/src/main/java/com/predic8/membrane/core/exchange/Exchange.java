@@ -14,17 +14,19 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.proxies.*;
+import com.predic8.membrane.core.http.BodyCollectingMessageObserver;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.util.HttpUtil;
 
-import java.net.*;
-import java.util.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Map;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toMap;
 
 public class Exchange extends AbstractExchange {
 
@@ -110,7 +112,9 @@ public class Exchange extends AbstractExchange {
     }
 
     public void collectStatistics() {
-        proxy.getStatisticCollector().collect(this);
+        // proxy is null when a request is rejected before routing (e.g. invalid method).
+        if (proxy != null)
+            proxy.getStatisticCollector().collect(this);
     }
 
     /**
