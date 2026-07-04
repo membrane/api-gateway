@@ -19,6 +19,7 @@ import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.interceptor.session.JwtSessionManager;
 import com.predic8.membrane.core.router.Router;
 import org.jose4j.json.JsonUtil;
+import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
@@ -60,7 +61,7 @@ public class BearerJwtTokenGenerator implements TokenGenerator {
                 log.warn("bearerJwtToken uses a generated key ('{}'). Sessions of this instance will not be compatible " +
                                 "with sessions of other (e.g. restarted) instances. To solve this, write the JWK into a file and " +
                                 "reference it using bearerJwtToken/jwk/location: ...",
-                        rsaJsonWebKey.getKeyId());
+                        rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE));
         } else {
             rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), resolveBaseLocation(this, router))));
         }

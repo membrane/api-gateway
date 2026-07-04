@@ -34,14 +34,14 @@ Paste the `access_token` into <https://jwt.io>. A JWT has three parts separated 
 
 The **payload** carries the claims that describe the token. Who it is for, what it may do, and how long it is valid. For this demo token they are:
 
-| Claim    | Meaning                              | Example         |
-|----------|--------------------------------------|-----------------|
-| `sub`    | subject (the client id)              | `my-client`     |
-| `aud`    | audience (the API this token is for) | `demo-resource` |
-| `scopes` | permissions granted                  | `read write`    |
-| `iat`    | issued-at (Unix time)                | `1782893176`    |
-| `exp`    | expiry (Unix time, `iat` + 300s)     | `1782893476`    |
-| `nbf`    | not valid before (Unix time)         | `1782893056`    |
+| Claim   | Meaning                              | Example         |
+|---------|--------------------------------------|-----------------|
+| `sub`   | subject (the client id)              | `my-client`     |
+| `aud`   | audience (the API this token is for) | `demo-resource` |
+| `scope` | permissions granted                  | `read write`    |
+| `iat`   | issued-at (Unix time)                | `1782893176`    |
+| `exp`   | expiry (Unix time, `iat` + 300s)     | `1782893476`    |
+| `nbf`   | not valid before (Unix time)         | `1782893056`    |
 
 
 ## 3. Call the protected resource

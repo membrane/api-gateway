@@ -113,12 +113,18 @@ public class Jwks {
      * The JWKS URIs may be unreachable during init() (e.g. Membrane starts before the issuer);
      * init() only logs that failure, so the load is retried here on first use. If the keys still
      * cannot be retrieved, this throws and the current request fails; the next request retries.
-     * Synchronized so concurrent first requests do not fetch the JWKS multiple times.
+     * Double-checked locking (jwks is volatile) so the common already-loaded case avoids the lock,
+     * while concurrent first requests still do not fetch the JWKS multiple times.
      */
-    private synchronized void reloadJwksIfNeeded() {
+    private void reloadJwksIfNeeded() {
         if (jwks != null && !jwks.isEmpty())
             return;
-        setJwks(loadJwks(false));
+        synchronized (this) {
+            // re-check: another thread may have loaded the JWKS while we waited for the lock
+            if (jwks != null && !jwks.isEmpty())
+                return;
+            setJwks(loadJwks(false));
+        }
     }
 
     public List<Jwk> getJwks() {

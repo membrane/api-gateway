@@ -31,10 +31,11 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.util.EnumSet.*;
-import static org.apache.commons.text.StringEscapeUtils.*;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static java.util.EnumSet.of;
+import static org.apache.commons.text.StringEscapeUtils.escapeHtml4;
 
 /**
  * @description Validates a JWT on requests (signature via JWKS, required exp/sub) and exposes claims in exchange properties ("jwt").
@@ -73,6 +74,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     String expectedAud;
     String expectedTid;
     String expectedIss;
+    String scopesClaim = "scp";
 
 
     public JwtAuthInterceptor() {
@@ -160,7 +162,7 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
 
         exc.getProperties().put("jwt",jwtClaims);
 
-        new JWTSecurityScheme(jwtClaims).add(exc);
+        new JWTSecurityScheme(jwtClaims, scopesClaim).add(exc);
 
         return CONTINUE;
     }
@@ -256,6 +258,23 @@ public class JwtAuthInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setExpectedIss(String expectedIss) {
         this.expectedIss = expectedIss;
+    }
+
+    public String getScopesClaim() {
+        return scopesClaim;
+    }
+
+    /**
+     * @description
+     * <p>Name of the claim that carries the token's scopes, e.g. "scp" (Microsoft Entra ID)
+     * or "scope" (RFC 9068). The claim may hold a space separated string or a list of strings.
+     * The scopes are used by the OpenAPI security validation.</p>
+     * @default scp
+     * @example scope
+     */
+    @MCAttribute
+    public void setScopesClaim(String scopesClaim) {
+        this.scopesClaim = scopesClaim;
     }
 
     @Override

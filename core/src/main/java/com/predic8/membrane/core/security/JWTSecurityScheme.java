@@ -13,18 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.security;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 public class JWTSecurityScheme extends AbstractSecurityScheme {
 
     /**
-     * Reads the scopes from the "scp" claim (Microsoft Entra ID style) or, if absent,
-     * from the "scope" claim (RFC 9068). Both may be a space separated string or a list.
-     *
-     * @param jwt claims of the validated JSON Web Token
+     * @param jwt claims of the validated JSON Web Token; the value of the {@code scopesClaim}
+     *            entry may be a space separated string or a list
+     * @param scopesClaim name of the claim holding the scopes, e.g. "scp" (Microsoft Entra ID)
+     *                    or "scope" (RFC 9068)
      */
-    public JWTSecurityScheme(Map<String, Object> jwt) {
-        var scopes = jwt.containsKey("scp") ? jwt.get("scp") : jwt.get("scope");
+    public JWTSecurityScheme(Map<String, Object> jwt, String scopesClaim) {
+        var scopes = jwt.get(scopesClaim);
         if (scopes instanceof String scopeString) {
             this.scopes = new HashSet<>(Arrays.asList(scopeString.split(" +")));
         }
