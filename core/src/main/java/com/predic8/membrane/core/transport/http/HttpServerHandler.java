@@ -146,6 +146,11 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             log.debug("Client connection terminated before first line was read. Line so far: {}", getLineMaskedAndTruncated(e));
         } catch (EOFWhileReadingLineException e) {
             log.debug("Client connection terminated while reading header line: {}", getLineMaskedAndTruncated(e));
+        } catch (MalformedHeaderException e) {
+            // Invalid message framing (e.g. conflicting Content-Length), RFC 9112 §6.3:
+            // respond 400 and close the connection to avoid request smuggling.
+            log.debug("Rejecting request with invalid framing: {}", e.getMessage());
+            respondWithBadRequestAndClose(e.getMessage());
         } catch (Exception e) {
             log.error("", e);
         } finally {
@@ -350,6 +355,17 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
             return;
         }
         currentThread().setName(DEFAULT_THREAD_NAME);
+    }
+
+    private void respondWithBadRequestAndClose(String message) {
+        try {
+            Response response = Response.badRequest(message).build();
+            response.getHeader().setConnection(Header.CLOSE);
+            response.write(srcOut, false);
+            srcOut.flush();
+        } catch (Exception e) {
+            log.debug("Could not send 400 response for request with invalid framing.", e);
+        }
     }
 
     protected void writeResponse(Response res) throws IOException {
