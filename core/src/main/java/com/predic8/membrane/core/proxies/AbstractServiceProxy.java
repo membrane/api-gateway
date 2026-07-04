@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.core.proxies;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.transport.ssl.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
 public abstract class AbstractServiceProxy extends SSLableProxy {
 
@@ -36,12 +37,9 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
     }
 
     /**
-     * @description <p>A space separated list of hostnames. If set, Membrane will only consider this rule, if the "Host"
-     * header of incoming HTTP requests matches one of the hostnames.
-     * </p>
-     * <p>
-     * The asterisk '*' can be used for basic globbing (to match any number, including zero, characters).
-     * </p>
+     * @description Restricts to requests whose <code>Host</code> header matches one of the
+     *              given hostnames. Separate multiple hostnames with spaces. The asterisk
+     *              <code>*</code> matches any number of characters, including zero, for basic globbing.
      * @default <i>not set</i>
      * @example predic8.de *.predic8.de
      */
@@ -62,14 +60,10 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
     }
 
     /**
-     * @description <p>
-     * If set, Membrane will only consider this rule, if the path of incoming HTTP requests matches.
-     * {@link Path} supports starts-with and regex matching.
-     * </p>
-     * <p>
-     * If used in a {@link SOAPProxy}, this causes path rewriting of SOAP requests and in the WSDL to
-     * automatically be configured.
-     * </p>
+     * @description Restricts to requests whose path matches, either by prefix (starts-with)
+     *              or, when enabled, by regular expression. In a <code>soapProxy</code>, setting a path
+     *              also rewrites the paths of SOAP requests and the service addresses in the WSDL
+     *              accordingly.
      */
     @MCChildElement(order = 50)
     public void setPath(Path path) {
@@ -87,6 +81,9 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
         return target;
     }
 
+    /**
+     * @description The backend server that requests are forwarded to after passing through the flow.
+     */
     @MCChildElement(order = 150)
     public void setTarget(Target target) {
         this.target = target;

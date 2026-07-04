@@ -318,8 +318,8 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     /**
-     * @description Name of the WSDL service to use. Defaults to the first service defined in the WSDL.
-     * Required only when the WSDL defines more than one service.
+     * @description Name of the WSDL service to use, if the WSDL defines more than one. Optional;
+     * if omitted, the first service defined in the WSDL is used.
      */
     @MCAttribute
     public void setServiceName(String serviceName) {
