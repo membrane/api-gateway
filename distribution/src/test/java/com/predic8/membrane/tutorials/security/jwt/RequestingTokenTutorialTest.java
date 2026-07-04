@@ -71,8 +71,8 @@ public class RequestingTokenTutorialTest {
         .then()
             .statusCode(200)
             .body("success", equalTo(true))
-            .body("user", equalTo("my-client"))
-            .body("scopes", equalTo("read write"));
+            .body("sub", equalTo("my-client"))
+            .body("scope", equalTo("read write"));
 
         // 3) Without the token the request is rejected.
         given()
