@@ -17,10 +17,33 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.util.*;
 
 /**
- * @description <p>Internal proxy that can only be invoked by other proxies within the gateway. An internal
- * proxy does not listen on any port.</p>
- * <p>Internal proxies are useful to better structure the configuration of the gateway.</p>
+ * @description A named API that is not exposed on any port and can only be invoked by other APIs
+ * within the gateway using the <code>internal://name</code> URL scheme.
+ * Use it to factor out shared flow logic that multiple APIs call.
  * @topic 1. Proxies and Flow
+ * @yaml
+ * <pre><code>
+ * internal:
+ *   name: shared-auth
+ *   flow:
+ *     - setHeader:
+ *         name: X-Api-Key
+ *         value: downstream-secret
+ *   target:
+ *     url: https://api.example.com
+ *
+ * ---
+ * api:
+ *   port: 2000
+ *   target:
+ *     url: internal://shared-auth
+ *
+ * ---
+ * api:
+ *   port: 3000
+ *   target:
+ *     url: internal://shared-auth
+ * </code></pre>
  */
 @MCElement(name="internal", topLevel = true, component = false)
 public class InternalProxy extends AbstractServiceProxy implements NotPortOpeningProxy {

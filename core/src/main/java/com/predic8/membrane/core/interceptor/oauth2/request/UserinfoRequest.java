@@ -18,6 +18,8 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -25,6 +27,8 @@ import java.util.HashSet;
 import java.util.Map;
 
 public class UserinfoRequest extends ParameterizedRequest {
+    private static final Logger log = LoggerFactory.getLogger(UserinfoRequest.class);
+
     private TokenAuthorizationHeader authHeader;
     private HashMap<String, String> sessionProperties;
 
@@ -44,14 +48,19 @@ public class UserinfoRequest extends ParameterizedRequest {
 
     @Override
     protected Response processWithParameters() throws Exception {
-        if(!authHeader.isValid() || !authServer.getSessionFinder().hasSessionForToken(authHeader.getToken())) {
+        // isValid() must be checked first: getToken() throws on a malformed Authorization header
+        if(!authHeader.isValid()) {
+            log.info("Access token at userinfo endpoint not accepted: token is invalid.");
+            return buildWwwAuthenticateErrorResponse( Response.unauthorized(), "invalid_token");
+        }
+        if(!authServer.getSessionFinder().hasSessionForToken(authHeader.getToken())) {
+            log.info("Access token at userinfo endpoint not accepted: token is valid but has no associated session.");
             return buildWwwAuthenticateErrorResponse( Response.unauthorized(), "invalid_token");
         }
         sessionProperties = new HashMap<>(authServer.getSessionFinder().getSessionForToken(authHeader.getToken()).getUserAttributes());
 
         String token = authHeader.getToken();
         String username = authServer.getTokenGenerator().getUsername(token);
-
 
         return new NoResponse();
     }

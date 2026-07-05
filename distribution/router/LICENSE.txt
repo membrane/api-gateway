@@ -90,6 +90,27 @@ Oracle SSL Server Name Indication utility classes
 Copyright (c) 2013, Oracle and/or its affiliates. See https://github.com/membrane/service-proxy/blob/master/core/src/main/java/com/oracle/util/ssl/SSLCapabilities.java and ./SSLExplorer.java .
 
 
+===============================================================================
+THIRD-PARTY COMPONENTS
+===============================================================================
+
+This product bundles a derivative of the OWASP Core Rule Set (CRS). The
+SQL-injection detection rules from the CRS file
+REQUEST-942-APPLICATION-ATTACK-SQLI.conf are transpiled into:
+
+    core/src/main/resources/com/predic8/membrane/core/interceptor/sqlinjection/crs-sqli-rules.json
+
+The OWASP Core Rule Set is:
+
+    Copyright (c) 2006-2020 Trustwave and contributors. All rights reserved.
+    Copyright (c) 2021-2026 CRS project. All rights reserved.
+
+    Licensed under the Apache License, Version 2.0.
+    Source: https://github.com/coreruleset/coreruleset
+
+The unmodified CRS source file is located under distribution/crs-sqli-rules/.
+The transpiler that derives the bundled resource from it is located under
+distribution/src/main/java/com/predic8/membrane/build/.
 
 
 

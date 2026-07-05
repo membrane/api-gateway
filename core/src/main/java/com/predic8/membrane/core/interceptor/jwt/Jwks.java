@@ -48,7 +48,13 @@ import static java.util.stream.Collectors.toMap;
 
 /**
  * @description
- * JSON Web Key Set, configured <b>either</b> by an explicit list of JWK <b>or</b> by a list of JWK URIs that will be refreshed periodically.
+ * <p>JSON Web Key Set, configured <b>either</b> by an explicit list of JWK <b>or</b> by a list of JWK URIs.</p>
+ * <p>When JWK URIs are used, the keys are fetched at startup. If they cannot be retrieved at that point
+ * (e.g. the issuer is not running yet), the gateway starts anyway and fetching is retried on the first
+ * request that needs the keys. Until the keys have been retrieved, requests validated against this key
+ * set are rejected.</p>
+ * <p>If an authorizationService with a jwksRefreshInterval is configured, the key set is additionally
+ * refreshed periodically.</p>
  */
 @MCElement(name="jwks")
 public class Jwks {
@@ -66,6 +72,7 @@ public class Jwks {
     List<String> jwksUris = emptyList();
     AuthorizationService authorizationService;
     private Router router;
+
     private final Runnable refreshJwksTask = () -> {
         try {
             List<Jwk> loaded = loadJwks(true);
@@ -89,13 +96,39 @@ public class Jwks {
         }
         if (!jwks.isEmpty())
             throw new ConfigurationException("JWKs cannot be set both via JwksUris and Jwks elements.");
-        setJwks(loadJwks(false));
+
+        try {
+            setJwks(loadJwks(false));
+        } catch (Exception e) {
+            log.warn("Could not load JWKs from {} ({}). Maybe the server is not yet available. I'll try it later. Ignore when token server and resource are served from the same configuration.", jwksUris, e.getMessage());
+            log.debug("JWKS load failure", e);
+        }
+
         if (authorizationService != null && authorizationService.getJwksRefreshInterval() > 0) {
             router.getTimerManager().schedulePeriodicTask(createTimerTask(refreshJwksTask), authorizationService.getJwksRefreshInterval() * 1_000L, "JWKS Refresh");
         }
     }
 
+    /**
+     * The JWKS URIs may be unreachable during init() (e.g. Membrane starts before the issuer);
+     * init() only logs that failure, so the load is retried here on first use. If the keys still
+     * cannot be retrieved, this throws and the current request fails; the next request retries.
+     * Double-checked locking (jwks is volatile) so the common already-loaded case avoids the lock,
+     * while concurrent first requests still do not fetch the JWKS multiple times.
+     */
+    private void reloadJwksIfNeeded() {
+        if (jwks != null && !jwks.isEmpty())
+            return;
+        synchronized (this) {
+            // re-check: another thread may have loaded the JWKS while we waited for the lock
+            if (jwks != null && !jwks.isEmpty())
+                return;
+            setJwks(loadJwks(false));
+        }
+    }
+
     public List<Jwk> getJwks() {
+        reloadJwksIfNeeded();
         return jwks;
     }
 
@@ -121,6 +154,7 @@ public class Jwks {
     }
 
     public Optional<RsaJsonWebKey> getKeyByKid(String kid) {
+        reloadJwksIfNeeded();
         return Optional.ofNullable(keysByKid.get(kid));
     }
 
@@ -151,6 +185,7 @@ public class Jwks {
     }
 
     private List<Jwk> loadJwks(boolean suppressExceptions) {
+        log.debug("Loading JWKs from {}.", jwksUris);
         return jwksUris.stream()
                 .map(uri -> parseJwksUriIntoList(uri, suppressExceptions))
                 .flatMap(l -> l.jwks().stream().map(jwkRaw -> convertToJwk(jwkRaw, mapper, l.uri(), suppressExceptions)))

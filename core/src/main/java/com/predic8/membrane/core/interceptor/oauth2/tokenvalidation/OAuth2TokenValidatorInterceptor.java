@@ -18,6 +18,8 @@ import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.transport.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.*;
 
@@ -27,6 +29,8 @@ import static com.predic8.membrane.core.interceptor.Outcome.*;
 
 @MCElement(name="tokenValidator")
 public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(OAuth2TokenValidatorInterceptor.class);
 
     private String endpoint;
 
@@ -69,6 +73,7 @@ public class OAuth2TokenValidatorInterceptor extends AbstractInterceptor {
     }
 
     private void setResponseToBadRequest(Exchange exc) {
+        log.info("Access token not accepted: validation endpoint {} did not return 200.", endpoint);
         exc.setResponse(Response.badRequest().build());
     }
 

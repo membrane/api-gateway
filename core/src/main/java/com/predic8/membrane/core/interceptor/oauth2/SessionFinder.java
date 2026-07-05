@@ -102,6 +102,12 @@ public class SessionFinder {
         }
     }
 
+    public void removeSessionForRefreshToken(String refreshToken) {
+        synchronized (refreshTokensToSession) {
+            refreshTokensToSession.remove(refreshToken);
+        }
+    }
+
     public void cleanupSessions(Set<SessionManager.Session> sessionsToRemove) {
 
         cleanupMap(sessionsToRemove, authCodesToSession);

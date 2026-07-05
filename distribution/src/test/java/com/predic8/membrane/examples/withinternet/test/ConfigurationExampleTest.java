@@ -58,4 +58,42 @@ public class ConfigurationExampleTest extends AbstractSampleMembraneStartStopTes
         }
     }
 
+    @Test
+    void validMethodIsAccepted() {
+        // GET matches the RFC 9110 token grammar accepted by the configured rfc9110MethodValidator.
+        // @formatter:off
+        given()
+                .when()
+                .request("GET", "http://localhost:2000")
+                .then()
+                .statusCode(200);
+        // @formatter:on
+    }
+
+    @Test
+    void overlongMethodIsRejected() {
+        // AVERYLONGMETHODNAME is a valid RFC 9110 token, but the example caps methods at maxLength 15,
+        // so it is rejected with 501 before reaching the API.
+        // @formatter:off
+        given()
+                .when()
+                .request("AVERYLONGMETHODNAME", "http://localhost:2000")
+                .then()
+                .statusCode(501);
+        // @formatter:on
+    }
+
+    @Test
+    void traceMethodIsRejected() {
+        // TRACE is a valid RFC 9110 token, but the example configures allowTrace: false, so it is
+        // rejected with 501 before reaching the API.
+        // @formatter:off
+        given()
+                .when()
+                .request("TRACE", "http://localhost:2000")
+                .then()
+                .statusCode(501);
+        // @formatter:on
+    }
+
 }

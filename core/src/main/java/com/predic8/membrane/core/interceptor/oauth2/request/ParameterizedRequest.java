@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.request;
 
-import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
@@ -23,7 +22,10 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInt
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -104,6 +106,8 @@ public abstract class ParameterizedRequest {
     }
 
     protected Map<String, String> verifyUserThroughParams(){
+        if (authServer.getUserDataProvider() == null)
+            return null;
         try {
             return authServer.getUserDataProvider().verify(params);
         }catch (Exception ignored){
@@ -147,25 +151,34 @@ public abstract class ParameterizedRequest {
     }
 
     protected Map<String, Object> claimsMap(Map<String, String> userParams) {
+        Map<String, Object> claims = new HashMap<>();
         if (userParams.containsKey("aud"))
-            return ImmutableMap.of("aud", userParams.get("aud").split(" "));
-        return ImmutableMap.of();
+            claims.put("aud", userParams.get("aud").split(" "));
+        if (userParams.containsKey("scopes"))
+            claims.put("scope", userParams.get("scopes"));
+        return claims;
     }
 
     protected Map<String, Object> claimsMapForRefresh(Map<String, String> userParams) {
+        Map<String, Object> claims = new HashMap<>();
         if (userParams.containsKey("aud"))
-            return ImmutableMap.of("i-aud", userParams.get("aud").split(" "));
-        return ImmutableMap.of();
+            claims.put("i-aud", userParams.get("aud").split(" "));
+        if (userParams.containsKey("scopes"))
+            claims.put("i-scope", userParams.get("scopes"));
+        return claims;
     }
 
     protected Map<String, Object> claimsMapFromRefresh(Map<String, Object> refreshClaims) {
+        Map<String, Object> claims = new HashMap<>();
         if (refreshClaims.containsKey("i-aud"))
-            return ImmutableMap.of("aud", refreshClaims.get("i-aud"));
-        return ImmutableMap.of();
+            claims.put("aud", refreshClaims.get("i-aud"));
+        if (refreshClaims.containsKey("i-scope"))
+            claims.put("scope", refreshClaims.get("i-scope"));
+        return claims;
     }
 
-    protected String createTokenForVerifiedClient(){
-        return authServer.getTokenGenerator().getToken(getClientId(), getClientId(), getClientSecret(), null);
+    protected String createTokenForVerifiedClient(Map<String, Object> additionalClaims){
+        return authServer.getTokenGenerator().getToken(getClientId(), getClientId(), getClientSecret(), additionalClaims);
     }
 
     public String getPrompt() {
@@ -213,5 +226,7 @@ public abstract class ParameterizedRequest {
     public String getPassword(){return params.get(ParamNames.PASSWORD);}
 
     public String getRefreshToken(){return params.get(ParamNames.REFRESH_TOKEN);}
+
+    public String getResource(){return params.get(ParamNames.RESOURCE);}
 
 }

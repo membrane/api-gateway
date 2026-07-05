@@ -13,18 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.rewrite.*;
-import com.predic8.membrane.core.model.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.ssl.*;
-import org.jetbrains.annotations.*;
-import org.springframework.beans.factory.*;
+import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptor;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.router.Router;
+import com.predic8.membrane.core.transport.http.method.DefaultMethodValidator;
+import com.predic8.membrane.core.transport.http.method.MethodValidator;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.ListableBeanFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.Vector;
 
 public abstract class Transport {
 
@@ -35,6 +41,8 @@ public abstract class Transport {
 
     private Router router;
     private boolean reverseDNS = true;
+
+    private MethodValidator methodValidator = new DefaultMethodValidator();
 
     private int concurrentConnectionLimitPerIp = -1;
 
@@ -53,6 +61,9 @@ public abstract class Transport {
 
     public void init(Router router) {
         this.router = router;
+
+        if (router != null && router.getRegistry() != null)
+            router.getRegistry().getBean(MethodValidator.class).ifPresent(v -> methodValidator = v);
 
         if (interceptors.isEmpty()) {
             interceptors.add(getInterceptor(RuleMatchingInterceptor.class));
@@ -107,6 +118,14 @@ public abstract class Transport {
 
     public Router getRouter() {
         return router;
+    }
+
+    /**
+     * The policy deciding which request methods are accepted. Uses a {@code <methodValidator>} component if one is
+     * declared.
+     */
+    public MethodValidator getMethodValidator() {
+        return methodValidator;
     }
 
     public <T extends Interceptor> Optional<T> getFirstInterceptorOfType(Class<T> type) {

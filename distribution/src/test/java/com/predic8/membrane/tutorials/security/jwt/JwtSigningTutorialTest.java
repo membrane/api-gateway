@@ -20,11 +20,11 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
-public class IssuingAndValidatingJwtsTutorialTest extends AbstractSecurityJwtTutorialTest {
+public class JwtSigningTutorialTest extends AbstractSecurityJwtTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "50-Issuing-and-Validating-JWTs.yaml";
+        return "41-JWT-Signing.yaml";
     }
 
     @Test
@@ -69,7 +69,7 @@ public class IssuingAndValidatingJwtsTutorialTest extends AbstractSecurityJwtTut
         .then()
             .statusCode(200)
             .body("client", equalTo("alice"))
-            .body("scopes", equalTo("read write"));
+            .body("scope", equalTo("read write"));
         // @formatter:on
     }
 }

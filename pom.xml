@@ -504,7 +504,7 @@
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<configuration>
-						<argLine>-Dfile.encoding=UTF-8</argLine>
+						<argLine>-Dfile.encoding=UTF-8 -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0</argLine>
 					</configuration>
 					<version>3.1.2</version>
 				</plugin>
@@ -513,7 +513,7 @@
 					<artifactId>maven-failsafe-plugin</artifactId>
 					<version>3.1.2</version>
 					<configuration>
-					  <argLine>-Dfile.encoding=UTF-8</argLine>
+					  <argLine>-Dfile.encoding=UTF-8 -Djdk.xml.maxGeneralEntitySizeLimit=0 -Djdk.xml.totalEntitySizeLimit=0</argLine>
 					</configuration>
 				</plugin>
 

@@ -97,6 +97,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("Could not create token generators.",e);
         }
 
+        tokenGenerator.setIssuer(issuer);
+        refreshTokenGenerator.setIssuer(issuer);
+
         addSupportedAuthorizationGrants();
 
         try {
@@ -111,8 +114,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         } catch (IOException e) {
             throw new ConfigurationException("Could not create Consent Page file.",e);
         }
-        if (userDataProvider == null)
-            throw new ConfigurationException("No userDataProvider configured. - Cannot work without one.");
+        if (userDataProvider == null) {
+            log.warn("=====================================================================================================");
+            log.warn("IMPORTANT: No userDataProvider configured - Only flows without users (e.g. client credentials) are");
+            log.warn("available. Authorization code, implicit and password flows will reject all requests.");
+            log.warn("=====================================================================================================");
+            loginViewDisabled = true;
+        }
         if (getClientList() == null)
             throw new ConfigurationException("No clientList configured. - Cannot work without one.");
         if (getClaimList() == null)
@@ -131,7 +139,8 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         }
         if(getPath() == null)
             throw new ConfigurationException("No path configured. - Cannot work without one");
-        userDataProvider.init(router);
+        if (userDataProvider != null)
+            userDataProvider.init(router);
         getClientList().init(router);
         getClaimList().init(router);
         try {
@@ -181,7 +190,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return userDataProvider;
     }
 
-    @Required
+    /**
+     * @description Provides the user data (e.g. from a static list or a database). Required for the
+     *              authorization code, implicit and password flows. Can be omitted if only user-less
+     *              flows like client_credentials are used.
+     */
     @MCChildElement(order = 1)
     public void setUserDataProvider(UserDataProvider userDataProvider) {
         this.userDataProvider = userDataProvider;

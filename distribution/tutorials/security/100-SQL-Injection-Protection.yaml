@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.2.4.json
+#
+# Tutorial: SQL Injection Protection
+#
+# Blocks requests whose query parameters, path or body contain SQL injection
+# patterns, using detection rules derived from the OWASP Core Rule Set (CRS).
+# The rules are bundled. Nothing to download.
+#
+# This is a defense-in-depth layer, not a guarantee. Signature-based filtering
+# can be bypassed (encoding tricks, novel payloads) and always risks false
+# positives. It does NOT replace parameterized queries / prepared statements in
+# your backend. Those remain the primary defense against SQL injection.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 100-SQL-Injection-Protection.yaml
+#
+# 2.) A normal request passes through:
+#     curl -H 'Content-Type: application/json' -d '{"q":"laptop"}' localhost:2000
+#
+#     200
+#
+# 3.) A SQL injection attempt is blocked with 400:
+#     curl -H 'Content-Type: application/json' -d '{"q":"SELECT pw FROM information_schema.tables"}' localhost:2000
+#
+#     400  "Request blocked by SQL injection protection"
+#
+# 4.) A blind-injection attempt is blocked too:
+#     curl -H 'Content-Type: application/json' -d '{"q":"1 OR sleep(5)"}' localhost:2000
+#
+#     400
+#
+# Scope it to one direction by wrapping it in a request: or response: flow block.
+# Inspecting responses is useful when Membrane is an outbound gateway in front of
+# an untrusted upstream:
+#
+#     flow:
+#       - response:
+#           - sqlInjectionProtection: {}
+#
+# Reference: https://www.membrane-api.io/docs/current/sqlInjectionProtection.html
+
+api:
+  port: 2000
+  flow:
+    # Scanning buffers the body and matches it against every rule. Pair with a limit
+    # plugin so oversized bodies are rejected before they are buffered and scanned:
+    - limit:
+        maxBodyLength: 100000
+    - sqlInjectionProtection:
+        level: 1               # OWASP CRS paranoia level 1-4; higher catches more but raises false positives
+        onDetect: block        # only log the hit and let the request through - use while tuning a deployment
+        inspectHeaders: false  # also scan headers (off by default: headers cause more false positives)
+    - return:
+        status: 200

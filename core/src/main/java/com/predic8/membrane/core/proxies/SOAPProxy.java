@@ -13,47 +13,75 @@
    limitations under the License. */
 package com.predic8.membrane.core.proxies;
 
-import com.google.common.collect.*;
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.rewrite.*;
-import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import com.predic8.membrane.core.interceptor.server.*;
-import com.predic8.membrane.core.interceptor.soap.*;
-import com.predic8.membrane.core.openapi.util.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.router.*;
-import com.predic8.membrane.core.transport.http.client.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.util.wsdl.parser.*;
-import org.apache.commons.lang3.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.google.common.collect.Lists;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.interceptor.WSDLInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
+import com.predic8.membrane.core.interceptor.soap.WebServiceExplorerInterceptor;
+import com.predic8.membrane.core.openapi.util.UriUtil;
+import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Service;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
-import java.net.*;
-import java.util.regex.*;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.interceptor.InterceptorUtil.*;
+import static com.predic8.membrane.core.interceptor.InterceptorUtil.moveToFirstPosition;
 
 /**
- * @description <p>
- * A SOAP proxy automatically configures itself using a WSDL description. It reads the WSDL to extract:
- * </p>
- * - The &lt;soap:address/&gt; for target, port, and path.
- * <p>
- * The proxy sits in front of a SOAP Web Service, masking it while providing the same interface to clients
- * as the target server. The proxy serves the WSDL to gateway clients, with the WSDL address pointing to the proxy
- * instead of the backend. This ensures that client requests using the WSDL are routed through the API Gateway.
- * </p>
- * Additionally, the SOAP proxy:
- * - Can validate requests against the WSDL
- * - Provides a simple service explorer
- * @explanation If the WSDL specified by the <i>wsdl</i> attribute is unavailable at startup, the &lt;soapProxy&gt;
- * becomes inactive. Reinitialization can be triggered via the admin console or automatically by the
- * {@link Router}, which periodically attempts to restore the proxy.
+ * @description The <code>soapProxy</code> auto-configures itself from a WSDL:
+ * it reads the <code>soap:address</code> to derive the backend host, port, and path, rewrites the WSDL
+ * endpoint to point to the gateway, and serves the rewritten WSDL at <code>?wsdl</code>. A built-in
+ * service explorer is available at the same address. When a <code>path</code> is configured, request paths
+ * are automatically rewritten between the gateway path and the backend path.
+ * See tutorials/soap/20-SOAPProxy.yaml.
+ * @explanation If the WSDL is unavailable at startup, the proxy becomes inactive. Reinitialization can be
+ * triggered via the admin console or automatically by the router, which periodically retries.
  * @topic 1. Proxies and Flow
+ * @yaml <pre><code>
+ * # Minimal: auto-configure from WSDL
+ * soapProxy:
+ *   port: 2000
+ *   wsdl: https://www.predic8.de/city-service?wsdl
+ *
+ * ---
+ *
+ * # Full: path rewriting, WSDL validation, custom host/port in rewritten WSDL,
+ * # explicit service selection, and a dedicated HTTP client for WSDL retrieval
+ * soapProxy:
+ *   port: 2000
+ *   host: api.example.com
+ *   wsdl: https://www.predic8.de/city-service?wsdl
+ *   serviceName: CityService
+ *   portName: CityServiceSoap
+ *   path:
+ *     uri: /city-service
+ *   wsdlHttpClientConfig:
+ *     connection:
+ *       timeout: 5000
+ *   flow:
+ *     - wsdlRewriter:
+ *         host: api.example.com
+ *         protocol: https
+ *         port: 443
+ *     - validator: {}
+ * </code></pre>
  */
 @MCElement(name = "soapProxy", topLevel = true, component = false)
 public class SOAPProxy extends AbstractServiceProxy {
@@ -250,8 +278,8 @@ public class SOAPProxy extends AbstractServiceProxy {
     }
 
     /**
-     * @description The WSDL of the SOAP service.
-     * @example <a href="http://predic8.de/my.wsdl">http://predic8.de/my.wsdl</a> <i>or</i> file:my.wsdl
+     * @description URL or file path of the WSDL document. Both HTTP/HTTPS URLs and <code>file:</code> paths are supported.
+     * @example https://www.predic8.de/city-service?wsdl
      */
     @Required
     @MCAttribute
@@ -264,6 +292,9 @@ public class SOAPProxy extends AbstractServiceProxy {
         return portName;
     }
 
+    /**
+     * @description Name of the WSDL port. When omitted, the explorer shows the first port defined in the WSDL.
+     */
     @MCAttribute
     public void setPortName(String portName) {
         this.portName = portName;
@@ -273,6 +304,10 @@ public class SOAPProxy extends AbstractServiceProxy {
         return httpClientConfig;
     }
 
+    /**
+     * @description HTTP client settings used when fetching the WSDL document. Use this to configure
+     * timeouts, a proxy, or TLS settings for the WSDL retrieval connection.
+     */
     @MCChildElement
     public void setWsdlHttpClientConfig(HttpClientConfiguration httpClientConfig) {
         this.httpClientConfig = httpClientConfig;
@@ -282,6 +317,10 @@ public class SOAPProxy extends AbstractServiceProxy {
         return serviceName;
     }
 
+    /**
+     * @description Name of the WSDL service to use, if the WSDL defines more than one. Optional;
+     * if omitted, the first service defined in the WSDL is used.
+     */
     @MCAttribute
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;

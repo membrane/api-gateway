@@ -14,21 +14,31 @@
 
 package com.predic8.membrane.core.http;
 
-import com.google.common.collect.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.google.common.collect.Sets;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
+import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.regex.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.annot.Constants.CRLF;
 import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class Request extends Message {
 
@@ -38,6 +48,7 @@ public class Request extends Message {
     private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
     public static final String METHOD_GET = "GET";
+    public static final String METHOD_QUERY = "QUERY";
     public static final String METHOD_POST = "POST";
     public static final String METHOD_PATCH = "PATCH";
     public static final String METHOD_HEAD = "HEAD";

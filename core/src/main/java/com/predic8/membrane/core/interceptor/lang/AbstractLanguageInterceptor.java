@@ -34,9 +34,9 @@ public abstract class AbstractLanguageInterceptor extends AbstractInterceptor im
     }
 
     /**
-     * @description the language of the 'test' condition
+     * @description Scripting language used to evaluate the value expression.
      * @default SpEL
-     * @example SpEL, groovy, jsonpath, xpath
+     * @example SpEL | groovy | jsonpath | xpath
      */
     @MCAttribute
     public void setLanguage(Language language) {
@@ -44,8 +44,7 @@ public abstract class AbstractLanguageInterceptor extends AbstractInterceptor im
     }
 
     /**
-     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
-     * @param xmlConfig
+     * @description XML namespace declarations for XPath expressions in the value.
      */
     @Override
     @MCChildElement(allowForeign = true,order = 10)

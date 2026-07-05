@@ -20,12 +20,13 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.config.xml.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.lang.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.lang.ExchangeExpression.*;
-import com.predic8.membrane.core.openapi.util.UriUtil;
+import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.XMLSupport;
+import com.predic8.membrane.core.interceptor.lang.Polyglot;
+import com.predic8.membrane.core.lang.ExchangeExpression;
+import com.predic8.membrane.core.lang.ExchangeExpression.InterceptorAdapter;
+import com.predic8.membrane.core.lang.ExchangeExpression.Language;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.URIFactory;
@@ -43,19 +44,42 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 
 /**
- * @description The api proxy extends the serviceProxy with API related functions like OpenAPI support and path parameters.
+ * @description <p>API proxy with several routing options.</p>
+ * <p>Multiple APIs on the same port are discriminated by host, path, or a <code>test</code>
+ * expression. Incoming requests are probed from the top API to the bottom. The first API that
+ * matches the request will process it.</p>
+ * <b>OpenAPI Support</b>
+ * <p>When <code>openapi</code> children are present, Membrane auto-wires a publisher at
+ * <code>/api-docs</code> and an OpenAPI rewriter; see <code>tutorials/getting-started/80-OpenAPI.yaml</code>
+ * and <code>tutorials/getting-started/90-OpenAPI-Validation.yaml</code>.</p>
+ *
+ * @topic 1. Proxies and Flow
  * @yaml <pre><code>
  * api:
  *   port: 2000
+ *   path:
+ *      uri: /orders/{id}
+ *   target:
+ *     url: https://api.predic8.de/shop/orders/{pathParam.id}
+ * ---
+ * api:
+ *   port: 2000
+ *   path:
+ *     uri: /orders/
+ *   target:
+ *     url: https://api.predic8.de
+ * ---
+ * api:
+ *   port: 2000
+ *   test: header.SOAPAction == 'https://predic8.de/city-service/get'
  *   target:
  *     url: https://api.predic8.de
  * ---
  * api:
  *   port: 2000
  *   openapi:
- *     - location: fruitshop-api-v1.oas.yaml
+ *     - location: openapi/fruitshop-api.yaml
  * </code></pre>
- * @topic 1. Proxies and Flow
  */
 @MCElement(name = "api", topLevel = true, component = false)
 public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {

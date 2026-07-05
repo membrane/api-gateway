@@ -3,6 +3,9 @@
 
 
 PRIO 1:
+- When released:
+  - Add SqlProtection to README.md
+  - Udate OAuth2 sections in README.md
 - Proxy Server Configuration Sample 
   - explains how to configure a proxy server
 - HotReload for YAML
@@ -98,3 +101,5 @@ PRIO 3:
 - JSONBody
   - Store body as parsed JsonNode or Document
     - If JSON is needed by an interceptor use already parsed JSON
+
+  

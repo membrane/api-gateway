@@ -21,12 +21,11 @@ import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
+import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
-
-import org.jose4j.lang.JoseException;
 
 public class PasswordFlow extends TokenRequest {
 
@@ -47,6 +46,20 @@ public class PasswordFlow extends TokenRequest {
         if(!verifyClientThroughParams())
             return OAuth2Util.createParameterizedJsonErrorResponse("error","unauthorized_client");
 
+        Client client;
+        try {
+            synchronized (authServer.getClientList()) {
+                client = authServer.getClientList().getClient(getClientId());
+            }
+        } catch (Exception e) {
+            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_client");
+        }
+
+        String grantTypes = client.getGrantTypes();
+        if (!grantTypes.contains(getGrantType())) {
+			return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant_type");
+        }
+
         Map<String,String> userParams = verifyUserThroughParams();
         if(userParams == null)
             return OAuth2Util.createParameterizedJsonErrorResponse("error","access_denied");
@@ -62,21 +75,6 @@ public class PasswordFlow extends TokenRequest {
             session.getUserAttributes().putAll(userParams);
         }
         authServer.getSessionFinder().addSessionForToken(token,session);
-
-        Client client;
-        try {
-            synchronized (authServer.getClientList()) {
-                client = authServer.getClientList().getClient(getClientId());
-            }
-        } catch (Exception e) {
-            return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_client");
-        }
-
-        String grantTypes = client.getGrantTypes();
-        if (!grantTypes.contains(getGrantType())) {
-			return OAuth2Util.createParameterizedJsonErrorResponse("error", "invalid_grant_type");
-        }
-
         authServer.getSessionFinder().addSessionForRefreshToken(refreshToken, session);
 
         if (authServer.isIssueNonSpecIdTokens() && OAuth2Util.isOpenIdScope(scope)) {
