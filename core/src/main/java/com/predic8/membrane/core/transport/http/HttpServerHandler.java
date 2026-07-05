@@ -359,7 +359,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private void respondWithBadRequestAndClose(String message) {
         try {
-            Response response = Response.badRequest(message).build();
+            Response response = Response.badRequest(message, true).build();
             response.getHeader().setConnection(Header.CLOSE);
             response.write(srcOut, false);
             srcOut.flush();
