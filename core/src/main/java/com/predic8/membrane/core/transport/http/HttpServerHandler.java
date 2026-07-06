@@ -38,6 +38,7 @@ import java.net.SocketTimeoutException;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.http.Header.CONNECTION;
 import static com.predic8.membrane.core.http.Header.PROXY_CONNECTION;
 import static com.predic8.membrane.core.http.Response.notImplemented;
@@ -374,7 +375,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable, 
 
     private void respondWithBadRequestAndClose(String message) {
         try {
-            Response response = Response.badRequest(message, true).build();
+            Response response = user(getTransport().getRouter().getConfiguration().isProduction(), "http-server-handler")
+                    .addSubSee("invalid-framing")
+                    .detail(message)
+                    .build();
             response.getHeader().setConnection(Header.CLOSE);
             response.write(srcOut, false);
             srcOut.flush();
