@@ -381,15 +381,7 @@ public class Header {
 
     private static long parseContentLengthValue(String token, String rawValue) {
         String trimmed = token.trim();
-        boolean digitsOnly = !trimmed.isEmpty();
-        for (int i = 0; i < trimmed.length(); i++) {
-            char c = trimmed.charAt(i);
-            if (c < '0' || c > '9') {
-                digitsOnly = false;
-                break;
-            }
-        }
-        if (digitsOnly) {
+        if (!trimmed.isEmpty() && trimmed.chars().allMatch(c -> c >= '0' && c <= '9')) {
             try {
                 return Long.parseLong(trimmed);
             } catch (NumberFormatException ignored) {
