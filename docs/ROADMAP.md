@@ -18,7 +18,6 @@ PRIO 1:
 PRIO 2:
 - Remove MemoryExchangeStore
   - It was used only by Membrane Monitor
-- Fix maven central publish job ?
 - Tutorial: Replace httpbin and catfact TB
 
 PRIO 3:
@@ -35,7 +34,6 @@ PRIO 3:
 - upgrade to jackson 3
   - When OpenAPI Parser: swagger-parser-v3 is released with Jackson 3 support
 - refactor JdbcUserDataProvider
-- wsdlRewriter YAML is not working ?
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
 - Migrate deprecated finally to try with resources
 - YAML:
