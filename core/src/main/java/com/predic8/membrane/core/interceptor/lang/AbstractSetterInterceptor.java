@@ -14,18 +14,20 @@
 
 package com.predic8.membrane.core.interceptor.lang;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.lang.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.ExchangeExpressionException;
+import com.predic8.membrane.core.util.ExceptionUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressionInterceptor {
 
@@ -85,6 +87,11 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
 
     protected abstract void setValue(Exchange exchange, Flow flow, Object evaluatedValue);
 
+    /**
+     * @description When true, only sets the field if it is not already present in the message.
+     * @default false
+     * @example true
+     */
     @MCAttribute
     public void setIfAbsent(boolean ifAbsent) {
         this.ifAbsent = ifAbsent;
@@ -94,6 +101,10 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         return ifAbsent;
     }
 
+    /**
+     * @description Name of the header field or exchange property key to set.
+     * @example X-Powered-By
+     */
     @MCAttribute(attributeName = "name")
     public void setFieldName(String fieldName) {
         this.fieldName = fieldName;
@@ -103,6 +114,11 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
         return fieldName;
     }
 
+    /**
+     * @description Value to assign, evaluated as a SpEL template expression by default.
+     * Use the <code>language</code> attribute to switch to Groovy, JsonPath, or XPath.
+     * @example ${method}
+     */
     @MCAttribute
     public void setValue(String value) {
         this.expression = value;
@@ -117,10 +133,10 @@ public abstract class AbstractSetterInterceptor extends AbstractExchangeExpressi
     }
 
     /**
-     * Sets whether errors during value evaluation should be ignored or throw an exception.
-     *
-     * @param failOnError If true, an exception is raised on error. If false, errors are ignored.
+     * @description When true, aborts processing if expression evaluation fails.
+     * When false, logs the error and continues unchanged.
      * @default true
+     * @example false
      */
     @MCAttribute
     public void setFailOnError(boolean failOnError) {

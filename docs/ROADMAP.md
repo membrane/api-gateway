@@ -8,7 +8,6 @@ PRIO 1:
   - Udate OAuth2 sections in README.md
 - Proxy Server Configuration Sample 
   - explains how to configure a proxy server
-- HotReload for YAML
 - Register JSON Schema for YAML at: https://www.schemastore.org TB
 - create test asserting that connection reuse via proxy works TP
 - Central description of Membrane Languages, Cheat Sheets, links to their docs. TP
@@ -19,19 +18,7 @@ PRIO 1:
 PRIO 2:
 - Remove MemoryExchangeStore
   - It was used only by Membrane Monitor
-- jsonRPCProtection:
-  - maxBatchSize = 0,1 -> No Batch, n = n-Batches
-  - allow/block list for methods
-- Fix maven central publish job
 - Tutorial: Replace httpbin and catfact TB
-- use @MCElement(collapsed=true) for suitable classes
-- if:
-    test: param.case == 'c'
-    flow:
-      - return:
-          status: 500
-    else:
-      - 
 
 PRIO 3:
 - OpenAPI: validate `in: cookie` parameters
@@ -47,14 +34,10 @@ PRIO 3:
 - upgrade to jackson 3
   - When OpenAPI Parser: swagger-parser-v3 is released with Jackson 3 support
 - refactor JdbcUserDataProvider
-- Refine YAML for balancer: clustersFromSpring
-- wsdlRewriter YAML is not working
 - Discuss renaming the WebSocketInterceptor.flow to something else to avoid confusion with flowParser
 - Migrate deprecated finally to try with resources
 - YAML:
   - method: Suggest GET, POST, ...
-  - Language is case sensitive: e.g. language: SPEL is not valid according to the Schema and produces: TB
-       Invalid YAML: does not have a value in the enumeration ["groovy", "spel", "xpath", "jsonpath"]
   - openapi/rewrite/protocol provide http and https options
 - Refactor: File-, JDBC-, LDAP- and StaticUserProvider
 
