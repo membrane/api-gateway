@@ -22,7 +22,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref }}
           persist-credentials: false
@@ -59,7 +59,7 @@ jobs:
           title: "Snapshot version"
           author: "github-actions <github-actions@github.com>"
           body: "Update all project `pom.xml` and related files to post-${{ steps.get_version.outputs.VERSION }} snapshot version"
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref }}
           persist-credentials: true # needed for create release action
