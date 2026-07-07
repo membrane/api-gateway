@@ -22,10 +22,9 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
-          persist-credentials: true # needed for create release action
       - id: compile-membrane
         name: Compile Membrane
         run: |
@@ -59,10 +58,9 @@ jobs:
           title: "Snapshot version"
           author: "github-actions <github-actions@github.com>"
           body: "Update all project `pom.xml` and related files to post-${{ steps.get_version.outputs.VERSION }} snapshot version"
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
-          persist-credentials: true # needed for create release action
       - id: install-secret-key
         name: Install gpg secret key
         run: |
