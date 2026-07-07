@@ -120,7 +120,7 @@ public class JwtSignInterceptor extends AbstractInterceptor {
     }
 
     private String prepareJwtPayload(Message msg) throws IOException {
-        var body = (ObjectNode) om.readTree(msg.getBodyAsStream());
+        var body = (ObjectNode) om.readTree(msg.getBodyAsStreamDecoded());
         long epoch = System.currentTimeMillis() / 1000;
         body.put("iat", epoch);
         body.put("exp", epoch + expirySeconds);
