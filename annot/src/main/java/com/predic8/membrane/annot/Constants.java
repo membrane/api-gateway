@@ -51,8 +51,8 @@ public class Constants {
 	public static final String JSON_SCHEMA_VERSION;
 
 	static {
-		String version = "7.2"; // fallback
-		String jsonSchemaVersion = "7.2.5-SNAPSHOT"; // fallback
+		String version = "7.3"; // fallback
+		String jsonSchemaVersion = "7.3.0"; // fallback
 		try {
 			Properties p = new Properties(); // Production
 			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa/service-proxy-core/pom.properties"));

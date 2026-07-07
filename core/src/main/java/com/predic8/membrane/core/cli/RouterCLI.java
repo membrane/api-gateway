@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.cli;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.predic8.membrane.annot.yaml.ConfigurationParsingException;
 import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
 import com.predic8.membrane.core.exceptions.SpringConfigurationErrorHandler;
@@ -185,12 +184,16 @@ public class RouterCLI {
                 log.error("Fatal error: {}", errorMsg);
             }
         } catch (ConfigurationParsingException e) {
-            // Keep with one param to log otherwise first color code will be ignored!
+            // Render the highlighted YAML on a best-effort basis: a failure here must never
+            // mask the actual error message (see #3041).
+            String report = "";
             try {
-                log.error("{}", "%s%s%s\n%s".formatted(RED(), e.getMessage(), RESET(), e.getFormattedReport()));
-            } catch (JsonProcessingException ex) {
-                throw new RuntimeException(ex);
+                report = e.getFormattedReport();
+            } catch (Exception ex) {
+                log.debug("Could not render YAML error report.", ex);
             }
+            // Keep with one param to log otherwise first color code will be ignored!
+            log.error("{}", "%s%s%s\n%s".formatted(RED(), e.getMessage(), RESET(), report));
         } catch (ExitException ignored) {
             // do nothing
         } catch (Exception ex) {
