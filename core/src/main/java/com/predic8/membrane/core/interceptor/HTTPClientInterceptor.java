@@ -17,6 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.MalformedHeaderException;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -164,6 +165,18 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
                     .detail(e.getMessage())
                     .internal("proxy", exc.getProxy().getName())
                     .internal("url", exc.getRequest().getUri())
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        } catch (MalformedHeaderException e) {
+            // The backend response has invalid framing (e.g. conflicting Content-Length),
+            // RFC 9112 §6.3. We cannot safely forward it, so reject with 502 Bad Gateway.
+            log.warn("Backend {} returned a response with invalid framing: {}", getDestination(exc), e.getMessage());
+            gateway(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Bad Gateway")
+                    .status(502)
+                    .addSubSee("invalid-framing")
+                    .detail(e.getMessage())
+                    .stacktrace(false)
                     .buildAndSetResponse(exc);
             return ABORT;
         } catch (Exception e) {

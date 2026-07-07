@@ -50,8 +50,15 @@ public class ConfigurationParsingException extends RuntimeException {
 
     /**
      * Returns a complete formatted error report including highlighted YAML.
+     * <p>
+     * Many throw sites do not carry a {@link ParsingContext} (e.g. errors raised before the
+     * offending node is known). Without one there is nothing to highlight, so an empty report
+     * is returned rather than failing with a {@link NullPointerException} that would mask the
+     * actual error message.
      */
     public String getFormattedReport() throws JsonProcessingException {
+        if (parsingContext == null || parsingContext.getNode() == null)
+            return "";
         return renderErrorReport(this.parsingContext, sourceFile);
     }
 

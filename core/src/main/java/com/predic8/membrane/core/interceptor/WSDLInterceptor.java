@@ -110,7 +110,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
         var stream = new ByteArrayOutputStream();
         var relocator = getRelocator(exc, stream);
-        relocator.relocate(exc.getResponse().getBodyAsStream());
+        relocator.relocate(exc.getResponse().getBodyAsStreamDecoded());
         exc.getResponse().setBodyContent(stream.toByteArray());
 
         // Preserve existing Content-Type if present; otherwise set a sane default including charset.
