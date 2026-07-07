@@ -36,7 +36,7 @@ jobs:
           index_of_str: "v"
           output_name: tag
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
 

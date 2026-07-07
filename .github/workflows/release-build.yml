@@ -22,7 +22,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
       - id: compile-membrane
@@ -58,7 +58,7 @@ jobs:
           title: "Snapshot version"
           author: "github-actions <github-actions@github.com>"
           body: "Update all project `pom.xml` and related files to post-${{ steps.get_version.outputs.VERSION }} snapshot version"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
       - id: install-secret-key
