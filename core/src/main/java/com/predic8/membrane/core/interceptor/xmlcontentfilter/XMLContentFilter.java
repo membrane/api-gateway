@@ -13,10 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.xml.XPathUtil;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.xml.namespace.QName;
@@ -25,32 +34,17 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-
-import jakarta.mail.internet.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.xml.XPathUtil;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Takes action on XML documents based on an XPath expression. The only action
@@ -167,13 +161,13 @@ public class XMLContentFilter {
 			}
 
             if (elementFinder != null &&
-					!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStream())) {
+					!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded())) {
 				return;
 			}
 			DocumentBuilder db = createDocumentBuilder();
 			Document d;
 			try {
-				d = db.parse(xop != null ? xop.getBodyAsStream() : message.getBodyAsStream());
+				d = db.parse(xop != null ? xop.getBodyAsStream() : message.getBodyAsStreamDecoded());
 			} finally {
 				db.reset();
 			}

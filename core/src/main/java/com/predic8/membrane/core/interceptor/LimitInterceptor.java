@@ -13,28 +13,46 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
+import static com.predic8.membrane.core.http.Header.CONTENT_LENGTH;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
- * @description Limits the maximum length of a HTTP message body.
- * @explanation <p>
- *              Note that due to the streaming nature of Membrane, a request header may already have been passed on to
- *              the backend, when the condition "body.length &gt; X" becomes true. In this case, further processing is
- *              aborted and the connection to the backend is simply closed.
- *              </p>
- *              <p>
- *              To apply <tt>&lt;limit/&gt;</tt> only to either requests or responses, wrap it in a corresponding tag:
- *              <tt>&lt;request&gt;&lt;limit ... /&gt;&lt;/request&gt;</tt>.
- *              </p>
+ * @description Enforces a maximum body size, rejecting oversized messages with a Problem Details 400 response.
+ * <p>
+ * If a <code>Content-Length</code> header is already present and exceeds the limit, the message is
+ * rejected immediately without reading the body. Otherwise body bytes are counted lazily as they
+ * stream through; the limit is applied to the <b>decoded</b> (uncompressed) byte count, so
+ * Content-Encoding compression (gzip, brotli, deflate) cannot be used to bypass it.
+ * When decoding is applied, <code>Content-Encoding</code> and <code>Content-Length</code> are
+ * removed from the forwarded message because the decoded size is not known ahead of time.
+ * </p>
+ * <p>
+ * Due to Membrane's streaming architecture, request headers may already have been forwarded to
+ * the backend when the limit is exceeded mid-body; in that case the backend connection is closed.
+ * </p>
+ * <p>See tutorials/security/100-SQL-Injection-Protection.yaml.</p>
  * @topic 3. Security and Validation
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - limit:
+ *         maxBodyLength: 10485760
+ * </code></pre>
  */
 @MCElement(name="limit")
 public class LimitInterceptor extends AbstractInterceptor {
@@ -67,7 +85,9 @@ public class LimitInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description The maximal length of a message body.
+	 * @description Maximum body size in bytes, measured against the decoded (uncompressed) content.
+	 * Set to <code>-1</code> to disable the limit.
+	 * @default -1
 	 * @example 10485760
 	 */
 	@MCAttribute
@@ -90,7 +110,9 @@ public class LimitInterceptor extends AbstractInterceptor {
 			return ABORT;
 		}
 
-		msg.setBody(new Body(new LengthLimitingStream(msg.getBodyAsStream())));
+		msg.setBody(new Body(new LengthLimitingStream(msg.getBodyAsStreamDecoded())));
+		msg.getHeader().removeFields(CONTENT_ENCODING);
+		msg.getHeader().removeFields(CONTENT_LENGTH);
 
 		return CONTINUE;
 	}

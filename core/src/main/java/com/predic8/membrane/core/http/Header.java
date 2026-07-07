@@ -348,10 +348,47 @@ public class Header {
         return CHUNKED.equalsIgnoreCase(last);
     }
 
+    /**
+     * Returns the declared message body length from the {@code Content-Length}
+     * header(s), or {@code -1} if none is present.
+     * <p>
+     * Enforces RFC 9112 &sect;6.3: a message received with multiple
+     * {@code Content-Length} field values that do not all agree, or with a value
+     * that is not a valid non-negative integer, has invalid framing. Multiple
+     * values may appear as repeated header fields <em>or</em> as a
+     * comma-separated list within a single field; both forms are checked.
+     * Rather than silently taking the first value (which would enable HTTP
+     * request smuggling when an upstream and a downstream disagree on the body
+     * boundary) such a message is rejected.
+     *
+     * @throws MalformedHeaderException if the {@code Content-Length} values
+     *                                  conflict or are not valid non-negative integers
+     */
     public long getContentLength() {
-        if (!hasContentLength())
-            return -1;
-        return Long.parseLong(getFirstValue(CONTENT_LENGTH));
+        Long length = null;
+        for (HeaderField field : filterByHeaderName(CONTENT_LENGTH).toList()) {
+            for (String token : field.getValue().split(",", -1)) {
+                long value = parseContentLengthValue(token, field.getValue());
+                if (length == null) {
+                    length = value;
+                } else if (length != value) {
+                    throw new MalformedHeaderException("Conflicting Content-Length header values. The message declares more than one body length; rejecting to prevent request smuggling.");
+                }
+            }
+        }
+        return length == null ? -1 : length;
+    }
+
+    private static long parseContentLengthValue(String token, String rawValue) {
+        String trimmed = token.trim();
+        if (!trimmed.isEmpty() && trimmed.chars().allMatch(c -> c >= '0' && c <= '9')) {
+            try {
+                return Long.parseLong(trimmed);
+            } catch (NumberFormatException ignored) {
+                // Falls through: value is all digits but exceeds the long range.
+            }
+        }
+        throw new MalformedHeaderException("Invalid Content-Length header value: \"" + rawValue + "\".");
     }
 
     public String getContentType() {

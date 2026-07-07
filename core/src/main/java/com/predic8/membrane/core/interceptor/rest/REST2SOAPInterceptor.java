@@ -13,29 +13,43 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.proxies.*;
-import com.predic8.xml.beautifier.*;
-import org.slf4j.*;
-import org.springframework.http.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.Required;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy;
+import com.predic8.membrane.core.proxies.SSLableProxy;
+import com.predic8.xml.beautifier.XMLInputFactoryFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.events.XMLEvent;
+import javax.xml.transform.stream.StreamSource;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.http.Header.ACCEPT;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
 import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 /**
@@ -167,7 +181,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
     private boolean isSOAP12(AbstractExchange exc) {
         // Determine SOAP version per-request; do not cache in instance state
-        return SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStream()));
+        return SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStreamDecoded()));
     }
 
     private String getRootElementNamespace(InputStream stream) {

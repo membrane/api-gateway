@@ -355,6 +355,67 @@ class HeaderTest {
         }
     }
 
+    @Nested
+    class GetContentLength {
+
+        @Test
+        void noContentLengthReturnsMinusOne() {
+            assertEquals(-1, new Header().getContentLength());
+        }
+
+        @Test
+        void singleValue() {
+            Header h = new Header();
+            h.add(CONTENT_LENGTH, "42");
+            assertEquals(42, h.getContentLength());
+        }
+
+        @Test
+        void zero() {
+            Header h = new Header();
+            h.add(CONTENT_LENGTH, "0");
+            assertEquals(0, h.getContentLength());
+        }
+
+        @Test
+        void duplicateFieldsWithSameValueAreAccepted() {
+            Header h = new Header();
+            h.add(CONTENT_LENGTH, "42");
+            h.add(CONTENT_LENGTH, "42");
+            assertEquals(42, h.getContentLength());
+        }
+
+        @Test
+        void commaListWithSameValueIsAccepted() {
+            Header h = new Header();
+            h.add(CONTENT_LENGTH, "42, 42");
+            assertEquals(42, h.getContentLength());
+        }
+
+        @Test
+        void duplicateFieldsWithDifferentValuesAreRejected() {
+            Header h = new Header();
+            h.add(CONTENT_LENGTH, "42");
+            h.add(CONTENT_LENGTH, "43");
+            assertThrows(MalformedHeaderException.class, h::getContentLength);
+        }
+
+        @Test
+        void commaListWithDifferentValuesIsRejected() {
+            Header h = new Header();
+            h.add(CONTENT_LENGTH, "42, 43");
+            assertThrows(MalformedHeaderException.class, h::getContentLength);
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"", " ", "abc", "4a2", "-1", "+42", "0x10", "4.2"})
+        void invalidValuesAreRejected(String value) {
+            Header h = new Header();
+            h.add(CONTENT_LENGTH, value);
+            assertThrows(MalformedHeaderException.class, h::getContentLength);
+        }
+    }
+
     @Test
     void sanitization() {
         Header h = new Header();
