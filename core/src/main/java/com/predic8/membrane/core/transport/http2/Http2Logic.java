@@ -149,9 +149,10 @@ public class Http2Logic {
                 handleFrame(frame.asGoaway());
                 break;
             case TYPE_PUSH_PROMISE:
+                throw new FatalConnectionException(ERROR_PROTOCOL_ERROR);
             default:
-                // TODO
-                throw new NotImplementedException("frame type " + frame.getType());
+                log.debug("ignoring frame of unknown type {}", frame.getType());
+                break;
         }
 
     }
