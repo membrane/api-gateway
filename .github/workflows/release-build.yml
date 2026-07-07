@@ -9,6 +9,11 @@ on:
       - 6**
       - 5**
       - 4**
+
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   build-release:
     if: github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'Release ')
@@ -94,7 +99,7 @@ jobs:
 #          makeLatest: true
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
           artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
-          token: ${{ secrets.PAT }}
+          token: ${{ github.token }}
 
       - name: Trigger website pipeline on GitLab
         shell: bash
