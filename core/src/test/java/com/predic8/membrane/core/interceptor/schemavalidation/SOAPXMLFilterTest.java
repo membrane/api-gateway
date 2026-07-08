@@ -71,7 +71,9 @@ class SOAPXMLFilterTest {
     }
 
     private static String filterSoapBody(String soap) throws Exception {
-        Transformer t = TransformerFactory.newInstance().newTransformer();
+        TransformerFactory tf = TransformerFactory.newInstance();
+        tf.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        Transformer t = tf.newTransformer();
         StringWriter sw = new StringWriter();
         t.transform(MessageUtil.getSOAPBody(new ByteArrayInputStream(soap.getBytes(UTF_8))), new StreamResult(sw));
         return sw.toString();
