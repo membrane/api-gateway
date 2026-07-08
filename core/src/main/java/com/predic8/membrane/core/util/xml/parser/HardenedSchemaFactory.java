@@ -17,8 +17,7 @@ package com.predic8.membrane.core.util.xml.parser;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import static javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD;
-import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
+import static javax.xml.XMLConstants.*;
 
 /**
  * Factory for XXE-hardened {@link SchemaFactory} and {@link Validator} instances.
@@ -46,9 +45,10 @@ public final class HardenedSchemaFactory {
         var sf = SchemaFactory.newInstance(schemaLanguage);
         try {
             sf.setFeature(FEATURE_SECURE_PROCESSING, true);
-            // Redundant after FEATURE_SECURE_PROCESSING (which already resets it to "") —
+            // Redundant after FEATURE_SECURE_PROCESSING (which already resets both to "") —
             // kept as an explicit guard against JAXP implementations that behave differently.
             sf.setProperty(ACCESS_EXTERNAL_DTD, "");
+            sf.setProperty(ACCESS_EXTERNAL_SCHEMA, "");
         } catch (org.xml.sax.SAXNotRecognizedException | org.xml.sax.SAXNotSupportedException e) {
             throw new IllegalStateException("Secure SchemaFactory properties not supported", e);
         }
