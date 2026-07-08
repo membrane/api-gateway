@@ -18,29 +18,36 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import static javax.xml.XMLConstants.ACCESS_EXTERNAL_DTD;
+import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
 
 /**
  * Factory for XXE-hardened {@link SchemaFactory} and {@link Validator} instances.
  * {@link SchemaFactory} is not thread-safe and cannot be shared, so each call to
  * {@link #newInstance} returns a fresh instance.
- * Callers may still set an {@link org.w3c.dom.ls.LSResourceResolver} after construction —
- * that resolver handles legitimate external schema imports via xs:import and is unaffected
- * by the DTD hardening.
+ * <p>
+ * Explicitly enabling {@code FEATURE_SECURE_PROCESSING} resets both {@code ACCESS_EXTERNAL_DTD}
+ * and {@code ACCESS_EXTERNAL_SCHEMA} to the empty string, so the factory itself never fetches
+ * external resources. Legitimate xs:import/xs:include resolution still works because callers
+ * install an {@link org.w3c.dom.ls.LSResourceResolver} (see ResolverMap#toLSResourceResolver),
+ * which is consulted before the factory's own — now blocked — fetching.
  */
 public final class HardenedSchemaFactory {
 
     private HardenedSchemaFactory() {}
 
     /**
-     * Returns a new {@link SchemaFactory} for the given schema language with external DTD
-     * access blocked. Note: ACCESS_EXTERNAL_SCHEMA is intentionally left at its default so
-     * that legitimate xs:import resolution through an LSResourceResolver continues to work.
+     * Returns a new {@link SchemaFactory} for the given schema language with all parser-side
+     * external DTD and schema fetching blocked. External schema references (xs:import,
+     * xs:include) must be served by an LSResourceResolver set by the caller.
      *
      * @param schemaLanguage e.g. {@code XMLConstants.W3C_XML_SCHEMA_NS_URI}
      */
     public static SchemaFactory newInstance(String schemaLanguage) {
-        SchemaFactory sf = SchemaFactory.newInstance(schemaLanguage);
+        var sf = SchemaFactory.newInstance(schemaLanguage);
         try {
+            sf.setFeature(FEATURE_SECURE_PROCESSING, true);
+            // Redundant after FEATURE_SECURE_PROCESSING (which already resets it to "") —
+            // kept as an explicit guard against JAXP implementations that behave differently.
             sf.setProperty(ACCESS_EXTERNAL_DTD, "");
         } catch (org.xml.sax.SAXNotRecognizedException | org.xml.sax.SAXNotSupportedException e) {
             throw new IllegalStateException("Secure SchemaFactory properties not supported", e);

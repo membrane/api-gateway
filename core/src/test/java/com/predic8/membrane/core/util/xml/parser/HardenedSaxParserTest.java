@@ -37,7 +37,7 @@ public class HardenedSaxParserTest {
 
     @Test
     void parsesValidXml() throws Exception {
-        var reader = HardenedSaxParser.getInstance().newSAXParser().getXMLReader();
+        var reader = HardenedSaxParser.newSAXParser().getXMLReader();
         reader.setContentHandler(new DefaultHandler());
         reader.parse(new InputSource(new StringReader("<root><child attr='val'/></root>")));
     }
@@ -45,7 +45,7 @@ public class HardenedSaxParserTest {
     @Test
     void rejectsDoctype() {
         assertThrows(SAXException.class, () -> {
-            var reader = HardenedSaxParser.getInstance().newSAXParser().getXMLReader();
+            var reader = HardenedSaxParser.newSAXParser().getXMLReader();
             reader.setContentHandler(new DefaultHandler());
             reader.parse(new InputSource(new StringReader("<!DOCTYPE r [<!ELEMENT r ANY>]><r/>")));
         });
@@ -57,7 +57,7 @@ public class HardenedSaxParserTest {
         int port = freePort();
         TestRouter router = startRecordingServer(port, received);
         try {
-            var reader = HardenedSaxParser.getInstance().newSAXParser().getXMLReader();
+            var reader = HardenedSaxParser.newSAXParser().getXMLReader();
             reader.setContentHandler(new DefaultHandler());
             assertThrows(SAXException.class, () ->
                 reader.parse(new InputSource(new StringReader(

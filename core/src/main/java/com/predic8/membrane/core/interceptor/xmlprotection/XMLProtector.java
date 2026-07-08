@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.util.CollectionsUtil.count;
 import static com.predic8.xml.beautifier.XMLInputFactoryFactory.JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES;
@@ -50,6 +51,9 @@ import static javax.xml.stream.XMLInputFactory.*;
 public class XMLProtector {
     private static final Logger log = LoggerFactory.getLogger(XMLProtector.class);
 
+    // Word-bounded so DOCTYPE names that merely contain the keywords (e.g. PUBLICATIONS) don't match
+    private static final Pattern EXTERNAL_ID_KEYWORD = Pattern.compile("\\b(?:SYSTEM|PUBLIC)\\b");
+
     private final XMLEventWriter writer;
     private final int maxAttributeCount;
     private final int maxElementNameLength;
@@ -72,9 +76,26 @@ public class XMLProtector {
     private static void checkExternalEntities(DTD dtd) throws XMLProtectionException {
         if (containsExternalEntityReferences(dtd)) {
             String msg = "Possible attack. External entity found in DTD.";
-            log.warn(msg);
+            log.info(msg);
             throw new XMLProtectionException(msg);
         }
+    }
+
+    private static void checkExternalSubset(DTD dtd) throws XMLProtectionException {
+        var decl = dtd.getDocumentTypeDeclaration();
+        if (decl == null) return;
+        // Only inspect the header before the internal subset '[' — SYSTEM/PUBLIC only appear there as keywords
+        String header = getHeader(decl);
+        if (EXTERNAL_ID_KEYWORD.matcher(header).find()) {
+            String msg = "Possible attack. External DTD subset reference in DOCTYPE declaration.";
+            log.info(msg);
+            throw new XMLProtectionException(msg);
+        }
+    }
+
+    private static @NotNull String getHeader(String decl) {
+        int internalSubset = decl.indexOf('[');
+        return internalSubset >= 0 ? decl.substring(0, internalSubset) : decl;
     }
 
     private static boolean containsExternalEntityReferences(DTD dtd) {
@@ -115,6 +136,7 @@ public class XMLProtector {
                         log.debug("removed DTD.");
                         continue;
                     }
+                    checkExternalSubset(dtd);
                 }
                 writer.add(event);
             }

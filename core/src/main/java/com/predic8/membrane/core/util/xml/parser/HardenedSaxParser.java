@@ -28,27 +28,22 @@ import static javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING;
 
 /**
  * Thread-safe, XXE-hardened SAX parser factory.
- * A fresh {@link SAXParser} is created for each call to {@link #newSAXParser()}.
- * Instances are immutable and can safely be shared across threads.
+ * A fresh {@link SAXParser} is created for each call to {@link #newSAXParser()} from a
+ * per-thread {@link SAXParserFactory}, so parser creation never contends on a shared lock.
+ * <p>
+ * Why a ThreadLocal and not a shared factory or a parser pool: Membrane runs one virtual
+ * thread per connection, so the cached factory is reused across all keep-alive requests on
+ * a connection (and fully reused with platform threads). A {@code synchronized} shared
+ * factory would pin virtual threads to their carrier on Java 21. A parser pool would save
+ * only a few microseconds per message — noise next to the actual parse/validation work —
+ * while requiring re-hardening after {@link SAXParser#reset()}, which drops the entity
+ * resolver set below. Worst case here is one factory creation (~20 µs) per connection.
  */
 public final class HardenedSaxParser {
 
-    private final SAXParserFactory factory = createFactory();
-
-    private static volatile HardenedSaxParser INSTANCE;
+    private static final ThreadLocal<SAXParserFactory> FACTORY = ThreadLocal.withInitial(HardenedSaxParser::createFactory);
 
     private HardenedSaxParser() {}
-
-    public static HardenedSaxParser getInstance() {
-        if (INSTANCE == null) {
-            synchronized (HardenedSaxParser.class) {
-                if (INSTANCE == null) {
-                    INSTANCE = new HardenedSaxParser();
-                }
-            }
-        }
-        return INSTANCE;
-    }
 
     private static SAXParserFactory createFactory() {
         SAXParserFactory f = SAXParserFactory.newInstance();
@@ -70,9 +65,11 @@ public final class HardenedSaxParser {
     /**
      * Creates a new hardened {@link SAXParser}. Not thread-safe — each caller must use their own instance.
      */
-    public SAXParser newSAXParser() {
+    public static SAXParser newSAXParser() {
         try {
-            SAXParser parser = factory.newSAXParser();
+            SAXParser parser = FACTORY.get().newSAXParser();
+            // Second line of defence: if disallow-doctype-decl is ever ignored by the SAX
+            // implementation, the resolver swallows the external fetch instead of hitting the network.
             parser.getXMLReader().setEntityResolver((publicId, systemId) -> new InputSource(new StringReader("")));
             return parser;
         } catch (ParserConfigurationException | SAXException e) {

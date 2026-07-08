@@ -74,7 +74,7 @@ public class MessageUtil {
 	
 	public static Source getSOAPBody(InputStream stream) {
 		try {
-            return new SAXSource(new SOAPXMLFilter(HardenedSaxParser.getInstance().newSAXParser().getXMLReader()), new InputSource(stream));
+            return new SAXSource(new SOAPXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader()), new InputSource(stream));
 		} catch (SAXException e) {
 			throw new RuntimeException("Error initializing SAXSource", e);
 		}

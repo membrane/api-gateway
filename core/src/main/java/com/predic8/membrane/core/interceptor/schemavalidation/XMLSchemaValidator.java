@@ -98,7 +98,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
     @Override
     protected Source getMessageBody(InputStream input) {
         try {
-            XMLReader reader = HardenedSaxParser.getInstance().newSAXParser().getXMLReader();
+            XMLReader reader = HardenedSaxParser.newSAXParser().getXMLReader();
             return new SAXSource(reader, new InputSource(input));
         } catch (SAXException e) {
             throw new RuntimeException("Failed to create hardened SAX reader for schema validation", e);

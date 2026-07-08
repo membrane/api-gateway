@@ -103,18 +103,43 @@ class XMLProtectorTest {
     }
 
     @Test
+    void rejectsExternalDtdSubsetWhenNotRemovingDtd() {
+        // When removeDTD=false, a bare DOCTYPE with a SYSTEM reference has no entity declarations
+        // and would previously pass checkExternalEntities() undetected, writing the external
+        // reference to output. It must now throw instead.
+        assertThrows(XMLProtectionException.class, () -> {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), false, 1000, 1000);
+            String xml = "<?xml version='1.0'?><!DOCTYPE r SYSTEM 'http://127.0.0.1:1/x.dtd'><r/>";
+            protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8));
+        });
+    }
+
+    @Test
+    void allowsDoctypeNameContainingKeywordSubstringWhenNotRemovingDtd() throws Exception {
+        // PUBLICATIONS contains "PUBLIC" but is not an external ID keyword — must not be rejected
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), false, 1000, 1000);
+        String xml = "<?xml version='1.0'?><!DOCTYPE PUBLICATIONS [<!ELEMENT PUBLICATIONS ANY>]><PUBLICATIONS/>";
+        assertTrue(protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8)));
+    }
+
+    @Test
     void doesNotFetchExternalDtd() throws Exception {
         var received = new AtomicBoolean(false);
         int port = freePort();
         TestRouter router = startRecordingServer(port, received);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        boolean result;
         try {
-            var baos = new ByteArrayOutputStream();
             var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), true, 1000, 1000);
             String xml = "<?xml version='1.0'?><!DOCTYPE r SYSTEM 'http://127.0.0.1:%d/x.dtd'><r/>".formatted(port);
-            protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8));
+            result = protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8));
         } finally {
             router.stop();
         }
+        assertTrue(result, "XMLProtector should succeed after stripping the DTD");
+        assertFalse(new String(baos.toByteArray(), UTF_8).contains("DOCTYPE"), "DTD must be removed from output");
         assertFalse(received.get(), "XMLProtector must not fetch external DTD");
     }
 
