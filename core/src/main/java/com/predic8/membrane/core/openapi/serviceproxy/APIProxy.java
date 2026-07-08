@@ -44,41 +44,52 @@ import static com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL;
 import static com.predic8.membrane.core.util.text.StringUtil.maskNonPrintableCharacters;
 
 /**
- * @description <p>API proxy with several routing options.</p>
- * <p>Multiple APIs on the same port are discriminated by host, path, or a <code>test</code>
- * expression. Incoming requests are probed from the top API to the bottom. The first API that
- * matches the request will process it.</p>
- * <b>OpenAPI Support</b>
- * <p>When <code>openapi</code> children are present, Membrane auto-wires a publisher at
- * <code>/api-docs</code> and an OpenAPI rewriter; see <code>tutorials/getting-started/80-OpenAPI.yaml</code>
- * and <code>tutorials/getting-started/90-OpenAPI-Validation.yaml</code>.</p>
+ * @description <p>The main API configuration. Extends <code>serviceProxy</code> with REST and OpenAPI
+ * support and expression-based routing.</p>
+ * <p>Several APIs can share one port and are told apart by host, path, or a <code>test</code>
+ * expression. Incoming requests are probed from the first API to the last; the first one that matches
+ * handles the request.</p>
+ * <p>When <code>openapi</code> children are present, Membrane deploys the described API: it publishes
+ * the specifications at <code>/api-docs</code> and routes to the target from the OpenAPI
+ * <code>servers</code> field. See <code>tutorials/getting-started/80-OpenAPI.yaml</code> and
+ * <code>tutorials/getting-started/90-OpenAPI-Validation.yaml</code>.</p>
  *
  * @topic 1. Proxies and Flow
  * @yaml <pre><code>
+ *
+ * # Basic path routing
  * api:
  *   port: 2000
  *   path:
- *      uri: /orders/{id}
- *   target:
- *     url: https://api.predic8.de/shop/orders/{pathParam.id}
- * ---
- * api:
- *   port: 2000
- *   path:
- *     uri: /orders/
+ *     uri: /products
  *   target:
  *     url: https://api.predic8.de
+ *
  * ---
+ * # URI template routing
+ * api:
+ *   port: 2000
+ *   path:
+ *     uri: /orders/{id}
+ *   target:
+ *     url: https://api.predic8.de/shop/orders/{pathParam.id}
+ *
+ * ---
+ * # Custom routing with expression
  * api:
  *   port: 2000
  *   test: header.SOAPAction == 'https://predic8.de/city-service/get'
  *   target:
- *     url: https://api.predic8.de
+ *     url: https://api.predic8.de/city-service
+ *
  * ---
+ * # OpenAPI support
  * api:
  *   port: 2000
  *   openapi:
  *     - location: openapi/fruitshop-api.yaml
+ *       validateRequests: true
+ *       validateResponses: true
  * </code></pre>
  */
 @MCElement(name = "api", topLevel = true, component = false)
@@ -113,7 +124,8 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     }
 
     /**
-     * @description Deploys an API from an OpenAPI document.
+     * @description Deploys the API described by an OpenAPI document: the document is published under
+     * <code>/api-docs</code> and, when configured, requests and responses are validated against it.
      */
     @MCChildElement(order = 25)
     public void setOpenapi(List<OpenAPISpec> specs) {
@@ -269,6 +281,11 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         return test;
     }
 
+    /**
+     * @description Expression evaluated against each request; the API matches only when it returns
+     * true. Used to discriminate APIs on the same port beyond host and path, e.g. by header or method.
+     * @example header.SOAPAction == 'https://predic8.de/city-service/get'
+     */
     @MCAttribute
     public void setTest(String test) {
         this.test = test;
@@ -282,16 +299,28 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
         return description;
     }
 
+    /**
+     * @description Identifier for this API. Overrides the auto-generated entry id used for this API
+     * in the published <code>apis.json</code> catalog; otherwise an id is derived from the API's key.
+     * @example order-api
+     */
     @MCAttribute
     public void setId(String id) {
         this.id = id;
     }
 
+    /**
+     * @description Human-readable description of the API.
+     */
     @MCChildElement
     public void setDescription(ApiDescription description) {
         this.description = description;
     }
 
+    /**
+     * @description Expression language used to evaluate the <code>test</code> attribute.
+     * @default SpEL
+     */
     @MCAttribute
     @Override
     public void setLanguage(Language language) {
@@ -313,8 +342,8 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     }
 
     /**
-     * XML Configuration e.g. declaration of XML namespaces for XPath expressions, ...
-     * @param xmlConfig
+     * @description XML configuration for the API, such as namespace declarations used by XPath
+     * expressions.
      */
     @MCChildElement(allowForeign = true,order = 10)
     public void setXmlConfig(XmlConfig xmlConfig) {
