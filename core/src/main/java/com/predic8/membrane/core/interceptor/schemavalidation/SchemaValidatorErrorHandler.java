@@ -13,8 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import org.slf4j.*;
-import org.xml.sax.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXParseException;
 
 public class SchemaValidatorErrorHandler implements ErrorHandler {
 
@@ -22,18 +24,19 @@ public class SchemaValidatorErrorHandler implements ErrorHandler {
 
 	private Exception exception;
 
+	// Errors are collected here and only reported by AbstractXMLSchemaValidator once the message
+	// has failed *all* embedded schemas. Logging here would emit spurious "Error:" lines for a
+	// perfectly valid message that simply matches a different embedded schema of the same WSDL.
 	public void error(SAXParseException e) {
 		exception = e;
-		log.info("Error: {}", e.getMessage());
 	}
 
 	public void fatalError(SAXParseException e) {
 		exception = e;
-		log.info("Fatal Error: {}", e.getMessage());
 	}
 
 	public void warning(SAXParseException e) {
-		log.info("Warning: {}", e.getMessage());
+		log.debug("Warning: {}", e.getMessage());
 	}
 
 	public Exception getException() {

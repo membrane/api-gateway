@@ -14,17 +14,20 @@
 
 package com.predic8.membrane.core.ws;
 
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.wsdl.parser.*;
-import com.predic8.membrane.core.util.wsdl.parser.schema.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.WSDLValidator;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.WSDLElement;
+import com.predic8.membrane.core.util.wsdl.parser.schema.SchemaElement;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class WSDLIncludeImportTest {
 
@@ -104,6 +107,20 @@ public class WSDLIncludeImportTest {
                 "TestService",
                 (msg, exc) -> log.info("Validation failure: {}", msg), true);
         validator.init();
+    }
+
+    /**
+     * The service schema references types from two other embedded schemas via namespace-only
+     * {@code <xsd:import>} (no schemaLocation). Compiling that schema must resolve those types
+     * from the WSDL's own embedded schemas instead of failing with src-resolve.
+     */
+    @Test
+    void validatorResolvesCrossEmbeddedSchemaImports() {
+        var validator = new WSDLValidator(new ResolverMap(),
+                WSDLIncludeImportTest.class.getResource("/ws/import/embedded.wsdl").toString(),
+                "CustomerService",
+                (msg, exc) -> log.info("Validation failure: {}", msg), true);
+        assertDoesNotThrow(validator::init);
     }
 
     private static @NotNull List<String> getElementNames(List<SchemaElement> schemaElements) {
