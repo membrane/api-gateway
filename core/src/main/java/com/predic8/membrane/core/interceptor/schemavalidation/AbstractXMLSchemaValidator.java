@@ -21,6 +21,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.xml.parser.HardenedSchemaFactory;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,7 +123,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
     }
 
     protected List<Validator> createValidators() {
-        var sf = SchemaFactory.newInstance(XSD_NS);
+        var sf = HardenedSchemaFactory.newInstance(XSD_NS);
         sf.setResourceResolver(resolver.toLSResourceResolver());
         var validators = new ArrayList<Validator>();
         var schemas = getSchemas();
@@ -140,6 +141,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             source.setSystemId(location);
             var validator = sf.newSchema(source).newValidator();
             validator.setErrorHandler(new SchemaValidatorErrorHandler());
+            HardenedSchemaFactory.hardenValidator(validator);
             return validator;
         } catch (SAXException e) {
             throw new ConfigurationException("Cannot read schema %s".formatted(location), e);

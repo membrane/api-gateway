@@ -13,12 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.router.TestRouter;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.http.Request.post;
-import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.*;
+import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.SOAP_OPERATION;
+import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.SOAP_OPERATION_NS;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.freePort;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SoapOperationExtractorTest {
@@ -65,6 +71,28 @@ public class SoapOperationExtractorTest {
 		assertEquals("http://predic8.de", exc.getProperty(SOAP_OPERATION_NS));
 
 	}
+
+	@Test
+	public void doesNotFetchExternalDtd() throws Exception {
+		var received = new AtomicBoolean(false);
+		int port = freePort();
+		TestRouter router = startRecordingServer(port, received);
+		try {
+			String maliciousSoap = """
+					<?xml version='1.0'?>
+					<!DOCTYPE s SYSTEM 'http://127.0.0.1:%d/x.dtd'>
+					<s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'>
+					  <s:Body><op xmlns='http://example.com/'/></s:Body>
+					</s:Envelope>
+					""".formatted(port);
+			Exchange exc = post("/test").body(maliciousSoap).buildExchange();
+			extractor.handleRequest(exc);
+		} finally {
+			router.stop();
+		}
+		assertFalse(received.get(), "SoapOperationExtractor must not fetch external DTD");
+	}
+
 
 	private Exchange getExchange(String path) throws Exception {
 		return post("/test").body(getClass().getClassLoader().getResourceAsStream(path)).buildExchange();

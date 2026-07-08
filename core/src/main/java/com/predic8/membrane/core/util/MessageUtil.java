@@ -13,28 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.schemavalidation.*;
-import org.brotli.dec.*;
-import org.xml.sax.*;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
+import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
+import org.brotli.dec.BrotliInputStream;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.sax.*;
-import java.io.*;
-import java.util.zip.*;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
 
 import static com.predic8.membrane.core.util.ByteUtil.getDecompressedData;
 
 public class MessageUtil {
-
-	private static final SAXParserFactory saxParserFactory;
-
-	static {
-		saxParserFactory = SAXParserFactory.newInstance();
-		saxParserFactory.setNamespaceAware(true);
-		saxParserFactory.setValidating(false);
-	}
 
 	public static InputStream getContentAsStream(Message msg) {
 		try {
@@ -78,8 +74,8 @@ public class MessageUtil {
 	
 	public static Source getSOAPBody(InputStream stream) {
 		try {
-            return new SAXSource(new SOAPXMLFilter(saxParserFactory.newSAXParser().getXMLReader()), new InputSource(stream));
-		} catch (ParserConfigurationException | SAXException e) {
+            return new SAXSource(new SOAPXMLFilter(HardenedSaxParser.getInstance().newSAXParser().getXMLReader()), new InputSource(stream));
+		} catch (SAXException e) {
 			throw new RuntimeException("Error initializing SAXSource", e);
 		}
 	}

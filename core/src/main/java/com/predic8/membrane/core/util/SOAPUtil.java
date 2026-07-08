@@ -14,23 +14,30 @@
 
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.multipart.*;
-import com.predic8.xml.beautifier.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.ReadingBodyException;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.xml.beautifier.XMLInputFactoryFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
-import javax.xml.namespace.*;
-import javax.xml.parsers.*;
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.util.*;
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.util.Map;
 
 import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.util.xml.XMLUtil.*;
-import static javax.xml.stream.XMLInputFactory.*;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.util.xml.XMLUtil.mapToXml;
+import static com.predic8.membrane.core.util.xml.XMLUtil.xmlNode2String;
 
 public class SOAPUtil {
 
@@ -110,10 +117,7 @@ public class SOAPUtil {
          * 2: waiting for "<soapenv:Fault>"
          */
         try {
-            var f = XMLInputFactory.newInstance();
-            f.setProperty(IS_REPLACING_ENTITY_REFERENCES, false);
-            f.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-            var parser = f.createXMLEventReader(xopr.reconstituteIfNecessary(msg));
+            var parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
 
             SoapVersion version = null;
             int state = 0;

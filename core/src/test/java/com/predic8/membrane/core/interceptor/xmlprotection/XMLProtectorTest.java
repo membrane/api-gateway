@@ -13,11 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.router.TestRouter;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.freePort;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XMLProtectorTest {
@@ -94,4 +101,21 @@ class XMLProtectorTest {
     void manyAttributes() throws Exception {
         assertFalse(runOn("/xml/many-attributes.xml"));
     }
+
+    @Test
+    void doesNotFetchExternalDtd() throws Exception {
+        var received = new AtomicBoolean(false);
+        int port = freePort();
+        TestRouter router = startRecordingServer(port, received);
+        try {
+            var baos = new ByteArrayOutputStream();
+            var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), true, 1000, 1000);
+            String xml = "<?xml version='1.0'?><!DOCTYPE r SYSTEM 'http://127.0.0.1:%d/x.dtd'><r/>".formatted(port);
+            protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8));
+        } finally {
+            router.stop();
+        }
+        assertFalse(received.get(), "XMLProtector must not fetch external DTD");
+    }
+
 }

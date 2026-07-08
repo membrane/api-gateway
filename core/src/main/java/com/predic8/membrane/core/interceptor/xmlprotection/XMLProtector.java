@@ -14,17 +14,24 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
-import java.util.function.*;
+import javax.xml.stream.events.DTD;
+import javax.xml.stream.events.EntityDeclaration;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.function.Predicate;
 
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
-import static com.predic8.xml.beautifier.XMLInputFactoryFactory.*;
-import static java.lang.Boolean.*;
+import static com.predic8.membrane.core.util.CollectionsUtil.count;
+import static com.predic8.xml.beautifier.XMLInputFactoryFactory.JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static javax.xml.stream.XMLInputFactory.*;
 
 /**
@@ -154,6 +161,9 @@ public class XMLProtector {
 
         // Support DTDs on purpose to detect them in the StAX loop!
         f.setProperty(SUPPORT_DTD, TRUE);
+
+        // Block external DTD fetches while still surfacing the DTD event for removal
+        f.setXMLResolver((publicId, systemId, baseURI, namespace) -> new ByteArrayInputStream(new byte[0]));
 
         f.setProperty(IS_NAMESPACE_AWARE, TRUE);
         f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);
