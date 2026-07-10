@@ -14,18 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.SOAPUtil;
+import org.junit.jupiter.api.Test;
 
-import javax.xml.namespace.*;
-import java.io.*;
+import javax.xml.namespace.QName;
+import java.io.FileInputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.Constants.SoapVersion.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.util.SOAPUtil.*;
+import static com.predic8.membrane.core.Constants.SoapVersion.SOAP11;
+import static com.predic8.membrane.core.Constants.SoapVersion.SOAP12;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.util.SOAPUtil.analyseSOAPMessage;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.freePort;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -118,6 +123,26 @@ public class SOAPUtilTest {
         assertTrue(result.isSOAP());
         assertTrue(result.isFault());
         assertEquals(SOAP11, result.version());
+    }
+
+    @Test
+    void analyseSOAPMessageDoesNotFetchExternalDtd() throws Exception {
+        var received = new AtomicBoolean(false);
+        int port = freePort();
+        HttpRouter router = startRecordingServer(port, received);
+        try {
+            String malicious = """
+                    <?xml version='1.0'?>
+                    <!DOCTYPE s SYSTEM 'http://127.0.0.1:%d/x.dtd'>
+                    <s11:Envelope xmlns:s11='http://schemas.xmlsoap.org/soap/envelope/'>
+                      <s11:Body/>
+                    </s11:Envelope>
+                    """.formatted(port);
+            analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString(malicious));
+        } finally {
+            router.shutdown();
+        }
+        assertFalse(received.get(), "SOAPUtil.analyseSOAPMessage must not fetch external DTD");
     }
 
     private Message getMessageFromString(String body) {

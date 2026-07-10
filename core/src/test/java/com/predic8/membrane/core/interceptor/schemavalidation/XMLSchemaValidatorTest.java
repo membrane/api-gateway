@@ -13,18 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.resolver.*;
-import org.junit.jupiter.api.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_PROBLEM_JSON;
+import static com.predic8.membrane.core.http.Request.post;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.freePort;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XMLSchemaValidatorTest {
@@ -74,5 +82,26 @@ class XMLSchemaValidatorTest {
         assertTrue(validation.get(0).get("column").asInt() > 5);  // Should be 13, but a bit of tolerance can help
 
 //        System.out.println("exc.getResponse().getBodyAsStringDecoded() = " + exc.getResponse().getBodyAsStringDecoded());
+    }
+
+    @Test
+    void doesNotFetchExternalDtdInInstanceDocument() throws Exception {
+        var received = new AtomicBoolean(false);
+        int port = freePort();
+        HttpRouter router = startRecordingServer(port, received);
+        try {
+            String malicious = """
+                    <?xml version='1.0'?>
+                    <!DOCTYPE order SYSTEM 'http://127.0.0.1:%d/x.dtd'>
+                    <order xmlns="http://membrane-soa.org/router/validation/order/1/">
+                      <items><item id="1"/></items>
+                    </order>
+                    """.formatted(port);
+            Exchange exc = post("/foo").body(malicious).buildExchange();
+            validator.validateMessage(exc, REQUEST);
+        } finally {
+            router.shutdown();
+        }
+        assertFalse(received.get(), "XMLSchemaValidator must not fetch external DTD from instance document");
     }
 }

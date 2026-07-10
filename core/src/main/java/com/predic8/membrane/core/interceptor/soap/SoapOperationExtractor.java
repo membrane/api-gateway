@@ -14,17 +14,21 @@
 
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.multipart.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.xml.beautifier.XMLInputFactoryFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.stream.*;
-import java.io.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import java.io.IOException;
 
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 @MCElement(name="soapOperationExtractor")
 public class SoapOperationExtractor extends AbstractInterceptor {
@@ -35,11 +39,6 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 	public static final String SOAP_OPERATION_NS = "XSLT_SOAP_OPERATION_NS";
 
 	private static final XOPReconstitutor xopr = new XOPReconstitutor();
-	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	static {
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-	}
 
 	public SoapOperationExtractor() {
 		name = "soap operation extractor";
@@ -94,11 +93,8 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 		}
 	}
 
-	private XMLStreamReader getReader(Exchange exc) throws XMLStreamException,
-	FactoryConfigurationError, IOException {
-		synchronized (xmlInputFactory) {
-			return xmlInputFactory.createXMLStreamReader(xopr.reconstituteIfNecessary(exc.getRequest()));
-		}
+	private XMLStreamReader getReader(Exchange exc) throws XMLStreamException, IOException {
+		return XMLInputFactoryFactory.inputFactory().createXMLStreamReader(xopr.reconstituteIfNecessary(exc.getRequest()));
 	}
 
 	private boolean isNotSoap(XMLStreamReader reader) throws XMLStreamException {

@@ -13,20 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.SOAP_OPERATION;
 import static com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor.SOAP_OPERATION_NS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.freePort;
+import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SoapOperationExtractorTest {
 
@@ -71,6 +72,28 @@ public class SoapOperationExtractorTest {
 		assertEquals("getBuecher", exc.getProperty(SOAP_OPERATION));
 		assertEquals("http://predic8.de", exc.getProperty(SOAP_OPERATION_NS));
 
+	}
+
+	@Test
+	public void doesNotFetchExternalDtd() throws Exception {
+		var received = new AtomicBoolean(false);
+		int port = freePort();
+		HttpRouter router = startRecordingServer(port, received);
+		try {
+			String maliciousSoap = """
+					<?xml version='1.0'?>
+					<!DOCTYPE s SYSTEM 'http://127.0.0.1:%d/x.dtd'>
+					<s:Envelope xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'>
+					  <s:Body><op xmlns='http://example.com/'/></s:Body>
+					</s:Envelope>
+					""".formatted(port);
+			Exchange exc = new Exchange(null);
+			exc.setRequest(Request.post("http://test/").body(maliciousSoap).build());
+			extractor.handleRequest(exc);
+		} finally {
+			router.shutdown();
+		}
+		assertFalse(received.get(), "SoapOperationExtractor must not fetch external DTD");
 	}
 
 	private Exchange getExchange(String path) throws IOException, URISyntaxException {
