@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.0.json
+#
+# Tutorial: XSLT Parameter
+#
+# Exchange properties are passed to the stylesheet as XSLT parameters of the same name.
+#
+# Try:
+#   curl -d @books.xml -H "Content-Type: text/xml" localhost:2000
+#
+#   <books library="predic8">
+#     ...
+#   </books>
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - setProperty:
+            name: library
+            value: predic8
+        - transform:
+            xslt: add-library.xsl
+    - return:
+        status: 200

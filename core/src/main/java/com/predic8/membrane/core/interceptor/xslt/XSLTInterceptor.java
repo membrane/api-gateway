@@ -42,11 +42,34 @@ import static com.predic8.membrane.core.util.text.TextUtil.linkURL;
 import static com.predic8.membrane.core.util.text.TextUtil.removeFinalChar;
 
 /**
- * @description <p>
- * The transform feature applies an XSLT transformation to the content in the body of a message. After the
- * transformation the body content is replaced with the result of the transformation.
- * </p>
+ * @description Applies an XSLT stylesheet to the body of a request or response and replaces the body with
+ * the transformation result. Every string-valued <code>Exchange</code> property is passed to the stylesheet
+ * as an XSLT parameter of the same name; declare a matching <code>xsl:param</code> in the stylesheet to read
+ * it. Set such a property beforehand, e.g. with <code>setProperty</code>. See
+ * tutorials/xml/35-XSLT-Transformation-to-json.yaml.
  * @topic 2. Enterprise Integration Patterns
+ * @yaml <pre><code>
+ * api:
+ *   port: 2000
+ *   flow:
+ *     - setProperty:
+ *         name: company
+ *         value: predic8
+ *     - transform:
+ *         xslt: customer2person.xsl
+ * </code></pre>
+ * @explanation <code>customer2person.xsl</code> declares a matching <code>xsl:param</code> and reads it as
+ * <code>$company</code>:
+ * <pre><code>
+ * &lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+ *   &lt;xsl:param name="company"/&gt;
+ *   &lt;xsl:template match="/customer"&gt;
+ *     &lt;person&gt;
+ *       &lt;company&gt;&lt;xsl:value-of select="$company"/&gt;&lt;/company&gt;
+ *     &lt;/person&gt;
+ *   &lt;/xsl:template&gt;
+ * &lt;/xsl:stylesheet&gt;
+ * </code></pre>
  */
 @MCElement(name = "transform")
 public class XSLTInterceptor extends AbstractInterceptor {
@@ -59,6 +82,18 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
     public XSLTInterceptor() {
         name = "xslt transformer";
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        try {
+            xsltTransformer = new XSLTTransformer(xslt, router, getBeanBaseLocation(), getConcurrency());
+        } catch (Exception e) {
+            log.debug("", e);
+            throw new ConfigurationException("Could not create XSLT transformer from: %s".formatted(xslt), e);
+
+        }
     }
 
     @Override
@@ -128,18 +163,6 @@ public class XSLTInterceptor extends AbstractInterceptor {
             return;
         msg.setBodyContent(xsltTransformer.transform(
                 new StreamSource(xopr.reconstituteIfNecessary(msg)), parameter));
-    }
-
-    @Override
-    public void init() {
-        super.init();
-        try {
-            xsltTransformer = new XSLTTransformer(xslt, router, getBeanBaseLocation(), getConcurrency());
-        } catch (Exception e) {
-            log.debug("", e);
-            throw new ConfigurationException("Could not create XSLT transformer from: %s".formatted(xslt), e);
-
-        }
     }
 
     private static int getConcurrency() {
