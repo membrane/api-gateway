@@ -125,7 +125,7 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
 - [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
 
-### **AI Gateway**
+### **AI and LLM Gateway**
 - [LLM Gateway](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
 - [Securely Share LLM API Keys](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
 - [MCP Protection](https://www.membrane-api.io/ai/mcp-protection-api-gateway.html)
@@ -196,7 +196,7 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
     - [Logging](#log-http)
     - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
     - [OpenTelemetry](#opentelemetry-integration)
-13. [Community and professional Support](#13-support)
+13. [Community and Enterprise Support](#13-community-and-enterprise-support)
 
 # Installation
 
@@ -1324,7 +1324,7 @@ api:
 
 For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/monitoring-tracing/opentelemetry).
 
-# 13. Support
+# 13. Community and Enterprise Support
 
 ## Community Support
 
