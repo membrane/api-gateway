@@ -23,8 +23,8 @@ import java.io.OutputStreamWriter;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector.getHeaderAfterRootName;
-import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.freePort;
-import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 

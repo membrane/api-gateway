@@ -21,6 +21,18 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static javax.xml.stream.XMLInputFactory.*;
 
+/**
+ * Thread-safe, XXE-hardened source of {@link XMLInputFactory} instances for StAX parsing.
+ * Each thread gets its own cached factory, so hardening the {@code SUPPORT_DTD} /
+ * {@code isSupportingExternalEntities} / resolver settings happens once per thread rather than
+ * once per factory instance (factory creation takes ~10s for 1,000,000 instances; ThreadLocal
+ * reuse takes ~0s).
+ * <p>
+ * DTD support stays enabled so callers can still observe and act on {@code DOCTYPE} events (e.g.
+ * removing them, as {@link com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector}
+ * does), but external entities and external subset fetching are disabled via the resolver, so
+ * no DOCTYPE can trigger an outbound network or file-system access.
+ */
 public final class HardenedStaxInputFactory {
 
     public static final String JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES = "javax.xml.stream.isSupportingExternalEntities";

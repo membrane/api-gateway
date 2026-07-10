@@ -28,9 +28,9 @@ import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static com.predic8.membrane.core.util.SOAPUtil.analyseSOAPMessage;
-import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.freePort;
-import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
 import static org.junit.jupiter.api.Assertions.*;
 
 

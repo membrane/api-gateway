@@ -18,12 +18,11 @@ import org.junit.jupiter.api.Test;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import java.io.IOException;
 import java.io.StringReader;
-import java.net.ServerSocket;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -99,11 +98,5 @@ class HardenedSchemaFactoryTest {
             router.stop();
         }
         assertFalse(received.get(), "Validator must not fetch external DTD from instance document");
-    }
-
-    private static int freePort() throws IOException {
-        try (ServerSocket s = new ServerSocket(0)) {
-            return s.getLocalPort();
-        }
     }
 }

@@ -31,8 +31,8 @@ import static com.predic8.membrane.core.http.Request.post;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.freePort;
-import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XMLSchemaValidatorTest {

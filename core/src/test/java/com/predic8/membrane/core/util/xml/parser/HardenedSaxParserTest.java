@@ -13,23 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.util.xml.parser;
 
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.proxies.ServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.TestRouter;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.IOException;
 import java.io.StringReader;
-import java.net.ServerSocket;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.predic8.membrane.core.http.Response.ok;
-import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
+import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -68,27 +62,5 @@ public class HardenedSaxParserTest {
             router.stop();
         }
         assertFalse(received.get(), "SAX parser must not fetch external DTD");
-    }
-
-    public static int freePort() throws IOException {
-        try (ServerSocket s = new ServerSocket(0)) {
-            return s.getLocalPort();
-        }
-    }
-
-    public static TestRouter startRecordingServer(int port, AtomicBoolean received) throws IOException {
-        TestRouter router = new TestRouter();
-        ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "", -1);
-        sp.getFlow().add(new AbstractInterceptor() {
-            @Override
-            public Outcome handleRequest(com.predic8.membrane.core.exchange.Exchange exc) {
-                received.set(true);
-                exc.setResponse(ok("").build());
-                return RETURN;
-            }
-        });
-        router.add(sp);
-        router.start();
-        return router;
     }
 }
