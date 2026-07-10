@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.predic8.membrane.core.interceptor.xmlprotection.XMLProtector.getHeaderAfterRootName;
 import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.freePort;
 import static com.predic8.membrane.core.util.xml.parser.HardenedSaxParserTest.startRecordingServer;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -125,6 +126,16 @@ class XMLProtectorTest {
     }
 
     @Test
+    void allowsDoctypeRootNamedSystemOrPublic() throws Exception {
+        // The DOCTYPE root name itself may legally be "SYSTEM" or "PUBLIC" — must not be
+        // mistaken for an external identifier keyword.
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        var protector = new XMLProtector(new OutputStreamWriter(baos, UTF_8), false, 1000, 1000);
+        String xml = "<?xml version='1.0'?><!DOCTYPE SYSTEM []><SYSTEM/>";
+        assertTrue(protector.protect(new InputStreamReader(new ByteArrayInputStream(xml.getBytes(UTF_8)), UTF_8)));
+    }
+
+    @Test
     void doesNotFetchExternalDtd() throws Exception {
         var received = new AtomicBoolean(false);
         int port = freePort();
@@ -141,6 +152,49 @@ class XMLProtectorTest {
         assertTrue(result, "XMLProtector should succeed after stripping the DTD");
         assertFalse(new String(baos.toByteArray(), UTF_8).contains("DOCTYPE"), "DTD must be removed from output");
         assertFalse(received.get(), "XMLProtector must not fetch external DTD");
+    }
+
+    @Test
+    void getHeaderAfterRootName_stripsSimpleRootName() {
+        assertEquals(" SYSTEM 'x.dtd'", getHeaderAfterRootName("<!DOCTYPE r SYSTEM 'x.dtd'"));
+    }
+
+    @Test
+    void getHeaderAfterRootName_stripsRootNameNamedSystem() {
+        // The keyword remaining after the root name is skipped must not be "SYSTEM" itself
+        assertEquals(" []", getHeaderAfterRootName("<!DOCTYPE SYSTEM []"));
+    }
+
+    @Test
+    void getHeaderAfterRootName_stripsRootNameNamedPublic() {
+        assertEquals(" []", getHeaderAfterRootName("<!DOCTYPE PUBLIC []"));
+    }
+
+    @Test
+    void getHeaderAfterRootName_stripsRootNameContainingKeywordSubstring() {
+        assertEquals(" ", getHeaderAfterRootName("<!DOCTYPE PUBLICATIONS "));
+    }
+
+    @Test
+    void getHeaderAfterRootName_skipsExtraWhitespaceBeforeRootName() {
+        assertEquals("   SYSTEM 'x'", getHeaderAfterRootName("<!DOCTYPE   r   SYSTEM 'x'"));
+    }
+
+    @Test
+    void getHeaderAfterRootName_handlesRootNameWithNoTrailingContent() {
+        assertEquals("", getHeaderAfterRootName("<!DOCTYPE r"));
+    }
+
+    @Test
+    void getHeaderAfterRootName_handlesMissingDoctypeKeywordDefensively() {
+        // Should never happen per the DTD contract, but must not throw — falls back to
+        // skipping the header's first whitespace-delimited token.
+        assertEquals(" bar baz", getHeaderAfterRootName("foo bar baz"));
+    }
+
+    @Test
+    void getHeaderAfterRootName_handlesEmptyHeader() {
+        assertEquals("", getHeaderAfterRootName(""));
     }
 
 }

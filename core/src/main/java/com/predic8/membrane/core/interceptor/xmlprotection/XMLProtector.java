@@ -94,12 +94,26 @@ public class XMLProtector {
         var decl = dtd.getDocumentTypeDeclaration();
         if (decl == null) return false;
         // Only inspect the header before the internal subset '[' — SYSTEM/PUBLIC only appear there as keywords
-        return EXTERNAL_ID_KEYWORD.matcher(getHeader(decl)).find();
+        return EXTERNAL_ID_KEYWORD.matcher(getHeaderAfterRootName(getHeader(decl))).find();
     }
 
     private static @NotNull String getHeader(String decl) {
         int internalSubset = decl.indexOf('[');
         return internalSubset >= 0 ? decl.substring(0, internalSubset) : decl;
+    }
+
+    /**
+     * Per the {@link DTD#getDocumentTypeDeclaration()} contract, the header always starts with
+     * "DOCTYPE" followed by the declared root element name (e.g. "&lt;!DOCTYPE SYSTEM ..."). That
+     * name can legally be "SYSTEM" or "PUBLIC" itself, so it must be skipped before keyword-matching
+     * for an actual external identifier — otherwise such a root name would be mistaken for one.
+     */
+    static @NotNull String getHeaderAfterRootName(String header) {
+        int doctypeIdx = header.indexOf("DOCTYPE");
+        int i = doctypeIdx >= 0 ? doctypeIdx + "DOCTYPE".length() : 0;
+        while (i < header.length() && Character.isWhitespace(header.charAt(i))) i++;
+        while (i < header.length() && !Character.isWhitespace(header.charAt(i))) i++;
+        return header.substring(i);
     }
 
     private static boolean containsExternalEntityReferences(DTD dtd) {
