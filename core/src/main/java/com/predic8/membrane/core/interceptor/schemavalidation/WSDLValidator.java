@@ -22,14 +22,18 @@ import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.LSInputImpl;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion;
+import com.predic8.membrane.core.util.xml.XMLUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+import org.w3c.dom.ls.LSResourceResolver;
 
 import javax.xml.namespace.QName;
 import javax.xml.transform.Source;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +50,7 @@ import static com.predic8.membrane.core.util.SOAPUtil.FaultCode.Client;
 import static com.predic8.membrane.core.util.SOAPUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class WSDLValidator extends AbstractXMLSchemaValidator {
 
@@ -156,6 +161,34 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     @Override
     protected List<Element> getSchemas() {
         return definitions.getSchemaElements();
+    }
+
+    /**
+     * Each schema embedded in the WSDL is compiled into its own validator. A schema that
+     * references a type from another embedded schema via a namespace-only {@code <xsd:import>}
+     * (no {@code schemaLocation}) would otherwise fail to resolve, because the default
+     * location-based resolver has no systemId to work with. This resolver serves such imports
+     * from the WSDL's own embedded schemas, delegating everything else to the default resolver.
+     */
+    @Override
+    protected LSResourceResolver getResourceResolver() {
+        LSResourceResolver delegate = super.getResourceResolver();
+        return (type, namespaceURI, publicId, systemId, baseURI) -> {
+            if (systemId == null && namespaceURI != null) {
+                var embedded = definitions.getEmbeddedSchema(namespaceURI);
+                if (embedded.isPresent()) {
+                    try {
+                        String xsd = XMLUtil.xmlNode2String(embedded.get().getSchemaElement());
+                        return new LSInputImpl(publicId, location, new ByteArrayInputStream(xsd.getBytes(UTF_8)));
+                    } catch (Exception e) {
+                        throw new ConfigurationException(
+                                "Could not resolve embedded schema for namespace %s in WSDL at %s."
+                                        .formatted(namespaceURI, location), e);
+                    }
+                }
+            }
+            return delegate.resolveResource(type, namespaceURI, publicId, systemId, baseURI);
+        };
     }
 
     @Override

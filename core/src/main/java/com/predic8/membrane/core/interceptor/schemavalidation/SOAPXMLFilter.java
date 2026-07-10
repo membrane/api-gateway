@@ -18,6 +18,14 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
 
+import static com.predic8.membrane.annot.Constants.SOAP11_NS;
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
+
+/**
+ * Strips the SOAP envelope so that only the payload below {@code <soap:Body>} is passed on.
+ * The {@code Body} boundary is matched by namespace, not just local name: a domain element
+ * that happens to be named {@code Body} in another namespace is left untouched and forwarded.
+ */
 public class SOAPXMLFilter extends XMLFilterImpl {
 
 
@@ -27,11 +35,15 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 		super(reader);
 	}
 
+	private static boolean isSoapBody(String uri, String localName) {
+		return localName.equals("Body") && (SOAP11_NS.equals(uri) || SOAP12_NS.equals(uri));
+	}
+
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes atts) throws SAXException {
 
-		if (localName.equals("Body")) {
+		if (isSoapBody(uri, localName)) {
 			body = true;
 			return;
 		}
@@ -47,7 +59,7 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
 
-		if (localName.equals("Body")) {
+		if (isSoapBody(uri, localName)) {
 			body = false;
 			return;
 		}
