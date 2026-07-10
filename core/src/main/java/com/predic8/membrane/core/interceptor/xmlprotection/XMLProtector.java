@@ -82,15 +82,19 @@ public class XMLProtector {
     }
 
     private static void checkExternalSubset(DTD dtd) throws XMLProtectionException {
-        var decl = dtd.getDocumentTypeDeclaration();
-        if (decl == null) return;
-        // Only inspect the header before the internal subset '[' — SYSTEM/PUBLIC only appear there as keywords
-        String header = getHeader(decl);
-        if (EXTERNAL_ID_KEYWORD.matcher(header).find()) {
+        if (hasExternalSubsetReference(dtd)) {
             String msg = "Possible attack. External DTD subset reference in DOCTYPE declaration.";
             log.info(msg);
+            log.debug("DTD: {}", dtd.getDocumentTypeDeclaration());
             throw new XMLProtectionException(msg);
         }
+    }
+
+    private static boolean hasExternalSubsetReference(DTD dtd) {
+        var decl = dtd.getDocumentTypeDeclaration();
+        if (decl == null) return false;
+        // Only inspect the header before the internal subset '[' — SYSTEM/PUBLIC only appear there as keywords
+        return EXTERNAL_ID_KEYWORD.matcher(getHeader(decl)).find();
     }
 
     private static @NotNull String getHeader(String decl) {
@@ -133,6 +137,10 @@ public class XMLProtector {
                 if (event instanceof javax.xml.stream.events.DTD dtd) {
                     checkExternalEntities(dtd);
                     if (removeDTD) {
+                        if (hasExternalSubsetReference(dtd)) {
+                            log.info("Possible attack. External DTD subset reference in DOCTYPE declaration (DTD removed, request continues).");
+                            log.debug("DTD: {}", dtd.getDocumentTypeDeclaration());
+                        }
                         log.debug("removed DTD.");
                         continue;
                     }
