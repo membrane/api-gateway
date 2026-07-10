@@ -20,7 +20,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.xml.beautifier.XMLInputFactoryFactory;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +94,7 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 	}
 
 	private XMLStreamReader getReader(Exchange exc) throws XMLStreamException, IOException {
-		return XMLInputFactoryFactory.inputFactory().createXMLStreamReader(xopr.reconstituteIfNecessary(exc.getRequest()));
+		return HardenedStaxInputFactory.inputFactory().createXMLStreamReader(xopr.reconstituteIfNecessary(exc.getRequest()));
 	}
 
 	private boolean isNotSoap(XMLStreamReader reader) throws XMLStreamException {

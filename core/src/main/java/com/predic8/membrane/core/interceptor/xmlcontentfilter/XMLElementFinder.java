@@ -13,16 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import com.predic8.xml.beautifier.*;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 
-import javax.annotation.concurrent.*;
-import javax.xml.namespace.*;
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
-import java.util.*;
+import javax.annotation.concurrent.ThreadSafe;
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.List;
 
-import static javax.xml.XMLConstants.*;
+import static javax.xml.XMLConstants.NULL_NS_URI;
 
 /**
  * Checks whether an InputStream is XML and contains any of a set of element names.
@@ -51,7 +54,7 @@ public class XMLElementFinder {
 	 */
 	public boolean matches(InputStream is) {
 		try {
-			XMLEventReader parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(is);
+			XMLEventReader parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(is);
 
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();

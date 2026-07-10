@@ -14,12 +14,15 @@
 
 package com.predic8.xml.beautifier;
 
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.stream.*;
-import java.io.*;
+import javax.xml.stream.XMLStreamReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 
-import static com.predic8.xml.beautifier.XMLInputFactoryFactory.*;
+import static com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory.inputFactory;
 import static javax.xml.stream.XMLStreamConstants.*;
 
 /**

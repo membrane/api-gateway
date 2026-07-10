@@ -14,16 +14,22 @@
 
 package com.predic8.membrane.core.ws.relocator;
 
-import com.predic8.xml.beautifier.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.concurrent.*;
-import javax.xml.namespace.*;
+import javax.annotation.concurrent.NotThreadSafe;
+import javax.xml.namespace.QName;
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import javax.xml.stream.events.Attribute;
+import javax.xml.stream.events.XMLEvent;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 @NotThreadSafe
 public class Relocator {
@@ -68,7 +74,7 @@ public class Relocator {
     }
 
     public void relocate(InputStream is) throws Exception {
-        relocate(XMLInputFactoryFactory.inputFactory().createXMLEventReader(is));
+        relocate(HardenedStaxInputFactory.inputFactory().createXMLEventReader(is));
     }
 
     private void relocate(XMLEventReader parser) throws XMLStreamException {

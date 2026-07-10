@@ -30,7 +30,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.util.CollectionsUtil.count;
-import static com.predic8.xml.beautifier.XMLInputFactoryFactory.JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES;
+import static com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory.JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static javax.xml.stream.XMLInputFactory.*;

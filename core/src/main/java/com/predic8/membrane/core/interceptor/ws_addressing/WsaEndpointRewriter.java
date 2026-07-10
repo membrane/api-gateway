@@ -14,17 +14,21 @@
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
 import com.predic8.membrane.core.util.URI;
-import com.predic8.membrane.core.util.*;
-import com.predic8.xml.beautifier.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.namespace.*;
+import javax.xml.namespace.QName;
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
-import java.net.*;
-import java.util.stream.*;
+import javax.xml.stream.events.EndElement;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.stream.Stream;
 
 
 public class WsaEndpointRewriter {
@@ -38,7 +42,7 @@ public class WsaEndpointRewriter {
 
     public void rewriteEndpoint(InputStream reader, OutputStream writer, WsaEndpointRewriterInterceptor.Location location) throws XMLStreamException {
         XMLEventFactory ef = XMLEventFactory.newFactory();
-        XMLEventReader parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(reader);
+        XMLEventReader parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(reader);
         XMLEventWriter eventWriter = XMLOutputFactory.newInstance().createXMLEventWriter(writer);
 
         String url;

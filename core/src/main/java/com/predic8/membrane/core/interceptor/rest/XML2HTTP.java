@@ -14,17 +14,23 @@
 package com.predic8.membrane.core.interceptor.rest;
 
 import com.predic8.membrane.annot.Constants;
-import com.predic8.membrane.core.http.*;
-import com.predic8.xml.beautifier.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.xml.namespace.*;
+import javax.xml.namespace.QName;
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
+import javax.xml.stream.events.Attribute;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.io.Serial;
+import java.io.StringWriter;
 
 import static com.predic8.membrane.core.http.MimeType.isXML;
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Reverse of {@link com.predic8.membrane.core.http.xml.Request#write(XMLStreamWriter)} and
@@ -137,7 +143,7 @@ public class XML2HTTP {
     }
 
     private static XMLEventReader getXmlEventReader(Message message) throws XMLStreamException {
-        return XMLInputFactoryFactory.inputFactory().createXMLEventReader(message.getBodyAsStreamDecoded());
+        return HardenedStaxInputFactory.inputFactory().createXMLEventReader(message.getBodyAsStreamDecoded());
     }
 
     private static String slurpCharacterData(XMLEventReader parser, StartElement sevent) throws XMLStreamException, XML2HTTPException {

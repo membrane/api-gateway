@@ -12,16 +12,16 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.xml.beautifier;
+package com.predic8.membrane.core.util.xml.parser;
 
-import javax.xml.stream.*;
-import java.io.*;
+import javax.xml.stream.XMLInputFactory;
+import java.io.ByteArrayInputStream;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static javax.xml.stream.XMLInputFactory.*;
 
-public final class XMLInputFactoryFactory {
+public final class HardenedStaxInputFactory {
 
     public static final String JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES = "javax.xml.stream.isSupportingExternalEntities";
 
@@ -51,7 +51,7 @@ public final class XMLInputFactoryFactory {
         return f;
     });
 
-    private XMLInputFactoryFactory() {
+    private HardenedStaxInputFactory() {
     }
 
     public static XMLInputFactory inputFactory() {

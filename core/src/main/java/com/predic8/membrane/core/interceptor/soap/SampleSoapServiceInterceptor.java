@@ -13,30 +13,39 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.xml.beautifier.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
-import javax.xml.parsers.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
-import java.util.*;
-import java.util.regex.*;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.*;
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.http.Response.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.util.xml.XMLUtil.*;
-import static java.util.Objects.*;
-import static javax.xml.stream.XMLStreamConstants.*;
+import static com.predic8.membrane.annot.Constants.SOAP11_NS;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.http.Header.CONTENT_TYPE;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML_UTF8;
+import static com.predic8.membrane.core.http.Response.ok;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.util.Utils.getResourceAsStream;
+import static com.predic8.membrane.core.util.xml.XMLUtil.xmlNode2String;
+import static java.util.Objects.requireNonNull;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 @MCElement(name = "sampleSoapService")
 public class SampleSoapServiceInterceptor extends AbstractInterceptor {
@@ -154,7 +163,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
     }
 
     public static String getElementAsString(InputStream is, String localName) throws Exception {
-        XMLStreamReader reader = XMLInputFactoryFactory.inputFactory().createXMLStreamReader(is);
+        XMLStreamReader reader = HardenedStaxInputFactory.inputFactory().createXMLStreamReader(is);
 
         while (reader.hasNext()) {
             if (reader.next() == START_ELEMENT) {
@@ -170,7 +179,7 @@ public class SampleSoapServiceInterceptor extends AbstractInterceptor {
         // XMLEventFactory is not required to be thread-safe, ...
         // https://javadoc.io/static/com.sun.xml.ws/jaxws-rt/2.2.10-b140319.1121/com/sun/xml/ws/api/streaming/XMLStreamReaderFactory.Default.html
         StringWriter modifiedXmlWriter = new StringWriter();
-        XMLEventReader reader = XMLInputFactoryFactory.inputFactory().createXMLEventReader(is);
+        XMLEventReader reader = HardenedStaxInputFactory.inputFactory().createXMLEventReader(is);
         XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(modifiedXmlWriter);
         try {
             XMLEventFactory fac = XMLEventFactory.newInstance();

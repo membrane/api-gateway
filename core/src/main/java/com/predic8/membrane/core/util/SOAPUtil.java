@@ -18,7 +18,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.xml.beautifier.XMLInputFactoryFactory;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -46,7 +46,7 @@ public class SOAPUtil {
 
     public static boolean isSOAP( XOPReconstitutor xopr, Message msg) {
         try {
-            XMLEventReader parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
+            XMLEventReader parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
 
             while (parser.hasNext()) {
                 XMLEvent event = parser.nextEvent();
@@ -117,7 +117,7 @@ public class SOAPUtil {
          * 2: waiting for "<soapenv:Fault>"
          */
         try {
-            var parser = XMLInputFactoryFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
+            var parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
 
             SoapVersion version = null;
             int state = 0;

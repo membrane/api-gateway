@@ -20,7 +20,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
-import com.predic8.xml.beautifier.XMLInputFactoryFactory;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +71,7 @@ public class XMLElementSessionIdExtractor extends AbstractXmlElement implements 
     }
 
     private @NotNull XMLStreamReader getXmlStreamReader(Message msg) throws XMLStreamException {
-        return XMLInputFactoryFactory.inputFactory().createXMLStreamReader(msg.getBodyAsStreamDecoded());
+        return HardenedStaxInputFactory.inputFactory().createXMLStreamReader(msg.getBodyAsStreamDecoded());
     }
 
     private boolean isSessionIdElement(XMLStreamReader reader) {

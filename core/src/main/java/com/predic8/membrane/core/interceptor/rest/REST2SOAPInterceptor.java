@@ -25,7 +25,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.proxies.SSLableProxy;
-import com.predic8.xml.beautifier.XMLInputFactoryFactory;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -186,7 +186,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
     private String getRootElementNamespace(InputStream stream) {
         try {
-            XMLEventReader xer = XMLInputFactoryFactory.inputFactory().createXMLEventReader(stream);
+            XMLEventReader xer = HardenedStaxInputFactory.inputFactory().createXMLEventReader(stream);
             while (xer.hasNext()) {
                 XMLEvent event = xer.nextEvent();
                 if (event.isStartElement())

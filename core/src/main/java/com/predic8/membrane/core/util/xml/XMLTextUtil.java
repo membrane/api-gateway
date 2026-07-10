@@ -15,13 +15,18 @@
 package com.predic8.membrane.core.util.xml;
 
 
-import com.predic8.xml.beautifier.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
+import com.predic8.xml.beautifier.HtmlBeautifierFormatter;
+import com.predic8.xml.beautifier.StandardXMLBeautifierFormatter;
+import com.predic8.xml.beautifier.XMLBeautifier;
+import com.predic8.xml.beautifier.XMLBeautifierFormatter;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.NodeList;
 
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.events.XMLEvent;
 import java.io.*;
 
 
@@ -76,7 +81,7 @@ public class XMLTextUtil {
      */
     public static boolean isValidXMLSnippet(String s) {
         try {
-            XMLEventReader parser = XMLInputFactoryFactory.inputFactory()
+            XMLEventReader parser = HardenedStaxInputFactory.inputFactory()
                     .createXMLEventReader(new StringReader("<a>" + s + "</a>"));
             XMLEvent event = null;
             try {
