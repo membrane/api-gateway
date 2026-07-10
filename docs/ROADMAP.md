@@ -41,6 +41,18 @@ PRIO 3:
   - openapi/rewrite/protocol provide http and https options
 - Refactor: File-, JDBC-, LDAP- and StaticUserProvider
 
+## Membrane 8.0.0 (Java 25)
+
+- Upgrade baseline to Java 25
+  - Bump `javac.source`/`javac.target` from 21 to 25 in the root pom.xml
+  - Simplify `Util.createNewThreadPool()`: the reflective lookup of `Executors.newVirtualThreadPerTaskExecutor` and the `--enable-preview` handling are leftovers from the Java 19/20 preview era; call it directly and drop the `-Dmembrane.virtualthreads` fallback (or keep the flag as a plain if).
+- Evaluate: virtual threads for HTTP/1 client connections
+  - Story: HTTP/2 (`Http2ServerHandler`, `Http2Client`) already runs on virtual threads via `Util.createNewThreadPool()`. HTTP/1 connections still go through the `ThreadPoolExecutor` in `HttpTransport` (platform threads, core 20, unbounded max). On Java 21 this was left alone deliberately: a virtual thread blocking inside a `synchronized` block pins its carrier thread, which is risky for connection handling under load. JEP 491 (Java 24) removed monitor pinning, so with a Java 25 baseline that argument is gone.
+  - Check whether switching `HttpTransport` to a virtual-thread-per-task executor makes sense. If yes, account for what the pool currently provides:
+    - Backpressure: `maxThreadPoolSize` is a documented attribute and `HttpEndpointListener` handles `RejectedExecutionException` by closing the socket. A per-task executor never rejects — replace with a `Semaphore` or rely on `concurrentConnectionLimitPerIp`. Dropping the attribute is a breaking change.
+    - Thread naming: keep "router" thread names via `Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("router-", 0).factory())`.
+    - Graceful shutdown / hot deploy: `shutdown()` + `awaitTermination()` in `closeAll()` works unchanged with a per-task executor.
+
 ## Breaking Changes
 
 - `groovy` interceptor: Return string from script does not set a content type of `text/html` anymore. User has to set the content type manually. 

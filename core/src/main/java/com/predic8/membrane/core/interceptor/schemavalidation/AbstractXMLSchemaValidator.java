@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
+import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -111,7 +112,9 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         } else {
             exceptions.add(new Exception(preliminaryError));
         }
+        // Reached only when the message matched none of the (possibly several) embedded schemas.
         var errorMsg = getErrorMsg(exceptions); // Errors als simple String
+        log.info("{} message did not validate against any schema of {}: {}", flow, location, errorMsg);
         if (failureHandler != null) {
             failureHandler.handleFailure(errorMsg, exc);
         }
@@ -124,7 +127,7 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
     protected List<Validator> createValidators() {
         var sf = HardenedSchemaFactory.newInstance(XSD_NS);
-        sf.setResourceResolver(resolver.toLSResourceResolver());
+        sf.setResourceResolver(getResourceResolver());
         var validators = new ArrayList<Validator>();
         var schemas = getSchemas();
         for (int i = 0; i < schemas.size(); i++) {
@@ -133,6 +136,15 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             validators.add(createValidator(schema, sf));
         }
         return validators;
+    }
+
+    /**
+     * Resolver used while compiling the schemas. Subclasses may override to resolve references
+     * that the default location-based {@link ResolverMap} resolver cannot handle, e.g. a
+     * namespace-only {@code <xsd:import>} between two schemas embedded in the same WSDL.
+     */
+    protected LSResourceResolver getResourceResolver() {
+        return resolver.toLSResourceResolver();
     }
 
     private @NotNull Validator createValidator(Element schema, SchemaFactory sf) {

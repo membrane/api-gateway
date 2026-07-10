@@ -172,9 +172,11 @@ public class SOAPUtil {
                     return NO_SOAP_RESULT;
             }
         } catch (Exception e) {
-            log.warn("Ignoring exception: ", e);
+            log.info("Error parsing SOAP message: {}", e.getMessage());
+            log.debug("Ignoring exception: ", e);
+            return NO_SOAP_RESULT;
         }
-        log.debug("No SOAP Element found.");
+        log.info("No SOAP Element found.");
         return NO_SOAP_RESULT;
     }
 

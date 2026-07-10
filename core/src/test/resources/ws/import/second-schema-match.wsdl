@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic fixture: the request element is declared in the SECOND embedded schema, so the
+     first schema's validator is tried (and fails) before the matching one succeeds. Used to pin
+     the logging behaviour of AbstractXMLSchemaValidator for multi-schema WSDLs. -->
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://example.com/b"
+             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+             targetNamespace="http://example.com/b" name="SecondSchemaMatch">
+
+  <types>
+    <!-- Schema A: first embedded schema; does NOT declare the request element -->
+    <xs:schema targetNamespace="http://example.com/a" elementFormDefault="qualified">
+      <xs:element name="somethingElse" type="xs:string"/>
+    </xs:schema>
+
+    <!-- Schema B: second embedded schema; declares the request element -->
+    <xs:schema targetNamespace="http://example.com/b" elementFormDefault="qualified">
+      <xs:element name="Req">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="value" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:schema>
+  </types>
+
+  <message name="ReqMsg">
+    <part name="p" element="tns:Req"/>
+  </message>
+
+  <portType name="PT">
+    <operation name="Op">
+      <input message="tns:ReqMsg"/>
+    </operation>
+  </portType>
+
+  <binding name="B" type="tns:PT">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="Op">
+      <soap:operation soapAction="op"/>
+      <input><soap:body use="literal"/></input>
+    </operation>
+  </binding>
+
+  <service name="Svc">
+    <port name="P" binding="tns:B">
+      <soap:address location="http://example.com/b"/>
+    </port>
+  </service>
+
+</definitions>

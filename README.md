@@ -117,6 +117,7 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
 
 - Deploy APIs from [OpenAPI specifications](https://www.membrane-api.io/openapi/configuration-and-validation).
 - Validate requests and responses against [OpenAPI](distribution/examples/openapi/validation-simple) and **JSON Schema**.
+- Support for [OpenAPI 3.2](#openapi-32), including the `QUERY` method, `additionalOperations`, and `itemSchema`.
 
 ### **API Security**
 - [JSON Web Tokens](#json-web-tokens), [OAuth2](https://www.membrane-soa.org/service-proxy/oauth2-provider-client.html), [API Keys](#api-keys), [NTLM](distribution/examples/security/ntlm), and [Basic Authentication](https://www.membrane-api.io/docs/current/basicAuthentication.html).
@@ -124,19 +125,19 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
 - [Rate limiting](#rate-limiting) and traffic control
 - Protection for **GraphQL**, **JSON**, and **XML** APIs against malicious inputs.
 
-### **AI Gateway**
+### **AI and LLM Gateway**
 - [LLM Gateway](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
 - [Securely Share LLM API Keys](https://www.membrane-api.io/api-key-sharing-for-ai-and-llm-models.html)
-- MCP Protection *(available from version 7.3.0)*
+- [MCP Protection](https://www.membrane-api.io/ai/mcp-protection-api-gateway.html)
 
 ### **Legacy Web Services**
-- Seamless support for [SOAP message routing](#soap-web-services).
+- Seamless support for [SOAP message routing](#11-legacy-web-services-soap).
 - Configure, validate, and rewrite WSDL-based services, including [message validation](#message-validation-against-wsdl-and-xsd).
 
 ### **Additional Features**
 - **Admin Web Console** for monitoring and management.
 - Advanced [load balancing](#load-balancing) to ensure high availability.
-- Flexible [message transformation](#message-transformation) for seamless data processing.
+- Flexible [message transformation](#7-message-transformation) for seamless data processing.
 - Embeddable reverse proxy HTTP framework to build custom API gateways.
 - Traffic shadowing
 
@@ -150,21 +151,25 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
 
 # Content
 
-1. [Getting Started](#getting-started)
+1. [Getting Started](#1-getting-started)
     - [Java](#java)
     - [Docker](#docker)
-2. [Basics](#basics) Routing, rewriting
+2. [Basics](#2-basics) Routing, rewriting
     - [API Definition and Configuration](#api-definition-and-configuration)
     - [Simple REST and HTTP Forwarding APIs](#simple-rest-and-http-forwarding-apis)
-3. [OpenAPI Support](#openapi-support)
+3. [OpenAPI Support](#3-openapi-support)
     - [Deploy APIs with OpenAPI](#deploy-apis-with-openapi)
-4. [Routing](#routing)
+    - [OpenAPI 3.2](#openapi-32)
+4. [AI and LLM Gateway](#4-ai-and-llm-gateway)
+    - [LLM Gateway](#llm-gateway)
+    - [MCP Protection](#mcp-protection)
+5. [Routing](#5-routing)
     - [Short Circuit](#short-circuit)
     - [URL Rewriting](#url-rewriting)
-5. [Scripting](#scripting)
+6. [Scripting](#6-scripting)
     - With [Groovy](#groovy-scripts) and [Javascript](#javascript-scripts)
     - [Creating Responses with Groovy](#creating-responses-with-groovy)
-6. [Message Transformation](#message-transformation)
+7. [Message Transformation](#7-message-transformation)
     - [Manipulating](#manipulating-http-headers) and [removing](#removing-http-headers) HTTP Headers
     - [Create JSON from Query Parameters](#create-json-from-query-parameters)
     - [Transform JSON into TEXT, JSON or XML with Templates](#transform-json-into-text-json-or-xml-with-templates)
@@ -172,8 +177,8 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
     - [Complex Transformations using Javascript or Groovy](#complex-transformations-using-javascript-or-groovy)
     - [Transformation with Computations](#transformation-with-computations)
     - [JSON and XML Beautifier](#json-and-xml-beautifier)
-7. [Conditionals with if](#conditionals-with-if)
-8. [Security](#security)
+8. [Conditionals with if](#8-conditionals-with-if)
+9. [Security](#9-security)
     - [API Keys](#api-keys) and [Basic Authentication](#basic-authentication)
     - [SSL/TLS](#ssltls)
     - [JSON Web Tokens](#json-web-tokens) JWT
@@ -181,17 +186,17 @@ Meet other Membrane users **online** to discuss API gateway configuration, opera
     - [Secure APIs with OAuth2](#secure-apis-with-oauth2)
         - [Membrane as Authorization Server](#membrane-as-authorization-server)
         - [XML and JSON Protection](#xml-and-json-protection)
-9. [Traffic Control](#traffic-control) Rate limiting, Load balancing
+10. [Traffic Control](#10-traffic-control) Rate limiting, Load balancing
     - [Rate Limiting](#rate-limiting)
     - [Load Balancing](#load-balancing)
-10. [Legacy Web Services](#soap-web-services) SOAP and WSDL
+11. [Legacy Web Services](#11-legacy-web-services-soap) SOAP and WSDL
     - [API configuration from WSDL](#api-configuration-from-wsdl)
     - [Message Validation against WSDL and XSD](#message-validation-against-wsdl-and-xsd)
-11. [Operation](#operation)
+12. [Operation](#12-operation)
     - [Logging](#log-http)
     - [Monitoring with Prometheus and Grafana](#monitoring-with-prometheus-and-grafana)
     - [OpenTelemetry](#opentelemetry-integration)
-12. [Community and professional Support](#support)
+13. [Community and Enterprise Support](#13-community-and-enterprise-support)
 
 # Installation
 
@@ -250,7 +255,7 @@ You can run Membrane as Docker container, standalone Java application or install
 
 For detailed Docker setup instructions, see the [Membrane Deployment Guide](https://membrane-api.io/deployment/#docker).
 
-## Getting Started
+## 1. Getting Started
 
 ### Explore and Experiment
 - Try the code snippets on this page.
@@ -267,7 +272,7 @@ For detailed Docker setup instructions, see the [Membrane Deployment Guide](http
 - Browse the [reference](https://www.membrane-api.io/docs/)
 - Try the recipes from the [cookbook](https://www.membrane-api.io/api-gateway-cookbook.html)
 
-# Basics
+# 2. Basics
 
 ### API Definition and Configuration
 
@@ -297,7 +302,7 @@ api:
 After modifying and saving the `proxies.xml` file, open [http://localhost:2000/shop/v2/](http://localhost:2000/shop/v2/)
 
 
-## OpenAPI Support
+## 3. OpenAPI Support
 
 Membrane natively supports OpenAPI, allowing you to easily configure the gateway with OpenAPI documents and automatically validate both requests and responses.
 
@@ -324,10 +329,82 @@ Click on an API title in the list to open the Swagger UI for interactive explora
 
 ![Swagger UI](distribution/examples/openapi/openapi-proxy/swagger-ui.jpg)
 
+### OpenAPI 3.2
+
+Membrane validates requests against the constructs introduced in [OpenAPI 3.2](https://spec.openapis.org/oas/v3.2.0), a backward compatible superset of 3.1:
+
+- The `QUERY` HTTP method (a read operation with a request body).
+- `additionalOperations` for exposing custom HTTP methods on a path.
+- `itemSchema` for sequential media types, validating each item of a JSON Lines stream.
+- The `in: querystring` parameter, validating the whole query string as one typed value.
+- The `xml.nodeType` keyword, mapping schema properties to XML attributes, elements, or text.
+
+See the [OpenAPI 3.2 tutorial](distribution/tutorials/openapi/v32) for a self-teaching walkthrough of each feature.
+
 ### Learn More
 For additional details and a working example, check out the [OpenAPI Example](distribution/examples/openapi).
 
-## Routing
+## 4. AI and LLM Gateway
+
+Membrane can act as a gateway in front of Large Language Models and Model Context Protocol (MCP) servers.
+
+### LLM Gateway
+
+The `llmGateway` plugin routes requests to an LLM provider such as Anthropic Claude, OpenAI, or Google Gemini. It centralizes the provider API key and enforces per-request limits on input and output tokens as well as the models that may be used.
+
+```yaml
+api:
+  port: 2000
+  flow:
+    - llmGateway:
+        claude: {}
+        apiKey: <<Replace with your API_KEY>>
+        policies:
+          maxInputTokens: 500000
+          maxOutputTokens: 100000
+          models:
+            - claude-opus-4-8
+            - claude-sonnet-5
+        simpleStore:
+          users:
+            - name: alice
+              apiKey: abc123
+              tokens: 2000000
+            - name: bob
+              apiKey: qwertz
+              tokens: 10000000
+          # Time in seconds after which the token limit is reset
+          limitResetPeriod: 60
+  target:
+    url: https://api.anthropic.com
+```
+
+Instead of handing your provider API key to every developer, keep it in the gateway and issue per-user keys. Membrane authenticates the user, enforces a per-user token budget, restricts the allowed models, and forwards the request using the shared provider key.
+
+See the [key sharing tutorial](distribution/tutorials/ai/llm-gateway/claude/20-Sharing-API-Keys.yaml).
+
+### MCP Protection
+
+`mcpProtection` sits in front of an MCP server and controls which tools clients may see and call. Rules are evaluated top-down, and the first match wins; `initialize` and `ping` are always allowed.
+
+<img src="docs/images/mcp-protection-api-gateway.png" alt="Membrane MCP protection in front of an MCP server" width="800">
+
+```yaml
+api:
+  port: 2000
+  flow:
+    - mcpProtection:
+        tools:
+          - allow: getCustomers
+          - allow: getOrders
+          - deny: '.*'
+  target:
+    url: http://my-mcp-server
+```
+
+See the [MCP protection tutorial](distribution/tutorials/ai/mcp/20-MCP-Protection.yaml).
+
+## 5. Routing
 Membrane provides versatile routing with a fallthrough mechanism that applies only the first matching API rule, ensuring precise and efficient routing based on path, HTTP method, or hostname or many other criterias.
 
 ### Example: Advanced Routing
@@ -464,7 +541,7 @@ will be rewritten to and forwarded to the backend at:
 https://api.predic8.de/shop/v2/products/4
 ```
 
-# Scripting
+# 6. Scripting
 
 Membrane has powerful scripting features that allow to modify the desired of an API using Groovy or Javascript. 
 
@@ -615,7 +692,7 @@ api:
 #### Learn More
 For more details about using JavaScript with Membrane, check the [JavaScript Plugin documentation](https://www.membrane-api.io/docs/current/javascript.html).
 
-## Message Transformation
+## 7. Message Transformation
 
 ### Manipulating HTTP Headers
 
@@ -865,7 +942,7 @@ Result:
 }
 ```
 
-# Conditionals with if
+# 8. Conditionals with if
 
 This example shows how to intercept error responses from a backend and replace them with a custom response.
 
@@ -884,7 +961,7 @@ api:
     url: https://httpbin.org/status/500
 ```
 
-# Security
+# 9. Security
 
 Membrane offers all kinds of security features to protect APIs and backend servers.
 
@@ -1100,7 +1177,7 @@ global:
 
 See [JSON Protection](https://www.membrane-api.io/docs/current/jsonProtection.html).
 
-# Traffic Control
+# 10. Traffic Control
 
 ## Rate Limiting
 
@@ -1152,7 +1229,7 @@ api:
 
 See [documentation](https://www.membrane-soa.org/service-proxy-doc/4.8/websocket-routing-intercepting.html)
 
-# SOAP Web Services
+# 11. Legacy Web Services (SOAP)
 
 Integrate legacy services.
 
@@ -1184,7 +1261,7 @@ soapProxy:
     - validator: {}
 ```
 
-# Operation
+# 12. Operation
 
 ## Log HTTP
 
@@ -1247,7 +1324,7 @@ api:
 
 For a working example and detailed setup, see the [OpenTelemetry Example](./distribution/examples/monitoring-tracing/opentelemetry).
 
-# Support
+# 13. Community and Enterprise Support
 
 ## Community Support
 
