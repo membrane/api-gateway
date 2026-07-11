@@ -4,11 +4,13 @@
 
     <xsl:output method="xml" indent="yes"/>
 
-    <!-- Set from the "library" exchange property -->
+    <!-- Each param is set from the exchange property of the same name -->
     <xsl:param name="library"/>
+    <xsl:param name="generated"/>
+    <xsl:param name="requestId"/>
 
     <xsl:template match="/books">
-        <books library="{$library}">
+        <books library="{$library}" generated="{$generated}" requestId="{$requestId}">
             <xsl:copy-of select="book"/>
         </books>
     </xsl:template>

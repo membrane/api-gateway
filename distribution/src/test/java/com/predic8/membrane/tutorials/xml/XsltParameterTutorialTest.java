@@ -22,6 +22,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.XML;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.matchesPattern;
 
 public class XsltParameterTutorialTest extends AbstractXmlTutorialTest {
     @Override
@@ -41,6 +42,9 @@ public class XsltParameterTutorialTest extends AbstractXmlTutorialTest {
             .statusCode(200)
             .contentType(XML)
             .body("books.@library", equalTo("predic8"))
+            // Dynamic, gateway-computed values XSLT 1.0 cannot produce itself
+            .body("books.@generated", matchesPattern("\\d{4}-\\d{2}-\\d{2}"))
+            .body("books.@requestId", matchesPattern("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"))
             .body("books.book.size()", greaterThan(0));
         // @formatter:on
     }
