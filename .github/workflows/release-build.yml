@@ -9,6 +9,11 @@ on:
       - 6**
       - 5**
       - 4**
+
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   build-release:
     if: github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'Release ')
@@ -103,17 +108,21 @@ jobs:
 #          makeLatest: true
           bodyFile: "distribution/release-notes/${{ steps.get_version.outputs.VERSION }}.md"
           artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
-          token: ${{ secrets.PAT }}
+          token: ${{ github.token }}
+
       - name: Trigger website pipeline on GitLab
+        shell: bash
         env:
           GITLAB_TRIGGER_TOKEN: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
         run: |
-          VERSION='${{ steps.get_version.outputs.VERSION }}'
-          echo "Triggering GitLab pipeline for membrane-api.io with VERSION=${VERSION}"
-
-          curl -X POST --fail --timeout 10 \
-            -F token="${GITLAB_TRIGGER_TOKEN}" \
-            -F ref=main \
-            -F "variables[MEMBRANE_VERSION]=${VERSION}" \
-            https://gitlab.predic8.de/api/v4/projects/prod%2Fmembrane-api.io/trigger/pipeline
-
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            --connect-timeout 10 \
+            --max-time 10 \
+            --request POST \
+            --form-string "token=${GITLAB_TRIGGER_TOKEN}" \
+            --form-string "ref=main" \
+            --form-string "variables[PIPELINE]=release" \
+            --form-string "variables[MEMBRANE_VERSION]=${VERSION}" \
+            "https://gitlab.predic8.de/api/v4/projects/94/trigger/pipeline"
