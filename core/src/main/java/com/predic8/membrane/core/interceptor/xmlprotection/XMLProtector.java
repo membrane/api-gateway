@@ -14,17 +14,25 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.stream.*;
-import javax.xml.stream.events.*;
-import java.io.*;
-import java.util.function.*;
+import javax.xml.stream.events.DTD;
+import javax.xml.stream.events.EntityDeclaration;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
+import java.io.ByteArrayInputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.util.CollectionsUtil.*;
-import static com.predic8.xml.beautifier.XMLInputFactoryFactory.*;
-import static java.lang.Boolean.*;
+import static com.predic8.membrane.core.util.CollectionsUtil.count;
+import static com.predic8.xml.beautifier.XMLInputFactoryFactory.JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static javax.xml.stream.XMLInputFactory.*;
 
 /**
@@ -42,6 +50,9 @@ import static javax.xml.stream.XMLInputFactory.*;
  */
 public class XMLProtector {
     private static final Logger log = LoggerFactory.getLogger(XMLProtector.class);
+
+    // Word-bounded so DOCTYPE names that merely contain the keywords (e.g. PUBLICATIONS) don't match
+    private static final Pattern EXTERNAL_ID_KEYWORD = Pattern.compile("\\b(?:SYSTEM|PUBLIC)\\b");
 
     private final XMLEventWriter writer;
     private final int maxAttributeCount;
@@ -65,9 +76,44 @@ public class XMLProtector {
     private static void checkExternalEntities(DTD dtd) throws XMLProtectionException {
         if (containsExternalEntityReferences(dtd)) {
             String msg = "Possible attack. External entity found in DTD.";
-            log.warn(msg);
+            log.info(msg);
             throw new XMLProtectionException(msg);
         }
+    }
+
+    private static void checkExternalSubset(DTD dtd) throws XMLProtectionException {
+        if (hasExternalSubsetReference(dtd)) {
+            String msg = "Possible attack. External DTD subset reference in DOCTYPE declaration.";
+            log.info(msg);
+            log.debug("DTD: {}", dtd.getDocumentTypeDeclaration());
+            throw new XMLProtectionException(msg);
+        }
+    }
+
+    private static boolean hasExternalSubsetReference(DTD dtd) {
+        var decl = dtd.getDocumentTypeDeclaration();
+        if (decl == null) return false;
+        // Only inspect the header before the internal subset '[' — SYSTEM/PUBLIC only appear there as keywords
+        return EXTERNAL_ID_KEYWORD.matcher(getHeaderAfterRootName(getHeader(decl))).find();
+    }
+
+    private static @NotNull String getHeader(String decl) {
+        int internalSubset = decl.indexOf('[');
+        return internalSubset >= 0 ? decl.substring(0, internalSubset) : decl;
+    }
+
+    /**
+     * Per the {@link DTD#getDocumentTypeDeclaration()} contract, the header always starts with
+     * "DOCTYPE" followed by the declared root element name (e.g. "&lt;!DOCTYPE SYSTEM ..."). That
+     * name can legally be "SYSTEM" or "PUBLIC" itself, so it must be skipped before keyword-matching
+     * for an actual external identifier — otherwise such a root name would be mistaken for one.
+     */
+    static @NotNull String getHeaderAfterRootName(String header) {
+        int doctypeIdx = header.indexOf("DOCTYPE");
+        int i = doctypeIdx >= 0 ? doctypeIdx + "DOCTYPE".length() : 0;
+        while (i < header.length() && Character.isWhitespace(header.charAt(i))) i++;
+        while (i < header.length() && !Character.isWhitespace(header.charAt(i))) i++;
+        return header.substring(i);
     }
 
     private static boolean containsExternalEntityReferences(DTD dtd) {
@@ -105,9 +151,14 @@ public class XMLProtector {
                 if (event instanceof javax.xml.stream.events.DTD dtd) {
                     checkExternalEntities(dtd);
                     if (removeDTD) {
+                        if (hasExternalSubsetReference(dtd)) {
+                            log.info("Possible attack. External DTD subset reference in DOCTYPE declaration (DTD removed, request continues).");
+                            log.debug("DTD: {}", dtd.getDocumentTypeDeclaration());
+                        }
                         log.debug("removed DTD.");
                         continue;
                     }
+                    checkExternalSubset(dtd);
                 }
                 writer.add(event);
             }
@@ -154,6 +205,9 @@ public class XMLProtector {
 
         // Support DTDs on purpose to detect them in the StAX loop!
         f.setProperty(SUPPORT_DTD, TRUE);
+
+        // Block external DTD fetches while still surfacing the DTD event for removal
+        f.setXMLResolver((publicId, systemId, baseURI, namespace) -> new ByteArrayInputStream(new byte[0]));
 
         f.setProperty(IS_NAMESPACE_AWARE, TRUE);
         f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);

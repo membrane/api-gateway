@@ -14,25 +14,34 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.multipart.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
-import org.xml.sax.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.ConfigurationException;
+import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
+import com.predic8.membrane.core.util.xml.parser.HardenedSchemaFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
-import javax.xml.transform.*;
-import javax.xml.transform.stream.*;
-import javax.xml.validation.*;
-import java.io.*;
-import java.util.*;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-import static com.predic8.membrane.core.Constants.*;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.http.Header.*;
+import static com.predic8.membrane.core.Constants.XSD_NS;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
@@ -55,7 +64,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 
     @Override
     protected List<Validator> createValidators() {
-        SchemaFactory sf = SchemaFactory.newInstance(XSD_NS);
+        SchemaFactory sf = HardenedSchemaFactory.newInstance(XSD_NS);
         sf.setResourceResolver(resolver.toLSResourceResolver());
         List<Validator> validators = new ArrayList<>();
         log.debug("Creating validator for schema: {}", location);
@@ -74,21 +83,26 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
         }
         validator.setResourceResolver(resolver.toLSResourceResolver());
         validator.setErrorHandler(new SchemaValidatorErrorHandler());
+        HardenedSchemaFactory.hardenValidator(validator);
         validators.add(validator);
         return validators;
     }
 
     /**
-     * Time is dependent on Source type. Messured on Mac M1 and 1_000_000 validations
-     * StreamSource = 6.2s
-     * DOMSource = 38.8s
+     * Returns a {@link SAXSource} backed by {@link HardenedSaxParser} so the Validator
+     * cannot fetch external DTDs from instance documents regardless of Validator property support.
      *
      * @param input Stream with body
      * @return Source
      */
     @Override
     protected Source getMessageBody(InputStream input) {
-        return new StreamSource(input);
+        try {
+            XMLReader reader = HardenedSaxParser.getInstance().newSAXParser().getXMLReader();
+            return new SAXSource(reader, new InputSource(input));
+        } catch (SAXException e) {
+            throw new RuntimeException("Failed to create hardened SAX reader for schema validation", e);
+        }
     }
 
     @Override
