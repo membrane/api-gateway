@@ -16,8 +16,9 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.annotation.*;
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.ASINOPENAPI;
 
@@ -33,6 +34,7 @@ public class OpenAPISpec implements Cloneable {
     public YesNoOpenAPIOption validateResponses = ASINOPENAPI;
     public YesNoOpenAPIOption validationDetails = ASINOPENAPI;
     public YesNoOpenAPIOption validateSecurity = ASINOPENAPI;
+    public YesNoOpenAPIOption logValidationMessages = ASINOPENAPI;
     private Rewrite rewrite = new Rewrite();
 
     @Override
@@ -131,6 +133,24 @@ public class OpenAPISpec implements Cloneable {
         return validationDetails;
     }
 
+    /**
+     * @description <p>Validation failures are always logged. By default the log message includes
+     * the offending value(s) from the request/response (e.g. "-3 is smaller than the minimum of
+     * 0"), which can be personal data submitted by the client. Set this to "no" to log only
+     * non-personal, structural information (method, path template, field location, schema type)
+     * instead - useful to comply with data protection regulations like the GDPR/DSGVO.</p>
+     * @example no
+     * @default yes
+     */
+    @MCAttribute()
+    public void setLogValidationMessages(YesNoOpenAPIOption logValidationMessages) {
+        this.logValidationMessages = logValidationMessages;
+    }
+
+    public YesNoOpenAPIOption getLogValidationMessages() {
+        return logValidationMessages;
+    }
+
     @SuppressWarnings("unused")
     public YesNoOpenAPIOption getValidateSecurity() {
         return validateSecurity;
@@ -160,6 +180,7 @@ public class OpenAPISpec implements Cloneable {
                ", validateResponses=" + validateResponses +
                ", validationDetails=" + validationDetails +
                ", validateSecurity=" + validateSecurity +
+               ", logValidationMessages=" + logValidationMessages +
                ", rewrite=" + rewrite +
                '}';
     }

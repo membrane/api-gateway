@@ -16,9 +16,14 @@
 
 package com.predic8.membrane.core.openapi.validators;
 
-import com.predic8.membrane.core.openapi.model.*;
+import com.predic8.membrane.core.openapi.model.Request;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static com.predic8.membrane.core.openapi.util.Utils.setFieldIfNotNull;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.util.StringUtil.joinFields;
 
 public class ValidationContext {
 
@@ -238,5 +243,38 @@ public class ValidationContext {
                 ", validatedEntity='" + validatedEntity + '\'' +
                 ", statusCode=" + statusCode +
                 '}';
+    }
+
+    /**
+     * Like {@link #toString()} but without the concrete request {@code path}, which can contain
+     * user-submitted data (e.g. a path parameter value), and without empty/null fields. Safe to
+     * log at INFO level; use {@code uriTemplate} instead of {@code path} to identify the endpoint.
+     *
+     * @param includeRequestInfo whether to include {@code method}/{@code uriTemplate} — set to
+     *                           {@code false} when they are already logged once for a whole
+     *                           {@link ValidationErrors} list and would otherwise be repeated.
+     */
+    public String toSafeString(boolean includeRequestInfo) {
+        Map<String, Object> fields = new LinkedHashMap<>();
+        if (includeRequestInfo) {
+            setFieldIfNotNull(fields, "method", method);
+            setFieldIfNotNull(fields, "uriTemplate", uriTemplate);
+        }
+        setFieldIfNotNull(fields, "parameter", parameter);
+        if (!jsonPointer.isEmpty())
+            fields.put("xpointer", jsonPointer);
+        setFieldIfNotNull(fields, "schemaType", schemaType);
+        setFieldIfNotNull(fields, "complexType", complexType);
+        if (validatedEntityType != null)
+            fields.put("validatedEntityType", validatedEntityType);
+        // validatedEntity is a safe schema name for most entity types, but for PATH it holds the
+        // concrete request path (see OpenAPIValidator, invalid-path case) which can contain
+        // personal data; "REQUEST"/"RESPONSE" are internal body-root sentinels. Exclude both.
+        if (validatedEntity != null && validatedEntityType != PATH
+                && !validatedEntity.equals("REQUEST") && !validatedEntity.equals("RESPONSE"))
+            fields.put("validatedEntity", validatedEntity);
+        fields.put("statusCode", statusCode);
+
+        return joinFields(fields);
     }
 }

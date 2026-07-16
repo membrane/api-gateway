@@ -16,29 +16,36 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.parser.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.parser.*;
-import io.swagger.v3.parser.core.models.*;
-import org.apache.commons.lang3.exception.*;
-import org.jetbrains.annotations.*;
-import org.slf4j.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.ConfigurationException;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.parser.ObjectMapperFactory;
+import io.swagger.v3.parser.core.models.ParseOptions;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
-import static com.predic8.membrane.core.util.FileUtil.*;
-import static com.predic8.membrane.core.util.URIUtil.*;
-import static java.lang.String.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
+import static com.predic8.membrane.core.util.FileUtil.readInputStream;
+import static com.predic8.membrane.core.util.URIUtil.convertPath2FilePathString;
+import static java.lang.String.format;
 
 public class OpenAPIRecordFactory {
 
@@ -230,6 +237,7 @@ public class OpenAPIRecordFactory {
         extension.put(REQUESTS, false);
         extension.put(RESPONSES, false);
         extension.put(VALIDATION_DETAILS, true);
+        extension.put(LOG_VALIDATION_MESSAGES, true);
         return extension;
     }
 
@@ -237,6 +245,9 @@ public class OpenAPIRecordFactory {
 
         if (spec.validationDetails != ASINOPENAPI)
             extension.put(VALIDATION_DETAILS, toYesNo(spec.validationDetails));
+
+        if (spec.logValidationMessages != ASINOPENAPI)
+            extension.put(LOG_VALIDATION_MESSAGES, toYesNo(spec.logValidationMessages));
 
         if (spec.validateRequests != ASINOPENAPI)
             extension.put(REQUESTS, toYesNo(spec.validateRequests));
@@ -257,6 +268,7 @@ public class OpenAPIRecordFactory {
 
         extension.putIfAbsent(REQUESTS, false);
         extension.putIfAbsent(RESPONSES, false);
+        extension.putIfAbsent(LOG_VALIDATION_MESSAGES, true);
 
         return extension;
     }

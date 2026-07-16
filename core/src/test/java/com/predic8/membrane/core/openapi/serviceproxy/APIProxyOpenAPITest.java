@@ -16,18 +16,21 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.util.*;
-import io.swagger.v3.oas.models.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.util.ConfigurationException;
+import io.swagger.v3.oas.models.OpenAPI;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.X_MEMBRANE_VALIDATION;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
-import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.createProxy;
+import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.getSingleOpenAPIRecord;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -37,6 +40,7 @@ public class APIProxyOpenAPITest {
     private static final String RESPONSES = "responses";
     private static final String SECURITY = "security";
     private static final String DETAILS = "details";
+    private static final String LOG_MESSAGES = "logMessages";
 
     Router router;
 
@@ -139,6 +143,25 @@ public class APIProxyOpenAPITest {
     }
 
     @Test
+    public void logMessagesDefaultsToTrue() {
+        Map<String,Object> xValidation = getXValidation(getSpec("no-extensions.yml"));
+        assertNotNull(xValidation);
+        assertTrue(isLogMessages(xValidation));
+    }
+
+    @Test
+    public void logMessagesDisabled() {
+        OpenAPISpec spec = getSpec("no-extensions.yml");
+        spec.logValidationMessages = NO;
+
+        Map<String,Object> xValidation = getXValidation(spec);
+        assertNotNull(xValidation);
+        assertFalse(isLogMessages(xValidation));
+        // The unrelated "details" (response body) flag must not be affected.
+        assertTrue(isDetails(xValidation));
+    }
+
+    @Test
     public void validationDetailsFalseExtensions() {
 
         OpenAPISpec spec = getSpec("validation-details-false-extensions.yml");
@@ -213,6 +236,10 @@ public class APIProxyOpenAPITest {
 
     private static Boolean isDetails(Map<String, Object> xValidation) {
         return (Boolean) xValidation.get(DETAILS);
+    }
+
+    private static Boolean isLogMessages(Map<String, Object> xValidation) {
+        return (Boolean) xValidation.get(LOG_MESSAGES);
     }
 
     @SuppressWarnings("unchecked")

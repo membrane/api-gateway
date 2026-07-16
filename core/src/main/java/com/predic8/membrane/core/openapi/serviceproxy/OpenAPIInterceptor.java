@@ -16,32 +16,39 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ReadingBodyException;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.openapi.*;
-import com.predic8.membrane.core.openapi.validators.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.OpenAPIParsingException;
+import com.predic8.membrane.core.openapi.OpenAPIValidator;
+import com.predic8.membrane.core.openapi.validators.ValidationErrors;
 import com.predic8.membrane.core.proxies.Proxy;
-import com.predic8.membrane.core.proxies.*;
-import io.swagger.v3.oas.models.*;
-import io.swagger.v3.oas.models.servers.*;
-import jakarta.mail.internet.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.proxies.RuleKey;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.exchange.Exchange.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exchange.Exchange.SNI_SERVER_NAME;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_RESPONSE_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
-import static com.predic8.membrane.core.openapi.util.UriUtil.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static java.util.Comparator.*;
+import static com.predic8.membrane.core.openapi.util.UriUtil.getUrlWithoutPath;
+import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
+import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.*;
 
 /**
@@ -104,9 +111,14 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             ValidationErrors errors = validateRequest(rec, exc);
 
             if (!errors.isEmpty()) {
-                log.info("OpenAPI request validation failed for {} {} against '{}': {}",
-                        exc.getRequest().getMethod(), exc.getRequest().getUri(),
-                        rec.api.getInfo().getTitle(), errors);
+                // Offending values (e.g. request body data) may be personal/DSGVO-relevant;
+                // logValidationMessages lets ops keep them out of the log entirely.
+                if (logValidationMessages(rec.api)) {
+                    log.info("OpenAPI request validation failed: {}", errors);
+                } else {
+                    log.info("OpenAPI request validation failed: {} error(s), {}", errors.size(), errors.toSafeString());
+                }
+
                 apiProxy.statisticCollector.collect(errors);
                 createErrorResponse(exc, errors, ValidationErrors.Direction.REQUEST, validationDetails(rec.api));
                 return RETURN;
@@ -160,9 +172,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             ValidationErrors errors = validateResponse(rec, exc);
 
             if (errors != null && errors.hasErrors()) {
-                log.info("OpenAPI response validation failed for {} {} against '{}': {}",
-                        exc.getRequest().getMethod(), exc.getRequest().getUri(),
-                        rec.api.getInfo().getTitle(), errors);
+                // See handleRequest(): logValidationMessages lets ops keep offending values
+                // (potentially personal data) out of the log entirely.
+                if (logValidationMessages(rec.api)) {
+                    log.info("OpenAPI response validation failed: {}", errors);
+                } else {
+                    log.info("OpenAPI response validation failed: {} error(s), {}", errors.size(), errors.toSafeString());
+                }
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
                 apiProxy.statisticCollector.collect(errors);
                 createErrorResponse(exc, errors, ValidationErrors.Direction.RESPONSE, validationDetails(rec.api));
@@ -216,7 +232,28 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         return new OpenAPIValidator(router.getUriFactory(), rec).validateResponse(getOpenapiValidatorRequest(exc), getOpenapiValidatorResponse(exc));
     }
 
+    /**
+     * Whether the validation-failure response body may include details (which values failed and
+     * why). Configured via {@code validationDetails} on the {@code <openapi>} element.
+     */
     public boolean validationDetails(OpenAPI api) {
+        return booleanExtension(api, VALIDATION_DETAILS);
+    }
+
+    /**
+     * Whether validation-failure log messages may include the offending value(s) from the
+     * request/response, which can be personal data. Configured via {@code logValidationMessages}
+     * on the {@code <openapi>} element (see {@link OpenAPISpec}).
+     */
+    public boolean logValidationMessages(OpenAPI api) {
+        return booleanExtension(api, LOG_VALIDATION_MESSAGES);
+    }
+
+    /**
+     * Reads a boolean flag from the {@code x-membrane-validation} OpenAPI extension, defaulting
+     * to {@code true} when the extension or the key is absent.
+     */
+    private static boolean booleanExtension(OpenAPI api, String key) {
         if (api.getExtensions() == null)
             return true;
 
@@ -226,12 +263,8 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         if (xValidation == null)
             return true;
 
-        Boolean validationDetails = (Boolean) xValidation.get("details");
-
-        if (xValidation.get("details") == null)
-            return true;
-
-        return validationDetails;
+        Object value = xValidation.get(key);
+        return value == null || (Boolean) value;
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

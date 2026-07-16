@@ -17,10 +17,12 @@
 package com.predic8.membrane.core.openapi.validators;
 
 import java.util.*;
-import java.util.stream.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static com.predic8.membrane.core.openapi.util.Utils.*;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.*;
+import static com.predic8.membrane.core.openapi.util.Utils.setFieldIfNotNull;
+import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
+import static com.predic8.membrane.core.util.StringUtil.joinFields;
 
 public class ValidationErrors {
 
@@ -128,5 +130,31 @@ public class ValidationErrors {
         return "ValidationErrors{" +
                 "errors=" + errors +
                 '}';
+    }
+
+    /**
+     * Like {@link #toString()} but without the offending values, which validator messages
+     * may embed (e.g. "-3 is smaller than the minimum of 0"). Safe to log at INFO level.
+     * {@code method}/{@code uriTemplate} are logged once, since all errors of one validation
+     * run share the same request.
+     */
+    public String toSafeString() {
+        List<ValidationContext> contexts = errors.stream()
+                .map(ValidationError::getContext)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (contexts.isEmpty())
+            return "[]";
+
+        ValidationContext head = contexts.getFirst();
+        Map<String, Object> fields = new LinkedHashMap<>();
+        setFieldIfNotNull(fields, "method", head.getMethod());
+        setFieldIfNotNull(fields, "uriTemplate", head.getUriTemplate());
+        fields.put("errors", contexts.stream()
+                .map(ctx -> ctx.toSafeString(false))
+                .collect(Collectors.joining("; ", "[", "]")));
+
+        return joinFields(fields);
     }
 }

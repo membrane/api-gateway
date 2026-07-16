@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core.util;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import static java.lang.Math.min;
 
 public class StringUtil {
@@ -48,5 +51,13 @@ public class StringUtil {
         return sb.toString();
     }
 
+    /**
+     * Renders a field map as a {@code key=value, key=value} string, preserving insertion order.
+     */
+    public static String joinFields(Map<String, ?> fields) {
+        return fields.entrySet().stream()
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining(", "));
+    }
 
 }

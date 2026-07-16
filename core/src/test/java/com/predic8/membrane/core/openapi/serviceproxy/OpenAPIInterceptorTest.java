@@ -16,20 +16,24 @@
 
 package com.predic8.membrane.core.openapi.serviceproxy;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.exceptions.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.*;
-import org.jetbrains.annotations.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exceptions.ProblemDetails;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.util.URIFactory;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.*;
 
-import static com.predic8.membrane.core.http.MimeType.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
-import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static com.predic8.membrane.core.interceptor.Outcome.RETURN;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.NO;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.YES;
+import static com.predic8.membrane.core.openapi.util.JsonTestUtil.convert2JSON;
 import static com.predic8.membrane.core.openapi.util.OpenAPITestUtils.*;
 import static com.predic8.membrane.core.util.ProblemDetailsTestUtil.parse;
 import static com.predic8.membrane.test.TestUtil.getPathFromResource;
@@ -170,6 +174,23 @@ class OpenAPIInterceptorTest {
         specCustomers.validateResponses = YES;
         specCustomers.validationDetails = NO;
         assertEquals("Message validation failed!", getMapFromResponse(callPut(specCustomers)).get("validation").get("error"));
+    }
+
+    @Test
+    void logValidationMessagesDefaultsToTrue() {
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+        var api = getSingleOpenAPIRecord(interceptor.getApiProxy().apiRecords).api;
+        assertTrue(interceptor.logValidationMessages(api));
+    }
+
+    @Test
+    void logValidationMessagesDisabled() {
+        specCustomers.logValidationMessages = NO;
+        OpenAPIInterceptor interceptor = new OpenAPIInterceptor(createProxy(router, specCustomers));
+        interceptor.init(router);
+        var api = getSingleOpenAPIRecord(interceptor.getApiProxy().apiRecords).api;
+        assertFalse(interceptor.logValidationMessages(api));
     }
 
     @NotNull
