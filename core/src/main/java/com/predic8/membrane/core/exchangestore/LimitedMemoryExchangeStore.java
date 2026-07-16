@@ -208,12 +208,14 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 		for (AbstractExchange ex : inflight) {
 			// An inflight exchange whose request snapshot is not (yet) attached carries no usable data and
-			// would hand callers an exchange with a null request. Skip it rather than leak that NPE downstream.
-			if (ex.getRequest() == null)
+			// would hand callers an exchange with a null request. Read the request once so a concurrent
+			// reset between the guard and setRequest() can't slip a null through and leak that NPE downstream.
+			Request request = ex.getRequest();
+			if (request == null)
 				continue;
 			Exchange newEx = new Exchange(null);
 			newEx.setId(ex.getId());
-			newEx.setRequest(ex.getRequest());
+			newEx.setRequest(request);
 			newEx.setProxy(ex.getProxy());
 			newEx.setRemoteAddr(ex.getRemoteAddr());
 			newEx.setTime(ex.getTime());
