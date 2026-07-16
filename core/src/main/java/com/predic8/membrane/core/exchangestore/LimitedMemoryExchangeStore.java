@@ -70,14 +70,22 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			if (flow == REQUEST) {
 				AbstractExchange excCopy = snapInternal(exc, flow);
 
-				if (exc.getRequest() != null)
-					excCopy.setRequest(exc.getRequest().createSnapshot(() -> {
-						{
+				try {
+					if (exc.getRequest() != null)
+						excCopy.setRequest(exc.getRequest().createSnapshot(() -> {
 							currentSize.getAndAdd(- excCopy.resetHeapSizeEstimation() + excCopy.getHeapSizeEstimation());
 							log.debug("newSnap currentSize: " + currentSize);
 							modify();
-						}
-					}, bodyExceedingMaxSizeStrategy, maxBodySize));
+						}, bodyExceedingMaxSizeStrategy, maxBodySize));
+				} catch (Exception e) {
+					// Snapshotting the request failed after snapInternal() already enqueued the copy in
+					// 'inflight'. Drop it again so a half-initialised exchange with a null request can never
+					// surface in getAllExchangesAsList() (see the null-guard there) and contaminate later reads.
+					if (inflight.remove(excCopy))
+						currentSize.getAndAdd(- excCopy.getHeapSizeEstimation());
+					modify();
+					throw e;
+				}
 
 				exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
 					@Override
@@ -199,6 +207,10 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		List<AbstractExchange> ret = new LinkedList<>();
 
 		for (AbstractExchange ex : inflight) {
+			// An inflight exchange whose request snapshot is not (yet) attached carries no usable data and
+			// would hand callers an exchange with a null request. Skip it rather than leak that NPE downstream.
+			if (ex.getRequest() == null)
+				continue;
 			Exchange newEx = new Exchange(null);
 			newEx.setId(ex.getId());
 			newEx.setRequest(ex.getRequest());

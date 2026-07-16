@@ -19,6 +19,8 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.*;
 import org.junit.jupiter.api.*;
 
+import java.util.*;
+
 import static com.predic8.membrane.core.http.Response.ok;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -52,6 +54,28 @@ public class LimitedMemoryExchangeStoreTest {
 		assertStore(0, "1");
 		assertStore(1, "2");
 
+	}
+
+	/**
+	 * Regression for the NPE in LimitedMemoryExchangeStoreIntegrationTest: an exchange can sit in the
+	 * 'inflight' queue before its request snapshot is attached (the brief window in newSnap(), or after a
+	 * failed request snapshot). getAllExchangesAsList() must skip such a request-less entry rather than
+	 * hand callers an exchange whose getRequest() is null.
+	 */
+	@Test
+	public void requestLessInflightExchangeIsSkipped() {
+		LimitedMemoryExchangeStore s = new LimitedMemoryExchangeStore();
+		s.setMaxSize(500000);
+
+		// snap() on the request flow enqueues a copy in 'inflight'; snapInternal() copies no request when the
+		// original has none, reproducing a request-less inflight entry deterministically.
+		s.snap(new Exchange(null), Flow.REQUEST);
+
+		List<AbstractExchange> all = s.getAllExchangesAsList();
+
+		assertTrue(all.stream().allMatch(e -> e.getRequest() != null),
+				"getAllExchangesAsList() must never return an exchange with a null request");
+		assertTrue(all.isEmpty(), "the request-less inflight ghost must be skipped");
 	}
 
 	private void assertStore(int pos, String value) {
