@@ -29,35 +29,35 @@ public class PositionalIncludeTutorialTest extends AbstractAdvancedTutorialTest 
 
     @Override
     protected String getTutorialYaml() {
-        return "10-Positional-Include.yaml";
+        return "20-Positional-Include.yaml";
     }
 
     @Test
-    void healthRouteDefinedFirstInlineReturns200() {
+    void specificOrderRouteDefinedFirstInlineReturns200() {
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/health")
+            .get("http://localhost:2000/shop/orders/42")
         .then()
             .statusCode(200)
-            .body(containsString("\"status\""));
+            .body(containsString("\"orderId\""));
         // @formatter:on
     }
 
     @Test
-    void adminRouteFromFirstIncludeReturns200() {
+    void orderListFromIncludeReturns200() {
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/admin")
+            .get("http://localhost:2000/shop/orders")
         .then()
             .statusCode(200)
-            .body(containsString("\"role\""));
+            .body(containsString("\"id\""));
         // @formatter:on
     }
 
     @Test
-    void shopRouteDefinedInlineReturns200() {
+    void shopRootDefinedInlineReturns200() {
         // @formatter:off
         given()
         .when()
