@@ -49,6 +49,11 @@ If you need to integrate legacy SOAP Web Services, this tutorial provides exampl
 
 Learn the features added in OpenAPI 3.2 - such as the QUERY method - and how Membrane validates requests against them.
 
+
+## [OpenAPI Rewriting](openapi/rewrite)
+
+Understand how Membrane rewrites the server URLs of an OpenAPI document served at `/api-docs`, and how to pin the host, port, base path or protocol - for example when running behind a reverse proxy.
+
 ---
 
 ## Start Membrane with Docker
