@@ -25,6 +25,8 @@ import org.slf4j.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH_UI;
 import static com.predic8.membrane.core.openapi.util.UriTemplateMatcher.matchTemplate;
 import static java.util.Optional.*;
 
@@ -62,8 +64,8 @@ public class APIProxyKey extends ServiceProxyKey {
             return;
 
         // Add basePaths of OpenAPIPublisherInterceptor to accept them also
-        basePaths.add(OpenAPIPublisherInterceptor.PATH);    // new path
-        basePaths.add(OpenAPIPublisherInterceptor.PATH_UI); // "
+        basePaths.add(PATH);    // new path
+        basePaths.add(PATH_UI); // "
         basePaths.add("/api-doc");                          // old to stay compatible
         basePaths.add("/api-doc/ui");                       // "
     }
@@ -133,6 +135,10 @@ public class APIProxyKey extends ServiceProxyKey {
 
     @Override
     public boolean matchesPath(String path) {
+        for (String basePath : basePaths) {
+            if (path.startsWith(basePath))
+                return true;
+        }
         try {
             matchTemplate(getPath(), path); // ignore result
             return true;
