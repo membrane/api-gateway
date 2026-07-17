@@ -63,7 +63,7 @@ public class YamlHotDeploymentThread extends Thread {
                     sleep(1000);
                 }
 
-                log.info("Configuration Changed.");
+                log.debug("Configuration changed.");
 
                 if (!reloader.reload()) {
                     log.debug("YAML Hot Deployment Thread stopped after reload failure.");
