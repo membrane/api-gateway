@@ -6,7 +6,9 @@ ARG USER_GID=$USER_UID
 
 COPY release-bin .
 RUN apt-get update \
-    && apt-get install unzip
+    && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends unzip \
+    && rm -rf /var/lib/apt/lists/*
 RUN unzip membrane-api-gateway-*.zip -x */examples* */tutorials* \
     && rm membrane-api-gateway-*.zip \
     && mv membrane-api-gateway-* /opt/membrane
