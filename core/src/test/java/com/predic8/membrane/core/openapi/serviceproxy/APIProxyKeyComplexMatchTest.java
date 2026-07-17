@@ -94,6 +94,17 @@ class APIProxyKeyComplexMatchTest {
         assertFalse(key.complexMatch(new Builder().get("/foobar").buildExchange()));
     }
 
+    @Test
+    @DisplayName("matchesPath allows /api-docs even when a path is configured")
+    void matchesPathAllowsApiDocsWhenPathIsConfigured() {
+        var key = new APIProxyKey("", "", 80, "/cities", "*", null, true);
+        assertTrue(key.matchesPath("/api-docs"));
+        assertTrue(key.matchesPath("/api-docs/ui"));
+        assertTrue(key.matchesPath("/api-doc"));
+        assertTrue(key.matchesPath("/api-doc/ui"));
+        assertFalse(key.matchesPath("/other"));
+    }
+
     private static Stream<Arguments> urls() {
         return Stream.of(
                 of("/api-docs",true),
