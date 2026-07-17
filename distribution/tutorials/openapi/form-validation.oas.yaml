@@ -1,0 +1,25 @@
+openapi: 3.0.3
+info:
+  title: Form API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+paths:
+  /orders:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [product]
+              properties:
+                product:
+                  type: string
+                quantity:
+                  type: integer
+                  minimum: 1
+      responses:
+        '200':
+          description: Order accepted
