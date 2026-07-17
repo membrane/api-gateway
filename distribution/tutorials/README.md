@@ -47,7 +47,7 @@ If you need to integrate legacy SOAP Web Services, this tutorial provides exampl
 
 ## [OpenAPI](openapi)
 
-Validate requests against an OpenAPI description - including `application/x-www-form-urlencoded` form posts - and learn the features added in OpenAPI 3.2, such as the QUERY method.
+Validate requests against an OpenAPI description and learn the features added in OpenAPI 3.2, such as the QUERY method.
 
 ---
 
