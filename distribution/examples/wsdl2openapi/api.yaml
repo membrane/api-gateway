@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# 1.) Start Membrane:
+#     ./membrane.sh
+#
+# 2.) View the generated OpenAPI spec:
+#     curl http://localhost:2000/cities/api-docs/spec.yaml
+#
+# 3.) Call an operation:
+#     curl -X POST http://localhost:2000/cities/get-city \
+#       -H "Content-Type: application/json" \
+#       -d '{"name": "Berlin"}'
+
+api:
+  port: 2000
+  path: /cities
+  flow:
+    - wsdl2openapi:
+        wsdl: city.wsdl
+        operations:
+          - operation:
+              name: getCity
+  target:
+    url: http://localhost:2001
+
+---
+
+api:
+  port: 2001
+  flow:
+    - sampleSoapService: {}

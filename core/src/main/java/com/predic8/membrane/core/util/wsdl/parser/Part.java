@@ -37,6 +37,16 @@ public class Part extends WSDLElement {
         return resolveQName(getAttribute(attribute));
     }
 
+    public String getElementName() {
+        QName qname = getElementQName();
+        return qname != null ? qname.getLocalPart() : null;
+    }
+
+    public String getElementNamespace() {
+        QName qname = getElementQName();
+        return qname != null ? qname.getNamespaceURI() : null;
+    }
+
     @Override
     public String toString() {
         return "Part [element=%s, type=%s]".formatted(getElementQName(), getTypeQName());
