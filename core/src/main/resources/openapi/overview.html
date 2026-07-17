@@ -63,7 +63,7 @@
 
 <%
 def effectivePath = { api, server ->
-    api.value.spec.rewrite.basePath != null ? api.value.spec.rewrite.basePath : com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url)
+    (api.value.spec.hasRewrite() && api.value.spec.rewrite.basePath != null) ? api.value.spec.rewrite.basePath : com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url)
 }
 def hasRootServerPath = { api, server -> def p = effectivePath(api, server); p == '' || p == '/' }
 %>
