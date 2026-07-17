@@ -1,0 +1,14 @@
+# Transitive include: the shop team splits orders into its own file
+include:
+  - ./shop-orders.apis.yaml
+---
+api:
+  port: 2000
+  path:
+    uri: /shop
+  flow:
+    - static:
+        src: '{"status":"open"}'
+        contentType: application/json
+    - return:
+        status: 200
