@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# Tutorial: Positional Includes
+#
+# Each include is expanded in-place.
+# The document order determines which API is registered first and therefore
+# which route wins when a request could match more than one API.
+#
+# This config registers four groups in order:
+#   1. Health API   (inline — first document)
+#   2. Admin API    (from teams/admin.apis.yaml  — first include)
+#   3. Shop API     (inline — third document)
+#   4. Fallback 404 (from teams/fallback.apis.yaml — second include)
+#
+# Moving the fallback include before the shop document would cause /shop
+# to be caught by the fallback instead of the shop handler.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 10-Positional-Include.yaml
+#
+# 2.) Health route (inline, registered first):
+#     curl -i http://localhost:2000/health
+#     -> 200  {"status":"up"}
+#
+# 3.) Admin route (first include, registered second):
+#     curl -i http://localhost:2000/admin
+#     -> 200  {"role":"admin"}
+#
+# 4.) Shop route (inline, registered third):
+#     curl -i http://localhost:2000/shop
+#     -> 200  {"status":"open"}
+#
+# 5.) Unknown path (fallback include, registered last):
+#     curl -i http://localhost:2000/unknown
+#     -> 404
+
+# 1st document: health API (highest priority, inline)
+api:
+  port: 2000
+  path:
+    uri: /health
+  flow:
+    - static:
+        src: '{"status":"up"}'
+        contentType: application/json
+    - return:
+        status: 200
+
+---
+# 2nd document: admin APIs (second priority, from include)
+include:
+  - ./teams/admin.apis.yaml
+
+---
+# 3rd document: core shop API (third priority, inline)
+api:
+  port: 2000
+  path:
+    uri: /shop
+  flow:
+    - static:
+        src: '{"status":"open"}'
+        contentType: application/json
+    - return:
+        status: 200
+
+---
+# 4th document: fallback (lowest priority — catches everything else)
+include:
+  - ./teams/fallback.apis.yaml

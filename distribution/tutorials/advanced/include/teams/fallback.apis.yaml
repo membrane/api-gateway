@@ -1,0 +1,5 @@
+api:
+  port: 2000
+  flow:
+    - return:
+        status: 404

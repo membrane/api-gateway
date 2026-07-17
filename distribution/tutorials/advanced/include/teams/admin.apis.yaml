@@ -1,0 +1,10 @@
+api:
+  port: 2000
+  path:
+    uri: /admin
+  flow:
+    - static:
+        src: '{"role":"admin"}'
+        contentType: application/json
+    - return:
+        status: 200
