@@ -89,7 +89,7 @@ def hasRootServerPath = {server -> com.predic8.membrane.core.openapi.util.UriUti
         <ul>
             <% for (server in api.value.api.servers) { %>
             <li>
-                <%= com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory,server.url) %><br>
+                <%= api.value.spec.rewrite.basePath ?: com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory,server.url) %><br>
                 <%= server.description != null ? server.description : "" %>
             </li>
             <% } %>
