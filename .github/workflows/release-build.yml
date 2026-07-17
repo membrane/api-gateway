@@ -18,6 +18,8 @@ jobs:
   build-release:
     if: github.event.pull_request.merged && startsWith(github.event.pull_request.title, 'Release ')
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
     steps:
       - name: Get version
         id: get_version
@@ -99,19 +101,9 @@ jobs:
           artifacts: "core/target/classes/com/predic8/membrane/core/config/json/membrane.schema.json,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip,distribution/target/membrane-api-gateway-${{ steps.get_version.outputs.VERSION }}.zip.asc"
           token: ${{ github.token }}
 
-      - name: Trigger website pipeline on GitLab
-        shell: bash
-        env:
-          GITLAB_TRIGGER_TOKEN: ${{ secrets.GITLAB_TRIGGER_TOKEN }}
-          VERSION: ${{ steps.get_version.outputs.VERSION }}
-        run: |
-          set -euo pipefail
-          curl --fail --silent --show-error \
-            --connect-timeout 10 \
-            --max-time 10 \
-            --request POST \
-            --form-string "token=${GITLAB_TRIGGER_TOKEN}" \
-            --form-string "ref=main" \
-            --form-string "variables[PIPELINE]=release" \
-            --form-string "variables[MEMBRANE_VERSION]=${VERSION}" \
-            "https://gitlab.predic8.de/api/v4/projects/94/trigger/pipeline"
+  trigger-website:
+    needs: build-release
+    uses: ./.github/workflows/trigger-website-pipeline.yml
+    with:
+      version: ${{ needs.build-release.outputs.version }}
+    secrets: inherit
