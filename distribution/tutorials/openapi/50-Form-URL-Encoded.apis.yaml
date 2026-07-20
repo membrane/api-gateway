@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# Tutorial: Validating application/x-www-form-urlencoded messages with OpenAPI
+#
+# HTML forms post their fields as application/x-www-form-urlencoded.
+# When the OpenAPI description declares that media type, Membrane can validate the form fields
+# against its schema.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 50-Form-URL-Encoded.apis.yaml
+#
+# 2.) Send a valid form post (curl uses application/x-www-form-urlencoded by default for -d):
+#     curl localhost:2000/orders -v -d 'product=Shoes&quantity=5'
+#
+#     The request passes to the backend.
+#
+# 3.) Order a negative quantity:
+#     curl localhost:2000/orders -v -d 'product=Shoes&quantity=-5'
+#
+#     Rejected with status 400: "quantity" is below the minimum of 1.
+
+api:
+  port: 2000
+  openapi:
+    - location: form-validation.oas.yaml
+      validateRequests: true
+
+---
+# Mock backend
+# Requests that pass validation are forwarded here.
+api:
+  port: 3000
+  path:
+    uri: /orders
+  flow:
+    - static:
+        contentType: application/json
+        src: '{ "status": "accepted" }'
+    - return:
+        status: 200
