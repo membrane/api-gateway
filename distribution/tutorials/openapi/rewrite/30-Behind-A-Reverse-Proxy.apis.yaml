@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# Tutorial: Rewriting Behind a Reverse Proxy
+#
+# A common setup puts a TLS-terminating reverse proxy in front of Membrane: clients
+# reach a public https host, but Membrane itself only sees plain http on an internal
+# address. Automatic rewriting would advertise that internal address.
+# Override the protocol and host so the served document shows the public URL.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 30-Behind-A-Reverse-Proxy.apis.yaml
+#
+# 2.) Fetch the OpenAPI:
+#     curl localhost:2000/api-docs/minimal-shop-api-v2-0
+#
+#     The server URL shows the public https endpoint:
+#
+#         servers:
+#           - url: https://api.example.com/shop/v2
+#
+#     The path stays as in the spec. Port 443 is the default for https, so Membrane
+#     omits it from the URL. (If you leave the port out, Membrane falls back to the
+#     gateway's own port 2000. Pin 443 here to get the clean public URL.)
+
+api:
+  port: 2000
+  openapi:
+    - location: minimal-shop-api.oas.yaml
+      rewrite:
+        protocol: https
+        host: api.example.com
+        port: 443

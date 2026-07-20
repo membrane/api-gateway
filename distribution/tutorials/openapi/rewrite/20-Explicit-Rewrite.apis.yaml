@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# Tutorial: Explicit Server URLs Rewrite
+#
+# Automatic rewriting uses the host and port of the incoming request. To pin explicit
+# values instead, add a "rewrite" block under the openapi entry. Any field you set
+# overrides the request-derived value; fields you leave out keep the automatic behaviour.
+#
+# 1.) Start Membrane:
+#     ./membrane.sh -c 20-Explicit-Rewrite.apis.yaml
+#
+# 2.) Fetch the OpenAPI:
+#     curl localhost:2000/api-docs/minimal-shop-api-v2-0
+#
+#     The server URL is rewritten to the values configured below:
+#
+#         servers:
+#           - url: http://shop.example.com:8080/shop
+#
+#     Note: basePath REPLACES the whole path of the server URI. It does not get
+#     prepended to it. The original "/shop/v2" is gone, replaced by "/boutique".
+
+api:
+  port: 2000
+  openapi:
+    - location: minimal-shop-api.oas.yaml
+      rewrite:
+        host: shop.example.com
+        port: 8080
+        basePath: /boutique
