@@ -20,7 +20,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXParseException;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -256,7 +256,7 @@ class Soap2JsonTransformerTest {
                 </soap:Envelope>
                 """;
 
-        assertThrows(SAXParseException.class, () -> transformer.transform(xmlWithDoctype),
+        assertThrows(XmlParseException.class, () -> transformer.transform(xmlWithDoctype),
                 "DOCTYPE should be rejected to prevent XXE");
     }
 }

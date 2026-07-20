@@ -15,14 +15,15 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.fasterxml.jackson.databind.*;
+import com.predic8.membrane.core.util.xml.parser.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
+import org.xml.sax.*;
 
-import javax.xml.parsers.*;
 import java.io.*;
 import java.util.*;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getInstance;
 import static org.w3c.dom.Node.ELEMENT_NODE;
 
 /**
@@ -33,13 +34,7 @@ public class Soap2JsonTransformer {
     private final ObjectMapper mapper = new ObjectMapper();
 
     public String transform(String soapXml) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.parse(new ByteArrayInputStream(soapXml.getBytes(UTF_8)));
+        Document doc = getInstance().parse(new InputSource(new StringReader(soapXml)));
 
         Element body = getSoapBody(doc);
         if (body == null) {
