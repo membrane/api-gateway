@@ -99,6 +99,60 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         log.info("Loaded WSDL from {} with {} services", wsdl, definitions.getServices().size());
     }
 
+    @Override
+    public Outcome handleRequest(Exchange exc) {
+        Outcome outcome = publisher.handleRequest(exc);
+        if (outcome != CONTINUE) {
+            return outcome;
+        }
+
+        String operationName = extractOperationName(exc.getRequest().getUri());
+        if (isValidOperation(operationName)) {
+            return handleOperation(exc, operationName);
+        }
+
+        return CONTINUE;
+    }
+
+    @Override
+    public Outcome handleResponse(Exchange exc) {
+        String operationName = (String) exc.getProperty("wsdl2openapi.operation");
+        if (operationName == null) {
+            return CONTINUE;
+        }
+
+        try {
+            Soap2JsonTransformer responseTransformer = new Soap2JsonTransformer();
+            String jsonResponse = responseTransformer.transform(exc.getResponse().getBodyAsStringDecoded());
+
+            exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
+            exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
+
+        } catch (SoapFaultException fault) {
+            log.debug("SOAP fault received for operation {}: [{}] {}", operationName, fault.getFaultCode(), fault.getFaultMessage());
+            var pd = problemDetails("soap-fault", router.getConfiguration().isProduction())
+                    .component(getDisplayName())
+                    .status(fault.getHttpStatus())
+                    .title("SOAP fault.")
+                    .detail(fault.getFaultMessage())
+                    .topLevel("faultCode", fault.getFaultCode());
+            if (fault.getSoapDetail() != null) {
+                pd.internal("soapDetail", fault.getSoapDetail());
+            }
+            exc.setResponse(pd.build());
+            return ABORT;
+        } catch (Exception e) {
+            log.error("Failed to transform SOAP to JSON for operation {}", operationName, e);
+            internal(router.getConfiguration().isProduction(), getDisplayName())
+                    .detail("Could not transform SOAP response to JSON")
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+
+        return CONTINUE;
+    }
+
     private void registerApiDocsPaths() {
         RuleKey key = proxy.getKey();
         if (key instanceof APIProxyKey apiKey) {
@@ -129,21 +183,6 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             }
         }
         return "/";
-    }
-
-    @Override
-    public Outcome handleRequest(Exchange exc) {
-        Outcome outcome = publisher.handleRequest(exc);
-        if (outcome != CONTINUE) {
-            return outcome;
-        }
-
-        String operationName = extractOperationName(exc.getRequest().getUri());
-        if (isValidOperation(operationName)) {
-            return handleOperation(exc, operationName);
-        }
-
-        return CONTINUE;
     }
 
     String extractOperationName(String path) {
@@ -199,45 +238,6 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             log.error("Failed to transform JSON to SOAP for operation {}", operationName, e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
                     .detail("Could not transform JSON request to SOAP")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
-
-        return CONTINUE;
-    }
-
-    @Override
-    public Outcome handleResponse(Exchange exc) {
-        String operationName = (String) exc.getProperty("wsdl2openapi.operation");
-        if (operationName == null) {
-            return CONTINUE;
-        }
-
-        try {
-            Soap2JsonTransformer responseTransformer = new Soap2JsonTransformer();
-            String jsonResponse = responseTransformer.transform(exc.getResponse().getBodyAsStringDecoded());
-
-            exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
-            exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
-
-        } catch (SoapFaultException fault) {
-            log.debug("SOAP fault received for operation {}: [{}] {}", operationName, fault.getFaultCode(), fault.getFaultMessage());
-            var pd = problemDetails("soap-fault", router.getConfiguration().isProduction())
-                    .component(getDisplayName())
-                    .status(fault.getHttpStatus())
-                    .title("SOAP fault.")
-                    .detail(fault.getFaultMessage())
-                    .topLevel("faultCode", fault.getFaultCode());
-            if (fault.getSoapDetail() != null) {
-                pd.internal("soapDetail", fault.getSoapDetail());
-            }
-            exc.setResponse(pd.build());
-            return ABORT;
-        } catch (Exception e) {
-            log.error("Failed to transform SOAP to JSON for operation {}", operationName, e);
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .detail("Could not transform SOAP response to JSON")
                     .exception(e)
                     .buildAndSetResponse(exc);
             return ABORT;
