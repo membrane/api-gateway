@@ -92,6 +92,8 @@ public class APIProxy extends ServiceProxy implements Polyglot, XMLSupport {
     public static final String RESPONSES = "responses";
     public static final String SECURITY = "security";
     public static final String VALIDATION_DETAILS = "details";
+    public static final String MASK_VALUES = "mask";
+    public static final String MASK_VALUES_LOG = "maskLog";
 
     private Language language = SPEL;
     private ExchangeExpression exchangeExpression;
