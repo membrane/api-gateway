@@ -1,0 +1,15 @@
+openapi: 3.0.3
+info:
+  # A minimal excerpt of the Fruit Shop API - just enough to demonstrate rewriting.
+  title: Minimal Shop API
+  version: "2.0"
+# The server URL points at the backend. When Membrane serves this document at
+# /api-docs, it rewrites this URL so clients talk to the gateway instead.
+servers:
+  - url: https://api.predic8.de/shop/v2
+paths:
+  /products:
+    get:
+      responses:
+        '200':
+          description: A list of products

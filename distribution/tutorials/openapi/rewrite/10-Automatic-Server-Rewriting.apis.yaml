@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# Tutorial: Automatic Server URLs Rewriting
+#
+# When Membrane serves an OpenAPI document at /api-docs, it rewrites the servers[].url
+# entries so that Swagger UI and generated clients talk to the gateway instead of the
+# backend.
+#
+# 1.) Look at the server URL in minimal-shop-api.oas.yaml. It points at the backend:
+#
+#         servers:
+#           - url: https://api.predic8.de/shop/v2
+#
+# 2.) Start Membrane:
+#     ./membrane.sh -c 10-Automatic-Server-Rewriting.apis.yaml
+#
+# 3.) Fetch the document Membrane serves:
+#     curl localhost:2000/api-docs/minimal-shop-api-v2-0
+#
+#     The served spec advertises the gateway. Host and port were rewritten
+#     to the address the request came in on, while the path is preserved:
+#
+#         servers:
+#           - url: http://localhost:2000/shop/v2
+
+api:
+  port: 2000
+  openapi:
+    - location: minimal-shop-api.oas.yaml
