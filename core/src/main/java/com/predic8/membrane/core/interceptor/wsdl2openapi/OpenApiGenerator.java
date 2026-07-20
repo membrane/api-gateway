@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Message;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.wsdl.parser.Service;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -88,38 +89,51 @@ public class OpenApiGenerator {
 
     private Paths buildPaths() {
         var paths = new Paths();
-        definitions.getPortTypes().stream()
-                .flatMap(pt -> pt.getOperations().stream())
-                .filter(wsdlOp -> {
-                    if (wsdlOp.getName() == null) {
-                        log.debug("Skipping WSDL operation with null name");
-                        return false;
-                    }
-                    return true;
-                })
-                .filter(wsdlOp -> operations.isEmpty() || operations.containsKey(wsdlOp.getName()))
-                .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp)));
+        if (operations.isEmpty()) {
+            definitions.getPortTypes().stream()
+                    .flatMap(pt -> pt.getOperations().stream())
+                    .filter(wsdlOp -> {
+                        if (wsdlOp.getName() == null) {
+                            log.debug("Skipping WSDL operation with null name");
+                            return false;
+                        }
+                        return true;
+                    })
+                    .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp.getName(), wsdlOp)));
+        } else {
+            var wsdlOps = definitions.getPortTypes().stream()
+                    .flatMap(pt -> pt.getOperations().stream())
+                    .filter(op -> op.getName() != null)
+                    .toList();
+            for (var name : operations.keySet()) {
+                var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst().orElse(null);
+                if (wsdlOp == null) log.debug("Configured operation '{}' not found in WSDL definitions", name);
+                paths.addPathItem("/" + camelToKebab(name), buildPathItem(name, wsdlOp));
+            }
+        }
         return paths;
     }
 
-    private PathItem buildPathItem(Operation wsdlOp) {
+    private PathItem buildPathItem(String name, Operation wsdlOp) {
+        var inputs = wsdlOp != null ? wsdlOp.getMessagesByDirection(INPUT) : List.<Message>of();
+        var outputs = wsdlOp != null ? wsdlOp.getMessagesByDirection(OUTPUT) : List.<Message>of();
         var apiOp = new io.swagger.v3.oas.models.Operation()
-                .operationId(wsdlOp.getName())
-                .summary(wsdlOp.getName())
-                .requestBody(buildRequestBody(wsdlOp))
-                .responses(buildResponses(wsdlOp));
+                .operationId(name)
+                .summary(name)
+                .requestBody(buildRequestBody(inputs))
+                .responses(buildResponses(outputs));
         return new PathItem().post(apiOp);
     }
 
-    private RequestBody buildRequestBody(Operation wsdlOp) {
-        var schema = converter.convertMessageParts(wsdlOp.getMessagesByDirection(INPUT));
+    private RequestBody buildRequestBody(List<Message> messages) {
+        var schema = converter.convertMessageParts(messages);
         return new RequestBody()
                 .required(true)
                 .content(new Content().addMediaType("application/json", new MediaType().schema(schema)));
     }
 
-    private ApiResponses buildResponses(Operation wsdlOp) {
-        var schema = converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT));
+    private ApiResponses buildResponses(List<Message> messages) {
+        var schema = converter.convertMessageParts(messages);
         return new ApiResponses()
                 .addApiResponse("200", new ApiResponse()
                         .description("Successful response")
