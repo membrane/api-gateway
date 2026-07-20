@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import io.swagger.v3.oas.models.media.*;
 import org.junit.jupiter.api.BeforeAll;
@@ -339,6 +340,99 @@ class Soap2JsonTransformerTest {
         assertEquals("env:Receiver", ex.getFaultCode());
         assertEquals("Processing error", ex.getFaultMessage());
         assertEquals(500, ex.getHttpStatus());
+    }
+
+    @Test
+    void booleanFieldConvertedToBooleanWithSchema() throws Exception {
+        var schema = new ObjectSchema()
+                .addProperty("active", new BooleanSchema())
+                .addProperty("name", new StringSchema());
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getStatusResponse>
+                      <active>true</active>
+                      <name>Alice</name>
+                    </getStatusResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        var json = new Soap2JsonTransformer().transform(soapXml, schema);
+        JsonNode root = mapper.readTree(json);
+        assertTrue(root.get("active").isBoolean(), "active should be a JSON boolean");
+        assertTrue(root.get("active").booleanValue());
+        assertTrue(root.get("name").isTextual());
+    }
+
+    @Test
+    void falseValueConvertedToBooleanWithSchema() throws Exception {
+        var schema = new ObjectSchema().addProperty("active", new BooleanSchema());
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getStatusResponse>
+                      <active>false</active>
+                    </getStatusResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, schema));
+        assertTrue(root.get("active").isBoolean());
+        assertFalse(root.get("active").booleanValue());
+    }
+
+    @Test
+    void typedArrayItemsConvertedWithSchema() throws Exception {
+        var itemSchema = new ObjectSchema().addProperty("id", new IntegerSchema());
+        var responseSchema = new ObjectSchema()
+                .addProperty("order", new ArraySchema().items(itemSchema));
+        var json = new Soap2JsonTransformer().transform(REPEATED_ELEMENTS_RESPONSE, responseSchema);
+        JsonNode root = mapper.readTree(json);
+        JsonNode orders = root.get("order");
+        assertTrue(orders.isArray());
+        assertEquals(3, orders.size());
+        assertTrue(orders.get(0).get("id").isNumber(), "id inside each order should be a JSON number");
+        assertEquals(1L, orders.get(0).get("id").longValue());
+        assertEquals(3L, orders.get(2).get("id").longValue());
+    }
+
+    @Test
+    void invalidIntegerFallsBackToStringGracefully() throws Exception {
+        var schema = new ObjectSchema().addProperty("population", new IntegerSchema());
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getCityResponse xmlns="https://predic8.de/cities">
+                      <country>Germany</country>
+                      <population>N/A</population>
+                    </getCityResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, schema));
+        assertTrue(root.get("population").isTextual(), "unparseable integer should fall back to string");
+        assertEquals("N/A", root.get("population").asText());
+    }
+
+    @Test
+    void wsdlDerivedSchemaConvertsPopulationToNumber() throws Exception {
+        var xsdToSchema = new XsdToSchema(citiesDefinitions);
+        var outputMessages = citiesDefinitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .filter(op -> "getCity".equals(op.getName()))
+                .findFirst()
+                .map(op -> op.getMessagesByDirection(Operation.Direction.OUTPUT))
+                .orElseThrow();
+        var responseSchema = xsdToSchema.convertMessageParts(outputMessages);
+
+        JsonNode root = mapper.readTree(
+                new Soap2JsonTransformer().transform(CITIES_SOAP11_RESPONSE, responseSchema));
+        assertTrue(root.get("population").isNumber(),
+                "WSDL-derived schema should type population as a number");
+        assertEquals(3645000L, root.get("population").longValue());
     }
 
     @Test
