@@ -59,6 +59,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
 
     private String wsdl;
     private Definitions definitions;
+    private XsdToSchema xsdToSchema;
     private String basePath;
     private List<OperationConfig> operations = new ArrayList<>();
     private final Map<String, OperationConfig> operationsByName = new LinkedHashMap<>();
@@ -81,6 +82,8 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         } catch (Exception e) {
             throw new ConfigurationException("Cannot parse WSDL '%s': %s".formatted(wsdl, e.getMessage()));
         }
+
+        xsdToSchema = new XsdToSchema(definitions);
 
         for (OperationConfig op : operations) {
             if (op.getName() != null) {
@@ -122,8 +125,16 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
 
         try {
+            var outputMessages = definitions.getPortTypes().stream()
+                    .flatMap(pt -> pt.getOperations().stream())
+                    .filter(op -> operationName.equals(op.getName()))
+                    .findFirst()
+                    .map(op -> op.getMessagesByDirection(Operation.Direction.OUTPUT))
+                    .orElse(List.of());
+            var responseSchema = xsdToSchema.convertMessageParts(outputMessages);
+
             Soap2JsonTransformer responseTransformer = new Soap2JsonTransformer();
-            String jsonResponse = responseTransformer.transform(exc.getResponse().getBodyAsStringDecoded());
+            String jsonResponse = responseTransformer.transform(exc.getResponse().getBodyAsStringDecoded(), responseSchema);
 
             exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
@@ -133,11 +144,10 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             var pd = problemDetails("soap-fault", router.getConfiguration().isProduction())
                     .component(getDisplayName())
                     .status(fault.getHttpStatus())
-                    .title("SOAP fault.")
-                    .detail(fault.getFaultMessage())
+                    .title(fault.getFaultMessage())
                     .topLevel("faultCode", fault.getFaultCode());
             if (fault.getSoapDetail() != null) {
-                pd.internal("soapDetail", fault.getSoapDetail());
+                pd.internal("error", fault.getSoapDetail());
             }
             exc.setResponse(pd.build());
             return ABORT;

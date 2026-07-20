@@ -18,9 +18,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
+import io.swagger.v3.oas.models.media.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -179,6 +180,66 @@ class Soap2JsonTransformerTest {
 
         assertThrows(Exception.class, () -> transformer.transform(emptyBody),
                 "Should throw when SOAP Body has no response element");
+    }
+
+    // --- Schema-driven type conversion ---
+
+    @Test
+    void integerFieldConvertedToNumberWithSchema() throws Exception {
+        var schema = new ObjectSchema()
+                .addProperty("country", new StringSchema())
+                .addProperty("population", new IntegerSchema());
+        var json = new Soap2JsonTransformer().transform(CITIES_SOAP11_RESPONSE, schema);
+        JsonNode root = mapper.readTree(json);
+        assertTrue(root.get("population").isNumber(), "population should be a JSON number");
+        assertEquals(3645000L, root.get("population").longValue());
+        assertTrue(root.get("country").isTextual(), "country should remain a string");
+    }
+
+    @Test
+    void decimalFieldConvertedToNumberWithSchema() throws Exception {
+        var moneySchema = new ObjectSchema()
+                .addProperty("amount", new NumberSchema())
+                .addProperty("currency", new StringSchema());
+        var articleSchema = new ObjectSchema()
+                .addProperty("name", new StringSchema())
+                .addProperty("price", moneySchema);
+        var responseSchema = new ObjectSchema().addProperty("article", articleSchema);
+
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <ns:getResponse xmlns:ns="http://example.com/">
+                      <article>
+                        <name>foo</name>
+                        <price><amount>12</amount><currency>EUR</currency></price>
+                      </article>
+                    </ns:getResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        var json = new Soap2JsonTransformer().transform(soapXml, responseSchema);
+        JsonNode root = mapper.readTree(json);
+        var amount = root.path("article").path("price").path("amount");
+        assertTrue(amount.isNumber(), "amount should be a JSON number");
+        assertEquals(12.0, amount.doubleValue(), 0.0001);
+    }
+
+    @Test
+    void missingSchemaFallsBackToString() throws Exception {
+        var json = new Soap2JsonTransformer().transform(CITIES_SOAP11_RESPONSE);
+        JsonNode root = mapper.readTree(json);
+        assertTrue(root.get("population").isTextual(), "without schema, population stays a string");
+    }
+
+    @Test
+    void unknownFieldWithoutSchemaPropertyRemainsString() throws Exception {
+        // Schema has no 'population' property — should fall back to string for that field
+        var schema = new ObjectSchema().addProperty("country", new StringSchema());
+        var json = new Soap2JsonTransformer().transform(CITIES_SOAP11_RESPONSE, schema);
+        JsonNode root = mapper.readTree(json);
+        assertTrue(root.get("population").isTextual(), "field not in schema should remain a string");
     }
 
     private static final String SOAP11_SERVER_FAULT = """

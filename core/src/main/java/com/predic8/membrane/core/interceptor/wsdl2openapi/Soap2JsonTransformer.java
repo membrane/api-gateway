@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.fasterxml.jackson.databind.*;
 import com.predic8.membrane.core.util.xml.parser.*;
+import io.swagger.v3.oas.models.media.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
@@ -34,6 +35,15 @@ public class Soap2JsonTransformer {
     private final ObjectMapper mapper = new ObjectMapper();
 
     public String transform(String soapXml) throws Exception {
+        return transform(soapXml, null);
+    }
+
+    /**
+     * Transforms the SOAP response to JSON, using {@code responseSchema} to produce
+     * properly typed values (numbers, booleans) rather than always strings.
+     * Pass {@code null} to fall back to all-string behaviour.
+     */
+    public String transform(String soapXml, Schema<?> responseSchema) throws Exception {
         Document doc = getInstance().parse(new InputSource(new StringReader(soapXml)));
 
         Element body = getSoapBody(doc);
@@ -50,7 +60,7 @@ public class Soap2JsonTransformer {
             throw buildFaultException(responseElement);
         }
 
-        Map<String, Object> jsonMap = elementToMap(responseElement);
+        Map<String, Object> jsonMap = elementToMap(responseElement, responseSchema);
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
     }
 
@@ -81,44 +91,61 @@ public class Soap2JsonTransformer {
         return null;
     }
 
+    // Used by fault detail extraction (no schema, all strings)
     private Map<String, Object> elementToMap(Element element) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        
-        NodeList children = element.getChildNodes();
-        Map<String, List<Object>> childGroups = new LinkedHashMap<>();
+        return elementToMap(element, null);
+    }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> elementToMap(Element element, Schema<?> schema) {
+        Map<String, Schema<?>> properties;
+        if (schema instanceof ObjectSchema os && os.getProperties() != null) {
+            properties = (Map<String, Schema<?>>) (Map<?, ?>) os.getProperties();
+        } else {
+            properties = Map.of();
+        }
+
+        var childGroups = new LinkedHashMap<String, List<Object>>();
+        NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
-            
-            if (node.getNodeType() == ELEMENT_NODE) {
-                Element childElement = (Element) node;
-                String localName = childElement.getLocalName();
-                
-                Object value;
-                if (hasChildElements(childElement)) {
-                    value = elementToMap(childElement);
-                } else {
-                    value = childElement.getTextContent();
-                }
+            if (node.getNodeType() != ELEMENT_NODE) continue;
+            Element childElement = (Element) node;
+            String localName = childElement.getLocalName();
 
-                // Group elements with same name (for arrays)
-                childGroups.computeIfAbsent(localName, k -> new ArrayList<>()).add(value);
-            }
-        }
+            // ArraySchema wraps the per-item schema; unwrap it so we type individual instances correctly
+            Schema<?> childSchema = properties.get(localName);
+            Schema<?> effectiveSchema = childSchema instanceof ArraySchema as ? as.getItems() : childSchema;
 
-        // Convert groups to result
-        for (Map.Entry<String, List<Object>> entry : childGroups.entrySet()) {
-            String name = entry.getKey();
-            List<Object> values = entry.getValue();
-            
-            if (values.size() == 1) {
-                result.put(name, values.getFirst());
+            Object value;
+            if (hasChildElements(childElement)) {
+                value = elementToMap(childElement, effectiveSchema);
             } else {
-                result.put(name, values);
+                value = convertLeaf(childElement.getTextContent(), effectiveSchema);
             }
+
+            childGroups.computeIfAbsent(localName, k -> new ArrayList<>()).add(value);
         }
 
+        var result = new LinkedHashMap<String, Object>();
+        for (var entry : childGroups.entrySet()) {
+            var values = entry.getValue();
+            result.put(entry.getKey(), values.size() == 1 ? values.getFirst() : values);
+        }
         return result;
+    }
+
+    private Object convertLeaf(String text, Schema<?> schema) {
+        if (schema instanceof IntegerSchema) {
+            try { return Long.parseLong(text.trim()); } catch (NumberFormatException e) { return text; }
+        }
+        if (schema instanceof NumberSchema) {
+            try { return Double.parseDouble(text.trim()); } catch (NumberFormatException e) { return text; }
+        }
+        if (schema instanceof BooleanSchema) {
+            return Boolean.parseBoolean(text.trim());
+        }
+        return text;
     }
 
     private SoapFaultException buildFaultException(Element fault) {
