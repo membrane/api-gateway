@@ -53,7 +53,7 @@ public abstract class AbstractIncludeImport extends WSDLElement {
                 return new Schema(ctx.basePath(resolved), WSDLParserUtil.parse(is));
             }
         } catch (Exception e) {
-            log.warn("Cannot resolve schema location '{}': {}", schemaLocation, e.getMessage());
+            log.warn("Cannot resolve schema location '{}'", schemaLocation, e);
             return null;
         }
     }
