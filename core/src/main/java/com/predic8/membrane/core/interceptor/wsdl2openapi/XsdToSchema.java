@@ -75,8 +75,6 @@ public class XsdToSchema {
         return convertElementType(xsdElement, schemaRoot);
     }
 
-    // --- Internal conversion ---
-
     /**
      * Resolves the Schema for an {@code <xsd:element>} node — its inline type
      * or the type referenced by the {@code type} attribute.

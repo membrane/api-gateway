@@ -15,49 +15,40 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.slf4j.*;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.w3c.dom.Node.ELEMENT_NODE;
 
 /**
  * Transforms SOAP XML response to JSON
  */
 public class Soap2JsonTransformer {
 
-    private static final Logger log = LoggerFactory.getLogger(Soap2JsonTransformer.class);
-    private final Definitions definitions;
-    private final String operationName;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public Soap2JsonTransformer(Definitions definitions, String operationName) {
-        this.definitions = definitions;
-        this.operationName = operationName;
-    }
-
     public String transform(String soapXml) throws Exception {
-        // Parse SOAP XML
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.parse(new ByteArrayInputStream(soapXml.getBytes("UTF-8")));
+        Document doc = builder.parse(new ByteArrayInputStream(soapXml.getBytes(UTF_8)));
 
-        // Extract response from SOAP Body
         Element body = getSoapBody(doc);
         if (body == null) {
             throw new IllegalArgumentException("No SOAP Body found in response");
         }
 
-        // Get the first child element in Body (the response element)
         Element responseElement = getFirstChildElement(body);
         if (responseElement == null) {
             throw new IllegalArgumentException("No response element found in SOAP Body");
         }
 
-        // Convert to JSON
         Map<String, Object> jsonMap = elementToMap(responseElement);
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
     }
@@ -82,7 +73,7 @@ public class Soap2JsonTransformer {
         NodeList children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
-            if (node.getNodeType() == Node.ELEMENT_NODE) {
+            if (node.getNodeType() == ELEMENT_NODE) {
                 return (Element) node;
             }
         }
@@ -98,7 +89,7 @@ public class Soap2JsonTransformer {
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
             
-            if (node.getNodeType() == Node.ELEMENT_NODE) {
+            if (node.getNodeType() == ELEMENT_NODE) {
                 Element childElement = (Element) node;
                 String localName = childElement.getLocalName();
                 
@@ -120,7 +111,7 @@ public class Soap2JsonTransformer {
             List<Object> values = entry.getValue();
             
             if (values.size() == 1) {
-                result.put(name, values.get(0));
+                result.put(name, values.getFirst());
             } else {
                 result.put(name, values);
             }
@@ -132,7 +123,7 @@ public class Soap2JsonTransformer {
     private boolean hasChildElements(Element element) {
         NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
-            if (children.item(i).getNodeType() == Node.ELEMENT_NODE) {
+            if (children.item(i).getNodeType() == ELEMENT_NODE) {
                 return true;
             }
         }

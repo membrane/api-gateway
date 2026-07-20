@@ -27,6 +27,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.*;
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 
 /**
  * Transforms JSON request to SOAP XML envelope
@@ -47,34 +48,22 @@ public class Json2SoapTransformer {
     }
 
     public byte[] transform(String jsonBody) throws Exception {
-        // Parse JSON
         JsonNode jsonNode = mapper.readTree(jsonBody);
 
-        // Find operation in WSDL
-        Operation operation = findOperation(operationName);
-        if (operation == null) {
-            throw new IllegalArgumentException("Operation not found: " + operationName);
-        }
-
-        // Get input message
-        List<Message> inputMessages = operation.getMessagesByDirection(Operation.Direction.INPUT);
+        List<Message> inputMessages = findOperation(operationName).getMessagesByDirection(INPUT);
         if (inputMessages.isEmpty()) {
             throw new IllegalArgumentException("No input message found for operation: " + operationName);
         }
-        Message inputMessage = inputMessages.get(0);
+        Message inputMessage = inputMessages.getFirst();
 
-        // Build SOAP envelope
         Document doc = createSoapEnvelope();
         Element body = getSoapBody(doc);
 
-        // Create operation element
         Element operationElement = createOperationElement(doc, inputMessage);
         body.appendChild(operationElement);
 
-        // Map JSON to operation parameters
         mapJsonToElement(jsonNode, operationElement, doc);
 
-        // Convert to string
         return documentToBytes(doc);
     }
 
@@ -115,14 +104,12 @@ public class Json2SoapTransformer {
     }
 
     private Element createOperationElement(Document doc, Message message) {
-        // Get the element from the message part
-        Part part = message.getParts().get(0);
+        Part part = message.getParts().getFirst();
         String elementName = part.getElementName();
         String namespace = part.getElementNamespace();
 
         Element opElement = doc.createElementNS(namespace, elementName);
-        
-        // Add namespace declaration
+
         if (namespace != null && !namespace.isEmpty()) {
             String prefix = "ns";
             opElement.setPrefix(prefix);
@@ -134,9 +121,7 @@ public class Json2SoapTransformer {
 
     private void mapJsonToElement(JsonNode jsonNode, Element parent, Document doc) {
         if (jsonNode.isObject()) {
-            Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
+            for (Map.Entry<String, JsonNode> field : jsonNode.properties()) {
                 String fieldName = field.getKey();
                 JsonNode fieldValue = field.getValue();
 

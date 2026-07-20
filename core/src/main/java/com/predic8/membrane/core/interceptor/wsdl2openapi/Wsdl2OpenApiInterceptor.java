@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
@@ -25,7 +24,6 @@ import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.slf4j.*;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.*;
 
@@ -216,7 +214,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
 
         try {
-            Soap2JsonTransformer responseTransformer = new Soap2JsonTransformer(definitions, operationName);
+            Soap2JsonTransformer responseTransformer = new Soap2JsonTransformer();
             String jsonResponse = responseTransformer.transform(exc.getResponse().getBodyAsStringDecoded());
 
             exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));

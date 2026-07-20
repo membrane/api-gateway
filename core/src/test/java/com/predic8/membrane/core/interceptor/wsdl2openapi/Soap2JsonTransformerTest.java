@@ -97,7 +97,7 @@ class Soap2JsonTransformerTest {
 
     @Test
     void soap11ResponseParsedToJson() throws Exception {
-        var transformer = new Soap2JsonTransformer(citiesDefinitions, "getCity");
+        var transformer = new Soap2JsonTransformer();
         var json = transformer.transform(CITIES_SOAP11_RESPONSE);
 
         JsonNode root = mapper.readTree(json);
@@ -107,7 +107,7 @@ class Soap2JsonTransformerTest {
 
     @Test
     void soap12ResponseParsedToJson() throws Exception {
-        var transformer = new Soap2JsonTransformer(citiesDefinitions, "getCity");
+        var transformer = new Soap2JsonTransformer();
         var json = transformer.transform(CITIES_SOAP12_RESPONSE);
 
         JsonNode root = mapper.readTree(json);
@@ -117,7 +117,7 @@ class Soap2JsonTransformerTest {
 
     @Test
     void nestedElementsMappedToNestedJson() throws Exception {
-        var transformer = new Soap2JsonTransformer(blzDefinitions, "getBank");
+        var transformer = new Soap2JsonTransformer();
         var json = transformer.transform(BLZ_SOAP_RESPONSE);
 
         JsonNode root = mapper.readTree(json);
@@ -131,7 +131,7 @@ class Soap2JsonTransformerTest {
 
     @Test
     void repeatedElementsBecomeJsonArray() throws Exception {
-        var transformer = new Soap2JsonTransformer(citiesDefinitions, "getCity");
+        var transformer = new Soap2JsonTransformer();
         var json = transformer.transform(REPEATED_ELEMENTS_RESPONSE);
 
         JsonNode root = mapper.readTree(json);
@@ -143,7 +143,7 @@ class Soap2JsonTransformerTest {
 
     @Test
     void singleElementRemainsJsonObject() throws Exception {
-        var transformer = new Soap2JsonTransformer(citiesDefinitions, "getCity");
+        var transformer = new Soap2JsonTransformer();
         var json = transformer.transform(CITIES_SOAP11_RESPONSE);
 
         JsonNode root = mapper.readTree(json);
@@ -152,7 +152,7 @@ class Soap2JsonTransformerTest {
 
     @Test
     void outputIsValidJson() throws Exception {
-        var transformer = new Soap2JsonTransformer(citiesDefinitions, "getCity");
+        var transformer = new Soap2JsonTransformer();
         var json = transformer.transform(CITIES_SOAP11_RESPONSE);
 
         assertDoesNotThrow(() -> mapper.readTree(json), "Output should be valid JSON");
@@ -160,7 +160,7 @@ class Soap2JsonTransformerTest {
 
     @Test
     void missingBodyThrowsException() {
-        var transformer = new Soap2JsonTransformer(citiesDefinitions, "getCity");
+        var transformer = new Soap2JsonTransformer();
         var invalidSoap = "<root><foo>bar</foo></root>";
 
         assertThrows(Exception.class, () -> transformer.transform(invalidSoap),
@@ -169,7 +169,7 @@ class Soap2JsonTransformerTest {
 
     @Test
     void emptyBodyElementThrowsException() {
-        var transformer = new Soap2JsonTransformer(citiesDefinitions, "getCity");
+        var transformer = new Soap2JsonTransformer();
         var emptyBody = """
                 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                   <soap:Body/>
