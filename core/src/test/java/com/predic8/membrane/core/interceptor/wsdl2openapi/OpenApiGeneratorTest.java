@@ -27,6 +27,7 @@ class OpenApiGeneratorTest {
     static Definitions blzDefinitions;
     static Definitions extendedDefinitions;
     static Definitions crossNsDefinitions;
+    static Definitions recursiveDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -34,6 +35,7 @@ class OpenApiGeneratorTest {
         blzDefinitions = Definitions.parse(new ResolverMap(), "classpath:/blz-service.wsdl");
         extendedDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/extended-types.wsdl");
         crossNsDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cross-namespace.wsdl");
+        recursiveDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/recursive-type.wsdl");
     }
 
     @Test
@@ -197,6 +199,20 @@ class OpenApiGeneratorTest {
 
         assertTrue(yaml.contains("itemName:"), "Should resolve ItemType from the types namespace");
         assertTrue(yaml.contains("itemCount:"), "Should resolve ItemType from the types namespace");
+    }
+
+    // --- Recursive type references ---
+
+    @Test
+    void selfReferencingTypeDoesNotCauseStackOverflow() {
+        assertDoesNotThrow(() -> generator(recursiveDefinitions, "/"),
+                "Self-referencing complexType must not cause StackOverflowError");
+    }
+
+    @Test
+    void selfReferencingTypePreservesNonRecursiveFields() {
+        var yaml = generator(recursiveDefinitions, "/");
+        assertTrue(yaml.contains("value:"), "Non-recursive 'value' field should be present");
     }
 
     // --- Helper ---

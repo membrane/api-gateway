@@ -46,6 +46,7 @@ public class XsdToSchema {
     private static final Logger log = LoggerFactory.getLogger(XsdToSchema.class);
 
     private final Map<String, Element> schemasByNamespace;
+    private final Set<Element> inProgress = new HashSet<>();
 
     public XsdToSchema(Definitions definitions) {
         this.schemasByNamespace = buildSchemaMap(definitions);
@@ -225,7 +226,16 @@ public class XsdToSchema {
 
         Element complexType = findXsdChildWithName(targetRoot, "complexType", local);
         if (complexType != null) {
-            return buildObjectSchema(complexType, targetRoot);
+            if (inProgress.contains(complexType)) {
+                log.debug("Recursive reference to type '{}', returning empty schema", local);
+                return new ObjectSchema();
+            }
+            inProgress.add(complexType);
+            try {
+                return buildObjectSchema(complexType, targetRoot);
+            } finally {
+                inProgress.remove(complexType);
+            }
         }
         Element simpleType = findXsdChildWithName(targetRoot, "simpleType", local);
         if (simpleType != null) {
