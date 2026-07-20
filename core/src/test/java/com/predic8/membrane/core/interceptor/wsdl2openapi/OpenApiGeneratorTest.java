@@ -28,6 +28,7 @@ class OpenApiGeneratorTest {
     static Definitions extendedDefinitions;
     static Definitions crossNsDefinitions;
     static Definitions recursiveDefinitions;
+    static Definitions articleDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -36,6 +37,7 @@ class OpenApiGeneratorTest {
         extendedDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/extended-types.wsdl");
         crossNsDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cross-namespace.wsdl");
         recursiveDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/recursive-type.wsdl");
+        articleDefinitions = Definitions.parse(new ResolverMap(), "classpath:/validation/article-service.wsdl");
     }
 
     @Test
@@ -121,8 +123,6 @@ class OpenApiGeneratorTest {
         assertTrue(yaml.contains("/get-city:"));
     }
 
-    // --- Inline complexType schema extraction ---
-
     @Test
     void getCityRequestHasNameField() {
         assertTrue(generator(citiesDefinitions, "/").contains("name:"));
@@ -135,8 +135,6 @@ class OpenApiGeneratorTest {
         assertTrue(yaml.contains("country:"));
         assertTrue(yaml.contains("population:"));
     }
-
-    // --- Type-reference schema extraction ---
 
     @Test
     void getBankRequestHasBLZField() {
@@ -151,11 +149,8 @@ class OpenApiGeneratorTest {
         assertTrue(yaml.contains("bezeichnung:"));
     }
 
-    // --- xsd:extension ---
-
     @Test
     void extensionInheritsBaseTypeFields() {
-        // searchResponse -> item: ExtendedType extends BaseType
         var yaml = generator(extendedDefinitions, "/");
 
         assertTrue(yaml.contains("baseId:"), "Should contain 'baseId' inherited from BaseType");
@@ -163,15 +158,10 @@ class OpenApiGeneratorTest {
         assertTrue(yaml.contains("extra:"), "Should contain 'extra' from ExtendedType");
     }
 
-    // --- maxOccurs="unbounded" ---
-
     @Test
     void unboundedElementProducesArraySchema() {
-        // searchResponse -> item with maxOccurs="unbounded"
         assertTrue(generator(extendedDefinitions, "/").contains("type: \"array\""));
     }
-
-    // --- xsd:choice ---
 
     @Test
     void choiceAlternativesAreAllPresent() {
@@ -182,26 +172,18 @@ class OpenApiGeneratorTest {
         assertTrue(yaml.contains("byId:"), "Should contain 'byId' from choice");
     }
 
-    // --- Named xsd:simpleType ---
-
     @Test
     void namedSimpleTypeRestrictedToStringMapsToString() {
-        // CodeType is a simpleType restriction of xsd:string
         assertTrue(generator(extendedDefinitions, "/").contains("code:"));
     }
 
-    // --- Cross-namespace type references ---
-
     @Test
     void crossNamespaceTypeIsResolved() {
-        // getItemRequest -> item: types:ItemType (from a different embedded schema namespace)
         var yaml = generator(crossNsDefinitions, "/");
 
         assertTrue(yaml.contains("itemName:"), "Should resolve ItemType from the types namespace");
         assertTrue(yaml.contains("itemCount:"), "Should resolve ItemType from the types namespace");
     }
-
-    // --- Recursive type references ---
 
     @Test
     void selfReferencingTypeDoesNotCauseStackOverflow() {
@@ -215,7 +197,12 @@ class OpenApiGeneratorTest {
         assertTrue(yaml.contains("value:"), "Non-recursive 'value' field should be present");
     }
 
-    // --- Helper ---
+    @Test
+    void externalXsdImportChainResolvesMoneyType() {
+        var yaml = generator(articleDefinitions, "/");
+        assertTrue(yaml.contains("amount:"), "MoneyType.amount should be resolved from external XSD chain");
+        assertTrue(yaml.contains("currency:"), "MoneyType.currency should be resolved from external XSD chain");
+    }
 
     private static String generator(Definitions defs, String basePath) {
         return new OpenApiGenerator(defs, basePath).generateYaml();

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:tns="http://predic8.com/wsdl/article/1/"
+             xmlns:mat="http://predic8.com/material/1/"
+             xmlns:com="http://predic8.com/common/1/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             name="ArticleService"
+             targetNamespace="http://predic8.com/wsdl/article/1/">
+    <types>
+        <xsd:schema targetNamespace="http://predic8.com/wsdl/article/1/">
+            <!--
+              Imports ArticleType.xsd (http://predic8.com/material/1/) which in turn imports
+              ArticleService.xsd (http://predic8.com/common/1/) containing MoneyType.
+              Also directly imports CommonDataTypes.xsd (same http://predic8.com/common/1/ namespace)
+              which does NOT contain MoneyType. This triggers the multi-file same-namespace bug
+              if buildSchemaMap uses first-wins semantics.
+            -->
+            <xsd:import namespace="http://predic8.com/material/1/" schemaLocation="ArticleType.xsd"/>
+            <xsd:import namespace="http://predic8.com/common/1/" schemaLocation="CommonDataTypes.xsd"/>
+            <xsd:element name="create">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="article" type="mat:ArticleType"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="createResponse">
+                <xsd:complexType>
+                    <xsd:sequence/>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="get">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="com:IdentifierType"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="article" type="mat:ArticleType"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getAll">
+                <xsd:complexType>
+                    <xsd:sequence/>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getAllResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="article" type="mat:ArticleType" minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </types>
+    <message name="createRequest">
+        <part name="parameters" element="tns:create"/>
+    </message>
+    <message name="createResponse">
+        <part name="parameters" element="tns:createResponse"/>
+    </message>
+    <message name="getRequest">
+        <part name="parameters" element="tns:get"/>
+    </message>
+    <message name="getResponse">
+        <part name="parameters" element="tns:getResponse"/>
+    </message>
+    <message name="getAllRequest">
+        <part name="parameters" element="tns:getAll"/>
+    </message>
+    <message name="getAllResponse">
+        <part name="parameters" element="tns:getAllResponse"/>
+    </message>
+    <portType name="ArticleServicePT">
+        <operation name="create">
+            <input message="tns:createRequest"/>
+            <output message="tns:createResponse"/>
+        </operation>
+        <operation name="get">
+            <input message="tns:getRequest"/>
+            <output message="tns:getResponse"/>
+        </operation>
+        <operation name="getAll">
+            <input message="tns:getAllRequest"/>
+            <output message="tns:getAllResponse"/>
+        </operation>
+    </portType>
+    <binding name="ArticleServiceBinding" type="tns:ArticleServicePT">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <operation name="create">
+            <soap:operation soapAction="create"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+        <operation name="get">
+            <soap:operation soapAction="get"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+        <operation name="getAll">
+            <soap:operation soapAction="getAll"/>
+            <input><soap:body use="literal"/></input>
+            <output><soap:body use="literal"/></output>
+        </operation>
+    </binding>
+    <service name="ArticleService">
+        <port name="ArticleServicePort" binding="tns:ArticleServiceBinding">
+            <soap:address location="http://example.com/article"/>
+        </port>
+    </service>
+</definitions>

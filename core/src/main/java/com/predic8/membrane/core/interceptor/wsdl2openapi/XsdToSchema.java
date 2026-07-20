@@ -45,7 +45,7 @@ public class XsdToSchema {
 
     private static final Logger log = LoggerFactory.getLogger(XsdToSchema.class);
 
-    private final Map<String, Element> schemasByNamespace;
+    private final Map<String, List<Element>> schemasByNamespace;
     private final Set<Element> inProgress = new HashSet<>();
 
     public XsdToSchema(Definitions definitions) {
@@ -69,11 +69,15 @@ public class XsdToSchema {
      * Converts the top-level XSD element referenced by the given QName to an OpenAPI schema.
      */
     public Schema<?> convert(QName qname) {
-        Element schemaRoot = schemasByNamespace.get(qname.getNamespaceURI());
-        if (schemaRoot == null) return new ObjectSchema();
-        Element xsdElement = findXsdChildWithName(schemaRoot, "element", qname.getLocalPart());
-        if (xsdElement == null) return new ObjectSchema();
-        return convertElementType(xsdElement, schemaRoot);
+        List<Element> roots = schemasByNamespace.get(qname.getNamespaceURI());
+        if (roots == null) return new ObjectSchema();
+        for (var schemaRoot : roots) {
+            Element xsdElement = findXsdChildWithName(schemaRoot, "element", qname.getLocalPart());
+            if (xsdElement != null) {
+                return convertElementType(xsdElement, schemaRoot);
+            }
+        }
+        return new ObjectSchema();
     }
 
     /**
@@ -221,39 +225,42 @@ public class XsdToSchema {
         if (typeRef.isEmpty()) return new StringSchema();
         String prefix = prefix(typeRef);
         String local = localName(typeRef);
-
-        Element targetRoot = resolveTargetSchemaRoot(prefix, contextElement, currentSchemaRoot);
-
-        Element complexType = findXsdChildWithName(targetRoot, "complexType", local);
-        if (complexType != null) {
-            if (inProgress.contains(complexType)) {
-                log.debug("Recursive reference to type '{}', returning empty schema", local);
-                return new ObjectSchema();
-            }
-            inProgress.add(complexType);
-            try {
-                return buildObjectSchema(complexType, targetRoot);
-            } finally {
-                inProgress.remove(complexType);
+        List<Element> targetRoots = resolveTargetSchemaRoots(prefix, contextElement, currentSchemaRoot);
+        for (var targetRoot : targetRoots) {
+            Element complexType = findXsdChildWithName(targetRoot, "complexType", local);
+            if (complexType != null) {
+                if (inProgress.contains(complexType)) {
+                    log.debug("Recursive reference to type '{}', returning empty schema", local);
+                    return new ObjectSchema();
+                }
+                inProgress.add(complexType);
+                try {
+                    return buildObjectSchema(complexType, targetRoot);
+                } finally {
+                    inProgress.remove(complexType);
+                }
             }
         }
-        Element simpleType = findXsdChildWithName(targetRoot, "simpleType", local);
-        if (simpleType != null) {
-            return buildSimpleTypeSchema(simpleType, contextElement, targetRoot);
+        for (var targetRoot : targetRoots) {
+            Element simpleType = findXsdChildWithName(targetRoot, "simpleType", local);
+            if (simpleType != null) {
+                return buildSimpleTypeSchema(simpleType, contextElement, targetRoot);
+            }
         }
         return mapPrimitive(local);
     }
 
     /**
-     * Returns the schema root element for the namespace identified by {@code prefix}
+     * Returns the schema root elements for the namespace identified by {@code prefix}
      * in the context of {@code contextElement}. Falls back to {@code currentSchemaRoot}
      * if the prefix can't be resolved or the namespace has no known schema.
      */
-    private Element resolveTargetSchemaRoot(String prefix, Element contextElement, Element currentSchemaRoot) {
-        if (prefix.isEmpty()) return currentSchemaRoot;
+    private List<Element> resolveTargetSchemaRoots(String prefix, Element contextElement, Element currentSchemaRoot) {
+        if (prefix.isEmpty()) return List.of(currentSchemaRoot);
         String nsUri = contextElement.lookupNamespaceURI(prefix);
-        if (nsUri == null) return currentSchemaRoot;
-        return schemasByNamespace.getOrDefault(nsUri, currentSchemaRoot);
+        if (nsUri == null) return List.of(currentSchemaRoot);
+        List<Element> roots = schemasByNamespace.get(nsUri);
+        return (roots != null && !roots.isEmpty()) ? roots : List.of(currentSchemaRoot);
     }
 
     private Schema<?> mapPrimitive(String localPart) {
@@ -277,25 +284,32 @@ public class XsdToSchema {
 
 
     /**
-     * Builds a namespace → schema root element map by traversing the full import
-     * graph of the WSDL. Starts from directly embedded schemas and follows
-     * {@code <xsd:import>} chains transitively, so cross-namespace type references
-     * in imported files are also resolved.
+     * Builds a namespace → list of schema root elements map by traversing the full
+     * import and include graph of the WSDL. Collecting all schema roots per namespace
+     * allows type lookup across multiple files that share the same target namespace.
+     * Identity-based dedup prevents processing the same schema object twice.
      */
-    private static Map<String, Element> buildSchemaMap(Definitions definitions) {
-        var map = new LinkedHashMap<String, Element>();
+    private static Map<String, List<Element>> buildSchemaMap(Definitions definitions) {
+        var map = new LinkedHashMap<String, List<Element>>();
         var queue = new ArrayDeque<>(definitions.getSchemas());
+        var seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        seen.addAll(definitions.getSchemas());
         while (!queue.isEmpty()) {
             var schema = queue.poll();
             var ns = schema.getTargetNamespace();
-            if (ns != null && !map.containsKey(ns)) {
-                map.put(ns, schema.getSchemaElement());
+            if (ns != null) {
+                map.computeIfAbsent(ns, k -> new ArrayList<>()).add(schema.getSchemaElement());
             }
             for (var imp : schema.getImports()) {
                 var imported = imp.getSchema();
-                if (imported != null && imported.getTargetNamespace() != null
-                        && !map.containsKey(imported.getTargetNamespace())) {
+                if (imported != null && imported.getTargetNamespace() != null && seen.add(imported)) {
                     queue.add(imported);
+                }
+            }
+            for (var inc : schema.getIncludes()) {
+                var included = inc.getSchema();
+                if (included != null && included.getTargetNamespace() != null && seen.add(included)) {
+                    queue.add(included);
                 }
             }
         }
