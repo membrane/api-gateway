@@ -104,7 +104,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
     private void registerApiDocsPaths() {
         RuleKey key = proxy.getKey();
         if (key instanceof APIProxyKey apiKey) {
-            apiKey.addBasePaths(new ArrayList<>(List.of(PATH)));
+            apiKey.addBasePaths(new ArrayList<>(List.of(PATH, basePath)));
         } else if (key instanceof AbstractRuleKey ark && ark.isUsePathPattern()) {
             String existing = ark.getPath();
             if (existing != null) {
