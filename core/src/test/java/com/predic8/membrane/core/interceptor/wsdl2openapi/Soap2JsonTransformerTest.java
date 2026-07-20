@@ -221,12 +221,47 @@ class Soap2JsonTransformerTest {
             </env:Envelope>
             """;
 
+    private static final String SOAP11_FAULT_WITH_DETAIL = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <soap:Fault>
+                  <faultcode>Client</faultcode>
+                  <faultstring>WSDL message validation failed</faultstring>
+                  <detail>
+                    <validation>
+                      <item>
+                        <message>cvc-type.3.1.3: The value 'RE-12ssss345' of element 'id' is not valid.</message>
+                        <line>1</line>
+                        <column>368</column>
+                      </item>
+                    </validation>
+                  </detail>
+                </soap:Fault>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
     @Test
     void soap11ServerFaultThrowsSoapFaultException() throws Exception {
         var ex = assertThrows(SoapFaultException.class, () -> new Soap2JsonTransformer().transform(SOAP11_SERVER_FAULT));
         assertEquals("soap:Server", ex.getFaultCode());
         assertEquals("Internal server error", ex.getFaultMessage());
         assertEquals(500, ex.getHttpStatus());
+        assertNull(ex.getSoapDetail());
+    }
+
+    @Test
+    void faultDetailExtractedAndConvertedToMap() throws Exception {
+        var ex = assertThrows(SoapFaultException.class, () -> new Soap2JsonTransformer().transform(SOAP11_FAULT_WITH_DETAIL));
+        assertNotNull(ex.getSoapDetail(), "soapDetail must be present when <detail> exists");
+        @SuppressWarnings("unchecked")
+        var validation = (java.util.Map<String, Object>) ex.getSoapDetail().get("validation");
+        assertNotNull(validation, "soapDetail should contain 'validation' key");
+        @SuppressWarnings("unchecked")
+        var item = (java.util.Map<String, Object>) validation.get("item");
+        assertNotNull(item);
+        assertTrue(item.get("message").toString().contains("RE-12ssss345"));
     }
 
     @Test

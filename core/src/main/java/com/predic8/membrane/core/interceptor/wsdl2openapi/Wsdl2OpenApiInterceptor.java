@@ -223,14 +223,16 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
 
         } catch (SoapFaultException fault) {
             log.debug("SOAP fault received for operation {}: [{}] {}", operationName, fault.getFaultCode(), fault.getFaultMessage());
-            exc.setResponse(null);  // prevent 4xx→5xx upgrade in ProblemDetails response-flow check
-            problemDetails("soap-fault", router.getConfiguration().isProduction())
+            var pd = problemDetails("soap-fault", router.getConfiguration().isProduction())
                     .component(getDisplayName())
                     .status(fault.getHttpStatus())
                     .title("SOAP fault.")
                     .detail(fault.getFaultMessage())
-                    .topLevel("faultCode", fault.getFaultCode())
-                    .buildAndSetResponse(exc);
+                    .topLevel("faultCode", fault.getFaultCode());
+            if (fault.getSoapDetail() != null) {
+                pd.internal("soapDetail", fault.getSoapDetail());
+            }
+            exc.setResponse(pd.build());
             return ABORT;
         } catch (Exception e) {
             log.error("Failed to transform SOAP to JSON for operation {}", operationName, e);

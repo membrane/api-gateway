@@ -131,10 +131,12 @@ public class Soap2JsonTransformer {
 
     private SoapFaultException extractSoap11Fault(Element fault) {
         String code = childText(fault, "faultcode");
+        Element detailEl = childElement(fault, "detail");
         return new SoapFaultException(
                 code,
                 childText(fault, "faultstring"),
-                (code.endsWith(":Client") || "Client".equals(code)) ? 400 : 500
+                (code.endsWith(":Client") || "Client".equals(code)) ? 400 : 500,
+                detailEl != null ? elementToMap(detailEl) : null
         );
     }
 
@@ -142,10 +144,12 @@ public class Soap2JsonTransformer {
         Element codeEl = childElement(fault, "Code");
         String code = codeEl != null ? childText(codeEl, "Value") : "";
         Element reasonEl = childElement(fault, "Reason");
+        Element detailEl = childElement(fault, "Detail");
         return new SoapFaultException(
                 code,
                 reasonEl != null ? childText(reasonEl, "Text") : "",
-                (code.endsWith(":Sender") || "Sender".equals(code)) ? 400 : 500
+                (code.endsWith(":Sender") || "Sender".equals(code)) ? 400 : 500,
+                detailEl != null ? elementToMap(detailEl) : null
         );
     }
 
