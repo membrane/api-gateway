@@ -25,20 +25,24 @@ import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.slf4j.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.core.http.Response.statusCode;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
+import static com.predic8.membrane.core.resolver.ResolverMap.combine;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @description <p>
  * The <i>wsdl2openapi</i> interceptor exposes SOAP/WSDL services via HTTP/JSON/OpenAPI.
  * It automatically converts JSON requests to SOAP XML and SOAP XML responses back to JSON.
- * This is NOT REST - it's OpenAPI as a Remote Procedure Call mechanism.
  * </p>
  * @yaml <pre><code>
  * api:
@@ -59,7 +63,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
     private Definitions definitions;
     private String basePath;
     private List<OperationConfig> operations = new ArrayList<>();
-    private Map<String, OperationConfig> operationsByName = new LinkedHashMap<>();
+    private final Map<String, OperationConfig> operationsByName = new LinkedHashMap<>();
     private OpenAPIPublisherInterceptor publisher;
 
     public Wsdl2OpenApiInterceptor() {
@@ -70,16 +74,12 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
 
-        if (wsdl == null) {
-            throw new ConfigurationException("<wsdl2openapi> requires a 'wsdl' attribute");
-        }
-
         basePath = getBasePath();
 
         try {
             ResolverMap resolverMap = router.getResolverMap();
-            String resolvedWsdl = ResolverMap.combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl);
-            definitions = Definitions.parse(resolverMap, resolvedWsdl);
+            String resolvedWsdl = combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl);
+            definitions = parse(resolverMap, resolvedWsdl);
         } catch (Exception e) {
             throw new ConfigurationException("Cannot parse WSDL '%s': %s".formatted(wsdl, e.getMessage()));
         }
@@ -90,13 +90,12 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             }
         }
 
-        var generator = new OpenApiGenerator(definitions, basePath, operationsByName);
+        var generator = new OpenApiGenerator(definitions, basePath);
         var openApiModel = generator.generate();
         var record = new OpenAPIRecord(openApiModel, new OpenAPISpec());
         publisher = new OpenAPIPublisherInterceptor(Map.of(getIdFromAPI(openApiModel), record));
         publisher.init(router);
 
-        // Register /api-docs paths on the proxy key so the router accepts them
         registerApiDocsPaths();
 
         log.info("Loaded WSDL from {} with {} services", wsdl, definitions.getServices().size());
@@ -113,6 +112,15 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
                 ark.setPath("(" + Pattern.quote(existing) + ".*|" + Pattern.quote(PATH) + ".*)");
             }
         }
+    }
+
+    private boolean isValidOperation(String operationName) {
+        if (!operationsByName.isEmpty()) {
+            return operationsByName.containsKey(operationName);
+        }
+        return definitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .anyMatch(op -> op.getName().equals(operationName));
     }
 
     private String getBasePath() {
@@ -133,7 +141,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
 
         String operationName = extractOperationName(exc.getRequest().getUri());
-        if (operationName != null && operationsByName.containsKey(operationName)) {
+        if (isValidOperation(operationName)) {
             return handleOperation(exc, operationName);
         }
 
@@ -166,7 +174,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
 
     private Outcome handleOperation(Exchange exc, String operationName) {
         if (!exc.getRequest().isPOSTRequest()) {
-            exc.setResponse(Response.statusCode(405)
+            exc.setResponse(statusCode(405)
                     .header("Allow", "POST")
                     .body("Method not allowed. Use POST.")
                     .build());
@@ -206,7 +214,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             Soap2JsonTransformer responseTransformer = new Soap2JsonTransformer(definitions, operationName);
             String jsonResponse = responseTransformer.transform(exc.getResponse().getBodyAsStringDecoded());
 
-            exc.getResponse().setBodyContent(jsonResponse.getBytes("UTF-8"));
+            exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
 
         } catch (Exception e) {
@@ -238,6 +246,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
      * @description The WSDL (URL or file).
      * @example http://backend-service/service.wsdl
      */
+    @Required
     @MCAttribute
     public void setWsdl(String wsdl) {
         this.wsdl = wsdl;

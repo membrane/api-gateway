@@ -15,9 +15,9 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.wsdl.parser.Service;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.info.*;
@@ -28,23 +28,26 @@ import io.swagger.v3.oas.models.servers.*;
 import io.swagger.v3.parser.ObjectMapperFactory;
 import org.slf4j.*;
 
-import java.util.*;
+import java.util.List;
+
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
+import static io.swagger.v3.parser.ObjectMapperFactory.createYaml;
+import static java.lang.Character.isUpperCase;
+import static java.lang.Character.toLowerCase;
 
 /**
  * Generates an OpenAPI 3.0 model from WSDL definitions.
  */
 public class OpenApiGenerator {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenApiGenerator.class);
-
     private final Definitions definitions;
     private final String basePath;
-    private final Map<String, OperationConfig> operations;
+    private final XsdToSchema converter;
 
-    public OpenApiGenerator(Definitions definitions, String basePath, Map<String, OperationConfig> operations) {
+    public OpenApiGenerator(Definitions definitions, String basePath) {
         this.definitions = definitions;
         this.basePath = basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
-        this.operations = operations;
+        this.converter = new XsdToSchema(definitions);
     }
 
     public OpenAPI generate() {
@@ -58,7 +61,7 @@ public class OpenApiGenerator {
 
     public String generateYaml() {
         try {
-            return ObjectMapperFactory.createYaml().writeValueAsString(generate());
+            return createYaml().writeValueAsString(generate());
         } catch (Exception e) {
             throw new RuntimeException("Could not serialize OpenAPI model to YAML", e);
         }
@@ -73,43 +76,41 @@ public class OpenApiGenerator {
 
     private Paths buildPaths() {
         var paths = new Paths();
-        for (var entry : operations.entrySet()) {
-            String operationName = entry.getKey();
-            paths.addPathItem("/" + camelToKebab(operationName), buildPathItem(operationName));
-        }
+        definitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp)));
         return paths;
     }
 
-    private PathItem buildPathItem(String operationName) {
-        var operation = new Operation()
-                .operationId(operationName)
-                .summary(operationName)
-                .requestBody(buildRequestBody(operationName))
-                .responses(buildResponses());
-        return new PathItem().post(operation);
+    private PathItem buildPathItem(Operation wsdlOp) {
+        var apiOp = new io.swagger.v3.oas.models.Operation()
+                .operationId(wsdlOp.getName())
+                .summary(wsdlOp.getName())
+                .requestBody(buildRequestBody(wsdlOp))
+                .responses(buildResponses(wsdlOp));
+        return new PathItem().post(apiOp);
     }
 
-    private RequestBody buildRequestBody(String operationName) {
-        var schema = new ObjectSchema()
-                .description("Request parameters for " + operationName);
+    private RequestBody buildRequestBody(Operation wsdlOp) {
+        var schema = converter.convertMessageParts(wsdlOp.getMessagesByDirection(INPUT));
         return new RequestBody()
                 .required(true)
                 .content(new Content().addMediaType("application/json", new MediaType().schema(schema)));
     }
 
-    private ApiResponses buildResponses() {
+    private ApiResponses buildResponses(Operation wsdlOp) {
+        var schema = converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT));
         return new ApiResponses()
                 .addApiResponse("200", new ApiResponse()
                         .description("Successful response")
-                        .content(new Content().addMediaType("application/json",
-                                new MediaType().schema(new ObjectSchema()))))
+                        .content(new Content().addMediaType("application/json", new MediaType().schema(schema))))
                 .addApiResponse("500", new ApiResponse().description("Internal server error"));
     }
 
     private String getServiceName() {
         List<Service> services = definitions.getServices();
         if (!services.isEmpty()) {
-            return services.get(0).getName();
+            return services.getFirst().getName();
         }
         return "SOAP Service";
     }
@@ -118,9 +119,9 @@ public class OpenApiGenerator {
         var result = new StringBuilder();
         for (int i = 0; i < camelCase.length(); i++) {
             char c = camelCase.charAt(i);
-            if (Character.isUpperCase(c)) {
+            if (isUpperCase(c)) {
                 if (i > 0) result.append('-');
-                result.append(Character.toLowerCase(c));
+                result.append(toLowerCase(c));
             } else {
                 result.append(c);
             }

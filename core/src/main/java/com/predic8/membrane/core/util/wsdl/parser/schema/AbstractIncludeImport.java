@@ -18,9 +18,15 @@ import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 import org.w3c.dom.*;
 
+import static com.predic8.membrane.core.util.URIUtil.getNormalizedAbsolutePathOrUri;
+import static org.slf4j.LoggerFactory.getLogger;
+
 public abstract class AbstractIncludeImport extends WSDLElement {
+
+    private static final Logger log = getLogger(AbstractIncludeImport.class);
 
     protected String schemaLocation;
     protected Schema schema;
@@ -47,12 +53,13 @@ public abstract class AbstractIncludeImport extends WSDLElement {
                 return new Schema(ctx.basePath(resolved), WSDLParserUtil.parse(is));
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            log.warn("Cannot resolve schema location '{}': {}", schemaLocation, e.getMessage());
+            return null;
         }
     }
 
     private String resolve(WSDLParserContext ctx) {
-        return URIUtil.getNormalizedAbsolutePathOrUri(ResolverMap.combine(ctx.basePath(), schemaLocation));
+        return getNormalizedAbsolutePathOrUri(ResolverMap.combine(ctx.basePath(), schemaLocation));
     }
 
     public String getSchemaLocation() {
