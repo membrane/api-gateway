@@ -20,17 +20,21 @@ import com.predic8.membrane.core.util.wsdl.parser.Service;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
-import io.swagger.v3.oas.models.info.*;
-import io.swagger.v3.oas.models.media.*;
-import io.swagger.v3.oas.models.parameters.*;
-import io.swagger.v3.oas.models.responses.*;
-import io.swagger.v3.oas.models.servers.*;
-import io.swagger.v3.parser.ObjectMapperFactory;
-import org.slf4j.*;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.oas.models.servers.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static io.swagger.v3.parser.ObjectMapperFactory.createYaml;
 import static java.lang.Character.isUpperCase;
 import static java.lang.Character.toLowerCase;
@@ -45,11 +49,17 @@ public class OpenApiGenerator {
     private final Definitions definitions;
     private final String basePath;
     private final XsdToSchema converter;
+    private final Map<String, OperationConfig> operations;
 
     public OpenApiGenerator(Definitions definitions, String basePath) {
+        this(definitions, basePath, Map.of());
+    }
+
+    public OpenApiGenerator(Definitions definitions, String basePath, Map<String, OperationConfig> operations) {
         this.definitions = definitions;
         this.basePath = basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
         this.converter = new XsdToSchema(definitions);
+        this.operations = operations;
     }
 
     public OpenAPI generate() {
@@ -87,6 +97,7 @@ public class OpenApiGenerator {
                     }
                     return true;
                 })
+                .filter(wsdlOp -> operations.isEmpty() || operations.containsKey(wsdlOp.getName()))
                 .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp)));
         return paths;
     }
