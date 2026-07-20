@@ -21,6 +21,7 @@ import com.predic8.membrane.core.openapi.model.*;
 
 import java.math.*;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
 
 public class IntegerValidator implements JsonSchemaValidator {
@@ -48,7 +49,7 @@ public class IntegerValidator implements JsonSchemaValidator {
         if (value instanceof JsonNode j) {
             return j.isIntegralNumber() ? null
                     : error(ctx.schemaType("integer"),
-                    String.format("%s is not an integer.", j.asText()));
+                    mask -> String.format("%s is not an integer.", v(j.asText(), mask)));
         }
         if (value instanceof String s) {
             try {
@@ -56,7 +57,7 @@ public class IntegerValidator implements JsonSchemaValidator {
                 return null;
             } catch (NumberFormatException e) {
                 return error(ctx.schemaType("integer"),
-                        String.format("%s is not an integer.", s));
+                        mask -> String.format("%s is not an integer.", v(s, mask)));
             }
         }
         if (value instanceof Body) {
@@ -67,7 +68,7 @@ public class IntegerValidator implements JsonSchemaValidator {
             return null;
         }
         if (value instanceof Number) {
-            return error(ctx.schemaType("integer"), "%s is not an integer.".formatted(value));
+            return error(ctx.schemaType("integer"), mask -> "%s is not an integer.".formatted(v(value, mask)));
         }
         if (value == null) {
             return error(ctx.schemaType("integer"), "null is not an integer.");

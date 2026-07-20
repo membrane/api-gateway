@@ -28,6 +28,7 @@ import java.util.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static com.predic8.membrane.core.openapi.validators.ValidationErrors.error;
 import static java.lang.String.*;
 import static java.util.Collections.*;
@@ -67,7 +68,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         ctx = ctx.schemaType("object");
 
         if (canValidate(obj) == null || !(obj instanceof ObjectNode node)) {
-            return error(ctx.statusCode(400), format("Value %s is not an object.", obj));
+            return error(ctx.statusCode(400), mask -> format("Value %s is not an object.", v(obj, mask)));
         }
 
         ValidationErrors errors = validateRequiredProperties(ctx, node);
@@ -97,7 +98,8 @@ public class ObjectValidator implements JsonSchemaValidator {
 
         Schema<?> baseSchema = getBaseSchema(propertyValue);
         if (baseSchema == null) {
-            return error(ctx.statusCode(400), format("Discriminator value %s is not a valid type.", propertyValue));
+            String value = propertyValue;
+            return error(ctx.statusCode(400), mask -> format("Discriminator value %s is not a valid type.", v(value, mask)));
         }
         return new SchemaValidator(api, baseSchema).validate(ctx, node);
     }
@@ -311,7 +313,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (node.get(propertyName) == null)
             return null;
 
-        return error(ctx.addJSONpointerSegment(propertyName), String.format("The property %s is read only. But the request contains the value %s for this field.", propertyName, node.get(propertyName)));
+        return error(ctx.addJSONpointerSegment(propertyName), mask -> String.format("The property %s is read only. But the request contains the value %s for this field.", propertyName, v(node.get(propertyName), mask)));
     }
 
     @SuppressWarnings("rawtypes")
@@ -326,7 +328,7 @@ public class ObjectValidator implements JsonSchemaValidator {
         if (node.get(propertyName) == null)
             return null;
 
-        return error(ctx.addJSONpointerSegment(propertyName), String.format("The property %s is write only. But the response contained the value %s.", propertyName, node.get(propertyName)));
+        return error(ctx.addJSONpointerSegment(propertyName), mask -> String.format("The property %s is write only. But the response contained the value %s.", propertyName, v(node.get(propertyName), mask)));
     }
 
     @SuppressWarnings("rawtypes")

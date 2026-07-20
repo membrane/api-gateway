@@ -30,6 +30,7 @@ import java.util.*;
 
 import static com.predic8.membrane.core.openapi.util.SchemaUtil.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 
 public class SchemaValidator implements JsonSchemaValidator {
 
@@ -153,7 +154,7 @@ public class SchemaValidator implements JsonSchemaValidator {
             }
         }
 
-        return ValidationErrors.error(ctx, "%s is of type %s which does not match any of %s".formatted(value, typeOfValue, types));
+        return ValidationErrors.error(ctx, mask -> "%s is of type %s which does not match any of %s".formatted(v(value, mask), typeOfValue, types));
     }
 
     /**
@@ -195,7 +196,7 @@ public class SchemaValidator implements JsonSchemaValidator {
                 default -> throw new RuntimeException("Should not happen! " + type);
             };
         } catch (Exception e) {
-            return ValidationErrors.error(ctx, "%s is not of %s format.".formatted(value, type));
+            return ValidationErrors.error(ctx, mask -> "%s is not of %s format.".formatted(v(value, mask), type));
         }
     }
 

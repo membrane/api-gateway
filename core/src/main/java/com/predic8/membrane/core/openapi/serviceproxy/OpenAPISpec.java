@@ -33,6 +33,7 @@ public class OpenAPISpec implements Cloneable {
     public YesNoOpenAPIOption validateResponses = ASINOPENAPI;
     public YesNoOpenAPIOption validationDetails = ASINOPENAPI;
     public YesNoOpenAPIOption validateSecurity = ASINOPENAPI;
+    public MaskValues maskValues = MaskValues.NONE;
     private Rewrite rewrite = new Rewrite();
 
     @Override
@@ -131,6 +132,27 @@ public class OpenAPISpec implements Cloneable {
         return validationDetails;
     }
 
+    public MaskValues getMaskValues() {
+        return maskValues;
+    }
+
+    /**
+     * @description Where the actual submitted value is masked in validation error messages. A value
+     * that fails validation is replaced with <code>***</code> in the <code>message</code>
+     * (for example <code>*** is smaller than the minimum of 10</code>) so that potentially sensitive
+     * data is not echoed back. Constraint values from the OpenAPI document (such as the minimum) are
+     * never masked. Choose where masking applies: <code>none</code> (default), <code>response</code>
+     * (mask only in the HTTP response), <code>log</code> (mask only in the server log) or
+     * <code>both</code>. This lets you, for example, return <code>***</code> to the caller while
+     * keeping the real value in the log for debugging.
+     * @example response
+     * @default none
+     */
+    @MCAttribute
+    public void setMaskValues(MaskValues maskValues) {
+        this.maskValues = maskValues;
+    }
+
     @SuppressWarnings("unused")
     public YesNoOpenAPIOption getValidateSecurity() {
         return validateSecurity;
@@ -149,6 +171,13 @@ public class OpenAPISpec implements Cloneable {
         // To allow reading from YAML with yes and no without quotes
         TRUE,
         FALSE
+    }
+
+    public enum MaskValues {
+        NONE,
+        RESPONSE,
+        LOG,
+        BOTH
     }
 
     @Override
