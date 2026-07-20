@@ -52,7 +52,7 @@ public abstract class AbstractBodyValidator<T extends Message<? extends Body,?>>
             return errors.add(ctx,"Validation of XML messages is not implemented yet!");
         }
         if(isWWWFormUrlEncoded(mediaType)) {
-            return errors.add(ctx,"Validation of 'application/x-www-form-urlencoded' messages is not implemented yet!");
+            return errors.add(new FormUrlEncodedValidator(api).validate(ctx, mediaTypeObj, message));
         }
         // Other types that can't be validated against OpenAPI are Ok.
         return errors;
