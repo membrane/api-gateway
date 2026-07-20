@@ -191,6 +191,11 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
 
             exc.setProperty("wsdl2openapi.operation", operationName);
 
+            String serviceAddress = getServiceAddress();
+            if (serviceAddress != null) {
+                exc.setDestinations(List.of(serviceAddress));
+            }
+
         } catch (Exception e) {
             log.error("Failed to transform JSON to SOAP for operation {}", operationName, e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
@@ -236,6 +241,14 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
                 .findFirst()
                 .map(BindingOperation::getSoapAction)
                 .orElse("");
+    }
+
+    private String getServiceAddress() {
+        var services = definitions.getServices();
+        if (services.isEmpty()) return null;
+        var ports = services.getFirst().getPorts();
+        if (ports.isEmpty()) return null;
+        return ports.getFirst().getAddress().getLocation();
     }
 
     public String getWsdl() {
