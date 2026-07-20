@@ -20,6 +20,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXParseException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -178,5 +179,20 @@ class Soap2JsonTransformerTest {
 
         assertThrows(Exception.class, () -> transformer.transform(emptyBody),
                 "Should throw when SOAP Body has no response element");
+    }
+
+    @Test
+    void doctypeInResponseCausesSaxParseException() {
+        var transformer = new Soap2JsonTransformer();
+        var xmlWithDoctype = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body><response>test</response></soap:Body>
+                </soap:Envelope>
+                """;
+
+        assertThrows(SAXParseException.class, () -> transformer.transform(xmlWithDoctype),
+                "DOCTYPE should be rejected to prevent XXE");
     }
 }

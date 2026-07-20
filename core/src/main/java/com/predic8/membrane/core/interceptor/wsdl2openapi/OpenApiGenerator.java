@@ -40,6 +40,8 @@ import static java.lang.Character.toLowerCase;
  */
 public class OpenApiGenerator {
 
+    private static final Logger log = LoggerFactory.getLogger(OpenApiGenerator.class);
+
     private final Definitions definitions;
     private final String basePath;
     private final XsdToSchema converter;
@@ -78,6 +80,13 @@ public class OpenApiGenerator {
         var paths = new Paths();
         definitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
+                .filter(wsdlOp -> {
+                    if (wsdlOp.getName() == null) {
+                        log.debug("Skipping WSDL operation with null name");
+                        return false;
+                    }
+                    return true;
+                })
                 .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp)));
         return paths;
     }

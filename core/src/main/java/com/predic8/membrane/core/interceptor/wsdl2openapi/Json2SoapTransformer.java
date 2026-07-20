@@ -70,9 +70,9 @@ public class Json2SoapTransformer {
     private Operation findOperation(String name) {
         return definitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
-                .filter(op -> op.getName().equals(name))
+                .filter(op -> name.equals(op.getName()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + name));
     }
 
     private Document createSoapEnvelope() throws Exception {
@@ -104,8 +104,14 @@ public class Json2SoapTransformer {
     }
 
     private Element createOperationElement(Document doc, Message message) {
+        if (message.getParts().isEmpty()) {
+            throw new IllegalArgumentException("Input message has no parts for operation: " + operationName);
+        }
         Part part = message.getParts().getFirst();
         String elementName = part.getElementName();
+        if (elementName == null) {
+            throw new IllegalArgumentException("Part has no element name for operation: " + operationName);
+        }
         String namespace = part.getElementNamespace();
 
         Element opElement = doc.createElementNS(namespace, elementName);
@@ -125,14 +131,7 @@ public class Json2SoapTransformer {
                 String fieldName = field.getKey();
                 JsonNode fieldValue = field.getValue();
 
-                Element childElement = doc.createElement(fieldName);
-                parent.appendChild(childElement);
-
-                if (fieldValue.isObject()) {
-                    mapJsonToElement(fieldValue, childElement, doc);
-                } else if (fieldValue.isArray()) {
-                    // For arrays, create multiple elements with the same name
-                    parent.removeChild(childElement);
+                if (fieldValue.isArray()) {
                     for (JsonNode arrayItem : fieldValue) {
                         Element arrayElement = doc.createElement(fieldName);
                         if (arrayItem.isValueNode()) {
@@ -143,7 +142,13 @@ public class Json2SoapTransformer {
                         parent.appendChild(arrayElement);
                     }
                 } else {
-                    childElement.setTextContent(fieldValue.asText());
+                    Element childElement = doc.createElement(fieldName);
+                    parent.appendChild(childElement);
+                    if (fieldValue.isObject()) {
+                        mapJsonToElement(fieldValue, childElement, doc);
+                    } else {
+                        childElement.setTextContent(fieldValue.asText());
+                    }
                 }
             }
         } else if (jsonNode.isValueNode()) {

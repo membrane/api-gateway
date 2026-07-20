@@ -118,7 +118,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
         return definitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
-                .anyMatch(op -> op.getName().equals(operationName));
+                .anyMatch(op -> operationName.equals(op.getName()));
     }
 
     private String getBasePath() {
@@ -146,12 +146,13 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    private String extractOperationName(String path) {
+    String extractOperationName(String path) {
         String withoutBase = path.replaceFirst("^" + basePath, "");
         if (withoutBase.startsWith("/")) {
             withoutBase = withoutBase.substring(1);
         }
-        return kebabToCamel(withoutBase);
+        String segment = withoutBase.contains("?") ? withoutBase.substring(0, withoutBase.indexOf('?')) : withoutBase;
+        return kebabToCamel(segment);
     }
 
     private String kebabToCamel(String kebab) {
@@ -246,7 +247,8 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         if (services.isEmpty()) return null;
         var ports = services.getFirst().getPorts();
         if (ports.isEmpty()) return null;
-        return ports.getFirst().getAddress().getLocation();
+        var address = ports.getFirst().getAddress();
+        return address != null ? address.getLocation() : null;
     }
 
     public String getWsdl() {

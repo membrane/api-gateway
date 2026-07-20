@@ -194,6 +194,8 @@ public class XsdToSchema {
                 if (baseObj.getRequired() != null) {
                     baseObj.getRequired().forEach(schema::addRequiredItem);
                 }
+            } else if (!(baseSchema instanceof ObjectSchema)) {
+                log.debug("Base type '{}' is not an object schema, skipping field inheritance", base);
             }
         }
         Element seq = findXsdChild(extension, "sequence");
@@ -281,7 +283,8 @@ public class XsdToSchema {
             }
             for (var imp : schema.getImports()) {
                 var imported = imp.getSchema();
-                if (imported != null && !map.containsKey(imported.getTargetNamespace())) {
+                if (imported != null && imported.getTargetNamespace() != null
+                        && !map.containsKey(imported.getTargetNamespace())) {
                     queue.add(imported);
                 }
             }

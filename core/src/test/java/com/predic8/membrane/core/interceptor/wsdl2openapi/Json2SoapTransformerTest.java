@@ -32,11 +32,13 @@ class Json2SoapTransformerTest {
 
     static Definitions citiesDefinitions;
     static Definitions blzDefinitions;
+    static Definitions emptyMessageDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
         citiesDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cities.wsdl");
         blzDefinitions = Definitions.parse(new ResolverMap(), "classpath:/blz-service.wsdl");
+        emptyMessageDefinitions = Definitions.parse(new ResolverMap(), "classpath:/special/empty-message.wsdl");
     }
 
     @Test
@@ -130,11 +132,19 @@ class Json2SoapTransformerTest {
     }
 
     @Test
-    void unknownOperationThrowsException() {
+    void unknownOperationThrowsIllegalArgumentException() {
         var transformer = new Json2SoapTransformer(citiesDefinitions, "nonExistentOperation");
 
-        assertThrows(Exception.class, () -> transformer.transform("{\"foo\": \"bar\"}"),
-                "Should throw for unknown operation");
+        assertThrows(IllegalArgumentException.class, () -> transformer.transform("{\"foo\": \"bar\"}"),
+                "Should throw IllegalArgumentException for unknown operation");
+    }
+
+    @Test
+    void emptyMessagePartsThrowsIllegalArgumentException() {
+        var transformer = new Json2SoapTransformer(emptyMessageDefinitions, "ping");
+
+        assertThrows(IllegalArgumentException.class, () -> transformer.transform("{}"),
+                "Should throw IllegalArgumentException when input message has no parts");
     }
 
     @Test

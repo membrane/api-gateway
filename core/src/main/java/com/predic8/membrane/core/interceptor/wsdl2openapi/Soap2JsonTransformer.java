@@ -20,7 +20,6 @@ import org.w3c.dom.*;
 
 import javax.xml.parsers.*;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -36,6 +35,9 @@ public class Soap2JsonTransformer {
     public String transform(String soapXml) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document doc = builder.parse(new ByteArrayInputStream(soapXml.getBytes(UTF_8)));
 
