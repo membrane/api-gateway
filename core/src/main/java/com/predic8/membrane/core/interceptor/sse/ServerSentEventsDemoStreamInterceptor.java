@@ -108,7 +108,7 @@ public class ServerSentEventsDemoStreamInterceptor extends AbstractInterceptor {
         }
 
         @Override
-        public int getLength() {
+        public long getLength() {
             return -1; // Unknown length due to streaming
         }
 

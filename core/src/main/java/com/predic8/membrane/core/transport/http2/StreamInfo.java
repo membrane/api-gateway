@@ -170,7 +170,7 @@ public class StreamInfo {
 
     private class Http2Body extends AbstractBody {
 
-        int streamedLength = 0;
+        long streamedLength = 0;
         Header trailer;
 
         @Override
@@ -197,8 +197,10 @@ public class StreamInfo {
 
         @Override
         protected void writeAlreadyRead(AbstractBodyTransferer out) throws IOException {
-            if (getLength() > 0)
-                out.write(getContent(), 0, getLength());
+            if (getLength() > 0) {
+                byte[] content = getContent();
+                out.write(content, 0, content.length);
+            }
             out.finish(trailer);
         }
 
@@ -266,7 +268,7 @@ public class StreamInfo {
         }
 
         @Override
-        public int getLength() {
+        public long getLength() {
             if (wasStreamed())
                 return streamedLength;
             return super.getLength();

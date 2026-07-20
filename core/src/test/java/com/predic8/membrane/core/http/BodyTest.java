@@ -121,6 +121,35 @@ public class BodyTest {
 	}
 
 	@Test
+	void getContentThrowsWhenBodyExceedsArrayLimit() {
+		AbstractBody body = bodyReporting((long) Integer.MAX_VALUE + 1);
+		BodyTooLargeException e = assertThrows(BodyTooLargeException.class, body::getContent);
+		assertInstanceOf(ReadingBodyException.class, e); // stays catchable as a generic body-read failure
+	}
+
+	@Test
+	void largeBodyLengthRoundTripsThroughContentLength() {
+		// Regression: getLength() used to be int and overflowed >2GB to a negative value,
+		// which setContentLength wrote as e.g. "-2147483648" and getContentLength then rejected.
+		long huge = (long) Integer.MAX_VALUE + 1024;
+		Header header = new Header();
+		header.setContentLength(bodyReporting(huge).getLength());
+		assertEquals(huge, header.getContentLength());
+	}
+
+	/** A body that only reports a length, without allocating it — for boundary tests. */
+	private static AbstractBody bodyReporting(long length) {
+		return new AbstractBody() {
+			@Override public long getLength() { return length; }
+			@Override protected void readLocal() {}
+			@Override protected void writeAlreadyRead(AbstractBodyTransferer out) {}
+			@Override protected void writeNotRead(AbstractBodyTransferer out) {}
+			@Override protected void writeStreamed(AbstractBodyTransferer out) {}
+			@Override protected byte[] getRawLocal() { return new byte[0]; }
+		};
+	}
+
+	@Test
 	void hasRelevantObservers() {
 		assertFalse(unchunkedBody.hasRelevantObservers());
 		unchunkedBody.addObserver(new NonRelevantObserver());

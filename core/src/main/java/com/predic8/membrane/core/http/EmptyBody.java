@@ -19,7 +19,7 @@ import java.io.IOException;
 public class EmptyBody extends AbstractBody {
 
 	@Override
-	public int getLength() {
+	public long getLength() {
 		return 0;
 	}
 
