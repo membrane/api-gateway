@@ -181,6 +181,70 @@ class Soap2JsonTransformerTest {
                 "Should throw when SOAP Body has no response element");
     }
 
+    private static final String SOAP11_SERVER_FAULT = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <soap:Fault>
+                  <faultcode>soap:Server</faultcode>
+                  <faultstring>Internal server error</faultstring>
+                </soap:Fault>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
+    private static final String SOAP11_CLIENT_FAULT = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <soap:Fault>
+                  <faultcode>soap:Client</faultcode>
+                  <faultstring>Invalid BLZ format</faultstring>
+                </soap:Fault>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
+    private static final String SOAP12_RECEIVER_FAULT = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope">
+              <env:Body>
+                <env:Fault>
+                  <env:Code>
+                    <env:Value>env:Receiver</env:Value>
+                  </env:Code>
+                  <env:Reason>
+                    <env:Text xml:lang="en">Processing error</env:Text>
+                  </env:Reason>
+                </env:Fault>
+              </env:Body>
+            </env:Envelope>
+            """;
+
+    @Test
+    void soap11ServerFaultThrowsSoapFaultException() throws Exception {
+        var ex = assertThrows(SoapFaultException.class, () -> new Soap2JsonTransformer().transform(SOAP11_SERVER_FAULT));
+        assertEquals("soap:Server", ex.getFaultCode());
+        assertEquals("Internal server error", ex.getFaultMessage());
+        assertEquals(500, ex.getHttpStatus());
+    }
+
+    @Test
+    void soap11ClientFaultHasStatus400() throws Exception {
+        var ex = assertThrows(SoapFaultException.class, () -> new Soap2JsonTransformer().transform(SOAP11_CLIENT_FAULT));
+        assertEquals("soap:Client", ex.getFaultCode());
+        assertEquals("Invalid BLZ format", ex.getFaultMessage());
+        assertEquals(400, ex.getHttpStatus());
+    }
+
+    @Test
+    void soap12ReceiverFaultThrowsSoapFaultException() throws Exception {
+        var ex = assertThrows(SoapFaultException.class, () -> new Soap2JsonTransformer().transform(SOAP12_RECEIVER_FAULT));
+        assertEquals("env:Receiver", ex.getFaultCode());
+        assertEquals("Processing error", ex.getFaultMessage());
+        assertEquals(500, ex.getHttpStatus());
+    }
+
     @Test
     void doctypeInResponseCausesSaxParseException() {
         var transformer = new Soap2JsonTransformer();

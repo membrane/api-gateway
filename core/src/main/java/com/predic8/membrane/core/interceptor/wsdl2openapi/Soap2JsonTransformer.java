@@ -51,6 +51,10 @@ public class Soap2JsonTransformer {
             throw new IllegalArgumentException("No response element found in SOAP Body");
         }
 
+        if ("Fault".equals(responseElement.getLocalName())) {
+            throw buildFaultException(responseElement);
+        }
+
         Map<String, Object> jsonMap = elementToMap(responseElement);
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
     }
@@ -120,6 +124,50 @@ public class Soap2JsonTransformer {
         }
 
         return result;
+    }
+
+    private SoapFaultException buildFaultException(Element fault) {
+        String ns = fault.getNamespaceURI();
+        if ("http://www.w3.org/2003/05/soap-envelope".equals(ns)) {
+            return extractSoap12Fault(fault);
+        }
+        return extractSoap11Fault(fault);
+    }
+
+    private SoapFaultException extractSoap11Fault(Element fault) {
+        String code = childText(fault, "faultcode");
+        return new SoapFaultException(
+                code,
+                childText(fault, "faultstring"),
+                (code.endsWith(":Client") || "Client".equals(code)) ? 400 : 500
+        );
+    }
+
+    private SoapFaultException extractSoap12Fault(Element fault) {
+        Element codeEl = childElement(fault, "Code");
+        String code = codeEl != null ? childText(codeEl, "Value") : "";
+        Element reasonEl = childElement(fault, "Reason");
+        return new SoapFaultException(
+                code,
+                reasonEl != null ? childText(reasonEl, "Text") : "",
+                (code.endsWith(":Sender") || "Sender".equals(code)) ? 400 : 500
+        );
+    }
+
+    private String childText(Element parent, String localName) {
+        Element child = childElement(parent, localName);
+        return child != null ? child.getTextContent().trim() : "";
+    }
+
+    private Element childElement(Element parent, String localName) {
+        NodeList children = parent.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node node = children.item(i);
+            if (node.getNodeType() == ELEMENT_NODE && localName.equals(node.getLocalName())) {
+                return (Element) node;
+            }
+        }
+        return null;
     }
 
     private boolean hasChildElements(Element element) {
