@@ -14,18 +14,29 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import com.predic8.membrane.core.util.wsdl.parser.*;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Service;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.info.*;
+import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.oas.models.parameters.*;
+import io.swagger.v3.oas.models.responses.*;
+import io.swagger.v3.oas.models.servers.*;
+import io.swagger.v3.parser.ObjectMapperFactory;
 import org.slf4j.*;
 
 import java.util.*;
 
 /**
- * Generates OpenAPI 3.0 specification from WSDL definitions
+ * Generates an OpenAPI 3.0 model from WSDL definitions.
  */
 public class OpenApiGenerator {
 
     private static final Logger log = LoggerFactory.getLogger(OpenApiGenerator.class);
-    
+
     private final Definitions definitions;
     private final String basePath;
     private final Map<String, OperationConfig> operations;
@@ -36,52 +47,63 @@ public class OpenApiGenerator {
         this.operations = operations;
     }
 
+    public OpenAPI generate() {
+        var openAPI = new OpenAPI();
+        openAPI.setOpenapi("3.0.0");
+        openAPI.setInfo(buildInfo());
+        openAPI.setServers(List.of(new Server().url(basePath)));
+        openAPI.setPaths(buildPaths());
+        return openAPI;
+    }
+
     public String generateYaml() {
-        StringBuilder yaml = new StringBuilder();
-        
-        // OpenAPI header
-        yaml.append("openapi: 3.0.0\n");
-        yaml.append("info:\n");
-        yaml.append("  title: ").append(escapeYaml(getServiceName())).append("\n");
-        yaml.append("  description: Auto-generated OpenAPI from WSDL\n");
-        yaml.append("  version: 1.0.0\n");
-        yaml.append("\n");
-        
-        // Servers
-        yaml.append("servers:\n");
-        yaml.append("  - url: ").append(basePath).append("\n");
-        yaml.append("\n");
-        
-        // Paths
-        yaml.append("paths:\n");
-        
-        for (Map.Entry<String, OperationConfig> entry : operations.entrySet()) {
-            String operationName = entry.getKey();
-            String path = "/" + camelToKebab(operationName);
-            
-            yaml.append("  ").append(path).append(":\n");
-            yaml.append("    post:\n");
-            yaml.append("      operationId: ").append(operationName).append("\n");
-            yaml.append("      summary: ").append(operationName).append("\n");
-            yaml.append("      requestBody:\n");
-            yaml.append("        required: true\n");
-            yaml.append("        content:\n");
-            yaml.append("          application/json:\n");
-            yaml.append("            schema:\n");
-            yaml.append("              type: object\n");
-            yaml.append("              description: Request parameters for ").append(operationName).append("\n");
-            yaml.append("      responses:\n");
-            yaml.append("        '200':\n");
-            yaml.append("          description: Successful response\n");
-            yaml.append("          content:\n");
-            yaml.append("            application/json:\n");
-            yaml.append("              schema:\n");
-            yaml.append("                type: object\n");
-            yaml.append("        '500':\n");
-            yaml.append("          description: Internal server error\n");
+        try {
+            return ObjectMapperFactory.createYaml().writeValueAsString(generate());
+        } catch (Exception e) {
+            throw new RuntimeException("Could not serialize OpenAPI model to YAML", e);
         }
-        
-        return yaml.toString();
+    }
+
+    private Info buildInfo() {
+        return new Info()
+                .title(getServiceName())
+                .description("Auto-generated OpenAPI from WSDL")
+                .version("1.0.0");
+    }
+
+    private Paths buildPaths() {
+        var paths = new Paths();
+        for (var entry : operations.entrySet()) {
+            String operationName = entry.getKey();
+            paths.addPathItem("/" + camelToKebab(operationName), buildPathItem(operationName));
+        }
+        return paths;
+    }
+
+    private PathItem buildPathItem(String operationName) {
+        var operation = new Operation()
+                .operationId(operationName)
+                .summary(operationName)
+                .requestBody(buildRequestBody(operationName))
+                .responses(buildResponses());
+        return new PathItem().post(operation);
+    }
+
+    private RequestBody buildRequestBody(String operationName) {
+        var schema = new ObjectSchema()
+                .description("Request parameters for " + operationName);
+        return new RequestBody()
+                .required(true)
+                .content(new Content().addMediaType("application/json", new MediaType().schema(schema)));
+    }
+
+    private ApiResponses buildResponses() {
+        return new ApiResponses()
+                .addApiResponse("200", new ApiResponse()
+                        .description("Successful response")
+                        .content(new Content().addMediaType("application/json",
+                                new MediaType().schema(new ObjectSchema()))))
+                .addApiResponse("500", new ApiResponse().description("Internal server error"));
     }
 
     private String getServiceName() {
@@ -93,29 +115,16 @@ public class OpenApiGenerator {
     }
 
     private String camelToKebab(String camelCase) {
-        StringBuilder result = new StringBuilder();
+        var result = new StringBuilder();
         for (int i = 0; i < camelCase.length(); i++) {
             char c = camelCase.charAt(i);
             if (Character.isUpperCase(c)) {
-                if (i > 0) {
-                    result.append('-');
-                }
+                if (i > 0) result.append('-');
                 result.append(Character.toLowerCase(c));
             } else {
                 result.append(c);
             }
         }
         return result.toString();
-    }
-
-    private String escapeYaml(String value) {
-        if (value == null) {
-            return "";
-        }
-        // Basic YAML escaping
-        if (value.contains(":") || value.contains("#") || value.contains("\"")) {
-            return "\"" + value.replace("\"", "\\\"") + "\"";
-        }
-        return value;
     }
 }

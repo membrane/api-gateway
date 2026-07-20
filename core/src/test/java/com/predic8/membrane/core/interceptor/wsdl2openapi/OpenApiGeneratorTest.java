@@ -37,51 +37,45 @@ class OpenApiGeneratorTest {
 
     @Test
     void openApiHeader() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/purchasing", operationsMap("getCity"));
-        var yaml = generator.generateYaml();
+        var yaml = generator(citiesDefinitions, "/purchasing", "getCity");
 
-        assertTrue(yaml.startsWith("openapi: 3.0.0\n"), "Should start with openapi version");
+        assertTrue(yaml.contains("openapi: \"3.0.0\""), "Should contain openapi version");
         assertTrue(yaml.contains("info:"), "Should contain info section");
-        assertTrue(yaml.contains("version: 1.0.0"), "Should contain version");
+        assertTrue(yaml.contains("version: \"1.0.0\""), "Should contain version");
     }
 
     @Test
     void serviceNameUsedAsTitle() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/purchasing", operationsMap("getCity"));
-        var yaml = generator.generateYaml();
+        var yaml = generator(citiesDefinitions, "/purchasing", "getCity");
 
-        assertTrue(yaml.contains("title: CityService"), "Title should use WSDL service name");
+        assertTrue(yaml.contains("title: \"CityService\""), "Title should use WSDL service name");
     }
 
     @Test
     void serverUrlFromBasePath() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/purchasing", operationsMap("getCity"));
-        var yaml = generator.generateYaml();
+        var yaml = generator(citiesDefinitions, "/purchasing", "getCity");
 
-        assertTrue(yaml.contains("url: /purchasing"), "Should contain the base path as server URL");
+        assertTrue(yaml.contains("url: \"/purchasing\""), "Should contain the base path as server URL");
     }
 
     @Test
     void basePathTrailingSlashStripped() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/purchasing/", operationsMap("getCity"));
-        var yaml = generator.generateYaml();
+        var yaml = new OpenApiGenerator(citiesDefinitions, "/purchasing/", operationsMap("getCity")).generateYaml();
 
-        assertTrue(yaml.contains("url: /purchasing"), "Trailing slash should be stripped from server URL");
-        assertFalse(yaml.contains("url: /purchasing/"), "Should not contain trailing slash");
+        assertTrue(yaml.contains("url: \"/purchasing\""), "Trailing slash should be stripped from server URL");
+        assertFalse(yaml.contains("url: \"/purchasing/\""), "Should not contain trailing slash");
     }
 
     @Test
     void camelCaseOperationMappedToKebabPath() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/", operationsMap("getCity"));
-        var yaml = generator.generateYaml();
+        var yaml = generator(citiesDefinitions, "/", "getCity");
 
         assertTrue(yaml.contains("/get-city:"), "getCity should become /get-city path");
     }
 
     @Test
     void operationUsesPostMethod() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/", operationsMap("getCity"));
-        var yaml = generator.generateYaml();
+        var yaml = generator(citiesDefinitions, "/", "getCity");
 
         assertTrue(yaml.contains("post:"), "Operation should use POST method");
         assertFalse(yaml.contains("get:"), "Should not generate GET endpoint");
@@ -89,16 +83,14 @@ class OpenApiGeneratorTest {
 
     @Test
     void operationIdMatchesOriginalCamelCase() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/", operationsMap("getCity"));
-        var yaml = generator.generateYaml();
+        var yaml = generator(citiesDefinitions, "/", "getCity");
 
-        assertTrue(yaml.contains("operationId: getCity"), "operationId should use original camelCase name");
+        assertTrue(yaml.contains("operationId: \"getCity\""), "operationId should use original camelCase name");
     }
 
     @Test
     void requestBodyIsRequired() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/", operationsMap("getCity"));
-        var yaml = generator.generateYaml();
+        var yaml = generator(citiesDefinitions, "/", "getCity");
 
         assertTrue(yaml.contains("required: true"), "requestBody should be required");
         assertTrue(yaml.contains("application/json:"), "Should accept application/json");
@@ -106,11 +98,10 @@ class OpenApiGeneratorTest {
 
     @Test
     void responsesWith200And500() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/", operationsMap("getCity"));
-        var yaml = generator.generateYaml();
+        var yaml = generator(citiesDefinitions, "/", "getCity");
 
-        assertTrue(yaml.contains("'200':"), "Should define 200 response");
-        assertTrue(yaml.contains("'500':"), "Should define 500 response");
+        assertTrue(yaml.contains("\"200\":"), "Should define 200 response");
+        assertTrue(yaml.contains("\"500\":"), "Should define 500 response");
     }
 
     @Test
@@ -120,8 +111,7 @@ class OpenApiGeneratorTest {
         ops.put("createOrder", new OperationConfig());
         ops.put("deleteOrder", new OperationConfig());
 
-        var generator = new OpenApiGenerator(citiesDefinitions, "/purchasing", ops);
-        var yaml = generator.generateYaml();
+        var yaml = new OpenApiGenerator(citiesDefinitions, "/purchasing", ops).generateYaml();
 
         assertTrue(yaml.contains("/get-orders:"), "Should contain /get-orders path");
         assertTrue(yaml.contains("/create-order:"), "Should contain /create-order path");
@@ -130,19 +120,21 @@ class OpenApiGeneratorTest {
 
     @Test
     void blzServiceTitle() {
-        var generator = new OpenApiGenerator(blzDefinitions, "/blz", operationsMap("getBank"));
-        var yaml = generator.generateYaml();
+        var yaml = generator(blzDefinitions, "/blz", "getBank");
 
-        assertTrue(yaml.contains("title: BLZService"), "Title should use BLZ service name");
+        assertTrue(yaml.contains("title: \"BLZService\""), "Title should use BLZ service name");
         assertTrue(yaml.contains("/get-bank:"), "getBank should become /get-bank path");
     }
 
     @Test
     void emptyOperationsProducesEmptyPaths() {
-        var generator = new OpenApiGenerator(citiesDefinitions, "/", new LinkedHashMap<>());
-        var yaml = generator.generateYaml();
+        var yaml = new OpenApiGenerator(citiesDefinitions, "/", new LinkedHashMap<>()).generateYaml();
 
         assertTrue(yaml.contains("paths:"), "Should still contain paths section");
+    }
+
+    private static String generator(Definitions defs, String basePath, String... ops) {
+        return new OpenApiGenerator(defs, basePath, operationsMap(ops)).generateYaml();
     }
 
     private static Map<String, OperationConfig> operationsMap(String... names) {

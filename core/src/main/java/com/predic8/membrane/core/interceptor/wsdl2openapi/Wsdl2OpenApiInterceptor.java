@@ -18,20 +18,21 @@ import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.resolver.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.util.wsdl.parser.*;
-import groovy.text.*;
 import org.slf4j.*;
 
-import java.io.*;
 import java.util.*;
+import java.util.regex.*;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.*;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
-import static com.predic8.membrane.core.openapi.util.Utils.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.*;
+import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.*;
 
 /**
  * @description <p>
@@ -54,15 +55,12 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(Wsdl2OpenApiInterceptor.class);
 
-    private static final String API_DOCS_PATH = "/api-docs";
-    private static final String SPEC_PATH = "/api-docs/spec.yaml";
-
     private String wsdl;
     private Definitions definitions;
     private String basePath;
     private List<OperationConfig> operations = new ArrayList<>();
     private Map<String, OperationConfig> operationsByName = new LinkedHashMap<>();
-    private Template swaggerUiTemplate;
+    private OpenAPIPublisherInterceptor publisher;
 
     public Wsdl2OpenApiInterceptor() {
         name = "wsdl2openapi";
@@ -76,10 +74,8 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("<wsdl2openapi> requires a 'wsdl' attribute");
         }
 
-        // Determine base path from proxy
         basePath = getBasePath();
 
-        // Parse WSDL
         try {
             ResolverMap resolverMap = router.getResolverMap();
             String resolvedWsdl = ResolverMap.combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl);
@@ -88,28 +84,41 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             throw new ConfigurationException("Cannot parse WSDL '%s': %s".formatted(wsdl, e.getMessage()));
         }
 
-        // Load Swagger UI template
-        try {
-            swaggerUiTemplate = new StreamingTemplateEngine().createTemplate(
-                    new InputStreamReader(getResourceAsStream(this, "/openapi/swagger-ui.html")));
-        } catch (Exception e) {
-            throw new ConfigurationException("Cannot load Swagger UI template: " + e.getMessage());
-        }
-
-        // Build lookup map from operation list
         for (OperationConfig op : operations) {
             if (op.getName() != null) {
                 operationsByName.put(op.getName(), op);
             }
         }
 
+        var generator = new OpenApiGenerator(definitions, basePath, operationsByName);
+        var openApiModel = generator.generate();
+        var record = new OpenAPIRecord(openApiModel, new OpenAPISpec());
+        publisher = new OpenAPIPublisherInterceptor(Map.of(getIdFromAPI(openApiModel), record));
+        publisher.init(router);
+
+        // Register /api-docs paths on the proxy key so the router accepts them
+        registerApiDocsPaths();
+
         log.info("Loaded WSDL from {} with {} services", wsdl, definitions.getServices().size());
+    }
+
+    private void registerApiDocsPaths() {
+        RuleKey key = proxy.getKey();
+        if (key instanceof APIProxyKey apiKey) {
+            apiKey.addBasePaths(new ArrayList<>(List.of(PATH)));
+        } else if (key instanceof AbstractRuleKey ark && ark.isUsePathPattern()) {
+            String existing = ark.getPath();
+            if (existing != null) {
+                ark.setPathRegExp(true);
+                ark.setPath("(" + Pattern.quote(existing) + ".*|" + Pattern.quote(PATH) + ".*)");
+            }
+        }
     }
 
     private String getBasePath() {
         if (proxy instanceof ServiceProxy sp) {
             var path = sp.getPath();
-            if (path != null) {
+            if (path != null && path.getUri() != null) {
                 return path.getUri();
             }
         }
@@ -118,20 +127,12 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) {
-        String requestPath = exc.getRequest().getUri();
-
-        // Serve Swagger UI
-        if (requestPath.endsWith(API_DOCS_PATH)) {
-            return serveSwaggerUi(exc);
+        Outcome outcome = publisher.handleRequest(exc);
+        if (outcome != CONTINUE) {
+            return outcome;
         }
 
-        // Serve OpenAPI spec YAML
-        if (requestPath.endsWith(SPEC_PATH)) {
-            return serveOpenApiSpec(exc);
-        }
-
-        // Route to operation handler
-        String operationName = extractOperationName(requestPath);
+        String operationName = extractOperationName(exc.getRequest().getUri());
         if (operationName != null && operationsByName.containsKey(operationName)) {
             return handleOperation(exc, operationName);
         }
@@ -139,45 +140,16 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
-    private Outcome serveSwaggerUi(Exchange exc) {
-        String specUrl = basePath + SPEC_PATH;
-        String title = definitions.getServices().isEmpty() ? "SOAP Service" : definitions.getServices().getFirst().getName();
-
-        Map<String, Object> ctx = new HashMap<>();
-        ctx.put("openApiUrl", specUrl);
-        ctx.put("openApiTitle", title);
-
-        exc.setResponse(Response.ok()
-                .contentType(TEXT_HTML_UTF8)
-                .body(swaggerUiTemplate.make(ctx).toString())
-                .build());
-        return RETURN;
-    }
-
-    private Outcome serveOpenApiSpec(Exchange exc) {
-        OpenApiGenerator generator = new OpenApiGenerator(definitions, basePath, operationsByName);
-        String yaml = generator.generateYaml();
-
-        exc.setResponse(Response.ok()
-                .yaml()
-                .body(yaml)
-                .build());
-        return RETURN;
-    }
-
     private String extractOperationName(String path) {
-        // Extract operation name from path like /purchasing/get-orders -> getOrders
         String withoutBase = path.replaceFirst("^" + basePath, "");
         if (withoutBase.startsWith("/")) {
             withoutBase = withoutBase.substring(1);
         }
-
-        // Convert kebab-case to camelCase
         return kebabToCamel(withoutBase);
     }
 
     private String kebabToCamel(String kebab) {
-        StringBuilder result = new StringBuilder();
+        var result = new StringBuilder();
         boolean capitalizeNext = false;
 
         for (char c : kebab.toCharArray()) {
@@ -202,16 +174,13 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
 
         try {
-            // Transform JSON to SOAP
             Json2SoapTransformer requestTransformer = new Json2SoapTransformer(definitions, operationName);
             byte[] soapRequest = requestTransformer.transform(exc.getRequest().getBodyAsStringDecoded());
 
-            // Update request for SOAP backend
             exc.getRequest().setBodyContent(soapRequest);
             exc.getRequest().getHeader().setContentType(TEXT_XML);
             exc.getRequest().getHeader().setSOAPAction(getSOAPAction(operationName));
 
-            // Store operation name for response transformation
             exc.setProperty("wsdl2openapi.operation", operationName);
 
         } catch (Exception e) {
@@ -234,7 +203,6 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
 
         try {
-            // Transform SOAP response to JSON
             Soap2JsonTransformer responseTransformer = new Soap2JsonTransformer(definitions, operationName);
             String jsonResponse = responseTransformer.transform(exc.getResponse().getBodyAsStringDecoded());
 
@@ -254,7 +222,6 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
     }
 
     private String getSOAPAction(String operationName) {
-        // Try to find the SOAP action from the binding
         return definitions.getBindings().stream()
                 .flatMap(b -> b.getBindingOperations().stream())
                 .filter(op -> op.getName().equals(operationName))
