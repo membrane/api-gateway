@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tests: xsd:extension, xsd:choice, maxOccurs=unbounded, named xsd:simpleType -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/extended"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/extended">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/extended">
+
+            <!-- Base type -->
+            <xsd:complexType name="BaseType">
+                <xsd:sequence>
+                    <xsd:element name="baseId" type="xsd:int"/>
+                    <xsd:element name="baseName" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <!-- Extension: inherits BaseType fields, adds extra -->
+            <xsd:complexType name="ExtendedType">
+                <xsd:complexContent>
+                    <xsd:extension base="tns:BaseType">
+                        <xsd:sequence>
+                            <xsd:element name="extra" type="xsd:string"/>
+                        </xsd:sequence>
+                    </xsd:extension>
+                </xsd:complexContent>
+            </xsd:complexType>
+
+            <!-- Named simpleType restriction -->
+            <xsd:simpleType name="CodeType">
+                <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="A"/>
+                    <xsd:enumeration value="B"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
+            <!-- Request: choice + optional simpleType field -->
+            <xsd:element name="searchRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:choice>
+                            <xsd:element name="byName" type="xsd:string"/>
+                            <xsd:element name="byId" type="xsd:int"/>
+                        </xsd:choice>
+                        <xsd:element name="code" type="tns:CodeType" minOccurs="0"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <!-- Response: unbounded array of ExtendedType -->
+            <xsd:element name="searchResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="item" type="tns:ExtendedType"
+                                     minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+        </xsd:schema>
+    </wsdl:types>
+
+    <wsdl:message name="SearchRequest">
+        <wsdl:part name="parameters" element="tns:searchRequest"/>
+    </wsdl:message>
+    <wsdl:message name="SearchResponse">
+        <wsdl:part name="parameters" element="tns:searchResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="SearchPort">
+        <wsdl:operation name="search">
+            <wsdl:input message="tns:SearchRequest"/>
+            <wsdl:output message="tns:SearchResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="SearchBinding" type="tns:SearchPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="search">
+            <s:operation soapAction="search"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="SearchService">
+        <wsdl:port name="SearchPort" binding="tns:SearchBinding">
+            <s:address location="http://localhost:8080/search"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
