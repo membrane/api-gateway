@@ -28,6 +28,10 @@ import java.io.*;
 import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.localName;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.prefix;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.resolveTargetSchemaRoots;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 
@@ -181,23 +185,9 @@ public class Json2SoapTransformer {
      * Resolves a {@code type="prefix:local"} reference to a named {@code xsd:complexType} element.
      */
     private Element resolveComplexType(String typeRef, Element contextElement, Element currentSchemaRoot) {
-        int colon = typeRef.indexOf(':');
-        String prefix = colon >= 0 ? typeRef.substring(0, colon) : "";
-        String local = colon >= 0 ? typeRef.substring(colon + 1) : typeRef;
-
-        List<Element> targetRoots;
-        if (prefix.isEmpty()) {
-            targetRoots = List.of(currentSchemaRoot);
-        } else {
-            String nsUri = contextElement.lookupNamespaceURI(prefix);
-            if (nsUri == null) {
-                targetRoots = List.of(currentSchemaRoot);
-            } else {
-                var roots = schemasByNamespace.get(nsUri);
-                targetRoots = (roots != null && !roots.isEmpty()) ? roots : List.of(currentSchemaRoot);
-            }
-        }
-
+        String prefix = prefix(typeRef);
+        String local = localName(typeRef);
+        List<Element> targetRoots = resolveTargetSchemaRoots(prefix, contextElement, currentSchemaRoot, schemasByNamespace);
         for (var root : targetRoots) {
             Element complexType = findXsdChildWithName(root, "complexType", local);
             if (complexType != null) return complexType;
@@ -258,49 +248,4 @@ public class Json2SoapTransformer {
         return outputStream.toByteArray();
     }
 
-    private static Map<String, List<Element>> buildSchemaMap(Definitions definitions) {
-        var map = new LinkedHashMap<String, List<Element>>();
-        var queue = new ArrayDeque<>(definitions.getSchemas());
-        var seen = Collections.newSetFromMap(new IdentityHashMap<>());
-        seen.addAll(definitions.getSchemas());
-        while (!queue.isEmpty()) {
-            var schema = queue.poll();
-            var ns = schema.getTargetNamespace();
-            if (ns != null) {
-                map.computeIfAbsent(ns, k -> new ArrayList<>()).add(schema.getSchemaElement());
-            }
-            for (var imp : schema.getImports()) {
-                var imported = imp.getSchema();
-                if (imported != null && seen.add(imported)) {
-                    queue.add(imported);
-                }
-            }
-        }
-        return map;
-    }
-
-    private static Element findXsdChild(Element parent, String xsdLocalName) {
-        NodeList children = parent.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element el && XSD_NS.equals(el.getNamespaceURI()) && xsdLocalName.equals(el.getLocalName())) {
-                return el;
-            }
-        }
-        return null;
-    }
-
-    private static Element findXsdChildWithName(Element parent, String xsdLocalName, String nameAttr) {
-        NodeList children = parent.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element el
-                    && XSD_NS.equals(el.getNamespaceURI())
-                    && xsdLocalName.equals(el.getLocalName())
-                    && nameAttr.equals(el.getAttribute("name"))) {
-                return el;
-            }
-        }
-        return null;
-    }
 }

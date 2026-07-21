@@ -24,6 +24,7 @@ import javax.xml.namespace.QName;
 import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 
 /**
  * Converts XSD type definitions embedded in a WSDL to OpenAPI Schema objects.
@@ -225,7 +226,7 @@ public class XsdToSchema {
         if (typeRef.isEmpty()) return new StringSchema();
         String prefix = prefix(typeRef);
         String local = localName(typeRef);
-        List<Element> targetRoots = resolveTargetSchemaRoots(prefix, contextElement, currentSchemaRoot);
+        List<Element> targetRoots = resolveTargetSchemaRoots(prefix, contextElement, currentSchemaRoot, schemasByNamespace);
         for (var targetRoot : targetRoots) {
             Element complexType = findXsdChildWithName(targetRoot, "complexType", local);
             if (complexType != null) {
@@ -250,19 +251,6 @@ public class XsdToSchema {
         return mapPrimitive(local);
     }
 
-    /**
-     * Returns the schema root elements for the namespace identified by {@code prefix}
-     * in the context of {@code contextElement}. Falls back to {@code currentSchemaRoot}
-     * if the prefix can't be resolved or the namespace has no known schema.
-     */
-    private List<Element> resolveTargetSchemaRoots(String prefix, Element contextElement, Element currentSchemaRoot) {
-        if (prefix.isEmpty()) return List.of(currentSchemaRoot);
-        String nsUri = contextElement.lookupNamespaceURI(prefix);
-        if (nsUri == null) return List.of(currentSchemaRoot);
-        List<Element> roots = schemasByNamespace.get(nsUri);
-        return (roots != null && !roots.isEmpty()) ? roots : List.of(currentSchemaRoot);
-    }
-
     private Schema<?> mapPrimitive(String localPart) {
         return switch (localPart) {
             case "string", "anyURI", "normalizedString", "token", "language",
@@ -282,76 +270,6 @@ public class XsdToSchema {
         };
     }
 
-
-    /**
-     * Builds a namespace → list of schema root elements map by traversing the full
-     * import and include graph of the WSDL. Collecting all schema roots per namespace
-     * allows type lookup across multiple files that share the same target namespace.
-     * Identity-based dedup prevents processing the same schema object twice.
-     */
-    private static Map<String, List<Element>> buildSchemaMap(Definitions definitions) {
-        var map = new LinkedHashMap<String, List<Element>>();
-        var queue = new ArrayDeque<>(definitions.getSchemas());
-        var seen = Collections.newSetFromMap(new IdentityHashMap<>());
-        seen.addAll(definitions.getSchemas());
-        while (!queue.isEmpty()) {
-            var schema = queue.poll();
-            var ns = schema.getTargetNamespace();
-            if (ns != null) {
-                map.computeIfAbsent(ns, k -> new ArrayList<>()).add(schema.getSchemaElement());
-            }
-            for (var imp : schema.getImports()) {
-                var imported = imp.getSchema();
-                if (imported != null && imported.getTargetNamespace() != null && seen.add(imported)) {
-                    queue.add(imported);
-                }
-            }
-            for (var inc : schema.getIncludes()) {
-                var included = inc.getSchema();
-                if (included != null && included.getTargetNamespace() != null && seen.add(included)) {
-                    queue.add(included);
-                }
-            }
-        }
-        return map;
-    }
-
-    private Element findXsdChildWithName(Element parent, String xsdLocalName, String nameAttr) {
-        NodeList children = parent.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element el
-                    && XSD_NS.equals(el.getNamespaceURI())
-                    && xsdLocalName.equals(el.getLocalName())
-                    && nameAttr.equals(el.getAttribute("name"))) {
-                return el;
-            }
-        }
-        return null;
-    }
-
-    private Element findXsdChild(Element parent, String xsdLocalName) {
-        NodeList children = parent.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element el
-                    && XSD_NS.equals(el.getNamespaceURI())
-                    && xsdLocalName.equals(el.getLocalName())) {
-                return el;
-            }
-        }
-        return null;
-    }
-
-    private String prefix(String qualifiedName) {
-        int colon = qualifiedName.indexOf(':');
-        return colon >= 0 ? qualifiedName.substring(0, colon) : "";
-    }
-
-    private String localName(String qualifiedName) {
-        int colon = qualifiedName.indexOf(':');
-        return colon >= 0 ? qualifiedName.substring(colon + 1) : qualifiedName;
-    }
 
     private boolean isMoreThanOne(String maxOccurs) {
         if (maxOccurs == null || maxOccurs.isEmpty()) return false;
