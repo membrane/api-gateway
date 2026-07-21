@@ -63,6 +63,8 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
     private String basePath;
     private List<OperationConfig> operations = new ArrayList<>();
     private final Map<String, OperationConfig> operationsByName = new LinkedHashMap<>();
+    private final Map<String, String> kebabToOperation = new LinkedHashMap<>();
+    private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
     private OpenAPIPublisherInterceptor publisher;
 
     public Wsdl2OpenApiInterceptor() {
@@ -89,6 +91,17 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             if (op.getName() != null) {
                 operationsByName.put(op.getName(), op);
             }
+        }
+
+        var allOps = definitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .toList();
+        var opsToExpose = operationsByName.isEmpty()
+                ? allOps
+                : allOps.stream().filter(op -> operationsByName.containsKey(op.getName())).toList();
+        for (var op : opsToExpose) {
+            kebabToOperation.put(camelToKebab(op.getName()), op.getName());
+            requestTransformers.put(op.getName(), new Json2SoapTransformer(definitions, op.getName()));
         }
 
         var generator = new OpenApiGenerator(definitions, basePath, operationsByName);
@@ -196,27 +209,25 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
     }
 
     String extractOperationName(String path) {
-        String withoutBase = path.replaceFirst("^" + basePath, "");
+        String withoutBase = path.replaceFirst("^" + Pattern.quote(basePath), "");
         if (withoutBase.startsWith("/")) {
             withoutBase = withoutBase.substring(1);
         }
         String segment = withoutBase.contains("?") ? withoutBase.substring(0, withoutBase.indexOf('?')) : withoutBase;
-        return kebabToCamel(segment);
+        return kebabToOperation.getOrDefault(segment, segment);
     }
 
-    private String kebabToCamel(String kebab) {
+    private String camelToKebab(String camelCase) {
         var result = new StringBuilder();
-        boolean capitalizeNext = false;
-
-        for (char c : kebab.toCharArray()) {
-            if (c == '-') {
-                capitalizeNext = true;
+        for (int i = 0; i < camelCase.length(); i++) {
+            char c = camelCase.charAt(i);
+            if (Character.isUpperCase(c)) {
+                if (i > 0) result.append('-');
+                result.append(Character.toLowerCase(c));
             } else {
-                result.append(capitalizeNext ? Character.toUpperCase(c) : c);
-                capitalizeNext = false;
+                result.append(c);
             }
         }
-
         return result.toString();
     }
 
@@ -230,8 +241,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
 
         try {
-            Json2SoapTransformer requestTransformer = new Json2SoapTransformer(definitions, operationName);
-            byte[] soapRequest = requestTransformer.transform(exc.getRequest().getBodyAsStringDecoded());
+            byte[] soapRequest = requestTransformers.get(operationName).transform(exc.getRequest().getBodyAsStringDecoded());
 
             exc.getRequest().setBodyContent(soapRequest);
             exc.getRequest().getHeader().setContentType(TEXT_XML);

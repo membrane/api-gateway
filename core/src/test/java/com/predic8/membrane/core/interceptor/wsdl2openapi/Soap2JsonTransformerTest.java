@@ -436,6 +436,42 @@ class Soap2JsonTransformerTest {
     }
 
     @Test
+    void numericTrueBooleanConvertedWithSchema() throws Exception {
+        var schema = new ObjectSchema().addProperty("active", new BooleanSchema());
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getStatusResponse>
+                      <active>1</active>
+                    </getStatusResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, schema));
+        assertTrue(root.get("active").isBoolean(), "active should be a JSON boolean");
+        assertTrue(root.get("active").booleanValue(), "XSD '1' must map to JSON true");
+    }
+
+    @Test
+    void numericFalseBooleanConvertedWithSchema() throws Exception {
+        var schema = new ObjectSchema().addProperty("active", new BooleanSchema());
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getStatusResponse>
+                      <active>0</active>
+                    </getStatusResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, schema));
+        assertTrue(root.get("active").isBoolean(), "active should be a JSON boolean");
+        assertFalse(root.get("active").booleanValue(), "XSD '0' must map to JSON false");
+    }
+
+    @Test
     void doctypeInResponseCausesSaxParseException() {
         var transformer = new Soap2JsonTransformer();
         var xmlWithDoctype = """

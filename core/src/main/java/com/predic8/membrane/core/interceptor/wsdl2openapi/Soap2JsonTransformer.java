@@ -32,7 +32,7 @@ import static org.w3c.dom.Node.ELEMENT_NODE;
  */
 public class Soap2JsonTransformer {
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public String transform(String soapXml) throws Exception {
         return transform(soapXml, null);
@@ -61,7 +61,7 @@ public class Soap2JsonTransformer {
         }
 
         Map<String, Object> jsonMap = elementToMap(responseElement, responseSchema);
-        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
+        return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonMap);
     }
 
     private Element getSoapBody(Document doc) {
@@ -143,7 +143,8 @@ public class Soap2JsonTransformer {
             try { return Double.parseDouble(text.trim()); } catch (NumberFormatException e) { return text; }
         }
         if (schema instanceof BooleanSchema) {
-            return Boolean.parseBoolean(text.trim());
+            String v = text.trim();
+            return "true".equalsIgnoreCase(v) || "1".equals(v);
         }
         return text;
     }

@@ -17,17 +17,28 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class Wsdl2OpenApiInterceptorTest {
 
+    @SuppressWarnings("unchecked")
+    private static void setFields(Wsdl2OpenApiInterceptor interceptor, String basePath,
+                                   Map<String, String> kebabToOperation) throws Exception {
+        Field bf = Wsdl2OpenApiInterceptor.class.getDeclaredField("basePath");
+        bf.setAccessible(true);
+        bf.set(interceptor, basePath);
+
+        Field kf = Wsdl2OpenApiInterceptor.class.getDeclaredField("kebabToOperation");
+        kf.setAccessible(true);
+        ((Map<String, String>) kf.get(interceptor)).putAll(kebabToOperation);
+    }
+
     @Test
     void extractOperationNameStripsQueryString() throws Exception {
         var interceptor = new Wsdl2OpenApiInterceptor();
-        Field field = Wsdl2OpenApiInterceptor.class.getDeclaredField("basePath");
-        field.setAccessible(true);
-        field.set(interceptor, "/purchasing");
+        setFields(interceptor, "/purchasing", Map.of("get-city", "getCity"));
 
         assertEquals("getCity", interceptor.extractOperationName("/purchasing/get-city?format=json"));
     }
@@ -35,10 +46,24 @@ class Wsdl2OpenApiInterceptorTest {
     @Test
     void extractOperationNameWithoutQueryString() throws Exception {
         var interceptor = new Wsdl2OpenApiInterceptor();
-        Field field = Wsdl2OpenApiInterceptor.class.getDeclaredField("basePath");
-        field.setAccessible(true);
-        field.set(interceptor, "/purchasing");
+        setFields(interceptor, "/purchasing", Map.of("get-city", "getCity"));
 
         assertEquals("getCity", interceptor.extractOperationName("/purchasing/get-city"));
+    }
+
+    @Test
+    void extractOperationNamePreservesPascalCase() throws Exception {
+        var interceptor = new Wsdl2OpenApiInterceptor();
+        setFields(interceptor, "/api", Map.of("get-city", "GetCity"));
+
+        assertEquals("GetCity", interceptor.extractOperationName("/api/get-city"));
+    }
+
+    @Test
+    void extractOperationNameHandlesRegexMetacharactersInBasePath() throws Exception {
+        var interceptor = new Wsdl2OpenApiInterceptor();
+        setFields(interceptor, "/api/v1.0", Map.of("get-city", "getCity"));
+
+        assertEquals("getCity", interceptor.extractOperationName("/api/v1.0/get-city"));
     }
 }
