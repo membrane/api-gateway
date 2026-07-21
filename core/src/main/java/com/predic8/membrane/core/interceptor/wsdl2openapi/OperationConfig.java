@@ -46,7 +46,10 @@ public class OperationConfig {
     }
 
     /**
-     * @description Interceptors applied to this operation (e.g. apiKey, rateLimiter)
+     * @description Interceptors applied to this operation.
+     * On the request side they run before JSON-to-SOAP conversion and before the SOAP backend call,
+     * so plugins like <code>apiKey</code> or <code>rateLimiter</code> can reject early.
+     * On the response side they run after SOAP-to-JSON conversion on the final JSON body.
      */
     @MCChildElement
     public void setTransformation(List<Interceptor> transformation) {
