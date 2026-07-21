@@ -25,6 +25,8 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,12 +35,14 @@ class Json2SoapTransformerTest {
     static Definitions citiesDefinitions;
     static Definitions blzDefinitions;
     static Definitions emptyMessageDefinitions;
+    static Definitions orderingDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
         citiesDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cities.wsdl");
         blzDefinitions = Definitions.parse(new ResolverMap(), "classpath:/blz-service.wsdl");
         emptyMessageDefinitions = Definitions.parse(new ResolverMap(), "classpath:/special/empty-message.wsdl");
+        orderingDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/ordering.wsdl");
     }
 
     @Test
@@ -169,6 +173,27 @@ class Json2SoapTransformerTest {
         assertDoesNotThrow(() -> parseXml(soapBytes), "Output should be well-formed XML");
     }
 
+    @Test
+    void fieldsOrderedAccordingToWsdlSchema() throws Exception {
+        // JSON fields are in reverse WSDL order: age, lastName, firstName
+        var transformer = new Json2SoapTransformer(orderingDefinitions, "createPerson");
+        var soapBytes = transformer.transform("{\"age\": 30, \"lastName\": \"Doe\", \"firstName\": \"John\"}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element createPersonEl = getFirstChildElement(body);
+
+        List<Element> children = getChildElements(createPersonEl);
+        assertEquals(3, children.size());
+        assertEquals("firstName", children.get(0).getLocalName());
+        assertEquals("John", children.get(0).getTextContent());
+        assertEquals("lastName", children.get(1).getLocalName());
+        assertEquals("Doe", children.get(1).getTextContent());
+        assertEquals("age", children.get(2).getLocalName());
+        assertEquals("30", children.get(2).getTextContent());
+    }
+
     private static Document parseXml(byte[] bytes) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -184,5 +209,16 @@ class Json2SoapTransformerTest {
             }
         }
         return null;
+    }
+
+    private static List<Element> getChildElements(Element parent) {
+        var result = new ArrayList<Element>();
+        var children = parent.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i).getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
+                result.add((Element) children.item(i));
+            }
+        }
+        return result;
     }
 }
