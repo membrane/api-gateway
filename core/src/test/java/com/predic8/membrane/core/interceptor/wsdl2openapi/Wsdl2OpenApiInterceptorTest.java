@@ -14,10 +14,14 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import org.junit.jupiter.api.Test;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.router.*;
+import org.junit.jupiter.api.*;
 
-import java.lang.reflect.Field;
-import java.util.Map;
+import java.lang.reflect.*;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 

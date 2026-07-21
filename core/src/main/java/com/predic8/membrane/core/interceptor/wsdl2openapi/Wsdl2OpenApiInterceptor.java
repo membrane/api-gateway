@@ -93,6 +93,12 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             }
         }
 
+        for (OperationConfig opConfig : operations) {
+            for (Interceptor i : opConfig.getTransformation()) {
+                i.init(router, proxy);
+            }
+        }
+
         var allOps = definitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
                 .toList();
@@ -151,6 +157,11 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
 
             exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
+
+            OperationConfig opConfig = operationsByName.get(operationName);
+            if (opConfig != null && !opConfig.getTransformation().isEmpty()) {
+                return router.getFlowController().invokeResponseHandlers(exc, opConfig.getTransformation());
+            }
 
         } catch (SoapFaultException fault) {
             log.debug("SOAP fault received for operation {}: [{}] {}", operationName, fault.getFaultCode(), fault.getFaultMessage());
@@ -241,6 +252,12 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
 
         try {
+            OperationConfig opConfig = operationsByName.get(operationName);
+            if (opConfig != null && !opConfig.getTransformation().isEmpty()) {
+                Outcome outcome = router.getFlowController().invokeRequestHandlers(exc, opConfig.getTransformation());
+                if (outcome != CONTINUE) return outcome;
+            }
+
             byte[] soapRequest = requestTransformers.get(operationName).transform(exc.getRequest().getBodyAsStringDecoded());
 
             exc.getRequest().setBodyContent(soapRequest);

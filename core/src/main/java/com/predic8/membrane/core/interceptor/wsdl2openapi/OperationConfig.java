@@ -15,6 +15,9 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.annot.*;
+import com.predic8.membrane.core.interceptor.*;
+
+import java.util.*;
 
 /**
  * Configuration for a single WSDL operation exposed via OpenAPI
@@ -23,6 +26,7 @@ import com.predic8.membrane.annot.*;
 public class OperationConfig {
 
     private String name;
+    private List<Interceptor> transformation = new ArrayList<>();
 
     public String getName() {
         return name;
@@ -35,5 +39,17 @@ public class OperationConfig {
     @MCAttribute
     public void setName(String name) {
         this.name = name;
+    }
+
+    public List<Interceptor> getTransformation() {
+        return transformation;
+    }
+
+    /**
+     * @description Interceptors applied to this operation (e.g. apiKey, rateLimiter)
+     */
+    @MCChildElement
+    public void setTransformation(List<Interceptor> transformation) {
+        this.transformation = transformation;
     }
 }
