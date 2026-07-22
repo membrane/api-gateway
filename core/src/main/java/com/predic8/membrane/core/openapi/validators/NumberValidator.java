@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.node.*;
 
 import java.math.*;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
+
 /**
  * When numbers appear in parameters, they enter as Strings (which is OK).
  * <p>
@@ -60,7 +62,7 @@ public class NumberValidator implements JsonSchemaValidator {
         }
         try {
             if (value instanceof TextNode) {
-                return ValidationErrors.error(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
+                return ValidationErrors.error(ctx.schemaType(NUMBER), mask -> String.format("%s is not a number.", v(value, mask)));
             }
             if (value instanceof JsonNode jn) {
                 // Not using double prevents from losing fractions
@@ -72,7 +74,7 @@ public class NumberValidator implements JsonSchemaValidator {
                 return null;
             }
         } catch (NumberFormatException ignored) {
-            return ValidationErrors.error(ctx.schemaType(NUMBER), String.format("%s is not a number.", value));
+            return ValidationErrors.error(ctx.schemaType(NUMBER), mask -> String.format("%s is not a number.", v(value, mask)));
         }
         throw new RuntimeException("Should never happen!");
     }

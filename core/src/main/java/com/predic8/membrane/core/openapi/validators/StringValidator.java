@@ -25,6 +25,7 @@ import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.util.Utils.*;
 import static com.predic8.membrane.core.openapi.validators.ValidationContext.ValidatedEntityType.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static java.lang.String.*;
 
 @SuppressWarnings("rawtypes")
@@ -67,7 +68,7 @@ public class StringValidator implements JsonSchemaValidator {
             } else if (QUERY_PARAMETER.equals(ctx.getValidatedEntityType())) {
                 value = node.asText();
             } else {
-                errors.add(ctx, format("String expected but got %s of type %s", node, node.getNodeType()));
+                errors.add(ctx, mask -> format("String expected but got %s of type %s", v(node, mask), node.getNodeType()));
                 return errors;
             }
         } else if (obj instanceof String s) {
@@ -89,107 +90,107 @@ public class StringValidator implements JsonSchemaValidator {
         switch (schema.getFormat()) {
             case "uuid": {
                 if (!isValidUUID(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid UUID.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid UUID.", v(value, mask)));
                 break;
             }
             case "email": {
                 if (!isValidEMail(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid E-Mail.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid E-Mail.", v(value, mask)));
                 break;
             }
             case "uri": {
                 if (!isValidUri(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid URI.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid URI.", v(value, mask)));
                 break;
             }
             case "date": {
                 if (!isValidDate(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid date of the pattern YYYY-MM-DD.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid date of the pattern YYYY-MM-DD.", v(value, mask)));
                 break;
             }
             case "date-time": {
                 if (!isValidDateTime(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid date-time according to ISO 8601.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid date-time according to ISO 8601.", v(value, mask)));
                 break;
             }
             case "duration": {
                 if (!isValidDuration(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid duration.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid duration.", v(value, mask)));
                 break;
             }
             case "ip", "ipv4": {
                 if (!isValidIp(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid IPv4 address.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid IPv4 address.", v(value, mask)));
                 break;
             }
             case "ipv6": {
                 if (!isValidIpV6(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid IPv6 address.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid IPv6 address.", v(value, mask)));
                 break;
             }
             case "idn-email": {
                 if (!isValidEMail(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid E-Mail address.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid E-Mail address.", v(value, mask)));
                 break;
             }
             case "uri-reference": {
                 if (!isValidUri(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid URI reference.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid URI reference.", v(value, mask)));
                 break;
             }
             case "iri": {
                 if (!isValidUri(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid IRI.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid IRI.", v(value, mask)));
                 break;
             }
             case "iri-reference": {
                 if (!isValidUri(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid IRI reference.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid IRI reference.", v(value, mask)));
                 break;
             }
             case "hostname", "idn-hostname": {
                 if (!isValidHostname(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid hostname.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid hostname.", v(value, mask)));
                 break;
             }
             case "json-pointer": {
                 if (!isValidJsonPointer(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid JSON pointer.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid JSON pointer.", v(value, mask)));
                 break;
             }
             case "relative-json-pointer": {
                 if (!isValidRelativeJsonPointer(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid relative JSON pointer.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid relative JSON pointer.", v(value, mask)));
                 break;
             }
             case "gtin-13": {
                 if (!isValidGlobalTradeItemNumber(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid GTIN-13 number.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid GTIN-13 number.", v(value, mask)));
                 break;
             }
             case "iso-3166-alpha-2": {
                 if (!isValidIso3166Alpha2(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid ISO-3166-1-alpha-2 number.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid ISO-3166-1-alpha-2 number.", v(value, mask)));
                 break;
             }
             case "iso-4217": {
                 if (!isValidIso4217(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid currency code according to ISO 4217.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid currency code according to ISO 4217.", v(value, mask)));
                 break;
             }
             case "bcp47": {
                 if (!isValidBCP47(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid multi letter language tag according to BCP47.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid multi letter language tag according to BCP47.", v(value, mask)));
                 break;
             }
             case "iso-639": {
                 if (!isValidIso639(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid language code according to ISO 639.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid language code according to ISO 639.", v(value, mask)));
                 break;
             }
             case "iso-639-1": {
                 if (!isValidIso639_1(value))
-                    return ValidationErrors.error(ctx, format("The string '%s' is not a valid two letter language code according to ISO 639-1.", value));
+                    return ValidationErrors.error(ctx, mask -> format("The string '%s' is not a valid two letter language code according to ISO 639-1.", v(value, mask)));
                 break;
             }
             default:

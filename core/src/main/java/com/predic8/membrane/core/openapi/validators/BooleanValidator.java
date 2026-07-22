@@ -18,6 +18,7 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.*;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static java.util.Locale.*;
 
 public class BooleanValidator implements JsonSchemaValidator {
@@ -39,7 +40,7 @@ public class BooleanValidator implements JsonSchemaValidator {
         if (str.equals("true") || str.equals("false") || str.equals("yes") || str.equals("no"))
             return null;
 
-        return ValidationErrors.error(ctx.schemaType("boolean"), String.format("Value '%s' is not a boolean (true/false).", value));
+        return ValidationErrors.error(ctx.schemaType("boolean"), mask -> String.format("Value '%s' is not a boolean (true/false).", v(value, mask)));
     }
 
     private static String getStringValue(Object value) {
