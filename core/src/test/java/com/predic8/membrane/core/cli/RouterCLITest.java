@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RouterCLITest {
@@ -29,6 +30,16 @@ class RouterCLITest {
     @Test
     void getUserDir() {
         assertTrue(RouterCLI.getUserDir().endsWith("/"));
+    }
+
+    /**
+     * Dry run (-t) on a YAML configuration must parse it as YAML instead of feeding it to the XML
+     * parser (which failed with "Content is not allowed in prolog", see issue #3104).
+     */
+    @Test
+    void verifyYamlConfiguration() {
+        assertDoesNotThrow(() ->
+                RouterCLI.verifyConfiguration("src/test/resources/configuration/dry-run.apis.yaml"));
     }
 
     /**
