@@ -59,7 +59,11 @@ public class VerifyConfigurationTest extends DistributionExtractingTestcase {
     void verifiesValidXmlConfiguration() throws Exception {
         writeStringToFile(new File(baseDir, "verify-valid.proxies.xml"), """
                 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
-                              xmlns:spring="http://www.springframework.org/schema/beans">
+                              xmlns:spring="http://www.springframework.org/schema/beans"
+                              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                              xsi:schemaLocation="http://www.springframework.org/schema/beans
+                              http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                              http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
                     <router>
                         <api port="2004">
                             <return/>
