@@ -18,6 +18,8 @@ package com.predic8.membrane.core.openapi.validators;
 
 import com.fasterxml.jackson.databind.node.NullNode;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
+
 public class NullValidator implements JsonSchemaValidator {
 
     @Override
@@ -42,6 +44,6 @@ public class NullValidator implements JsonSchemaValidator {
         if (value instanceof NullNode) {
             return null;
         }
-        return ValidationErrors.error(ctx.schemaType(NULL), String.format("%s is not null.", value));
+        return ValidationErrors.error(ctx.schemaType(NULL), mask -> String.format("%s is not null.", v(value, mask)));
     }
 }
