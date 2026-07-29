@@ -53,6 +53,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public abstract class AbstractBody {
 	private static final Logger log = LoggerFactory.getLogger(AbstractBody.class.getName());
 
+	/**
+	 * Largest body we will materialize into a single {@code byte[]}. A JVM cannot
+	 * allocate an array larger than {@link Integer#MAX_VALUE} elements (some VMs stop
+	 * a few bytes short), so anything above this can only be streamed, not buffered.
+	 */
+	static final int MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
+
 	// whether the body has been read completely from the wire
 	boolean read;
 
@@ -120,7 +127,10 @@ public abstract class AbstractBody {
 		if (wasStreamed)
 			throw new IllegalStateException("Cannot read body after it was streamed.");
 		read();
-		byte[] content = new byte[getLength()];
+		long length = getLength();
+		if (length > MAX_ARRAY_LENGTH)
+			throw new BodyTooLargeException("Message body of " + length + " bytes is too large to load into memory (limit " + MAX_ARRAY_LENGTH + " bytes). Stream the message instead of calling getContent().");
+		byte[] content = new byte[(int) length];
 		int destPos = 0;
 		for (Chunk chunk : chunks) {
 			destPos = chunk.copyChunk(content, destPos);
@@ -166,12 +176,14 @@ public abstract class AbstractBody {
 	 * Warning: Calling this method will trigger reading the body from the client, disabling "streaming".
 	 * Use {@link #isRead()} to determine wether the body already has been read, if necessary.
 	 *
-	 * @return the length of the return value of {@link #getContent()}
+	 * @return the body's total length in bytes. This is the full byte count and may exceed
+	 *         {@link #MAX_ARRAY_LENGTH}, i.e. it can be larger than a {@link #getContent()}
+	 *         array could hold.
 	 */
-	public int getLength() {
+	public long getLength() {
 		read();
 
-		int length = 0;
+		long length = 0;
 		for (Chunk chunk : chunks) {
 			length += chunk.getLength();
 		}
