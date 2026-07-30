@@ -52,7 +52,6 @@ Maven multi-module reactor (root `pom.xml`), Java 21 (`javac.source/target`):
   `tutorials/`, `examples/`). Also owns the tutorial/example integration tests.
 - `war` — packages `core` for deployment into a servlet container (Tomcat, Jetty).
 - `test` — shared test utilities (HTTP client helpers, fixtures), depended on as `test` scope.
-- `maven-plugin`, `openapi-parser-shaded` — not in the root reactor; build/inspect separately if touched.
 
 ## Build
 
