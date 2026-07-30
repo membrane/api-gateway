@@ -87,9 +87,9 @@ mvn -pl core -am -DskipTests package   # one module + its dependencies
   misleading failures (`PortOccupiedException` inside a passing-looking suite, or a bare
   `TimeoutException` from `waitForMembrane()`). Check `lsof -nP -tiTCP:2000 -sTCP:LISTEN` (and
   `7007`) before assuming a config regression.
-- Every new function or feature must be covered by at least one test — before writing a new test class, check `src/test/java/<mirrored package>/` for an existing test class covering that production class and add a test method there; only create a new `<ClassName>Test` class if none exists yet.
+- Every new function or feature must be covered by at least one test — before writing a new test class, check `<module>/src/test/java/<mirrored package>/` for an existing test class covering that production class and add a test method there; only create a new `<ClassName>Test` class if none exists yet.
 - Test observable behavior — inputs/outputs, edge cases (zero/identical values, boundaries), and any documented invariants. Do not write tests for record accessors, generated `equals`/`hashCode`/`toString`, or plain getters/setters — there's no behavior there to break.
-- Test classes mirror the package of the class under test (e.g. `de.predic8.geo.GeoDistanceCalculator` → `de.predic8.geo.GeoDistanceCalculatorTest`).
+- Test classes mirror the package of the class under test (e.g. `com.predic8.membrane.core.util.URLUtil` → `com.predic8.membrane.core.util.URLUtilTest`).
 - Prefer a few tests that pin down real behavior (known-value checks, symmetry/round-trip properties) over exhaustive trivial cases.
 
 
@@ -129,14 +129,13 @@ example/tutorial discovery and scaffolding.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
-- Prefer pure functions: same input → same output, no side effects. Push I/O and mutation to the edges (thin imperative shell, functional core).
-- Prefer expressions over statements. Use ternaries, `map`/`filter`/`reduce`, and comprehensions instead of loops with mutated accumulators.
-- Treat data as immutable. Never mutate arguments, arrays, or objects in place — return new values (spread/copy instead of `push`, `splice`, direct assignment).
-- Compose behavior from small, single-purpose functions rather than classes with internal state. Avoid `this`, inheritance, and mutable instance fields unless the language/library forces it.
-- Avoid `let`/reassignment where a `const`/single-assignment binding will do. If a variable must change, that's a signal to extract a function.
-- Model control flow declaratively: pattern matching / lookup tables over long `if/else` or `switch` chains; pipelines (`compose`/`pipe` or chained calls) over sequential mutation steps.
-- No hidden side effects in "getter"-like functions — anything that mutates state, logs, or does I/O should be named and called out explicitly, not buried in a computation.
-- Keep functions small and total (handle all inputs explicitly); avoid throwing for expected control flow — return result/option-like values where it fits the codebase's existing conventions.
+- Prefer pure methods where practical: same input → same output, minimal side effects; push I/O and mutation to the edges of a call chain.
+- Prefer `final` fields, parameters, and locals; a variable that must be reassigned is a signal to extract a helper method instead.
+- Treat data as immutable by default — prefer immutable collections (`List.of`, `Collections.unmodifiableList`) or defensive copies over mutating a caller-owned array/collection in place.
+- Use Streams only where they read more clearly than an equivalent loop; don't force a stream onto logic a plain loop expresses better.
+- Model control flow declaratively where it fits: pattern matching (`switch` over sealed types/records, pattern `instanceof`) over long `if`/`else` chains.
+- No hidden side effects in getter-like methods — anything that mutates state, logs, or does I/O should be named and called out explicitly, not buried in a computation.
+- Keep methods small and cohesive with a single responsibility; make result and exception behavior explicit — return a value (or `Optional`) for expected outcomes, reserve exceptions for actual failures, and declare checked exceptions rather than swallowing them.
 
 ## Git hygiene
 
