@@ -93,10 +93,9 @@ Repo-specific gotchas that will otherwise waste time or produce misleading failu
   annotation-processor test fails on a German-locale JVM and has nothing to do with the branch
   under review. Build/test the changed module directly instead.
 - **Changes under `distribution/` (examples & tutorials)** are verified by integration tests that
-  unzip the *built* distribution, not the source tree. Use the `run-example-test` skill
-  (`.claude/skills/run-example-test/SKILL.md`) — it rebuilds the distribution when needed, runs a
-  single `*ExampleTest` / `*TutorialTest` fast, and already sets the English locale. Don't try to
-  run these with a plain `mvn test`.
+  unzip the *built* distribution, not the source tree. Use the `run-example-test` skill — it
+  rebuilds the distribution when needed, runs a single `*ExampleTest` / `*TutorialTest` fast, and
+  already sets the English locale. Don't try to run these with a plain `mvn test`.
 
 If a relevant test suite is too slow to run in full, run the most relevant classes and **say so in
 the report** — list the suites you ran and the ones you judged too expensive to run, so the author

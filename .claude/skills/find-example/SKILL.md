@@ -53,12 +53,5 @@ Narrow to one tree when that's all the user wants:
   a README that merely names the element won't produce a false hit.
 - **Examples are deduped to their directory**; tutorials are listed per file
   (they're individual steps sharing one category directory).
-- **No match → exit 3.** Either the element genuinely has no demo, or the name is
-  off. Confirm the name with `find-interceptor-impl` and retry.
-
-## When to also point docs at what you find
-
-If you're improving an element's reference docs (see the
-`optimize-interceptor-docs` skill), mention any examples/tutorials you find in
-the class-level `@description` **prose** — `@see` is dropped by the doc renderer.
-Reference the directory (`examples/orchestration`), not a specific file.
+  - **No match → exit 3.** Either the element genuinely has no demo, or the name is
+    off. Confirm the name with `find-interceptor-impl` and retry.

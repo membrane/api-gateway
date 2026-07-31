@@ -46,13 +46,15 @@ api:
           - header: X-Api-Key
 ```
 
-**Syntax sketch (`[] |` notation).** When the element nests children or offers alternatives, give a compact grammar so the shape is clear at a glance. Put it in `@description` inside a `<pre>` block (no `<` characters inside, so it stays XML-safe). Notation:
-- `<value>` — a placeholder the user fills in
+**Syntax sketch (`[] |` notation).** When the element nests children or offers alternatives, give a compact grammar so the shape is clear at a glance. Put it in `@description` inside a `<pre>` block. Notation:
+- `&lt;value&gt;` — a placeholder the user fills in. Must be escaped entities in the actual Javadoc — a raw `<value>` is read by StAX as an opening XML tag and fails the build (see `references/rendering-contract.md`).
 - `[ x ]` — optional
 - `a | b` — choose one
 - a `-` list with `...` — repeatable
 
-```
+In the rendered Markdown here, the sketch reads with plain angle brackets for readability:
+
+```yaml
 apiKey:
   [ required: true | false ]      # default: true
   extractors:                     # 0..*; defaults to one header extractor
@@ -60,6 +62,21 @@ apiKey:
     ...
   stores:                         # 0..*
     - ...
+```
+
+But in the actual Java source, write it with escaped entities:
+
+```text
+ * @description
+ * <pre>
+ * apiKey:
+ *   [ required: true | false ]      # default: true
+ *   extractors:                     # 0..*; defaults to one header extractor
+ *     - header: &lt;name&gt; | query: &lt;name&gt;
+ *     ...
+ *   stores:                         # 0..*
+ *     - ...
+ * </pre>
 ```
 
 **Attributes.** One or two sentences in `@description`; `@default` carries the default value, `@example` a representative value. Keep them terse — they render as table cells.

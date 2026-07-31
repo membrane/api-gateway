@@ -50,11 +50,11 @@ hardcoded `ExampleTests.java`). Don't hand-roll this — use the existing skill:
 Pass `-b` (or delete `distribution/target/*.zip`) if `core` or another upstream
 module changed since the last build.
 
-## 2. Before running OAuth2Test or any security-tutorial IT
-These bind fixed ports 2000, 3000, and 7007. Check first:
+## 2. If a test run fails
+Tests bind fixed ports, mainly 2000, 3000, 7007 but also others. Before concluding it's a real
+regression, check whether something else already holds one of those ports:
 ```
-lsof -nP -tiTCP:2000 -sTCP:LISTEN
-lsof -nP -tiTCP:7007 -sTCP:LISTEN
+lsof -nP -tiTCP:2000 -sTCP:LISTEN && lsof -nP -tiTCP:3000 -sTCP:LISTEN && lsof -nP -tiTCP:7007 -sTCP:LISTEN
 ```
 A manually running Membrane instance or an IDE-launched JVM already holding one
 of these ports produces a misleading `PortOccupiedException` or a bare

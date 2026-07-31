@@ -101,7 +101,7 @@ Match the tutorials so generated config looks native:
 
 ## Output
 
-Present the config in a fenced ```yaml (or ```xml) block. Below it, add a line or
+Present the config in a fenced code block with `yaml` or `xml` as its info string. Below it, add a line or
 two on what it does and, when it makes the example concrete, how to run and test
 it (e.g. `./membrane.sh -c apis.yaml` then a `curl`). State that you validated it
 against the schema. If a requested feature isn't in the schema (the local build

@@ -22,7 +22,7 @@ Run the helper with the XML element name:
 It prints the class and file, searching every module's `src/main/java` (the
 annotation is not limited to `core`):
 
-```
+```text
 Implementation class for <groovy>:
   GroovyInterceptor  ->  ./core/src/main/java/.../groovy/GroovyInterceptor.java
 ```

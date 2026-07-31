@@ -17,13 +17,16 @@ fi
 
 name="$1"
 
+# Resolve the repo root so the script works from any cwd.
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+
 # Search roots: every module's main sources. @MCElement lives across modules
 # (core, but also others), so don't hard-code core only.
 roots=()
 while IFS= read -r d; do roots+=("$d"); done < <(
-  find . -type d -path '*/src/main/java' -not -path '*/target/*' 2>/dev/null
+  find "$root" -type d -path '*/src/main/java' -not -path '*/target/*' 2>/dev/null
 )
-[[ ${#roots[@]} -eq 0 ]] && roots=(.)
+[[ ${#roots[@]} -eq 0 ]] && roots=("$root")
 
 # An @MCElement annotation is virtually always on one line; `name` may appear
 # after other attributes (component=, id=, ...), so allow anything before it.
@@ -40,7 +43,7 @@ if [[ -n "$matches" ]]; then
   fi
   while IFS= read -r f; do
     cls="$(grep -oE 'public( abstract| final)? class [A-Za-z0-9_]+' "$f" | head -1 | awk '{print $NF}')"
-    echo "  ${cls:-?}  ->  $f"
+    echo "  ${cls:-?}  ->  ${f#"$root"/}"
   done <<< "$matches"
   exit 0
 fi

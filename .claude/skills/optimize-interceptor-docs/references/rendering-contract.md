@@ -33,7 +33,7 @@ isn't well-formed XML, the build **fails** (or blanks the value). Consequences:
 - **`{@code …}` is a hard error** — the parser explicitly rejects it (`@code not allowed!`). Use `<code>…</code>`.
 - **Undeclared entities error out.** `&nbsp;`, `&copy;`, `&mdash;`, `&rarr;` → `Entity … not allowed`. The five XML built-ins (`&lt; &gt; &amp; &quot; &apos;`) are fine. Prefer plain ASCII; write a literal `<` as `&lt;`.
 - Safe formatting vocabulary inside values: `<code>`, `<pre>`, `<b>`, `<i>`, `<p>`, `<br/>`, `<ul>/<li>`.
-- A `<pre>` syntax sketch using `[ ]`, `|`, `<value>`, `-`, `...` contains no `<`-delimited tags of its own, so it is always safe. (Avoid putting `<name>` style angle-brackets inside `<pre>` unless you escape them as `&lt;name&gt;` — they'd otherwise be read as XML tags.)
+- A `<pre>` syntax sketch using `[ ]`, `|`, `-`, `...` is safe as-is, but placeholders must be written `&lt;value&gt;`, never a raw `<value>` — StAX reads an unescaped `<name>` as an opening XML tag and the build fails. (See `ValidatorInterceptor`, `GroovyInterceptor`, `LoadBalancingInterceptor` for real examples.)
 
 ## What is derived automatically (don't hand-write it)
 

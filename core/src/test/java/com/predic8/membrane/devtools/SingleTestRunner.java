@@ -34,6 +34,10 @@ import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.r
  */
 public class SingleTestRunner {
     public static void main(String[] args) throws Exception {
+        System.exit(run(args));
+    }
+
+    static int run(String[] args) {
         boolean isPackage = "package".equals(args[1]);
         LauncherDiscoveryRequest discoveryRequest = request()
                 .selectors(isPackage ? selectPackage(args[0]) : selectClass(args[0]))
@@ -46,6 +50,10 @@ public class SingleTestRunner {
         TestExecutionSummary summary = listener.getSummary();
         summary.printTo(new PrintWriter(System.out));
         summary.printFailuresTo(new PrintWriter(System.out), 100);
-        System.exit(summary.getTotalFailureCount() == 0 ? 0 : 1);
+        return isFailure(summary) ? 1 : 0;
+    }
+
+    static boolean isFailure(TestExecutionSummary summary) {
+        return summary.getTestsFoundCount() == 0 || summary.getTotalFailureCount() > 0;
     }
 }
