@@ -63,7 +63,15 @@ mvn -pl core -am -DskipTests package   # one module + its dependencies
 
 ## Testing
 
-- Full unit test run: `mvn test`. Single module: `mvn -pl core -am test`.
+- **Default to running only the tests affected by a change** — the class(es)/package(s) touched,
+  not the whole suite. Never run a full unit test run (`mvn test` / `mvn -pl core -am test`) or
+  the full distribution IT suite without asking the user first; these are slow and often fail on
+  unrelated/network-dependent tests offline.
+- For a single `core` test class or package, use `test/scripts/run-core-test.sh <FQCN or package>`
+  — it drives `com.predic8.membrane.devtools.SingleTestRunner` (a permanent JUnit Platform
+  Launcher entry point under `core/src/test/java`, so it compiles with the normal test build —
+  no per-run codegen) and matches Surefire's `argLine`/CWD so results agree with a real Maven
+  run. For a single distribution/tutorial IT, use the `run-example-test` skill.
 - **`-Dtest=ClassName` does NOT isolate a class in `core`.** Surefire is bound to
   `UnitTests.java`, a JUnit Platform `@Suite` with `@SelectPackages("com.predic8")` — the suite
   engine ignores Surefire's class filter and runs the whole package regardless (including
