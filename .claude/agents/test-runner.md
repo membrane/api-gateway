@@ -54,7 +54,7 @@ module changed since the last build.
 Tests bind fixed ports, mainly 2000, 3000, 7007 but also others. Before concluding it's a real
 regression, check whether something else already holds one of those ports:
 ```
-lsof -nP -tiTCP:2000 -sTCP:LISTEN && lsof -nP -tiTCP:3000 -sTCP:LISTEN && lsof -nP -tiTCP:7007 -sTCP:LISTEN
+for p in 2000 3000 7007; do lsof -nP -tiTCP:$p -sTCP:LISTEN; done
 ```
 A manually running Membrane instance or an IDE-launched JVM already holding one
 of these ports produces a misleading `PortOccupiedException` or a bare
