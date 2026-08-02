@@ -68,17 +68,17 @@ public abstract class OAuth2ResourceTest {
     public void init() throws IOException {
         mockAuthServer = new TestRouter();
         mockAuthServer.add(getMockAuthServiceProxy());
-        mockAuthServer.start();
         mockAuthServer.getTransport().setBacklog(10000);
         mockAuthServer.getTransport().setSocketTimeout(10000);
         mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit + 1);
+        mockAuthServer.start();
 
         oauth2Resource = new TestRouter();
         oauth2Resource.add(getConfiguredOAuth2Resource());
-        oauth2Resource.start();
         oauth2Resource.getTransport().setBacklog(10000);
         oauth2Resource.getTransport().setSocketTimeout(10000);
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit + 1);
+        oauth2Resource.start();
     }
 
     @AfterEach
