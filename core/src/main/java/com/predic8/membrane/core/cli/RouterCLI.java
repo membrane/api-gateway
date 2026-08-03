@@ -151,12 +151,24 @@ public class RouterCLI {
 
     private static void dryRun(MembraneCommandLine commandLine) {
         try {
-            new TrackingFileSystemXmlApplicationContext(new String[]{getRulesFile(commandLine)}, false).refresh();
+            verifyConfiguration(getRulesFile(commandLine));
         } catch (Throwable e) {
             System.err.println(getExceptionMessageWithCauses(e));
             System.exit(1);
         }
         System.exit(0);
+    }
+
+    /**
+     * Parses the configuration file to verify it is valid, without opening any ports. Supports both
+     * the YAML and the legacy XML configuration formats, selected by file extension.
+     */
+    static void verifyConfiguration(String config) throws Exception {
+        if (config.endsWith(".yaml") || config.endsWith(".yml")) {
+            loadIntoRouter(new DefaultRouter(), config);
+        } else {
+            new TrackingFileSystemXmlApplicationContext(new String[]{config}, false).refresh();
+        }
     }
 
     public static String getExceptionMessageWithCauses(Throwable throwable) {

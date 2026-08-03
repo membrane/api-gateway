@@ -71,7 +71,7 @@ class BeautifierInterceptorTest {
         interceptor.handleRequest(exc);
 
         Request req = exc.getRequest();
-        int bodyLength = req.getBody().getLength();
+        long bodyLength = req.getBody().getLength();
         assertEquals(req.getHeader().getContentLength(), bodyLength);
         assertEquals(bodyLength, req.getBodyAsStringDecoded().getBytes(UTF_8).length);
     }
@@ -83,7 +83,7 @@ class BeautifierInterceptorTest {
         interceptor.handleResponse(exc);
 
         Response res = exc.getResponse();
-        int bodyLength = res.getBody().getLength();
+        long bodyLength = res.getBody().getLength();
         assertEquals(res.getHeader().getContentLength(), bodyLength);
         assertEquals(bodyLength, res.getBodyAsStringDecoded().getBytes(UTF_8).length);
     }

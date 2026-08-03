@@ -387,7 +387,7 @@ public abstract class Message {
 	public int estimateHeapSize() {
 		return 100 +
 				(header != null ? header.estimateHeapSize() : 0) +
-				(body != null ? body.isRead() ? body.getLength() : 0 : 0) +
+				(body != null ? body.isRead() ? (int) Math.min(Integer.MAX_VALUE, body.getLength()) : 0 : 0) +
 				(errorMessage != null ? 2*errorMessage.length() : 0);
 	}
 
