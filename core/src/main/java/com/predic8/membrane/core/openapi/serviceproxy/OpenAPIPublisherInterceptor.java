@@ -107,6 +107,10 @@ public class OpenAPIPublisherInterceptor extends AbstractInterceptor {
         this.apis = apis;
     }
 
+    public void addRecord(String id, OpenAPIRecord record) {
+        apis.put(id, record);
+    }
+
     public void init() {
         super.init();
         if (apis == null) {

@@ -113,8 +113,17 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         var generator = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName);
         var openApiModel = generator.generate();
         var record = new OpenAPIRecord(openApiModel, new OpenAPISpec());
-        publisher = new OpenAPIPublisherInterceptor(Map.of(getIdFromAPI(openApiModel), record));
-        publisher.init(router);
+
+        publisher = proxy.getFlow().stream()
+                .filter(i -> i instanceof Wsdl2OpenApiInterceptor w && w.publisher != null)
+                .map(i -> ((Wsdl2OpenApiInterceptor) i).publisher)
+                .findFirst()
+                .orElseGet(() -> {
+                    var p = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());
+                    p.init(router);
+                    return p;
+                });
+        publisher.addRecord(getIdFromAPI(openApiModel), record);
 
         registerApiDocsPaths();
 
