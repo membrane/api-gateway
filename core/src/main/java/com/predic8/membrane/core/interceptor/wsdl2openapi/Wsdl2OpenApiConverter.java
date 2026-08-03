@@ -37,8 +37,7 @@ import java.util.Map;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static io.swagger.v3.parser.ObjectMapperFactory.createYaml;
-import static java.lang.Character.isUpperCase;
-import static java.lang.Character.toLowerCase;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 
 /**
  * Generates an OpenAPI 3.0 model from WSDL definitions.
@@ -149,17 +148,4 @@ public class Wsdl2OpenApiConverter {
         return "SOAP Service";
     }
 
-    private String camelToKebab(String camelCase) {
-        var result = new StringBuilder();
-        for (int i = 0; i < camelCase.length(); i++) {
-            char c = camelCase.charAt(i);
-            if (isUpperCase(c)) {
-                if (i > 0) result.append('-');
-                result.append(toLowerCase(c));
-            } else {
-                result.append(c);
-            }
-        }
-        return result.toString();
-    }
 }

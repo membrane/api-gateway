@@ -109,4 +109,32 @@ class XsdDomUtil {
         List<Element> roots = schemasByNamespace.get(nsUri);
         return (roots != null && !roots.isEmpty()) ? roots : List.of(currentSchemaRoot);
     }
+
+    /**
+     * Converts a WSDL operation name to a URL-safe kebab-case path segment.
+     * Handles camelCase, PascalCase, snake_case, and mixed forms.
+     * Underscores and uppercase letters both act as word separators;
+     * consecutive separators are collapsed to a single dash.
+     */
+    static String camelToKebab(String name) {
+        var result = new StringBuilder();
+        char prev = 0;
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c == '_') {
+                if (!result.isEmpty() && result.charAt(result.length() - 1) != '-')
+                    result.append('-');
+                prev = c;
+            } else if (Character.isUpperCase(c)) {
+                if (Character.isLowerCase(prev))
+                    result.append('-');
+                result.append(Character.toLowerCase(c));
+                prev = c;
+            } else {
+                result.append(c);
+                prev = c;
+            }
+        }
+        return result.toString();
+    }
 }
