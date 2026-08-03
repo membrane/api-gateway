@@ -110,7 +110,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             requestTransformers.put(op.getName(), new Json2SoapTransformer(definitions, op.getName()));
         }
 
-        var generator = new OpenApiGenerator(definitions, basePath, operationsByName);
+        var generator = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName);
         var openApiModel = generator.generate();
         var record = new OpenAPIRecord(openApiModel, new OpenAPISpec());
         publisher = new OpenAPIPublisherInterceptor(Map.of(getIdFromAPI(openApiModel), record));

@@ -43,20 +43,20 @@ import static java.lang.Character.toLowerCase;
 /**
  * Generates an OpenAPI 3.0 model from WSDL definitions.
  */
-public class OpenApiGenerator {
+public class Wsdl2OpenApiConverter {
 
-    private static final Logger log = LoggerFactory.getLogger(OpenApiGenerator.class);
+    private static final Logger log = LoggerFactory.getLogger(Wsdl2OpenApiConverter.class);
 
     private final Definitions definitions;
     private final String basePath;
     private final XsdToSchema converter;
     private final Map<String, OperationConfig> operations;
 
-    public OpenApiGenerator(Definitions definitions, String basePath) {
+    public Wsdl2OpenApiConverter(Definitions definitions, String basePath) {
         this(definitions, basePath, Map.of());
     }
 
-    public OpenApiGenerator(Definitions definitions, String basePath, Map<String, OperationConfig> operations) {
+    public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationConfig> operations) {
         this.definitions = definitions;
         this.basePath = basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
         this.converter = new XsdToSchema(definitions);
@@ -65,7 +65,7 @@ public class OpenApiGenerator {
 
     public OpenAPI generate() {
         var openAPI = new OpenAPI();
-        openAPI.setOpenapi("3.0.0");
+        openAPI.setOpenapi("3.1.0"); // TODO Newest 3.1
         openAPI.setInfo(buildInfo());
         openAPI.setServers(List.of(new Server().url(basePath)));
         openAPI.setPaths(buildPaths());
@@ -115,8 +115,8 @@ public class OpenApiGenerator {
     }
 
     private PathItem buildPathItem(String name, Operation wsdlOp) {
-        var inputs = wsdlOp != null ? wsdlOp.getMessagesByDirection(INPUT) : List.<Message>of();
-        var outputs = wsdlOp != null ? wsdlOp.getMessagesByDirection(OUTPUT) : List.<Message>of();
+        var inputs = wsdlOp.getMessagesByDirection(INPUT);
+        var outputs = wsdlOp.getMessagesByDirection(OUTPUT);
         var apiOp = new io.swagger.v3.oas.models.Operation()
                 .operationId(name)
                 .summary(name)

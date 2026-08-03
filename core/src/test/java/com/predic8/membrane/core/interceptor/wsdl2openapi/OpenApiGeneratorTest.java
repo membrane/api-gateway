@@ -61,7 +61,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void basePathTrailingSlashStripped() {
-        var yaml = new OpenApiGenerator(citiesDefinitions, "/purchasing/").generateYaml();
+        var yaml = new Wsdl2OpenApiConverter(citiesDefinitions, "/purchasing/").generateYaml();
 
         assertTrue(yaml.contains("url: \"/purchasing\""));
         assertFalse(yaml.contains("url: \"/purchasing/\""));
@@ -103,8 +103,8 @@ class OpenApiGeneratorTest {
 
     @Test
     void allPortTypeOperationsAreGenerated() {
-        assertTrue(new OpenApiGenerator(citiesDefinitions, "/").generateYaml().contains("/get-city:"));
-        assertTrue(new OpenApiGenerator(blzDefinitions, "/blz").generateYaml().contains("/get-bank:"));
+        assertTrue(new Wsdl2OpenApiConverter(citiesDefinitions, "/").generateYaml().contains("/get-city:"));
+        assertTrue(new Wsdl2OpenApiConverter(blzDefinitions, "/blz").generateYaml().contains("/get-bank:"));
     }
 
     @Test
@@ -117,7 +117,7 @@ class OpenApiGeneratorTest {
 
     @Test
     void citiesProducesGetCityPath() {
-        var yaml = new OpenApiGenerator(citiesDefinitions, "/").generateYaml();
+        var yaml = new Wsdl2OpenApiConverter(citiesDefinitions, "/").generateYaml();
 
         assertTrue(yaml.contains("paths:"));
         assertTrue(yaml.contains("/get-city:"));
@@ -205,6 +205,6 @@ class OpenApiGeneratorTest {
     }
 
     private static String generator(Definitions defs, String basePath) {
-        return new OpenApiGenerator(defs, basePath).generateYaml();
+        return new Wsdl2OpenApiConverter(defs, basePath).generateYaml();
     }
 }
