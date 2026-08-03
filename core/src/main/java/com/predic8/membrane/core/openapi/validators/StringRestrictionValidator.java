@@ -23,6 +23,7 @@ import org.slf4j.*;
 import java.util.regex.*;
 
 import static com.predic8.membrane.core.openapi.validators.JsonSchemaValidator.*;
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static java.lang.String.*;
 
 public class StringRestrictionValidator {
@@ -71,24 +72,24 @@ public class StringRestrictionValidator {
         }
 
         if (isMaxlenExceeded(str)) {
-            err.add(new ValidationError(ctx.schemaType(STRING), format("The string '%s' is %d characters long. MaxLength of %d is exceeded.", str, str.length(), schema.getMaxLength())));
+            err.add(new ValidationError(ctx.schemaType(STRING), mask -> format("The string '%s' is %d characters long. MaxLength of %d is exceeded.", v(str, mask), str.length(), schema.getMaxLength())));
         }
         if (isMinLenExceeded(str)) {
-            err.add(new ValidationError(ctx.schemaType(STRING), format("The string '%s' is %d characters long. The length of the string is shorter than the minLength of %d.", str, str.length(), schema.getMinLength())));
+            err.add(new ValidationError(ctx.schemaType(STRING), mask -> format("The string '%s' is %d characters long. The length of the string is shorter than the minLength of %d.", v(str, mask), str.length(), schema.getMinLength())));
         }
         if (isPatternViolated(str)) {
             err.add(new ValidationError(
                     ctx.schemaType(STRING),
-                    format("The string '%s' does not match the pattern %s.", str, schema.getPattern())
+                    mask -> format("The string '%s' does not match the pattern %s.", v(str, mask), schema.getPattern())
             ));
         }
         if (isEnumViolated(str)) {
             err.add(new ValidationError(ctx.schemaType(STRING),
-                    format("'%s' is not part of the enum %s.", str, schema.getEnum())));
+                    mask -> format("'%s' is not part of the enum %s.", v(str, mask), schema.getEnum())));
         }
         if (isConstViolated(str)) {
             err.add(new ValidationError(ctx.schemaType(STRING),
-                    format("The string '%s' must be equal to the constant value '%s'.", str, schema.getConst())));
+                    mask -> format("The string '%s' must be equal to the constant value '%s'.", v(str, mask), schema.getConst())));
         }
         return err;
     }

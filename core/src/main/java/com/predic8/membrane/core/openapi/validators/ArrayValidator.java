@@ -24,6 +24,7 @@ import io.swagger.v3.oas.models.media.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.openapi.validators.ValidationError.v;
 import static java.lang.String.*;
 
 
@@ -86,7 +87,7 @@ public class ArrayValidator implements JsonSchemaValidator {
             itemValues.add(node.get(i));
         }
         if (!moreThanOnce.isEmpty()) {
-            return ValidationErrors.error(ctx, format("Array with restriction uniqueItems contains non-unique values: %s.", Utils.joinByComma(moreThanOnce)));
+            return ValidationErrors.error(ctx, mask -> format("Array with restriction uniqueItems contains non-unique values: %s.", v(Utils.joinByComma(moreThanOnce), mask)));
         }
 
         return null;

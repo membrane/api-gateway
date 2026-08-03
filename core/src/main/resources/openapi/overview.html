@@ -62,7 +62,10 @@
 <body>
 
 <%
-def hasRootServerPath = {server -> com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '' || com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url) == '/' }
+def effectivePath = { api, server ->
+    (api.value.spec.hasRewrite() && api.value.spec.rewrite.basePath != null) ? api.value.spec.rewrite.basePath : com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory, server.url)
+}
+def hasRootServerPath = { api, server -> def p = effectivePath(api, server); p == '' || p == '/' }
 %>
 
 
@@ -81,7 +84,7 @@ def hasRootServerPath = {server -> com.predic8.membrane.core.openapi.util.UriUti
         <th>Key</th>
     </tr>
     <% for (api in apis) { %>
-    <tr <% if (apis.size() > 1 && api.value.api.servers.any { server -> hasRootServerPath(server)}) { %> class="warning" <% } %> >
+    <tr <% if (apis.size() > 1 && api.value.api.servers.any { server -> hasRootServerPath(api, server)}) { %> class="warning" <% } %> >
     <td>
         <!--suppress HtmlUnknownTarget -->
         <a href="${pathUi}/${api.key}"><%= api.value.api.info.title %></a></td>
@@ -89,7 +92,7 @@ def hasRootServerPath = {server -> com.predic8.membrane.core.openapi.util.UriUti
         <ul>
             <% for (server in api.value.api.servers) { %>
             <li>
-                <%= com.predic8.membrane.core.openapi.util.UriUtil.getPathFromURL(uriFactory,server.url) %><br>
+                <%= effectivePath(api, server) %><br>
                 <%= server.description != null ? server.description : "" %>
             </li>
             <% } %>
@@ -108,7 +111,7 @@ def hasRootServerPath = {server -> com.predic8.membrane.core.openapi.util.UriUti
     <% } %>
 </table>
 
-<% if (apis.size() > 1 && apis.any { api -> api.value.api.servers.any { server -> hasRootServerPath(server)}}) { %>
+<% if (apis.size() > 1 && apis.any { api -> api.value.api.servers.any { server -> hasRootServerPath(api, server)}}) { %>
 <div class="warning-box">
     <p><b>Warning:</b> Marked APIs contain URLs with "/" matching all requests. This might cause routing to the wrong API!</p>
 </div>

@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 set "DIR=%~dp0"
-set "IMAGE=predic8/membrane:7.3.1"
+set "IMAGE=predic8/membrane:7.4.0"
 
 for /f "delims=" %%i in ('docker create -p 2000-2010:2000-2010 %IMAGE% %*') do set "CID=%%i"
 

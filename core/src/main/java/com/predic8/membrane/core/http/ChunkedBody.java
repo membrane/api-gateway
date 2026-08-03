@@ -300,14 +300,16 @@ public class ChunkedBody extends AbstractBody {
     protected int getRawLength() {
         if (chunks.isEmpty())
             return 0;
-        int length = getLength();
+        long length = getLength();
         for (Chunk chunk : chunks) {
             length += toHexString(chunk.getLength()).getBytes(UTF_8).length;
             length += 2 * CRLF_BYTES.length;
         }
         length += "0".getBytes(UTF_8).length;
         length += 2 * CRLF_BYTES.length;
-        return length;
+        if (length > MAX_ARRAY_LENGTH)
+            throw new BodyTooLargeException("Chunked message body of " + length + " bytes is too large to load into memory (limit " + MAX_ARRAY_LENGTH + " bytes). Stream the message instead.");
+        return (int) length;
     }
 
     @Override
@@ -347,9 +349,9 @@ public class ChunkedBody extends AbstractBody {
     }
 
     @Override
-    public int getLength() {
+    public long getLength() {
         if (wasStreamed())
-            return (int) lengthStreamed;
+            return lengthStreamed;
         return super.getLength();
     }
 
