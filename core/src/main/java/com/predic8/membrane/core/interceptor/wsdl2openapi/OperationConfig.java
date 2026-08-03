@@ -26,6 +26,7 @@ import java.util.*;
 public class OperationConfig {
 
     private String name;
+    private String path;
     private String method = "POST";
     private List<Interceptor> flow = new ArrayList<>();
 
@@ -40,6 +41,19 @@ public class OperationConfig {
     @MCAttribute
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    /**
+     * @description URL path segment for this operation.
+     * @example budget-structures
+     */
+    @MCAttribute
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public String getMethod() {

@@ -109,9 +109,11 @@ public class Wsdl2OpenApiConverter {
                     .toList();
             for (var entry : operations.entrySet()) {
                 var name = entry.getKey();
+                var opConfig = entry.getValue();
                 var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst().orElse(null);
                 if (wsdlOp == null) log.debug("Configured operation '{}' not found in WSDL definitions", name);
-                paths.addPathItem("/" + camelToKebab(name), buildPathItem(name, wsdlOp, entry.getValue().getMethod()));
+                var pathSegment = opConfig.getPath() != null ? opConfig.getPath() : camelToKebab(name);
+                paths.addPathItem("/" + pathSegment, buildPathItem(name, wsdlOp, opConfig.getMethod()));
             }
         }
         return paths;

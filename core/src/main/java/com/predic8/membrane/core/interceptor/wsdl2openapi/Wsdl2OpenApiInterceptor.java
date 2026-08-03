@@ -54,6 +54,7 @@ import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInt
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -125,7 +126,9 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
                 ? allOps
                 : allOps.stream().filter(op -> operationsByName.containsKey(op.getName())).toList();
         for (var op : opsToExpose) {
-            kebabToOperation.put(camelToKebab(op.getName()), op.getName());
+            OperationConfig opConfig = operationsByName.get(op.getName());
+            String segment = (opConfig != null && opConfig.getPath() != null) ? opConfig.getPath() : camelToKebab(op.getName());
+            kebabToOperation.put(segment, op.getName());
             requestTransformers.put(op.getName(), new Json2SoapTransformer(definitions, op.getName()));
         }
 
@@ -176,7 +179,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
                     .flatMap(pt -> pt.getOperations().stream())
                     .filter(op -> operationName.equals(op.getName()))
                     .findFirst()
-                    .map(op -> op.getMessagesByDirection(Operation.Direction.OUTPUT))
+                    .map(op -> op.getMessagesByDirection(OUTPUT))
                     .orElse(List.of());
             var responseSchema = xsdToSchema.convertMessageParts(outputMessages);
 
