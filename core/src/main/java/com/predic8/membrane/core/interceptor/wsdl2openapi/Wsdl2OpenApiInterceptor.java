@@ -276,6 +276,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             byte[] soapRequest = requestTransformers.get(operationName).transform(exc.getRequest().getBodyAsStringDecoded());
 
             exc.getRequest().setBodyContent(soapRequest);
+            exc.getRequest().setMethod("POST");
             exc.getRequest().getHeader().setContentType(TEXT_XML);
             exc.getRequest().getHeader().setSOAPAction(getSOAPAction(operationName));
 
