@@ -16,12 +16,19 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Message;
+import com.predic8.membrane.core.util.wsdl.parser.Part;
 import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.QName;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
@@ -58,16 +65,32 @@ public class XsdToSchema {
     }
 
     /**
-     * Converts the first message part of the first message in the list to an OpenAPI schema.
+     * Converts the parts of the first message in the list to an OpenAPI schema.
      * Returns an empty ObjectSchema if the list is empty or has no usable parts.
      */
     public Schema<?> convertMessageParts(List<Message> messages) {
         if (messages.isEmpty()) return new ObjectSchema();
-        var parts = messages.getFirst().getParts();
+        return convertParts(messages.getFirst().getParts());
+    }
+
+    /**
+     * Converts a list of WSDL message parts to an OpenAPI schema. A single part with a wrapping
+     * XSD element (document/literal wrapped style) is unwrapped to that element's own schema.
+     * Any other case — RPC-style parts (type=), or multiple parts (bare style) — is represented
+     * as an object with one property per part, keyed by the part's name.
+     */
+    public Schema<?> convertParts(List<Part> parts) {
         if (parts.isEmpty()) return new ObjectSchema();
-        QName qname = parts.getFirst().getElementQName();
-        if (qname == null) return new ObjectSchema();
-        return convert(qname);
+        if (parts.size() == 1 && parts.getFirst().getElementQName() != null) {
+            return convert(parts.getFirst().getElementQName());
+        }
+        var schema = new ObjectSchema();
+        for (var part : parts) {
+            QName elementQName = part.getElementQName();
+            schema.addProperty(part.getName(),
+                    elementQName != null ? convert(elementQName) : convertType(part.getTypeQName()));
+        }
+        return schema;
     }
 
     /**
@@ -253,6 +276,26 @@ public class XsdToSchema {
             }
         }
         return mapPrimitive(local);
+    }
+
+    /**
+     * Resolves a WSDL message part's {@code type=} reference (already resolved to a QName, as
+     * used by RPC-style bindings) to an OpenAPI schema.
+     */
+    public Schema<?> convertType(QName qname) {
+        if (qname == null) return new StringSchema();
+        if (XSD_NS.equals(qname.getNamespaceURI())) return mapPrimitive(qname.getLocalPart());
+        List<Element> targetRoots = schemasByNamespace.get(qname.getNamespaceURI());
+        if (targetRoots == null) return mapPrimitive(qname.getLocalPart());
+        for (var root : targetRoots) {
+            Element complexType = findXsdChildWithName(root, "complexType", qname.getLocalPart());
+            if (complexType != null) return buildObjectSchema(complexType, root);
+        }
+        for (var root : targetRoots) {
+            Element simpleType = findXsdChildWithName(root, "simpleType", qname.getLocalPart());
+            if (simpleType != null) return buildSimpleTypeSchema(simpleType, simpleType, root);
+        }
+        return mapPrimitive(qname.getLocalPart());
     }
 
     private Schema<?> mapPrimitive(String localPart) {

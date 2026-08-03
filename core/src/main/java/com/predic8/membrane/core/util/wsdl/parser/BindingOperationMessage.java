@@ -18,19 +18,13 @@ import org.w3c.dom.Node;
 
 import java.util.List;
 
-public class BindingOperation extends WSDLElement{
+public class BindingOperationMessage extends WSDLElement {
 
-    public BindingOperation(WSDLParserContext ctx, Node node) {
-        super(ctx,node);
+    public BindingOperationMessage(WSDLParserContext ctx, Node node) {
+        super(ctx, node);
     }
 
-    public String getSoapAction() {
-        return  instantiateChild("operation",ProtocolOperation.class).orElseThrow(() ->
-            new WSDLParserException("No operation found for binding operation: " + getName())
-        ).getSoapAction();
-    }
-
-    public List<BindingOperationMessage> getInputs() {
-        return instantiateWSDLChildren("input", BindingOperationMessage.class);
+    public List<SoapHeader> getHeaders() {
+        return instantiateChildren("header", SoapHeader.class);
     }
 }

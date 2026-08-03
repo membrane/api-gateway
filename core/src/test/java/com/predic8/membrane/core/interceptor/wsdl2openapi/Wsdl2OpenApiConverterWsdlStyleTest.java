@@ -34,10 +34,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * as a text block so the scenario under test is fully visible without following a reference to
  * a classpath fixture file.
  *
- * <p>Several of these tests currently FAIL — {@link Wsdl2OpenApiConverter} does not yet read
- * WSDL bindings at all (RPC/document style, multiple faults, soap:header, SOAP version are all
- * currently ignored). They are meant to be fixed one at a time, not adjusted to match today's
- * gaps.
  */
 class Wsdl2OpenApiConverterWsdlStyleTest {
 

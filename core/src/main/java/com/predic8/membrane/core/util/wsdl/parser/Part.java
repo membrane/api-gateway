@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.jetbrains.annotations.*;
-import org.w3c.dom.*;
+import org.jetbrains.annotations.Nullable;
+import org.w3c.dom.Node;
 
-import javax.xml.namespace.*;
+import javax.xml.namespace.QName;
 
 public class Part extends WSDLElement {
 
@@ -34,7 +34,8 @@ public class Part extends WSDLElement {
     }
 
     private @Nullable QName getAttributeQName(String attribute) {
-        return resolveQName(getAttribute(attribute));
+        String value = getAttribute(attribute);
+        return value.isEmpty() ? null : resolveQName(value);
     }
 
     public String getElementName() {

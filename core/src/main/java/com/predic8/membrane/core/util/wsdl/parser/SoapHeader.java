@@ -16,21 +16,17 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import org.w3c.dom.Node;
 
-import java.util.List;
+public class SoapHeader extends WSDLElement {
 
-public class BindingOperation extends WSDLElement{
-
-    public BindingOperation(WSDLParserContext ctx, Node node) {
-        super(ctx,node);
+    public SoapHeader(WSDLParserContext ctx, Node node) {
+        super(ctx, node);
     }
 
-    public String getSoapAction() {
-        return  instantiateChild("operation",ProtocolOperation.class).orElseThrow(() ->
-            new WSDLParserException("No operation found for binding operation: " + getName())
-        ).getSoapAction();
+    public String getPart() {
+        return getAttribute("part");
     }
 
-    public List<BindingOperationMessage> getInputs() {
-        return instantiateWSDLChildren("input", BindingOperationMessage.class);
+    public String getMessage() {
+        return getAttribute("message");
     }
 }

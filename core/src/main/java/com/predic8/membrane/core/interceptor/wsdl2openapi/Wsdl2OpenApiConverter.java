@@ -14,16 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import com.predic8.membrane.core.util.wsdl.parser.Definitions;
-import com.predic8.membrane.core.util.wsdl.parser.Message;
-import com.predic8.membrane.core.util.wsdl.parser.Operation;
-import com.predic8.membrane.core.util.wsdl.parser.Service;
+import com.predic8.membrane.core.util.wsdl.parser.*;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
@@ -33,11 +33,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
 import static io.swagger.v3.parser.ObjectMapperFactory.createYaml;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 
 /**
  * Generates an OpenAPI 3.0 model from WSDL definitions.
@@ -114,30 +117,101 @@ public class Wsdl2OpenApiConverter {
     }
 
     private PathItem buildPathItem(String name, Operation wsdlOp) {
-        var inputs = wsdlOp.getMessagesByDirection(INPUT);
-        var outputs = wsdlOp.getMessagesByDirection(OUTPUT);
+        var inputParts = getInputParts(wsdlOp);
+        var headerParts = findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
+
         var apiOp = new io.swagger.v3.oas.models.Operation()
                 .operationId(name)
                 .summary(name)
-                .requestBody(buildRequestBody(inputs))
-                .responses(buildResponses(outputs));
+                .requestBody(buildRequestBody(getBodyParts(inputParts, headerParts)))
+                .responses(buildResponses(wsdlOp));
+        var headerParameters = buildHeaderParameters(headerParts);
+        if (!headerParameters.isEmpty()) {
+            apiOp.setParameters(headerParameters);
+        }
         return new PathItem().post(apiOp);
     }
 
-    private RequestBody buildRequestBody(List<Message> messages) {
-        var schema = converter.convertMessageParts(messages);
+    private List<Part> getInputParts(Operation wsdlOp) {
+        var inputs = wsdlOp.getMessagesByDirection(INPUT);
+        return inputs.isEmpty() ? List.of() : inputs.getFirst().getParts();
+    }
+
+    private List<Part> getBodyParts(List<Part> inputParts, List<Part> headerParts) {
+        var headerPartNames = headerParts.stream().map(Part::getName).collect(Collectors.toSet());
+        return inputParts.stream().filter(p -> !headerPartNames.contains(p.getName())).toList();
+    }
+
+    private List<Parameter> buildHeaderParameters(List<Part> headerParts) {
+        return headerParts.stream().map(this::buildHeaderParameter).toList();
+    }
+
+    private Optional<BindingOperation> findBindingOperation(String name) {
+        return definitions.getBindings().stream()
+                .flatMap(b -> b.getBindingOperations().stream())
+                .filter(bo -> name.equals(bo.getName()))
+                .findFirst();
+    }
+
+    private List<Part> getHeaderParts(BindingOperation bindingOperation) {
+        return bindingOperation.getInputs().stream()
+                .flatMap(input -> input.getHeaders().stream())
+                .map(this::resolveHeaderPart)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private Part resolveHeaderPart(SoapHeader header) {
+        return definitions.findMessage(WSDLParserUtil.getLocalName(header.getMessage()))
+                .flatMap(message -> message.getParts().stream()
+                        .filter(p -> header.getPart().equals(p.getName()))
+                        .findFirst())
+                .orElse(null);
+    }
+
+    private Parameter buildHeaderParameter(Part part) {
+        var schema = part.getElementQName() != null
+                ? converter.convert(part.getElementQName())
+                : converter.convertType(part.getTypeQName());
+        return new Parameter().in("header").name(part.getName()).schema(schema);
+    }
+
+    private RequestBody buildRequestBody(List<Part> parts) {
+        var schema = converter.convertParts(parts);
         return new RequestBody()
                 .required(true)
                 .content(new Content().addMediaType("application/json", new MediaType().schema(schema)));
     }
 
-    private ApiResponses buildResponses(List<Message> messages) {
-        var schema = converter.convertMessageParts(messages);
+    private ApiResponses buildResponses(Operation wsdlOp) {
+        var schema = converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT));
+        var response200 = new ApiResponse()
+                .description("Successful response")
+                .content(new Content().addMediaType("application/json", new MediaType().schema(schema)));
+
+        List<Schema> faultSchemas = wsdlOp.getFaults().stream()
+                .map(fault -> fault.getMessage().getParts())
+                .filter(parts -> !parts.isEmpty())
+                .map(parts -> parts.getFirst().getElementQName())
+                .filter(Objects::nonNull)
+                .map(qname -> (Schema) converter.convert(qname))
+                .toList();
+
+        ApiResponse response500;
+        if (faultSchemas.isEmpty()) {
+            response500 = new ApiResponse().description("Internal server error");
+        } else {
+            Schema faultSchema = faultSchemas.size() == 1
+                    ? faultSchemas.getFirst()
+                    : new ComposedSchema().oneOf(faultSchemas);
+            response500 = new ApiResponse()
+                    .description("Internal server error")
+                    .content(new Content().addMediaType("application/json", new MediaType().schema(faultSchema)));
+        }
+
         return new ApiResponses()
-                .addApiResponse("200", new ApiResponse()
-                        .description("Successful response")
-                        .content(new Content().addMediaType("application/json", new MediaType().schema(schema))))
-                .addApiResponse("500", new ApiResponse().description("Internal server error"));
+                .addApiResponse("200", response200)
+                .addApiResponse("500", response500);
     }
 
     private String getServiceName() {
