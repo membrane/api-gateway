@@ -35,46 +35,56 @@ class Wsdl2OpenApiInterceptorTest {
 
     @SuppressWarnings("unchecked")
     private static void setFields(Wsdl2OpenApiInterceptor interceptor, String basePath,
-                                   Map<String, String> kebabToOperation) throws Exception {
+                                   Map<String, String> pathMethodToOperation) throws Exception {
         Field bf = Wsdl2OpenApiInterceptor.class.getDeclaredField("basePath");
         bf.setAccessible(true);
         bf.set(interceptor, basePath);
 
-        Field kf = Wsdl2OpenApiInterceptor.class.getDeclaredField("kebabToOperation");
+        Field kf = Wsdl2OpenApiInterceptor.class.getDeclaredField("pathMethodToOperation");
         kf.setAccessible(true);
-        ((Map<String, String>) kf.get(interceptor)).putAll(kebabToOperation);
+        ((Map<String, String>) kf.get(interceptor)).putAll(pathMethodToOperation);
     }
 
     @Test
     void extractOperationNameStripsQueryString() throws Exception {
         var interceptor = new Wsdl2OpenApiInterceptor();
-        setFields(interceptor, "/purchasing", Map.of("get-city", "getCity"));
+        setFields(interceptor, "/purchasing", Map.of("get-city:POST", "getCity"));
 
-        assertEquals("getCity", interceptor.extractOperationName("/purchasing/get-city?format=json"));
+        assertEquals("getCity", interceptor.extractOperationName("/purchasing/get-city?format=json", "POST"));
     }
 
     @Test
     void extractOperationNameWithoutQueryString() throws Exception {
         var interceptor = new Wsdl2OpenApiInterceptor();
-        setFields(interceptor, "/purchasing", Map.of("get-city", "getCity"));
+        setFields(interceptor, "/purchasing", Map.of("get-city:POST", "getCity"));
 
-        assertEquals("getCity", interceptor.extractOperationName("/purchasing/get-city"));
+        assertEquals("getCity", interceptor.extractOperationName("/purchasing/get-city", "POST"));
     }
 
     @Test
     void extractOperationNamePreservesPascalCase() throws Exception {
         var interceptor = new Wsdl2OpenApiInterceptor();
-        setFields(interceptor, "/api", Map.of("get-city", "GetCity"));
+        setFields(interceptor, "/api", Map.of("get-city:GET", "GetCity"));
 
-        assertEquals("GetCity", interceptor.extractOperationName("/api/get-city"));
+        assertEquals("GetCity", interceptor.extractOperationName("/api/get-city", "GET"));
     }
 
     @Test
     void extractOperationNameHandlesRegexMetacharactersInBasePath() throws Exception {
         var interceptor = new Wsdl2OpenApiInterceptor();
-        setFields(interceptor, "/api/v1.0", Map.of("get-city", "getCity"));
+        setFields(interceptor, "/api/v1.0", Map.of("get-city:POST", "getCity"));
 
-        assertEquals("getCity", interceptor.extractOperationName("/api/v1.0/get-city"));
+        assertEquals("getCity", interceptor.extractOperationName("/api/v1.0/get-city", "POST"));
+    }
+
+    @Test
+    void extractOperationNameDistinguishesByMethod() throws Exception {
+        var interceptor = new Wsdl2OpenApiInterceptor();
+        setFields(interceptor, "/", Map.of("articles:GET", "getAll", "articles:POST", "create"));
+
+        assertEquals("getAll", interceptor.extractOperationName("/articles", "GET"));
+        assertEquals("create", interceptor.extractOperationName("/articles", "POST"));
+        assertNull(interceptor.extractOperationName("/articles", "DELETE"));
     }
 
     @ParameterizedTest(name = "{0} → {1}")

@@ -35,7 +35,6 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
-import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,13 +44,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.problemDetails;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Response.statusCode;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.*;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
@@ -59,7 +55,6 @@ import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInt
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorRequest;
 import static com.predic8.membrane.core.openapi.util.Utils.getOpenapiValidatorResponse;
-import static com.predic8.membrane.core.openapi.validators.ValidationErrors.Direction.REQUEST;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
@@ -95,7 +90,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
     private String basePath;
     private List<OperationConfig> operations = new ArrayList<>();
     private final Map<String, OperationConfig> operationsByName = new LinkedHashMap<>();
-    private final Map<String, String> kebabToOperation = new LinkedHashMap<>();
+    private final Map<String, String> pathMethodToOperation = new LinkedHashMap<>();
     private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
     private OpenAPIPublisherInterceptor publisher;
     private OpenAPIValidator openApiValidator;
@@ -141,7 +136,8 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         for (var op : opsToExpose) {
             OperationConfig opConfig = operationsByName.get(op.getName());
             String segment = (opConfig != null && opConfig.getPath() != null) ? opConfig.getPath() : camelToKebab(op.getName());
-            kebabToOperation.put(segment, op.getName());
+            String method = (opConfig != null) ? opConfig.getMethod().toUpperCase() : "POST";
+            pathMethodToOperation.put(segment + ":" + method, op.getName());
             requestTransformers.put(op.getName(), new Json2SoapTransformer(definitions, op.getName()));
         }
 
@@ -176,8 +172,8 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             return outcome;
         }
 
-        String operationName = extractOperationName(exc.getRequest().getUri());
-        if (isValidOperation(operationName)) {
+        String operationName = extractOperationName(exc.getRequest().getUri(), exc.getRequest().getMethod());
+        if (operationName != null && isValidOperation(operationName)) {
             return handleOperation(exc, operationName);
         }
 
@@ -285,13 +281,13 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         return "/";
     }
 
-    String extractOperationName(String path) {
+    String extractOperationName(String path, String method) {
         String withoutBase = path.replaceFirst("^" + Pattern.quote(basePath), "");
         if (withoutBase.startsWith("/")) {
             withoutBase = withoutBase.substring(1);
         }
         String segment = withoutBase.contains("?") ? withoutBase.substring(0, withoutBase.indexOf('?')) : withoutBase;
-        return kebabToOperation.getOrDefault(segment, segment);
+        return pathMethodToOperation.get(segment + ":" + method.toUpperCase());
     }
 
     private Outcome handleOperation(Exchange exc, String operationName) {

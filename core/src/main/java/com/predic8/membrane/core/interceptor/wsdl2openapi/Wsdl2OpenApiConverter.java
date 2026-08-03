@@ -112,14 +112,23 @@ public class Wsdl2OpenApiConverter {
                 var opConfig = entry.getValue();
                 var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst().orElse(null);
                 if (wsdlOp == null) log.debug("Configured operation '{}' not found in WSDL definitions", name);
-                var pathSegment = opConfig.getPath() != null ? opConfig.getPath() : camelToKebab(name);
-                paths.addPathItem("/" + pathSegment, buildPathItem(name, wsdlOp, opConfig.getMethod()));
+                var pathKey = "/" + (opConfig.getPath() != null ? opConfig.getPath() : camelToKebab(name));
+                var existing = paths.get(pathKey);
+                if (existing != null) {
+                    applyMethod(existing, buildApiOperation(name, wsdlOp, opConfig.getMethod()), opConfig.getMethod());
+                } else {
+                    paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opConfig.getMethod()));
+                }
             }
         }
         return paths;
     }
 
     private PathItem buildPathItem(String name, Operation wsdlOp, String method) {
+        return applyMethod(new PathItem(), buildApiOperation(name, wsdlOp, method), method);
+    }
+
+    private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, String method) {
         var inputParts = getInputParts(wsdlOp);
         var headerParts = findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
 
@@ -134,7 +143,7 @@ public class Wsdl2OpenApiConverter {
         if (!headerParameters.isEmpty()) {
             apiOp.setParameters(headerParameters);
         }
-        return applyMethod(new PathItem(), apiOp, method);
+        return apiOp;
     }
 
     private static boolean hasRequestBody(String method) {
