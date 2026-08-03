@@ -132,9 +132,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             if (!errors.isEmpty()) {
                 log.info("OpenAPI request validation failed for {} {} against '{}': {}",
                         exc.getRequest().getMethod(), exc.getRequest().getUri(),
-                        rec.api.getInfo().getTitle(), errors);
+                        rec.api.getInfo().getTitle(), errors.toString(maskValues(rec.api, MASK_VALUES_LOG)));
                 apiProxy.statisticCollector.collect(errors);
-                createErrorResponse(exc, errors, ValidationErrors.Direction.REQUEST, validationDetails(rec.api));
+                createErrorResponse(exc, errors, ValidationErrors.Direction.REQUEST, validationDetails(rec.api), maskValues(rec.api, MASK_VALUES));
                 return RETURN;
             }
         } catch (OpenAPIParsingException e) {
@@ -188,10 +188,10 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             if (errors != null && errors.hasErrors()) {
                 log.info("OpenAPI response validation failed for {} {} against '{}': {}",
                         exc.getRequest().getMethod(), exc.getRequest().getUri(),
-                        rec.api.getInfo().getTitle(), errors);
+                        rec.api.getInfo().getTitle(), errors.toString(maskValues(rec.api, MASK_VALUES_LOG)));
                 exc.getResponse().setStatusCode(500); // A validation error in the response is a server error!
                 apiProxy.statisticCollector.collect(errors);
-                createErrorResponse(exc, errors, ValidationErrors.Direction.RESPONSE, validationDetails(rec.api));
+                createErrorResponse(exc, errors, ValidationErrors.Direction.RESPONSE, validationDetails(rec.api), maskValues(rec.api, MASK_VALUES));
                 return RETURN;
             }
         } catch (OpenAPIParsingException e) {
@@ -291,6 +291,14 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
             return true;
 
         return validationDetails;
+    }
+
+    private static boolean maskValues(OpenAPI api, String key) {
+        if (api.getExtensions() == null)
+            return false;
+        @SuppressWarnings("unchecked")
+        Map<String, Object> xValidation = (Map<String, Object>) api.getExtensions().get(X_MEMBRANE_VALIDATION);
+        return xValidation != null && Boolean.TRUE.equals(xValidation.get(key));
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -417,13 +425,13 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
                 """.formatted(props.get("security"), props.get("requests"), props.get("responses"), props.get("details"));
     }
 
-    private void createErrorResponse(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
+    private void createErrorResponse(Exchange exc, ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails, boolean maskValues) {
         user(router.getConfiguration().isProduction(), getDisplayName())
                 .title("OpenAPI message validation failed")
                 .addSubType("validation")
                 .status(errors.get(0).getContext().getStatusCode())
                 .flow(getFlowFromDirection(direction))
-                .topLevel("validation", getErrorMap(errors, direction, validationDetails))
+                .topLevel("validation", getErrorMap(errors, direction, validationDetails, maskValues))
                 .buildAndSetResponse(exc);
     }
 
@@ -434,9 +442,9 @@ public class OpenAPIInterceptor extends AbstractInterceptor {
         };
     }
 
-    private static Map<String, Object> getErrorMap(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails) {
+    private static Map<String, Object> getErrorMap(ValidationErrors errors, ValidationErrors.Direction direction, boolean validationDetails, boolean maskValues) {
         if (validationDetails) {
-            return errors.getErrorMessage(direction);
+            return errors.getErrorMessage(direction, maskValues);
         }
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("error", "Message validation failed!");

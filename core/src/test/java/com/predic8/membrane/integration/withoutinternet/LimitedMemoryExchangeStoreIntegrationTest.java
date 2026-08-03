@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.flow.*;
+import com.predic8.membrane.core.interceptor.templating.StaticInterceptor;
 import com.predic8.membrane.core.proxies.*;
 import com.predic8.membrane.core.router.*;
 import com.predic8.membrane.core.transport.http.*;
@@ -51,8 +52,13 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         hcc = new HttpClientConfiguration();
         hcc.getRetryHandler().setRetries(1);
 
-        ServiceProxy proxy = getServiceProxy(3045, "dummy", 80);
-        proxy.getFlow().add(new ReturnInterceptor());
+        ServiceProxy proxy = getServiceProxy(3045, "localhost", 80);
+        var ri = new RequestInterceptor();
+        var si = new StaticInterceptor();
+        si.setSrc("Dummy");
+        ri.getFlow().add(si);
+        ri.getFlow().add(new ResponseInterceptor());
+        proxy.getFlow().add(ri);
         router = new DefaultRouter();
         router.add(proxy);
         router.start();
@@ -107,7 +113,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
     void large() throws Exception {
         long len = MAX_VALUE + 1L;
         call(prepareExchange(len).buildExchange());
-        int snappedLength = lmes.getAllExchangesAsList().getFirst().getRequest().getBody().getLength();
+        long snappedLength = lmes.getAllExchangesAsList().getFirst().getRequest().getBody().getLength();
         assertTrue(100000 <= snappedLength && snappedLength <= 150000);
     }
 
@@ -116,7 +122,7 @@ public class LimitedMemoryExchangeStoreIntegrationTest {
         long len = MAX_VALUE + 1L;
         Exchange e = prepareExchange(len).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
         call(e);
-        int snappedLength = lmes.getAllExchangesAsList().getFirst().getRequest().getBody().getLength();
+        long snappedLength = lmes.getAllExchangesAsList().getFirst().getRequest().getBody().getLength();
         assertTrue(100000 <= snappedLength && snappedLength <= 150000);
     }
 

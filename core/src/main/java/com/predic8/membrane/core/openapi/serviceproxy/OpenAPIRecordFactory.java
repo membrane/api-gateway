@@ -41,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.predic8.membrane.core.openapi.serviceproxy.APIProxy.*;
+import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.MaskValues.*;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec.YesNoOpenAPIOption.*;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
 import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.isSwagger2;
@@ -289,6 +290,9 @@ public class OpenAPIRecordFactory {
 
         if (spec.validateSecurity != ASINOPENAPI)
             extension.put(SECURITY, toYesNo(spec.validateSecurity));
+
+        extension.put(MASK_VALUES, spec.maskValues == RESPONSE || spec.maskValues == BOTH);
+        extension.put(MASK_VALUES_LOG, spec.maskValues == LOG || spec.maskValues == BOTH);
 
         if (spec.validateSecurity == YES && spec.validateRequests == NO)
             log.warn("Automatically enabled request validation; which is required by security validation.");
