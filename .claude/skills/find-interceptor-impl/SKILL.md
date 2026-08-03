@@ -27,32 +27,28 @@ Implementation class for <groovy>:
   GroovyInterceptor  ->  ./core/src/main/java/.../groovy/GroovyInterceptor.java
 ```
 
-Notes on its behaviour, so you can trust the output:
-
-- **Several results** — some names are declared on more than one class (a base
-  plus an override, or per-module variants). The script lists all of them; pick
-  by package/context.
-- **No exact match** — it exits non-zero and suggests the closest declared names
-  (handles typos like `grovy` → `groovy`). Re-run with the corrected name.
-- `name` need not be the first annotation attribute (`@MCElement(component =
-  false, name = "...")` is handled), and both `name="x"` and `name = "x"`
-  spacings match.
-
 ## Class → element name (reverse direction)
 
-If the user has a class and wants its config tag, read the class's `@MCElement`
-annotation directly:
+Given a class name, find its file and annotation in one shot — no need to know
+which module it lives in first:
 
 ```bash
-grep -n '@MCElement' core/src/main/java/.../GroovyInterceptor.java
+grep -rn --include='GroovyInterceptor.java' '@MCElement' .
 ```
 
-The `name = "..."` value is the tag used in `proxies.xml`.
+The `name = "..."` value is the tag used in `proxies.xml`. No match means the
+class isn't directly configurable — it's likely an abstract base or exposed
+under a parent element; check its subclasses for the nearest one carrying
+`@MCElement`, or grep `distribution/examples` / `proxies.xml` for how it's
+actually used.
 
-## When the annotation isn't where you expect
+## Behaviour to trust
 
-A class with no `@MCElement` of its own is not directly configurable — it's
-usually an abstract base (e.g. `AbstractInterceptor`) or is exposed under a
-parent element. In that case search the class hierarchy for the nearest subclass
-that does carry an `@MCElement`, or grep for the element name in
-`distribution/examples` / `proxies.xml` to see how it's actually used.
+- **Several results** — some names are declared on more than one class (a base
+  plus an override, or per-module variants); the script lists all of them, pick
+  by package/context.
+- **No exact match** — exits non-zero and suggests the closest declared names
+  (handles typos like `grovy` → `groovy`); re-run with the corrected name.
+- **Matching is lenient**: `name` need not be the first annotation attribute
+  (`@MCElement(component = false, name = "...")` is fine), and both `name="x"`
+  and `name = "x"` spacings match.
