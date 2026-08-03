@@ -14,297 +14,443 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import io.swagger.v3.oas.models.media.*;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.*;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
 
 import javax.xml.namespace.QName;
-import java.util.List;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class XsdToSchemaTest {
 
-    static final String NS_CITIES    = "https://predic8.de/cities";
-    static final String NS_EXTENDED  = "https://example.com/extended";
-    static final String NS_SERVICE   = "https://example.com/service";
-    static final String NS_RECURSIVE = "https://example.com/recursive";
+    static final String NS = "https://test.example.com";
 
-    static XsdToSchema cities;
-    static XsdToSchema extended;
-    static XsdToSchema crossNs;
-    static XsdToSchema recursive;
-
-    @BeforeAll
-    static void setup() throws Exception {
-        var resolver = new ResolverMap();
-        cities    = new XsdToSchema(Definitions.parse(resolver, "classpath:/ws/cities.wsdl"));
-        extended  = new XsdToSchema(Definitions.parse(resolver, "classpath:/ws/extended-types.wsdl"));
-        crossNs   = new XsdToSchema(Definitions.parse(resolver, "classpath:/ws/cross-namespace.wsdl"));
-        recursive = new XsdToSchema(Definitions.parse(resolver, "classpath:/ws/recursive-type.wsdl"));
+    static XsdToSchema converterFor(String xsdDeclarations) {
+        return converterForSchemas(Map.of(NS, xsdDeclarations));
     }
 
-    private static Schema<?> convert(XsdToSchema converter, String namespace, String element) {
-        return converter.convert(new QName(namespace, element));
+    static XsdToSchema converterForSchemas(Map<String, String> xsdContentByNamespace) {
+        try {
+            var factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            var builder = factory.newDocumentBuilder();
+            var map = new LinkedHashMap<String, List<Element>>();
+            for (var entry : xsdContentByNamespace.entrySet()) {
+                var ns = entry.getKey();
+                var xml = """
+                        <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                                    xmlns:tns="%s"
+                                    targetNamespace="%s">
+                          %s
+                        </xsd:schema>
+                        """.formatted(ns, ns, entry.getValue());
+                var doc = builder.parse(new InputSource(new StringReader(xml)));
+                map.put(ns, List.of(doc.getDocumentElement()));
+            }
+            return new XsdToSchema(map);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private static Schema<?> fieldOf(Schema<?> schema, String fieldName) {
-        return schema.getProperties().get(fieldName);
+    static Schema<?> convert(XsdToSchema converter, String elementName) {
+        return converter.convert(new QName(NS, elementName));
     }
 
-    private static boolean isRequired(Schema<?> schema, String fieldName) {
+    static Schema<?> fieldOf(Schema<?> schema, String name) {
+        return schema.getProperties().get(name);
+    }
+
+    static boolean isRequired(Schema<?> schema, String name) {
         var req = schema.getRequired();
-        return req != null && req.contains(fieldName);
+        return req != null && req.contains(name);
     }
 
-    private static Schema<?> extendedTypeItems() {
-        return fieldOf(convert(extended, NS_EXTENDED, "searchResponse"), "item").getItems();
+    // ── Unresolvable inputs ───────────────────────────────────────────────
+
+    @Test
+    void unknownNamespaceProducesEmptyObjectSchema() {
+        var converter = converterFor("<xsd:element name='x' type='xsd:string'/>");
+
+        var schema = converter.convert(new QName("https://unknown.example.com", "x"));
+
+        assertInstanceOf(ObjectSchema.class, schema);
+        assertNull(schema.getProperties());
     }
 
-    @Nested
-    class UnresolvableInput {
+    @Test
+    void unknownElementInKnownNamespaceProducesEmptyObjectSchema() {
+        var converter = converterFor("<xsd:element name='x' type='xsd:string'/>");
 
-        @Test
-        void unknownNamespaceProducesEmptyObjectSchema() {
-            var schema = convert(cities, "https://does-not-exist.example.com", "foo");
+        var schema = convert(converter, "doesNotExist");
 
-            assertInstanceOf(ObjectSchema.class, schema);
-            assertNull(schema.getProperties());
-        }
-
-        @Test
-        void unknownElementInKnownNamespaceProducesEmptyObjectSchema() {
-            var schema = convert(cities, NS_CITIES, "doesNotExist");
-
-            assertInstanceOf(ObjectSchema.class, schema);
-            assertNull(schema.getProperties());
-        }
+        assertInstanceOf(ObjectSchema.class, schema);
+        assertNull(schema.getProperties());
     }
 
-    @Nested
-    class PrimitiveTypes {
-        // xsd:string  →  cities / getCityResponse.country
-        // xsd:integer →  cities / getCityResponse.population
-        // xsd:int     →  extended / searchResponse → item[] → baseId  (via ExtendedType extends BaseType)
+    // ── Primitive XSD type mappings ───────────────────────────────────────
 
-        @Test
-        void xsdStringMapsToStringSchema() {
-            var getCityResponse = convert(cities, NS_CITIES, "getCityResponse");
-            assertInstanceOf(StringSchema.class, fieldOf(getCityResponse, "country"));
-        }
+    @ParameterizedTest(name = "{0} → {1}")
+    @MethodSource
+    void primitiveTypeMapping(String xsdType, Class<?> expectedSchemaClass) {
+        var schema = convert(converterFor("""
+                <xsd:element name="root">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="value" type="%s"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """.formatted(xsdType)), "root");
 
-        @Test
-        void xsdIntegerMapsToIntegerSchema() {
-            var getCityResponse = convert(cities, NS_CITIES, "getCityResponse");
-            assertInstanceOf(IntegerSchema.class, fieldOf(getCityResponse, "population"));
-        }
-
-        @Test
-        void xsdIntMapsToIntegerSchema() {
-            assertInstanceOf(IntegerSchema.class, fieldOf(extendedTypeItems(), "baseId"));
-        }
+        assertInstanceOf(expectedSchemaClass, fieldOf(schema, "value"));
     }
 
-    @Nested
-    class SequenceFields {
-        // cities / getCity:         { name: xsd:string }
-        // cities / getCityResponse: { country: xsd:string, population: xsd:integer }
-        // extended / searchRequest: { <choice>, code: CodeType (minOccurs=0) }
-
-        @Test
-        void inlineComplexTypeWithSequenceProducesObjectSchema() {
-            var getCity = convert(cities, NS_CITIES, "getCity");
-            assertInstanceOf(ObjectSchema.class, getCity);
-        }
-
-        @Test
-        void sequenceFieldTypesAreResolvedCorrectly() {
-            var getCityResponse = convert(cities, NS_CITIES, "getCityResponse");
-            assertInstanceOf(StringSchema.class,  fieldOf(getCityResponse, "country"));
-            assertInstanceOf(IntegerSchema.class, fieldOf(getCityResponse, "population"));
-        }
-
-        @Test
-        void fieldWithoutMinOccursIsRequired() {
-            var getCity = convert(cities, NS_CITIES, "getCity");
-            assertTrue(isRequired(getCity, "name"));
-        }
-
-        @Test
-        void allFieldsWithoutMinOccursAreRequired() {
-            var getCityResponse = convert(cities, NS_CITIES, "getCityResponse");
-            assertTrue(isRequired(getCityResponse, "country"));
-            assertTrue(isRequired(getCityResponse, "population"));
-        }
-
-        @Test
-        void fieldWithMinOccursZeroIsNotRequired() {
-            var searchRequest = convert(extended, NS_EXTENDED, "searchRequest");
-            assertNotNull(fieldOf(searchRequest, "code"));
-            assertFalse(isRequired(searchRequest, "code"));
-        }
+    static Stream<Arguments> primitiveTypeMapping() {
+        return Stream.of(
+                arguments("xsd:string",          StringSchema.class),
+                arguments("xsd:normalizedString", StringSchema.class),
+                arguments("xsd:anyURI",           StringSchema.class),
+                arguments("xsd:date",             StringSchema.class),
+                arguments("xsd:dateTime",         StringSchema.class),
+                arguments("xsd:base64Binary",     StringSchema.class),
+                arguments("xsd:integer",          IntegerSchema.class),
+                arguments("xsd:int",              IntegerSchema.class),
+                arguments("xsd:long",             IntegerSchema.class),
+                arguments("xsd:short",            IntegerSchema.class),
+                arguments("xsd:decimal",          NumberSchema.class),
+                arguments("xsd:float",            NumberSchema.class),
+                arguments("xsd:double",           NumberSchema.class),
+                arguments("xsd:boolean",          BooleanSchema.class)
+        );
     }
 
-    @Nested
-    class ChoiceFields {
-        // extended / searchRequest:
-        //   <xsd:sequence>
-        //     <xsd:choice>
-        //       <xsd:element name="byName" type="xsd:string"/>
-        //       <xsd:element name="byId"   type="xsd:int"/>
-        //     </xsd:choice>
-        //     <xsd:element name="code" type="tns:CodeType" minOccurs="0"/>
-        //   </xsd:sequence>
+    // ── Required and optional fields (minOccurs) ──────────────────────────
 
-        @Test
-        void allAlternativesAreExposedAsProperties() {
-            var searchRequest = convert(extended, NS_EXTENDED, "searchRequest");
-            assertNotNull(fieldOf(searchRequest, "byName"));
-            assertNotNull(fieldOf(searchRequest, "byId"));
-        }
+    @Test
+    void elementWithoutMinOccursIsRequired() {
+        var schema = convert(converterFor("""
+                <xsd:element name="request">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="username" type="xsd:string"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "request");
 
-        @Test
-        void noChoiceAlternativeIsRequired() {
-            var searchRequest = convert(extended, NS_EXTENDED, "searchRequest");
-            assertFalse(isRequired(searchRequest, "byName"));
-            assertFalse(isRequired(searchRequest, "byId"));
-        }
-
-        @Test
-        void alternativesMapToTheirPrimitiveTypes() {
-            var searchRequest = convert(extended, NS_EXTENDED, "searchRequest");
-            assertInstanceOf(StringSchema.class,  fieldOf(searchRequest, "byName"));
-            assertInstanceOf(IntegerSchema.class, fieldOf(searchRequest, "byId"));
-        }
+        assertTrue(isRequired(schema, "username"));
     }
 
-    @Nested
-    class UnboundedFields {
-        // extended / searchResponse:
-        //   <xsd:element name="item" type="tns:ExtendedType" minOccurs="0" maxOccurs="unbounded"/>
+    @Test
+    void elementWithMinOccursZeroIsNotRequired() {
+        var schema = convert(converterFor("""
+                <xsd:element name="request">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="comment" type="xsd:string" minOccurs="0"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "request");
 
-        @Test
-        void maxOccursUnboundedProducesArraySchema() {
-            var searchResponse = convert(extended, NS_EXTENDED, "searchResponse");
-            assertInstanceOf(ArraySchema.class, fieldOf(searchResponse, "item"));
-        }
-
-        @Test
-        void arrayItemsReflectTheReferencedComplexType() {
-            var searchResponse = convert(extended, NS_EXTENDED, "searchResponse");
-            var itemArray = (ArraySchema) fieldOf(searchResponse, "item");
-            assertInstanceOf(ObjectSchema.class, itemArray.getItems());
-        }
-
-        @Test
-        void unboundedFieldWithMinOccursZeroIsNotRequired() {
-            var searchResponse = convert(extended, NS_EXTENDED, "searchResponse");
-            assertFalse(isRequired(searchResponse, "item"));
-        }
+        assertNotNull(fieldOf(schema, "comment"));
+        assertFalse(isRequired(schema, "comment"));
     }
 
-    @Nested
-    class ExtensionInheritance {
-        // extended-types.wsdl:
-        //   BaseType     { baseId: xsd:int, baseName: xsd:string }
-        //   ExtendedType extends BaseType, adds { extra: xsd:string }
-        // Reached via: searchResponse → item (ArraySchema) → items (ExtendedType schema)
+    @Test
+    void onlyElementsWithoutMinOccursZeroAreRequired() {
+        var schema = convert(converterFor("""
+                <xsd:element name="order">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="productId" type="xsd:string"/>
+                    <xsd:element name="quantity"  type="xsd:int"/>
+                    <xsd:element name="note"      type="xsd:string" minOccurs="0"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "order");
 
-        @Test
-        void baseTypeFieldsArePresentInExtendedSchema() {
-            var extendedType = extendedTypeItems();
-            assertNotNull(fieldOf(extendedType, "baseId"));
-            assertNotNull(fieldOf(extendedType, "baseName"));
-        }
-
-        @Test
-        void ownFieldFromExtendingTypeIsAlsoPresent() {
-            assertNotNull(fieldOf(extendedTypeItems(), "extra"));
-        }
-
-        @Test
-        void allInheritedAndOwnFieldsHaveCorrectTypes() {
-            var extendedType = extendedTypeItems();
-            assertInstanceOf(IntegerSchema.class, fieldOf(extendedType, "baseId"));
-            assertInstanceOf(StringSchema.class,  fieldOf(extendedType, "baseName"));
-            assertInstanceOf(StringSchema.class,  fieldOf(extendedType, "extra"));
-        }
+        assertTrue(isRequired(schema, "productId"));
+        assertTrue(isRequired(schema, "quantity"));
+        assertFalse(isRequired(schema, "note"));
     }
 
-    @Nested
-    class SimpleTypeRestriction {
-        // extended-types.wsdl:
-        //   <xsd:simpleType name="CodeType">
-        //     <xsd:restriction base="xsd:string"/>
-        //   </xsd:simpleType>
-        // searchRequest.code has type tns:CodeType
+    // ── maxOccurs → ArraySchema ───────────────────────────────────────────
 
-        @Test
-        void restrictionOfXsdStringResolvesToStringSchema() {
-            var searchRequest = convert(extended, NS_EXTENDED, "searchRequest");
-            assertInstanceOf(StringSchema.class, fieldOf(searchRequest, "code"));
-        }
+    @Test
+    void maxOccursUnboundedProducesArraySchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="list">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="item" type="xsd:string" maxOccurs="unbounded"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "list");
+
+        assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
     }
 
-    @Nested
-    class CrossNamespaceResolution {
-        // cross-namespace.wsdl — two embedded schemas:
-        //   NS=service  getItemRequest.item  →  type="types:ItemType"
-        //   NS=types    ItemType             →  { itemName: xsd:string, itemCount: xsd:int }
+    @Test
+    void maxOccursGreaterThanOneProducesArraySchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="list">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="item" type="xsd:string" maxOccurs="3"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "list");
 
-        @Test
-        void typeFromDifferentNamespaceIsResolved() {
-            var getItemRequest = convert(crossNs, NS_SERVICE, "getItemRequest");
-            var item = fieldOf(getItemRequest, "item");
-            assertInstanceOf(ObjectSchema.class, item);
-            assertNotNull(fieldOf(item, "itemName"));
-            assertNotNull(fieldOf(item, "itemCount"));
-        }
-
-        @Test
-        void resolvedCrossNamespaceFieldsHaveCorrectTypes() {
-            var item = fieldOf(convert(crossNs, NS_SERVICE, "getItemRequest"), "item");
-            assertInstanceOf(StringSchema.class,  fieldOf(item, "itemName"));
-            assertInstanceOf(IntegerSchema.class, fieldOf(item, "itemCount"));
-        }
+        assertInstanceOf(ArraySchema.class, fieldOf(schema, "item"));
     }
 
-    @Nested
-    class SelfReferencingTypes {
-        // recursive-type.wsdl:
-        //   TreeNode { value: xsd:string, children: TreeNode (minOccurs=0, maxOccurs=unbounded) }
-        // processTreeRequest.root has type tns:TreeNode
+    @Test
+    void maxOccursOneDoesNotProduceArraySchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="list">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="item" type="xsd:string" maxOccurs="1"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "list");
 
-        @Test
-        void conversionCompletesWithoutStackOverflow() {
-            assertDoesNotThrow(() -> convert(recursive, NS_RECURSIVE, "processTreeRequest"));
-        }
-
-        @Test
-        void nonRecursiveFieldIsPreservedAfterCycleDetection() {
-            var processTreeRequest = convert(recursive, NS_RECURSIVE, "processTreeRequest");
-            var root = fieldOf(processTreeRequest, "root");
-            assertNotNull(fieldOf(root, "value"));
-        }
-
-        @Test
-        void recursiveFieldBecomesArrayOfEmptyObjectSchema() {
-            var root = fieldOf(convert(recursive, NS_RECURSIVE, "processTreeRequest"), "root");
-            var children = (ArraySchema) fieldOf(root, "children");
-            assertInstanceOf(ObjectSchema.class, children.getItems());
-            assertNull(children.getItems().getProperties());
-        }
+        assertFalse(fieldOf(schema, "item") instanceof ArraySchema);
     }
 
-    @Nested
-    class MessageParts {
+    // ── xsd:all treated same as xsd:sequence ─────────────────────────────
 
-        @Test
-        void emptyMessageListProducesEmptyObjectSchema() {
-            var schema = cities.convertMessageParts(List.of());
-            assertInstanceOf(ObjectSchema.class, schema);
-            assertNull(schema.getProperties());
-        }
+    @Test
+    void xsdAllProducesObjectSchemaWithAllFields() {
+        var schema = convert(converterFor("""
+                <xsd:element name="record">
+                  <xsd:complexType>
+                    <xsd:all>
+                      <xsd:element name="firstName" type="xsd:string"/>
+                      <xsd:element name="lastName"  type="xsd:string"/>
+                    </xsd:all>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "record");
+
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "firstName"));
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "lastName"));
+    }
+
+    // ── xsd:choice ────────────────────────────────────────────────────────
+
+    @Test
+    void choiceAlternativesAreExposedAsProperties() {
+        var schema = convert(converterFor("""
+                <xsd:element name="searchRequest">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:choice>
+                      <xsd:element name="byName" type="xsd:string"/>
+                      <xsd:element name="byId"   type="xsd:int"/>
+                    </xsd:choice>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "searchRequest");
+
+        assertNotNull(fieldOf(schema, "byName"));
+        assertNotNull(fieldOf(schema, "byId"));
+    }
+
+    @Test
+    void choiceAlternativesAreNotRequired() {
+        var schema = convert(converterFor("""
+                <xsd:element name="searchRequest">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:choice>
+                      <xsd:element name="byName" type="xsd:string"/>
+                      <xsd:element name="byId"   type="xsd:int"/>
+                    </xsd:choice>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "searchRequest");
+
+        assertFalse(isRequired(schema, "byName"));
+        assertFalse(isRequired(schema, "byId"));
+    }
+
+    // ── xsd:extension — field inheritance ────────────────────────────────
+
+    @Test
+    void extensionInheritsBaseTypeFieldsAndAddsOwnFields() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="Vehicle">
+                  <xsd:sequence>
+                    <xsd:element name="brand" type="xsd:string"/>
+                    <xsd:element name="year"  type="xsd:int"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:complexType name="Car">
+                  <xsd:complexContent>
+                    <xsd:extension base="tns:Vehicle">
+                      <xsd:sequence>
+                        <xsd:element name="doors" type="xsd:int"/>
+                      </xsd:sequence>
+                    </xsd:extension>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="car" type="tns:Car"/>
+                """), "car");
+
+        assertInstanceOf(StringSchema.class,  fieldOf(schema, "brand"));  // from Vehicle
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "year"));   // from Vehicle
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "doors"));  // from Car
+    }
+
+    // ── xsd:restriction on complexContent ────────────────────────────────
+
+    @Test
+    void complexContentRestrictionExposesBaseTypeFields() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="FullAddress">
+                  <xsd:sequence>
+                    <xsd:element name="street"  type="xsd:string"/>
+                    <xsd:element name="city"    type="xsd:string"/>
+                    <xsd:element name="country" type="xsd:string"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:complexType name="ShortAddress">
+                  <xsd:complexContent>
+                    <xsd:restriction base="tns:FullAddress">
+                      <xsd:sequence>
+                        <xsd:element name="city"    type="xsd:string"/>
+                        <xsd:element name="country" type="xsd:string"/>
+                      </xsd:sequence>
+                    </xsd:restriction>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="address" type="tns:ShortAddress"/>
+                """), "address");
+
+        assertNotNull(fieldOf(schema, "street"));
+        assertNotNull(fieldOf(schema, "city"));
+        assertNotNull(fieldOf(schema, "country"));
+    }
+
+    // ── Named xsd:simpleType restriction ──────────────────────────────────
+
+    @Test
+    void namedSimpleTypeRestrictionResolvesToBasePrimitive() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="StatusCode">
+                  <xsd:restriction base="xsd:string">
+                    <xsd:enumeration value="ACTIVE"/>
+                    <xsd:enumeration value="INACTIVE"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="account">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="status" type="tns:StatusCode"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "account");
+
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "status"));
+    }
+
+    // ── xsd:simpleContent ─────────────────────────────────────────────────
+
+    @Test
+    void simpleContentProducesStringSchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="note">
+                  <xsd:complexType>
+                    <xsd:simpleContent>
+                      <xsd:extension base="xsd:string"/>
+                    </xsd:simpleContent>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "note");
+
+        assertInstanceOf(StringSchema.class, schema);
+    }
+
+    // ── Self-referencing types ────────────────────────────────────────────
+
+    @Test
+    void selfReferencingTypeCompletesWithoutStackOverflow() {
+        assertDoesNotThrow(() -> convert(converterFor("""
+                <xsd:complexType name="TreeNode">
+                  <xsd:sequence>
+                    <xsd:element name="value"    type="xsd:string"/>
+                    <xsd:element name="children" type="tns:TreeNode" minOccurs="0" maxOccurs="unbounded"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:element name="tree" type="tns:TreeNode"/>
+                """), "tree"));
+    }
+
+    @Test
+    void selfReferencingTypePreservesNonRecursiveFields() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="TreeNode">
+                  <xsd:sequence>
+                    <xsd:element name="value"    type="xsd:string"/>
+                    <xsd:element name="children" type="tns:TreeNode" minOccurs="0" maxOccurs="unbounded"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:element name="tree" type="tns:TreeNode"/>
+                """), "tree");
+
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "value"));
+    }
+
+    @Test
+    void recursiveReferenceBreaksCycleWithEmptyObjectSchema() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="TreeNode">
+                  <xsd:sequence>
+                    <xsd:element name="value"    type="xsd:string"/>
+                    <xsd:element name="children" type="tns:TreeNode" minOccurs="0" maxOccurs="unbounded"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:element name="tree" type="tns:TreeNode"/>
+                """), "tree");
+
+        var children = (ArraySchema) fieldOf(schema, "children");
+        assertInstanceOf(ObjectSchema.class, children.getItems());
+        assertNull(children.getItems().getProperties());
+    }
+
+    // ── Cross-namespace type resolution ───────────────────────────────────
+
+    @Test
+    void typeDefinedInDifferentNamespaceSchemaIsResolved() {
+        var converter = converterForSchemas(Map.of(
+                NS, """
+                        <xsd:import namespace="https://types.example.com"/>
+                        <xsd:element name="request">
+                          <xsd:complexType><xsd:sequence>
+                            <xsd:element name="payload" type="types:Payload"
+                                         xmlns:types="https://types.example.com"/>
+                          </xsd:sequence></xsd:complexType>
+                        </xsd:element>
+                        """,
+                "https://types.example.com", """
+                        <xsd:complexType name="Payload">
+                          <xsd:sequence>
+                            <xsd:element name="body" type="xsd:string"/>
+                          </xsd:sequence>
+                        </xsd:complexType>
+                        """
+        ));
+
+        var payload = fieldOf(convert(converter, "request"), "payload");
+
+        assertInstanceOf(ObjectSchema.class, payload);
+        assertInstanceOf(StringSchema.class, fieldOf(payload, "body"));
     }
 }

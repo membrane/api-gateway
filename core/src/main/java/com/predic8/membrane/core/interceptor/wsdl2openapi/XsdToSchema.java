@@ -49,8 +49,12 @@ public class XsdToSchema {
     private final Map<String, List<Element>> schemasByNamespace;
     private final Set<Element> inProgress = new HashSet<>();
 
+    XsdToSchema(Map<String, List<Element>> schemasByNamespace) {
+        this.schemasByNamespace = schemasByNamespace;
+    }
+
     public XsdToSchema(Definitions definitions) {
-        this.schemasByNamespace = buildSchemaMap(definitions);
+        this(buildSchemaMap(definitions));
     }
 
     /**
