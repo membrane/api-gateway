@@ -98,30 +98,47 @@ public class Wsdl2OpenApiConverter {
                         }
                         return true;
                     })
-                    .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp.getName(), wsdlOp)));
+                    .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp.getName(), wsdlOp, "POST")));
         } else {
             var wsdlOps = definitions.getPortTypes().stream()
                     .flatMap(pt -> pt.getOperations().stream())
                     .filter(op -> op.getName() != null)
                     .toList();
-            for (var name : operations.keySet()) {
+            for (var entry : operations.entrySet()) {
+                var name = entry.getKey();
                 var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst().orElse(null);
                 if (wsdlOp == null) log.debug("Configured operation '{}' not found in WSDL definitions", name);
-                paths.addPathItem("/" + camelToKebab(name), buildPathItem(name, wsdlOp));
+                paths.addPathItem("/" + camelToKebab(name), buildPathItem(name, wsdlOp, entry.getValue().getMethod()));
             }
         }
         return paths;
     }
 
-    private PathItem buildPathItem(String name, Operation wsdlOp) {
+    private PathItem buildPathItem(String name, Operation wsdlOp, String method) {
         var inputs = wsdlOp.getMessagesByDirection(INPUT);
         var outputs = wsdlOp.getMessagesByDirection(OUTPUT);
         var apiOp = new io.swagger.v3.oas.models.Operation()
                 .operationId(name)
                 .summary(name)
-                .requestBody(buildRequestBody(inputs))
                 .responses(buildResponses(outputs));
-        return new PathItem().post(apiOp);
+        if (hasRequestBody(method)) {
+            apiOp.requestBody(buildRequestBody(inputs));
+        }
+        return applyMethod(new PathItem(), apiOp, method);
+    }
+
+    private static boolean hasRequestBody(String method) {
+        return !method.equalsIgnoreCase("GET") && !method.equalsIgnoreCase("DELETE");
+    }
+
+    private static PathItem applyMethod(PathItem item, io.swagger.v3.oas.models.Operation op, String method) {
+        return switch (method.toUpperCase()) {
+            case "GET"    -> item.get(op);
+            case "PUT"    -> item.put(op);
+            case "DELETE" -> item.delete(op);
+            case "PATCH"  -> item.patch(op);
+            default       -> item.post(op);
+        };
     }
 
     private RequestBody buildRequestBody(List<Message> messages) {

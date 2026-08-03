@@ -113,7 +113,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
 
         for (OperationConfig opConfig : operations) {
-            for (Interceptor i : opConfig.getTransformation()) {
+            for (Interceptor i : opConfig.getFlow()) {
                 i.init(router, proxy);
             }
         }
@@ -187,8 +187,8 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
 
             OperationConfig opConfig = operationsByName.get(operationName);
-            if (opConfig != null && !opConfig.getTransformation().isEmpty()) {
-                return router.getFlowController().invokeResponseHandlers(exc, opConfig.getTransformation());
+            if (opConfig != null && !opConfig.getFlow().isEmpty()) {
+                return router.getFlowController().invokeResponseHandlers(exc, opConfig.getFlow());
             }
 
         } catch (SoapFaultException fault) {
@@ -257,18 +257,19 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleOperation(Exchange exc, String operationName) {
-        if (!exc.getRequest().isPOSTRequest()) {
+        OperationConfig opConfig = operationsByName.get(operationName);
+        String expectedMethod = opConfig != null ? opConfig.getMethod().toUpperCase() : "POST";
+        if (!exc.getRequest().getMethod().equalsIgnoreCase(expectedMethod)) {
             exc.setResponse(statusCode(405)
-                    .header("Allow", "POST")
-                    .body("Method not allowed. Use POST.")
+                    .header("Allow", expectedMethod)
+                    .body("Method not allowed. Use " + expectedMethod + ".")
                     .build());
             return RETURN;
         }
 
         try {
-            OperationConfig opConfig = operationsByName.get(operationName);
-            if (opConfig != null && !opConfig.getTransformation().isEmpty()) {
-                Outcome outcome = router.getFlowController().invokeRequestHandlers(exc, opConfig.getTransformation());
+            if (opConfig != null && !opConfig.getFlow().isEmpty()) {
+                Outcome outcome = router.getFlowController().invokeRequestHandlers(exc, opConfig.getFlow());
                 if (outcome != CONTINUE) return outcome;
             }
 
