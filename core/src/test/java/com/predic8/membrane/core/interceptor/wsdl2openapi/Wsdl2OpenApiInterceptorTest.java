@@ -26,6 +26,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,15 +77,13 @@ class Wsdl2OpenApiInterceptorTest {
         assertEquals("getCity", interceptor.extractOperationName("/api/v1.0/get-city"));
     }
 
-    static final Wsdl2OpenApiInterceptor interceptor = new Wsdl2OpenApiInterceptor();
-
     @ParameterizedTest(name = "{0} → {1}")
     @MethodSource
-    void camelToKebab(String input, String expected) {
-        assertEquals(expected, interceptor.camelToKebab(input));
+    void camelToKebabConv(String input, String expected) {
+        assertEquals(expected, camelToKebab(input));
     }
 
-    static Stream<Arguments> camelToKebab() {
+    static Stream<Arguments> camelToKebabConv() {
         return Stream.of(
                 arguments("getCity",                   "get-city"),
                 arguments("getBank",                   "get-bank"),
