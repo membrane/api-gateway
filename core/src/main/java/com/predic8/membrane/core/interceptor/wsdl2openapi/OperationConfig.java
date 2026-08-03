@@ -26,7 +26,8 @@ import java.util.*;
 public class OperationConfig {
 
     private String name;
-    private List<Interceptor> transformation = new ArrayList<>();
+    private String method = "POST";
+    private List<Interceptor> flow = new ArrayList<>();
 
     public String getName() {
         return name;
@@ -41,8 +42,21 @@ public class OperationConfig {
         this.name = name;
     }
 
-    public List<Interceptor> getTransformation() {
-        return transformation;
+    public String getMethod() {
+        return method;
+    }
+
+    /**
+     * @description HTTP method exposed for this operation. Defaults to POST.
+     * @example GET
+     */
+    @MCAttribute
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public List<Interceptor> getFlow() {
+        return flow;
     }
 
     /**
@@ -52,7 +66,7 @@ public class OperationConfig {
      * On the response side they run after SOAP-to-JSON conversion on the final JSON body.
      */
     @MCChildElement
-    public void setTransformation(List<Interceptor> transformation) {
-        this.transformation = transformation;
+    public void setFlow(List<Interceptor> flow) {
+        this.flow = flow;
     }
 }
