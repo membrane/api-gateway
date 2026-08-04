@@ -76,9 +76,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @topic 6. Web Services with SOAP and WSDL
  */
 @MCElement(name = "wsdl2openapi")
-public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
+public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(Wsdl2OpenApiInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(Wsdl2OpenapiInterceptor.class);
 
     private String wsdl;
     private boolean validateRequests = false;
@@ -95,7 +95,7 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
     private OpenAPIPublisherInterceptor publisher;
     private OpenAPIValidator openApiValidator;
 
-    public Wsdl2OpenApiInterceptor() {
+    public Wsdl2OpenapiInterceptor() {
         name = "wsdl2openapi";
     }
 
@@ -150,8 +150,8 @@ public class Wsdl2OpenApiInterceptor extends AbstractInterceptor {
         }
 
         publisher = proxy.getFlow().stream()
-                .filter(i -> i instanceof Wsdl2OpenApiInterceptor w && w.publisher != null)
-                .map(i -> ((Wsdl2OpenApiInterceptor) i).publisher)
+                .filter(i -> i instanceof Wsdl2OpenapiInterceptor w && w.publisher != null)
+                .map(i -> ((Wsdl2OpenapiInterceptor) i).publisher)
                 .findFirst()
                 .orElseGet(() -> {
                     var p = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());

@@ -14,10 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.router.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.*;
@@ -31,23 +27,23 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class Wsdl2OpenApiInterceptorTest {
+class Wsdl2OpenapiInterceptorTest {
 
     @SuppressWarnings("unchecked")
-    private static void setFields(Wsdl2OpenApiInterceptor interceptor, String basePath,
-                                   Map<String, String> pathMethodToOperation) throws Exception {
-        Field bf = Wsdl2OpenApiInterceptor.class.getDeclaredField("basePath");
+    private static void setFields(Wsdl2OpenapiInterceptor interceptor, String basePath,
+                                  Map<String, String> pathMethodToOperation) throws Exception {
+        Field bf = Wsdl2OpenapiInterceptor.class.getDeclaredField("basePath");
         bf.setAccessible(true);
         bf.set(interceptor, basePath);
 
-        Field kf = Wsdl2OpenApiInterceptor.class.getDeclaredField("pathMethodToOperation");
+        Field kf = Wsdl2OpenapiInterceptor.class.getDeclaredField("pathMethodToOperation");
         kf.setAccessible(true);
         ((Map<String, String>) kf.get(interceptor)).putAll(pathMethodToOperation);
     }
 
     @Test
     void extractOperationNameStripsQueryString() throws Exception {
-        var interceptor = new Wsdl2OpenApiInterceptor();
+        var interceptor = new Wsdl2OpenapiInterceptor();
         setFields(interceptor, "/purchasing", Map.of("get-city:POST", "getCity"));
 
         assertEquals("getCity", interceptor.extractOperationName("/purchasing/get-city?format=json", "POST"));
@@ -55,7 +51,7 @@ class Wsdl2OpenApiInterceptorTest {
 
     @Test
     void extractOperationNameWithoutQueryString() throws Exception {
-        var interceptor = new Wsdl2OpenApiInterceptor();
+        var interceptor = new Wsdl2OpenapiInterceptor();
         setFields(interceptor, "/purchasing", Map.of("get-city:POST", "getCity"));
 
         assertEquals("getCity", interceptor.extractOperationName("/purchasing/get-city", "POST"));
@@ -63,7 +59,7 @@ class Wsdl2OpenApiInterceptorTest {
 
     @Test
     void extractOperationNamePreservesPascalCase() throws Exception {
-        var interceptor = new Wsdl2OpenApiInterceptor();
+        var interceptor = new Wsdl2OpenapiInterceptor();
         setFields(interceptor, "/api", Map.of("get-city:GET", "GetCity"));
 
         assertEquals("GetCity", interceptor.extractOperationName("/api/get-city", "GET"));
@@ -71,7 +67,7 @@ class Wsdl2OpenApiInterceptorTest {
 
     @Test
     void extractOperationNameHandlesRegexMetacharactersInBasePath() throws Exception {
-        var interceptor = new Wsdl2OpenApiInterceptor();
+        var interceptor = new Wsdl2OpenapiInterceptor();
         setFields(interceptor, "/api/v1.0", Map.of("get-city:POST", "getCity"));
 
         assertEquals("getCity", interceptor.extractOperationName("/api/v1.0/get-city", "POST"));
@@ -79,7 +75,7 @@ class Wsdl2OpenApiInterceptorTest {
 
     @Test
     void extractOperationNameDistinguishesByMethod() throws Exception {
-        var interceptor = new Wsdl2OpenApiInterceptor();
+        var interceptor = new Wsdl2OpenapiInterceptor();
         setFields(interceptor, "/", Map.of("articles:GET", "getAll", "articles:POST", "create"));
 
         assertEquals("getAll", interceptor.extractOperationName("/articles", "GET"));
