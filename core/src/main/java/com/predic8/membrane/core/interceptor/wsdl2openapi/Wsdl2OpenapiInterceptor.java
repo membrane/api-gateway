@@ -38,10 +38,7 @@ import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -101,6 +98,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
     private OpenAPIPublisherInterceptor publisher;
     private OpenAPIValidator openApiValidator;
+
+    private final String instanceId = UUID.randomUUID().toString();
+    private final String operationPropertyKey = "wsdl2openapi.operation." + instanceId;
+    private final String validationPlanPropertyKey = "wsdl2openapi.validationPlan." + instanceId;
 
     public Wsdl2OpenapiInterceptor() {
         name = "wsdl2openapi";
@@ -185,7 +186,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) {
-        String operationName = (String) exc.getProperty("wsdl2openapi.operation");
+        String operationName = exc.getProperty(operationPropertyKey, String.class);
         if (operationName == null) {
             return CONTINUE;
         }
@@ -206,7 +207,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
 
             if (validateResponses) {
-                var validationPlan = exc.getProperty("wsdl2openapi.validationPlan", OpenAPIValidator.ValidationPlan.class);
+                var validationPlan = exc.getProperty(validationPlanPropertyKey, OpenAPIValidator.ValidationPlan.class);
                 if (validationPlan != null) {
                     var errors = validationPlan.validateResponse(getOpenapiValidatorResponse(exc));
                     if (errors.hasErrors()) {
@@ -308,7 +309,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             if (openApiValidator != null) {
                 var validatorRequest = getOpenapiValidatorRequest(exc);
                 var validationPlan = openApiValidator.prepareValidation(validatorRequest);
-                exc.setProperty("wsdl2openapi.validationPlan", validationPlan);
+                exc.setProperty(validationPlanPropertyKey, validationPlan);
                 if (validateRequests) {
                     var errors = validationPlan.validateRequest(validatorRequest);
                     if (errors.hasErrors()) {
@@ -336,7 +337,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             exc.getRequest().getHeader().setContentType(TEXT_XML);
             exc.getRequest().getHeader().setSOAPAction(getSOAPAction(operationName));
 
-            exc.setProperty("wsdl2openapi.operation", operationName);
+            exc.setProperty(operationPropertyKey, operationName);
 
             String serviceAddress = getServiceAddress();
             if (serviceAddress != null) {

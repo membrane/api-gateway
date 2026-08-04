@@ -14,18 +14,20 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
-
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class Wsdl2OpenapiInterceptorTest {
 
@@ -81,6 +83,25 @@ class Wsdl2OpenapiInterceptorTest {
         assertEquals("getAll", interceptor.extractOperationName("/articles", "GET"));
         assertEquals("create", interceptor.extractOperationName("/articles", "POST"));
         assertNull(interceptor.extractOperationName("/articles", "DELETE"));
+    }
+
+    @Test
+    void chainedInstancesDoNotShareOperationProperty() throws Exception {
+        var first = new Wsdl2OpenapiInterceptor();
+        var second = new Wsdl2OpenapiInterceptor();
+
+        Field kf = Wsdl2OpenapiInterceptor.class.getDeclaredField("operationPropertyKey");
+        kf.setAccessible(true);
+        String firstKey = (String) kf.get(first);
+        String secondKey = (String) kf.get(second);
+        assertNotEquals(firstKey, secondKey);
+
+        var exc = new Exchange(null);
+        exc.setProperty(firstKey, "someOperationOnlyFirstDefines");
+
+        // second's handleResponse must not see first's matched operation and must not
+        // attempt to transform the (SOAP) response body a second time.
+        assertEquals(Outcome.CONTINUE, second.handleResponse(exc));
     }
 
     @ParameterizedTest(name = "{0} → {1}")
