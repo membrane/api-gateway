@@ -143,12 +143,19 @@ example/tutorial discovery and scaffolding.
 - Model control flow declaratively where it fits: pattern matching (`switch` over sealed types/records, pattern `instanceof`) over long `if`/`else` chains.
 - No hidden side effects in getter-like methods — anything that mutates state, logs, or does I/O should be named and called out explicitly, not buried in a computation.
 - Keep methods small and cohesive with a single responsibility; make result and exception behavior explicit — return a value (or `Optional`) for expected outcomes, reserve exceptions for actual failures, and declare checked exceptions rather than swallowing them.
+- Use existing constants instead of inlining namespace URI or MIME type string literals:
+  - Namespace URIs (XSD, SOAP 1.1/1.2, WSDL 1.1, xmlns, ...): `com.predic8.membrane.annot.Constants`
+    (`annot/src/main/java/com/predic8/membrane/annot/Constants.java`).
+  - MIME types (`application/json`, `text/xml`, `application/soap+xml`, ...):
+    `com.predic8.membrane.core.http.MimeType`
+    (`core/src/main/java/com/predic8/membrane/core/http/MimeType.java`).
 
 ## Git hygiene
 
-Never commit customer-derived artifacts — real customer names, WSDLs, XML, or sample payloads —
+Never use customer-derived artifacts — real customer names, WSDLs, XML, or sample payloads —
 even as test fixtures. Generate synthetic equivalents (`example.com`-style) or reuse existing
-generic fixtures instead.
+generic fixtures instead. Test fixtures must not use real company or person names (customer-derived
+or otherwise) — use synthetic/placeholder names instead.
 
 ## Release notes
 
