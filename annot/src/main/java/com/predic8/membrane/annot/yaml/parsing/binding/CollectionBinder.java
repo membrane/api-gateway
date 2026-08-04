@@ -62,7 +62,8 @@ public final class CollectionBinder {
         }
 
         if (item.size() == 1) {
-            if (canUseInlineObjectForm(elemType, item.fieldNames().next())) {
+            String key = item.fieldNames().next();
+            if (canUseInlineObjectForm(elemType, key) || ctx.findClass(key) == null) {
                 return parseInlineListItem(ctx, item, elemType);
             }
             return parseMapToObj(ctx, item);

@@ -20,67 +20,40 @@ import com.predic8.membrane.core.interceptor.*;
 import java.util.*;
 
 /**
- * Configuration for a single WSDL operation exposed via OpenAPI
+ * Configuration for a single WSDL operation exposed via OpenAPI.
+ * The WSDL operation name is used as the YAML key; its value holds the settings.
  */
-@MCElement(name = "operation")
+@MCElement(name = "operation", component = false)
 public class OperationConfig {
 
     private String name;
-    private String path;
-    private String method = "POST";
-    private List<Interceptor> flow = new ArrayList<>();
+    private OperationSettings settings;
+
+    /**
+     * Captures the operation name from the YAML key and its settings from the value.
+     * E.g. <code>getAll: {method: GET, path: articles}</code>
+     */
+    @MCOtherAttributes
+    public void setEntry(Map<String, OperationSettings> entry) {
+        if (entry == null || entry.isEmpty()) return;
+        var e = entry.entrySet().iterator().next();
+        this.name = e.getKey();
+        this.settings = e.getValue();
+    }
 
     public String getName() {
         return name;
     }
 
-    /**
-     * @description The WSDL operation name (e.g. getOrders, createOrder)
-     * @example getOrders
-     */
-    @MCAttribute
-    public void setName(String name) {
-        this.name = name;
+    public String getMethod() {
+        return settings != null ? settings.getMethod() : "POST";
     }
 
     public String getPath() {
-        return path;
-    }
-
-    /**
-     * @description URL path segment for this operation.
-     * @example budget-structures
-     */
-    @MCAttribute
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    /**
-     * @description HTTP method exposed for this operation. Defaults to POST.
-     * @example GET
-     */
-    @MCAttribute
-    public void setMethod(String method) {
-        this.method = method;
+        return settings != null ? settings.getPath() : null;
     }
 
     public List<Interceptor> getFlow() {
-        return flow;
-    }
-
-    /**
-     * @description Interceptors applied to this operation.
-     * On the request side they run before JSON-to-SOAP conversion and before the SOAP backend call,
-     * so plugins like <code>apiKey</code> or <code>rateLimiter</code> can reject early.
-     * On the response side they run after SOAP-to-JSON conversion on the final JSON body.
-     */
-    @MCChildElement
-    public void setFlow(List<Interceptor> flow) {
-        this.flow = flow;
+        return settings != null ? settings.getFlow() : List.of();
     }
 }

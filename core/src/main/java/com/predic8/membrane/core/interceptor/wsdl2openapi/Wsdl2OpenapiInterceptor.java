@@ -72,6 +72,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *   flow:
  *     - wsdl2openapi:
  *         wsdl: http://backend-service/service.wsdl
+ *         operations:
+ *           - getAll:
+ *               method: GET
+ *               path: articles
+ *           - createOrder:
+ *               method: POST
+ *               path: orders
  * </code></pre>
  * @topic 6. Web Services with SOAP and WSDL
  */
