@@ -512,6 +512,42 @@ class Soap2JsonTransformerTest {
     }
 
     @Test
+    void choiceRefsWithSameLocalNameAreTypedCorrectlyViaQualifiedSchemaKeyFallback() throws Exception {
+        // processAmbiguous has a choice of a:value (string) and b:value (int) — same local
+        // name, different namespaces. The schema keys both alternatives with a namespace-qualified
+        // key (XsdToSchema.addChoiceFields); elementToMap must fall back to that qualified key to
+        // find the right type, since the actual SOAP element only carries the plain local name.
+        var xsdToSchema = new XsdToSchema(crossNamespaceChoiceDefinitions);
+        var outputMessages = crossNamespaceChoiceDefinitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .filter(op -> "processAmbiguous".equals(op.getName()))
+                .findFirst()
+                .map(op -> op.getMessagesByDirection(Operation.Direction.OUTPUT))
+                .orElseThrow();
+        var responseSchema = xsdToSchema.convertMessageParts(outputMessages);
+
+        // SOAP response using the b:value alternative (integer)
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <tns:processAmbiguous xmlns:tns="https://example.com/choice-service"
+                                           xmlns:b="https://example.com/choice-type-b">
+                      <b:value>42</b:value>
+                    </tns:processAmbiguous>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        var json = new Soap2JsonTransformer().transform(soapXml, responseSchema);
+        JsonNode root = mapper.readTree(json);
+
+        assertNotNull(root.get("value"), "value must appear in JSON under its plain local name");
+        assertTrue(root.get("value").isNumber(),
+                "qualified-schema-key fallback must type value as integer despite the plain output key");
+        assertEquals(42L, root.get("value").longValue());
+    }
+
+    @Test
     void wsdlDerivedSchemaConvertsPopulationToNumber() throws Exception {
         var xsdToSchema = new XsdToSchema(citiesDefinitions);
         var outputMessages = citiesDefinitions.getPortTypes().stream()

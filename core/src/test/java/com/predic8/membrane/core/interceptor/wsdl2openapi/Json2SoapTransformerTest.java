@@ -283,6 +283,40 @@ class Json2SoapTransformerTest {
     }
 
     @Test
+    void choiceRefsWithSameLocalNameAreDisambiguatedByQualifiedJsonKey_alternativeA() throws Exception {
+        var transformer = new Json2SoapTransformer(crossNamespaceChoiceDefinitions, "processAmbiguous");
+        var soapBytes = transformer.transform("{\"{https://example.com/choice-type-a}value\": \"hello\"}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element processAmbiguousEl = getFirstChildElement(body);
+
+        Element valueEl = getFirstChildElement(processAmbiguousEl);
+        assertNotNull(valueEl);
+        assertEquals("value", valueEl.getLocalName());
+        assertEquals("https://example.com/choice-type-a", valueEl.getNamespaceURI());
+        assertEquals("hello", valueEl.getTextContent());
+    }
+
+    @Test
+    void choiceRefsWithSameLocalNameAreDisambiguatedByQualifiedJsonKey_alternativeB() throws Exception {
+        var transformer = new Json2SoapTransformer(crossNamespaceChoiceDefinitions, "processAmbiguous");
+        var soapBytes = transformer.transform("{\"{https://example.com/choice-type-b}value\": 42}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element processAmbiguousEl = getFirstChildElement(body);
+
+        Element valueEl = getFirstChildElement(processAmbiguousEl);
+        assertNotNull(valueEl);
+        assertEquals("value", valueEl.getLocalName());
+        assertEquals("https://example.com/choice-type-b", valueEl.getNamespaceURI());
+        assertEquals("42", valueEl.getTextContent());
+    }
+
+    @Test
     void childElementsInSoapCarryTargetNamespaceWhenElementFormDefaultIsQualified() throws Exception {
         var transformer = new Json2SoapTransformer(qualifiedDefinitions, "sendMessage");
         var soapBytes = transformer.transform("{\"text\": \"hello\", \"priority\": 1}");

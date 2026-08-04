@@ -15,7 +15,9 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
-import org.w3c.dom.*;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.util.*;
 
@@ -94,6 +96,26 @@ class XsdDomUtil {
     static String localName(String qualifiedName) {
         int colon = qualifiedName.indexOf(':');
         return colon >= 0 ? qualifiedName.substring(colon + 1) : qualifiedName;
+    }
+
+    /**
+     * Builds a Clark-notation key ({@code "{namespaceURI}localName"}) used to disambiguate
+     * xsd:choice alternatives that share a local name across different namespaces.
+     */
+    static String qualifiedKey(String namespaceURI, String localName) {
+        return "{" + namespaceURI + "}" + localName;
+    }
+
+    /**
+     * Extracts the local name from a key possibly produced by {@link #qualifiedKey}; returns
+     * the input unchanged if it isn't in qualified form.
+     */
+    static String localNameFromKey(String key) {
+        if (key.startsWith("{")) {
+            int close = key.indexOf('}');
+            if (close >= 0) return key.substring(close + 1);
+        }
+        return key;
     }
 
     /**

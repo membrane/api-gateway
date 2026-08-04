@@ -38,6 +38,11 @@ public class Soap2JsonTransformer {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    /**
+     * Schema-less fallback: converts the SOAP response structurally, with all scalar
+     * values produced as JSON strings. Use when no response schema is available,
+     * e.g. for untyped/{@code xsd:any} elements.
+     */
     public String transform(String soapXml) throws Exception {
         return transform(soapXml, null);
     }
@@ -130,6 +135,11 @@ public class Soap2JsonTransformer {
 
             // ArraySchema wraps the per-item schema; unwrap it so we type individual instances correctly
             Schema<?> childSchema = properties.get(localName);
+            if (childSchema == null && childElement.getNamespaceURI() != null) {
+                // same-local-name choice alternatives from different namespaces are keyed by a
+                // namespace-qualified key in the schema (see XsdToSchema.addChoiceFields)
+                childSchema = properties.get(XsdDomUtil.qualifiedKey(childElement.getNamespaceURI(), localName));
+            }
             Schema<?> effectiveSchema = childSchema instanceof ArraySchema as ? as.getItems() : childSchema;
 
             Object value;

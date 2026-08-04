@@ -31,18 +31,31 @@
                     </xsd:choice>
                 </xsd:complexType>
             </xsd:element>
+
+            <!-- Ambiguous variant: both choice alternatives share the local name "value".
+                 One element is reused for both request and response. -->
+            <xsd:element name="processAmbiguous">
+                <xsd:complexType>
+                    <xsd:choice>
+                        <xsd:element ref="a:value"/>
+                        <xsd:element ref="b:value"/>
+                    </xsd:choice>
+                </xsd:complexType>
+            </xsd:element>
         </xsd:schema>
 
         <!-- Type A schema -->
         <xsd:schema targetNamespace="https://example.com/choice-type-a">
             <xsd:element name="textInput"  type="xsd:string"/>
             <xsd:element name="textResult" type="xsd:string"/>
+            <xsd:element name="value"      type="xsd:string"/>
         </xsd:schema>
 
         <!-- Type B schema -->
         <xsd:schema targetNamespace="https://example.com/choice-type-b">
             <xsd:element name="numericInput"  type="xsd:int"/>
             <xsd:element name="numericResult" type="xsd:int"/>
+            <xsd:element name="value"         type="xsd:int"/>
         </xsd:schema>
 
     </wsdl:types>
@@ -53,11 +66,21 @@
     <wsdl:message name="ProcessResultResponse">
         <wsdl:part name="parameters" element="tns:processResult"/>
     </wsdl:message>
+    <wsdl:message name="ProcessAmbiguousInputRequest">
+        <wsdl:part name="parameters" element="tns:processAmbiguous"/>
+    </wsdl:message>
+    <wsdl:message name="ProcessAmbiguousResultResponse">
+        <wsdl:part name="parameters" element="tns:processAmbiguous"/>
+    </wsdl:message>
 
     <wsdl:portType name="ProcessorPort">
         <wsdl:operation name="processInput">
             <wsdl:input  message="tns:ProcessInputRequest"/>
             <wsdl:output message="tns:ProcessResultResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="processAmbiguous">
+            <wsdl:input  message="tns:ProcessAmbiguousInputRequest"/>
+            <wsdl:output message="tns:ProcessAmbiguousResultResponse"/>
         </wsdl:operation>
     </wsdl:portType>
 
@@ -65,6 +88,11 @@
         <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
         <wsdl:operation name="processInput">
             <s:operation soapAction="processInput"/>
+            <wsdl:input> <s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="processAmbiguous">
+            <s:operation soapAction="processAmbiguous"/>
             <wsdl:input> <s:body use="literal"/></wsdl:input>
             <wsdl:output><s:body use="literal"/></wsdl:output>
         </wsdl:operation>

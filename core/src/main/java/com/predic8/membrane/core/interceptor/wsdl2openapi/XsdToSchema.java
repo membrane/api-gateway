@@ -25,10 +25,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.QName;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
@@ -254,26 +251,72 @@ public class XsdToSchema {
         }
     }
 
+    /** A resolved xsd:choice alternative, prior to deciding its final (possibly-qualified) key. */
+    private record ChoiceAlternative(String localName, String namespaceURI, Schema<?> fieldSchema) {}
+
     /**
      * Maps choice alternatives to optional properties. All alternatives are present
      * in the schema but none are added to {@code required}, reflecting that exactly
      * one is expected at runtime.
+     *
+     * <p>Alternatives are resolved before any are added to {@code schema}, so that alternatives
+     * whose local name collides across namespaces (e.g. two {@code ref}'d elements both named
+     * {@code value}, from different namespaces) can be detected and keyed with a namespace-
+     * qualified key ({@link XsdDomUtil#qualifiedKey}) instead of silently overwriting each other.
      */
     private void addChoiceFields(Element choice, ObjectSchema schema, Element schemaRoot) {
+        var alternatives = new ArrayList<ChoiceAlternative>();
         NodeList children = choice.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
             if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
-            if ("element".equals(el.getLocalName())) {
-                String fieldName = el.getAttribute("name");
-                if (!fieldName.isEmpty()) {
-                    schema.addProperty(fieldName, convertElementType(el, schemaRoot));
-                    // intentionally not added to required
-                } else {
-                    addRefField(el, schema, schemaRoot);
-                }
+            if (!"element".equals(el.getLocalName())) continue;
+
+            String fieldName = el.getAttribute("name");
+            if (!fieldName.isEmpty()) {
+                alternatives.add(new ChoiceAlternative(fieldName, null, convertElementType(el, schemaRoot)));
+            } else {
+                resolveChoiceRefAlternative(el, schemaRoot).ifPresent(alternatives::add);
             }
         }
+
+        var occurrences = new HashMap<String, Integer>();
+        for (var alt : alternatives) {
+            occurrences.merge(alt.localName(), 1, Integer::sum);
+        }
+        for (var alt : alternatives) {
+            boolean collides = occurrences.get(alt.localName()) > 1 && alt.namespaceURI() != null;
+            String key = collides ? qualifiedKey(alt.namespaceURI(), alt.localName()) : alt.localName();
+            schema.addProperty(key, alt.fieldSchema());
+            // intentionally not added to required
+        }
+    }
+
+    /**
+     * Resolves an {@code <xsd:element ref="prefix:local"/>} choice alternative to its local name,
+     * referenced namespace, and schema, without mutating a target schema directly — so that
+     * {@link #addChoiceFields} can detect same-local-name collisions across namespaces first.
+     */
+    private Optional<ChoiceAlternative> resolveChoiceRefAlternative(Element refEl, Element schemaRoot) {
+        String ref = refEl.getAttribute("ref");
+        if (ref.isEmpty()) return Optional.empty();
+        String local = localName(ref);
+        String refPrefix = prefix(ref);
+        String namespaceURI = refPrefix.isEmpty()
+                ? schemaRoot.getAttribute("targetNamespace")
+                : refEl.lookupNamespaceURI(refPrefix);
+        for (var root : resolveTargetSchemaRoots(refPrefix, refEl, schemaRoot, schemasByNamespace)) {
+            Element referenced = findXsdChildWithName(root, "element", local);
+            if (referenced != null) {
+                String maxOccurs = refEl.getAttribute("maxOccurs");
+                Schema<?> fieldSchema = convertElementType(referenced, root);
+                if ("unbounded".equals(maxOccurs) || isMoreThanOne(maxOccurs)) {
+                    fieldSchema = new ArraySchema().items(fieldSchema);
+                }
+                return Optional.of(new ChoiceAlternative(local, namespaceURI, fieldSchema));
+            }
+        }
+        return Optional.empty();
     }
 
     /**

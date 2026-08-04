@@ -553,6 +553,39 @@ class XsdToSchemaTest {
     }
 
     @Test
+    void choiceRefsWithSameLocalNameInDifferentNamespacesAreQualifiedToAvoidCollision() {
+        var converter = converterForSchemas(Map.of(
+                NS, """
+                        <xsd:import namespace="https://types-a.example.com"/>
+                        <xsd:import namespace="https://types-b.example.com"/>
+                        <xsd:element name="request">
+                          <xsd:complexType><xsd:choice>
+                            <xsd:element ref="a:value" xmlns:a="https://types-a.example.com"/>
+                            <xsd:element ref="b:value" xmlns:b="https://types-b.example.com"/>
+                          </xsd:choice></xsd:complexType>
+                        </xsd:element>
+                        """,
+                "https://types-a.example.com", """
+                        <xsd:element name="value" type="xsd:string"/>
+                        """,
+                "https://types-b.example.com", """
+                        <xsd:element name="value" type="xsd:int"/>
+                        """
+        ));
+
+        var schema = convert(converter, "request");
+
+        // Both choice alternatives are named "value" but come from different namespaces with
+        // different types. Since they collide, both are keyed with a namespace-qualified key
+        // instead of the ambiguous bare local name.
+        assertNull(fieldOf(schema, "value"), "colliding local name must not be exposed unqualified");
+        assertInstanceOf(StringSchema.class,
+                fieldOf(schema, XsdDomUtil.qualifiedKey("https://types-a.example.com", "value")));
+        assertInstanceOf(IntegerSchema.class,
+                fieldOf(schema, XsdDomUtil.qualifiedKey("https://types-b.example.com", "value")));
+    }
+
+    @Test
     void elementRefInSameNamespaceIsResolved() {
         var schema = convert(converterFor("""
                 <xsd:element name="city" type="xsd:string"/>

@@ -247,7 +247,18 @@ public class Json2SoapTransformer {
         return result;
     }
 
+    /** A field name/namespace pair, resolved prior to deciding its final (possibly-qualified) key. */
+    private record FieldRef(String localName, String namespaceURI) {}
+
+    /**
+     * Resolves every field in {@code container} to a {@link FieldRef} first, so that fields
+     * whose local name collides across namespaces (e.g. two {@code ref}'d elements both named
+     * {@code value}, from different namespaces) can be keyed with a namespace-qualified key
+     * ({@link XsdDomUtil#qualifiedKey}) instead of silently overwriting each other in
+     * {@code result} — mirrors {@code XsdToSchema.addChoiceFields}.
+     */
     private void collectFieldNamespaces(Element container, Element schemaRoot, String defaultNs, Map<String, String> result) {
+        var refs = new ArrayList<FieldRef>();
         NodeList children = container.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
@@ -257,7 +268,7 @@ public class Json2SoapTransformer {
             String name = el.getAttribute("name");
             if (!name.isEmpty()) {
                 // locally declared: use defaultNs (non-null only when elementFormDefault="qualified")
-                if (defaultNs != null) result.put(name, defaultNs);
+                refs.add(new FieldRef(name, defaultNs));
             } else {
                 // ref= element: resolve the ref'd element's namespace
                 String ref = el.getAttribute("ref");
@@ -266,8 +277,19 @@ public class Json2SoapTransformer {
                 String refNs = refPrefix.isEmpty()
                         ? schemaRoot.getAttribute("targetNamespace")
                         : el.lookupNamespaceURI(refPrefix);
-                if (refNs != null && !refNs.isEmpty()) result.put(localName(ref), refNs);
+                if (refNs != null && !refNs.isEmpty()) refs.add(new FieldRef(localName(ref), refNs));
             }
+        }
+
+        var occurrences = new HashMap<String, Integer>();
+        for (var r : refs) {
+            occurrences.merge(r.localName(), 1, Integer::sum);
+        }
+        for (var r : refs) {
+            if (r.namespaceURI() == null) continue;
+            boolean collides = occurrences.get(r.localName()) > 1;
+            String key = collides ? qualifiedKey(r.namespaceURI(), r.localName()) : r.localName();
+            result.put(key, r.namespaceURI());
         }
     }
 
@@ -297,9 +319,10 @@ public class Json2SoapTransformer {
             return;
         }
         String ns = fieldNamespaces.get(fieldName);
+        String xmlLocalName = localNameFromKey(fieldName);
         if (fieldValue.isArray()) {
             for (JsonNode arrayItem : fieldValue) {
-                Element arrayElement = makeElement(doc, ns, fieldName);
+                Element arrayElement = makeElement(doc, ns, xmlLocalName);
                 if (arrayItem.isValueNode()) {
                     arrayElement.setTextContent(arrayItem.asText());
                 } else {
@@ -308,7 +331,7 @@ public class Json2SoapTransformer {
                 parent.appendChild(arrayElement);
             }
         } else {
-            Element childElement = makeElement(doc, ns, fieldName);
+            Element childElement = makeElement(doc, ns, xmlLocalName);
             parent.appendChild(childElement);
             if (fieldValue.isObject()) {
                 mapJsonToElement(fieldValue, childElement, doc, List.of(), Map.of());
