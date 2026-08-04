@@ -1,0 +1,177 @@
+/* Copyright 2026 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+package com.predic8.membrane.core.interceptor.soap.wsse;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.util.Iterator;
+import java.util.List;
+
+/**
+ * SOAP/WS-Security XML helpers shared by {@link UsernameTokenInterceptor},
+ * {@link DigitalSignatureInterceptor}, and {@link DigitalSignatureVerifierInterceptor}: locating
+ * or creating the {@code soap:Header}/{@code wsse:Security} structure, and resolving a
+ * {@link SignatureReference} to the element it selects.
+ */
+final class WsSecurityXml {
+
+    public static final String WSSE_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
+    public static final String WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
+
+    static final String X509_V3_VALUE_TYPE =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
+    static final String THUMBPRINT_SHA1_VALUE_TYPE =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.1#ThumbprintSHA1";
+    // Note: this is a distinct namespace from WSSE_NS (the wsse secext schema itself) - not to be
+    // confused with "...wssecurity-secext-1.0.xsd#Base64Binary", which is not a valid EncodingType.
+    static final String BASE64_BINARY_ENCODING_TYPE =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary";
+
+    static final NamespaceContext SOAP_WSSE_NAMESPACE_CONTEXT = new NamespaceContext() {
+        @Override
+        public String getNamespaceURI(String prefix) {
+            return switch (prefix) {
+                case "soap" -> "http://schemas.xmlsoap.org/soap/envelope/";
+                case "wsse" -> WSSE_NS;
+                case "wsu" -> WSU_NS;
+                default -> null;
+            };
+        }
+
+        @Override
+        public String getPrefix(String namespaceURI) {
+            return null;
+        }
+
+        @Override
+        public Iterator<String> getPrefixes(String namespaceURI) {
+            return null;
+        }
+    };
+
+    private WsSecurityXml() {
+    }
+
+    static Element getOrCreateHeader(Document doc, Element envelope, String soapNs) {
+        Element header = getFirstChildByName(envelope, soapNs, "Header");
+        if (header != null) {
+            return header;
+        }
+        header = doc.createElementNS(soapNs, "soap:Header");
+        Element body = getFirstChildByName(envelope, soapNs, "Body");
+        envelope.insertBefore(header, body);
+        return header;
+    }
+
+    static Element getOrCreateSecurity(Document doc, Element header) {
+        Element security = getFirstChildByName(header, WSSE_NS, "Security");
+        if (security != null) {
+            return security;
+        }
+        security = doc.createElementNS(WSSE_NS, "wsse:Security");
+        header.appendChild(security);
+        return security;
+    }
+
+    /**
+     * Resolves a {@link SignatureReference} to the element it selects (the SOAP body/header, an
+     * existing {@code wsu:Timestamp}, or an XPath match), for both signing and verification.
+     *
+     * @throws ReferenceResolutionException if the reference cannot be resolved to exactly one element
+     */
+    static Element resolveReference(Document doc, Element envelope, Element security, String soapNs, SignatureReference reference) {
+        return switch (reference.getBy()) {
+            case BODY -> requireElement(getFirstChildByName(envelope, soapNs, "Body"), "soap:Body is missing.");
+            case HEADER -> requireElement(getFirstChildByName(envelope, soapNs, "Header"), "soap:Header is missing.");
+            case TIMESTAMP -> requireElement(getFirstChildByName(security, WSU_NS, "Timestamp"),
+                    "No wsu:Timestamp found inside wsse:Security.");
+            case XPATH -> resolveByXPath(doc, reference.getXpath());
+        };
+    }
+
+    private static Element requireElement(Element element, String message) {
+        if (element == null) {
+            throw new ReferenceResolutionException(message);
+        }
+        return element;
+    }
+
+    private static Element resolveByXPath(Document doc, String xpath) {
+        if (xpath == null || xpath.isBlank()) {
+            throw new ReferenceResolutionException("reference by=\"XPATH\" requires an xpath attribute.");
+        }
+        try {
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            xPath.setNamespaceContext(SOAP_WSSE_NAMESPACE_CONTEXT);
+            NodeList nodes = (NodeList) xPath.evaluate(xpath, doc, XPathConstants.NODESET);
+            if (nodes.getLength() != 1) {
+                throw new ReferenceResolutionException(
+                        "XPath \"" + xpath + "\" matched " + nodes.getLength() + " element(s), expected exactly 1.");
+            }
+            return (Element) nodes.item(0);
+        } catch (XPathExpressionException e) {
+            throw new ReferenceResolutionException("Invalid XPath expression: " + xpath);
+        }
+    }
+
+    static Element getFirstChildByName(Element parent, String namespace, String localName) {
+        if (parent == null) {
+            return null;
+        }
+        NodeList children = parent.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child instanceof Element el
+                    && localName.equals(el.getLocalName())
+                    && namespace.equals(el.getNamespaceURI())) {
+                return el;
+            }
+        }
+        return null;
+    }
+
+    static List<Element> getChildrenByName(Element parent, String namespace, String localName) {
+        List<Element> result = new java.util.ArrayList<>();
+        NodeList children = parent.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child instanceof Element el
+                    && localName.equals(el.getLocalName())
+                    && namespace.equals(el.getNamespaceURI())) {
+                result.add(el);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Thrown when a {@link SignatureReference} cannot be resolved to exactly one element - either
+     * because the referenced element (body/header/timestamp) is absent, or its XPath didn't match
+     * exactly once. Callers decide the resulting HTTP status: a signer treats this as a bad
+     * request (400), a verifier treats it as a failed verification (403).
+     */
+    static class ReferenceResolutionException extends RuntimeException {
+        ReferenceResolutionException(String message) {
+            super(message);
+        }
+    }
+}
