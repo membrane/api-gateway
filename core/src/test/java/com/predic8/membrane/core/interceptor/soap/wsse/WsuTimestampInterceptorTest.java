@@ -123,12 +123,46 @@ class WsuTimestampInterceptorTest {
                 </soap:Envelope>
                 """);
 
+        Instant before = Instant.now();
         assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        Instant after = Instant.now();
 
         Document result = parseResultBody();
         // firstByTag already asserts exactly one wsu:Timestamp/Created remains.
         Instant created = Instant.parse(firstByTag(result, WSU_NS, "Created").getTextContent());
-        assertTrue(created.isAfter(Instant.parse("2000-01-02T00:00:00Z")));
+        Instant expires = Instant.parse(firstByTag(result, WSU_NS, "Expires").getTextContent());
+        assertFalse(created.isBefore(before.minusSeconds(1)));
+        assertFalse(created.isAfter(after.plusSeconds(1)));
+        assertEquals(Duration.ofMinutes(5), Duration.between(created, expires));
+    }
+
+    @Test
+    void replacesMultipleExistingTimestampsInsteadOfLeavingOneBehind() throws Exception {
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Header>
+                        <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                            <wsu:Timestamp xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                                <wsu:Created>2000-01-01T00:00:00Z</wsu:Created>
+                                <wsu:Expires>2000-01-01T00:05:00Z</wsu:Expires>
+                            </wsu:Timestamp>
+                            <wsu:Timestamp xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                                <wsu:Created>2000-01-01T00:01:00Z</wsu:Created>
+                                <wsu:Expires>2000-01-01T00:06:00Z</wsu:Expires>
+                            </wsu:Timestamp>
+                        </wsse:Security>
+                    </soap:Header>
+                    <soap:Body>
+                        <foo>bar</foo>
+                    </soap:Body>
+                </soap:Envelope>
+                """);
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+
+        Document result = parseResultBody();
+        // firstByTag already asserts exactly one wsu:Timestamp/Created remains.
+        firstByTag(result, WSU_NS, "Created");
     }
 
     @Test

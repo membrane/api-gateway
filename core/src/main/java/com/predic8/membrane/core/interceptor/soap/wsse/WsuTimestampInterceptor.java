@@ -88,8 +88,8 @@ public class WsuTimestampInterceptor extends AbstractInterceptor {
 
             Element header = getOrCreateHeader(doc, envelope, soapNs);
             Element security = getOrCreateSecurity(doc, header);
-            Element existingTimestamp = getFirstChildByName(security, WSU_NS, "Timestamp");
-            if (existingTimestamp != null) {
+            Element existingTimestamp;
+            while ((existingTimestamp = getFirstChildByName(security, WSU_NS, "Timestamp")) != null) {
                 security.removeChild(existingTimestamp);
             }
             security.insertBefore(createTimestamp(doc), security.getFirstChild());

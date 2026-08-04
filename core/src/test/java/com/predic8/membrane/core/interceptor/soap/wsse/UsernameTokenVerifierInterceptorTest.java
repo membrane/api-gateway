@@ -192,4 +192,22 @@ class UsernameTokenVerifierInterceptorTest {
         assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
         assertEquals(403, exchange.getResponse().getStatusCode());
     }
+
+    @Test
+    void zeroFreshnessWindowIsRejected() {
+        assertThrows(com.predic8.membrane.core.util.ConfigurationException.class,
+                () -> verifier.setFreshnessWindow("PT0S"));
+    }
+
+    @Test
+    void negativeFreshnessWindowIsRejected() {
+        assertThrows(com.predic8.membrane.core.util.ConfigurationException.class,
+                () -> verifier.setFreshnessWindow("PT-5M"));
+    }
+
+    @Test
+    void malformedFreshnessWindowIsRejected() {
+        assertThrows(java.time.format.DateTimeParseException.class,
+                () -> verifier.setFreshnessWindow("not-a-duration"));
+    }
 }
