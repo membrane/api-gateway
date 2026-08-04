@@ -73,12 +73,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *     - wsdl2openapi:
  *         wsdl: http://backend-service/service.wsdl
  *         operations:
- *           - getAll:
- *               method: GET
- *               path: articles
- *           - createOrder:
- *               method: POST
- *               path: orders
+ *           getAll:
+ *             method: GET
+ *             path: articles
+ *           createOrder:
+ *             method: POST
+ *             path: orders
  * </code></pre>
  * @topic 6. Web Services with SOAP and WSDL
  */
@@ -95,8 +95,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private Definitions definitions;
     private XsdToSchema xsdToSchema;
     private String basePath;
-    private List<OperationConfig> operations = new ArrayList<>();
-    private final Map<String, OperationConfig> operationsByName = new LinkedHashMap<>();
+    private OperationsConfig operations;
+    private Map<String, OperationSettings> operationsByName = Map.of();
     private final Map<String, String> pathMethodToOperation = new LinkedHashMap<>();
     private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
     private OpenAPIPublisherInterceptor publisher;
@@ -122,14 +122,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         xsdToSchema = new XsdToSchema(definitions);
 
-        for (OperationConfig op : operations) {
-            if (op.getName() != null) {
-                operationsByName.put(op.getName(), op);
-            }
-        }
+        operationsByName = operations != null ? operations.getMap() : Map.of();
 
-        for (OperationConfig opConfig : operations) {
-            for (Interceptor i : opConfig.getFlow()) {
+        for (OperationSettings settings : operationsByName.values()) {
+            for (Interceptor i : settings.getFlow()) {
                 i.init(router, proxy);
             }
         }
@@ -141,9 +137,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 ? allOps
                 : allOps.stream().filter(op -> operationsByName.containsKey(op.getName())).toList();
         for (var op : opsToExpose) {
-            OperationConfig opConfig = operationsByName.get(op.getName());
-            String segment = (opConfig != null && opConfig.getPath() != null) ? opConfig.getPath() : camelToKebab(op.getName());
-            String method = (opConfig != null) ? opConfig.getMethod().toUpperCase() : "POST";
+            OperationSettings opSettings = operationsByName.get(op.getName());
+            String segment = (opSettings != null && opSettings.getPath() != null) ? opSettings.getPath() : camelToKebab(op.getName());
+            String method = (opSettings != null) ? opSettings.getMethod().toUpperCase() : "POST";
             pathMethodToOperation.put(segment + ":" + method, op.getName());
             requestTransformers.put(op.getName(), new Json2SoapTransformer(definitions, op.getName()));
         }
@@ -227,9 +223,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 }
             }
 
-            OperationConfig opConfig = operationsByName.get(operationName);
-            if (opConfig != null && !opConfig.getFlow().isEmpty()) {
-                return router.getFlowController().invokeResponseHandlers(exc, opConfig.getFlow());
+            OperationSettings opSettings = operationsByName.get(operationName);
+            if (opSettings != null && !opSettings.getFlow().isEmpty()) {
+                return router.getFlowController().invokeResponseHandlers(exc, opSettings.getFlow());
             }
 
         } catch (SoapFaultException fault) {
@@ -298,8 +294,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleOperation(Exchange exc, String operationName) {
-        OperationConfig opConfig = operationsByName.get(operationName);
-        String expectedMethod = opConfig != null ? opConfig.getMethod().toUpperCase() : "POST";
+        OperationSettings opSettings = operationsByName.get(operationName);
+        String expectedMethod = opSettings != null ? opSettings.getMethod().toUpperCase() : "POST";
         if (!exc.getRequest().getMethod().equalsIgnoreCase(expectedMethod)) {
             exc.setResponse(statusCode(405)
                     .header("Allow", expectedMethod)
@@ -328,8 +324,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 }
             }
 
-            if (opConfig != null && !opConfig.getFlow().isEmpty()) {
-                Outcome outcome = router.getFlowController().invokeRequestHandlers(exc, opConfig.getFlow());
+            if (opSettings != null && !opSettings.getFlow().isEmpty()) {
+                Outcome outcome = router.getFlowController().invokeRequestHandlers(exc, opSettings.getFlow());
                 if (outcome != CONTINUE) return outcome;
             }
 
@@ -443,15 +439,15 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         this.maskValues = maskValues;
     }
 
-    public List<OperationConfig> getOperations() {
+    public OperationsConfig getOperations() {
         return operations;
     }
 
     /**
-     * @description List of operations to expose via OpenAPI
+     * @description Named map of WSDL operations to expose via OpenAPI
      */
     @MCChildElement
-    public void setOperations(List<OperationConfig> operations) {
+    public void setOperations(OperationsConfig operations) {
         this.operations = operations;
     }
 

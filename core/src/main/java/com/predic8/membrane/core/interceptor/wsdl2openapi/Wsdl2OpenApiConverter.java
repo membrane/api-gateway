@@ -52,13 +52,13 @@ public class Wsdl2OpenApiConverter {
     private final Definitions definitions;
     private final String basePath;
     private final XsdToSchema converter;
-    private final Map<String, OperationConfig> operations;
+    private final Map<String, OperationSettings> operations;
 
     public Wsdl2OpenApiConverter(Definitions definitions, String basePath) {
         this(definitions, basePath, Map.of());
     }
 
-    public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationConfig> operations) {
+    public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationSettings> operations) {
         this.definitions = definitions;
         this.basePath = basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
         this.converter = new XsdToSchema(definitions);
@@ -109,15 +109,15 @@ public class Wsdl2OpenApiConverter {
                     .toList();
             for (var entry : operations.entrySet()) {
                 var name = entry.getKey();
-                var opConfig = entry.getValue();
+                var opSettings = entry.getValue();
                 var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst().orElse(null);
                 if (wsdlOp == null) log.debug("Configured operation '{}' not found in WSDL definitions", name);
-                var pathKey = "/" + (opConfig.getPath() != null ? opConfig.getPath() : camelToKebab(name));
+                var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
                 var existing = paths.get(pathKey);
                 if (existing != null) {
-                    applyMethod(existing, buildApiOperation(name, wsdlOp, opConfig.getMethod()), opConfig.getMethod());
+                    applyMethod(existing, buildApiOperation(name, wsdlOp, opSettings.getMethod()), opSettings.getMethod());
                 } else {
-                    paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opConfig.getMethod()));
+                    paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings.getMethod()));
                 }
             }
         }
