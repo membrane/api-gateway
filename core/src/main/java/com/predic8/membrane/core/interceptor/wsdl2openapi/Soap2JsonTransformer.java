@@ -14,21 +14,25 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.util.xml.parser.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.models.media.*;
-import org.slf4j.*;
 import org.w3c.dom.*;
-import org.xml.sax.*;
+import org.xml.sax.InputSource;
 
-import java.io.*;
-import java.util.*;
+import javax.xml.XMLConstants;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getInstance;
 import static org.w3c.dom.Node.ELEMENT_NODE;
 
 /**
- * Transforms SOAP XML response to JSON
+ * Transforms SOAP XML response to JSON.
+ * XML attributes are mapped to "@"-prefixed properties; xmlns declarations and xml: namespace
+ * attributes (e.g. xml:lang) are excluded.
  */
 public class Soap2JsonTransformer {
 
@@ -105,6 +109,17 @@ public class Soap2JsonTransformer {
             properties = Map.of();
         }
 
+        var result = new LinkedHashMap<String, Object>();
+        NamedNodeMap attributes = element.getAttributes();
+        for (int i = 0; i < attributes.getLength(); i++) {
+            Node attr = attributes.item(i);
+            String ns = attr.getNamespaceURI();
+            if (XMLConstants.XMLNS_ATTRIBUTE_NS_URI.equals(ns) || XMLConstants.XML_NS_URI.equals(ns)) {
+                continue;
+            }
+            result.put("@" + attr.getLocalName(), convertLeaf(attr.getNodeValue(), properties.get("@" + attr.getLocalName())));
+        }
+
         var childGroups = new LinkedHashMap<String, List<Object>>();
         NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
@@ -127,7 +142,6 @@ public class Soap2JsonTransformer {
             childGroups.computeIfAbsent(localName, k -> new ArrayList<>()).add(value);
         }
 
-        var result = new LinkedHashMap<String, Object>();
         for (var entry : childGroups.entrySet()) {
             var values = entry.getValue();
             result.put(entry.getKey(), values.size() == 1 ? values.getFirst() : values);

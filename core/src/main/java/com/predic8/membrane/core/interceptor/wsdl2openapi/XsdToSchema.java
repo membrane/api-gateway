@@ -41,6 +41,7 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  *   <li>Inline complexType and type-reference patterns</li>
  *   <li>xsd:sequence, xsd:all (treated identically)</li>
  *   <li>xsd:choice (all alternatives become optional properties)</li>
+ *   <li>xsd:attribute (mapped to a property named "@" + attribute name; required when use="required")</li>
  *   <li>xsd:complexContent/xsd:extension (base type fields are inherited)</li>
  *   <li>xsd:complexContent/xsd:restriction (treated as extension for field inheritance)</li>
  *   <li>xsd:simpleContent (approximated as string)</li>
@@ -135,11 +136,13 @@ public class XsdToSchema {
         Element sequence = findXsdChild(complexTypeEl, "sequence");
         if (sequence != null) {
             addContainerFields(sequence, objectSchema, schemaRoot);
+            addAttributeFields(complexTypeEl, objectSchema, schemaRoot);
             return objectSchema;
         }
         Element all = findXsdChild(complexTypeEl, "all");
         if (all != null) {
             addContainerFields(all, objectSchema, schemaRoot);
+            addAttributeFields(complexTypeEl, objectSchema, schemaRoot);
             return objectSchema;
         }
         Element complexContent = findXsdChild(complexTypeEl, "complexContent");
@@ -154,6 +157,7 @@ public class XsdToSchema {
         if (findXsdChild(complexTypeEl, "simpleContent") != null) {
             return new StringSchema();
         }
+        addAttributeFields(complexTypeEl, objectSchema, schemaRoot);
         return objectSchema;
     }
 
@@ -190,6 +194,28 @@ public class XsdToSchema {
         schema.addProperty(fieldName, fieldSchema);
         if (!"0".equals(minOccurs)) {
             schema.addRequiredItem(fieldName);
+        }
+    }
+
+    /**
+     * Maps direct {@code <xsd:attribute>} children of {@code container} (a complexType or
+     * extension/restriction element) to properties prefixed with {@code @}, e.g. an attribute
+     * named {@code id} becomes the property {@code @id}.
+     */
+    private void addAttributeFields(Element container, ObjectSchema schema, Element schemaRoot) {
+        NodeList children = container.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
+            if (!"attribute".equals(el.getLocalName())) continue;
+
+            String fieldName = el.getAttribute("name");
+            if (fieldName.isEmpty()) continue; // ref= attributes: not supported
+
+            schema.addProperty("@" + fieldName, convertElementType(el, schemaRoot));
+            if ("required".equals(el.getAttribute("use"))) {
+                schema.addRequiredItem("@" + fieldName);
+            }
         }
     }
 
@@ -235,6 +261,7 @@ public class XsdToSchema {
         if (seq != null) addContainerFields(seq, schema, schemaRoot);
         Element all = findXsdChild(extension, "all");
         if (all != null) addContainerFields(all, schema, schemaRoot);
+        addAttributeFields(extension, schema, schemaRoot);
     }
 
     private Schema<?> buildSimpleTypeSchema(Element simpleTypeEl, Element contextEl, Element schemaRoot) {

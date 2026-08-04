@@ -14,29 +14,39 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import com.fasterxml.jackson.databind.*;
-import com.predic8.membrane.core.util.wsdl.parser.*;
-import org.slf4j.*;
-import org.w3c.dom.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import com.predic8.membrane.core.util.wsdl.parser.Message;
+import com.predic8.membrane.core.util.wsdl.parser.Operation;
+import com.predic8.membrane.core.util.wsdl.parser.Part;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-import javax.xml.namespace.*;
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import java.io.*;
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.*;
+import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.localName;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.prefix;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.resolveTargetSchemaRoots;
-import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.*;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
+import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 
 /**
- * Transforms JSON request to SOAP XML envelope
+ * Transforms JSON request to SOAP XML envelope.
+ * JSON keys prefixed with "@" are mapped to XML attributes instead of child elements.
  */
 public class Json2SoapTransformer {
 
@@ -216,6 +226,10 @@ public class Json2SoapTransformer {
     }
 
     private void emitField(String fieldName, JsonNode fieldValue, Element parent, Document doc) {
+        if (fieldName.startsWith("@")) {
+            parent.setAttribute(fieldName.substring(1), fieldValue.asText());
+            return;
+        }
         if (fieldValue.isArray()) {
             for (JsonNode arrayItem : fieldValue) {
                 Element arrayElement = doc.createElement(fieldName);

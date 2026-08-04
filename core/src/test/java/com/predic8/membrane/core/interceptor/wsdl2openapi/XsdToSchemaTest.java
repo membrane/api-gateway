@@ -17,14 +17,17 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 import io.swagger.v3.oas.models.media.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -423,6 +426,92 @@ class XsdToSchemaTest {
         var children = (ArraySchema) fieldOf(schema, "children");
         assertInstanceOf(ObjectSchema.class, children.getItems());
         assertNull(children.getItems().getProperties());
+    }
+
+    // ── xsd:attribute mapping ─────────────────────────────────────────────
+
+    @Test
+    void attributeIsMappedToAtPrefixedProperty() {
+        var schema = convert(converterFor("""
+                <xsd:element name="record">
+                  <xsd:complexType>
+                    <xsd:sequence>
+                      <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                    <xsd:attribute name="id" type="xsd:string"/>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "record");
+
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "@id"));
+        assertFalse(isRequired(schema, "@id"));
+    }
+
+    @Test
+    void requiredAttributeUseRequiredIsMarkedRequired() {
+        var schema = convert(converterFor("""
+                <xsd:element name="record">
+                  <xsd:complexType>
+                    <xsd:sequence>
+                      <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                    <xsd:attribute name="id" type="xsd:string" use="required"/>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "record");
+
+        assertTrue(isRequired(schema, "@id"));
+    }
+
+    @Test
+    void attributeWithInlineSimpleTypeIsMapped() {
+        var schema = convert(converterFor("""
+                <xsd:element name="record">
+                  <xsd:complexType>
+                    <xsd:sequence>
+                      <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                    <xsd:attribute name="status">
+                      <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                          <xsd:enumeration value="ACTIVE"/>
+                          <xsd:enumeration value="INACTIVE"/>
+                        </xsd:restriction>
+                      </xsd:simpleType>
+                    </xsd:attribute>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "record");
+
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "@status"));
+    }
+
+    @Test
+    void attributeDeclaredOnExtensionIsMapped() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="Vehicle">
+                  <xsd:sequence>
+                    <xsd:element name="brand" type="xsd:string"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:complexType name="Car">
+                  <xsd:complexContent>
+                    <xsd:extension base="tns:Vehicle">
+                      <xsd:sequence>
+                        <xsd:element name="doors" type="xsd:int"/>
+                      </xsd:sequence>
+                      <xsd:attribute name="id" type="xsd:string"/>
+                    </xsd:extension>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="car" type="tns:Car"/>
+                """), "car");
+
+        assertInstanceOf(StringSchema.class,  fieldOf(schema, "brand"));  // from Vehicle
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "doors"));  // from Car
+        assertInstanceOf(StringSchema.class,  fieldOf(schema, "@id"));    // from Car's extension
     }
 
     // ── Cross-namespace type resolution ───────────────────────────────────

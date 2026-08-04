@@ -36,6 +36,7 @@ class Json2SoapTransformerTest {
     static Definitions blzDefinitions;
     static Definitions emptyMessageDefinitions;
     static Definitions orderingDefinitions;
+    static Definitions attributesDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -43,6 +44,7 @@ class Json2SoapTransformerTest {
         blzDefinitions = Definitions.parse(new ResolverMap(), "classpath:/blz-service.wsdl");
         emptyMessageDefinitions = Definitions.parse(new ResolverMap(), "classpath:/special/empty-message.wsdl");
         orderingDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/ordering.wsdl");
+        attributesDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/attributes.wsdl");
     }
 
     @Test
@@ -192,6 +194,54 @@ class Json2SoapTransformerTest {
         assertEquals("Doe", children.get(1).getTextContent());
         assertEquals("age", children.get(2).getLocalName());
         assertEquals("30", children.get(2).getTextContent());
+    }
+
+    // ── @-prefixed JSON keys mapped to XML attributes ─────────────────────
+
+    @Test
+    void jsonAtPrefixedFieldMappedToXmlAttribute() throws Exception {
+        var transformer = new Json2SoapTransformer(attributesDefinitions, "record");
+        var soapBytes = transformer.transform("{\"name\": \"Berlin\", \"@id\": \"123\"}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element recordEl = getFirstChildElement(body);
+
+        assertEquals("123", recordEl.getAttribute("id"), "@id should be mapped to an XML attribute");
+        assertEquals(0, recordEl.getElementsByTagName("@id").getLength(),
+                "@id should not appear as a child element");
+        assertEquals(1, recordEl.getElementsByTagName("name").getLength(),
+                "name should still be mapped to a normal child element");
+    }
+
+    @Test
+    void multipleAtPrefixedFieldsMappedToMultipleXmlAttributes() throws Exception {
+        var transformer = new Json2SoapTransformer(attributesDefinitions, "record");
+        var soapBytes = transformer.transform("{\"name\": \"Berlin\", \"@id\": \"123\", \"@type\": \"city\"}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element recordEl = getFirstChildElement(body);
+
+        assertEquals("123", recordEl.getAttribute("id"));
+        assertEquals("city", recordEl.getAttribute("type"));
+        assertEquals(1, recordEl.getElementsByTagName("name").getLength(),
+                "name should still be mapped to a normal child element");
+    }
+
+    @Test
+    void missingAtPrefixedFieldProducesNoAttribute() throws Exception {
+        var transformer = new Json2SoapTransformer(attributesDefinitions, "record");
+        var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element recordEl = getFirstChildElement(body);
+
+        assertEquals("", recordEl.getAttribute("id"), "id attribute should be absent when @id is not in the JSON");
     }
 
     private static Document parseXml(byte[] bytes) throws Exception {

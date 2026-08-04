@@ -69,7 +69,7 @@ class Soap2JsonTransformerTest {
               <soap:Body>
                 <getBankResponse xmlns="http://thomas-bayer.com/blz/">
                   <details>
-                    <bezeichnung>Deutsche Bank</bezeichnung>
+                    <bezeichnung>Example Corp</bezeichnung>
                     <bic>DEUTDEDB</bic>
                     <ort>Berlin</ort>
                     <plz>10117</plz>
@@ -126,7 +126,7 @@ class Soap2JsonTransformerTest {
         JsonNode root = mapper.readTree(json);
         JsonNode details = root.get("details");
         assertNotNull(details, "Nested <details> should become a JSON object");
-        assertEquals("Deutsche Bank", details.get("bezeichnung").asText());
+        assertEquals("Example Corp", details.get("bezeichnung").asText());
         assertEquals("DEUTDEDB", details.get("bic").asText());
         assertEquals("Berlin", details.get("ort").asText());
         assertEquals("10117", details.get("plz").asText());
@@ -469,6 +469,98 @@ class Soap2JsonTransformerTest {
         JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, schema));
         assertTrue(root.get("active").isBoolean(), "active should be a JSON boolean");
         assertFalse(root.get("active").booleanValue(), "XSD '0' must map to JSON false");
+    }
+
+    // --- XML attributes → @-prefixed JSON properties ---
+
+    private static final String CITY_WITH_ATTRIBUTE_RESPONSE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <getCityResponse xmlns="https://predic8.de/cities" id="123">
+                  <country>Germany</country>
+                </getCityResponse>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
+    @Test
+    void xmlAttributeMappedToAtPrefixedJsonProperty() throws Exception {
+        var json = new Soap2JsonTransformer().transform(CITY_WITH_ATTRIBUTE_RESPONSE);
+
+        JsonNode root = mapper.readTree(json);
+        assertEquals("123", root.get("@id").asText());
+        assertEquals("Germany", root.get("country").asText());
+    }
+
+    @Test
+    void multipleXmlAttributesAllMappedToAtPrefixedJsonProperties() throws Exception {
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getCityResponse xmlns="https://predic8.de/cities" id="123" type="capital">
+                      <country>Germany</country>
+                    </getCityResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        var json = new Soap2JsonTransformer().transform(soapXml);
+
+        JsonNode root = mapper.readTree(json);
+        assertEquals("123", root.get("@id").asText());
+        assertEquals("capital", root.get("@type").asText());
+        assertEquals("Germany", root.get("country").asText());
+    }
+
+    @Test
+    void xmlnsDeclarationsAreNotMappedAsAttributes() throws Exception {
+        var json = new Soap2JsonTransformer().transform(CITY_WITH_ATTRIBUTE_RESPONSE);
+
+        JsonNode root = mapper.readTree(json);
+        assertNull(root.get("@xmlns"), "xmlns declaration must not leak into JSON output");
+    }
+
+    @Test
+    void xmlLangAttributeIsNotMapped() throws Exception {
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getCityResponse xmlns="https://predic8.de/cities" xml:lang="en">
+                      <country>Germany</country>
+                    </getCityResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        var json = new Soap2JsonTransformer().transform(soapXml);
+
+        JsonNode root = mapper.readTree(json);
+        assertNull(root.get("@lang"), "xml:lang should be excluded from attribute mapping");
+        assertEquals("Germany", root.get("country").asText());
+    }
+
+    @Test
+    void nestedElementAttributeIsMapped() throws Exception {
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getBankResponse xmlns="http://thomas-bayer.com/blz/">
+                      <details currency="EUR">
+                        <bezeichnung>Example Corp</bezeichnung>
+                      </details>
+                    </getBankResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        var json = new Soap2JsonTransformer().transform(soapXml);
+
+        JsonNode root = mapper.readTree(json);
+        JsonNode details = root.get("details");
+        assertNotNull(details);
+        assertEquals("EUR", details.get("@currency").asText());
+        assertEquals("Example Corp", details.get("bezeichnung").asText());
     }
 
     @Test
