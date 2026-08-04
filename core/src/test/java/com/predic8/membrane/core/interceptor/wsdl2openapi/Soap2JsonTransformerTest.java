@@ -398,6 +398,64 @@ class Soap2JsonTransformerTest {
         assertEquals(3L, orders.get(2).get("id").longValue());
     }
 
+    private static final String SCALAR_ARRAY_RESPONSE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+              <soap:Body>
+                <getTagsResponse>
+                  <tag>java</tag>
+                  <tag>rest</tag>
+                  <tag>api</tag>
+                </getTagsResponse>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
+    @Test
+    void repeatedScalarElementsBecomeJsonArray() throws Exception {
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(SCALAR_ARRAY_RESPONSE));
+
+        JsonNode tags = root.get("tag");
+        assertTrue(tags.isArray(), "Repeated scalar elements should become a JSON array");
+        assertEquals(3, tags.size());
+        assertEquals("java", tags.get(0).asText());
+        assertEquals("rest", tags.get(1).asText());
+        assertEquals("api",  tags.get(2).asText());
+    }
+
+    @Test
+    void typedScalarArrayItemsConvertedWithSchema() throws Exception {
+        var responseSchema = new ObjectSchema()
+                .addProperty("tag", new ArraySchema().items(new StringSchema()));
+
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(SCALAR_ARRAY_RESPONSE, responseSchema));
+
+        JsonNode tags = root.get("tag");
+        assertTrue(tags.isArray());
+        assertEquals(3, tags.size());
+        assertTrue(tags.get(0).isTextual(), "Each item should be a JSON string");
+        assertEquals("java", tags.get(0).asText());
+    }
+
+    @Test
+    void singleScalarElementRemainsScalarNotArray() throws Exception {
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getTagsResponse>
+                      <tag>java</tag>
+                    </getTagsResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml));
+
+        assertTrue(root.get("tag").isTextual(), "A single scalar element must stay a scalar, not become a one-element array");
+        assertEquals("java", root.get("tag").asText());
+    }
+
     @Test
     void invalidIntegerFallsBackToStringGracefully() throws Exception {
         var schema = new ObjectSchema().addProperty("population", new IntegerSchema());
