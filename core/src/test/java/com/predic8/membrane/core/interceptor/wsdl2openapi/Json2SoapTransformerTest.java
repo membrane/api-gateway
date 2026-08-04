@@ -38,6 +38,7 @@ class Json2SoapTransformerTest {
     static Definitions orderingDefinitions;
     static Definitions attributesDefinitions;
     static Definitions qualifiedDefinitions;
+    static Definitions crossNamespaceChoiceDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -47,6 +48,7 @@ class Json2SoapTransformerTest {
         orderingDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/ordering.wsdl");
         attributesDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/attributes.wsdl");
         qualifiedDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/qualified-elements.wsdl");
+        crossNamespaceChoiceDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cross-namespace-choice.wsdl");
     }
 
     @Test
@@ -244,6 +246,40 @@ class Json2SoapTransformerTest {
         Element recordEl = getFirstChildElement(body);
 
         assertEquals("", recordEl.getAttribute("id"), "id attribute should be absent when @id is not in the JSON");
+    }
+
+    @Test
+    void choiceRefFromDifferentNamespaceGetsCorrectNamespace() throws Exception {
+        var transformer = new Json2SoapTransformer(crossNamespaceChoiceDefinitions, "processInput");
+        var soapBytes = transformer.transform("{\"numericInput\": 42}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element processInputEl = getFirstChildElement(body);
+
+        Element numericInputEl = getFirstChildElement(processInputEl);
+        assertNotNull(numericInputEl);
+        assertEquals("numericInput", numericInputEl.getLocalName());
+        assertEquals("https://example.com/choice-type-b", numericInputEl.getNamespaceURI(),
+                "numericInput is ref'd from choice-type-b and must carry that namespace");
+    }
+
+    @Test
+    void choiceRefSelectsCorrectAlternativeNamespace() throws Exception {
+        var transformer = new Json2SoapTransformer(crossNamespaceChoiceDefinitions, "processInput");
+        var soapBytes = transformer.transform("{\"textInput\": \"hello\"}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element processInputEl = getFirstChildElement(body);
+
+        Element textInputEl = getFirstChildElement(processInputEl);
+        assertNotNull(textInputEl);
+        assertEquals("textInput", textInputEl.getLocalName());
+        assertEquals("https://example.com/choice-type-a", textInputEl.getNamespaceURI(),
+                "textInput is ref'd from choice-type-a and must carry that namespace");
     }
 
     @Test

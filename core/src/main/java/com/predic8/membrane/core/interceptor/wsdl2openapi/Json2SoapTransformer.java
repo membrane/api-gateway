@@ -81,8 +81,8 @@ public class Json2SoapTransformer {
         body.appendChild(operationElement);
 
         List<String> fieldOrder = resolveElementFieldOrder(inputMessage.getParts().getFirst().getElementQName());
-        String childNs = resolveChildNamespace(inputMessage.getParts().getFirst().getElementNamespace());
-        mapJsonToElement(jsonNode, operationElement, doc, fieldOrder, childNs);
+        Map<String, String> fieldNamespaces = resolveFieldNamespaces(inputMessage.getParts().getFirst().getElementQName());
+        mapJsonToElement(jsonNode, operationElement, doc, fieldOrder, fieldNamespaces);
 
         return documentToBytes(doc);
     }
@@ -207,34 +207,83 @@ public class Json2SoapTransformer {
     }
 
     /**
-     * Returns the target namespace to use for child elements, or {@code null} when the schema
-     * declares {@code elementFormDefault="unqualified"} (the default).
+     * Builds a map from field name to namespace URI for the children of the XSD element
+     * identified by {@code elementQName}. Locally-declared fields carry the schema's
+     * {@code targetNamespace} when {@code elementFormDefault="qualified"}; {@code ref=}
+     * fields carry their referenced element's target namespace regardless of
+     * {@code elementFormDefault}.
      */
-    private String resolveChildNamespace(String operationNamespace) {
-        if (operationNamespace == null || operationNamespace.isEmpty()) return null;
-        List<Element> roots = schemasByNamespace.get(operationNamespace);
-        if (roots == null) return null;
-        for (var root : roots) {
-            if ("qualified".equals(root.getAttribute("elementFormDefault"))) {
-                return operationNamespace;
+    private Map<String, String> resolveFieldNamespaces(QName elementQName) {
+        if (elementQName == null) return Map.of();
+        List<Element> roots = schemasByNamespace.get(elementQName.getNamespaceURI());
+        if (roots == null) return Map.of();
+        for (var schemaRoot : roots) {
+            Element xsdEl = findXsdChildWithName(schemaRoot, "element", elementQName.getLocalPart());
+            if (xsdEl != null) {
+                String defaultNs = "qualified".equals(schemaRoot.getAttribute("elementFormDefault"))
+                        ? schemaRoot.getAttribute("targetNamespace") : null;
+                return extractFieldNamespaces(xsdEl, schemaRoot, defaultNs);
             }
         }
-        return null;
+        return Map.of();
     }
 
-    private void mapJsonToElement(JsonNode jsonNode, Element parent, Document doc, List<String> fieldOrder, String childNs) {
+    private Map<String, String> extractFieldNamespaces(Element xsdElement, Element schemaRoot, String defaultNs) {
+        Element complexType = findXsdChild(xsdElement, "complexType");
+        if (complexType == null) {
+            String typeAttr = xsdElement.getAttribute("type");
+            if (!typeAttr.isEmpty()) complexType = resolveComplexType(typeAttr, xsdElement, schemaRoot);
+        }
+        if (complexType == null) return Map.of();
+
+        var result = new LinkedHashMap<String, String>();
+        for (String tag : List.of("sequence", "all", "choice")) {
+            Element container = findXsdChild(complexType, tag);
+            if (container != null) {
+                collectFieldNamespaces(container, schemaRoot, defaultNs, result);
+                break;
+            }
+        }
+        return result;
+    }
+
+    private void collectFieldNamespaces(Element container, Element schemaRoot, String defaultNs, Map<String, String> result) {
+        NodeList children = container.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
+            if (!"element".equals(el.getLocalName())) continue;
+
+            String name = el.getAttribute("name");
+            if (!name.isEmpty()) {
+                // locally declared: use defaultNs (non-null only when elementFormDefault="qualified")
+                if (defaultNs != null) result.put(name, defaultNs);
+            } else {
+                // ref= element: resolve the ref'd element's namespace
+                String ref = el.getAttribute("ref");
+                if (ref.isEmpty()) continue;
+                String refPrefix = prefix(ref);
+                String refNs = refPrefix.isEmpty()
+                        ? schemaRoot.getAttribute("targetNamespace")
+                        : el.lookupNamespaceURI(refPrefix);
+                if (refNs != null && !refNs.isEmpty()) result.put(localName(ref), refNs);
+            }
+        }
+    }
+
+    private void mapJsonToElement(JsonNode jsonNode, Element parent, Document doc, List<String> fieldOrder, Map<String, String> fieldNamespaces) {
         if (jsonNode.isObject()) {
             var emitted = new LinkedHashSet<String>();
             for (String name : fieldOrder) {
                 JsonNode val = jsonNode.get(name);
                 if (val != null) {
-                    emitField(name, val, parent, doc, childNs);
+                    emitField(name, val, parent, doc, fieldNamespaces);
                     emitted.add(name);
                 }
             }
             for (var entry : jsonNode.properties()) {
                 if (!emitted.contains(entry.getKey())) {
-                    emitField(entry.getKey(), entry.getValue(), parent, doc, childNs);
+                    emitField(entry.getKey(), entry.getValue(), parent, doc, fieldNamespaces);
                 }
             }
         } else if (jsonNode.isValueNode()) {
@@ -242,26 +291,27 @@ public class Json2SoapTransformer {
         }
     }
 
-    private void emitField(String fieldName, JsonNode fieldValue, Element parent, Document doc, String childNs) {
+    private void emitField(String fieldName, JsonNode fieldValue, Element parent, Document doc, Map<String, String> fieldNamespaces) {
         if (fieldName.startsWith("@")) {
             parent.setAttribute(fieldName.substring(1), fieldValue.asText());
             return;
         }
+        String ns = fieldNamespaces.get(fieldName);
         if (fieldValue.isArray()) {
             for (JsonNode arrayItem : fieldValue) {
-                Element arrayElement = makeElement(doc, childNs, fieldName);
+                Element arrayElement = makeElement(doc, ns, fieldName);
                 if (arrayItem.isValueNode()) {
                     arrayElement.setTextContent(arrayItem.asText());
                 } else {
-                    mapJsonToElement(arrayItem, arrayElement, doc, List.of(), childNs);
+                    mapJsonToElement(arrayItem, arrayElement, doc, List.of(), Map.of());
                 }
                 parent.appendChild(arrayElement);
             }
         } else {
-            Element childElement = makeElement(doc, childNs, fieldName);
+            Element childElement = makeElement(doc, ns, fieldName);
             parent.appendChild(childElement);
             if (fieldValue.isObject()) {
-                mapJsonToElement(fieldValue, childElement, doc, List.of(), childNs);
+                mapJsonToElement(fieldValue, childElement, doc, List.of(), Map.of());
             } else {
                 childElement.setTextContent(fieldValue.asText());
             }

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tests: xsd:choice with ref'd elements from two different namespaces, in both directions -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/choice-service"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/choice-service">
+    <wsdl:types>
+
+        <!-- Service schema: choice of ref'd elements from two different namespaces -->
+        <xsd:schema targetNamespace="https://example.com/choice-service"
+                    xmlns:a="https://example.com/choice-type-a"
+                    xmlns:b="https://example.com/choice-type-b">
+            <xsd:import namespace="https://example.com/choice-type-a"/>
+            <xsd:import namespace="https://example.com/choice-type-b"/>
+
+            <xsd:element name="processInput">
+                <xsd:complexType>
+                    <xsd:choice>
+                        <xsd:element ref="a:textInput"/>
+                        <xsd:element ref="b:numericInput"/>
+                    </xsd:choice>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="processResult">
+                <xsd:complexType>
+                    <xsd:choice>
+                        <xsd:element ref="a:textResult"/>
+                        <xsd:element ref="b:numericResult"/>
+                    </xsd:choice>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+
+        <!-- Type A schema -->
+        <xsd:schema targetNamespace="https://example.com/choice-type-a">
+            <xsd:element name="textInput"  type="xsd:string"/>
+            <xsd:element name="textResult" type="xsd:string"/>
+        </xsd:schema>
+
+        <!-- Type B schema -->
+        <xsd:schema targetNamespace="https://example.com/choice-type-b">
+            <xsd:element name="numericInput"  type="xsd:int"/>
+            <xsd:element name="numericResult" type="xsd:int"/>
+        </xsd:schema>
+
+    </wsdl:types>
+
+    <wsdl:message name="ProcessInputRequest">
+        <wsdl:part name="parameters" element="tns:processInput"/>
+    </wsdl:message>
+    <wsdl:message name="ProcessResultResponse">
+        <wsdl:part name="parameters" element="tns:processResult"/>
+    </wsdl:message>
+
+    <wsdl:portType name="ProcessorPort">
+        <wsdl:operation name="processInput">
+            <wsdl:input  message="tns:ProcessInputRequest"/>
+            <wsdl:output message="tns:ProcessResultResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="ProcessorBinding" type="tns:ProcessorPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="processInput">
+            <s:operation soapAction="processInput"/>
+            <wsdl:input> <s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="ProcessorService">
+        <wsdl:port name="ProcessorPort" binding="tns:ProcessorBinding">
+            <s:address location="http://localhost:8080/processor"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

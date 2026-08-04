@@ -32,11 +32,13 @@ class Soap2JsonTransformerTest {
 
     static Definitions citiesDefinitions;
     static Definitions blzDefinitions;
+    static Definitions crossNamespaceChoiceDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
         citiesDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cities.wsdl");
         blzDefinitions = Definitions.parse(new ResolverMap(), "classpath:/blz-service.wsdl");
+        crossNamespaceChoiceDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cross-namespace-choice.wsdl");
     }
 
     private static final String CITIES_SOAP11_RESPONSE = """
@@ -473,6 +475,40 @@ class Soap2JsonTransformerTest {
         JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, schema));
         assertTrue(root.get("population").isTextual(), "unparseable integer should fall back to string");
         assertEquals("N/A", root.get("population").asText());
+    }
+
+    @Test
+    void choiceRefAlternativeTypedCorrectlyFromWsdlDerivedSchema() throws Exception {
+        // Build response schema from WSDL: processResult has a choice of a:textResult and b:numericResult.
+        // After the addChoiceFields fix, the schema contains both alternatives with correct types.
+        var xsdToSchema = new XsdToSchema(crossNamespaceChoiceDefinitions);
+        var outputMessages = crossNamespaceChoiceDefinitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .filter(op -> "processInput".equals(op.getName()))
+                .findFirst()
+                .map(op -> op.getMessagesByDirection(Operation.Direction.OUTPUT))
+                .orElseThrow();
+        var responseSchema = xsdToSchema.convertMessageParts(outputMessages);
+
+        // SOAP response using the numericResult alternative (from choice-type-b namespace)
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <tns:processResult xmlns:tns="https://example.com/choice-service"
+                                       xmlns:b="https://example.com/choice-type-b">
+                      <b:numericResult>42</b:numericResult>
+                    </tns:processResult>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        var json = new Soap2JsonTransformer().transform(soapXml, responseSchema);
+        JsonNode root = mapper.readTree(json);
+
+        assertNotNull(root.get("numericResult"), "numericResult must appear in JSON");
+        assertTrue(root.get("numericResult").isNumber(),
+                "WSDL-derived schema must type numericResult as integer via choice ref resolution");
+        assertEquals(42L, root.get("numericResult").longValue());
     }
 
     @Test

@@ -145,6 +145,12 @@ public class XsdToSchema {
             addAttributeFields(complexTypeEl, objectSchema, schemaRoot);
             return objectSchema;
         }
+        Element choice = findXsdChild(complexTypeEl, "choice");
+        if (choice != null) {
+            addChoiceFields(choice, objectSchema, schemaRoot);
+            addAttributeFields(complexTypeEl, objectSchema, schemaRoot);
+            return objectSchema;
+        }
         Element complexContent = findXsdChild(complexTypeEl, "complexContent");
         if (complexContent != null) {
             Element extension = findXsdChild(complexContent, "extension");
@@ -263,6 +269,8 @@ public class XsdToSchema {
                 if (!fieldName.isEmpty()) {
                     schema.addProperty(fieldName, convertElementType(el, schemaRoot));
                     // intentionally not added to required
+                } else {
+                    addRefField(el, schema, schemaRoot);
                 }
             }
         }

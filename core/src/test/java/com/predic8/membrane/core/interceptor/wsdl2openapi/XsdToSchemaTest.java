@@ -514,7 +514,43 @@ class XsdToSchemaTest {
         assertInstanceOf(StringSchema.class,  fieldOf(schema, "@id"));    // from Car's extension
     }
 
-    // ── xsd:element ref= resolution ───────────────────────────────────────
+    @Test
+    void choiceRefInSameNamespaceIsResolved() {
+        var schema = convert(converterFor("""
+                <xsd:element name="textInput" type="xsd:string"/>
+                <xsd:element name="request">
+                  <xsd:complexType><xsd:choice>
+                    <xsd:element ref="tns:textInput"/>
+                    <xsd:element name="numericInput" type="xsd:int"/>
+                  </xsd:choice></xsd:complexType>
+                </xsd:element>
+                """), "request");
+
+        assertInstanceOf(StringSchema.class,  fieldOf(schema, "textInput"));   // resolved from ref
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "numericInput")); // named element still works
+    }
+
+    @Test
+    void choiceRefInDifferentNamespaceIsResolved() {
+        var converter = converterForSchemas(Map.of(
+                NS, """
+                        <xsd:import namespace="https://types.example.com"/>
+                        <xsd:element name="request">
+                          <xsd:complexType><xsd:choice>
+                            <xsd:element ref="types:remoteInput" xmlns:types="https://types.example.com"/>
+                            <xsd:element name="localInput" type="xsd:string"/>
+                          </xsd:choice></xsd:complexType>
+                        </xsd:element>
+                        """,
+                "https://types.example.com", """
+                        <xsd:element name="remoteInput" type="xsd:int"/>
+                        """
+        ));
+
+        var schema = convert(converter, "request");
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "remoteInput")); // resolved cross-NS
+        assertInstanceOf(StringSchema.class,  fieldOf(schema, "localInput"));  // named element still works
+    }
 
     @Test
     void elementRefInSameNamespaceIsResolved() {
@@ -564,8 +600,6 @@ class XsdToSchemaTest {
         assertNull(schema.getProperties());
     }
 
-    // ── Duplicate local-name collision from two namespaces ─────────────────
-
     @Test
     void sequenceWithSameLocalNameFromTwoNamespacesLastOneWins() {
         // Documents current "last writer wins" collision — both refs resolve to property "value";
@@ -594,8 +628,6 @@ class XsdToSchemaTest {
         assertNotNull(fieldOf(schema, "value"));
         assertInstanceOf(IntegerSchema.class, fieldOf(schema, "value")); // ns2:value = xsd:int
     }
-
-    // ── Cross-namespace type resolution ───────────────────────────────────
 
     @Test
     void typeDefinedInDifferentNamespaceSchemaIsResolved() {
