@@ -787,6 +787,64 @@ public class YAMLParsingTest {
         );
     }
 
+    @Test
+    public void otherAttributesWithStructuredValues() {
+        var sources = splitSources(MC_MAIN_DEMO + """
+                package com.predic8.membrane.demo;
+                import com.predic8.membrane.annot.*;
+                import java.util.*;
+                @MCElement(name="demo", topLevel=true, component=false)
+                public class DemoElement {
+                    WrapperElement wrapper;
+                    public WrapperElement getWrapper() { return wrapper; }
+                    @MCChildElement
+                    public void setWrapper(WrapperElement wrapper) { this.wrapper = wrapper; }
+                }
+                ---
+                package com.predic8.membrane.demo;
+                import com.predic8.membrane.annot.*;
+                import java.util.*;
+                @MCElement(name="wrapper", component=false)
+                public class WrapperElement {
+                    Map<String, EntryElement> map = new java.util.LinkedHashMap<>();
+                    public Map<String, EntryElement> getMap() { return map; }
+                    @MCOtherAttributes
+                    public void setEntry(Map<String, EntryElement> entry) {
+                        if (entry != null) map.putAll(entry);
+                    }
+                }
+                ---
+                package com.predic8.membrane.demo;
+                import com.predic8.membrane.annot.*;
+                @MCElement(name="entry", component=false)
+                public class EntryElement {
+                    String attr;
+                    public String getAttr() { return attr; }
+                    @MCAttribute
+                    public void setAttr(String attr) { this.attr = attr; }
+                }
+                """);
+        var result = CompilerHelper.compile(sources, false);
+        assertCompilerResult(true, result);
+
+        assertStructure(
+                parseYAML(result, """
+                        demo:
+                          wrapper:
+                            foo:
+                              attr: value1
+                            bar:
+                              attr: value2
+                        """),
+                clazz("DemoElement",
+                        property("wrapper", clazz("WrapperElement",
+                                property("map", map(
+                                        entry("foo", clazz("EntryElement", property("attr", value("value1")))),
+                                        entry("bar", clazz("EntryElement", property("attr", value("value2"))))
+                                )))))
+        );
+    }
+
     private Throwable getCause(Throwable e) {
         if (e.getCause() != null)
             return getCause(e.getCause());
