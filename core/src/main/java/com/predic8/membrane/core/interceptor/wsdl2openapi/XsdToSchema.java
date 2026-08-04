@@ -181,7 +181,10 @@ public class XsdToSchema {
 
     private void addElementField(Element el, ObjectSchema schema, Element schemaRoot) {
         String fieldName = el.getAttribute("name");
-        if (fieldName.isEmpty()) return; // ref= elements: not supported
+        if (fieldName.isEmpty()) {
+            addRefField(el, schema, schemaRoot);
+            return;
+        }
 
         String minOccurs = el.getAttribute("minOccurs");
         String maxOccurs = el.getAttribute("maxOccurs");
@@ -194,6 +197,32 @@ public class XsdToSchema {
         schema.addProperty(fieldName, fieldSchema);
         if (!"0".equals(minOccurs)) {
             schema.addRequiredItem(fieldName);
+        }
+    }
+
+    /**
+     * Resolves an {@code <xsd:element ref="prefix:local"/>} by looking up the referenced global
+     * element and adding it as a property under its declared name.
+     */
+    private void addRefField(Element refEl, ObjectSchema schema, Element schemaRoot) {
+        String ref = refEl.getAttribute("ref");
+        if (ref.isEmpty()) return;
+        String local = localName(ref);
+        for (var root : resolveTargetSchemaRoots(prefix(ref), refEl, schemaRoot, schemasByNamespace)) {
+            Element referenced = findXsdChildWithName(root, "element", local);
+            if (referenced != null) {
+                String minOccurs = refEl.getAttribute("minOccurs");
+                String maxOccurs = refEl.getAttribute("maxOccurs");
+                Schema<?> fieldSchema = convertElementType(referenced, root);
+                if ("unbounded".equals(maxOccurs) || isMoreThanOne(maxOccurs)) {
+                    fieldSchema = new ArraySchema().items(fieldSchema);
+                }
+                schema.addProperty(local, fieldSchema);
+                if (!"0".equals(minOccurs)) {
+                    schema.addRequiredItem(local);
+                }
+                return;
+            }
         }
     }
 

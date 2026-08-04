@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tests: elementFormDefault="qualified" — child elements must carry the target namespace -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/qualified"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/qualified">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/qualified"
+                    elementFormDefault="qualified">
+            <xsd:element name="sendMessage">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="text" type="xsd:string"/>
+                        <xsd:element name="priority" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+
+    <wsdl:message name="SendMessageRequest">
+        <wsdl:part name="parameters" element="tns:sendMessage"/>
+    </wsdl:message>
+
+    <wsdl:portType name="MessengerPort">
+        <wsdl:operation name="sendMessage">
+            <wsdl:input message="tns:SendMessageRequest"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="MessengerBinding" type="tns:MessengerPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="sendMessage">
+            <s:operation soapAction="sendMessage"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="MessengerService">
+        <wsdl:port name="MessengerPort" binding="tns:MessengerBinding">
+            <s:address location="http://localhost:8080/messenger"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

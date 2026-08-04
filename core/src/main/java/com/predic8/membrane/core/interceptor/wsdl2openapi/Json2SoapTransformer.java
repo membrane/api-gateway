@@ -81,7 +81,8 @@ public class Json2SoapTransformer {
         body.appendChild(operationElement);
 
         List<String> fieldOrder = resolveElementFieldOrder(inputMessage.getParts().getFirst().getElementQName());
-        mapJsonToElement(jsonNode, operationElement, doc, fieldOrder);
+        String childNs = resolveChildNamespace(inputMessage.getParts().getFirst().getElementNamespace());
+        mapJsonToElement(jsonNode, operationElement, doc, fieldOrder, childNs);
 
         return documentToBytes(doc);
     }
@@ -205,19 +206,35 @@ public class Json2SoapTransformer {
         return null;
     }
 
-    private void mapJsonToElement(JsonNode jsonNode, Element parent, Document doc, List<String> fieldOrder) {
+    /**
+     * Returns the target namespace to use for child elements, or {@code null} when the schema
+     * declares {@code elementFormDefault="unqualified"} (the default).
+     */
+    private String resolveChildNamespace(String operationNamespace) {
+        if (operationNamespace == null || operationNamespace.isEmpty()) return null;
+        List<Element> roots = schemasByNamespace.get(operationNamespace);
+        if (roots == null) return null;
+        for (var root : roots) {
+            if ("qualified".equals(root.getAttribute("elementFormDefault"))) {
+                return operationNamespace;
+            }
+        }
+        return null;
+    }
+
+    private void mapJsonToElement(JsonNode jsonNode, Element parent, Document doc, List<String> fieldOrder, String childNs) {
         if (jsonNode.isObject()) {
             var emitted = new LinkedHashSet<String>();
             for (String name : fieldOrder) {
                 JsonNode val = jsonNode.get(name);
                 if (val != null) {
-                    emitField(name, val, parent, doc);
+                    emitField(name, val, parent, doc, childNs);
                     emitted.add(name);
                 }
             }
             for (var entry : jsonNode.properties()) {
                 if (!emitted.contains(entry.getKey())) {
-                    emitField(entry.getKey(), entry.getValue(), parent, doc);
+                    emitField(entry.getKey(), entry.getValue(), parent, doc, childNs);
                 }
             }
         } else if (jsonNode.isValueNode()) {
@@ -225,30 +242,34 @@ public class Json2SoapTransformer {
         }
     }
 
-    private void emitField(String fieldName, JsonNode fieldValue, Element parent, Document doc) {
+    private void emitField(String fieldName, JsonNode fieldValue, Element parent, Document doc, String childNs) {
         if (fieldName.startsWith("@")) {
             parent.setAttribute(fieldName.substring(1), fieldValue.asText());
             return;
         }
         if (fieldValue.isArray()) {
             for (JsonNode arrayItem : fieldValue) {
-                Element arrayElement = doc.createElement(fieldName);
+                Element arrayElement = makeElement(doc, childNs, fieldName);
                 if (arrayItem.isValueNode()) {
                     arrayElement.setTextContent(arrayItem.asText());
                 } else {
-                    mapJsonToElement(arrayItem, arrayElement, doc, List.of());
+                    mapJsonToElement(arrayItem, arrayElement, doc, List.of(), childNs);
                 }
                 parent.appendChild(arrayElement);
             }
         } else {
-            Element childElement = doc.createElement(fieldName);
+            Element childElement = makeElement(doc, childNs, fieldName);
             parent.appendChild(childElement);
             if (fieldValue.isObject()) {
-                mapJsonToElement(fieldValue, childElement, doc, List.of());
+                mapJsonToElement(fieldValue, childElement, doc, List.of(), childNs);
             } else {
                 childElement.setTextContent(fieldValue.asText());
             }
         }
+    }
+
+    private static Element makeElement(Document doc, String namespace, String name) {
+        return namespace != null ? doc.createElementNS(namespace, name) : doc.createElement(name);
     }
 
     private byte[] documentToBytes(Document doc) throws Exception {

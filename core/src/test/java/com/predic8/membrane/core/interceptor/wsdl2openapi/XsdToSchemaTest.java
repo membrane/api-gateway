@@ -514,6 +514,87 @@ class XsdToSchemaTest {
         assertInstanceOf(StringSchema.class,  fieldOf(schema, "@id"));    // from Car's extension
     }
 
+    // ── xsd:element ref= resolution ───────────────────────────────────────
+
+    @Test
+    void elementRefInSameNamespaceIsResolved() {
+        var schema = convert(converterFor("""
+                <xsd:element name="city" type="xsd:string"/>
+                <xsd:element name="wrapper">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element ref="tns:city"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "wrapper");
+
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "city"));
+    }
+
+    @Test
+    void elementRefInDifferentNamespaceIsResolved() {
+        var converter = converterForSchemas(Map.of(
+                NS, """
+                        <xsd:import namespace="https://other.example.com"/>
+                        <xsd:element name="wrapper">
+                          <xsd:complexType><xsd:sequence>
+                            <xsd:element ref="other:bar" xmlns:other="https://other.example.com"/>
+                          </xsd:sequence></xsd:complexType>
+                        </xsd:element>
+                        """,
+                "https://other.example.com", """
+                        <xsd:element name="bar" type="xsd:int"/>
+                        """
+        ));
+
+        var schema = convert(converter, "wrapper");
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "bar"));
+    }
+
+    @Test
+    void attributeRefInComplexTypeIsSkipped() {
+        // xsd:attribute ref= is not supported — the referenced attribute is silently omitted
+        var schema = convert(converterFor("""
+                <xsd:element name="record">
+                  <xsd:complexType>
+                    <xsd:attribute ref="tns:globalId"/>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "record");
+
+        assertNull(schema.getProperties());
+    }
+
+    // ── Duplicate local-name collision from two namespaces ─────────────────
+
+    @Test
+    void sequenceWithSameLocalNameFromTwoNamespacesLastOneWins() {
+        // Documents current "last writer wins" collision — both refs resolve to property "value";
+        // the second ref (ns2:value = xsd:int) overwrites the first (ns1:value = xsd:string).
+        // TODO: future work could use "{ns}value"-keyed properties to distinguish namespaces.
+        final String NS1 = "https://ns1.example.com";
+        final String NS2 = "https://ns2.example.com";
+        final String NS3 = "https://ns3.example.com";
+
+        var schemas = new java.util.LinkedHashMap<String, String>();
+        schemas.put(NS1, "<xsd:element name=\"value\" type=\"xsd:string\"/>");
+        schemas.put(NS2, "<xsd:element name=\"value\" type=\"xsd:int\"/>");
+        schemas.put(NS3, """
+                <xsd:element name="container">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element ref="ns1:value" xmlns:ns1="https://ns1.example.com"/>
+                    <xsd:element ref="ns2:value" xmlns:ns2="https://ns2.example.com"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """);
+        var converter = converterForSchemas(schemas);
+
+        var schema = converter.convert(new QName(NS3, "container"));
+
+        // Both refs produce a property named "value"; second write wins
+        assertNotNull(fieldOf(schema, "value"));
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "value")); // ns2:value = xsd:int
+    }
+
     // ── Cross-namespace type resolution ───────────────────────────────────
 
     @Test

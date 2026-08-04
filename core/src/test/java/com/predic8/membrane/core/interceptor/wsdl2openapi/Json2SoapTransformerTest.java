@@ -37,6 +37,7 @@ class Json2SoapTransformerTest {
     static Definitions emptyMessageDefinitions;
     static Definitions orderingDefinitions;
     static Definitions attributesDefinitions;
+    static Definitions qualifiedDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -45,6 +46,7 @@ class Json2SoapTransformerTest {
         emptyMessageDefinitions = Definitions.parse(new ResolverMap(), "classpath:/special/empty-message.wsdl");
         orderingDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/ordering.wsdl");
         attributesDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/attributes.wsdl");
+        qualifiedDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/qualified-elements.wsdl");
     }
 
     @Test
@@ -242,6 +244,23 @@ class Json2SoapTransformerTest {
         Element recordEl = getFirstChildElement(body);
 
         assertEquals("", recordEl.getAttribute("id"), "id attribute should be absent when @id is not in the JSON");
+    }
+
+    @Test
+    void childElementsInSoapCarryTargetNamespaceWhenElementFormDefaultIsQualified() throws Exception {
+        var transformer = new Json2SoapTransformer(qualifiedDefinitions, "sendMessage");
+        var soapBytes = transformer.transform("{\"text\": \"hello\", \"priority\": 1}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element sendMessageEl = getFirstChildElement(body);
+
+        Element textEl = getFirstChildElement(sendMessageEl);
+        assertNotNull(textEl, "Should have a child element");
+        assertEquals("text", textEl.getLocalName());
+        assertEquals("https://example.com/qualified", textEl.getNamespaceURI(),
+                "Child element must carry target namespace when elementFormDefault=qualified");
     }
 
     private static Document parseXml(byte[] bytes) throws Exception {
