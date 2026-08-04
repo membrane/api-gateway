@@ -101,7 +101,8 @@ class UsernameTokenInterceptorTest {
         Element password = firstByTag(result, WSSE_NS, "Password");
         assertEquals("bob", username.getTextContent());
         assertEquals("secret", password.getTextContent());
-        assertEquals(WSSE_NS + "#PasswordText", password.getAttribute("Type"));
+        assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText",
+                password.getAttribute("Type"));
     }
 
     @Test
@@ -133,7 +134,8 @@ class UsernameTokenInterceptorTest {
         Element nonce = firstByTag(result, WSSE_NS, "Nonce");
         Element created = firstByTag(result, WSU_NS, "Created");
 
-        assertEquals(WSSE_NS + "#PasswordDigest", password.getAttribute("Type"));
+        assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest",
+                password.getAttribute("Type"));
         assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary",
                 nonce.getAttribute("EncodingType"));
 

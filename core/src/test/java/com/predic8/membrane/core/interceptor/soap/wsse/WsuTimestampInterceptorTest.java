@@ -106,6 +106,32 @@ class WsuTimestampInterceptorTest {
     }
 
     @Test
+    void replacesExistingTimestampInsteadOfDuplicatingIt() throws Exception {
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Header>
+                        <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                            <wsu:Timestamp xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                                <wsu:Created>2000-01-01T00:00:00Z</wsu:Created>
+                                <wsu:Expires>2000-01-01T00:05:00Z</wsu:Expires>
+                            </wsu:Timestamp>
+                        </wsse:Security>
+                    </soap:Header>
+                    <soap:Body>
+                        <foo>bar</foo>
+                    </soap:Body>
+                </soap:Envelope>
+                """);
+
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+
+        Document result = parseResultBody();
+        // firstByTag already asserts exactly one wsu:Timestamp/Created remains.
+        Instant created = Instant.parse(firstByTag(result, WSU_NS, "Created").getTextContent());
+        assertTrue(created.isAfter(Instant.parse("2000-01-02T00:00:00Z")));
+    }
+
+    @Test
     void nonSoapMessageAborts() throws Exception {
         exchangeWithBody("<foo>bar</foo>");
 

@@ -116,6 +116,20 @@ class UsernameTokenVerifierInterceptorTest {
         assertEquals(400, exchange.getResponse().getStatusCode());
     }
 
+    @Test
+    void malformedNonceIsRejectedAsVerificationFailure() throws Exception {
+        exchangeWithBody(SOAP_TEMPLATE.formatted("""
+                <wsse:Username>alice</wsse:Username>
+                <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">irrelevant</wsse:Password>
+                <wsse:Nonce>not-valid-base64!!</wsse:Nonce>
+                <wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">%s</wsu:Created>
+                """.formatted(java.time.Instant.now().toString())));
+        verifier.init(router);
+
+        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
+        assertEquals(403, exchange.getResponse().getStatusCode());
+    }
+
     private String createDigestToken(String password, String created, String nonceBase64) {
         try {
             java.security.MessageDigest sha1 = java.security.MessageDigest.getInstance("SHA-1");
@@ -125,7 +139,7 @@ class UsernameTokenVerifierInterceptorTest {
             String digest = java.util.Base64.getEncoder().encodeToString(sha1.digest());
             return """
                     <wsse:Username>alice</wsse:Username>
-                    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#PasswordDigest">%s</wsse:Password>
+                    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">%s</wsse:Password>
                     <wsse:Nonce>%s</wsse:Nonce>
                     <wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">%s</wsu:Created>
                     """.formatted(digest, nonceBase64, created);

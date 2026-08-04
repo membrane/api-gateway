@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.SOAPUtil;
 import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
@@ -73,7 +74,8 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(UsernameTokenVerifierInterceptor.class);
 
-    private static final String PASSWORD_DIGEST_TYPE = WSSE_NS + "#PasswordDigest";
+    private static final String PASSWORD_DIGEST_TYPE =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest";
     private static final Duration DEFAULT_FRESHNESS_WINDOW = Duration.ofMinutes(5);
 
     private String username;
@@ -83,9 +85,12 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
     private ExchangeExpression usernameExpression;
     private ExchangeExpression passwordExpression;
 
-    // Bounded by natural cache eviction below; a nonce only needs to be remembered for as long as
-    // its Created timestamp is still inside the freshness window anyway.
+    // A nonce only needs to be remembered for as long as its Created timestamp is still inside the
+    // freshness window, but that's a rate, not a constant - so growth is additionally capped here.
+    private static final int MAX_REMEMBERED_NONCES = 100_000;
+
     private final Map<String, Instant> seenNonces = new ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicLong lastPurgeEpochSecond = new java.util.concurrent.atomic.AtomicLong();
 
     @Override
     public void init() {
@@ -164,7 +169,7 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
             if (nonceEl == null || created == null) {
                 throw new VerificationException("wsse:Password of type PasswordDigest requires wsse:Nonce and wsu:Created.");
             }
-            String expectedDigest = computeDigest(nonceEl.getTextContent(), createdEl.getTextContent(), expectedPassword);
+            String expectedDigest = computeDigest(decodeNonce(nonceEl.getTextContent()), createdEl.getTextContent(), expectedPassword);
             if (!constantTimeEquals(expectedDigest, passwordEl.getTextContent())) {
                 throw new VerificationException("Password digest does not match.");
             }
@@ -196,10 +201,24 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
     }
 
     private void checkNonceNotReplayed(String username, String nonce, Instant created) {
-        purgeExpiredNonces();
+        purgeExpiredNoncesIfDue();
         String key = username + '|' + nonce;
+        if (seenNonces.size() >= MAX_REMEMBERED_NONCES) {
+            purgeExpiredNonces();
+            if (seenNonces.size() >= MAX_REMEMBERED_NONCES) {
+                throw new VerificationException("Replay cache is full; rejecting the request.");
+            }
+        }
         if (seenNonces.putIfAbsent(key, created.plus(freshnessWindow)) != null) {
             throw new VerificationException("Nonce has already been used; rejecting as a replay.");
+        }
+    }
+
+    private void purgeExpiredNoncesIfDue() {
+        long nowSecond = Instant.now().getEpochSecond();
+        long previous = lastPurgeEpochSecond.get();
+        if (nowSecond > previous && lastPurgeEpochSecond.compareAndSet(previous, nowSecond)) {
+            purgeExpiredNonces();
         }
     }
 
@@ -208,9 +227,17 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
         seenNonces.values().removeIf(expiry -> expiry.isBefore(now));
     }
 
-    private static String computeDigest(String nonce, String created, String password) throws Exception {
+    private static byte[] decodeNonce(String nonce) {
+        try {
+            return Base64.getDecoder().decode(nonce);
+        } catch (IllegalArgumentException e) {
+            throw new VerificationException("wsse:Nonce is not valid Base64.");
+        }
+    }
+
+    private static String computeDigest(byte[] nonce, String created, String password) throws Exception {
         MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-        sha1.update(Base64.getDecoder().decode(nonce));
+        sha1.update(nonce);
         sha1.update(created.getBytes(StandardCharsets.UTF_8));
         sha1.update(password.getBytes(StandardCharsets.UTF_8));
         return Base64.getEncoder().encodeToString(sha1.digest());
@@ -270,6 +297,10 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setFreshnessWindow(String freshnessWindow) {
-        this.freshnessWindow = Duration.parse(freshnessWindow);
+        Duration parsed = Duration.parse(freshnessWindow);
+        if (!parsed.isPositive()) {
+            throw new ConfigurationException("freshnessWindow must be a positive duration.");
+        }
+        this.freshnessWindow = parsed;
     }
 }

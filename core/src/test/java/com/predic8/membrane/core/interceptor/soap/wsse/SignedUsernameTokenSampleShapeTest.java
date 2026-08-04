@@ -135,7 +135,8 @@ class SignedUsernameTokenSampleShapeTest {
         assertEquals("ACME-001", firstByTag(result, WSSE_NS, "Username").getTextContent());
         Element password = firstByTag(result, WSSE_NS, "Password");
         assertEquals("Example123!", password.getTextContent());
-        assertEquals(WSSE_NS + "#PasswordText", password.getAttribute("Type"));
+        assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText",
+                password.getAttribute("Type"));
         String usernameTokenId = usernameToken.getAttributeNS(WSU_NS, "Id");
         assertFalse(usernameTokenId.isEmpty());
 

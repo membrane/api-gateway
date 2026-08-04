@@ -59,8 +59,10 @@ public class UsernameTokenInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(UsernameTokenInterceptor.class);
 
-    private static final String PASSWORD_TEXT_TYPE = WSSE_NS + "#PasswordText";
-    private static final String PASSWORD_DIGEST_TYPE = WSSE_NS + "#PasswordDigest";
+    private static final String USERNAME_TOKEN_PROFILE_NS =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0";
+    private static final String PASSWORD_TEXT_TYPE = USERNAME_TOKEN_PROFILE_NS + "#PasswordText";
+    private static final String PASSWORD_DIGEST_TYPE = USERNAME_TOKEN_PROFILE_NS + "#PasswordDigest";
     // Note: distinct from WSSE_NS (the wsse secext schema itself) - this is the WS-Security SOAP
     // Message Security namespace that actually defines the Base64Binary encoding type.
     private static final String BASE64_BINARY_TYPE =

@@ -18,11 +18,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.XPathFactoryConfigurationException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -115,19 +117,36 @@ final class WsSecurityXml {
         return element;
     }
 
+    private static final XPathFactory XPATH_FACTORY = createXPathFactory();
+
+    private static XPathFactory createXPathFactory() {
+        XPathFactory factory = XPathFactory.newInstance();
+        try {
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (XPathFactoryConfigurationException e) {
+            throw new IllegalStateException("Could not enable secure processing on XPathFactory.", e);
+        }
+        return factory;
+    }
+
     private static Element resolveByXPath(Document doc, String xpath) {
         if (xpath == null || xpath.isBlank()) {
             throw new ReferenceResolutionException("reference by=\"XPATH\" requires an xpath attribute.");
         }
         try {
-            XPath xPath = XPathFactory.newInstance().newXPath();
+            XPath xPath = XPATH_FACTORY.newXPath();
             xPath.setNamespaceContext(SOAP_WSSE_NAMESPACE_CONTEXT);
             NodeList nodes = (NodeList) xPath.evaluate(xpath, doc, XPathConstants.NODESET);
             if (nodes.getLength() != 1) {
                 throw new ReferenceResolutionException(
                         "XPath \"" + xpath + "\" matched " + nodes.getLength() + " element(s), expected exactly 1.");
             }
-            return (Element) nodes.item(0);
+            Node node = nodes.item(0);
+            if (!(node instanceof Element element)) {
+                throw new ReferenceResolutionException(
+                        "XPath \"" + xpath + "\" matched a " + node.getNodeName() + " node, expected an element.");
+            }
+            return element;
         } catch (XPathExpressionException e) {
             throw new ReferenceResolutionException("Invalid XPath expression: " + xpath);
         }

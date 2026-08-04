@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.SOAPUtil;
 import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
@@ -36,6 +37,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getFirstChildByName;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getOrCreateHeader;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getOrCreateSecurity;
 
@@ -86,6 +88,10 @@ public class WsuTimestampInterceptor extends AbstractInterceptor {
 
             Element header = getOrCreateHeader(doc, envelope, soapNs);
             Element security = getOrCreateSecurity(doc, header);
+            Element existingTimestamp = getFirstChildByName(security, WSU_NS, "Timestamp");
+            if (existingTimestamp != null) {
+                security.removeChild(existingTimestamp);
+            }
             security.insertBefore(createTimestamp(doc), security.getFirstChild());
 
             exc.getRequest().setBodyContent(XMLUtil.xmlNode2String(doc).getBytes(StandardCharsets.UTF_8));
@@ -127,6 +133,10 @@ public class WsuTimestampInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setTtl(String ttl) {
-        this.ttl = Duration.parse(ttl);
+        Duration parsed = Duration.parse(ttl);
+        if (!parsed.isPositive()) {
+            throw new ConfigurationException("ttl must be a positive duration.");
+        }
+        this.ttl = parsed;
     }
 }

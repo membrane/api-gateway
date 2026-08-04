@@ -142,6 +142,12 @@ public class DigitalSignatureInterceptor extends AbstractInterceptor {
 
             privateKey = (PrivateKey) ks.getKey(alias, keyPassword);
             certificate = (X509Certificate) ks.getCertificate(alias);
+            if (privateKey == null) {
+                throw new ConfigurationException("Keystore alias \"" + alias + "\" holds no private key.");
+            }
+            if (certificate == null) {
+                throw new ConfigurationException("Keystore alias \"" + alias + "\" holds no X.509 certificate.");
+            }
         } catch (Exception e) {
             throw new ConfigurationException("Could not load signing key from keystore for digitalSignature interceptor.", e);
         }
@@ -343,7 +349,8 @@ public class DigitalSignatureInterceptor extends AbstractInterceptor {
         }
         String soapPrefix = security.lookupPrefix(soapNs);
         if (soapPrefix == null) {
-            return;
+            soapPrefix = "soapenv";
+            security.setAttributeNS(javax.xml.XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:" + soapPrefix, soapNs);
         }
         String value = switch (soapNs) {
             case SOAP12_NS -> "true";

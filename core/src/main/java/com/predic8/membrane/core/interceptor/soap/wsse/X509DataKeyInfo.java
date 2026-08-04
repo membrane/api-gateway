@@ -18,8 +18,9 @@ import com.predic8.membrane.annot.MCElement;
 /**
  * @description Embeds the signing certificate directly in <code>ds:KeyInfo</code> as a
  * <code>ds:X509Data</code>/<code>ds:X509Certificate</code>. This is the default
- * <code>digitalSignature</code> behavior when neither <code>x509Data</code> nor
- * <code>securityTokenReference</code> is configured.
+ * <code>digitalSignature</code> behavior when no key-info element
+ * (<code>x509Data</code>, <code>securityTokenReference</code>, or <code>keyIdentifier</code>)
+ * is configured.
  */
 @MCElement(name = "x509Data", component = false, id = "digitalSignature-x509Data")
 public class X509DataKeyInfo {

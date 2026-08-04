@@ -54,6 +54,7 @@ import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.THUMBPRINT_SHA1_VALUE_TYPE;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.X509_V3_VALUE_TYPE;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getChildrenByName;
@@ -253,6 +254,9 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
             byte[] thumbprint = Base64.getDecoder().decode(content);
             return findCertificateByThumbprint(thumbprint);
         }
+        if (!X509_V3_VALUE_TYPE.equals(valueType)) {
+            throw new VerificationException("Unsupported wsse:KeyIdentifier ValueType: \"" + valueType + "\".");
+        }
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         return decodeCertificate(cf, content);
     }
@@ -338,7 +342,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
             return null;
         }
         try {
-            return Instant.parse(el.getTextContent());
+            return java.time.OffsetDateTime.parse(el.getTextContent().trim()).toInstant();
         } catch (DateTimeParseException e) {
             throw new VerificationException("wsu:Timestamp/wsu:" + localName + " is not a valid xs:dateTime: " + el.getTextContent());
         }
