@@ -14,15 +14,9 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import com.predic8.membrane.core.resolver.Resolver;
-import com.predic8.membrane.core.util.functionalInterfaces.ExceptionThrowingConsumer;
+import com.predic8.membrane.core.resolver.StaticStringResolver;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -108,7 +102,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(parseWsdl(wsdl), "/").generateYaml();
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("/say-hello:"), "Operation name should be mapped to a kebab-case path");
         assertTrue(yaml.contains("operationId: \"sayHello\""), "operationId should match the WSDL operation name");
@@ -170,7 +164,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(parseWsdl(wsdl), "/").generateYaml();
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("/add:"), "Path is still generated regardless of binding style");
         assertTrue(yaml.contains("operationId: \"add\""));
@@ -230,7 +224,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(parseWsdl(wsdl), "/").generateYaml();
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("/search:"));
         assertTrue(yaml.contains("query:"), "First bare-style message part should become a request field");
@@ -342,7 +336,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(parseWsdl(wsdl), "/").generateYaml();
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("cancelled:"), "Normal output message is still converted");
         assertTrue(yaml.contains("\"500\":"));
@@ -432,7 +426,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(parseWsdl(wsdl), "/").generateYaml();
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         assertTrue(yaml.contains("payload:"), "Body part is still converted");
         assertTrue(yaml.contains("in: \"header\""), "soap:header part should become an OpenAPI header parameter");
@@ -509,7 +503,7 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(parseWsdl(wsdl), "/").generateYaml();
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
 
         // SOAP version only affects the wire envelope, not the JSON/OpenAPI shape, so a
         // SOAP 1.2 binding should produce the same output as the equivalent SOAP 1.1 WSDL
@@ -522,27 +516,4 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         assertTrue(yaml.contains("\"500\":"));
     }
 
-    private static Definitions parseWsdl(String wsdl) throws Exception {
-        return Definitions.parse(new Resolver() {
-            @Override
-            public InputStream resolve(String url) {
-                return new ByteArrayInputStream(wsdl.getBytes(StandardCharsets.UTF_8));
-            }
-
-            @Override
-            public void observeChange(String url, ExceptionThrowingConsumer<InputStream> consumer) {
-                // not needed for inline test WSDLs
-            }
-
-            @Override
-            public List<String> getChildren(String url) {
-                return null;
-            }
-
-            @Override
-            public long getTimestamp(String url) {
-                return 0;
-            }
-        }, "inline.wsdl");
-    }
 }
