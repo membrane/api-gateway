@@ -23,6 +23,7 @@ import java.util.List;
 
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.findSetterForKey;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.getElementName;
+import static com.predic8.membrane.annot.yaml.McYamlIntrospector.hasOtherAttributes;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.isCollapsed;
 import static com.predic8.membrane.annot.yaml.McYamlIntrospector.isNoEnvelope;
 import static com.predic8.membrane.annot.yaml.NodeValidationUtils.ensureArray;
@@ -63,7 +64,7 @@ public final class CollectionBinder {
 
         if (item.size() == 1) {
             String key = item.fieldNames().next();
-            if (canUseInlineObjectForm(elemType, key) || ctx.findClass(key) == null) {
+            if (canUseInlineObjectForm(elemType, key) || (elemType != null && ctx.findClass(key) == null && hasOtherAttributes(elemType))) {
                 return parseInlineListItem(ctx, item, elemType);
             }
             return parseMapToObj(ctx, item);
