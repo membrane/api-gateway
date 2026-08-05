@@ -470,7 +470,7 @@ public class YAMLParsingTest {
             var c = (ConfigurationParsingException) getCause(e);
             var pc = c.getParsingContext();
             assertEquals("$.demo", pc.getPath());
-            assertNull(null);
+            assertEquals("errorHere", pc.getKey());
             assertEquals("Invalid field 'errorHere' in demo", c.getMessage());
         }
     }
@@ -838,7 +838,7 @@ public class YAMLParsingTest {
                         """),
                 clazz("DemoElement",
                         property("wrapper", clazz("WrapperElement",
-                                property("map", map(
+                                property("map", mapContaining(
                                         entry("foo", clazz("EntryElement", property("attr", value("value1")))),
                                         entry("bar", clazz("EntryElement", property("attr", value("value2"))))
                                 )))))
