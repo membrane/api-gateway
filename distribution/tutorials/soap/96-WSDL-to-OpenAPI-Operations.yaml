@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+#
+# Tutorial: WSDL to OpenAPI — Operation Settings
+#
+# Per-operation settings let you override the HTTP method for each WSDL operation.
+# Here getPartners is exposed as GET. The other operations keep the default POST.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 96-WSDL-to-OpenAPI-Operations.yaml
+#    Windows:
+#      membrane.cmd -c 96-WSDL-to-OpenAPI-Operations.yaml
+#
+# 2.) List all partners
+#     curl http://localhost:2000/get-partners
+#
+# 3.) Get a single partner
+#     curl -d '{"id":1}' -H "Content-Type: application/json" http://localhost:2000/get-partner
+
+#
+# 4.) Create a partner
+#     curl -d '{"name":"Dave","birthDate":"1990-01-01","kind":"PERSON","address":{"street":"Oak Ave","houseNumber":"5","postalCode":"54321","city":"Portland","country":"US"}}' \
+#          -H "Content-Type: application/json" http://localhost:2000/create-partner
+
+api:
+  port: 2000
+  flow:
+    - wsdl2openapi:
+        wsdl: partner-service/partner.wsdl
+        operations:
+          getPartners:
+            method: GET
+          getPartner:
+            method: POST
+          createPartner:
+            method: POST
+  target:
+    url: http://localhost:3000/partner-service
+
+---
+include:
+  - partner-service/partner-service.apis.yaml

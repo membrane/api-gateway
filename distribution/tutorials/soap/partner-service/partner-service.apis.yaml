@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+#
+# Partner Service mock
+#
+# Start standalone:
+#   ./membrane.sh -c partner-service/partner-service.apis.yaml
+#
+# Routes by SOAPAction and returns a static SOAP response for each operation.
+
+api:
+  port: 3000
+  test: header.SOAPAction == 'getPartners'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <getPartnersResponse xmlns="http://example.com/partner">
+                <partners>
+                  <partner><id>1</id><name>Alice</name></partner>
+                  <partner><id>2</id><name>Bob</name></partner>
+                  <partner><id>3</id><name>Carol</name></partner>
+                </partners>
+              </getPartnersResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 3000
+  test: header.SOAPAction == 'getPartner'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <getPartnerResponse xmlns="http://example.com/partner">
+                <partner>
+                  <id>1</id>
+                  <name>Alice</name>
+                  <birthDate>1985-03-15</birthDate>
+                  <kind>PERSON</kind>
+                  <active>true</active>
+                  <creditLimit>10000.00</creditLimit>
+                  <address>
+                    <street>Main St</street>
+                    <houseNumber>1</houseNumber>
+                    <postalCode>12345</postalCode>
+                    <city>Springfield</city>
+                    <country>US</country>
+                  </address>
+                </partner>
+              </getPartnerResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 3000
+  test: header.SOAPAction == 'createPartner'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <createPartnerResponse xmlns="http://example.com/partner"/>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200

@@ -29,6 +29,7 @@ import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
 import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.openapi.validators.ValidationErrors;
 import com.predic8.membrane.core.proxies.AbstractRuleKey;
+import com.predic8.membrane.core.proxies.AbstractServiceProxy;
 import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.resolver.ResolverMap;
@@ -366,6 +367,12 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     private String getServiceAddress() {
+        if (proxy instanceof AbstractServiceProxy asp) {
+            String url = asp.getTargetURL();
+            if (url != null && !url.isEmpty()) {
+                return url;
+            }
+        }
         var services = definitions.getServices();
         if (services.isEmpty()) return null;
         var ports = services.getFirst().getPorts();
