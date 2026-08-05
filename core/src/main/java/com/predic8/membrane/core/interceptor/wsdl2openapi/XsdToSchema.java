@@ -348,7 +348,20 @@ public class XsdToSchema {
         Element restriction = findXsdChild(simpleTypeEl, "restriction");
         if (restriction == null) return new StringSchema();
         String base = restriction.getAttribute("base");
-        return base.isEmpty() ? new StringSchema() : resolveTypeRef(base, restriction, schemaRoot);
+        Schema<?> schema = base.isEmpty() ? new StringSchema() : resolveTypeRef(base, restriction, schemaRoot);
+        addEnumValues(restriction, schema);
+        return schema;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addEnumValues(Element restriction, Schema<?> schema) {
+        NodeList children = restriction.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
+            if (!"enumeration".equals(el.getLocalName())) continue;
+            ((Schema<Object>) schema).addEnumItemObject(el.getAttribute("value"));
+        }
     }
 
     /**
@@ -407,21 +420,39 @@ public class XsdToSchema {
 
     private Schema<?> mapPrimitive(String localPart) {
         return switch (localPart) {
-            case "string", "anyURI", "normalizedString", "token", "language",
-                 "date", "dateTime", "time", "gYear", "gMonth", "gDay",
-                 "gYearMonth", "gMonthDay", "duration",
-                 "hexBinary", "base64Binary", "QName", "NOTATION" -> new StringSchema();
-            case "integer", "int", "long", "short", "byte",
+            case "string" -> new StringSchema();
+            case "date" -> withFormat(new StringSchema(), "date");
+            case "dateTime" -> withFormat(new StringSchema(), "date-time");
+            case "base64Binary" -> withFormat(new StringSchema(), "byte");
+            case "hexBinary" -> withFormat(new StringSchema(), "binary");
+            case "anyURI", "normalizedString", "token", "language", "time",
+                 "gYear", "gMonth", "gDay", "gYearMonth", "gMonthDay", "duration",
+                 "QName", "NOTATION" -> withDescription(new StringSchema(), localPart);
+            case "int" -> withFormat(new IntegerSchema(), "int32");
+            case "long" -> withFormat(new IntegerSchema(), "int64");
+            case "integer", "short", "byte",
                  "nonNegativeInteger", "positiveInteger",
                  "nonPositiveInteger", "negativeInteger",
-                 "unsignedInt", "unsignedShort", "unsignedByte", "unsignedLong" -> new IntegerSchema();
-            case "decimal", "float", "double" -> new NumberSchema();
+                 "unsignedInt", "unsignedShort", "unsignedByte", "unsignedLong" -> withDescription(withFormat(new IntegerSchema(), null), localPart);
+            case "float" -> withFormat(new NumberSchema(), "float");
+            case "double" -> withFormat(new NumberSchema(), "double");
+            case "decimal" -> withDescription(new NumberSchema(), localPart);
             case "boolean" -> new BooleanSchema();
             default -> {
                 log.debug("Unknown XSD type '{}', defaulting to string", localPart);
                 yield new StringSchema();
             }
         };
+    }
+
+    private static <T extends Schema<?>> T withFormat(T schema, String format) {
+        schema.setFormat(format);
+        return schema;
+    }
+
+    private static <T extends Schema<?>> T withDescription(T schema, String xsdType) {
+        schema.setDescription("xsd:" + xsdType);
+        return schema;
     }
 
 

@@ -2,9 +2,8 @@
 #
 # Tutorial: WSDL to OpenAPI
 #
-# A SOAP web service described by a WSDL can be automatically transformed into a
-# JSON/HTTP API described by an OpenAPI document. The wsdl2openapi interceptor
-# generates that OpenAPI document from the WSDL and converts incoming JSON
+# A SOAP web service described by a WSDL can be automatically transformed into an API.
+# wsdl2openapi generates an OpenAPI from the WSDL and converts incoming JSON
 # requests to SOAP, and SOAP responses back to JSON.
 #
 # 1.) Start Membrane
@@ -13,11 +12,16 @@
 #    Windows:
 #      membrane.cmd -c 95-WSDL-to-OpenAPI.yaml
 #
-# 2.) Look at the generated OpenAPI document
+# 2.) Look at the generated OpenAPI and the Swagger UI
 #     http://localhost:2000/api-docs
 #
-# 3.) Invoke the JSON-fronted operation
+# 3.) Call the API
 #    curl -d '{"name":"Berlin"}' -H "Content-Type: application/json" http://localhost:2000/get-city
+#
+#    Body is transformed to SOAP and routed to the SOAP service. The address is taken from the WSDL:
+#    <s:address location="http://localhost:2001/city-service"/>
+#
+# 4.) Look at the SOAP messages in the log
 
 api:
   port: 2000
@@ -31,4 +35,7 @@ api:
   path:
     uri: /city-service
   flow:
+    - beautifier: {}
+    - log:
+        label: "****** SOAP Message *******"
     - sampleSoapService: {}

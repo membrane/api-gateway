@@ -64,6 +64,17 @@ class Json2SoapTransformerTest {
     }
 
     @Test
+    void usesS11PrefixForSoap11Envelope() throws Exception {
+        var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
+        var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");
+
+        Document doc = parseXml(soapBytes);
+        Element envelope = doc.getDocumentElement();
+
+        assertEquals("s11", envelope.getPrefix());
+    }
+
+    @Test
     void soapBodyContainsOperationElement() throws Exception {
         var transformer = new Json2SoapTransformer(citiesDefinitions, "getCity");
         var soapBytes = transformer.transform("{\"name\": \"Berlin\"}");

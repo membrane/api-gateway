@@ -104,7 +104,7 @@ class XsdToSchemaTest {
 
     @ParameterizedTest(name = "{0} → {1}")
     @MethodSource
-    void primitiveTypeMapping(String xsdType, Class<?> expectedSchemaClass) {
+    void primitiveTypeMapping(String xsdType, Class<?> expectedSchemaClass, String expectedFormat, String expectedDescription) {
         var schema = convert(converterFor("""
                 <xsd:element name="root">
                   <xsd:complexType><xsd:sequence>
@@ -113,25 +113,31 @@ class XsdToSchemaTest {
                 </xsd:element>
                 """.formatted(xsdType)), "root");
 
-        assertInstanceOf(expectedSchemaClass, fieldOf(schema, "value"));
+        var value = fieldOf(schema, "value");
+        assertInstanceOf(expectedSchemaClass, value);
+        assertEquals(expectedFormat, value.getFormat());
+        assertEquals(expectedDescription, value.getDescription());
     }
 
     static Stream<Arguments> primitiveTypeMapping() {
         return Stream.of(
-                arguments("xsd:string",          StringSchema.class),
-                arguments("xsd:normalizedString", StringSchema.class),
-                arguments("xsd:anyURI",           StringSchema.class),
-                arguments("xsd:date",             StringSchema.class),
-                arguments("xsd:dateTime",         StringSchema.class),
-                arguments("xsd:base64Binary",     StringSchema.class),
-                arguments("xsd:integer",          IntegerSchema.class),
-                arguments("xsd:int",              IntegerSchema.class),
-                arguments("xsd:long",             IntegerSchema.class),
-                arguments("xsd:short",            IntegerSchema.class),
-                arguments("xsd:decimal",          NumberSchema.class),
-                arguments("xsd:float",            NumberSchema.class),
-                arguments("xsd:double",           NumberSchema.class),
-                arguments("xsd:boolean",          BooleanSchema.class)
+                arguments("xsd:string",          StringSchema.class,  null,        null),
+                arguments("xsd:normalizedString", StringSchema.class, null,        "xsd:normalizedString"),
+                arguments("xsd:anyURI",           StringSchema.class, null,        "xsd:anyURI"),
+                arguments("xsd:date",             StringSchema.class, "date",      null),
+                arguments("xsd:dateTime",         StringSchema.class, "date-time", null),
+                arguments("xsd:base64Binary",     StringSchema.class, "byte",      null),
+                arguments("xsd:hexBinary",        StringSchema.class, "binary",    null),
+                arguments("xsd:duration",         StringSchema.class, null,        "xsd:duration"),
+                arguments("xsd:integer",          IntegerSchema.class, null,       "xsd:integer"),
+                arguments("xsd:int",              IntegerSchema.class, "int32",    null),
+                arguments("xsd:long",             IntegerSchema.class, "int64",    null),
+                arguments("xsd:short",            IntegerSchema.class, null,       "xsd:short"),
+                arguments("xsd:unsignedShort",    IntegerSchema.class, null,       "xsd:unsignedShort"),
+                arguments("xsd:decimal",          NumberSchema.class,  null,       "xsd:decimal"),
+                arguments("xsd:float",            NumberSchema.class,  "float",    null),
+                arguments("xsd:double",           NumberSchema.class,  "double",   null),
+                arguments("xsd:boolean",          BooleanSchema.class, null,       null)
         );
     }
 
@@ -359,6 +365,7 @@ class XsdToSchemaTest {
                 """), "account");
 
         assertInstanceOf(StringSchema.class, fieldOf(schema, "status"));
+        assertEquals(List.of("ACTIVE", "INACTIVE"), fieldOf(schema, "status").getEnum());
     }
 
     // ── xsd:simpleContent ─────────────────────────────────────────────────
@@ -484,6 +491,7 @@ class XsdToSchemaTest {
                 """), "record");
 
         assertInstanceOf(StringSchema.class, fieldOf(schema, "@status"));
+        assertEquals(List.of("ACTIVE", "INACTIVE"), fieldOf(schema, "@status").getEnum());
     }
 
     @Test

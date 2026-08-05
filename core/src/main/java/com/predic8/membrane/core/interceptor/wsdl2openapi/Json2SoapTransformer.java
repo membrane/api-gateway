@@ -102,12 +102,13 @@ public class Json2SoapTransformer {
         Document doc = builder.newDocument();
 
         String soapNs = useSoap12() ? SOAP12_NS : SOAP11_NS;
+        String prefix = useSoap12() ? "s12" : "s11";
 
-        Element envelope = doc.createElementNS(soapNs, "soap:Envelope");
-        envelope.setAttribute("xmlns:soap", soapNs);
+        Element envelope = doc.createElementNS(soapNs, prefix + ":Envelope");
+        envelope.setAttribute("xmlns:" + prefix, soapNs);
         doc.appendChild(envelope);
 
-        Element body = doc.createElementNS(soapNs, "soap:Body");
+        Element body = doc.createElementNS(soapNs, prefix + ":Body");
         envelope.appendChild(body);
 
         return doc;
