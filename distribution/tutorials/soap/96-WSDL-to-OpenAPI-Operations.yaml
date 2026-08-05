@@ -16,7 +16,6 @@
 #
 # 3.) Get a single partner
 #     curl -d '{"id":1}' -H "Content-Type: application/json" http://localhost:2000/get-partner
-
 #
 # 4.) Create a partner
 #     curl -d '{"name":"Dave","birthDate":"1990-01-01","kind":"PERSON","address":{"street":"Oak Ave","houseNumber":"5","postalCode":"54321","city":"Portland","country":"US"}}' \
