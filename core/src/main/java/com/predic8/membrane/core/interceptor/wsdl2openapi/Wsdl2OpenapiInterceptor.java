@@ -39,7 +39,11 @@ import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
@@ -95,7 +99,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private String basePath;
     private OperationsConfig operations;
     private Map<String, OperationSettings> operationsByName = Map.of();
-    private final Map<String, String> pathMethodToOperation = new LinkedHashMap<>();
+    record RouteEntry(Pattern pathPattern, List<String> paramNames, String method, String operationName) {}
+    record RouteMatch(String operationName, Map<String, String> pathParams) {}
+
+    private List<RouteEntry> routes = new ArrayList<>();
     private final Map<String, Json2SoapTransformer> requestTransformers = new LinkedHashMap<>();
     private OpenAPIPublisherInterceptor publisher;
     private OpenAPIValidator openApiValidator;
@@ -106,6 +113,12 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     public Wsdl2OpenapiInterceptor() {
         name = "wsdl2openapi";
+    }
+
+    // Package-private — used by tests only
+    Wsdl2OpenapiInterceptor(String basePath, List<RouteEntry> routes) {
+        this.basePath = basePath;
+        this.routes = new ArrayList<>(routes);
     }
 
     @Override
@@ -142,7 +155,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             OperationSettings opSettings = operationsByName.get(op.getName());
             String segment = (opSettings != null && opSettings.getPath() != null) ? opSettings.getPath() : camelToKebab(op.getName());
             String method = (opSettings != null) ? opSettings.getMethod().toUpperCase() : "POST";
-            pathMethodToOperation.put(segment + ":" + method, op.getName());
+            routes.add(new RouteEntry(buildPathPattern(segment), extractParamNames(segment), method, op.getName()));
             requestTransformers.put(op.getName(), new Json2SoapTransformer(definitions, op.getName()));
         }
 
@@ -177,9 +190,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             return outcome;
         }
 
-        String operationName = extractOperationName(exc.getRequest().getUri(), exc.getRequest().getMethod());
-        if (operationName != null && isValidOperation(operationName)) {
-            return handleOperation(exc, operationName);
+        var match = matchRoute(exc.getRequest().getUri(), exc.getRequest().getMethod());
+        if (match.isPresent() && isValidOperation(match.get().operationName())) {
+            return handleOperation(exc, match.get().operationName(), match.get().pathParams());
         }
 
         return CONTINUE;
@@ -286,16 +299,56 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return "/";
     }
 
-    String extractOperationName(String path, String method) {
+    Optional<RouteMatch> matchRoute(String path, String method) {
         String withoutBase = path.replaceFirst("^" + Pattern.quote(basePath), "");
-        if (withoutBase.startsWith("/")) {
-            withoutBase = withoutBase.substring(1);
-        }
+        if (withoutBase.startsWith("/")) withoutBase = withoutBase.substring(1);
         String segment = withoutBase.contains("?") ? withoutBase.substring(0, withoutBase.indexOf('?')) : withoutBase;
-        return pathMethodToOperation.get(segment + ":" + method.toUpperCase());
+        for (var entry : routes) {
+            if (!entry.method().equalsIgnoreCase(method)) continue;
+            Matcher m = entry.pathPattern().matcher(segment);
+            if (m.matches()) {
+                var params = new LinkedHashMap<String, String>();
+                for (int i = 0; i < entry.paramNames().size(); i++) {
+                    params.put(entry.paramNames().get(i), m.group(i + 1));
+                }
+                return Optional.of(new RouteMatch(entry.operationName(), params));
+            }
+        }
+        return Optional.empty();
     }
 
-    private Outcome handleOperation(Exchange exc, String operationName) {
+    static List<String> extractParamNames(String template) {
+        List<String> names = new ArrayList<>();
+        Matcher m = Pattern.compile("\\{([^}]+)}").matcher(template);
+        while (m.find()) names.add(m.group(1));
+        return names;
+    }
+
+    static Pattern buildPathPattern(String template) {
+        StringBuilder sb = new StringBuilder("^");
+        Matcher m = Pattern.compile("\\{[^}]+}").matcher(template);
+        int last = 0;
+        while (m.find()) {
+            sb.append(Pattern.quote(template.substring(last, m.start())));
+            sb.append("([^/]+)");
+            last = m.end();
+        }
+        sb.append(Pattern.quote(template.substring(last)));
+        sb.append("$");
+        return Pattern.compile(sb.toString());
+    }
+
+    private String mergePathParamsIntoJson(String existingBody, Map<String, String> pathParams) throws Exception {
+        if (pathParams.isEmpty()) return existingBody;
+        var merged = new LinkedHashMap<String, Object>(pathParams);
+        if (existingBody != null && !existingBody.isBlank()) {
+            var parsed = new ObjectMapper().readValue(existingBody, new TypeReference<Map<String, Object>>() {});
+            merged.putAll(parsed);
+        }
+        return new ObjectMapper().writeValueAsString(merged);
+    }
+
+    private Outcome handleOperation(Exchange exc, String operationName, Map<String, String> pathParams) {
         OperationSettings opSettings = operationsByName.get(operationName);
         String expectedMethod = opSettings != null ? opSettings.getMethod().toUpperCase() : "POST";
         if (!exc.getRequest().getMethod().equalsIgnoreCase(expectedMethod)) {
@@ -331,7 +384,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                 if (outcome != CONTINUE) return outcome;
             }
 
-            byte[] soapRequest = requestTransformers.get(operationName).transform(exc.getRequest().getBodyAsStringDecoded());
+            String jsonBody = mergePathParamsIntoJson(exc.getRequest().getBodyAsStringDecoded(), pathParams);
+            byte[] soapRequest = requestTransformers.get(operationName).transform(jsonBody);
 
             exc.getRequest().setBodyContent(soapRequest);
             exc.getRequest().setMethod("POST");

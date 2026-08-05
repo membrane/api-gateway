@@ -23,6 +23,7 @@ import io.swagger.v3.oas.models.media.ComposedSchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
@@ -31,12 +32,16 @@ import io.swagger.v3.oas.models.servers.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.extractParamNames;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
@@ -101,7 +106,7 @@ public class Wsdl2OpenApiConverter {
                         }
                         return true;
                     })
-                    .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp.getName(), wsdlOp, "POST")));
+                    .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp.getName(), wsdlOp, "POST", null)));
         } else {
             var wsdlOps = definitions.getPortTypes().stream()
                     .flatMap(pt -> pt.getOperations().stream())
@@ -115,20 +120,20 @@ public class Wsdl2OpenApiConverter {
                 var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
                 var existing = paths.get(pathKey);
                 if (existing != null) {
-                    applyMethod(existing, buildApiOperation(name, wsdlOp, opSettings.getMethod()), opSettings.getMethod());
+                    applyMethod(existing, buildApiOperation(name, wsdlOp, opSettings.getMethod(), opSettings.getPath()), opSettings.getMethod());
                 } else {
-                    paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings.getMethod()));
+                    paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings.getMethod(), opSettings.getPath()));
                 }
             }
         }
         return paths;
     }
 
-    private PathItem buildPathItem(String name, Operation wsdlOp, String method) {
-        return applyMethod(new PathItem(), buildApiOperation(name, wsdlOp, method), method);
+    private PathItem buildPathItem(String name, Operation wsdlOp, String method, String pathTemplate) {
+        return applyMethod(new PathItem(), buildApiOperation(name, wsdlOp, method, pathTemplate), method);
     }
 
-    private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, String method) {
+    private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, String method, String pathTemplate) {
         var inputParts = getInputParts(wsdlOp);
         var headerParts = findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
 
@@ -136,7 +141,14 @@ public class Wsdl2OpenApiConverter {
                 .operationId(name)
                 .summary(name)
                 .responses(buildResponses(wsdlOp));
-        if (hasRequestBody(method)) {
+
+        List<String> pathParamNames = pathTemplate != null ? extractParamNames(pathTemplate) : List.of();
+        if (!pathParamNames.isEmpty()) {
+            pathParamNames.forEach(p ->
+                apiOp.addParametersItem(new Parameter().name(p).in("path").required(true).schema(new StringSchema()))
+            );
+        }
+        if (hasRequestBody(method) && pathParamNames.isEmpty()) {
             apiOp.requestBody(buildRequestBody(getBodyParts(inputParts, headerParts)));
         }
         var headerParameters = buildHeaderParameters(headerParts);

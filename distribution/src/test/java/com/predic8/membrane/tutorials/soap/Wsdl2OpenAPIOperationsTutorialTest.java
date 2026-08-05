@@ -48,14 +48,13 @@ public class Wsdl2OpenAPIOperationsTutorialTest extends AbstractSOAPTutorialTest
     void getPartnerReturnsOnePartner() {
         // @formatter:off
         given()
-            .contentType(JSON)
-            .body("{\"id\":1}")
         .when()
-            .post("http://localhost:2000/get-partner")
+            .get("http://localhost:2000/partners/1")
         .then()
             .statusCode(200)
             .contentType(JSON)
             .body("partner.name", equalTo("Alice"))
+            .body("partner.phoneNumber", equalTo("+4930123456"))
             .body("partner.kind", equalTo("PERSON"));
         // @formatter:on
     }
