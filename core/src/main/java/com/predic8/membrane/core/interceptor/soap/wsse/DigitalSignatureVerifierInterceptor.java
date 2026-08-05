@@ -25,16 +25,15 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import javax.xml.crypto.dsig.Reference;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 import javax.xml.crypto.dsig.dom.DOMValidateContext;
 import java.io.ByteArrayInputStream;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -83,7 +82,6 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
     private List<SignatureReference> requiredReferences = new ArrayList<>();
     private Duration clockSkew = DEFAULT_CLOCK_SKEW;
 
-    private X509TrustManager trustManager;
     private java.security.KeyStore trustKeyStore;
 
     @Override
@@ -98,9 +96,6 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         try {
             trustKeyStore = StaticSSLContext.openKeyStore(
                     trustStore, null, router.getResolverMap(), getBeanBaseLocation());
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            tmf.init(trustKeyStore);
-            trustManager = (X509TrustManager) tmf.getTrustManagers()[0];
         } catch (Exception e) {
             throw new ConfigurationException("Could not load truststore for digitalSignatureVerifier interceptor.", e);
         }
@@ -183,12 +178,39 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         }
     }
 
+    // Validated as a plain PKIX certificate path, not via X509TrustManager.checkServerTrusted:
+    // the latter additionally enforces the TLS server-authentication constraints (serverAuth EKU,
+    // key-exchange-specific key usage), which a signing certificate has no reason to carry.
     private void checkTrusted(X509Certificate[] chain) {
         try {
-            trustManager.checkServerTrusted(chain, chain[0].getPublicKey().getAlgorithm());
-        } catch (CertificateException e) {
+            List<X509Certificate> path = pathBelowTrustAnchors(chain);
+            if (path.isEmpty()) {
+                // The signing certificate is itself a trust anchor - nothing left to validate.
+                return;
+            }
+            PKIXParameters params = new PKIXParameters(trustKeyStore);
+            params.setRevocationEnabled(false);
+            CertPathValidator.getInstance("PKIX").validate(
+                    CertificateFactory.getInstance("X.509").generateCertPath(path), params);
+        } catch (CertPathValidatorException | InvalidAlgorithmParameterException | KeyStoreException
+                 | CertificateException | NoSuchAlgorithmException e) {
             throw new VerificationException("Signing certificate is not trusted: " + e.getMessage());
         }
+    }
+
+    /**
+     * A {@code CertPath} must not contain the trust anchor itself, so drop the anchors the message
+     * supplied at the end of its chain.
+     */
+    private List<X509Certificate> pathBelowTrustAnchors(X509Certificate[] chain) throws KeyStoreException {
+        List<X509Certificate> path = new ArrayList<>();
+        for (X509Certificate cert : chain) {
+            if (trustKeyStore.getCertificateAlias(cert) != null) {
+                break;
+            }
+            path.add(cert);
+        }
+        return path;
     }
 
     // The wsse:SecurityTokenReference path below only ever yields a single (leaf) certificate,
@@ -254,7 +276,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         String valueType = keyIdentifier.getAttribute("ValueType");
         String content = keyIdentifier.getTextContent().replaceAll("\\s", "");
         if (THUMBPRINT_SHA1_VALUE_TYPE.equals(valueType)) {
-            byte[] thumbprint = Base64.getDecoder().decode(content);
+            byte[] thumbprint = decodeBase64(content);
             return findCertificateByThumbprint(thumbprint);
         }
         if (!X509_V3_VALUE_TYPE.equals(valueType)) {
@@ -278,9 +300,20 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
     private static X509Certificate decodeCertificate(String base64) throws CertificateException {
         // Base64.getDecoder() rejects embedded whitespace/line breaks, which the certificate's
         // text content commonly has (e.g. from pretty-printing) - strip it all before decoding.
-        byte[] der = Base64.getDecoder().decode(base64.replaceAll("\\s", ""));
+        byte[] der = decodeBase64(base64.replaceAll("\\s", ""));
         return (X509Certificate) CertificateFactory.getInstance("X.509")
                 .generateCertificate(new ByteArrayInputStream(der));
+    }
+
+    // Base64.getDecoder() signals malformed input with IllegalArgumentException. That content is
+    // attacker-supplied, so it has to end up in the 403 verification-failure path rather than
+    // escaping as an internal error.
+    private static byte[] decodeBase64(String base64) {
+        try {
+            return Base64.getDecoder().decode(base64);
+        } catch (IllegalArgumentException e) {
+            throw new VerificationException("Malformed base64 content in wsse:Security.");
+        }
     }
 
     // Only ds:SignedInfo is protected by ds:SignatureValue. Everything else inside ds:Signature -

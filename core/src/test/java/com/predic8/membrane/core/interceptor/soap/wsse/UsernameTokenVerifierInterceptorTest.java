@@ -123,6 +123,13 @@ class UsernameTokenVerifierInterceptorTest extends AbstractWsseInterceptorTest {
     }
 
     @Test
+    void missingPasswordConfigurationIsRejected() {
+        verifier.setPassword("  ");
+
+        assertThrows(ConfigurationException.class, () -> verifier.init(router));
+    }
+
+    @Test
     void wrongPasswordIsRejected() throws Exception {
         exchangeWithPlainTextToken("alice", "wrong");
 

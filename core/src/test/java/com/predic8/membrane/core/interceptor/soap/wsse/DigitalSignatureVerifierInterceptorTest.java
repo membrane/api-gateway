@@ -293,6 +293,19 @@ class DigitalSignatureVerifierInterceptorTest extends AbstractWsseInterceptorTes
     }
 
     @Test
+    void malformedBase64CertificateIsRejected() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        Document doc = signedAndParsed();
+        ((Element) doc.getElementsByTagNameNS(DS_NS, "X509Certificate").item(0))
+                .setTextContent("not base64!!!");
+        setBody(doc);
+
+        verifierTrusting(TRUSTSTORE, BODY);
+
+        assertAborts(verifier, 403);
+    }
+
+    @Test
     void unknownThumbprintIsRejected() throws Exception {
         exchangeWithBody(SOAP_BODY);
         bodySignerWithKeyIdentifier(KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1).handleRequest(exchange);
