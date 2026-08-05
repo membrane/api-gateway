@@ -13,35 +13,27 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.soap.wsse.UsernameTokenInterceptor.PasswordType;
-import com.predic8.membrane.core.router.DefaultRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.security.MessageDigest;
 import java.util.Base64;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class UsernameTokenInterceptorTest {
+class UsernameTokenInterceptorTest extends AbstractWsseInterceptorTest {
 
-    private static final String SOAP_BODY_NO_HEADER = """
-            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                <soap:Body>
-                    <foo>bar</foo>
-                </soap:Body>
-            </soap:Envelope>
-            """;
+    private static final String PASSWORD_TEXT_TYPE =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText";
+    private static final String PASSWORD_DIGEST_TYPE =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest";
 
     private static final String SOAP_BODY_WITH_HEADER = """
             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -54,110 +46,81 @@ class UsernameTokenInterceptorTest {
             </soap:Envelope>
             """;
 
-    DefaultRouter router;
-    Exchange exchange;
     UsernameTokenInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
-        router = new DefaultRouter();
         interceptor = new UsernameTokenInterceptor();
     }
 
-    private void exchangeWithBody(String body) throws Exception {
-        exchange = new Exchange(null);
-        exchange.setRequest(new Request.Builder()
-                .post("/service")
-                .contentType(TEXT_XML)
-                .body(body)
-                .build());
+    private void exchangeWithCredentialProperties(String body) throws Exception {
+        exchangeWithBody(body);
         exchange.setProperty("apiUser", "spelUser");
         exchange.setProperty("apiPassword", "spelPass");
     }
 
-    private Document parseResultBody() throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        return factory.newDocumentBuilder().parse(exchange.getRequest().getBodyAsStream());
-    }
-
-    private static Element firstByTag(Document doc, String namespace, String localName) {
-        NodeList nodes = doc.getElementsByTagNameNS(namespace, localName);
-        assertEquals(1, nodes.getLength(), "Expected exactly one " + localName + " element");
-        return (Element) nodes.item(0);
+    private Document addTokenAndParse(String body) throws Exception {
+        exchangeWithCredentialProperties(body);
+        interceptor.init(router);
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        return parseBody();
     }
 
     @Test
     void staticCredentialsPlainTextCreatesHeaderAndSecurity() throws Exception {
-        exchangeWithBody(SOAP_BODY_NO_HEADER);
         interceptor.setUsername("bob");
         interceptor.setPassword("secret");
-        interceptor.init(router);
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        Document result = addTokenAndParse(SOAP_BODY);
 
-        Document result = parseResultBody();
-        Element username = firstByTag(result, WSSE_NS, "Username");
+        assertEquals("bob", firstByTag(result, WSSE_NS, "Username").getTextContent());
         Element password = firstByTag(result, WSSE_NS, "Password");
-        assertEquals("bob", username.getTextContent());
         assertEquals("secret", password.getTextContent());
-        assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText",
-                password.getAttribute("Type"));
+        assertEquals(PASSWORD_TEXT_TYPE, password.getAttribute("Type"));
     }
 
     @Test
     void spelExpressionsAreEvaluated() throws Exception {
-        exchangeWithBody(SOAP_BODY_NO_HEADER);
         interceptor.setUsername("${property.apiUser}");
         interceptor.setPassword("${property.apiPassword}");
-        interceptor.init(router);
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        Document result = addTokenAndParse(SOAP_BODY);
 
-        Document result = parseResultBody();
         assertEquals("spelUser", firstByTag(result, WSSE_NS, "Username").getTextContent());
         assertEquals("spelPass", firstByTag(result, WSSE_NS, "Password").getTextContent());
     }
 
     @Test
     void digestPasswordTypeIsVerifiable() throws Exception {
-        exchangeWithBody(SOAP_BODY_NO_HEADER);
         interceptor.setUsername("bob");
         interceptor.setPassword("secret");
         interceptor.setPasswordType(PasswordType.DIGEST);
-        interceptor.init(router);
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        Document result = addTokenAndParse(SOAP_BODY);
 
-        Document result = parseResultBody();
         Element password = firstByTag(result, WSSE_NS, "Password");
         Element nonce = firstByTag(result, WSSE_NS, "Nonce");
         Element created = firstByTag(result, WSU_NS, "Created");
 
-        assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest",
-                password.getAttribute("Type"));
+        assertEquals(PASSWORD_DIGEST_TYPE, password.getAttribute("Type"));
         assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary",
                 nonce.getAttribute("EncodingType"));
 
         MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
         sha1.update(Base64.getDecoder().decode(nonce.getTextContent()));
-        sha1.update(created.getTextContent().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        sha1.update("secret".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        String expectedDigest = Base64.getEncoder().encodeToString(sha1.digest());
+        sha1.update(created.getTextContent().getBytes(UTF_8));
+        sha1.update("secret".getBytes(UTF_8));
 
-        assertEquals(expectedDigest, password.getTextContent());
+        assertEquals(Base64.getEncoder().encodeToString(sha1.digest()), password.getTextContent());
     }
 
     @Test
     void existingHeaderContentIsPreserved() throws Exception {
-        exchangeWithBody(SOAP_BODY_WITH_HEADER);
         interceptor.setUsername("bob");
         interceptor.setPassword("secret");
-        interceptor.init(router);
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        Document result = addTokenAndParse(SOAP_BODY_WITH_HEADER);
 
-        Document result = parseResultBody();
         assertEquals(1, result.getElementsByTagName("existing").getLength());
         assertEquals("keep-me", result.getElementsByTagName("existing").item(0).getTextContent());
         firstByTag(result, WSSE_NS, "UsernameToken");
@@ -165,23 +128,20 @@ class UsernameTokenInterceptorTest {
 
     @Test
     void malformedBodyAborts() throws Exception {
-        exchangeWithBody("not xml at all");
-        interceptor.setUsername("bob");
-        interceptor.setPassword("secret");
-        interceptor.init(router);
-
-        assertEquals(Outcome.ABORT, interceptor.handleRequest(exchange));
-        assertEquals(400, exchange.getResponse().getStatusCode());
+        assertTokenCreationAborts("not xml at all");
     }
 
     @Test
     void xmlWithoutSoapBodyAborts() throws Exception {
-        exchangeWithBody("<foo>bar</foo>");
+        assertTokenCreationAborts("<foo>bar</foo>");
+    }
+
+    private void assertTokenCreationAborts(String body) throws Exception {
         interceptor.setUsername("bob");
         interceptor.setPassword("secret");
+        exchangeWithBody(body);
         interceptor.init(router);
 
-        assertEquals(Outcome.ABORT, interceptor.handleRequest(exchange));
-        assertEquals(400, exchange.getResponse().getStatusCode());
+        assertAborts(interceptor, 400);
     }
 }

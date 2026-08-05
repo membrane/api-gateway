@@ -13,25 +13,38 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.router.DefaultRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import java.security.MessageDigest;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.Base64;
+
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UsernameTokenVerifierInterceptorTest {
+class UsernameTokenVerifierInterceptorTest extends AbstractWsseInterceptorTest {
+
+    private static final String PASSWORD_TEXT_TYPE =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText";
+    private static final String PASSWORD_DIGEST_TYPE =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest";
+
+    private static final String NONCE = "abcdefgh";
 
     private static final String SOAP_TEMPLATE = """
             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                 <soap:Header>
-                    <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                    <wsse:Security xmlns:wsse="%s">
                         <wsse:UsernameToken>
-                            %s
+                            %%s
                         </wsse:UsernameToken>
                     </wsse:Security>
                 </soap:Header>
@@ -39,40 +52,54 @@ class UsernameTokenVerifierInterceptorTest {
                     <foo>bar</foo>
                 </soap:Body>
             </soap:Envelope>
-            """;
+            """.formatted(WSSE_NS);
 
-    DefaultRouter router;
-    Exchange exchange;
     UsernameTokenVerifierInterceptor verifier;
 
     @BeforeEach
     void setUp() {
-        router = new DefaultRouter();
         verifier = new UsernameTokenVerifierInterceptor();
         verifier.setUsername("alice");
         verifier.setPassword("secret");
     }
 
-    private void exchangeWithBody(String body) throws Exception {
-        exchange = new Exchange(null);
-        exchange.setRequest(new Request.Builder()
-                .post("/service")
-                .contentType(TEXT_XML)
-                .body(body)
-                .build());
+    private void exchangeWithToken(String token) throws Exception {
+        exchangeWithBody(SOAP_TEMPLATE.formatted(token));
+        verifier.init(router);
     }
 
-    private void plainTextToken(String username, String password) throws Exception {
-        exchangeWithBody(SOAP_TEMPLATE.formatted("""
+    private void exchangeWithPlainTextToken(String username, String password) throws Exception {
+        exchangeWithToken("""
                 <wsse:Username>%s</wsse:Username>
-                <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#PasswordText">%s</wsse:Password>
-                """.formatted(username, password)));
+                <wsse:Password Type="%s">%s</wsse:Password>
+                """.formatted(username, PASSWORD_TEXT_TYPE, password));
+    }
+
+    /**
+     * A digest token for user {@code alice}, with the digest computed over the given password - so a
+     * password other than the configured one yields a token that must be rejected.
+     */
+    private static String digestTokenForAlice(String password, String created, String nonceBase64) throws Exception {
+        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+        sha1.update(Base64.getDecoder().decode(nonceBase64));
+        sha1.update(created.getBytes(UTF_8));
+        sha1.update(password.getBytes(UTF_8));
+        return """
+                <wsse:Username>alice</wsse:Username>
+                <wsse:Password Type="%s">%s</wsse:Password>
+                <wsse:Nonce>%s</wsse:Nonce>
+                <wsu:Created xmlns:wsu="%s">%s</wsu:Created>
+                """.formatted(PASSWORD_DIGEST_TYPE, Base64.getEncoder().encodeToString(sha1.digest()),
+                nonceBase64, WSU_NS, created);
+    }
+
+    private static String freshDigestTokenForAlice(String password) throws Exception {
+        return digestTokenForAlice(password, Instant.now().toString(), NONCE);
     }
 
     @Test
     void correctPlainTextTokenIsAccepted() throws Exception {
-        plainTextToken("alice", "secret");
-        verifier.init(router);
+        exchangeWithPlainTextToken("alice", "secret");
 
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
     }
@@ -83,36 +110,30 @@ class UsernameTokenVerifierInterceptorTest {
         // "null"/"null" must not be authenticated by it.
         verifier.setUsername("${property.missingUser}");
         verifier.setPassword("${property.missingPassword}");
-        plainTextToken("null", "null");
-        verifier.init(router);
+        exchangeWithPlainTextToken("null", "null");
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(500, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 500);
     }
 
     @Test
     void missingUsernameConfigurationIsRejected() {
         verifier.setUsername("  ");
 
-        assertThrows(com.predic8.membrane.core.util.ConfigurationException.class, () -> verifier.init(router));
+        assertThrows(ConfigurationException.class, () -> verifier.init(router));
     }
 
     @Test
     void wrongPasswordIsRejected() throws Exception {
-        plainTextToken("alice", "wrong");
-        verifier.init(router);
+        exchangeWithPlainTextToken("alice", "wrong");
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void wrongUsernameIsRejected() throws Exception {
-        plainTextToken("mallory", "secret");
-        verifier.init(router);
+        exchangeWithPlainTextToken("mallory", "secret");
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
@@ -124,8 +145,7 @@ class UsernameTokenVerifierInterceptorTest {
                 """);
         verifier.init(router);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(401, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 401);
     }
 
     @Test
@@ -133,102 +153,68 @@ class UsernameTokenVerifierInterceptorTest {
         exchangeWithBody("<foo>bar</foo>");
         verifier.init(router);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(400, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 400);
     }
 
     @Test
     void malformedNonceIsRejectedAsVerificationFailure() throws Exception {
-        exchangeWithBody(SOAP_TEMPLATE.formatted("""
+        exchangeWithToken("""
                 <wsse:Username>alice</wsse:Username>
-                <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">irrelevant</wsse:Password>
+                <wsse:Password Type="%s">irrelevant</wsse:Password>
                 <wsse:Nonce>not-valid-base64!!</wsse:Nonce>
-                <wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">%s</wsu:Created>
-                """.formatted(java.time.Instant.now().toString())));
-        verifier.init(router);
+                <wsu:Created xmlns:wsu="%s">%s</wsu:Created>
+                """.formatted(PASSWORD_DIGEST_TYPE, WSU_NS, Instant.now()));
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
-    }
-
-    private String createDigestToken(String password, String created, String nonceBase64) {
-        try {
-            java.security.MessageDigest sha1 = java.security.MessageDigest.getInstance("SHA-1");
-            sha1.update(java.util.Base64.getDecoder().decode(nonceBase64));
-            sha1.update(created.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            sha1.update(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            String digest = java.util.Base64.getEncoder().encodeToString(sha1.digest());
-            return """
-                    <wsse:Username>alice</wsse:Username>
-                    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest">%s</wsse:Password>
-                    <wsse:Nonce>%s</wsse:Nonce>
-                    <wsu:Created xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">%s</wsu:Created>
-                    """.formatted(digest, nonceBase64, created);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        assertAborts(verifier, 403);
     }
 
     @Test
     void correctDigestTokenIsAccepted() throws Exception {
-        String created = java.time.Instant.now().toString();
-        exchangeWithBody(SOAP_TEMPLATE.formatted(createDigestToken("secret", created, "abcdefgh")));
-        verifier.init(router);
+        exchangeWithToken(freshDigestTokenForAlice("secret"));
 
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
     }
 
     @Test
     void wrongDigestIsRejected() throws Exception {
-        String created = java.time.Instant.now().toString();
-        exchangeWithBody(SOAP_TEMPLATE.formatted(createDigestToken("wrongpassword", created, "abcdefgh")));
-        verifier.init(router);
+        exchangeWithToken(freshDigestTokenForAlice("wrongpassword"));
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void staleCreatedIsRejected() throws Exception {
-        String created = java.time.Instant.now().minus(java.time.Duration.ofHours(1)).toString();
-        exchangeWithBody(SOAP_TEMPLATE.formatted(createDigestToken("secret", created, "abcdefgh")));
-        verifier.init(router);
+        exchangeWithToken(digestTokenForAlice(
+                "secret", Instant.now().minus(Duration.ofHours(1)).toString(), NONCE));
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void replayedNonceIsRejectedOnSecondUse() throws Exception {
-        String created = java.time.Instant.now().toString();
-        String nonce = java.util.Base64.getEncoder().encodeToString("replayed-nonce-1".getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        String tokenBody = createDigestToken("secret", created, nonce);
+        String token = digestTokenForAlice("secret", Instant.now().toString(),
+                Base64.getEncoder().encodeToString("replayed-nonce-1".getBytes(UTF_8)));
 
-        exchangeWithBody(SOAP_TEMPLATE.formatted(tokenBody));
-        verifier.init(router);
+        exchangeWithToken(token);
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
 
         // Same nonce+created replayed in a second, otherwise-identical request.
-        exchangeWithBody(SOAP_TEMPLATE.formatted(tokenBody));
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        exchangeWithToken(token);
+        assertAborts(verifier, 403);
     }
 
     @Test
     void zeroFreshnessWindowIsRejected() {
-        assertThrows(com.predic8.membrane.core.util.ConfigurationException.class,
-                () -> verifier.setFreshnessWindow("PT0S"));
+        assertThrows(ConfigurationException.class, () -> verifier.setFreshnessWindow("PT0S"));
     }
 
     @Test
     void negativeFreshnessWindowIsRejected() {
-        assertThrows(com.predic8.membrane.core.util.ConfigurationException.class,
-                () -> verifier.setFreshnessWindow("PT-5M"));
+        assertThrows(ConfigurationException.class, () -> verifier.setFreshnessWindow("PT-5M"));
     }
 
     @Test
     void malformedFreshnessWindowIsRejected() {
-        assertThrows(java.time.format.DateTimeParseException.class,
-                () -> verifier.setFreshnessWindow("not-a-duration"));
+        assertThrows(DateTimeParseException.class, () -> verifier.setFreshnessWindow("not-a-duration"));
     }
 }

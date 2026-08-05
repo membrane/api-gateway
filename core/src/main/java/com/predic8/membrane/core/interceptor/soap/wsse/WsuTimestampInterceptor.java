@@ -16,30 +16,16 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.SOAPUtil;
-import com.predic8.membrane.core.util.xml.XMLUtil;
-import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getFirstChildByName;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getOrCreateHeader;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getOrCreateSecurity;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
 
 /**
  * @description Adds a WS-Security <code>wsu:Timestamp</code> (<code>Created</code>/<code>Expires</code>)
@@ -62,47 +48,38 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getO
  * </code></pre>
  */
 @MCElement(name = "wsuTimestamp")
-public class WsuTimestampInterceptor extends AbstractInterceptor {
-
-    private static final Logger log = LoggerFactory.getLogger(WsuTimestampInterceptor.class);
+public class WsuTimestampInterceptor extends AbstractSoapDomInterceptor {
 
     private static final Duration DEFAULT_TTL = Duration.ofMinutes(5);
 
     private Duration ttl = DEFAULT_TTL;
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
-        if (!SOAPUtil.analyseSOAPMessage(new XOPReconstitutor(), exc.getRequest()).isSOAP()) {
-            user(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Not a SOAP message.")
-                    .detail("Request body is not XML or does not contain a SOAP body, so no wsu:Timestamp could be added.")
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
+    protected String notSoapDetail() {
+        return "no wsu:Timestamp could be added.";
+    }
 
-        try {
-            Document doc = HardenedXmlParser.getInstance().parse(XMLUtil.getInputSource(exc.getRequest()));
+    @Override
+    protected String internalErrorDetail() {
+        return "Could not add wsu:Timestamp to SOAP body.";
+    }
 
-            Element envelope = doc.getDocumentElement();
-            String soapNs = envelope.getNamespaceURI();
+    @Override
+    protected Outcome handleDocument(Exchange exc, Document doc) throws Exception {
+        Element envelope = doc.getDocumentElement();
+        String soapNs = envelope.getNamespaceURI();
 
-            Element header = getOrCreateHeader(doc, envelope, soapNs);
-            Element security = getOrCreateSecurity(doc, header);
-            Element existingTimestamp;
-            while ((existingTimestamp = getFirstChildByName(security, WSU_NS, "Timestamp")) != null) {
-                security.removeChild(existingTimestamp);
-            }
-            security.insertBefore(createTimestamp(doc), security.getFirstChild());
+        Element security = getOrCreateSecurity(doc, getOrCreateHeader(doc, envelope, soapNs));
+        removeExistingTimestamps(security);
+        security.insertBefore(createTimestamp(doc), security.getFirstChild());
 
-            exc.getRequest().setBodyContent(XMLUtil.xmlNode2String(doc).getBytes(StandardCharsets.UTF_8));
-            return CONTINUE;
-        } catch (Exception e) {
-            log.warn("Could not add wsu:Timestamp to SOAP body", e);
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .detail("Could not add wsu:Timestamp to SOAP body.")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
+        writeBack(exc, doc);
+        return CONTINUE;
+    }
+
+    private static void removeExistingTimestamps(Element security) {
+        for (Element timestamp : getChildrenByName(security, WSU_NS, "Timestamp")) {
+            security.removeChild(timestamp);
         }
     }
 

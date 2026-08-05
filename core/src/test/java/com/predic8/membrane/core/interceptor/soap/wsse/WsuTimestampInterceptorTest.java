@@ -13,80 +13,70 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.router.DefaultRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.time.Duration;
 import java.time.Instant;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
 import static org.junit.jupiter.api.Assertions.*;
 
-class WsuTimestampInterceptorTest {
+class WsuTimestampInterceptorTest extends AbstractWsseInterceptorTest {
 
-    private static final String SOAP_BODY = """
-            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                <soap:Body>
-                    <foo>bar</foo>
-                </soap:Body>
-            </soap:Envelope>
-            """;
-
-    DefaultRouter router;
-    Exchange exchange;
     WsuTimestampInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
-        router = new DefaultRouter();
         interceptor = new WsuTimestampInterceptor();
         interceptor.init(router);
     }
 
-    private void exchangeWithBody(String body) throws Exception {
-        exchange = new Exchange(null);
-        exchange.setRequest(new Request.Builder()
-                .post("/service")
-                .contentType(TEXT_XML)
-                .body(body)
-                .build());
+    private static String envelopeWithTimestamps(String... timestamps) {
+        return """
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Header>
+                        <wsse:Security xmlns:wsse="%s">%s
+                        </wsse:Security>
+                    </soap:Header>
+                    <soap:Body>
+                        <foo>bar</foo>
+                    </soap:Body>
+                </soap:Envelope>
+                """.formatted(WSSE_NS, String.join("", timestamps));
     }
 
-    private Document parseResultBody() throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        return factory.newDocumentBuilder().parse(exchange.getRequest().getBodyAsStream());
+    private static String timestamp(String created, String expires) {
+        return """
+
+                            <wsu:Timestamp xmlns:wsu="%s">
+                                <wsu:Created>%s</wsu:Created>
+                                <wsu:Expires>%s</wsu:Expires>
+                            </wsu:Timestamp>""".formatted(WSU_NS, created, expires);
     }
 
-    private static Element firstByTag(Document doc, String namespace, String localName) {
-        NodeList nodes = doc.getElementsByTagNameNS(namespace, localName);
-        assertEquals(1, nodes.getLength(), "Expected exactly one " + localName + " element");
-        return (Element) nodes.item(0);
+    private Document addTimestampAndParse(String body) throws Exception {
+        exchangeWithBody(body);
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        return parseBody();
+    }
+
+    private static Instant instantAt(Document doc, String localName) {
+        return Instant.parse(firstByTag(doc, WSU_NS, localName).getTextContent());
     }
 
     @Test
     void addsTimestampWithDefaultTtl() throws Exception {
-        exchangeWithBody(SOAP_BODY);
+        Document result = addTimestampAndParse(SOAP_BODY);
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
-
-        Document result = parseResultBody();
-        assertNotNull(firstByTag(result, WSSE_NS, "Security"));
+        firstByTag(result, WSSE_NS, "Security");
         firstByTag(result, WSU_NS, "Timestamp");
 
-        Instant created = Instant.parse(firstByTag(result, WSU_NS, "Created").getTextContent());
-        Instant expires = Instant.parse(firstByTag(result, WSU_NS, "Expires").getTextContent());
-        assertEquals(Duration.ofMinutes(5), Duration.between(created, expires));
+        Instant created = instantAt(result, "Created");
+        assertEquals(Duration.ofMinutes(5), Duration.between(created, instantAt(result, "Expires")));
 
         Instant now = Instant.now();
         assertTrue(created.isBefore(now.plusSeconds(5)) && created.isAfter(now.minusSeconds(30)));
@@ -95,72 +85,35 @@ class WsuTimestampInterceptorTest {
     @Test
     void ttlIsConfigurable() throws Exception {
         interceptor.setTtl("PT1M");
-        exchangeWithBody(SOAP_BODY);
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        Document result = addTimestampAndParse(SOAP_BODY);
 
-        Document result = parseResultBody();
-        Instant created = Instant.parse(firstByTag(result, WSU_NS, "Created").getTextContent());
-        Instant expires = Instant.parse(firstByTag(result, WSU_NS, "Expires").getTextContent());
-        assertEquals(Duration.ofMinutes(1), Duration.between(created, expires));
+        assertEquals(Duration.ofMinutes(1),
+                Duration.between(instantAt(result, "Created"), instantAt(result, "Expires")));
     }
 
     @Test
     void replacesExistingTimestampInsteadOfDuplicatingIt() throws Exception {
-        exchangeWithBody("""
-                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                    <soap:Header>
-                        <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
-                            <wsu:Timestamp xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
-                                <wsu:Created>2000-01-01T00:00:00Z</wsu:Created>
-                                <wsu:Expires>2000-01-01T00:05:00Z</wsu:Expires>
-                            </wsu:Timestamp>
-                        </wsse:Security>
-                    </soap:Header>
-                    <soap:Body>
-                        <foo>bar</foo>
-                    </soap:Body>
-                </soap:Envelope>
-                """);
+        exchangeWithBody(envelopeWithTimestamps(timestamp("2000-01-01T00:00:00Z", "2000-01-01T00:05:00Z")));
 
         Instant before = Instant.now();
         assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
         Instant after = Instant.now();
 
-        Document result = parseResultBody();
-        // firstByTag already asserts exactly one wsu:Timestamp/Created remains.
-        Instant created = Instant.parse(firstByTag(result, WSU_NS, "Created").getTextContent());
-        Instant expires = Instant.parse(firstByTag(result, WSU_NS, "Expires").getTextContent());
+        Document result = parseBody();
+        // firstByTag (via instantAt) already asserts exactly one wsu:Created remains.
+        Instant created = instantAt(result, "Created");
         assertFalse(created.isBefore(before.minusSeconds(1)));
         assertFalse(created.isAfter(after.plusSeconds(1)));
-        assertEquals(Duration.ofMinutes(5), Duration.between(created, expires));
+        assertEquals(Duration.ofMinutes(5), Duration.between(created, instantAt(result, "Expires")));
     }
 
     @Test
     void replacesMultipleExistingTimestampsInsteadOfLeavingOneBehind() throws Exception {
-        exchangeWithBody("""
-                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                    <soap:Header>
-                        <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
-                            <wsu:Timestamp xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
-                                <wsu:Created>2000-01-01T00:00:00Z</wsu:Created>
-                                <wsu:Expires>2000-01-01T00:05:00Z</wsu:Expires>
-                            </wsu:Timestamp>
-                            <wsu:Timestamp xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
-                                <wsu:Created>2000-01-01T00:01:00Z</wsu:Created>
-                                <wsu:Expires>2000-01-01T00:06:00Z</wsu:Expires>
-                            </wsu:Timestamp>
-                        </wsse:Security>
-                    </soap:Header>
-                    <soap:Body>
-                        <foo>bar</foo>
-                    </soap:Body>
-                </soap:Envelope>
-                """);
+        Document result = addTimestampAndParse(envelopeWithTimestamps(
+                timestamp("2000-01-01T00:00:00Z", "2000-01-01T00:05:00Z"),
+                timestamp("2000-01-01T00:01:00Z", "2000-01-01T00:06:00Z")));
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
-
-        Document result = parseResultBody();
         // firstByTag already asserts exactly one wsu:Timestamp/Created remains.
         firstByTag(result, WSU_NS, "Created");
     }
@@ -169,7 +122,6 @@ class WsuTimestampInterceptorTest {
     void nonSoapMessageAborts() throws Exception {
         exchangeWithBody("<foo>bar</foo>");
 
-        assertEquals(Outcome.ABORT, interceptor.handleRequest(exchange));
-        assertEquals(400, exchange.getResponse().getStatusCode());
+        assertAborts(interceptor, 400);
     }
 }

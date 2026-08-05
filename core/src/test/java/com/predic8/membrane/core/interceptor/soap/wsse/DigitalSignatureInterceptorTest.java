@@ -14,246 +14,114 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.router.DefaultRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
-import javax.xml.crypto.dsig.dom.DOMValidateContext;
-import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.crypto.dsig.XMLSignatureFactory;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.security.cert.Certificate;
+import java.security.MessageDigest;
+import java.util.Base64;
 import java.util.List;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
 import static org.junit.jupiter.api.Assertions.*;
 
-class DigitalSignatureInterceptorTest {
-
-    private static final String DS_NS = "http://www.w3.org/2000/09/xmldsig#";
-    private static final String EXC_C14N_NS = "http://www.w3.org/2001/10/xml-exc-c14n#";
-    private static final String KEYSTORE_PASSWORD = "secret";
-    private static final String ALIAS = "key1";
-
-    private static final String SOAP_BODY = """
-            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                <soap:Body>
-                    <foo>bar</foo>
-                </soap:Body>
-            </soap:Envelope>
-            """;
+class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
 
     private static final String SOAP_BODY_WITH_ID = """
             <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
-                            xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+                            xmlns:wsu="%s">
                 <soap:Body wsu:Id="existing-1">
                     <foo>bar</foo>
                 </soap:Body>
             </soap:Envelope>
-            """;
+            """.formatted(WSU_NS);
 
-    DefaultRouter router;
-    Exchange exchange;
     DigitalSignatureInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
-        router = new DefaultRouter();
         interceptor = new DigitalSignatureInterceptor();
-        KeyStore keyStore = new KeyStore();
-        keyStore.setLocation("classpath:/alias-keystore.p12");
-        keyStore.setKeyPassword(KEYSTORE_PASSWORD);
-        keyStore.setKeyAlias(ALIAS);
-        interceptor.setKeyStore(keyStore);
+        interceptor.setKeyStore(signingKeyStore(ALIAS_1));
     }
 
-    private void exchangeWithBody(String body) throws Exception {
-        exchange = new Exchange(null);
-        exchange.setRequest(new Request.Builder()
-                .post("/service")
-                .contentType(TEXT_XML)
-                .body(body)
-                .build());
+    private void initWith(SignatureReference... references) {
+        interceptor.setReferences(List.of(references));
+        interceptor.init(router);
     }
 
-    private Document parseResultBody() throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        return factory.newDocumentBuilder().parse(exchange.getRequest().getBodyAsStream());
+    private Document signAndParse(String body, SignatureReference... references) throws Exception {
+        exchangeWithBody(body);
+        initWith(references);
+        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        return parseBody();
     }
 
-    private static Element firstByTag(Document doc, String namespace, String localName) {
-        NodeList nodes = doc.getElementsByTagNameNS(namespace, localName);
-        assertEquals(1, nodes.getLength(), "Expected exactly one " + localName + " element");
-        return (Element) nodes.item(0);
-    }
-
-    private void assertSignatureIsValid(Document doc) throws Exception {
-        Element signatureElement = firstByTag(doc, DS_NS, "Signature");
-
-        // Re-mark every wsu:Id-bearing element as an XML ID attribute, since that information
-        // is lost when the document is freshly re-parsed for this assertion.
-        NodeList allElements = doc.getElementsByTagNameNS("*", "*");
-        for (int i = 0; i < allElements.getLength(); i++) {
-            if (allElements.item(i) instanceof Element el && !el.getAttributeNS(WSU_NS, "Id").isEmpty()) {
-                el.setIdAttributeNS(WSU_NS, "Id", true);
-            }
-        }
-
-        XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
-        DOMValidateContext valContext = new DOMValidateContext(certificate().getPublicKey(), signatureElement);
-        XMLSignature signature = fac.unmarshalXMLSignature(valContext);
-        assertTrue(signature.validate(valContext), "Signature must validate against the certificate's public key");
-    }
-
-    private Certificate certificate() throws Exception {
-        java.security.KeyStore ks = java.security.KeyStore.getInstance("PKCS12");
-        try (var is = getClass().getResourceAsStream("/alias-keystore.p12")) {
-            ks.load(is, KEYSTORE_PASSWORD.toCharArray());
-        }
-        return ks.getCertificate(ALIAS);
+    private Document signBodyAndParse() throws Exception {
+        return signAndParse(SOAP_BODY, bodyReference());
     }
 
     @Test
     void signsBodyByDefault() throws Exception {
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
+        Document result = signBodyAndParse();
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        firstByTag(result, WSSE_NS, "Security");
+        firstByTag(result, DS_NS, "Signature");
 
-        Document result = parseResultBody();
-        Element security = firstByTag(result, WSSE_NS, "Security");
-        assertNotNull(security);
-        Element signature = firstByTag(result, DS_NS, "Signature");
-        assertNotNull(signature);
-
-        Element body = firstByTag(result, "http://schemas.xmlsoap.org/soap/envelope/", "Body");
-        String bodyId = body.getAttributeNS(WSU_NS, "Id");
+        String bodyId = firstByTag(result, SOAP_NS, "Body").getAttributeNS(WSU_NS, "Id");
         assertFalse(bodyId.isEmpty());
+        assertEquals("#" + bodyId, firstByTag(result, DS_NS, "Reference").getAttribute("URI"));
 
-        Element reference = firstByTag(result, DS_NS, "Reference");
-        assertEquals("#" + bodyId, reference.getAttribute("URI"));
-
-        Element x509Cert = firstByTag(result, DS_NS, "X509Certificate");
-        assertFalse(x509Cert.getTextContent().isBlank());
-        Element signatureValue = firstByTag(result, DS_NS, "SignatureValue");
-        assertFalse(signatureValue.getTextContent().isBlank());
+        assertFalse(firstByTag(result, DS_NS, "X509Certificate").getTextContent().isBlank());
+        assertFalse(firstByTag(result, DS_NS, "SignatureValue").getTextContent().isBlank());
     }
 
     @Test
     void signatureIsCryptographicallyVerifiable() throws Exception {
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
-
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
-
-        assertSignatureIsValid(parseResultBody());
+        assertSignatureIsValid(signBodyAndParse());
     }
 
     @Test
     void multipleReferencesAreAllSigned() throws Exception {
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference bodyRef = new SignatureReference();
-        bodyRef.setBy(SignatureReference.By.BODY);
-        SignatureReference xpathRef = new SignatureReference();
-        xpathRef.setBy(SignatureReference.By.XPATH);
-        xpathRef.setXpath("//*[local-name()='foo']");
-        interceptor.setReferences(List.of(bodyRef, xpathRef));
-        interceptor.init(router);
+        Document result = signAndParse(SOAP_BODY, bodyReference(), xpathReference("//*[local-name()='foo']"));
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
-
-        Document result = parseResultBody();
-        NodeList references = result.getElementsByTagNameNS(DS_NS, "Reference");
-        assertEquals(2, references.getLength());
-
+        assertEquals(2, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
         assertSignatureIsValid(result);
     }
 
     @Test
     void signatureElementHasIdAndInclusiveNamespaces() throws Exception {
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
+        Document result = signBodyAndParse();
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
-
-        Document result = parseResultBody();
-        Element signature = firstByTag(result, DS_NS, "Signature");
-        assertTrue(signature.getAttribute("Id").startsWith("SIG-"));
-
-        Element canonicalizationMethod = firstByTag(result, DS_NS, "CanonicalizationMethod");
-        Element c14nInclusiveNamespaces = (Element) canonicalizationMethod
-                .getElementsByTagNameNS(EXC_C14N_NS, "InclusiveNamespaces").item(0);
-        assertNotNull(c14nInclusiveNamespaces);
-        assertEquals("soap", c14nInclusiveNamespaces.getAttribute("PrefixList"));
-
-        Element transform = firstByTag(result, DS_NS, "Transform");
-        Element transformInclusiveNamespaces = (Element) transform
-                .getElementsByTagNameNS(EXC_C14N_NS, "InclusiveNamespaces").item(0);
-        assertNotNull(transformInclusiveNamespaces);
-        assertEquals("", transformInclusiveNamespaces.getAttribute("PrefixList"));
+        assertTrue(firstByTag(result, DS_NS, "Signature").getAttribute("Id").startsWith("SIG-"));
+        assertEquals("soap", inclusiveNamespacesPrefixList(firstByTag(result, DS_NS, "CanonicalizationMethod")));
+        assertEquals("", inclusiveNamespacesPrefixList(firstByTag(result, DS_NS, "Transform")));
 
         assertSignatureIsValid(result);
     }
 
     @Test
     void securityHeaderGetsMustUnderstand() throws Exception {
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
+        Element security = firstByTag(signBodyAndParse(), WSSE_NS, "Security");
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
-
-        Document result = parseResultBody();
-        Element security = firstByTag(result, WSSE_NS, "Security");
-        assertEquals("1", security.getAttributeNS("http://schemas.xmlsoap.org/soap/envelope/", "mustUnderstand"));
+        assertEquals("1", security.getAttributeNS(SOAP_NS, "mustUnderstand"));
     }
 
     @Test
     void existingWsuIdIsReusedNotOverwritten() throws Exception {
-        exchangeWithBody(SOAP_BODY_WITH_ID);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
+        Document result = signAndParse(SOAP_BODY_WITH_ID, bodyReference());
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
-
-        Document result = parseResultBody();
-        Element reference = firstByTag(result, DS_NS, "Reference");
-        assertEquals("#existing-1", reference.getAttribute("URI"));
+        assertEquals("#existing-1", firstByTag(result, DS_NS, "Reference").getAttribute("URI"));
     }
 
     @Test
     void xpathMatchingZeroElementsAborts() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.XPATH);
-        ref.setXpath("//*[local-name()='doesNotExist']");
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
+        initWith(xpathReference("//*[local-name()='doesNotExist']"));
 
-        assertEquals(Outcome.ABORT, interceptor.handleRequest(exchange));
-        assertEquals(400, exchange.getResponse().getStatusCode());
+        assertAborts(interceptor, 400);
     }
 
     @Test
@@ -266,48 +134,30 @@ class DigitalSignatureInterceptorTest {
                     </soap:Body>
                 </soap:Envelope>
                 """);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.XPATH);
-        ref.setXpath("//*[local-name()='foo']");
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
+        initWith(xpathReference("//*[local-name()='foo']"));
 
-        assertEquals(Outcome.ABORT, interceptor.handleRequest(exchange));
-        assertEquals(400, exchange.getResponse().getStatusCode());
+        assertAborts(interceptor, 400);
     }
 
     @Test
     void passwordIsUsedAsKeyPasswordFallback() throws Exception {
-        // Only `password` set, no distinct `keyPassword` - common for a PKCS12 keystore where
-        // both are the same.
+        // Only `password` set, no distinct `keyPassword` - common for a PKCS12 keystore where both
+        // are the same.
         KeyStore keyStore = new KeyStore();
-        keyStore.setLocation("classpath:/alias-keystore.p12");
+        keyStore.setLocation(KEYSTORE);
+        keyStore.setKeyAlias(ALIAS_1);
         keyStore.setPassword(KEYSTORE_PASSWORD);
-        keyStore.setKeyAlias(ALIAS);
         interceptor.setKeyStore(keyStore);
 
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
-
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
-        assertSignatureIsValid(parseResultBody());
+        assertSignatureIsValid(signBodyAndParse());
     }
 
     @Test
     void signsWithSecurityTokenReferenceKeyInfo() throws Exception {
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
         interceptor.setSecurityTokenReference(new SecurityTokenReferenceKeyInfo());
-        interceptor.init(router);
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        Document result = signBodyAndParse();
 
-        Document result = parseResultBody();
         assertEquals(0, result.getElementsByTagNameNS(DS_NS, "X509Data").getLength());
 
         Element bst = firstByTag(result, WSSE_NS, "BinarySecurityToken");
@@ -317,126 +167,91 @@ class DigitalSignatureInterceptorTest {
         String bstId = bst.getAttributeNS(WSU_NS, "Id");
         assertFalse(bstId.isEmpty());
 
-        Element keyInfo = firstByTag(result, DS_NS, "KeyInfo");
-        assertFalse(keyInfo.getAttribute("Id").isEmpty());
-
-        Element str = firstByTag(result, WSSE_NS, "SecurityTokenReference");
-        assertFalse(str.getAttributeNS(WSU_NS, "Id").isEmpty());
-
-        Element strReference = firstByTag(result, WSSE_NS, "Reference");
-        assertEquals("#" + bstId, strReference.getAttribute("URI"));
+        assertFalse(firstByTag(result, DS_NS, "KeyInfo").getAttribute("Id").isEmpty());
+        assertFalse(firstByTag(result, WSSE_NS, "SecurityTokenReference").getAttributeNS(WSU_NS, "Id").isEmpty());
+        assertEquals("#" + bstId, firstByTag(result, WSSE_NS, "Reference").getAttribute("URI"));
 
         assertSignatureIsValid(result);
     }
 
     @Test
     void rejectsBothX509DataAndSecurityTokenReference() {
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
         interceptor.setX509Data(new X509DataKeyInfo());
         interceptor.setSecurityTokenReference(new SecurityTokenReferenceKeyInfo());
 
-        assertThrows(RuntimeException.class, () -> interceptor.init(router));
+        assertThrows(RuntimeException.class, () -> initWith(bodyReference()));
     }
 
     @Test
     void rejectsSecurityTokenReferenceAndKeyIdentifier() {
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
         interceptor.setSecurityTokenReference(new SecurityTokenReferenceKeyInfo());
         interceptor.setKeyIdentifier(new KeyIdentifierKeyInfo());
 
-        assertThrows(RuntimeException.class, () -> interceptor.init(router));
+        assertThrows(RuntimeException.class, () -> initWith(bodyReference()));
     }
 
     @Test
     void signsWithKeyIdentifierX509V3() throws Exception {
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        KeyIdentifierKeyInfo keyIdentifier = new KeyIdentifierKeyInfo();
-        keyIdentifier.setValueType(KeyIdentifierKeyInfo.ValueType.X509_V3);
-        interceptor.setKeyIdentifier(keyIdentifier);
-        interceptor.init(router);
+        useKeyIdentifier(KeyIdentifierKeyInfo.ValueType.X509_V3);
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        Document result = signBodyAndParse();
 
-        Document result = parseResultBody();
         assertEquals(0, result.getElementsByTagNameNS(DS_NS, "X509Data").getLength());
         assertEquals(0, result.getElementsByTagNameNS(WSSE_NS, "BinarySecurityToken").getLength());
 
-        Element keyIdentifierEl = firstByTag(result, WSSE_NS, "KeyIdentifier");
+        Element keyIdentifier = firstByTag(result, WSSE_NS, "KeyIdentifier");
         assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3",
-                keyIdentifierEl.getAttribute("ValueType"));
-        assertFalse(keyIdentifierEl.getTextContent().isBlank());
+                keyIdentifier.getAttribute("ValueType"));
+        assertFalse(keyIdentifier.getTextContent().isBlank());
 
         assertSignatureIsValid(result);
     }
 
     @Test
     void signsWithKeyIdentifierThumbprintSha1() throws Exception {
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        KeyIdentifierKeyInfo keyIdentifier = new KeyIdentifierKeyInfo();
-        keyIdentifier.setValueType(KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1);
-        interceptor.setKeyIdentifier(keyIdentifier);
-        interceptor.init(router);
+        useKeyIdentifier(KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1);
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        Document result = signBodyAndParse();
 
-        Document result = parseResultBody();
-        Element keyIdentifierEl = firstByTag(result, WSSE_NS, "KeyIdentifier");
+        Element keyIdentifier = firstByTag(result, WSSE_NS, "KeyIdentifier");
         assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.1#ThumbprintSHA1",
-                keyIdentifierEl.getAttribute("ValueType"));
+                keyIdentifier.getAttribute("ValueType"));
 
-        java.security.MessageDigest sha1 = java.security.MessageDigest.getInstance("SHA-1");
-        String expectedThumbprint = java.util.Base64.getEncoder().encodeToString(sha1.digest(certificate().getEncoded()));
-        assertEquals(expectedThumbprint, keyIdentifierEl.getTextContent());
+        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+        assertEquals(Base64.getEncoder().encodeToString(sha1.digest(certificate(ALIAS_1).getEncoded())),
+                keyIdentifier.getTextContent());
 
         assertSignatureIsValid(result);
+    }
+
+    private void useKeyIdentifier(KeyIdentifierKeyInfo.ValueType valueType) {
+        KeyIdentifierKeyInfo keyIdentifier = new KeyIdentifierKeyInfo();
+        keyIdentifier.setValueType(valueType);
+        interceptor.setKeyIdentifier(keyIdentifier);
     }
 
     @Test
     void invalidKeyAliasFailsAtInit() {
         interceptor.getKeyStore().setKeyAlias("nonexistent");
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
 
-        assertThrows(RuntimeException.class, () -> interceptor.init(router));
+        assertThrows(RuntimeException.class, () -> initWith(bodyReference()));
     }
 
     @Test
     void nonSoapMessageAborts() throws Exception {
         exchangeWithBody("<foo>bar</foo>");
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
+        initWith(bodyReference());
 
-        assertEquals(Outcome.ABORT, interceptor.handleRequest(exchange));
-        assertEquals(400, exchange.getResponse().getStatusCode());
+        assertAborts(interceptor, 400);
     }
 
     @Test
     void defaultAlgorithmsAreApplied() throws Exception {
-        exchangeWithBody(SOAP_BODY);
-        SignatureReference ref = new SignatureReference();
-        ref.setBy(SignatureReference.By.BODY);
-        interceptor.setReferences(List.of(ref));
-        interceptor.init(router);
+        Document result = signBodyAndParse();
 
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
-
-        Document result = parseResultBody();
-        Element signatureMethod = firstByTag(result, DS_NS, "SignatureMethod");
-        assertEquals("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", signatureMethod.getAttribute("Algorithm"));
-        Element canonicalizationMethod = firstByTag(result, DS_NS, "CanonicalizationMethod");
-        assertEquals("http://www.w3.org/2001/10/xml-exc-c14n#", canonicalizationMethod.getAttribute("Algorithm"));
+        assertEquals("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+                firstByTag(result, DS_NS, "SignatureMethod").getAttribute("Algorithm"));
+        assertEquals(EXC_C14N_NS,
+                firstByTag(result, DS_NS, "CanonicalizationMethod").getAttribute("Algorithm"));
     }
 }

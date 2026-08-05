@@ -16,17 +16,10 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.SOAPUtil;
-import com.predic8.membrane.core.util.xml.XMLUtil;
-import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -38,8 +31,9 @@ import java.time.format.DateTimeParseException;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
@@ -65,12 +59,8 @@ import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SER
  * </code></pre>
  */
 @MCElement(name = "usernameTokenVerifier")
-public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
+public class UsernameTokenVerifierInterceptor extends AbstractSoapDomInterceptor {
 
-    private static final Logger log = LoggerFactory.getLogger(UsernameTokenVerifierInterceptor.class);
-
-    private static final String PASSWORD_DIGEST_TYPE =
-            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordDigest";
     private static final Duration DEFAULT_FRESHNESS_WINDOW = Duration.ofMinutes(5);
 
     private String username;
@@ -85,7 +75,7 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
     private static final int MAX_REMEMBERED_NONCES = 100_000;
 
     private final Map<String, Instant> seenNonces = new ConcurrentHashMap<>();
-    private final java.util.concurrent.atomic.AtomicLong lastPurgeEpochSecond = new java.util.concurrent.atomic.AtomicLong();
+    private final AtomicLong lastPurgeEpochSecond = new AtomicLong();
 
     @Override
     public void init() {
@@ -101,33 +91,27 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
-        if (!SOAPUtil.analyseSOAPMessage(new XOPReconstitutor(), exc.getRequest()).isSOAP()) {
-            user(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Not a SOAP message.")
-                    .detail("Request body is not XML or does not contain a SOAP body, so no wsse:UsernameToken could be verified.")
+    protected String notSoapDetail() {
+        return "no wsse:UsernameToken could be verified.";
+    }
+
+    @Override
+    protected String internalErrorDetail() {
+        return "Could not verify wsse:UsernameToken on SOAP message.";
+    }
+
+    @Override
+    protected Outcome handleDocument(Exchange exc, Document doc) throws Exception {
+        Element usernameToken = findUsernameToken(doc);
+        if (usernameToken == null) {
+            security(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("UsernameToken missing.")
+                    .status(401)
+                    .detail("Request has no wsse:Security/wsse:UsernameToken to verify.")
                     .buildAndSetResponse(exc);
             return ABORT;
         }
-
         try {
-            Document doc = HardenedXmlParser.getInstance().parse(XMLUtil.getInputSource(exc.getRequest()));
-
-            Element envelope = doc.getDocumentElement();
-            String soapNs = envelope.getNamespaceURI();
-
-            Element header = getFirstChildByName(envelope, soapNs, "Header");
-            Element securityHeader = header == null ? null : getFirstChildByName(header, WSSE_NS, "Security");
-            Element usernameToken = securityHeader == null ? null : getFirstChildByName(securityHeader, WSSE_NS, "UsernameToken");
-            if (usernameToken == null) {
-                security(router.getConfiguration().isProduction(), getDisplayName())
-                        .title("UsernameToken missing.")
-                        .status(401)
-                        .detail("Request has no wsse:Security/wsse:UsernameToken to verify.")
-                        .buildAndSetResponse(exc);
-                return ABORT;
-            }
-
             verify(exc, usernameToken);
             return CONTINUE;
         } catch (VerificationException e) {
@@ -137,14 +121,14 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
                     .detail(e.getMessage())
                     .buildAndSetResponse(exc);
             return ABORT;
-        } catch (Exception e) {
-            log.warn("Could not verify wsse:UsernameToken on SOAP body", e);
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .detail("Could not verify wsse:UsernameToken on SOAP message.")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
         }
+    }
+
+    private static Element findUsernameToken(Document doc) {
+        Element envelope = doc.getDocumentElement();
+        Element header = getFirstChildByName(envelope, envelope.getNamespaceURI(), "Header");
+        Element securityHeader = header == null ? null : getFirstChildByName(header, WSSE_NS, "Security");
+        return securityHeader == null ? null : getFirstChildByName(securityHeader, WSSE_NS, "UsernameToken");
     }
 
     private void verify(Exchange exc, Element usernameToken) throws Exception {
@@ -158,38 +142,47 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
         requireResolved(expectedUsername, "username");
         requireResolved(expectedPassword, "password");
 
-        Element usernameEl = getFirstChildByName(usernameToken, WSSE_NS, "Username");
-        String actualUsername = usernameEl == null ? "" : usernameEl.getTextContent();
-        if (!constantTimeEquals(expectedUsername, actualUsername)) {
-            throw new VerificationException("Unknown username.");
-        }
-
-        Element passwordEl = getFirstChildByName(usernameToken, WSSE_NS, "Password");
-        if (passwordEl == null) {
-            throw new VerificationException("wsse:UsernameToken has no wsse:Password.");
-        }
+        checkUsername(usernameToken, expectedUsername);
 
         Element nonceEl = getFirstChildByName(usernameToken, WSSE_NS, "Nonce");
         Element createdEl = getFirstChildByName(usernameToken, WSU_NS, "Created");
         Instant created = createdEl == null ? null : parseCreated(createdEl.getTextContent());
 
-        if (PASSWORD_DIGEST_TYPE.equals(passwordEl.getAttribute("Type"))) {
-            if (nonceEl == null || created == null) {
-                throw new VerificationException("wsse:Password of type PasswordDigest requires wsse:Nonce and wsu:Created.");
-            }
-            String expectedDigest = computeDigest(decodeNonce(nonceEl.getTextContent()), createdEl.getTextContent(), expectedPassword);
-            if (!constantTimeEquals(expectedDigest, passwordEl.getTextContent())) {
-                throw new VerificationException("Password digest does not match.");
-            }
-        } else if (!constantTimeEquals(expectedPassword, passwordEl.getTextContent())) {
-            throw new VerificationException("Password does not match.");
-        }
+        checkPassword(usernameToken, expectedPassword, nonceEl, createdEl == null ? null : createdEl.getTextContent());
 
         if (created != null) {
             checkFreshness(created);
         }
         if (nonceEl != null && created != null) {
             checkNonceNotReplayed(expectedUsername, nonceEl.getTextContent(), created);
+        }
+    }
+
+    private static void checkUsername(Element usernameToken, String expectedUsername) {
+        Element usernameEl = getFirstChildByName(usernameToken, WSSE_NS, "Username");
+        if (!constantTimeEquals(expectedUsername, usernameEl == null ? "" : usernameEl.getTextContent())) {
+            throw new VerificationException("Unknown username.");
+        }
+    }
+
+    private static void checkPassword(Element usernameToken, String expectedPassword,
+                                      Element nonceEl, String created) throws Exception {
+        Element passwordEl = getFirstChildByName(usernameToken, WSSE_NS, "Password");
+        if (passwordEl == null) {
+            throw new VerificationException("wsse:UsernameToken has no wsse:Password.");
+        }
+        if (!PASSWORD_DIGEST_TYPE.equals(passwordEl.getAttribute("Type"))) {
+            if (!constantTimeEquals(expectedPassword, passwordEl.getTextContent())) {
+                throw new VerificationException("Password does not match.");
+            }
+            return;
+        }
+        if (nonceEl == null || created == null) {
+            throw new VerificationException("wsse:Password of type PasswordDigest requires wsse:Nonce and wsu:Created.");
+        }
+        String expectedDigest = usernameTokenDigest(decodeNonce(nonceEl.getTextContent()), created, expectedPassword);
+        if (!constantTimeEquals(expectedDigest, passwordEl.getTextContent())) {
+            throw new VerificationException("Password digest does not match.");
         }
     }
 
@@ -252,25 +245,11 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
         }
     }
 
-    private static String computeDigest(byte[] nonce, String created, String password) throws Exception {
-        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-        sha1.update(nonce);
-        sha1.update(created.getBytes(StandardCharsets.UTF_8));
-        sha1.update(password.getBytes(StandardCharsets.UTF_8));
-        return Base64.getEncoder().encodeToString(sha1.digest());
-    }
-
     private static boolean constantTimeEquals(String expected, String actual) {
         if (expected == null || actual == null) {
             return expected == actual;
         }
         return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), actual.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private static class VerificationException extends RuntimeException {
-        VerificationException(String message) {
-            super(message);
-        }
     }
 
     public String getUsername() {

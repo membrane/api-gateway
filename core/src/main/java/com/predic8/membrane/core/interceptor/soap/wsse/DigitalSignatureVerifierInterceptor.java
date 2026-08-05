@@ -18,16 +18,9 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.TrustStore;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.ConfigurationException;
-import com.predic8.membrane.core.util.SOAPUtil;
-import com.predic8.membrane.core.util.xml.XMLUtil;
-import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -44,12 +37,11 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
@@ -81,9 +73,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
  * </code></pre>
  */
 @MCElement(name = "digitalSignatureVerifier")
-public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
-
-    private static final Logger log = LoggerFactory.getLogger(DigitalSignatureVerifierInterceptor.class);
+public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomInterceptor {
 
     private static final String DS_NS = "http://www.w3.org/2000/09/xmldsig#";
 
@@ -117,30 +107,30 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
-        if (!SOAPUtil.analyseSOAPMessage(new XOPReconstitutor(), exc.getRequest()).isSOAP()) {
-            user(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Not a SOAP message.")
-                    .detail("Request body is not XML or does not contain a SOAP body, so it could not be verified.")
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
+    protected String notSoapDetail() {
+        return "it could not be verified.";
+    }
+
+    @Override
+    protected String internalErrorDetail() {
+        return "Could not verify signature on SOAP message.";
+    }
+
+    @Override
+    protected Outcome handleDocument(Exchange exc, Document doc) throws Exception {
+        Element envelope = doc.getDocumentElement();
+        // A freshly (DTD-less) parsed document doesn't know which attribute is an XML ID, so
+        // same-document "#id" dereferencing - both the JSR-105 signature validation below and
+        // getElementById-style lookups - would otherwise fail to resolve anything.
+        markWsuIdAttributes(envelope);
+
+        String soapNs = envelope.getNamespaceURI();
+        Element header = getFirstChildByName(envelope, soapNs, "Header");
+        Element security = header == null ? null : getFirstChildByName(header, WSSE_NS, "Security");
 
         try {
-            Document doc = HardenedXmlParser.getInstance().parse(XMLUtil.getInputSource(exc.getRequest()));
-            // A freshly (DTD-less) parsed document doesn't know which attribute is an XML ID, so
-            // same-document "#id" dereferencing - both the JSR-105 signature validation below and
-            // getElementById-style lookups - would otherwise fail to resolve anything.
-            markWsuIdAttributes(doc.getDocumentElement());
-
-            Element envelope = doc.getDocumentElement();
-            String soapNs = envelope.getNamespaceURI();
-
-            Element header = getFirstChildByName(envelope, soapNs, "Header");
-            Element security = header == null ? null : getFirstChildByName(header, WSSE_NS, "Security");
-
-            NodeList signatureNodes = security == null ? null : security.getElementsByTagNameNS(DS_NS, "Signature");
-            if (security == null || signatureNodes.getLength() == 0) {
+            Element signatureElement = security == null ? null : findSingleSignature(security);
+            if (signatureElement == null) {
                 security(router.getConfiguration().isProduction(), getDisplayName())
                         .title("Signature missing.")
                         .status(401)
@@ -148,31 +138,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
-            if (signatureNodes.getLength() > 1) {
-                throw new VerificationException("More than one ds:Signature element found; rejecting as ambiguous.");
-            }
-            Element signatureElement = (Element) signatureNodes.item(0);
-            rejectUnsignedSignatureContent(signatureElement);
-
-            X509Certificate[] chain = resolveCertificateChain(doc, signatureElement);
-
-            XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
-            DOMValidateContext valContext = new DOMValidateContext(chain[0].getPublicKey(), signatureElement);
-            XMLSignature signature = fac.unmarshalXMLSignature(valContext);
-            if (!signature.validate(valContext)) {
-                throw new VerificationException("Signature is not cryptographically valid.");
-            }
-
-            try {
-                trustManager.checkServerTrusted(chain, chain[0].getPublicKey().getAlgorithm());
-            } catch (CertificateException e) {
-                throw new VerificationException("Signing certificate is not trusted: " + e.getMessage());
-            }
-
-            for (SignatureReference required : requiredReferences) {
-                checkRequiredReference(doc, envelope, security, soapNs, signature, required);
-            }
-
+            verify(doc, envelope, security, soapNs, signatureElement);
             return CONTINUE;
         } catch (VerificationException | WsSecurityXml.ReferenceResolutionException e) {
             security(router.getConfiguration().isProduction(), getDisplayName())
@@ -181,13 +147,47 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
                     .detail(e.getMessage())
                     .buildAndSetResponse(exc);
             return ABORT;
-        } catch (Exception e) {
-            log.warn("Could not verify ds:Signature on SOAP body", e);
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .detail("Could not verify signature on SOAP message.")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
+        }
+    }
+
+    /**
+     * @return the single {@code ds:Signature} inside {@code wsse:Security}, or null if there is none
+     */
+    private static Element findSingleSignature(Element security) {
+        NodeList signatureNodes = security.getElementsByTagNameNS(DS_NS, "Signature");
+        if (signatureNodes.getLength() == 0) {
+            return null;
+        }
+        if (signatureNodes.getLength() > 1) {
+            throw new VerificationException("More than one ds:Signature element found; rejecting as ambiguous.");
+        }
+        return (Element) signatureNodes.item(0);
+    }
+
+    private void verify(Document doc, Element envelope, Element security, String soapNs, Element signatureElement)
+            throws Exception {
+        rejectUnsignedSignatureContent(signatureElement);
+
+        X509Certificate[] chain = resolveCertificateChain(doc, signatureElement);
+
+        DOMValidateContext valContext = new DOMValidateContext(chain[0].getPublicKey(), signatureElement);
+        XMLSignature signature = XMLSignatureFactory.getInstance("DOM").unmarshalXMLSignature(valContext);
+        if (!signature.validate(valContext)) {
+            throw new VerificationException("Signature is not cryptographically valid.");
+        }
+
+        checkTrusted(chain);
+
+        for (SignatureReference required : requiredReferences) {
+            checkRequiredReference(doc, envelope, security, soapNs, signature, required);
+        }
+    }
+
+    private void checkTrusted(X509Certificate[] chain) {
+        try {
+            trustManager.checkServerTrusted(chain, chain[0].getPublicKey().getAlgorithm());
+        } catch (CertificateException e) {
+            throw new VerificationException("Signing certificate is not trusted: " + e.getMessage());
         }
     }
 
@@ -203,42 +203,48 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
 
         Element x509Data = getFirstChildByName(keyInfo, DS_NS, "X509Data");
         if (x509Data != null) {
-            List<Element> certElements = getChildrenByName(x509Data, DS_NS, "X509Certificate");
-            if (certElements.isEmpty()) {
-                throw new VerificationException("ds:X509Data has no ds:X509Certificate.");
-            }
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            X509Certificate[] chain = new X509Certificate[certElements.size()];
-            for (int i = 0; i < certElements.size(); i++) {
-                chain[i] = decodeCertificate(cf, certElements.get(i).getTextContent());
-            }
-            return chain;
+            return chainFromX509Data(x509Data);
         }
 
         Element str = getFirstChildByName(keyInfo, WSSE_NS, "SecurityTokenReference");
         if (str != null) {
-            Element keyIdentifier = getFirstChildByName(str, WSSE_NS, "KeyIdentifier");
-            if (keyIdentifier != null) {
-                return new X509Certificate[]{resolveByKeyIdentifier(keyIdentifier)};
-            }
-
-            Element strReference = getFirstChildByName(str, WSSE_NS, "Reference");
-            if (strReference == null) {
-                throw new VerificationException("wsse:SecurityTokenReference has no wsse:Reference or wsse:KeyIdentifier.");
-            }
-            String uri = strReference.getAttribute("URI");
-            if (!uri.startsWith("#")) {
-                throw new VerificationException("wsse:Reference URI must be a same-document reference.");
-            }
-            Element token = resolveUniqueElementById(doc, uri.substring(1));
-            if (!(WSSE_NS.equals(token.getNamespaceURI()) && "BinarySecurityToken".equals(token.getLocalName()))) {
-                throw new VerificationException("wsse:Reference does not point at a wsse:BinarySecurityToken.");
-            }
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            return new X509Certificate[]{decodeCertificate(cf, token.getTextContent())};
+            return new X509Certificate[]{certificateFromSecurityTokenReference(doc, str)};
         }
 
         throw new VerificationException("Unsupported ds:KeyInfo shape: expected ds:X509Data or wsse:SecurityTokenReference.");
+    }
+
+    private static X509Certificate[] chainFromX509Data(Element x509Data) throws Exception {
+        List<Element> certElements = getChildrenByName(x509Data, DS_NS, "X509Certificate");
+        if (certElements.isEmpty()) {
+            throw new VerificationException("ds:X509Data has no ds:X509Certificate.");
+        }
+        X509Certificate[] chain = new X509Certificate[certElements.size()];
+        for (int i = 0; i < certElements.size(); i++) {
+            chain[i] = decodeCertificate(certElements.get(i).getTextContent());
+        }
+        return chain;
+    }
+
+    private X509Certificate certificateFromSecurityTokenReference(Document doc, Element str) throws Exception {
+        Element keyIdentifier = getFirstChildByName(str, WSSE_NS, "KeyIdentifier");
+        if (keyIdentifier != null) {
+            return resolveByKeyIdentifier(keyIdentifier);
+        }
+
+        Element strReference = getFirstChildByName(str, WSSE_NS, "Reference");
+        if (strReference == null) {
+            throw new VerificationException("wsse:SecurityTokenReference has no wsse:Reference or wsse:KeyIdentifier.");
+        }
+        String uri = strReference.getAttribute("URI");
+        if (!uri.startsWith("#")) {
+            throw new VerificationException("wsse:Reference URI must be a same-document reference.");
+        }
+        Element token = resolveUniqueElementById(doc, uri.substring(1));
+        if (!(WSSE_NS.equals(token.getNamespaceURI()) && "BinarySecurityToken".equals(token.getLocalName()))) {
+            throw new VerificationException("wsse:Reference does not point at a wsse:BinarySecurityToken.");
+        }
+        return decodeCertificate(token.getTextContent());
     }
 
     // Unlike ds:X509Data/wsse:BinarySecurityToken (which carry the certificate itself), a
@@ -254,28 +260,27 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
         if (!X509_V3_VALUE_TYPE.equals(valueType)) {
             throw new VerificationException("Unsupported wsse:KeyIdentifier ValueType: \"" + valueType + "\".");
         }
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        return decodeCertificate(cf, content);
+        return decodeCertificate(content);
     }
 
     private X509Certificate findCertificateByThumbprint(byte[] thumbprint) throws Exception {
-        java.security.MessageDigest sha1 = java.security.MessageDigest.getInstance("SHA-1");
-        java.util.Enumeration<String> aliases = trustKeyStore.aliases();
+        Enumeration<String> aliases = trustKeyStore.aliases();
         while (aliases.hasMoreElements()) {
             String alias = aliases.nextElement();
             if (trustKeyStore.getCertificate(alias) instanceof X509Certificate cert
-                    && java.util.Arrays.equals(thumbprint, sha1.digest(cert.getEncoded()))) {
+                    && Arrays.equals(thumbprint, sha1Thumbprint(cert))) {
                 return cert;
             }
         }
         throw new VerificationException("No certificate in the truststore matches the wsse:KeyIdentifier thumbprint.");
     }
 
-    private static X509Certificate decodeCertificate(CertificateFactory cf, String base64) throws CertificateException {
+    private static X509Certificate decodeCertificate(String base64) throws CertificateException {
         // Base64.getDecoder() rejects embedded whitespace/line breaks, which the certificate's
         // text content commonly has (e.g. from pretty-printing) - strip it all before decoding.
         byte[] der = Base64.getDecoder().decode(base64.replaceAll("\\s", ""));
-        return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(der));
+        return (X509Certificate) CertificateFactory.getInstance("X.509")
+                .generateCertificate(new ByteArrayInputStream(der));
     }
 
     // Only ds:SignedInfo is protected by ds:SignatureValue. Everything else inside ds:Signature -
@@ -322,17 +327,15 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
         // ds:SignatureValue, so a DOM-wide search would also accept an attacker-planted
         // ds:Reference sitting in unsigned ds:Object/ds:Manifest content, letting a wrapped message
         // declare its own decoy as "covered".
-        boolean covered = false;
-        for (Object reference : signature.getSignedInfo().getReferences()) {
-            if (reference instanceof Reference ref && ("#" + expectedId).equals(ref.getURI())) {
-                covered = true;
-                break;
-            }
-        }
-        if (!covered) {
+        if (!isCoveredBy(signature, expectedId)) {
             throw new VerificationException(
                     "Required element (" + required.getBy() + ", Id=" + expectedId + ") is not covered by any ds:Reference.");
         }
+    }
+
+    private static boolean isCoveredBy(XMLSignature signature, String expectedId) {
+        return signature.getSignedInfo().getReferences().stream()
+                .anyMatch(reference -> reference instanceof Reference ref && ("#" + expectedId).equals(ref.getURI()));
     }
 
     // Signed-Timestamp is the standard WS-Security defense against replaying a captured,
@@ -361,7 +364,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
             return null;
         }
         try {
-            return java.time.OffsetDateTime.parse(el.getTextContent().trim()).toInstant();
+            return OffsetDateTime.parse(el.getTextContent().trim()).toInstant();
         } catch (DateTimeParseException e) {
             throw new VerificationException("wsu:Timestamp/wsu:" + localName + " is not a valid xs:dateTime: " + el.getTextContent());
         }
@@ -374,7 +377,11 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
 
     private static Element resolveUniqueElementById(Document doc, String id) {
         List<Element> matches = new ArrayList<>();
-        collectElementsById(doc.getDocumentElement(), id, matches);
+        forEachDescendantElement(doc.getDocumentElement(), element -> {
+            if (id.equals(idOf(element))) {
+                matches.add(element);
+            }
+        });
         if (matches.isEmpty()) {
             throw new VerificationException("No element found with Id \"" + id + "\".");
         }
@@ -384,34 +391,12 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
         return matches.getFirst();
     }
 
-    private static void collectElementsById(Element element, String id, List<Element> out) {
-        if (id.equals(idOf(element))) {
-            out.add(element);
-        }
-        NodeList children = element.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            if (children.item(i) instanceof Element child) {
-                collectElementsById(child, id, out);
+    private static void markWsuIdAttributes(Element root) {
+        forEachDescendantElement(root, element -> {
+            if (!element.getAttributeNS(WSU_NS, "Id").isEmpty()) {
+                element.setIdAttributeNS(WSU_NS, "Id", true);
             }
-        }
-    }
-
-    private static void markWsuIdAttributes(Element element) {
-        if (!element.getAttributeNS(WSU_NS, "Id").isEmpty()) {
-            element.setIdAttributeNS(WSU_NS, "Id", true);
-        }
-        NodeList children = element.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            if (children.item(i) instanceof Element child) {
-                markWsuIdAttributes(child);
-            }
-        }
-    }
-
-    private static class VerificationException extends RuntimeException {
-        VerificationException(String message) {
-            super(message);
-        }
+        });
     }
 
     public TrustStore getTrustStore() {

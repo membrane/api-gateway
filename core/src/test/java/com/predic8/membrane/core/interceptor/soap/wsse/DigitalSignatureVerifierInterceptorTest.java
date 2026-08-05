@@ -13,141 +13,123 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
-import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.TrustStore;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.router.DefaultRouter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
-import javax.xml.parsers.DocumentBuilderFactory;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 
-import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.interceptor.soap.wsse.SignatureReference.By.BODY;
+import static com.predic8.membrane.core.interceptor.soap.wsse.SignatureReference.By.TIMESTAMP;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
-class DigitalSignatureVerifierInterceptorTest {
+class DigitalSignatureVerifierInterceptorTest extends AbstractWsseInterceptorTest {
 
-    private static final String SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/";
-    private static final String DS_NS = "http://www.w3.org/2000/09/xmldsig#";
-    private static final String KEYSTORE_PASSWORD = "secret";
-    private static final String ALIAS_1 = "key1";
-    private static final String ALIAS_2 = "key2";
-
-    private static final String SOAP_BODY = """
-            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                <soap:Body>
-                    <foo>bar</foo>
-                </soap:Body>
-            </soap:Envelope>
-            """;
-
-    private static final String SOAP_BODY_WITH_TIMESTAMP = """
-            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                <soap:Header>
-                    <wsse:Security xmlns:wsse="%s">
-                        <wsu:Timestamp xmlns:wsu="%s" wsu:Id="ts-1">
-                            <wsu:Created>2024-01-01T00:00:00Z</wsu:Created>
-                        </wsu:Timestamp>
-                    </wsse:Security>
-                </soap:Header>
-                <soap:Body>
-                    <foo>bar</foo>
-                </soap:Body>
-            </soap:Envelope>
-            """.formatted(WSSE_NS, WSU_NS);
-
-    DefaultRouter router;
-    Exchange exchange;
     DigitalSignatureVerifierInterceptor verifier;
 
     @BeforeEach
     void setUp() {
-        router = new DefaultRouter();
         verifier = new DigitalSignatureVerifierInterceptor();
     }
 
-    private DigitalSignatureInterceptor signerFor(String keystoreLocation, String alias, boolean useSecurityTokenReference) {
+    private DigitalSignatureInterceptor signer(SignatureReference... references) {
         DigitalSignatureInterceptor signer = new DigitalSignatureInterceptor();
-        KeyStore keyStore = new KeyStore();
-        keyStore.setLocation(keystoreLocation);
-        keyStore.setKeyPassword(KEYSTORE_PASSWORD);
-        keyStore.setKeyAlias(alias);
-        signer.setKeyStore(keyStore);
-        if (useSecurityTokenReference) {
-            signer.setSecurityTokenReference(new SecurityTokenReferenceKeyInfo());
-        }
-        SignatureReference bodyRef = new SignatureReference();
-        bodyRef.setBy(SignatureReference.By.BODY);
-        signer.setReferences(List.of(bodyRef));
+        signer.setKeyStore(signingKeyStore(ALIAS_1));
+        signer.setReferences(List.of(references));
+        return signer;
+    }
+
+    private DigitalSignatureInterceptor bodySigner() {
+        DigitalSignatureInterceptor signer = signer(bodyReference());
         signer.init(router);
         return signer;
     }
 
-    private DigitalSignatureInterceptor signerWithKeyIdentifier(String keystoreLocation, String alias,
-                                                                 KeyIdentifierKeyInfo.ValueType valueType) {
-        DigitalSignatureInterceptor signer = new DigitalSignatureInterceptor();
-        KeyStore keyStore = new KeyStore();
-        keyStore.setLocation(keystoreLocation);
-        keyStore.setKeyPassword(KEYSTORE_PASSWORD);
-        keyStore.setKeyAlias(alias);
-        signer.setKeyStore(keyStore);
+    private DigitalSignatureInterceptor bodySignerWithSecurityTokenReference() {
+        DigitalSignatureInterceptor signer = signer(bodyReference());
+        signer.setSecurityTokenReference(new SecurityTokenReferenceKeyInfo());
+        signer.init(router);
+        return signer;
+    }
+
+    private DigitalSignatureInterceptor bodySignerWithKeyIdentifier(KeyIdentifierKeyInfo.ValueType valueType) {
+        DigitalSignatureInterceptor signer = signer(bodyReference());
         KeyIdentifierKeyInfo keyIdentifier = new KeyIdentifierKeyInfo();
         keyIdentifier.setValueType(valueType);
         signer.setKeyIdentifier(keyIdentifier);
-        SignatureReference bodyRef = new SignatureReference();
-        bodyRef.setBy(SignatureReference.By.BODY);
-        signer.setReferences(List.of(bodyRef));
         signer.init(router);
         return signer;
     }
 
-    private void verifierWithTruststore(String truststoreLocation, SignatureReference.By... requiredBy) {
+    private DigitalSignatureInterceptor bodyAndTimestampSigner() {
+        DigitalSignatureInterceptor signer = signer(bodyReference(), reference(TIMESTAMP));
+        signer.init(router);
+        return signer;
+    }
+
+    private void verifierTrusting(String truststoreLocation, SignatureReference.By... requiredBy) {
         TrustStore trustStore = new TrustStore();
         trustStore.setLocation(truststoreLocation);
         trustStore.setPassword(KEYSTORE_PASSWORD);
         verifier.setTrustStore(trustStore);
-        verifier.setRequiredReferences(List.of(requiredBy).stream().map(by -> {
-            SignatureReference ref = new SignatureReference();
-            ref.setBy(by);
-            return ref;
-        }).toList());
+        verifier.setRequiredReferences(Arrays.stream(requiredBy)
+                .map(AbstractWsseInterceptorTest::reference)
+                .toList());
         verifier.init(router);
     }
 
-    private void exchangeWithBody(String body) throws Exception {
-        exchange = new Exchange(null);
-        exchange.setRequest(new Request.Builder()
-                .post("/service")
-                .contentType(TEXT_XML)
-                .body(body)
-                .build());
+    /**
+     * Signs the current exchange's body and re-parses it, so a test can tamper with the signed
+     * document before handing it to the verifier.
+     */
+    private Document signedAndParsed() throws Exception {
+        bodySigner().handleRequest(exchange);
+        return parseBody();
     }
 
-    private Document parseCurrentBody() throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        return factory.newDocumentBuilder().parse(exchange.getRequest().getBodyAsStream());
+    private static Element decoyBody(Document doc, String wsuId) {
+        Element decoyBody = doc.createElementNS(SOAP_NS, "soap:Body");
+        decoyBody.setAttributeNS(WSU_NS, "wsu:Id", wsuId);
+        Element decoyFoo = doc.createElementNS(null, "foo");
+        decoyFoo.setTextContent("PWNED");
+        decoyBody.appendChild(decoyFoo);
+        return decoyBody;
     }
 
-    private void setBody(Document doc) throws Exception {
-        exchange.getRequest().setBodyContent(
-                com.predic8.membrane.core.util.xml.XMLUtil.xmlNode2String(doc).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    private static String soapBodyWithTimestamp(Instant created) {
+        return soapBodyWithTimestamp(created, "");
+    }
+
+    private static String soapBodyWithTimestamp(Instant created, String timestampId) {
+        return """
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Header>
+                        <wsse:Security xmlns:wsse="%s">
+                            <wsu:Timestamp xmlns:wsu="%s" %s>
+                                <wsu:Created>%s</wsu:Created>
+                            </wsu:Timestamp>
+                        </wsse:Security>
+                    </soap:Header>
+                    <soap:Body>
+                        <foo>bar</foo>
+                    </soap:Body>
+                </soap:Envelope>
+                """.formatted(WSSE_NS, WSU_NS, timestampId, created);
     }
 
     @Test
     void validSignatureWithX509DataIsAccepted() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        bodySigner().handleRequest(exchange);
+        verifierTrusting(TRUSTSTORE, BODY);
 
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
     }
@@ -155,8 +137,8 @@ class DigitalSignatureVerifierInterceptorTest {
     @Test
     void validSignatureWithSecurityTokenReferenceIsAccepted() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerFor("classpath:/alias-keystore.p12", ALIAS_1, true).handleRequest(exchange);
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        bodySignerWithSecurityTokenReference().handleRequest(exchange);
+        verifierTrusting(TRUSTSTORE, BODY);
 
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
     }
@@ -164,56 +146,47 @@ class DigitalSignatureVerifierInterceptorTest {
     @Test
     void missingSignatureIsRejected() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        verifierTrusting(TRUSTSTORE, BODY);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(401, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 401);
     }
 
     @Test
     void tamperedBodyIsRejected() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
-
-        Document doc = parseCurrentBody();
-        Element foo = (Element) doc.getElementsByTagName("foo").item(0);
-        foo.setTextContent("tampered");
+        Document doc = signedAndParsed();
+        ((Element) doc.getElementsByTagName("foo").item(0)).setTextContent("tampered");
         setBody(doc);
 
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        verifierTrusting(TRUSTSTORE, BODY);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void untrustedCertificateIsRejected() throws Exception {
         exchangeWithBody(SOAP_BODY);
         // Signed with key1, but alias-truststore2.p12 only trusts key2.
-        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
-        verifierWithTruststore("classpath:/alias-truststore2.p12", SignatureReference.By.BODY);
+        bodySigner().handleRequest(exchange);
+        verifierTrusting(TRUSTSTORE_KEY2, BODY);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void requiredReferenceNotCoveredIsRejected() throws Exception {
-        exchangeWithBody(SOAP_BODY_WITH_TIMESTAMP);
+        exchangeWithBody(soapBodyWithTimestamp(Instant.parse("2024-01-01T00:00:00Z"), "wsu:Id=\"ts-1\""));
         // Only the Body is signed; the pre-existing Timestamp is left uncovered.
-        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY, SignatureReference.By.TIMESTAMP);
+        bodySigner().handleRequest(exchange);
+        verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void signatureWrappingAttackIsRejected() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
-
-        Document doc = parseCurrentBody();
+        Document doc = signedAndParsed();
         Element envelope = doc.getDocumentElement();
         Element header = (Element) envelope.getElementsByTagNameNS(SOAP_NS, "Header").item(0);
         Element signedBody = (Element) envelope.getElementsByTagNameNS(SOAP_NS, "Body").item(0);
@@ -223,30 +196,19 @@ class DigitalSignatureVerifierInterceptorTest {
         // Move the genuinely signed Body into the (unprocessed-by-downstream) Header, and plant a
         // fresh, unsigned decoy Body - sharing the SAME Id, to try to "borrow" its coverage - as
         // the real structural child of Envelope. This is the classic SOAP Body wrapping attack.
-        Node movedBody = envelope.removeChild(signedBody);
-        header.appendChild(movedBody);
-
-        Element decoyBody = doc.createElementNS(SOAP_NS, "soap:Body");
-        decoyBody.setAttributeNS(WSU_NS, "wsu:Id", signedBodyId);
-        Element decoyFoo = doc.createElementNS(null, "foo");
-        decoyFoo.setTextContent("PWNED");
-        decoyBody.appendChild(decoyFoo);
-        envelope.appendChild(decoyBody);
-
+        header.appendChild(envelope.removeChild(signedBody));
+        envelope.appendChild(decoyBody(doc, signedBodyId));
         setBody(doc);
 
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        verifierTrusting(TRUSTSTORE, BODY);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void wrappingWithFreshIdAndUnsignedManifestReferenceIsRejected() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
-
-        Document doc = parseCurrentBody();
+        Document doc = signedAndParsed();
         Element envelope = doc.getDocumentElement();
         Element signature = (Element) doc.getElementsByTagNameNS(DS_NS, "Signature").item(0);
         Element signedBody = (Element) envelope.getElementsByTagNameNS(SOAP_NS, "Body").item(0);
@@ -265,69 +227,58 @@ class DigitalSignatureVerifierInterceptorTest {
         object.appendChild(manifest);
         signature.appendChild(object);
 
-        Element decoyBody = doc.createElementNS(SOAP_NS, "soap:Body");
-        decoyBody.setAttributeNS(WSU_NS, "wsu:Id", "decoy-1");
-        Element decoyFoo = doc.createElementNS(null, "foo");
-        decoyFoo.setTextContent("PWNED");
-        decoyBody.appendChild(decoyFoo);
-        envelope.appendChild(decoyBody);
-
+        envelope.appendChild(decoyBody(doc, "decoy-1"));
         setBody(doc);
 
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        verifierTrusting(TRUSTSTORE, BODY);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void signatureWithUnsignedDsObjectIsRejected() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
-
-        Document doc = parseCurrentBody();
-        Element signature = (Element) doc.getElementsByTagNameNS(DS_NS, "Signature").item(0);
-        signature.appendChild(doc.createElementNS(DS_NS, "ds:Object"));
+        Document doc = signedAndParsed();
+        doc.getElementsByTagNameNS(DS_NS, "Signature").item(0)
+                .appendChild(doc.createElementNS(DS_NS, "ds:Object"));
         setBody(doc);
 
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        verifierTrusting(TRUSTSTORE, BODY);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
+        // Asserted on the reason, not just the status: a ds:Object appended to ds:Signature also
+        // trips an unmarshalling failure inside the JDK's XMLSignatureFactory, so a bare 403 would
+        // not show that the guard against unsigned ds:Signature content is what rejected it.
+        assertTrue(exchange.getResponse().getBodyAsStringDecoded().contains("unsigned ds:Object"),
+                "Expected the rejection to name the unsigned ds:Object");
     }
 
     @Test
     void multipleSignaturesAreRejected() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
-
-        Document doc = parseCurrentBody();
+        Document doc = signedAndParsed();
         Element security = (Element) doc.getElementsByTagNameNS(WSSE_NS, "Security").item(0);
-        Element signature = (Element) doc.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Signature").item(0);
-        security.appendChild(signature.cloneNode(true));
+        security.appendChild(doc.getElementsByTagNameNS(DS_NS, "Signature").item(0).cloneNode(true));
         setBody(doc);
 
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        verifierTrusting(TRUSTSTORE, BODY);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void nonSoapMessageIsRejected() throws Exception {
         exchangeWithBody("<foo>bar</foo>");
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        verifierTrusting(TRUSTSTORE, BODY);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(400, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 400);
     }
 
     @Test
     void validSignatureWithKeyIdentifierX509V3IsAccepted() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerWithKeyIdentifier("classpath:/alias-keystore.p12", ALIAS_1, KeyIdentifierKeyInfo.ValueType.X509_V3)
-                .handleRequest(exchange);
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        bodySignerWithKeyIdentifier(KeyIdentifierKeyInfo.ValueType.X509_V3).handleRequest(exchange);
+        verifierTrusting(TRUSTSTORE, BODY);
 
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
     }
@@ -335,9 +286,8 @@ class DigitalSignatureVerifierInterceptorTest {
     @Test
     void validSignatureWithKeyIdentifierThumbprintIsAccepted() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerWithKeyIdentifier("classpath:/alias-keystore.p12", ALIAS_1, KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1)
-                .handleRequest(exchange);
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+        bodySignerWithKeyIdentifier(KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1).handleRequest(exchange);
+        verifierTrusting(TRUSTSTORE, BODY);
 
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
     }
@@ -345,74 +295,37 @@ class DigitalSignatureVerifierInterceptorTest {
     @Test
     void unknownThumbprintIsRejected() throws Exception {
         exchangeWithBody(SOAP_BODY);
-        signerWithKeyIdentifier("classpath:/alias-keystore.p12", ALIAS_1, KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1)
-                .handleRequest(exchange);
+        bodySignerWithKeyIdentifier(KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1).handleRequest(exchange);
         // alias-truststore2.p12 only trusts key2, so key1's thumbprint can't be resolved from it.
-        verifierWithTruststore("classpath:/alias-truststore2.p12", SignatureReference.By.BODY);
+        verifierTrusting(TRUSTSTORE_KEY2, BODY);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void freshTimestampIsAccepted() throws Exception {
-        exchangeWithBody(soapBodyWithTimestamp(java.time.Instant.now()));
-        signerWithTimestampReference("classpath:/alias-keystore.p12", ALIAS_1).handleRequest(exchange);
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY, SignatureReference.By.TIMESTAMP);
+        exchangeWithBody(soapBodyWithTimestamp(Instant.now()));
+        bodyAndTimestampSigner().handleRequest(exchange);
+        verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP);
 
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
     }
 
     @Test
     void expiredTimestampIsRejected() throws Exception {
-        exchangeWithBody(soapBodyWithTimestamp(java.time.Instant.now().minus(java.time.Duration.ofHours(1))));
-        signerWithTimestampReference("classpath:/alias-keystore.p12", ALIAS_1).handleRequest(exchange);
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY, SignatureReference.By.TIMESTAMP);
+        exchangeWithBody(soapBodyWithTimestamp(Instant.now().minus(Duration.ofHours(1))));
+        bodyAndTimestampSigner().handleRequest(exchange);
+        verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
+        assertAborts(verifier, 403);
     }
 
     @Test
     void futureTimestampIsRejected() throws Exception {
-        exchangeWithBody(soapBodyWithTimestamp(java.time.Instant.now().plus(java.time.Duration.ofHours(1))));
-        signerWithTimestampReference("classpath:/alias-keystore.p12", ALIAS_1).handleRequest(exchange);
-        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY, SignatureReference.By.TIMESTAMP);
+        exchangeWithBody(soapBodyWithTimestamp(Instant.now().plus(Duration.ofHours(1))));
+        bodyAndTimestampSigner().handleRequest(exchange);
+        verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP);
 
-        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
-        assertEquals(403, exchange.getResponse().getStatusCode());
-    }
-
-    private static String soapBodyWithTimestamp(java.time.Instant created) {
-        return """
-                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                    <soap:Header>
-                        <wsse:Security xmlns:wsse="%s">
-                            <wsu:Timestamp xmlns:wsu="%s">
-                                <wsu:Created>%s</wsu:Created>
-                            </wsu:Timestamp>
-                        </wsse:Security>
-                    </soap:Header>
-                    <soap:Body>
-                        <foo>bar</foo>
-                    </soap:Body>
-                </soap:Envelope>
-                """.formatted(WSSE_NS, WSU_NS, created);
-    }
-
-    private DigitalSignatureInterceptor signerWithTimestampReference(String keystoreLocation, String alias) {
-        DigitalSignatureInterceptor signer = new DigitalSignatureInterceptor();
-        KeyStore keyStore = new KeyStore();
-        keyStore.setLocation(keystoreLocation);
-        keyStore.setKeyPassword(KEYSTORE_PASSWORD);
-        keyStore.setKeyAlias(alias);
-        signer.setKeyStore(keyStore);
-        SignatureReference bodyRef = new SignatureReference();
-        bodyRef.setBy(SignatureReference.By.BODY);
-        SignatureReference timestampRef = new SignatureReference();
-        timestampRef.setBy(SignatureReference.By.TIMESTAMP);
-        signer.setReferences(List.of(bodyRef, timestampRef));
-        signer.init(router);
-        return signer;
+        assertAborts(verifier, 403);
     }
 }

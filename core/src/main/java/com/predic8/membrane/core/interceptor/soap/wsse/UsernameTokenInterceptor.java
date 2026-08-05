@@ -16,34 +16,18 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
-import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.util.SOAPUtil;
-import com.predic8.membrane.core.util.xml.XMLUtil;
-import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getOrCreateHeader;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getOrCreateSecurity;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
 
@@ -55,18 +39,7 @@ import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SER
  * @topic 3. Security
  */
 @MCElement(name = "usernameToken")
-public class UsernameTokenInterceptor extends AbstractInterceptor {
-
-    private static final Logger log = LoggerFactory.getLogger(UsernameTokenInterceptor.class);
-
-    private static final String USERNAME_TOKEN_PROFILE_NS =
-            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0";
-    private static final String PASSWORD_TEXT_TYPE = USERNAME_TOKEN_PROFILE_NS + "#PasswordText";
-    private static final String PASSWORD_DIGEST_TYPE = USERNAME_TOKEN_PROFILE_NS + "#PasswordDigest";
-    // Note: distinct from WSSE_NS (the wsse secext schema itself) - this is the WS-Security SOAP
-    // Message Security namespace that actually defines the Base64Binary encoding type.
-    private static final String BASE64_BINARY_TYPE =
-            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary";
+public class UsernameTokenInterceptor extends AbstractSoapDomInterceptor {
 
     public enum PasswordType {PLAIN_TEXT, DIGEST}
 
@@ -85,85 +58,70 @@ public class UsernameTokenInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) {
-        if (!SOAPUtil.analyseSOAPMessage(new XOPReconstitutor(), exc.getRequest()).isSOAP()) {
-            user(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Not a SOAP message.")
-                    .detail("Request body is not XML or does not contain a SOAP body, so no wsse:UsernameToken could be added.")
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
+    protected String notSoapDetail() {
+        return "no wsse:UsernameToken could be added.";
+    }
 
-        try {
-            String user = usernameExpression.evaluate(exc, Flow.REQUEST, String.class);
-            String pass = passwordExpression.evaluate(exc, Flow.REQUEST, String.class);
+    @Override
+    protected String internalErrorDetail() {
+        return "Could not add wsse:UsernameToken to SOAP body.";
+    }
 
-            Document doc = HardenedXmlParser.getInstance().parse(XMLUtil.getInputSource(exc.getRequest()));
+    @Override
+    protected Outcome handleDocument(Exchange exc, Document doc) throws Exception {
+        String user = usernameExpression.evaluate(exc, Flow.REQUEST, String.class);
+        String pass = passwordExpression.evaluate(exc, Flow.REQUEST, String.class);
 
-            Element envelope = doc.getDocumentElement();
-            String soapNs = envelope.getNamespaceURI();
+        Element envelope = doc.getDocumentElement();
+        String soapNs = envelope.getNamespaceURI();
 
-            Element header = getOrCreateHeader(doc, envelope, soapNs);
-            Element security = getOrCreateSecurity(doc, header);
-            security.appendChild(createUsernameToken(doc, user, pass));
+        Element security = getOrCreateSecurity(doc, getOrCreateHeader(doc, envelope, soapNs));
+        security.appendChild(createUsernameToken(doc, user, pass));
 
-            exc.getRequest().setBodyContent(XMLUtil.xmlNode2String(doc).getBytes(StandardCharsets.UTF_8));
-            return CONTINUE;
-        } catch (Exception e) {
-            log.warn("Could not add wsse:UsernameToken to SOAP body", e);
-            internal(router.getConfiguration().isProduction(), getDisplayName())
-                    .detail("Could not add wsse:UsernameToken to SOAP body.")
-                    .exception(e)
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
+        writeBack(exc, doc);
+        return CONTINUE;
     }
 
     private Element createUsernameToken(Document doc, String user, String pass) throws Exception {
         Element usernameToken = doc.createElementNS(WSSE_NS, "wsse:UsernameToken");
-
-        Element usernameEl = doc.createElementNS(WSSE_NS, "wsse:Username");
-        usernameEl.setTextContent(user);
-        usernameToken.appendChild(usernameEl);
-
-        Element passwordEl = doc.createElementNS(WSSE_NS, "wsse:Password");
+        usernameToken.appendChild(textElement(doc, WSSE_NS, "wsse:Username", user));
         if (passwordType == PasswordType.DIGEST) {
-            String nonce = generateNonce();
-            String created = Instant.now().toString();
-
-            passwordEl.setAttribute("Type", PASSWORD_DIGEST_TYPE);
-            passwordEl.setTextContent(computeDigest(nonce, created, pass));
-            usernameToken.appendChild(passwordEl);
-
-            Element nonceEl = doc.createElementNS(WSSE_NS, "wsse:Nonce");
-            nonceEl.setAttribute("EncodingType", BASE64_BINARY_TYPE);
-            nonceEl.setTextContent(nonce);
-            usernameToken.appendChild(nonceEl);
-
-            Element createdEl = doc.createElementNS(WSU_NS, "wsu:Created");
-            createdEl.setTextContent(created);
-            usernameToken.appendChild(createdEl);
+            appendDigestPassword(doc, usernameToken, pass);
         } else {
-            passwordEl.setAttribute("Type", PASSWORD_TEXT_TYPE);
-            passwordEl.setTextContent(pass);
-            usernameToken.appendChild(passwordEl);
+            usernameToken.appendChild(passwordElement(doc, PASSWORD_TEXT_TYPE, pass));
         }
-
         return usernameToken;
     }
 
-    private static String generateNonce() {
-        byte[] nonce = new byte[16];
-        new SecureRandom().nextBytes(nonce);
-        return Base64.getEncoder().encodeToString(nonce);
+    private static void appendDigestPassword(Document doc, Element usernameToken, String pass) throws Exception {
+        byte[] nonce = generateNonce();
+        String created = Instant.now().toString();
+
+        usernameToken.appendChild(passwordElement(doc, PASSWORD_DIGEST_TYPE, usernameTokenDigest(nonce, created, pass)));
+
+        Element nonceEl = textElement(doc, WSSE_NS, "wsse:Nonce", Base64.getEncoder().encodeToString(nonce));
+        nonceEl.setAttribute("EncodingType", BASE64_BINARY_ENCODING_TYPE);
+        usernameToken.appendChild(nonceEl);
+
+        usernameToken.appendChild(textElement(doc, WSU_NS, "wsu:Created", created));
     }
 
-    private static String computeDigest(String nonce, String created, String password) throws Exception {
-        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-        sha1.update(Base64.getDecoder().decode(nonce));
-        sha1.update(created.getBytes(StandardCharsets.UTF_8));
-        sha1.update(password.getBytes(StandardCharsets.UTF_8));
-        return Base64.getEncoder().encodeToString(sha1.digest());
+    private static Element passwordElement(Document doc, String type, String content) {
+        Element passwordEl = textElement(doc, WSSE_NS, "wsse:Password", content);
+        passwordEl.setAttribute("Type", type);
+        return passwordEl;
+    }
+
+    private static Element textElement(Document doc, String namespace, String qualifiedName, String text) {
+        Element element = doc.createElementNS(namespace, qualifiedName);
+        element.setTextContent(text);
+        return element;
+    }
+
+    private static byte[] generateNonce() {
+        byte[] nonce = new byte[16];
+        new SecureRandom().nextBytes(nonce);
+        return nonce;
     }
 
     public String getUsername() {

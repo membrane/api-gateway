@@ -20,13 +20,17 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPathFactoryConfigurationException;
+import javax.xml.xpath.*;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * SOAP/WS-Security XML helpers shared by {@link UsernameTokenInterceptor},
@@ -47,6 +51,11 @@ final class WsSecurityXml {
     // confused with "...wssecurity-secext-1.0.xsd#Base64Binary", which is not a valid EncodingType.
     static final String BASE64_BINARY_ENCODING_TYPE =
             "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary";
+
+    static final String USERNAME_TOKEN_PROFILE_NS =
+            "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0";
+    static final String PASSWORD_TEXT_TYPE = USERNAME_TOKEN_PROFILE_NS + "#PasswordText";
+    static final String PASSWORD_DIGEST_TYPE = USERNAME_TOKEN_PROFILE_NS + "#PasswordDigest";
 
     static final NamespaceContext SOAP_WSSE_NAMESPACE_CONTEXT = new NamespaceContext() {
         @Override
@@ -169,7 +178,7 @@ final class WsSecurityXml {
     }
 
     static List<Element> getChildrenByName(Element parent, String namespace, String localName) {
-        List<Element> result = new java.util.ArrayList<>();
+        List<Element> result = new ArrayList<>();
         NodeList children = parent.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
@@ -180,6 +189,34 @@ final class WsSecurityXml {
             }
         }
         return result;
+    }
+
+    /**
+     * Applies {@code action} to {@code element} and, depth-first, to every descendant element.
+     */
+    static void forEachDescendantElement(Element element, Consumer<Element> action) {
+        action.accept(element);
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i) instanceof Element child) {
+                forEachDescendantElement(child, action);
+            }
+        }
+    }
+
+    /**
+     * The WS-Security UsernameToken password digest: Base64(SHA-1(nonce + created + password)).
+     */
+    static String usernameTokenDigest(byte[] nonce, String created, String password) throws NoSuchAlgorithmException {
+        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+        sha1.update(nonce);
+        sha1.update(created.getBytes(StandardCharsets.UTF_8));
+        sha1.update(password.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(sha1.digest());
+    }
+
+    static byte[] sha1Thumbprint(X509Certificate certificate) throws GeneralSecurityException {
+        return MessageDigest.getInstance("SHA-1").digest(certificate.getEncoded());
     }
 
     /**
