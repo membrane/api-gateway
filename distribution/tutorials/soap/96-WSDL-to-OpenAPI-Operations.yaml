@@ -37,11 +37,13 @@ api:
         operations:
           getPartners:
             method: GET
+            path: partners
           getPartner:
             method: GET
             path: partners/{id}
           createPartner:
             method: POST
+            path: partners
           updatePartner:
             method: PUT
             path: partners/{id}
