@@ -17,7 +17,6 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
@@ -40,14 +39,10 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getFirstChildByName;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
 
@@ -95,6 +90,12 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
     @Override
     public void init() {
         super.init();
+        if (username == null || username.isBlank()) {
+            throw new ConfigurationException("usernameTokenVerifier requires a username attribute.");
+        }
+        if (password == null || password.isBlank()) {
+            throw new ConfigurationException("usernameTokenVerifier requires a password attribute.");
+        }
         usernameExpression = TemplateExchangeExpression.newInstance(this, SPEL, username, router, TEXT_SERIALIZATION);
         passwordExpression = TemplateExchangeExpression.newInstance(this, SPEL, password, router, TEXT_SERIALIZATION);
     }
@@ -149,6 +150,13 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
     private void verify(Exchange exc, Element usernameToken) throws Exception {
         String expectedUsername = usernameExpression.evaluate(exc, Flow.REQUEST, String.class);
         String expectedPassword = passwordExpression.evaluate(exc, Flow.REQUEST, String.class);
+        // A template expression whose value doesn't resolve (e.g. ${property.apiUser} when nothing
+        // set that property) renders as the literal string "null" - see
+        // TemplateExchangeExpression.evaluateMultiple. Comparing against that would authenticate
+        // anyone sending Username/Password "null", so an unresolved expected credential must fail
+        // closed as a configuration error instead of being treated as the secret.
+        requireResolved(expectedUsername, "username");
+        requireResolved(expectedPassword, "password");
 
         Element usernameEl = getFirstChildByName(usernameToken, WSSE_NS, "Username");
         String actualUsername = usernameEl == null ? "" : usernameEl.getTextContent();
@@ -182,6 +190,15 @@ public class UsernameTokenVerifierInterceptor extends AbstractInterceptor {
         }
         if (nonceEl != null && created != null) {
             checkNonceNotReplayed(expectedUsername, nonceEl.getTextContent(), created);
+        }
+    }
+
+    // Not a VerificationException: this is a misconfigured gateway, not a bad request - it must
+    // surface as an internal error (500) rather than as a plain authentication failure.
+    private static void requireResolved(String value, String attribute) {
+        if (value == null || value.isBlank() || "null".equals(value)) {
+            throw new ConfigurationException(
+                    "usernameTokenVerifier: the " + attribute + " expression did not resolve to a value.");
         }
     }
 

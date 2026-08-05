@@ -21,7 +21,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UsernameTokenVerifierInterceptorTest {
 
@@ -74,6 +75,26 @@ class UsernameTokenVerifierInterceptorTest {
         verifier.init(router);
 
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
+    }
+
+    @Test
+    void unresolvedCredentialExpressionDoesNotAuthenticateLiteralNull() throws Exception {
+        // An unresolved template expression renders as the literal string "null"; a client sending
+        // "null"/"null" must not be authenticated by it.
+        verifier.setUsername("${property.missingUser}");
+        verifier.setPassword("${property.missingPassword}");
+        plainTextToken("null", "null");
+        verifier.init(router);
+
+        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
+        assertEquals(500, exchange.getResponse().getStatusCode());
+    }
+
+    @Test
+    void missingUsernameConfigurationIsRejected() {
+        verifier.setUsername("  ");
+
+        assertThrows(com.predic8.membrane.core.util.ConfigurationException.class, () -> verifier.init(router));
     }
 
     @Test

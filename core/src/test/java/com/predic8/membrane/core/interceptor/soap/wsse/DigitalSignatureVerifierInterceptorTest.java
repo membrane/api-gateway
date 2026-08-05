@@ -31,11 +31,13 @@ import java.util.List;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class DigitalSignatureVerifierInterceptorTest {
 
     private static final String SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/";
+    private static final String DS_NS = "http://www.w3.org/2000/09/xmldsig#";
     private static final String KEYSTORE_PASSWORD = "secret";
     private static final String ALIAS_1 = "key1";
     private static final String ALIAS_2 = "key2";
@@ -231,6 +233,61 @@ class DigitalSignatureVerifierInterceptorTest {
         decoyBody.appendChild(decoyFoo);
         envelope.appendChild(decoyBody);
 
+        setBody(doc);
+
+        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+
+        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
+        assertEquals(403, exchange.getResponse().getStatusCode());
+    }
+
+    @Test
+    void wrappingWithFreshIdAndUnsignedManifestReferenceIsRejected() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
+
+        Document doc = parseCurrentBody();
+        Element envelope = doc.getDocumentElement();
+        Element signature = (Element) doc.getElementsByTagNameNS(DS_NS, "Signature").item(0);
+        Element signedBody = (Element) envelope.getElementsByTagNameNS(SOAP_NS, "Body").item(0);
+
+        // Variant of the wrapping attack that the same-Id check alone does NOT catch: park the
+        // genuinely signed Body (keeping its Id) inside an unsigned ds:Object, give the decoy a
+        // FRESH Id, and declare that fresh Id "covered" with a ds:Reference planted in an unsigned
+        // ds:Manifest. SignedInfo/SignatureValue stay untouched, so the signature itself still
+        // validates - coverage must be decided from SignedInfo only.
+        Element object = doc.createElementNS(DS_NS, "ds:Object");
+        object.appendChild(envelope.removeChild(signedBody));
+        Element manifest = doc.createElementNS(DS_NS, "ds:Manifest");
+        Element planted = doc.createElementNS(DS_NS, "ds:Reference");
+        planted.setAttribute("URI", "#decoy-1");
+        manifest.appendChild(planted);
+        object.appendChild(manifest);
+        signature.appendChild(object);
+
+        Element decoyBody = doc.createElementNS(SOAP_NS, "soap:Body");
+        decoyBody.setAttributeNS(WSU_NS, "wsu:Id", "decoy-1");
+        Element decoyFoo = doc.createElementNS(null, "foo");
+        decoyFoo.setTextContent("PWNED");
+        decoyBody.appendChild(decoyFoo);
+        envelope.appendChild(decoyBody);
+
+        setBody(doc);
+
+        verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);
+
+        assertEquals(Outcome.ABORT, verifier.handleRequest(exchange));
+        assertEquals(403, exchange.getResponse().getStatusCode());
+    }
+
+    @Test
+    void signatureWithUnsignedDsObjectIsRejected() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        signerFor("classpath:/alias-keystore.p12", ALIAS_1, false).handleRequest(exchange);
+
+        Document doc = parseCurrentBody();
+        Element signature = (Element) doc.getElementsByTagNameNS(DS_NS, "Signature").item(0);
+        signature.appendChild(doc.createElementNS(DS_NS, "ds:Object"));
         setBody(doc);
 
         verifierWithTruststore("classpath:/alias-truststore.p12", SignatureReference.By.BODY);

@@ -34,6 +34,7 @@ import org.w3c.dom.NodeList;
 
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+import javax.xml.crypto.dsig.Reference;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 import javax.xml.crypto.dsig.dom.DOMValidateContext;
@@ -48,18 +49,10 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.THUMBPRINT_SHA1_VALUE_TYPE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.X509_V3_VALUE_TYPE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getChildrenByName;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.getFirstChildByName;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.resolveReference;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
 
 /**
  * @description Verifies the XML Signature (<a href="http://www.w3.org/2000/09/xmldsig#">XML-DSig</a>)
@@ -69,8 +62,10 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.reso
  * element listed in <code>requiredReferences</code> - the defense against XML Signature Wrapping
  * attacks, where an attacker leaves a validly-signed but irrelevant fragment in the message while
  * the element downstream logic actually reads is unsigned or swapped. A missing signature returns
- * 401; an invalid, untrusted, or incomplete one returns 403, both as Problem Details. Only acts on
- * requests.
+ * 401; an invalid, untrusted, or incomplete one returns 403, both as Problem Details. Freshness of a
+ * <code>wsu:Timestamp</code> is only enforced when <code>requiredReferences</code> contains a
+ * <code>TIMESTAMP</code> entry; without one, a captured signed request stays replayable. Only acts
+ * on requests.
  * @topic 3. Security
  * @yaml <pre><code>
  * api:
@@ -82,6 +77,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.reso
  *           password: secret
  *         requiredReferences:
  *           - by: BODY
+ *           - by: TIMESTAMP
  * </code></pre>
  */
 @MCElement(name = "digitalSignatureVerifier")
@@ -156,6 +152,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
                 throw new VerificationException("More than one ds:Signature element found; rejecting as ambiguous.");
             }
             Element signatureElement = (Element) signatureNodes.item(0);
+            rejectUnsignedSignatureContent(signatureElement);
 
             X509Certificate[] chain = resolveCertificateChain(doc, signatureElement);
 
@@ -173,7 +170,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
             }
 
             for (SignatureReference required : requiredReferences) {
-                checkRequiredReference(doc, envelope, security, soapNs, signatureElement, required);
+                checkRequiredReference(doc, envelope, security, soapNs, signature, required);
             }
 
             return CONTINUE;
@@ -281,8 +278,26 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
         return (X509Certificate) cf.generateCertificate(new ByteArrayInputStream(der));
     }
 
+    // Only ds:SignedInfo is protected by ds:SignatureValue. Everything else inside ds:Signature -
+    // ds:Object and its ds:Manifest children in particular - is unsigned, so an attacker can add,
+    // remove or rewrite it at will while the signature still validates. Since this verifier
+    // supports no legitimate use for such content, it is refused outright rather than ignored:
+    // that removes the "park the genuinely signed element in a ds:Object" half of an XML Signature
+    // Wrapping attack (the reference half is handled in checkRequiredReference).
+    private void rejectUnsignedSignatureContent(Element signatureElement) {
+        NodeList children = signatureElement.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i) instanceof Element child
+                    && DS_NS.equals(child.getNamespaceURI())
+                    && ("Object".equals(child.getLocalName()) || "Manifest".equals(child.getLocalName()))) {
+                throw new VerificationException(
+                        "ds:Signature carries unsigned ds:" + child.getLocalName() + " content; rejecting.");
+            }
+        }
+    }
+
     private void checkRequiredReference(Document doc, Element envelope, Element security, String soapNs,
-                                         Element signatureElement, SignatureReference required) {
+                                         XMLSignature signature, SignatureReference required) {
         Element expected = resolveReference(doc, envelope, security, soapNs, required);
         if (required.getBy() == SignatureReference.By.TIMESTAMP) {
             checkTimestampFreshness(expected);
@@ -293,19 +308,23 @@ public class DigitalSignatureVerifierInterceptor extends AbstractInterceptor {
                     "Required element (" + required.getBy() + ") has no wsu:Id/Id, so it cannot be covered by the signature.");
         }
 
-        // Reject outright if expectedId is used by more than one element anywhere in the document.
-        // This is the actual defense against signature wrapping: an attacker who moves the
-        // genuinely signed element aside and plants a decoy at the real structural position,
-        // giving it the same Id to "borrow" the existing signature's coverage, makes the Id
-        // ambiguous - which resolveUniqueElementById refuses to accept. (A decoy using a fresh,
-        // different Id is instead caught below: it's simply not covered by any ds:Reference.)
+        // First half of the signature-wrapping defense: reject outright if expectedId is used by
+        // more than one element anywhere in the document. An attacker who moves the genuinely
+        // signed element aside and plants a decoy at the real structural position, giving it the
+        // same Id to "borrow" the existing signature's coverage, makes the Id ambiguous - which
+        // resolveUniqueElementById refuses to accept.
         resolveUniqueElementById(doc, expectedId);
 
-        NodeList signedInfoReferences = signatureElement.getElementsByTagNameNS(DS_NS, "Reference");
+        // Second half: a decoy carrying a fresh, different Id is caught here, because that Id
+        // appears in no ds:Reference of the signature. Crucially, the references are taken from the
+        // unmarshalled ds:SignedInfo of the signature that validate() just verified - NOT by
+        // searching the ds:Signature subtree in the DOM. Only ds:SignedInfo is covered by
+        // ds:SignatureValue, so a DOM-wide search would also accept an attacker-planted
+        // ds:Reference sitting in unsigned ds:Object/ds:Manifest content, letting a wrapped message
+        // declare its own decoy as "covered".
         boolean covered = false;
-        for (int i = 0; i < signedInfoReferences.getLength(); i++) {
-            Element reference = (Element) signedInfoReferences.item(i);
-            if (("#" + expectedId).equals(reference.getAttribute("URI"))) {
+        for (Object reference : signature.getSignedInfo().getReferences()) {
+            if (reference instanceof Reference ref && ("#" + expectedId).equals(ref.getURI())) {
                 covered = true;
                 break;
             }
