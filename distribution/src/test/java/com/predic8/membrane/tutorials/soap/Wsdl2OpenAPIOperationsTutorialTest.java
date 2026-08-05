@@ -60,6 +60,34 @@ public class Wsdl2OpenAPIOperationsTutorialTest extends AbstractSOAPTutorialTest
     }
 
     @Test
+    void updatePartnerReturnsUpdatedPartner() {
+        // @formatter:off
+        given()
+            .contentType(JSON)
+            .body("{\"name\":\"Alice Updated\",\"birthDate\":\"1985-03-15\",\"kind\":\"PERSON\",\"address\":{\"street\":\"Main St\",\"houseNumber\":\"1\",\"postalCode\":\"12345\",\"city\":\"Springfield\",\"country\":\"US\"}}")
+        .when()
+            .put("http://localhost:2000/partners/1")
+        .then()
+            .statusCode(200)
+            .contentType(JSON)
+            .body("partner.name", equalTo("Alice Updated"))
+            .body("partner.kind", equalTo("PERSON"));
+        // @formatter:on
+    }
+
+    @Test
+    void deletePartnerReturnsSuccess() {
+        // @formatter:off
+        given()
+        .when()
+            .delete("http://localhost:2000/partners/1")
+        .then()
+            .statusCode(200)
+            .contentType(JSON);
+        // @formatter:on
+    }
+
+    @Test
     void createPartnerReturnsEmptyObject() {
         // @formatter:off
         given()

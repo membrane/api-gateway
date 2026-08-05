@@ -112,6 +112,38 @@
                 </xsd:complexType>
             </xsd:element>
 
+            <xsd:element name="updatePartnerRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:long"/>
+                        <xsd:element name="name" type="xsd:string"/>
+                        <xsd:element name="birthDate" type="xsd:date"/>
+                        <xsd:element name="kind" type="tns:PartnerKind"/>
+                        <xsd:element name="address" type="tns:Address"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="updatePartnerResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="partner" type="tns:Partner"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="deletePartnerRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:long"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:element name="deletePartnerResponse">
+                <xsd:complexType/>
+            </xsd:element>
+
         </xsd:schema>
     </wsdl:types>
 
@@ -139,6 +171,22 @@
         <wsdl:part name="parameters" element="tns:createPartnerResponse"/>
     </wsdl:message>
 
+    <wsdl:message name="UpdatePartnerRequest">
+        <wsdl:part name="parameters" element="tns:updatePartnerRequest"/>
+    </wsdl:message>
+
+    <wsdl:message name="UpdatePartnerResponse">
+        <wsdl:part name="parameters" element="tns:updatePartnerResponse"/>
+    </wsdl:message>
+
+    <wsdl:message name="DeletePartnerRequest">
+        <wsdl:part name="parameters" element="tns:deletePartnerRequest"/>
+    </wsdl:message>
+
+    <wsdl:message name="DeletePartnerResponse">
+        <wsdl:part name="parameters" element="tns:deletePartnerResponse"/>
+    </wsdl:message>
+
     <wsdl:portType name="PartnerService">
         <wsdl:operation name="getPartner">
             <wsdl:input message="tns:GetPartnerRequest"/>
@@ -151,6 +199,14 @@
         <wsdl:operation name="createPartner">
             <wsdl:input message="tns:CreatePartnerRequest"/>
             <wsdl:output message="tns:CreatePartnerResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="updatePartner">
+            <wsdl:input message="tns:UpdatePartnerRequest"/>
+            <wsdl:output message="tns:UpdatePartnerResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="deletePartner">
+            <wsdl:input message="tns:DeletePartnerRequest"/>
+            <wsdl:output message="tns:DeletePartnerResponse"/>
         </wsdl:operation>
     </wsdl:portType>
 
@@ -168,6 +224,16 @@
         </wsdl:operation>
         <wsdl:operation name="createPartner">
             <soap:operation soapAction="createPartner"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="updatePartner">
+            <soap:operation soapAction="updatePartner"/>
+            <wsdl:input><soap:body use="literal"/></wsdl:input>
+            <wsdl:output><soap:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="deletePartner">
+            <soap:operation soapAction="deletePartner"/>
             <wsdl:input><soap:body use="literal"/></wsdl:input>
             <wsdl:output><soap:body use="literal"/></wsdl:output>
         </wsdl:operation>

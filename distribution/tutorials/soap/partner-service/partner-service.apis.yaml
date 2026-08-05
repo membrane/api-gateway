@@ -76,3 +76,52 @@ api:
           </s11:Envelope>
     - return:
         status: 200
+
+---
+api:
+  port: 3000
+  test: header.SOAPAction == 'updatePartner'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <updatePartnerResponse xmlns="http://example.com/partner">
+                <partner>
+                  <id>1</id>
+                  <name>Alice Updated</name>
+                  <birthDate>1985-03-15</birthDate>
+                  <phoneNumber>+4930123456</phoneNumber>
+                  <kind>PERSON</kind>
+                  <active>true</active>
+                  <creditLimit>10000.00</creditLimit>
+                  <address>
+                    <street>Main St</street>
+                    <houseNumber>1</houseNumber>
+                    <postalCode>12345</postalCode>
+                    <city>Springfield</city>
+                    <country>US</country>
+                  </address>
+                </partner>
+              </updatePartnerResponse>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200
+
+---
+api:
+  port: 3000
+  test: header.SOAPAction == 'deletePartner'
+  flow:
+    - static:
+        contentType: text/xml
+        src: |
+          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+            <s11:Body>
+              <deletePartnerResponse xmlns="http://example.com/partner"/>
+            </s11:Body>
+          </s11:Envelope>
+    - return:
+        status: 200

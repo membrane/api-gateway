@@ -148,7 +148,7 @@ public class Wsdl2OpenApiConverter {
                 apiOp.addParametersItem(new Parameter().name(p).in("path").required(true).schema(new StringSchema()))
             );
         }
-        if (hasRequestBody(method) && pathParamNames.isEmpty()) {
+        if (hasRequestBody(method)) {
             apiOp.requestBody(buildRequestBody(getBodyParts(inputParts, headerParts)));
         }
         var headerParameters = buildHeaderParameters(headerParts);

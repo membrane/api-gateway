@@ -2,8 +2,8 @@
 #
 # Tutorial: WSDL to OpenAPI — Operation Settings
 #
-# Per-operation settings let you override the HTTP method for each WSDL operation.
-# Here getPartners is exposed as GET. The other operations keep the default POST.
+# Per-operation settings map each WSDL operation to an HTTP method and path,
+# covering all four REST methods: GET, POST, PUT, DELETE.
 #
 # 1.) Start Membrane
 #    Linux/Mac:
@@ -11,15 +11,23 @@
 #    Windows:
 #      membrane.cmd -c 96-WSDL-to-OpenAPI-Operations.yaml
 #
-# 2.) List all partners
+# 2.) List all partners (GET, no body)
 #     curl http://localhost:2000/get-partners
 #
-# 3.) Get a single partner — ID comes from the URL path, no request body needed
+# 3.) Get a single partner — ID comes from the URL path (GET, no body)
 #     curl http://localhost:2000/partners/1
 #
-# 4.) Create a partner
+# 4.) Create a partner (POST, body required)
 #     curl -d '{"name":"Dave","birthDate":"1990-01-01","kind":"PERSON","address":{"street":"Oak Ave","houseNumber":"5","postalCode":"54321","city":"Portland","country":"US"}}' \
 #          -H "Content-Type: application/json" http://localhost:2000/create-partner
+#
+# 5.) Update a partner — ID from URL, fields in body (PUT)
+#     curl -X PUT \
+#          -d '{"name":"Alice Updated","birthDate":"1985-03-15","kind":"PERSON","address":{"street":"Main St","houseNumber":"1","postalCode":"12345","city":"Springfield","country":"US"}}' \
+#          -H "Content-Type: application/json" http://localhost:2000/partners/1
+#
+# 6.) Delete a partner — ID from URL (DELETE, no body)
+#     curl -X DELETE http://localhost:2000/partners/1
 
 api:
   port: 2000
@@ -34,6 +42,12 @@ api:
             path: partners/{id}
           createPartner:
             method: POST
+          updatePartner:
+            method: PUT
+            path: partners/{id}
+          deletePartner:
+            method: DELETE
+            path: partners/{id}
   target:
     url: http://localhost:3000/partner-service
 
