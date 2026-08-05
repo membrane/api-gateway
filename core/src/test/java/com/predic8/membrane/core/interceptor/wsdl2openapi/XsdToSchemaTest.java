@@ -368,6 +368,27 @@ class XsdToSchemaTest {
         assertEquals(List.of("ACTIVE", "INACTIVE"), fieldOf(schema, "status").getEnum());
     }
 
+    @Test
+    void namedSimpleTypePatternPropagatedToSchema() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="PhoneNumber">
+                  <xsd:restriction base="xsd:string">
+                    <xsd:pattern value="\\+?[0-9]{7,15}"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="contact">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="phoneNumber" type="tns:PhoneNumber"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "contact");
+
+        Schema<?> phoneSchema = fieldOf(schema, "phoneNumber");
+        assertInstanceOf(StringSchema.class, phoneSchema);
+        assertEquals("\\+?[0-9]{7,15}", phoneSchema.getPattern());
+    }
+
     // ── xsd:simpleContent ─────────────────────────────────────────────────
 
     @Test

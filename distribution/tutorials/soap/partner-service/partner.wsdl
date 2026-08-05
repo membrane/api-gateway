@@ -11,6 +11,12 @@
                 targetNamespace="http://example.com/partner"
                 elementFormDefault="qualified">
 
+            <xsd:simpleType name="PhoneNumber">
+                <xsd:restriction base="xsd:string">
+                    <xsd:pattern value="\+?[0-9]{7,15}"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+
             <xsd:simpleType name="PartnerKind">
                 <xsd:restriction base="xsd:string">
                     <xsd:enumeration value="PERSON"/>
@@ -34,6 +40,7 @@
                     <xsd:element name="id" type="xsd:long"/>
                     <xsd:element name="name" type="xsd:string"/>
                     <xsd:element name="birthDate" type="xsd:date" minOccurs="0"/>
+                    <xsd:element name="phoneNumber" type="tns:PhoneNumber" minOccurs="0"/>
                     <xsd:element name="kind" type="tns:PartnerKind"/>
                     <xsd:element name="active" type="xsd:boolean"/>
                     <xsd:element name="creditLimit" type="xsd:decimal"/>

@@ -43,6 +43,7 @@ api:
                   <id>1</id>
                   <name>Alice</name>
                   <birthDate>1985-03-15</birthDate>
+                  <phoneNumber>+4930123456</phoneNumber>
                   <kind>PERSON</kind>
                   <active>true</active>
                   <creditLimit>10000.00</creditLimit>

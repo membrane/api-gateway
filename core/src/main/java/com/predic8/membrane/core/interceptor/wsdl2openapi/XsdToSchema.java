@@ -359,8 +359,10 @@ public class XsdToSchema {
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
             if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
-            if (!"enumeration".equals(el.getLocalName())) continue;
-            ((Schema<Object>) schema).addEnumItemObject(el.getAttribute("value"));
+            switch (el.getLocalName()) {
+                case "enumeration" -> ((Schema<Object>) schema).addEnumItemObject(el.getAttribute("value"));
+                case "pattern"     -> schema.setPattern(el.getAttribute("value"));
+            }
         }
     }
 
