@@ -17,11 +17,9 @@ api:
           <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
             <s11:Body>
               <getPartnersResponse xmlns="http://example.com/partner">
-                <partners>
-                  <partner><id>1</id><name>Alice</name></partner>
-                  <partner><id>2</id><name>Bob</name></partner>
-                  <partner><id>3</id><name>Carol</name></partner>
-                </partners>
+                <partners><id>1</id><name>Alice</name></partners>
+                <partners><id>2</id><name>Bob</name></partners>
+                <partners><id>3</id><name>Carol</name></partners>
               </getPartnersResponse>
             </s11:Body>
           </s11:Envelope>
@@ -33,31 +31,37 @@ api:
   port: 3000
   test: header.SOAPAction == 'getPartner'
   flow:
-    - static:
-        contentType: text/xml
-        src: |
-          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
-            <s11:Body>
-              <getPartnerResponse xmlns="http://example.com/partner">
-                <partner>
-                  <id>1</id>
-                  <name>Alice</name>
-                  <birthDate>1985-03-15</birthDate>
-                  <phoneNumber>+4930123456</phoneNumber>
-                  <kind>PERSON</kind>
-                  <active>true</active>
-                  <creditLimit>10000.00</creditLimit>
-                  <address>
-                    <street>Main St</street>
-                    <houseNumber>1</houseNumber>
-                    <postalCode>12345</postalCode>
-                    <city>Springfield</city>
-                    <country>US</country>
-                  </address>
-                </partner>
-              </getPartnerResponse>
-            </s11:Body>
-          </s11:Envelope>
+    - request:
+        - setProperty:
+            name: id
+            value: "${string(//*[local-name()='id'])}"
+            language: xpath
+    - response:
+        - template:
+            contentType: text/xml
+            src: |
+              <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                <s11:Body>
+                  <getPartnerResponse xmlns="http://example.com/partner">
+                    <partner>
+                      <id>${property.id}</id>
+                      <name>Alice</name>
+                      <birthDate>1985-03-15</birthDate>
+                      <phoneNumber>+4930123456</phoneNumber>
+                      <kind>PERSON</kind>
+                      <active>true</active>
+                      <creditLimit>10000.00</creditLimit>
+                      <address>
+                        <street>Main St</street>
+                        <houseNumber>1</houseNumber>
+                        <postalCode>12345</postalCode>
+                        <city>Springfield</city>
+                        <country>US</country>
+                      </address>
+                    </partner>
+                  </getPartnerResponse>
+                </s11:Body>
+              </s11:Envelope>
     - return:
         status: 200
 
@@ -82,31 +86,37 @@ api:
   port: 3000
   test: header.SOAPAction == 'updatePartner'
   flow:
-    - static:
-        contentType: text/xml
-        src: |
-          <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
-            <s11:Body>
-              <updatePartnerResponse xmlns="http://example.com/partner">
-                <partner>
-                  <id>1</id>
-                  <name>Alice Updated</name>
-                  <birthDate>1985-03-15</birthDate>
-                  <phoneNumber>+4930123456</phoneNumber>
-                  <kind>PERSON</kind>
-                  <active>true</active>
-                  <creditLimit>10000.00</creditLimit>
-                  <address>
-                    <street>Main St</street>
-                    <houseNumber>1</houseNumber>
-                    <postalCode>12345</postalCode>
-                    <city>Springfield</city>
-                    <country>US</country>
-                  </address>
-                </partner>
-              </updatePartnerResponse>
-            </s11:Body>
-          </s11:Envelope>
+    - request:
+        - setProperty:
+            name: id
+            value: "${string(//*[local-name()='id'])}"
+            language: xpath
+    - response:
+        - template:
+            contentType: text/xml
+            src: |
+              <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                <s11:Body>
+                  <updatePartnerResponse xmlns="http://example.com/partner">
+                    <partner>
+                      <id>${property.id}</id>
+                      <name>Alice Updated</name>
+                      <birthDate>1985-03-15</birthDate>
+                      <phoneNumber>+4930123456</phoneNumber>
+                      <kind>PERSON</kind>
+                      <active>true</active>
+                      <creditLimit>10000.00</creditLimit>
+                      <address>
+                        <street>Main St</street>
+                        <houseNumber>1</houseNumber>
+                        <postalCode>12345</postalCode>
+                        <city>Springfield</city>
+                        <country>US</country>
+                      </address>
+                    </partner>
+                  </updatePartnerResponse>
+                </s11:Body>
+              </s11:Envelope>
     - return:
         status: 200
 
