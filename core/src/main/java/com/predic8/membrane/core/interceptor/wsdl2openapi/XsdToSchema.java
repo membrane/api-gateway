@@ -21,8 +21,6 @@ import io.swagger.v3.oas.models.media.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.QName;
 import java.util.*;
@@ -50,6 +48,21 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 public class XsdToSchema {
 
     private static final Logger log = LoggerFactory.getLogger(XsdToSchema.class);
+
+    private static final String UNBOUNDED = "unbounded";
+    /** {@code minOccurs="0"} — the only value that makes an element optional. */
+    private static final String MIN_OCCURS_OPTIONAL = "0";
+
+    /**
+     * The schema document a reference is being resolved against, plus the complexTypes currently
+     * being expanded — the recursion guard that keeps self-referential types from looping.
+     */
+    private record XsdContext(Element schemaRoot, Set<Element> visitingTypes) {
+        /** The same traversal, continued in another schema document (an import or include). */
+        XsdContext withRoot(Element root) {
+            return root == schemaRoot ? this : new XsdContext(root, visitingTypes);
+        }
+    }
 
     private final Map<String, List<Element>> schemasByNamespace;
 
@@ -107,7 +120,7 @@ public class XsdToSchema {
         for (var schemaRoot : roots) {
             Element xsdElement = findXsdChildWithName(schemaRoot, "element", qname.getLocalPart());
             if (xsdElement != null) {
-                return convertElementType(xsdElement, schemaRoot, visitingTypes);
+                return convertElementType(xsdElement, new XsdContext(schemaRoot, visitingTypes));
             }
         }
         return new ObjectSchema();
@@ -118,73 +131,67 @@ public class XsdToSchema {
      * or the type referenced by the {@code type} attribute.
      * Does NOT apply maxOccurs wrapping; that is done by addElementField for sequence members.
      */
-    private Schema<?> convertElementType(Element xsdElement, Element schemaRoot, Set<Element> visitingTypes) {
+    private Schema<?> convertElementType(Element xsdElement, XsdContext ctx) {
         Element inlineComplexType = findXsdChild(xsdElement, "complexType");
         if (inlineComplexType != null) {
-            return buildObjectSchema(inlineComplexType, schemaRoot, visitingTypes);
+            return buildObjectSchema(inlineComplexType, ctx);
         }
         Element inlineSimpleType = findXsdChild(xsdElement, "simpleType");
         if (inlineSimpleType != null) {
-            return buildSimpleTypeSchema(inlineSimpleType, xsdElement, schemaRoot, visitingTypes);
+            return buildSimpleTypeSchema(inlineSimpleType, ctx);
         }
         String typeAttr = xsdElement.getAttribute("type");
         if (!typeAttr.isEmpty()) {
-            return resolveTypeRef(typeAttr, xsdElement, schemaRoot, visitingTypes);
+            return resolveTypeRef(typeAttr, xsdElement, ctx);
         }
         return new ObjectSchema();
     }
 
-    private Schema<?> buildObjectSchema(Element complexTypeEl, Element schemaRoot, Set<Element> visitingTypes) {
+    private Schema<?> buildObjectSchema(Element complexTypeEl, XsdContext ctx) {
         var objectSchema = new ObjectSchema();
 
-        Element sequence = findXsdChild(complexTypeEl, "sequence");
-        if (sequence != null) {
-            addContainerFields(sequence, objectSchema, schemaRoot, visitingTypes);
-            addAttributeFields(complexTypeEl, objectSchema, schemaRoot, visitingTypes);
-            return objectSchema;
-        }
-        Element all = findXsdChild(complexTypeEl, "all");
-        if (all != null) {
-            addContainerFields(all, objectSchema, schemaRoot, visitingTypes);
-            addAttributeFields(complexTypeEl, objectSchema, schemaRoot, visitingTypes);
-            return objectSchema;
-        }
-        Element choice = findXsdChild(complexTypeEl, "choice");
-        if (choice != null) {
-            addChoiceFields(choice, objectSchema, schemaRoot, visitingTypes);
-            addAttributeFields(complexTypeEl, objectSchema, schemaRoot, visitingTypes);
+        Element particle = firstXsdChild(complexTypeEl, "sequence", "all", "choice");
+        if (particle != null) {
+            addParticleFields(particle, objectSchema, ctx);
+            addAttributeFields(complexTypeEl, objectSchema, ctx);
             return objectSchema;
         }
         Element complexContent = findXsdChild(complexTypeEl, "complexContent");
         if (complexContent != null) {
             Element extension = findXsdChild(complexContent, "extension");
-            if (extension != null) addExtensionFields(extension, objectSchema, schemaRoot, visitingTypes);
+            if (extension != null) addExtensionFields(extension, objectSchema, ctx);
             Element restriction = findXsdChild(complexContent, "restriction");
-            if (restriction != null) addExtensionFields(restriction, objectSchema, schemaRoot, visitingTypes);
+            if (restriction != null) addExtensionFields(restriction, objectSchema, ctx);
             return objectSchema;
         }
         // simpleContent: a complex type whose value is text — approximate as string
         if (findXsdChild(complexTypeEl, "simpleContent") != null) {
             return new StringSchema();
         }
-        addAttributeFields(complexTypeEl, objectSchema, schemaRoot, visitingTypes);
+        addAttributeFields(complexTypeEl, objectSchema, ctx);
         return objectSchema;
+    }
+
+    /** Expands one {@code <xsd:sequence>}, {@code <xsd:all>} or {@code <xsd:choice>} particle into {@code schema}. */
+    private void addParticleFields(Element particle, ObjectSchema schema, XsdContext ctx) {
+        if ("choice".equals(particle.getLocalName())) {
+            addChoiceFields(particle, schema, ctx);
+            return;
+        }
+        addContainerFields(particle, schema, ctx);
     }
 
     /**
      * Processes children of {@code <xsd:sequence>} or {@code <xsd:all>}, dispatching
      * element, choice, nested sequence/all, and group-ref nodes.
      */
-    private void addContainerFields(Element container, ObjectSchema schema, Element schemaRoot, Set<Element> visitingTypes) {
-        NodeList children = container.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
+    private void addContainerFields(Element container, ObjectSchema schema, XsdContext ctx) {
+        for (Element el : xsdChildren(container)) {
             switch (el.getLocalName()) {
-                case "element"          -> addElementField(el, schema, schemaRoot, visitingTypes);
-                case "choice"           -> addChoiceFields(el, schema, schemaRoot, visitingTypes);
-                case "sequence", "all"  -> addContainerFields(el, schema, schemaRoot, visitingTypes);
-                case "group"            -> addGroupFields(el, schema, schemaRoot, visitingTypes);
+                case "element"          -> addElementField(el, schema, ctx);
+                case "choice"           -> addChoiceFields(el, schema, ctx);
+                case "sequence", "all"  -> addContainerFields(el, schema, ctx);
+                case "group"            -> addGroupFields(el, schema, ctx);
                 // xsd:any: skip - wildcard has no JSON Schema equivalent
             }
         }
@@ -195,70 +202,54 @@ public class XsdToSchema {
      * definition in the schema map and expanding its content model (sequence, all, or choice)
      * into {@code schema}. Logs a debug message if the group cannot be resolved.
      */
-    private void addGroupFields(Element groupRef, ObjectSchema schema, Element schemaRoot, Set<Element> visitingTypes) {
+    private void addGroupFields(Element groupRef, ObjectSchema schema, XsdContext ctx) {
         String ref = groupRef.getAttribute("ref");
         if (ref.isEmpty()) return;
         String local = localName(ref);
-        for (var root : resolveTargetSchemaRoots(prefix(ref), groupRef, schemaRoot, schemasByNamespace)) {
+        for (var root : resolveTargetSchemaRoots(prefix(ref), groupRef, ctx.schemaRoot(), schemasByNamespace)) {
             Element groupDef = findXsdChildWithName(root, "group", local);
             if (groupDef != null) {
-                Element sequence = findXsdChild(groupDef, "sequence");
-                if (sequence != null) { addContainerFields(sequence, schema, root, visitingTypes); return; }
-                Element all = findXsdChild(groupDef, "all");
-                if (all != null) { addContainerFields(all, schema, root, visitingTypes); return; }
-                Element choice = findXsdChild(groupDef, "choice");
-                if (choice != null) { addChoiceFields(choice, schema, root, visitingTypes); return; }
+                Element particle = firstXsdChild(groupDef, "sequence", "all", "choice");
+                if (particle != null) addParticleFields(particle, schema, ctx.withRoot(root));
                 return;
             }
         }
         log.debug("xsd:group ref='{}' could not be resolved, skipping", ref);
     }
 
-    private void addElementField(Element el, ObjectSchema schema, Element schemaRoot, Set<Element> visitingTypes) {
+    private void addElementField(Element el, ObjectSchema schema, XsdContext ctx) {
         String fieldName = el.getAttribute("name");
         if (fieldName.isEmpty()) {
-            addRefField(el, schema, schemaRoot, visitingTypes);
+            addRefField(el, schema, ctx);
             return;
         }
-
-        String minOccurs = el.getAttribute("minOccurs");
-        String maxOccurs = el.getAttribute("maxOccurs");
-
-        Schema<?> fieldSchema = convertElementType(el, schemaRoot, visitingTypes);
-        if ("unbounded".equals(maxOccurs) || isMoreThanOne(maxOccurs)) {
-            fieldSchema = new ArraySchema().items(fieldSchema);
-        }
-
-        schema.addProperty(fieldName, fieldSchema);
-        if (!"0".equals(minOccurs)) {
-            schema.addRequiredItem(fieldName);
-        }
+        addField(schema, fieldName, el, convertElementType(el, ctx));
     }
 
     /**
      * Resolves an {@code <xsd:element ref="prefix:local"/>} by looking up the referenced global
      * element and adding it as a property under its declared name.
      */
-    private void addRefField(Element refEl, ObjectSchema schema, Element schemaRoot, Set<Element> visitingTypes) {
-        String ref = refEl.getAttribute("ref");
-        if (ref.isEmpty()) return;
-        String local = localName(ref);
-        for (var root : resolveTargetSchemaRoots(prefix(ref), refEl, schemaRoot, schemasByNamespace)) {
-            Element referenced = findXsdChildWithName(root, "element", local);
-            if (referenced != null) {
-                String minOccurs = refEl.getAttribute("minOccurs");
-                String maxOccurs = refEl.getAttribute("maxOccurs");
-                Schema<?> fieldSchema = convertElementType(referenced, root, visitingTypes);
-                if ("unbounded".equals(maxOccurs) || isMoreThanOne(maxOccurs)) {
-                    fieldSchema = new ArraySchema().items(fieldSchema);
-                }
-                schema.addProperty(local, fieldSchema);
-                if (!"0".equals(minOccurs)) {
-                    schema.addRequiredItem(local);
-                }
-                return;
-            }
+    private void addRefField(Element refEl, ObjectSchema schema, XsdContext ctx) {
+        resolveRefAlternative(refEl, ctx)
+                .ifPresent(alternative -> addField(schema, alternative.localName(), refEl, alternative.fieldSchema()));
+    }
+
+    /** Adds {@code fieldSchema} as a property, applying the declaration's maxOccurs and minOccurs. */
+    private static void addField(ObjectSchema schema, String fieldName, Element declaration, Schema<?> fieldSchema) {
+        schema.addProperty(fieldName, applyMaxOccurs(declaration, fieldSchema));
+        if (!MIN_OCCURS_OPTIONAL.equals(declaration.getAttribute("minOccurs"))) {
+            schema.addRequiredItem(fieldName);
         }
+    }
+
+    /** Wraps {@code fieldSchema} in an ArraySchema if the declaration allows more than one occurrence. */
+    private static Schema<?> applyMaxOccurs(Element declaration, Schema<?> fieldSchema) {
+        String maxOccurs = declaration.getAttribute("maxOccurs");
+        if (UNBOUNDED.equals(maxOccurs) || isMoreThanOne(maxOccurs)) {
+            return new ArraySchema().items(fieldSchema);
+        }
+        return fieldSchema;
     }
 
     /**
@@ -266,25 +257,27 @@ public class XsdToSchema {
      * extension/restriction element) to properties prefixed with {@code @}, e.g. an attribute
      * named {@code id} becomes the property {@code @id}.
      */
-    private void addAttributeFields(Element container, ObjectSchema schema, Element schemaRoot, Set<Element> visitingTypes) {
-        NodeList children = container.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
+    private void addAttributeFields(Element container, ObjectSchema schema, XsdContext ctx) {
+        for (Element el : xsdChildren(container)) {
             if (!"attribute".equals(el.getLocalName())) continue;
 
             String fieldName = el.getAttribute("name");
             if (fieldName.isEmpty()) continue; // ref= attributes: not supported
 
-            schema.addProperty("@" + fieldName, convertElementType(el, schemaRoot, visitingTypes));
+            String key = attributeKey(fieldName);
+            schema.addProperty(key, convertElementType(el, ctx));
             if ("required".equals(el.getAttribute("use"))) {
-                schema.addRequiredItem("@" + fieldName);
+                schema.addRequiredItem(key);
             }
         }
     }
 
     /** A resolved xsd:choice alternative, prior to deciding its final (possibly-qualified) key. */
-    private record ChoiceAlternative(String localName, String namespaceURI, Schema<?> fieldSchema) {}
+    private record ChoiceAlternative(String localName, String namespaceURI, Schema<?> fieldSchema) {
+        ChoiceAlternative withSchema(Schema<?> schema) {
+            return new ChoiceAlternative(localName, namespaceURI, schema);
+        }
+    }
 
     /**
      * Maps choice alternatives to optional properties. All alternatives are present
@@ -297,61 +290,62 @@ public class XsdToSchema {
      * Nested {@code xsd:sequence} and {@code xsd:all} particles are expanded inline via
      * {@link #addContainerFields}; nested {@code xsd:choice} particles recurse into this method.
      */
-    private void addChoiceFields(Element choice, ObjectSchema schema, Element schemaRoot, Set<Element> visitingTypes) {
+    private void addChoiceFields(Element choice, ObjectSchema schema, XsdContext ctx) {
         var alternatives = new ArrayList<ChoiceAlternative>();
-        NodeList children = choice.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
+        for (Element el : xsdChildren(choice)) {
             switch (el.getLocalName()) {
                 case "element" -> {
                     String fieldName = el.getAttribute("name");
                     if (!fieldName.isEmpty()) {
-                        String ns = schemaRoot.getAttribute("targetNamespace");
-                        alternatives.add(new ChoiceAlternative(fieldName, ns.isEmpty() ? null : ns, convertElementType(el, schemaRoot, visitingTypes)));
+                        String ns = ctx.schemaRoot().getAttribute("targetNamespace");
+                        alternatives.add(new ChoiceAlternative(fieldName, ns.isEmpty() ? null : ns, convertElementType(el, ctx)));
                     } else {
-                        resolveChoiceRefAlternative(el, schemaRoot, visitingTypes).ifPresent(alternatives::add);
+                        resolveRefAlternative(el, ctx)
+                                .map(alternative -> alternative.withSchema(applyMaxOccurs(el, alternative.fieldSchema())))
+                                .ifPresent(alternatives::add);
                     }
                 }
-                case "sequence", "all" -> addContainerFields(el, schema, schemaRoot, visitingTypes);
-                case "choice"          -> addChoiceFields(el, schema, schemaRoot, visitingTypes);
+                case "sequence", "all" -> addContainerFields(el, schema, ctx);
+                case "choice"          -> addChoiceFields(el, schema, ctx);
             }
         }
 
-        var occurrences = new HashMap<String, Integer>();
+        var colliding = collidingLocalNames(alternatives);
         for (var alt : alternatives) {
-            occurrences.merge(alt.localName(), 1, Integer::sum);
-        }
-        for (var alt : alternatives) {
-            boolean collides = occurrences.get(alt.localName()) > 1 && alt.namespaceURI() != null;
-            String key = collides ? qualifiedKey(alt.namespaceURI(), alt.localName()) : alt.localName();
-            schema.addProperty(key, alt.fieldSchema());
+            boolean collides = colliding.contains(alt.localName()) && alt.namespaceURI() != null;
+            schema.addProperty(collides ? qualifiedKey(alt.namespaceURI(), alt.localName()) : alt.localName(), alt.fieldSchema());
             // intentionally not added to required
         }
     }
 
+    /** The local names carried by more than one alternative — those need a namespace-qualified key. */
+    private static Set<String> collidingLocalNames(List<ChoiceAlternative> alternatives) {
+        var seen = new HashSet<String>();
+        var colliding = new HashSet<String>();
+        for (var alt : alternatives) {
+            if (!seen.add(alt.localName())) colliding.add(alt.localName());
+        }
+        return colliding;
+    }
+
     /**
-     * Resolves an {@code <xsd:element ref="prefix:local"/>} choice alternative to its local name,
-     * referenced namespace, and schema, without mutating a target schema directly — so that
-     * {@link #addChoiceFields} can detect same-local-name collisions across namespaces first.
+     * Resolves an {@code <xsd:element ref="prefix:local"/>} to the referenced element's local name,
+     * namespace, and schema, without mutating a target schema and without applying the reference's
+     * own maxOccurs — so that {@link #addChoiceFields} can detect same-local-name collisions across
+     * namespaces first, and {@link #addRefField} can apply minOccurs/maxOccurs itself.
      */
-    private Optional<ChoiceAlternative> resolveChoiceRefAlternative(Element refEl, Element schemaRoot, Set<Element> visitingTypes) {
+    private Optional<ChoiceAlternative> resolveRefAlternative(Element refEl, XsdContext ctx) {
         String ref = refEl.getAttribute("ref");
         if (ref.isEmpty()) return Optional.empty();
         String local = localName(ref);
         String refPrefix = prefix(ref);
         String namespaceURI = refPrefix.isEmpty()
-                ? schemaRoot.getAttribute("targetNamespace")
+                ? ctx.schemaRoot().getAttribute("targetNamespace")
                 : refEl.lookupNamespaceURI(refPrefix);
-        for (var root : resolveTargetSchemaRoots(refPrefix, refEl, schemaRoot, schemasByNamespace)) {
+        for (var root : resolveTargetSchemaRoots(refPrefix, refEl, ctx.schemaRoot(), schemasByNamespace)) {
             Element referenced = findXsdChildWithName(root, "element", local);
             if (referenced != null) {
-                String maxOccurs = refEl.getAttribute("maxOccurs");
-                Schema<?> fieldSchema = convertElementType(referenced, root, visitingTypes);
-                if ("unbounded".equals(maxOccurs) || isMoreThanOne(maxOccurs)) {
-                    fieldSchema = new ArraySchema().items(fieldSchema);
-                }
-                return Optional.of(new ChoiceAlternative(local, namespaceURI, fieldSchema));
+                return Optional.of(new ChoiceAlternative(local, namespaceURI, convertElementType(referenced, ctx.withRoot(root))));
             }
         }
         return Optional.empty();
@@ -362,10 +356,10 @@ public class XsdToSchema {
      * {@code <xsd:restriction>} inside {@code <xsd:complexContent>}.
      * Merges base type fields into {@code schema} first, then appends extension fields.
      */
-    private void addExtensionFields(Element extension, ObjectSchema schema, Element schemaRoot, Set<Element> visitingTypes) {
+    private void addExtensionFields(Element extension, ObjectSchema schema, XsdContext ctx) {
         String base = extension.getAttribute("base");
         if (!base.isEmpty()) {
-            Schema<?> baseSchema = resolveTypeRef(base, extension, schemaRoot, visitingTypes);
+            Schema<?> baseSchema = resolveTypeRef(base, extension, ctx);
             if (baseSchema instanceof ObjectSchema baseObj && baseObj.getProperties() != null) {
                 baseObj.getProperties().forEach(schema::addProperty);
                 if (baseObj.getRequired() != null) {
@@ -376,27 +370,24 @@ public class XsdToSchema {
             }
         }
         Element seq = findXsdChild(extension, "sequence");
-        if (seq != null) addContainerFields(seq, schema, schemaRoot, visitingTypes);
+        if (seq != null) addContainerFields(seq, schema, ctx);
         Element all = findXsdChild(extension, "all");
-        if (all != null) addContainerFields(all, schema, schemaRoot, visitingTypes);
-        addAttributeFields(extension, schema, schemaRoot, visitingTypes);
+        if (all != null) addContainerFields(all, schema, ctx);
+        addAttributeFields(extension, schema, ctx);
     }
 
-    private Schema<?> buildSimpleTypeSchema(Element simpleTypeEl, Element contextEl, Element schemaRoot, Set<Element> visitingTypes) {
+    private Schema<?> buildSimpleTypeSchema(Element simpleTypeEl, XsdContext ctx) {
         Element restriction = findXsdChild(simpleTypeEl, "restriction");
         if (restriction == null) return new StringSchema();
         String base = restriction.getAttribute("base");
-        Schema<?> schema = base.isEmpty() ? new StringSchema() : resolveTypeRef(base, restriction, schemaRoot, visitingTypes);
+        Schema<?> schema = base.isEmpty() ? new StringSchema() : resolveTypeRef(base, restriction, ctx);
         addEnumValues(restriction, schema);
         return schema;
     }
 
     @SuppressWarnings("unchecked")
     private void addEnumValues(Element restriction, Schema<?> schema) {
-        NodeList children = restriction.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
+        for (Element el : xsdChildren(restriction)) {
             switch (el.getLocalName()) {
                 case "enumeration" -> ((Schema<Object>) schema).addEnumItemObject(el.getAttribute("value"));
                 case "pattern"     -> schema.setPattern(el.getAttribute("value"));
@@ -409,30 +400,30 @@ public class XsdToSchema {
      * to an OpenAPI schema. Uses the DOM context element for prefix→URI resolution so that
      * cross-namespace references are followed correctly.
      */
-    private Schema<?> resolveTypeRef(String typeRef, Element contextElement, Element currentSchemaRoot, Set<Element> visitingTypes) {
+    private Schema<?> resolveTypeRef(String typeRef, Element contextElement, XsdContext ctx) {
         if (typeRef.isEmpty()) return new StringSchema();
         String prefix = prefix(typeRef);
         String local = localName(typeRef);
-        List<Element> targetRoots = resolveTargetSchemaRoots(prefix, contextElement, currentSchemaRoot, schemasByNamespace);
+        List<Element> targetRoots = resolveTargetSchemaRoots(prefix, contextElement, ctx.schemaRoot(), schemasByNamespace);
         for (var targetRoot : targetRoots) {
             Element complexType = findXsdChildWithName(targetRoot, "complexType", local);
             if (complexType != null) {
-                if (visitingTypes.contains(complexType)) {
+                if (ctx.visitingTypes().contains(complexType)) {
                     log.debug("Recursive reference to type '{}', returning empty schema", local);
                     return new ObjectSchema();
                 }
-                visitingTypes.add(complexType);
+                ctx.visitingTypes().add(complexType);
                 try {
-                    return buildObjectSchema(complexType, targetRoot, visitingTypes);
+                    return buildObjectSchema(complexType, ctx.withRoot(targetRoot));
                 } finally {
-                    visitingTypes.remove(complexType);
+                    ctx.visitingTypes().remove(complexType);
                 }
             }
         }
         for (var targetRoot : targetRoots) {
             Element simpleType = findXsdChildWithName(targetRoot, "simpleType", local);
             if (simpleType != null) {
-                return buildSimpleTypeSchema(simpleType, contextElement, targetRoot, visitingTypes);
+                return buildSimpleTypeSchema(simpleType, ctx.withRoot(targetRoot));
             }
         }
         return mapPrimitive(local);
@@ -453,11 +444,11 @@ public class XsdToSchema {
         if (targetRoots == null) return mapPrimitive(qname.getLocalPart());
         for (var root : targetRoots) {
             Element complexType = findXsdChildWithName(root, "complexType", qname.getLocalPart());
-            if (complexType != null) return buildObjectSchema(complexType, root, visitingTypes);
+            if (complexType != null) return buildObjectSchema(complexType, new XsdContext(root, visitingTypes));
         }
         for (var root : targetRoots) {
             Element simpleType = findXsdChildWithName(root, "simpleType", qname.getLocalPart());
-            if (simpleType != null) return buildSimpleTypeSchema(simpleType, simpleType, root, visitingTypes);
+            if (simpleType != null) return buildSimpleTypeSchema(simpleType, new XsdContext(root, visitingTypes));
         }
         return mapPrimitive(qname.getLocalPart());
     }
@@ -500,7 +491,7 @@ public class XsdToSchema {
     }
 
 
-    private boolean isMoreThanOne(String maxOccurs) {
+    private static boolean isMoreThanOne(String maxOccurs) {
         if (maxOccurs == null || maxOccurs.isEmpty()) return false;
         try {
             return Integer.parseInt(maxOccurs) > 1;

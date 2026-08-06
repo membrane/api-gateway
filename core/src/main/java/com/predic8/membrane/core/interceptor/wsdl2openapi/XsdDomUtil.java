@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.util.*;
@@ -26,33 +25,56 @@ import static com.predic8.membrane.annot.Constants.XSD_NS;
 /** Static DOM helpers for XSD traversal shared across wsdl2openapi transformers. */
 class XsdDomUtil {
 
+    /** Prefix marking a JSON property that maps to an XML attribute rather than a child element. */
+    static final String ATTRIBUTE_PREFIX = "@";
+
     private XsdDomUtil() {}
+
+    /** The JSON property name an XML attribute is mapped to, e.g. {@code id} -> {@code @id}. */
+    static String attributeKey(String localName) {
+        return ATTRIBUTE_PREFIX + localName;
+    }
+
+    /** All child elements of {@code parent}, in document order. */
+    static List<Element> childElements(Element parent) {
+        var result = new ArrayList<Element>();
+        NodeList children = parent.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i) instanceof Element el) result.add(el);
+        }
+        return result;
+    }
+
+    /** All child elements of {@code parent} that are in the XSD namespace, in document order. */
+    static List<Element> xsdChildren(Element parent) {
+        var result = new ArrayList<Element>();
+        for (Element el : childElements(parent)) {
+            if (XSD_NS.equals(el.getNamespaceURI())) result.add(el);
+        }
+        return result;
+    }
 
     /** First xsd: child with the given local name, or null. */
     static Element findXsdChild(Element parent, String xsdLocalName) {
-        NodeList children = parent.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element el
-                    && XSD_NS.equals(el.getNamespaceURI())
-                    && xsdLocalName.equals(el.getLocalName())) {
-                return el;
-            }
+        for (Element el : xsdChildren(parent)) {
+            if (xsdLocalName.equals(el.getLocalName())) return el;
+        }
+        return null;
+    }
+
+    /** First xsd: child whose local name is one of {@code xsdLocalNames}, or null. */
+    static Element firstXsdChild(Element parent, String... xsdLocalNames) {
+        var wanted = List.of(xsdLocalNames);
+        for (Element el : xsdChildren(parent)) {
+            if (wanted.contains(el.getLocalName())) return el;
         }
         return null;
     }
 
     /** First xsd: child with given local name and name="..." attribute, or null. */
     static Element findXsdChildWithName(Element parent, String xsdLocalName, String nameAttr) {
-        NodeList children = parent.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element el
-                    && XSD_NS.equals(el.getNamespaceURI())
-                    && xsdLocalName.equals(el.getLocalName())
-                    && nameAttr.equals(el.getAttribute("name"))) {
-                return el;
-            }
+        for (Element el : xsdChildren(parent)) {
+            if (xsdLocalName.equals(el.getLocalName()) && nameAttr.equals(el.getAttribute("name"))) return el;
         }
         return null;
     }

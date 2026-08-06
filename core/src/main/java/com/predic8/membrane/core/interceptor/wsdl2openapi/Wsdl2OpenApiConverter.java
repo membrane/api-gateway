@@ -30,12 +30,10 @@ import io.swagger.v3.oas.models.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.extractParamNames;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
@@ -48,6 +46,9 @@ import static io.swagger.v3.parser.ObjectMapperFactory.createYaml;
 public class Wsdl2OpenApiConverter {
 
     private static final Logger log = LoggerFactory.getLogger(Wsdl2OpenApiConverter.class);
+
+    /** Mapping of an operation the configuration says nothing about: POST on its kebab-case name. */
+    private static final OperationSettings DEFAULT_SETTINGS = new OperationSettings();
 
     private final Definitions definitions;
     private final String basePath;
@@ -116,46 +117,50 @@ public class Wsdl2OpenApiConverter {
 
     private Paths buildPaths() {
         var paths = new Paths();
+        var wsdlOps = namedWsdlOperations();
         if (operations.isEmpty()) {
-            definitions.getPortTypes().stream()
-                    .flatMap(pt -> pt.getOperations().stream())
-                    .filter(wsdlOp -> {
-                        if (wsdlOp.getName() == null) {
-                            log.debug("Skipping WSDL operation with null name");
-                            return false;
-                        }
-                        return true;
-                    })
-                    .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp.getName(), wsdlOp, "POST", null, null)));
-        } else {
-            var wsdlOps = definitions.getPortTypes().stream()
-                    .flatMap(pt -> pt.getOperations().stream())
-                    .filter(op -> op.getName() != null)
-                    .toList();
-            for (var entry : operations.entrySet()) {
-                var name = entry.getKey();
-                var opSettings = entry.getValue();
-                var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst()
-                        .orElseThrow(() -> new ConfigurationException(
-                                "Operation '%s' is not defined in the WSDL. Available operations: %s".formatted(
-                                        name, wsdlOps.stream().map(Operation::getName).toList())));
-                var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
-                var existing = paths.get(pathKey);
-                if (existing != null) {
-                    applyMethod(existing, buildApiOperation(name, wsdlOp, opSettings.getMethod(), opSettings.getPath(), opSettings.getTag()), opSettings.getMethod());
-                } else {
-                    paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings.getMethod(), opSettings.getPath(), opSettings.getTag()));
-                }
-            }
+            wsdlOps.forEach(wsdlOp -> paths.addPathItem(
+                    "/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp.getName(), wsdlOp, DEFAULT_SETTINGS)));
+            return paths;
         }
+        operations.forEach((name, opSettings) -> addConfiguredPath(paths, wsdlOps, name, opSettings));
         return paths;
     }
 
-    private PathItem buildPathItem(String name, Operation wsdlOp, String method, String pathTemplate, String tag) {
-        return applyMethod(new PathItem(), buildApiOperation(name, wsdlOp, method, pathTemplate, tag), method);
+    /** The WSDL's operations across all port types; unnamed ones cannot be mapped to a path. */
+    private List<Operation> namedWsdlOperations() {
+        var named = new ArrayList<Operation>();
+        for (var portType : definitions.getPortTypes()) {
+            for (var wsdlOp : portType.getOperations()) {
+                if (wsdlOp.getName() == null) {
+                    log.debug("Skipping WSDL operation with null name");
+                    continue;
+                }
+                named.add(wsdlOp);
+            }
+        }
+        return named;
     }
 
-    private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, String method, String pathTemplate, String tag) {
+    private void addConfiguredPath(Paths paths, List<Operation> wsdlOps, String name, OperationSettings opSettings) {
+        var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst()
+                .orElseThrow(() -> new ConfigurationException(
+                        "Operation '%s' is not defined in the WSDL. Available operations: %s".formatted(
+                                name, wsdlOps.stream().map(Operation::getName).toList())));
+        var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
+        var existing = paths.get(pathKey);
+        if (existing != null) {
+            applyMethod(existing, buildApiOperation(name, wsdlOp, opSettings), opSettings.getMethod());
+        } else {
+            paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings));
+        }
+    }
+
+    private PathItem buildPathItem(String name, Operation wsdlOp, OperationSettings settings) {
+        return applyMethod(new PathItem(), buildApiOperation(name, wsdlOp, settings), settings.getMethod());
+    }
+
+    private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, OperationSettings settings) {
         var inputParts = getInputParts(wsdlOp);
         var headerParts = findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
 
@@ -164,19 +169,19 @@ public class Wsdl2OpenApiConverter {
                 .summary(name)
                 .responses(buildResponses(wsdlOp));
 
-        if (tag != null) {
-            apiOp.addTagsItem(tag);
+        if (settings.getTag() != null) {
+            apiOp.addTagsItem(settings.getTag());
         }
 
-        if (pathTemplate != null) {
-            extractParamNames(pathTemplate).forEach(p ->
+        if (settings.getPath() != null) {
+            extractParamNames(settings.getPath()).forEach(p ->
                 apiOp.addParametersItem(new Parameter().name(p).in("path").required(true).schema(new StringSchema()))
             );
         }
-        if (hasRequestBody(method)) {
+        if (hasRequestBody(settings.getMethod())) {
             apiOp.requestBody(buildRequestBody(getBodyParts(inputParts, headerParts)));
         }
-        buildHeaderParameters(headerParts).forEach(apiOp::addParametersItem);
+        headerParts.stream().map(this::buildHeaderParameter).forEach(apiOp::addParametersItem);
         return apiOp;
     }
 
@@ -205,10 +210,6 @@ public class Wsdl2OpenApiConverter {
     private List<Part> getBodyParts(List<Part> inputParts, List<Part> headerParts) {
         var headerPartNames = headerParts.stream().map(Part::getName).collect(Collectors.toSet());
         return inputParts.stream().filter(p -> !headerPartNames.contains(p.getName())).toList();
-    }
-
-    private List<Parameter> buildHeaderParameters(List<Part> headerParts) {
-        return headerParts.stream().map(this::buildHeaderParameter).toList();
     }
 
     private Optional<BindingOperation> findBindingOperation(String name) {
@@ -242,39 +243,40 @@ public class Wsdl2OpenApiConverter {
     }
 
     private RequestBody buildRequestBody(List<Part> parts) {
-        var schema = converter.convertParts(parts);
         return new RequestBody()
                 .required(true)
-                .content(new Content().addMediaType("application/json", new MediaType().schema(schema)));
+                .content(jsonContent(converter.convertParts(parts)));
+    }
+
+    private static Content jsonContent(Schema<?> schema) {
+        return new Content().addMediaType(APPLICATION_JSON, new MediaType().schema(schema));
     }
 
     private ApiResponses buildResponses(Operation wsdlOp) {
-        var schema = converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT));
         var response200 = new ApiResponse()
                 .description("Successful response")
-                .content(new Content().addMediaType("application/json", new MediaType().schema(schema)));
+                .content(jsonContent(converter.convertMessageParts(wsdlOp.getMessagesByDirection(OUTPUT))));
 
+        return new ApiResponses()
+                .addApiResponse("200", response200)
+                .addApiResponse("500", buildFaultResponse(wsdlOp));
+    }
+
+    /** The 500 response: the operation's declared faults, combined with oneOf if there is more than one. */
+    private ApiResponse buildFaultResponse(Operation wsdlOp) {
         List<Schema> faultSchemas = wsdlOp.getFaults().stream()
                 .map(fault -> fault.getMessage().getParts())
                 .filter(parts -> !parts.isEmpty())
                 .map(parts -> (Schema) converter.convertParts(parts))
                 .toList();
 
-        ApiResponse response500;
-        if (faultSchemas.isEmpty()) {
-            response500 = new ApiResponse().description("Internal server error");
-        } else {
-            Schema faultSchema = faultSchemas.size() == 1
-                    ? faultSchemas.getFirst()
-                    : new ComposedSchema().oneOf(faultSchemas);
-            response500 = new ApiResponse()
-                    .description("Internal server error")
-                    .content(new Content().addMediaType("application/json", new MediaType().schema(faultSchema)));
-        }
+        var response = new ApiResponse().description("Internal server error");
+        if (faultSchemas.isEmpty()) return response;
 
-        return new ApiResponses()
-                .addApiResponse("200", response200)
-                .addApiResponse("500", response500);
+        Schema faultSchema = faultSchemas.size() == 1
+                ? faultSchemas.getFirst()
+                : new ComposedSchema().oneOf(faultSchemas);
+        return response.content(jsonContent(faultSchema));
     }
 
     private String getServiceName() {

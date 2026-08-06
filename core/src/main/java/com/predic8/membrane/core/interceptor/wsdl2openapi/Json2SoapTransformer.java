@@ -20,12 +20,8 @@ import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import com.predic8.membrane.core.util.wsdl.parser.Message;
 import com.predic8.membrane.core.util.wsdl.parser.Operation;
 import com.predic8.membrane.core.util.wsdl.parser.Part;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
@@ -38,7 +34,8 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 
-import static com.predic8.membrane.annot.Constants.XSD_NS;
+import static com.predic8.membrane.annot.Constants.SOAP11_NS;
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_11;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.SOAPVersion.SOAP_12;
@@ -50,13 +47,10 @@ import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INP
  */
 public class Json2SoapTransformer {
 
-    private static final Logger log = LoggerFactory.getLogger(Json2SoapTransformer.class);
-    private static final String SOAP11_NS = "http://schemas.xmlsoap.org/soap/envelope/";
-    private static final String SOAP12_NS = "http://www.w3.org/2003/05/soap-envelope";
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final Definitions definitions;
     private final String operationName;
-    private final ObjectMapper mapper = new ObjectMapper();
     private final Map<String, List<Element>> schemasByNamespace;
 
     public Json2SoapTransformer(Definitions definitions, String operationName) {
@@ -66,7 +60,7 @@ public class Json2SoapTransformer {
     }
 
     public byte[] transform(String jsonBody) throws Exception {
-        JsonNode jsonNode = mapper.readTree(jsonBody);
+        JsonNode jsonNode = MAPPER.readTree(jsonBody);
 
         List<Message> inputMessages = findOperation(operationName).getMessagesByDirection(INPUT);
         if (inputMessages.isEmpty()) {
@@ -74,16 +68,14 @@ public class Json2SoapTransformer {
         }
         Message inputMessage = inputMessages.getFirst();
 
-        Document doc = createSoapEnvelope();
-        Element body = getSoapBody(doc);
+        Envelope envelope = createSoapEnvelope();
+        Document doc = envelope.doc();
 
         Element operationElement = createOperationElement(doc, inputMessage);
-        body.appendChild(operationElement);
+        envelope.body().appendChild(operationElement);
 
         var partQName = inputMessage.getParts().getFirst().getElementQName();
-        List<String> fieldOrder = resolveElementFieldOrder(partQName);
-        Map<String, String> fieldNamespaces = resolveFieldNamespaces(partQName);
-        mapJsonToElement(jsonNode, operationElement, doc, fieldOrder, fieldNamespaces, findXsdContext(partQName));
+        mapJsonToElement(jsonNode, operationElement, doc, fieldContextFor(findXsdContext(partQName)));
 
         return documentToBytes(doc);
     }
@@ -96,7 +88,10 @@ public class Json2SoapTransformer {
                 .orElseThrow(() -> new IllegalArgumentException("Operation not found: " + name));
     }
 
-    private Document createSoapEnvelope() throws Exception {
+    /** A freshly created SOAP envelope document, together with its Body element. */
+    private record Envelope(Document doc, Element body) {}
+
+    private Envelope createSoapEnvelope() throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -112,17 +107,12 @@ public class Json2SoapTransformer {
         Element body = doc.createElementNS(soapNs, prefix + ":Body");
         envelope.appendChild(body);
 
-        return doc;
+        return new Envelope(doc, body);
     }
 
     private boolean useSoap12() {
         Set<Definitions.SOAPVersion> versions = definitions.getSoapVersions();
         return versions.contains(SOAP_12) && !versions.contains(SOAP_11);
-    }
-
-    private Element getSoapBody(Document doc) {
-        NodeList bodies = doc.getElementsByTagNameNS("*", "Body");
-        return (Element) bodies.item(0);
     }
 
     private Element createOperationElement(Document doc, Message message) {
@@ -148,50 +138,36 @@ public class Json2SoapTransformer {
     }
 
     /**
-     * Returns the field names in WSDL-defined order for the element identified by {@code elementQName}.
-     * Returns an empty list if the element cannot be found or has no resolvable sequence.
-     */
-    private List<String> resolveElementFieldOrder(QName elementQName) {
-        if (elementQName == null) return List.of();
-        var roots = schemasByNamespace.get(elementQName.getNamespaceURI());
-        if (roots == null) return List.of();
-        for (var schemaRoot : roots) {
-            Element xsdEl = findXsdChildWithName(schemaRoot, "element", elementQName.getLocalPart());
-            if (xsdEl != null) {
-                return extractSequenceFieldNames(xsdEl, schemaRoot);
-            }
-        }
-        return List.of();
-    }
-
-    /**
      * Extracts ordered field names from the complexType of an xsd:element node.
      * Handles inline complexType and type-attribute references to named complexTypes.
      */
-    private List<String> extractSequenceFieldNames(Element xsdElement, Element schemaRoot) {
-        Element complexType = findXsdChild(xsdElement, "complexType");
-        if (complexType == null) {
-            String typeAttr = xsdElement.getAttribute("type");
-            if (!typeAttr.isEmpty()) {
-                complexType = resolveComplexType(typeAttr, xsdElement, schemaRoot);
-            }
-        }
+    private List<String> extractSequenceFieldNames(XsdContext context) {
+        if (context == null) return List.of();
+        Element complexType = complexTypeOf(context);
         if (complexType == null) return List.of();
 
-        Element sequence = findXsdChild(complexType, "sequence");
-        if (sequence == null) sequence = findXsdChild(complexType, "all");
+        Element sequence = firstXsdChild(complexType, "sequence", "all");
         if (sequence == null) return List.of();
 
         var names = new ArrayList<String>();
-        NodeList children = sequence.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (child instanceof Element el && XSD_NS.equals(el.getNamespaceURI()) && "element".equals(el.getLocalName())) {
-                String name = el.getAttribute("name");
-                if (!name.isEmpty()) names.add(name);
-            }
+        for (Element el : xsdChildren(sequence)) {
+            if (!"element".equals(el.getLocalName())) continue;
+            String name = el.getAttribute("name");
+            if (!name.isEmpty()) names.add(name);
         }
         return names;
+    }
+
+    /**
+     * The complexType defining the content of the context's xsd:element — either declared inline
+     * or referenced by its {@code type=} attribute. Returns {@code null} if there is none.
+     */
+    private Element complexTypeOf(XsdContext context) {
+        Element inline = findXsdChild(context.xsdElement(), "complexType");
+        if (inline != null) return inline;
+        String typeAttr = context.xsdElement().getAttribute("type");
+        if (typeAttr.isEmpty()) return null;
+        return resolveComplexType(typeAttr, context.xsdElement(), context.schemaRoot());
     }
 
     /**
@@ -209,44 +185,28 @@ public class Json2SoapTransformer {
     }
 
     /**
-     * Builds a map from field name to namespace URI for the children of the XSD element
-     * identified by {@code elementQName}. Locally-declared fields carry the schema's
-     * {@code targetNamespace} when {@code elementFormDefault="qualified"}; {@code ref=}
-     * fields carry their referenced element's target namespace regardless of
-     * {@code elementFormDefault}.
+     * Builds a map from field name to namespace URI for the children of the context's XSD element.
+     * Locally-declared fields carry the schema's {@code targetNamespace} when
+     * {@code elementFormDefault="qualified"}; {@code ref=} fields carry their referenced element's
+     * target namespace regardless of {@code elementFormDefault}.
      */
-    private Map<String, String> resolveFieldNamespaces(QName elementQName) {
-        if (elementQName == null) return Map.of();
-        List<Element> roots = schemasByNamespace.get(elementQName.getNamespaceURI());
-        if (roots == null) return Map.of();
-        for (var schemaRoot : roots) {
-            Element xsdEl = findXsdChildWithName(schemaRoot, "element", elementQName.getLocalPart());
-            if (xsdEl != null) {
-                String defaultNs = "qualified".equals(schemaRoot.getAttribute("elementFormDefault"))
-                        ? schemaRoot.getAttribute("targetNamespace") : null;
-                return extractFieldNamespaces(xsdEl, schemaRoot, defaultNs);
-            }
-        }
-        return Map.of();
-    }
-
-    private Map<String, String> extractFieldNamespaces(Element xsdElement, Element schemaRoot, String defaultNs) {
-        Element complexType = findXsdChild(xsdElement, "complexType");
-        if (complexType == null) {
-            String typeAttr = xsdElement.getAttribute("type");
-            if (!typeAttr.isEmpty()) complexType = resolveComplexType(typeAttr, xsdElement, schemaRoot);
-        }
+    private Map<String, String> extractFieldNamespaces(XsdContext context) {
+        if (context == null) return Map.of();
+        Element complexType = complexTypeOf(context);
         if (complexType == null) return Map.of();
 
+        Element container = firstXsdChild(complexType, "sequence", "all", "choice");
+        if (container == null) return Map.of();
+
         var result = new LinkedHashMap<String, String>();
-        for (String tag : List.of("sequence", "all", "choice")) {
-            Element container = findXsdChild(complexType, tag);
-            if (container != null) {
-                collectFieldNamespaces(container, schemaRoot, defaultNs, result);
-                break;
-            }
-        }
+        collectFieldNamespaces(container, context.schemaRoot(), defaultNamespace(context.schemaRoot()), result);
         return result;
+    }
+
+    /** The namespace locally-declared fields carry — only set when {@code elementFormDefault="qualified"}. */
+    private static String defaultNamespace(Element schemaRoot) {
+        return "qualified".equals(schemaRoot.getAttribute("elementFormDefault"))
+                ? schemaRoot.getAttribute("targetNamespace") : null;
     }
 
     /** A field name/namespace pair, resolved prior to deciding its final (possibly-qualified) key. */
@@ -275,19 +235,11 @@ public class Json2SoapTransformer {
      * sequence/all/choice of {@code xsdElement}, resolving a {@code type=} reference if needed.
      * Returns {@code null} if the parent has no complexType or no matching child.
      */
-    private Element findChildXsdElement(Element xsdElement, String childLocalName, Element schemaRoot) {
-        if (xsdElement == null) return null;
-        Element complexType = findXsdChild(xsdElement, "complexType");
-        if (complexType == null) {
-            String typeAttr = xsdElement.getAttribute("type");
-            if (!typeAttr.isEmpty()) complexType = resolveComplexType(typeAttr, xsdElement, schemaRoot);
-        }
+    private Element findChildXsdElement(XsdContext context, String childLocalName) {
+        Element complexType = complexTypeOf(context);
         if (complexType == null) return null;
-        for (String tag : List.of("sequence", "all", "choice")) {
-            Element container = findXsdChild(complexType, tag);
-            if (container != null) return findXsdChildWithName(container, "element", childLocalName);
-        }
-        return null;
+        Element container = firstXsdChild(complexType, "sequence", "all", "choice");
+        return container != null ? findXsdChildWithName(container, "element", childLocalName) : null;
     }
 
     /**
@@ -299,10 +251,7 @@ public class Json2SoapTransformer {
      */
     private void collectFieldNamespaces(Element container, Element schemaRoot, String defaultNs, Map<String, String> result) {
         var refs = new ArrayList<FieldRef>();
-        NodeList children = container.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            if (!(child instanceof Element el) || !XSD_NS.equals(el.getNamespaceURI())) continue;
+        for (Element el : xsdChildren(container)) {
             if (!"element".equals(el.getLocalName())) continue;
 
             String name = el.getAttribute("name");
@@ -333,19 +282,34 @@ public class Json2SoapTransformer {
         }
     }
 
-    private void mapJsonToElement(JsonNode jsonNode, Element parent, Document doc, List<String> fieldOrder, Map<String, String> fieldNamespaces, XsdContext xsdContext) {
+    /**
+     * The WSDL-derived metadata for the element currently being written: the order its fields are
+     * declared in, the namespace each field carries, and the XSD declaration itself (needed to
+     * derive the same three values for a nested object).
+     */
+    private record FieldContext(List<String> fieldOrder, Map<String, String> fieldNamespaces, XsdContext xsd) {}
+
+    private static final FieldContext NO_FIELD_CONTEXT = new FieldContext(List.of(), Map.of(), null);
+
+    /** The field metadata of {@code context}, or an empty context when the XSD declaration is unknown. */
+    private FieldContext fieldContextFor(XsdContext context) {
+        if (context == null) return NO_FIELD_CONTEXT;
+        return new FieldContext(extractSequenceFieldNames(context), extractFieldNamespaces(context), context);
+    }
+
+    private void mapJsonToElement(JsonNode jsonNode, Element parent, Document doc, FieldContext context) {
         if (jsonNode.isObject()) {
             var emitted = new LinkedHashSet<String>();
-            for (String name : fieldOrder) {
+            for (String name : context.fieldOrder()) {
                 JsonNode val = jsonNode.get(name);
                 if (val != null) {
-                    emitField(name, val, parent, doc, fieldNamespaces, xsdContext);
+                    emitField(name, val, parent, doc, context);
                     emitted.add(name);
                 }
             }
             for (var entry : jsonNode.properties()) {
                 if (!emitted.contains(entry.getKey())) {
-                    emitField(entry.getKey(), entry.getValue(), parent, doc, fieldNamespaces, xsdContext);
+                    emitField(entry.getKey(), entry.getValue(), parent, doc, context);
                 }
             }
         } else if (jsonNode.isValueNode()) {
@@ -353,25 +317,14 @@ public class Json2SoapTransformer {
         }
     }
 
-    private void emitField(String fieldName, JsonNode fieldValue, Element parent, Document doc, Map<String, String> fieldNamespaces, XsdContext xsdContext) {
-        if (fieldName.startsWith("@")) {
-            parent.setAttribute(fieldName.substring(1), fieldValue.asText());
+    private void emitField(String fieldName, JsonNode fieldValue, Element parent, Document doc, FieldContext context) {
+        if (fieldName.startsWith(ATTRIBUTE_PREFIX)) {
+            parent.setAttribute(fieldName.substring(ATTRIBUTE_PREFIX.length()), fieldValue.asText());
             return;
         }
-        String ns = fieldNamespaces.get(fieldName);
+        String ns = context.fieldNamespaces().get(fieldName);
         String xmlLocalName = localNameFromKey(fieldName);
-
-        XsdContext childContext = null;
-        if (xsdContext != null) {
-            Element childXsdEl = findChildXsdElement(xsdContext.xsdElement(), xmlLocalName, xsdContext.schemaRoot());
-            if (childXsdEl != null) childContext = new XsdContext(childXsdEl, xsdContext.schemaRoot());
-        }
-        List<String> childFieldOrder = childContext != null
-                ? extractSequenceFieldNames(childContext.xsdElement(), childContext.schemaRoot()) : List.of();
-        String childDefaultNs = childContext != null && "qualified".equals(childContext.schemaRoot().getAttribute("elementFormDefault"))
-                ? childContext.schemaRoot().getAttribute("targetNamespace") : null;
-        Map<String, String> childFieldNs = childContext != null
-                ? extractFieldNamespaces(childContext.xsdElement(), childContext.schemaRoot(), childDefaultNs) : Map.of();
+        FieldContext childContext = fieldContextFor(childXsdContext(context.xsd(), xmlLocalName));
 
         if (fieldValue.isArray()) {
             for (JsonNode arrayItem : fieldValue) {
@@ -379,7 +332,7 @@ public class Json2SoapTransformer {
                 if (arrayItem.isValueNode()) {
                     arrayElement.setTextContent(arrayItem.asText());
                 } else {
-                    mapJsonToElement(arrayItem, arrayElement, doc, childFieldOrder, childFieldNs, childContext);
+                    mapJsonToElement(arrayItem, arrayElement, doc, childContext);
                 }
                 parent.appendChild(arrayElement);
             }
@@ -387,11 +340,18 @@ public class Json2SoapTransformer {
             Element childElement = makeElement(doc, ns, xmlLocalName);
             parent.appendChild(childElement);
             if (fieldValue.isObject()) {
-                mapJsonToElement(fieldValue, childElement, doc, childFieldOrder, childFieldNs, childContext);
+                mapJsonToElement(fieldValue, childElement, doc, childContext);
             } else {
                 childElement.setTextContent(fieldValue.asText());
             }
         }
+    }
+
+    /** The XSD declaration of the named child field, or {@code null} if it cannot be resolved. */
+    private XsdContext childXsdContext(XsdContext parentContext, String childLocalName) {
+        if (parentContext == null) return null;
+        Element childXsdEl = findChildXsdElement(parentContext, childLocalName);
+        return childXsdEl != null ? new XsdContext(childXsdEl, parentContext.schemaRoot()) : null;
     }
 
     private static Element makeElement(Document doc, String namespace, String name) {

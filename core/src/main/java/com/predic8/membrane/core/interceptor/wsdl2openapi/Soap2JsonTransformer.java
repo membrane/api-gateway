@@ -26,8 +26,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.predic8.membrane.annot.Constants.SOAP11_NS;
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.attributeKey;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.childElements;
 import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getInstance;
-import static org.w3c.dom.Node.ELEMENT_NODE;
 
 /**
  * Transforms SOAP XML response to JSON.
@@ -74,30 +77,18 @@ public class Soap2JsonTransformer {
     }
 
     private Element getSoapBody(Document doc) {
-        // Try SOAP 1.1 namespace
-        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
-        if (bodies.getLength() > 0) {
-            return (Element) bodies.item(0);
-        }
+        Element body = bodyInNamespace(doc, SOAP11_NS);
+        return body != null ? body : bodyInNamespace(doc, SOAP12_NS);
+    }
 
-        // Try SOAP 1.2 namespace
-        bodies = doc.getElementsByTagNameNS("http://www.w3.org/2003/05/soap-envelope", "Body");
-        if (bodies.getLength() > 0) {
-            return (Element) bodies.item(0);
-        }
-
-        return null;
+    private static Element bodyInNamespace(Document doc, String soapNamespace) {
+        NodeList bodies = doc.getElementsByTagNameNS(soapNamespace, "Body");
+        return bodies.getLength() > 0 ? (Element) bodies.item(0) : null;
     }
 
     private Element getFirstChildElement(Element parent) {
-        NodeList children = parent.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node node = children.item(i);
-            if (node.getNodeType() == ELEMENT_NODE) {
-                return (Element) node;
-            }
-        }
-        return null;
+        var children = childElements(parent);
+        return children.isEmpty() ? null : children.getFirst();
     }
 
     // Used by fault detail extraction (no schema, all strings)
@@ -105,16 +96,42 @@ public class Soap2JsonTransformer {
         return elementToMap(element, null);
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> elementToMap(Element element, Schema<?> schema) {
-        Map<String, Schema<?>> properties;
-        if (schema instanceof ObjectSchema os && os.getProperties() != null) {
-            properties = (Map<String, Schema<?>>) (Map<?, ?>) os.getProperties();
-        } else {
-            properties = Map.of();
-        }
+        Map<String, Schema<?>> properties = propertiesOf(schema);
 
         var result = new LinkedHashMap<String, Object>();
+        putAttributes(element, properties, result);
+
+        var childGroups = new LinkedHashMap<String, ChildGroup>();
+        for (Element childElement : childElements(element)) {
+            String localName = childElement.getLocalName();
+
+            Schema<?> childSchema = resolveChildSchema(properties, childElement, localName);
+            // ArraySchema wraps the per-item schema; unwrap it so we type individual instances correctly
+            Schema<?> effectiveSchema = childSchema instanceof ArraySchema as ? as.getItems() : childSchema;
+
+            Object value = hasChildElements(childElement)
+                    ? elementToMap(childElement, effectiveSchema)
+                    : convertLeaf(childElement.getTextContent(), effectiveSchema);
+
+            childGroups.computeIfAbsent(localName, k -> new ChildGroup(childSchema, new ArrayList<>()))
+                    .values().add(value);
+        }
+
+        collapseGroups(childGroups, result);
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Schema<?>> propertiesOf(Schema<?> schema) {
+        if (schema instanceof ObjectSchema os && os.getProperties() != null) {
+            return (Map<String, Schema<?>>) (Map<?, ?>) os.getProperties();
+        }
+        return Map.of();
+    }
+
+    /** Copies the element's attributes into {@code result} as {@code @}-prefixed properties. */
+    private void putAttributes(Element element, Map<String, Schema<?>> properties, Map<String, Object> result) {
         NamedNodeMap attributes = element.getAttributes();
         for (int i = 0; i < attributes.getLength(); i++) {
             Node attr = attributes.item(i);
@@ -122,39 +139,17 @@ public class Soap2JsonTransformer {
             if (XMLConstants.XMLNS_ATTRIBUTE_NS_URI.equals(ns) || XMLConstants.XML_NS_URI.equals(ns)) {
                 continue;
             }
-            result.put("@" + attr.getLocalName(), convertLeaf(attr.getNodeValue(), properties.get("@" + attr.getLocalName())));
+            String key = attributeKey(attr.getLocalName());
+            result.put(key, convertLeaf(attr.getNodeValue(), properties.get(key)));
         }
+    }
 
-        var childGroups = new LinkedHashMap<String, ChildGroup>();
-        NodeList children = element.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node node = children.item(i);
-            if (node.getNodeType() != ELEMENT_NODE) continue;
-            Element childElement = (Element) node;
-            String localName = childElement.getLocalName();
-
-            Schema<?> childSchema = resolveChildSchema(properties, childElement, localName);
-            // ArraySchema wraps the per-item schema; unwrap it so we type individual instances correctly
-            Schema<?> effectiveSchema = childSchema instanceof ArraySchema as ? as.getItems() : childSchema;
-
-            Object value;
-            if (hasChildElements(childElement)) {
-                value = elementToMap(childElement, effectiveSchema);
-            } else {
-                value = convertLeaf(childElement.getTextContent(), effectiveSchema);
-            }
-
-            childGroups.computeIfAbsent(localName, k -> new ChildGroup(childSchema, new ArrayList<>()))
-                    .values().add(value);
-        }
-
-        for (var entry : childGroups.entrySet()) {
-            var group = entry.getValue();
-            result.put(entry.getKey(), group.schema() instanceof ArraySchema || group.values().size() > 1
-                    ? group.values()
-                    : group.values().getFirst());
-        }
-        return result;
+    /** A group stays a JSON array if its schema says so or it holds more than one value. */
+    private static void collapseGroups(Map<String, ChildGroup> childGroups, Map<String, Object> result) {
+        childGroups.forEach((name, group) -> result.put(name,
+                group.schema() instanceof ArraySchema || group.values().size() > 1
+                        ? group.values()
+                        : group.values().getFirst()));
     }
 
     /**
@@ -175,22 +170,30 @@ public class Soap2JsonTransformer {
     }
 
     private Object convertLeaf(String text, Schema<?> schema) {
-        if (schema instanceof IntegerSchema) {
-            try { return Long.parseLong(text.trim()); } catch (NumberFormatException e) { return text; }
-        }
-        if (schema instanceof NumberSchema) {
-            try { return Double.parseDouble(text.trim()); } catch (NumberFormatException e) { return text; }
-        }
-        if (schema instanceof BooleanSchema) {
-            String v = text.trim();
-            return "true".equalsIgnoreCase(v) || "1".equals(v);
-        }
-        return text;
+        return switch (schema) {
+            case IntegerSchema ignored -> parseLongOrText(text);
+            case NumberSchema ignored -> parseDoubleOrText(text);
+            case BooleanSchema ignored -> isTrue(text);
+            case null, default -> text;
+        };
+    }
+
+    private static Object parseLongOrText(String text) {
+        try { return Long.parseLong(text.trim()); } catch (NumberFormatException e) { return text; }
+    }
+
+    private static Object parseDoubleOrText(String text) {
+        try { return Double.parseDouble(text.trim()); } catch (NumberFormatException e) { return text; }
+    }
+
+    private static boolean isTrue(String text) {
+        String value = text.trim();
+        return "true".equalsIgnoreCase(value) || "1".equals(value);
     }
 
     private SoapFaultException buildFaultException(Element fault) {
         String ns = fault.getNamespaceURI();
-        if ("http://www.w3.org/2003/05/soap-envelope".equals(ns)) {
+        if (SOAP12_NS.equals(ns)) {
             return extractSoap12Fault(fault);
         }
         return extractSoap11Fault(fault);
@@ -226,23 +229,13 @@ public class Soap2JsonTransformer {
     }
 
     private Element childElement(Element parent, String localName) {
-        NodeList children = parent.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node node = children.item(i);
-            if (node.getNodeType() == ELEMENT_NODE && localName.equals(node.getLocalName())) {
-                return (Element) node;
-            }
+        for (Element el : childElements(parent)) {
+            if (localName.equals(el.getLocalName())) return el;
         }
         return null;
     }
 
     private boolean hasChildElements(Element element) {
-        NodeList children = element.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            if (children.item(i).getNodeType() == ELEMENT_NODE) {
-                return true;
-            }
-        }
-        return false;
+        return !childElements(element).isEmpty();
     }
 }

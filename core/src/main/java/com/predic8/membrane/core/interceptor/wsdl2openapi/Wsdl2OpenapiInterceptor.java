@@ -30,6 +30,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
+import io.swagger.v3.oas.models.media.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,12 +117,37 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
 
+        apiProxy = validateAndGetApiProxy();
+        basePath = getBasePath();
+
+        // init() can run more than once on the same instance: AbstractProxy.clone() and
+        // RuleManager.replaceRule both init, and the clone shares this interceptor.
+        routes.clear();
+        requestTransformers.clear();
+
+        definitions = parseWsdl();
+        xsdToSchema = new XsdToSchema(definitions);
+        operationsByName = operations != null ? operations.getMap() : Map.of();
+        initOperationFlows();
+
+        routes.addAll(buildRoutes(definitions, operationsByName));
+        for (RouteEntry route : routes) {
+            requestTransformers.put(route.operationName(), new Json2SoapTransformer(definitions, route.operationName()));
+        }
+
+        publisher = createPublisher();
+
+        registerApiDocsPaths();
+
+        log.info("Loaded WSDL from {} with {} services", wsdl, definitions.getServices().size());
+    }
+
+    private APIProxy validateAndGetApiProxy() {
         if (!(proxy instanceof APIProxy api)) {
             throw new ConfigurationException("""
                     The wsdl2openapi plugin can only be used within an api, but '%s' is not one.
                     It publishes an OpenAPI document at %s, which only an api can route to.""".formatted(proxy.getName(), PATH));
         }
-        apiProxy = api;
 
         // APIProxy.init() has already run and placed an OpenAPIPublisherInterceptor into the flow
         // if the api declares openapi documents or an openapiPublisher — both publish at PATH,
@@ -140,56 +166,49 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                     Put each WSDL into its own api.""".formatted(proxy.getName()));
         }
 
-        basePath = getBasePath();
+        return api;
+    }
 
-        // init() can run more than once on the same instance: AbstractProxy.clone() and
-        // RuleManager.replaceRule both init, and the clone shares this interceptor.
-        routes.clear();
-        requestTransformers.clear();
-
+    private Definitions parseWsdl() {
         try {
             ResolverMap resolverMap = router.getResolverMap();
             String resolvedWsdl = combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl);
-            definitions = parse(resolverMap, resolvedWsdl);
+            return parse(resolverMap, resolvedWsdl);
         } catch (Exception e) {
             throw new ConfigurationException("Cannot parse WSDL '%s': %s".formatted(wsdl, e.getMessage()), e);
         }
+    }
 
-        xsdToSchema = new XsdToSchema(definitions);
-
-        operationsByName = operations != null ? operations.getMap() : Map.of();
-
+    private void initOperationFlows() {
         for (OperationSettings settings : operationsByName.values()) {
             for (Interceptor i : settings.getFlow()) {
                 i.init(router, proxy);
             }
         }
+    }
 
-        var allOps = definitions.getPortTypes().stream()
+    /** One route per exposed operation: all of them, or only those named in {@code operationsByName}. */
+    static List<RouteEntry> buildRoutes(Definitions definitions, Map<String, OperationSettings> operationsByName) {
+        return definitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
+                .map(op -> op.getName())
+                .filter(name -> operationsByName.isEmpty() || operationsByName.containsKey(name))
+                .map(name -> toRoute(name, operationsByName.get(name)))
                 .toList();
-        var opsToExpose = operationsByName.isEmpty()
-                ? allOps
-                : allOps.stream().filter(op -> operationsByName.containsKey(op.getName())).toList();
-        for (var op : opsToExpose) {
-            OperationSettings opSettings = operationsByName.get(op.getName());
-            String segment = (opSettings != null && opSettings.getPath() != null) ? opSettings.getPath() : camelToKebab(op.getName());
-            String method = (opSettings != null) ? opSettings.getMethod().toUpperCase() : "POST";
-            routes.add(new RouteEntry(buildPathPattern(segment), extractParamNames(segment), method, op.getName()));
-            requestTransformers.put(op.getName(), new Json2SoapTransformer(definitions, op.getName()));
-        }
+    }
 
-        var generator = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName);
-        var openApiModel = generator.generate();
-        var record = new OpenAPIRecord(openApiModel, new OpenAPISpec());
+    private static RouteEntry toRoute(String operationName, OperationSettings settings) {
+        final String segment = (settings != null && settings.getPath() != null) ? settings.getPath() : camelToKebab(operationName);
+        final String method = (settings != null) ? settings.getMethod().toUpperCase() : "POST";
+        return new RouteEntry(buildPathPattern(segment), extractParamNames(segment), method, operationName);
+    }
 
-        publisher = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());
-        publisher.init(router);
-        publisher.addRecord(record);
-
-        registerApiDocsPaths();
-
-        log.info("Loaded WSDL from {} with {} services", wsdl, definitions.getServices().size());
+    private OpenAPIPublisherInterceptor createPublisher() {
+        var openApiModel = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName).generate();
+        var publisherInterceptor = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());
+        publisherInterceptor.init(router);
+        publisherInterceptor.addRecord(new OpenAPIRecord(openApiModel, new OpenAPISpec()));
+        return publisherInterceptor;
     }
 
     @Override
@@ -245,16 +264,8 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         try {
-            var outputMessages = definitions.getPortTypes().stream()
-                    .flatMap(pt -> pt.getOperations().stream())
-                    .filter(op -> operationName.equals(op.getName()))
-                    .findFirst()
-                    .map(op -> op.getMessagesByDirection(OUTPUT))
-                    .orElse(List.of());
-            var responseSchema = xsdToSchema.convertMessageParts(outputMessages);
-
-            Soap2JsonTransformer responseTransformer = new Soap2JsonTransformer();
-            String jsonResponse = responseTransformer.transform(exc.getResponse().getBodyAsStringDecoded(), responseSchema);
+            String jsonResponse = new Soap2JsonTransformer()
+                    .transform(exc.getResponse().getBodyAsStringDecoded(), responseSchemaFor(operationName));
 
             exc.getResponse().setBodyContent(jsonResponse.getBytes(UTF_8));
             exc.getResponse().getHeader().setContentType(APPLICATION_JSON);
@@ -266,15 +277,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         } catch (SoapFaultException fault) {
             log.debug("SOAP fault received for operation {}: [{}] {}", operationName, fault.getFaultCode(), fault.getFaultMessage());
-            var pd = problemDetails("soap-fault", router.getConfiguration().isProduction())
-                    .component(getDisplayName())
-                    .status(fault.getHttpStatus())
-                    .title(fault.getFaultMessage())
-                    .topLevel("faultCode", fault.getFaultCode());
-            if (fault.getSoapDetail() != null) {
-                pd.internal("error", fault.getSoapDetail());
-            }
-            exc.setResponse(pd.build());
+            exc.setResponse(soapFaultResponse(fault));
             return ABORT;
         } catch (Exception e) {
             log.error("Failed to transform SOAP to JSON for operation {}", operationName, e);
@@ -286,6 +289,28 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
 
         return CONTINUE;
+    }
+
+    /** The schema of the operation's OUTPUT messages; an empty schema if the operation is unknown. */
+    private Schema<?> responseSchemaFor(String operationName) {
+        return xsdToSchema.convertMessageParts(definitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .filter(op -> operationName.equals(op.getName()))
+                .findFirst()
+                .map(op -> op.getMessagesByDirection(OUTPUT))
+                .orElse(List.of()));
+    }
+
+    private Response soapFaultResponse(SoapFaultException fault) {
+        var pd = problemDetails("soap-fault", router.getConfiguration().isProduction())
+                .component(getDisplayName())
+                .status(fault.getHttpStatus())
+                .title(fault.getFaultMessage())
+                .topLevel("faultCode", fault.getFaultCode());
+        if (fault.getSoapDetail() != null) {
+            pd.internal("error", fault.getSoapDetail());
+        }
+        return pd.build();
     }
 
     /**
