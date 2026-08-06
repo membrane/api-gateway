@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
 #
-# Partner Service mock
+# PartnerService mock
 #
 # Start standalone:
 #   ./membrane.sh -c partner-service/partner-service.apis.yaml

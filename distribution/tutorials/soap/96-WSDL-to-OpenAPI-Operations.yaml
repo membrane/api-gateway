@@ -33,7 +33,7 @@ api:
   port: 2000
   flow:
     - wsdl2openapi:
-        wsdl: partner-service/partner.wsdl
+        wsdl: mocks/partner.wsdl
         operations:
           getPartners:
             method: GET
@@ -60,4 +60,4 @@ api:
 
 ---
 include:
-  - partner-service/partner-service.apis.yaml
+  - mocks/partner-service.apis.yaml
