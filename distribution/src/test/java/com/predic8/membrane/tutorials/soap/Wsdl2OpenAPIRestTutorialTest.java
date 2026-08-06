@@ -21,11 +21,11 @@ import static io.restassured.http.ContentType.JSON;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
-public class Wsdl2OpenAPIOperationsTutorialTest extends AbstractSOAPTutorialTest {
+public class Wsdl2OpenAPIRestTutorialTest extends AbstractSOAPTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "96-WSDL-to-OpenAPI-Operations.yaml";
+        return "96-WSDL-to-OpenAPI-REST.yaml";
     }
 
     @Test

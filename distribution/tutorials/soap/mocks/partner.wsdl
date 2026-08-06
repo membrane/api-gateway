@@ -7,9 +7,7 @@
         targetNamespace="http://example.com/partner">
 
     <wsdl:types>
-        <xsd:schema
-                targetNamespace="http://example.com/partner"
-                elementFormDefault="qualified">
+        <xsd:schema targetNamespace="http://example.com/partner">
 
             <xsd:simpleType name="PhoneNumber">
                 <xsd:restriction base="xsd:string">

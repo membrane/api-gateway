@@ -1,14 +1,21 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
 #
-# PartnerService mock
+# PartnerService Mock
 #
 # Start standalone:
 #   ./membrane.sh -c partner-service/partner-service.apis.yaml
 #
 # Routes by SOAPAction and returns a static SOAP response for each operation.
 
+global:
+  - beautifier: {}
+  - log:
+      label: "********* SOAP Message *********"
+
+---
 api:
   port: 3000
+  name: getPartners
   test: header.SOAPAction == 'getPartners'
   flow:
     - static:
@@ -29,6 +36,7 @@ api:
 ---
 api:
   port: 3000
+  name: getPartner
   test: header.SOAPAction == 'getPartner'
   flow:
     - request:
@@ -68,6 +76,7 @@ api:
 ---
 api:
   port: 3000
+  name: createPartner
   test: header.SOAPAction == 'createPartner'
   flow:
     - static:
@@ -84,6 +93,7 @@ api:
 ---
 api:
   port: 3000
+  name: updatePartner
   test: header.SOAPAction == 'updatePartner'
   flow:
     - request:
@@ -123,6 +133,7 @@ api:
 ---
 api:
   port: 3000
+  name: deletePartner
   test: header.SOAPAction == 'deletePartner'
   flow:
     - static:

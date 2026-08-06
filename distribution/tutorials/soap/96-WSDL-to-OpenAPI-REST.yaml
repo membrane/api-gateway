@@ -1,36 +1,34 @@
 # yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
 #
-# Tutorial: WSDL to OpenAPI — Operation Settings
+# Tutorial: WSDL to OpenAPI — Exposing SOAP Services as REST APIs
 #
-# Per-operation settings map each WSDL operation to an HTTP method and path,
-# covering all four REST methods: GET, POST, PUT, DELETE.
+# Configure each WSDL operation individually and map it to REST
+# endpoints such as GET /partners/{id}.
 #
 # 1.) Start Membrane
 #    Linux/Mac:
-#      ./membrane.sh -c 96-WSDL-to-OpenAPI-Operations.yaml
+#      ./membrane.sh -c 96-WSDL-to-OpenAPI-REST.yaml
 #    Windows:
-#      membrane.cmd -c 96-WSDL-to-OpenAPI-Operations.yaml
+#      membrane.cmd -c 96-WSDL-to-OpenAPI-REST.yaml
 #
 # 2.) List all partners (GET, no body)
-#     curl http://localhost:2000/get-partners
+#     curl -v http://localhost:2000/partners
 #
-# 3.) Get a single partner — ID comes from the URL path (GET, no body)
-#     curl http://localhost:2000/partners/1
+# 3.) Get a single partner by id (GET, no body)
+#     curl -v http://localhost:2000/partners/1
 #
 # 4.) Create a partner (POST, body required)
-#     curl -d '{"name":"Dave","birthDate":"1990-01-01","kind":"PERSON","address":{"street":"Oak Ave","houseNumber":"5","postalCode":"54321","city":"Portland","country":"US"}}' \
-#          -H "Content-Type: application/json" http://localhost:2000/create-partner
+#     curl -d @partner.json -H "Content-Type: application/json" http://localhost:2000/partners
 #
 # 5.) Update a partner — ID from URL, fields in body (PUT)
-#     curl -X PUT \
-#          -d '{"name":"Alice Updated","birthDate":"1985-03-15","kind":"PERSON","address":{"street":"Main St","houseNumber":"1","postalCode":"12345","city":"Springfield","country":"US"}}' \
-#          -H "Content-Type: application/json" http://localhost:2000/partners/1
+#     curl -X PUT -d @partner.json -H "Content-Type: application/json" http://localhost:2000/partners/1
 #
 # 6.) Delete a partner — ID from URL (DELETE, no body)
 #     curl -X DELETE http://localhost:2000/partners/1
 
 api:
   port: 2000
+  name: Partner REST API
   flow:
     - wsdl2openapi:
         wsdl: mocks/partner.wsdl
@@ -59,5 +57,6 @@ api:
     url: http://localhost:3000/partner-service
 
 ---
+# Mock Web Service with static responses
 include:
   - mocks/partner-service.apis.yaml

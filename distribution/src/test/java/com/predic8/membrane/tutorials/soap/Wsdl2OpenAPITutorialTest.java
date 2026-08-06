@@ -58,7 +58,7 @@ public class Wsdl2OpenAPITutorialTest extends AbstractSOAPTutorialTest {
             .contentType(JSON)
             .body("{\"name\":\"Berlin\"}")
         .when()
-            .post("http://localhost:2000/get-city")
+            .post("http://localhost:2000/service/get-city")
         .then()
             .statusCode(200)
             .contentType(JSON)

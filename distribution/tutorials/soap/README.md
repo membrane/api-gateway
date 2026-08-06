@@ -4,6 +4,10 @@ This tutorial shows how to use the Membrane Service Proxy to integrate with lega
 
 Start by looking at [10-Sample-SOAP-Service.yaml](10-Sample-SOAP-Service.yaml).
 
+For exposing a SOAP/WSDL service as a REST/OpenAPI API, see
+[95-WSDL-to-OpenAPI.yaml](95-WSDL-to-OpenAPI.yaml) (automatic conversion) and
+[96-WSDL-to-OpenAPI-REST.yaml](96-WSDL-to-OpenAPI-REST.yaml) (manual per-operation REST mapping).
+
 > **Note:** This tutorial is still a work in progress.
 
 Planned topics include:
