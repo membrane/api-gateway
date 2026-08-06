@@ -39,6 +39,7 @@ class Json2SoapTransformerTest {
     static Definitions attributesDefinitions;
     static Definitions qualifiedDefinitions;
     static Definitions crossNamespaceChoiceDefinitions;
+    static Definitions refChildDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -49,6 +50,43 @@ class Json2SoapTransformerTest {
         attributesDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/attributes.wsdl");
         qualifiedDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/qualified-elements.wsdl");
         crossNamespaceChoiceDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cross-namespace-choice.wsdl");
+        refChildDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/ref-child.wsdl");
+    }
+
+    private static final String REF_DETAIL_NS = "https://example.com/ref-detail";
+
+    /** placeOrder declares ref'd "shipment" before local "orderId"; the JSON deliberately reverses both levels. */
+    private static final String PLACE_ORDER_JSON =
+            "{\"orderId\": \"A-1\", \"shipment\": {\"city\": \"Berlin\", \"street\": \"Main St\"}}";
+
+    @Test
+    void refChildIsEmittedInSchemaDeclarationOrder() throws Exception {
+        var soapBytes = new Json2SoapTransformer(refChildDefinitions, "placeOrder").transform(PLACE_ORDER_JSON);
+
+        Element placeOrderEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
+        var children = getChildElements(placeOrderEl).stream().map(Element::getLocalName).toList();
+
+        assertEquals(List.of("shipment", "orderId"), children,
+                "a ref'd child must take its declared position, not be appended after the named ones");
+    }
+
+    /**
+     * Covers both halves of the child-context resolution: the ref'd element has to be found at all,
+     * and it has to be resolved against its <em>own</em> schema document — "shipment" carries an
+     * unprefixed {@code type="ShipmentType"}, which only resolves against the schema that declares
+     * it, so a context built on the referrer's root finds no complexType and orders nothing.
+     */
+    @Test
+    void refChildSubtreeKeepsSchemaOrder() throws Exception {
+        var soapBytes = new Json2SoapTransformer(refChildDefinitions, "placeOrder").transform(PLACE_ORDER_JSON);
+
+        Element placeOrderEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
+        Element shipmentEl = getFirstChildElement(placeOrderEl);
+
+        assertEquals(REF_DETAIL_NS, shipmentEl.getNamespaceURI(), "the ref'd element takes its own target namespace");
+        assertEquals(List.of("street", "city"),
+                getChildElements(shipmentEl).stream().map(Element::getLocalName).toList(),
+                "the referenced element's own sequence must order its children");
     }
 
     @Test
@@ -373,6 +411,11 @@ class Json2SoapTransformerTest {
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
         return builder.parse(new ByteArrayInputStream(bytes));
+    }
+
+    private static Element bodyOf(Document doc) {
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        return (Element) bodies.item(0);
     }
 
     private static Element getFirstChildElement(Element parent) {

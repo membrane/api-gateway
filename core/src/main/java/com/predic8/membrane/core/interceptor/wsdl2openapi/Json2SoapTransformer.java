@@ -138,24 +138,19 @@ public class Json2SoapTransformer {
     }
 
     /**
-     * Extracts ordered field names from the complexType of an xsd:element node.
-     * Handles inline complexType and type-attribute references to named complexTypes.
+     * The fields of the context's complexType, in declaration order — both locally declared
+     * ({@code name=}) and referenced ({@code ref=}) children. Handles inline complexTypes and
+     * {@code type=} references to named complexTypes.
      */
-    private List<String> extractSequenceFieldNames(XsdContext context) {
+    private List<FieldBinding> extractFieldBindings(XsdContext context) {
         if (context == null) return List.of();
         Element complexType = complexTypeOf(context);
         if (complexType == null) return List.of();
 
-        Element sequence = firstXsdChild(complexType, "sequence", "all");
-        if (sequence == null) return List.of();
+        Element container = firstXsdChild(complexType, "sequence", "all", "choice");
+        if (container == null) return List.of();
 
-        var names = new ArrayList<String>();
-        for (Element el : xsdChildren(sequence)) {
-            if (!"element".equals(el.getLocalName())) continue;
-            String name = el.getAttribute("name");
-            if (!name.isEmpty()) names.add(name);
-        }
-        return names;
+        return bindFields(container, context.schemaRoot(), defaultNamespace(context.schemaRoot()));
     }
 
     /**
@@ -185,21 +180,15 @@ public class Json2SoapTransformer {
     }
 
     /**
-     * Builds a map from field name to namespace URI for the children of the context's XSD element.
-     * Locally-declared fields carry the schema's {@code targetNamespace} when
-     * {@code elementFormDefault="qualified"}; {@code ref=} fields carry their referenced element's
-     * target namespace regardless of {@code elementFormDefault}.
+     * The namespace each field carries, keyed as in {@link #bindFields}. Fields with no namespace —
+     * locally declared in a schema that is not {@code elementFormDefault="qualified"} — are absent,
+     * so that {@code makeElement} creates them without one.
      */
-    private Map<String, String> extractFieldNamespaces(XsdContext context) {
-        if (context == null) return Map.of();
-        Element complexType = complexTypeOf(context);
-        if (complexType == null) return Map.of();
-
-        Element container = firstXsdChild(complexType, "sequence", "all", "choice");
-        if (container == null) return Map.of();
-
+    private static Map<String, String> fieldNamespacesOf(List<FieldBinding> bindings) {
         var result = new LinkedHashMap<String, String>();
-        collectFieldNamespaces(container, context.schemaRoot(), defaultNamespace(context.schemaRoot()), result);
+        for (var binding : bindings) {
+            if (binding.namespaceURI() != null) result.put(binding.key(), binding.namespaceURI());
+        }
         return result;
     }
 
@@ -211,6 +200,9 @@ public class Json2SoapTransformer {
 
     /** A field name/namespace pair, resolved prior to deciding its final (possibly-qualified) key. */
     private record FieldRef(String localName, String namespaceURI) {}
+
+    /** A content-model field: the JSON key addressing it, and the namespace it carries ({@code null} = none). */
+    private record FieldBinding(String key, String namespaceURI) {}
 
     /** The XSD element declaration and its containing schema root, used to resolve child field metadata. */
     private record XsdContext(Element xsdElement, Element schemaRoot) {}
@@ -231,25 +223,50 @@ public class Json2SoapTransformer {
     }
 
     /**
-     * Finds the inline {@code xsd:element} with {@code name=childLocalName} in the complexType
-     * sequence/all/choice of {@code xsdElement}, resolving a {@code type=} reference if needed.
+     * The declaration of the named child in the complexType sequence/all/choice of
+     * {@code context} — matched on {@code name=}, or resolved through {@code ref=} — together with
+     * the schema document it was found in. The document matters: a referenced element's own
+     * {@code type=} references resolve against <em>its</em> schema, not the referrer's.
      * Returns {@code null} if the parent has no complexType or no matching child.
      */
-    private Element findChildXsdElement(XsdContext context, String childLocalName) {
+    private XsdContext findChildXsdContext(XsdContext context, String childLocalName) {
         Element complexType = complexTypeOf(context);
         if (complexType == null) return null;
         Element container = firstXsdChild(complexType, "sequence", "all", "choice");
-        return container != null ? findXsdChildWithName(container, "element", childLocalName) : null;
+        if (container == null) return null;
+
+        Element declared = findXsdChildWithName(container, "element", childLocalName);
+        if (declared != null) return new XsdContext(declared, context.schemaRoot());
+
+        return resolveReferencedChild(container, childLocalName, context.schemaRoot());
     }
 
     /**
-     * Resolves every field in {@code container} to a {@link FieldRef} first, so that fields
-     * whose local name collides across namespaces (e.g. two {@code ref}'d elements both named
-     * {@code value}, from different namespaces) can be keyed with a namespace-qualified key
-     * ({@link XsdDomUtil#qualifiedKey}) instead of silently overwriting each other in
-     * {@code result} — mirrors {@code XsdToSchema.addChoiceFields}.
+     * Resolves an {@code <xsd:element ref="prefix:local"/>} child whose local name is
+     * {@code childLocalName} to the global element it points at, in the schema that declares it.
      */
-    private void collectFieldNamespaces(Element container, Element schemaRoot, String defaultNs, Map<String, String> result) {
+    private XsdContext resolveReferencedChild(Element container, String childLocalName, Element schemaRoot) {
+        for (Element el : xsdChildren(container)) {
+            if (!"element".equals(el.getLocalName())) continue;
+            String ref = el.getAttribute("ref");
+            if (ref.isEmpty() || !childLocalName.equals(localName(ref))) continue;
+
+            for (var root : resolveTargetSchemaRoots(prefix(ref), el, schemaRoot, schemasByNamespace)) {
+                Element referenced = findXsdChildWithName(root, "element", childLocalName);
+                if (referenced != null) return new XsdContext(referenced, root);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Binds every field in {@code container} — locally declared and {@code ref}'d alike — to the
+     * JSON key that addresses it, in declaration order. Fields whose local name collides across
+     * namespaces (e.g. two {@code ref}'d elements both named {@code value}, from different
+     * namespaces) are keyed with a namespace-qualified key ({@link XsdDomUtil#qualifiedKey})
+     * instead of silently overwriting each other — mirrors {@code XsdToSchema.addChoiceFields}.
+     */
+    private List<FieldBinding> bindFields(Element container, Element schemaRoot, String defaultNs) {
         var refs = new ArrayList<FieldRef>();
         for (Element el : xsdChildren(container)) {
             if (!"element".equals(el.getLocalName())) continue;
@@ -262,10 +279,7 @@ public class Json2SoapTransformer {
                 // ref= element: resolve the ref'd element's namespace
                 String ref = el.getAttribute("ref");
                 if (ref.isEmpty()) continue;
-                String refPrefix = prefix(ref);
-                String refNs = refPrefix.isEmpty()
-                        ? schemaRoot.getAttribute("targetNamespace")
-                        : el.lookupNamespaceURI(refPrefix);
+                String refNs = referencedNamespace(ref, el, schemaRoot);
                 if (refNs != null && !refNs.isEmpty()) refs.add(new FieldRef(localName(ref), refNs));
             }
         }
@@ -274,12 +288,22 @@ public class Json2SoapTransformer {
         for (var r : refs) {
             occurrences.merge(r.localName(), 1, Integer::sum);
         }
+        var bindings = new ArrayList<FieldBinding>();
         for (var r : refs) {
-            if (r.namespaceURI() == null) continue;
-            boolean collides = occurrences.get(r.localName()) > 1;
-            String key = collides ? qualifiedKey(r.namespaceURI(), r.localName()) : r.localName();
-            result.put(key, r.namespaceURI());
+            boolean collides = occurrences.get(r.localName()) > 1 && r.namespaceURI() != null;
+            bindings.add(new FieldBinding(
+                    collides ? qualifiedKey(r.namespaceURI(), r.localName()) : r.localName(),
+                    r.namespaceURI()));
         }
+        return bindings;
+    }
+
+    /** The target namespace of the element a {@code ref="prefix:local"} points at. */
+    private static String referencedNamespace(String ref, Element refEl, Element schemaRoot) {
+        String refPrefix = prefix(ref);
+        return refPrefix.isEmpty()
+                ? schemaRoot.getAttribute("targetNamespace")
+                : refEl.lookupNamespaceURI(refPrefix);
     }
 
     /**
@@ -294,7 +318,9 @@ public class Json2SoapTransformer {
     /** The field metadata of {@code context}, or an empty context when the XSD declaration is unknown. */
     private FieldContext fieldContextFor(XsdContext context) {
         if (context == null) return NO_FIELD_CONTEXT;
-        return new FieldContext(extractSequenceFieldNames(context), extractFieldNamespaces(context), context);
+        List<FieldBinding> bindings = extractFieldBindings(context);
+        return new FieldContext(bindings.stream().map(FieldBinding::key).toList(),
+                fieldNamespacesOf(bindings), context);
     }
 
     private void mapJsonToElement(JsonNode jsonNode, Element parent, Document doc, FieldContext context) {
@@ -349,9 +375,7 @@ public class Json2SoapTransformer {
 
     /** The XSD declaration of the named child field, or {@code null} if it cannot be resolved. */
     private XsdContext childXsdContext(XsdContext parentContext, String childLocalName) {
-        if (parentContext == null) return null;
-        Element childXsdEl = findChildXsdElement(parentContext, childLocalName);
-        return childXsdEl != null ? new XsdContext(childXsdEl, parentContext.schemaRoot()) : null;
+        return parentContext != null ? findChildXsdContext(parentContext, childLocalName) : null;
     }
 
     private static Element makeElement(Document doc, String namespace, String name) {
