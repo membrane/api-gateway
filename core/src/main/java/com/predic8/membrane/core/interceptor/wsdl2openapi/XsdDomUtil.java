@@ -57,7 +57,9 @@ class XsdDomUtil {
 
     /**
      * Builds namespace -> schema-root-element list by BFS over imports and includes.
-     * Uses identity-based dedup; skips schemas whose targetNamespace is null.
+     * Uses identity-based dedup. Schemas with a non-null targetNamespace are added to the map;
+     * schemas included without their own targetNamespace are still queued for traversal so their
+     * sub-imports and sub-includes are discovered.
      */
     static Map<String, List<Element>> buildSchemaMap(Definitions definitions) {
         var map = new LinkedHashMap<String, List<Element>>();
@@ -78,7 +80,7 @@ class XsdDomUtil {
             }
             for (var inc : schema.getIncludes()) {
                 var included = inc.getSchema();
-                if (included != null && included.getTargetNamespace() != null && seen.add(included)) {
+                if (included != null && seen.add(included)) {
                     queue.add(included);
                 }
             }

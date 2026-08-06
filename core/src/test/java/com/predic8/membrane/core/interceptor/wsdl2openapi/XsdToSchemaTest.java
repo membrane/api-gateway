@@ -283,6 +283,26 @@ class XsdToSchemaTest {
         assertFalse(isRequired(schema, "byId"));
     }
 
+    @Test
+    void sequenceNestedInsideChoiceExposesItsElements() {
+        var schema = convert(converterFor("""
+                <xsd:element name="payload">
+                  <xsd:complexType><xsd:choice>
+                    <xsd:element name="scalar" type="xsd:string"/>
+                    <xsd:sequence>
+                      <xsd:element name="part1" type="xsd:string"/>
+                      <xsd:element name="part2" type="xsd:int"/>
+                    </xsd:sequence>
+                  </xsd:choice></xsd:complexType>
+                </xsd:element>
+                """), "payload");
+
+        assertNotNull(fieldOf(schema, "scalar"), "direct choice element must be present");
+        assertNotNull(fieldOf(schema, "part1"),  "sequence-nested element part1 must be present");
+        assertNotNull(fieldOf(schema, "part2"),  "sequence-nested element part2 must be present");
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "part2"));
+    }
+
     // ── xsd:extension — field inheritance ────────────────────────────────
 
     @Test
