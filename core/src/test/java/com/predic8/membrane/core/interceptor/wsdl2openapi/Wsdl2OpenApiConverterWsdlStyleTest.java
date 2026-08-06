@@ -347,6 +347,80 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
     }
 
     @Test
+    void faultWithMultipleTypeBasedPartsAppearsInFaultSchema() throws Exception {
+        var wsdl = """
+                <definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+                             xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                             xmlns:tns="http://example.com/checkout"
+                             targetNamespace="http://example.com/checkout">
+
+                  <types>
+                    <xs:schema targetNamespace="http://example.com/checkout">
+                      <xs:element name="checkout">
+                        <xs:complexType>
+                          <xs:sequence>
+                            <xs:element name="cartId" type="xs:string"/>
+                          </xs:sequence>
+                        </xs:complexType>
+                      </xs:element>
+                      <xs:element name="checkoutResponse">
+                        <xs:complexType>
+                          <xs:sequence>
+                            <xs:element name="orderId" type="xs:string"/>
+                          </xs:sequence>
+                        </xs:complexType>
+                      </xs:element>
+                    </xs:schema>
+                  </types>
+
+                  <message name="CheckoutRequest">
+                    <part name="parameters" element="tns:checkout"/>
+                  </message>
+                  <message name="CheckoutResponse">
+                    <part name="parameters" element="tns:checkoutResponse"/>
+                  </message>
+                  <message name="ValidationFaultMessage">
+                    <part name="faultCode" type="xs:string"/>
+                    <part name="faultReason" type="xs:string"/>
+                  </message>
+
+                  <portType name="CheckoutPortType">
+                    <operation name="checkout">
+                      <input message="tns:CheckoutRequest"/>
+                      <output message="tns:CheckoutResponse"/>
+                      <fault name="ValidationFault" message="tns:ValidationFaultMessage"/>
+                    </operation>
+                  </portType>
+
+                  <binding name="CheckoutBinding" type="tns:CheckoutPortType">
+                    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+                    <operation name="checkout">
+                      <soap:operation soapAction="checkout"/>
+                      <input><soap:body use="literal"/></input>
+                      <output><soap:body use="literal"/></output>
+                      <fault name="ValidationFault">
+                        <soap:fault name="ValidationFault" use="literal"/>
+                      </fault>
+                    </operation>
+                  </binding>
+
+                  <service name="CheckoutService">
+                    <port name="CheckoutPort" binding="tns:CheckoutBinding">
+                      <soap:address location="http://example.com/checkout"/>
+                    </port>
+                  </service>
+
+                </definitions>""";
+
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+
+        assertTrue(yaml.contains("\"500\":"), "500 response must be present for the fault");
+        assertTrue(yaml.contains("faultCode:"), "First type-based part must appear in the 500 schema");
+        assertTrue(yaml.contains("faultReason:"), "Second type-based part must appear in the 500 schema");
+    }
+
+    @Test
     void soapHeaderBecomesHeaderParameter() throws Exception {
         // soap:header binds a message part that travels in the SOAP header, out-of-band from
         // the body. It should surface as an OpenAPI "in: header" parameter on the operation,

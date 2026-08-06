@@ -234,9 +234,7 @@ public class Wsdl2OpenApiConverter {
         List<Schema> faultSchemas = wsdlOp.getFaults().stream()
                 .map(fault -> fault.getMessage().getParts())
                 .filter(parts -> !parts.isEmpty())
-                .map(parts -> parts.getFirst().getElementQName())
-                .filter(Objects::nonNull)
-                .map(qname -> (Schema) converter.convert(qname))
+                .map(parts -> (Schema) converter.convertParts(parts))
                 .toList();
 
         ApiResponse response500;
