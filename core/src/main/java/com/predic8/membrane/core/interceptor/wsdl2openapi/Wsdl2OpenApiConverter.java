@@ -43,7 +43,7 @@ import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUT
 import static io.swagger.v3.parser.ObjectMapperFactory.createYaml;
 
 /**
- * Generates an OpenAPI 3.0 model from WSDL definitions.
+ * Generates an OpenAPI 3.1 model from WSDL definitions.
  */
 public class Wsdl2OpenApiConverter {
 
@@ -78,7 +78,7 @@ public class Wsdl2OpenApiConverter {
 
     public OpenAPI generate() {
         var openAPI = new OpenAPI();
-        openAPI.setOpenapi("3.1.0"); // TODO Newest 3.1
+        openAPI.setOpenapi("3.1.2");
         openAPI.setInfo(buildInfo());
         openAPI.setServers(List.of(new Server().url(basePath)));
         openAPI.setPaths(buildPaths());
@@ -191,7 +191,9 @@ public class Wsdl2OpenApiConverter {
             case "PUT"    -> item.put(op);
             case "DELETE" -> item.delete(op);
             case "PATCH"  -> item.patch(op);
-            default       -> throw new ConfigurationException("Unsupported HTTP method: " + method);
+            // OperationSettings.setMethod already rejects anything else at config time, so this
+            // is a bug rather than bad configuration.
+            default       -> throw new IllegalStateException("Unvalidated HTTP method reached the converter: " + method);
         };
     }
 

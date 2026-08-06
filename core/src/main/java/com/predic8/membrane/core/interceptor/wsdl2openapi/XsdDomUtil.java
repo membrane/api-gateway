@@ -26,6 +26,8 @@ import static com.predic8.membrane.annot.Constants.XSD_NS;
 /** Static DOM helpers for XSD traversal shared across wsdl2openapi transformers. */
 class XsdDomUtil {
 
+    private XsdDomUtil() {}
+
     /** First xsd: child with the given local name, or null. */
     static Element findXsdChild(Element parent, String xsdLocalName) {
         NodeList children = parent.getChildNodes();

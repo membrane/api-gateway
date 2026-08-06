@@ -42,6 +42,16 @@
                     </xsd:choice>
                 </xsd:complexType>
             </xsd:element>
+            <!-- Same-local-name alternatives that are also repeatable: the schema keys them by
+                 namespace *and* wraps them in an array. -->
+            <xsd:element name="processAmbiguousList">
+                <xsd:complexType>
+                    <xsd:choice>
+                        <xsd:element ref="a:value" maxOccurs="unbounded"/>
+                        <xsd:element ref="b:value" maxOccurs="unbounded"/>
+                    </xsd:choice>
+                </xsd:complexType>
+            </xsd:element>
         </xsd:schema>
 
         <!-- Type A schema -->
@@ -73,6 +83,10 @@
         <wsdl:part name="parameters" element="tns:processAmbiguous"/>
     </wsdl:message>
 
+    <wsdl:message name="ProcessAmbiguousListMessage">
+        <wsdl:part name="parameters" element="tns:processAmbiguousList"/>
+    </wsdl:message>
+
     <wsdl:portType name="ProcessorPort">
         <wsdl:operation name="processInput">
             <wsdl:input  message="tns:ProcessInputRequest"/>
@@ -81,6 +95,10 @@
         <wsdl:operation name="processAmbiguous">
             <wsdl:input  message="tns:ProcessAmbiguousInputRequest"/>
             <wsdl:output message="tns:ProcessAmbiguousResultResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="processAmbiguousList">
+            <wsdl:input  message="tns:ProcessAmbiguousListMessage"/>
+            <wsdl:output message="tns:ProcessAmbiguousListMessage"/>
         </wsdl:operation>
     </wsdl:portType>
 
@@ -93,6 +111,11 @@
         </wsdl:operation>
         <wsdl:operation name="processAmbiguous">
             <s:operation soapAction="processAmbiguous"/>
+            <wsdl:input> <s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="processAmbiguousList">
+            <s:operation soapAction="processAmbiguousList"/>
             <wsdl:input> <s:body use="literal"/></wsdl:input>
             <wsdl:output><s:body use="literal"/></wsdl:output>
         </wsdl:operation>

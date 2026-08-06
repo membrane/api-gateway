@@ -52,7 +52,7 @@ class OpenApiGeneratorTest {
     void openApiHeader() {
         var yaml = generator(citiesDefinitions, "/purchasing");
 
-        assertTrue(yaml.contains("openapi: \"3.1.0\""), "Should contain openapi version");
+        assertTrue(yaml.contains("openapi: \"3.1.2\""), "Should contain openapi version");
         assertTrue(yaml.contains("info:"), "Should contain info section");
         assertTrue(yaml.contains("version: \"1.0.0\""), "Should contain version");
     }

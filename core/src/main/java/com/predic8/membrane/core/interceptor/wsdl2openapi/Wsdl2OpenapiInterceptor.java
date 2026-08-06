@@ -26,8 +26,6 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.*;
-import com.predic8.membrane.core.proxies.AbstractServiceProxy;
-import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.BindingOperation;
@@ -84,7 +82,11 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     private static final Logger log = LoggerFactory.getLogger(Wsdl2OpenapiInterceptor.class);
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private String wsdl;
+    /** The api this plugin lives in. Set by init(), which rejects anything that is not an APIProxy. */
+    private APIProxy apiProxy;
     private Definitions definitions;
     private XsdToSchema xsdToSchema;
     private String basePath;
@@ -114,11 +116,12 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
 
-        if (!(proxy instanceof APIProxy)) {
+        if (!(proxy instanceof APIProxy api)) {
             throw new ConfigurationException("""
                     The wsdl2openapi plugin can only be used within an api, but '%s' is not one.
                     It publishes an OpenAPI document at %s, which only an api can route to.""".formatted(proxy.getName(), PATH));
         }
+        apiProxy = api;
 
         // APIProxy.init() has already run and placed an OpenAPIPublisherInterceptor into the flow
         // if the api declares openapi documents or an openapiPublisher — both publish at PATH,
@@ -198,7 +201,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
         String uri = exc.getRequest().getUri();
         var match = matchRoute(uri, exc.getRequest().getMethod());
-        if (match.isPresent() && isValidOperation(match.get().operationName())) {
+        if (match.isPresent()) {
             return handleOperation(exc, match.get().operationName(), match.get().pathParams());
         }
 
@@ -296,21 +299,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         }
     }
 
-    private boolean isValidOperation(String operationName) {
-        if (!operationsByName.isEmpty()) {
-            return operationsByName.containsKey(operationName);
-        }
-        return definitions.getPortTypes().stream()
-                .flatMap(pt -> pt.getOperations().stream())
-                .anyMatch(op -> operationName.equals(op.getName()));
-    }
-
     private String getBasePath() {
-        if (proxy instanceof ServiceProxy sp) {
-            var path = sp.getPath();
-            if (path != null && path.getUri() != null) {
-                return path.getUri();
-            }
+        var path = apiProxy.getPath();
+        if (path != null && path.getUri() != null) {
+            return path.getUri();
         }
         return "/";
     }
@@ -363,10 +355,10 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         if (pathParams.isEmpty()) return existingBody;
         var merged = new LinkedHashMap<String, Object>(pathParams);
         if (existingBody != null && !existingBody.isBlank()) {
-            var parsed = new ObjectMapper().readValue(existingBody, new TypeReference<Map<String, Object>>() {});
+            var parsed = MAPPER.readValue(existingBody, new TypeReference<Map<String, Object>>() {});
             merged.putAll(parsed);
         }
-        return new ObjectMapper().writeValueAsString(merged);
+        return MAPPER.writeValueAsString(merged);
     }
 
     private Outcome handleOperation(Exchange exc, String operationName, Map<String, String> pathParams) {
@@ -415,11 +407,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     private String getServiceAddress() {
-        if (proxy instanceof AbstractServiceProxy asp) {
-            String url = asp.getTargetURL();
-            if (url != null && !url.isEmpty()) {
-                return url;
-            }
+        String url = apiProxy.getTargetURL();
+        if (url != null && !url.isEmpty()) {
+            return url;
         }
         var services = definitions.getServices();
         if (services.isEmpty()) return null;

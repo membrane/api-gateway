@@ -24,6 +24,7 @@ import io.swagger.v3.oas.models.media.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.qualifiedKey;
 import static org.junit.jupiter.api.Assertions.*;
 
 class Soap2JsonTransformerTest {
@@ -463,6 +464,34 @@ class Soap2JsonTransformerTest {
     }
 
     @Test
+    void singleQualifiedKeyElementRemainsArrayWhenSchemaIsArraySchema() throws Exception {
+        // A same-local-name choice alternative is keyed by namespace (XsdToSchema.addChoiceFields),
+        // so the array decision must use the schema resolved via that qualified key — looking the
+        // plain local name up again finds nothing and collapses the array to a scalar.
+        var responseSchema = new ObjectSchema().addProperty(
+                qualifiedKey("https://example.com/choice-type-b", "value"),
+                new ArraySchema().items(new IntegerSchema()));
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <tns:processAmbiguous xmlns:tns="https://example.com/choice-service"
+                                          xmlns:b="https://example.com/choice-type-b">
+                      <b:value>42</b:value>
+                    </tns:processAmbiguous>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, responseSchema));
+        JsonNode values = root.get("value");
+        assertNotNull(values);
+        assertTrue(values.isArray(), "Single <b:value> must stay a JSON array when its qualified schema key is an ArraySchema");
+        assertEquals(1, values.size());
+        assertTrue(values.get(0).isNumber());
+        assertEquals(42L, values.get(0).longValue());
+    }
+
+    @Test
     void singleScalarElementRemainsScalarNotArray() throws Exception {
         var soapXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -568,6 +597,40 @@ class Soap2JsonTransformerTest {
         assertTrue(root.get("value").isNumber(),
                 "qualified-schema-key fallback must type value as integer despite the plain output key");
         assertEquals(42L, root.get("value").longValue());
+    }
+
+    @Test
+    void unboundedChoiceRefsWithSameLocalNameStayArrays() throws Exception {
+        // processAmbiguousList combines both conditions: the alternatives collide on the local name
+        // "value" (so they are keyed by namespace) and are maxOccurs="unbounded" (so their schema is
+        // an ArraySchema). A single occurrence must still come out as a one-element array.
+        var xsdToSchema = new XsdToSchema(crossNamespaceChoiceDefinitions);
+        var outputMessages = crossNamespaceChoiceDefinitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .filter(op -> "processAmbiguousList".equals(op.getName()))
+                .findFirst()
+                .map(op -> op.getMessagesByDirection(Operation.Direction.OUTPUT))
+                .orElseThrow();
+        var responseSchema = xsdToSchema.convertMessageParts(outputMessages);
+
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <tns:processAmbiguousList xmlns:tns="https://example.com/choice-service"
+                                              xmlns:b="https://example.com/choice-type-b">
+                      <b:value>42</b:value>
+                    </tns:processAmbiguousList>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, responseSchema));
+
+        JsonNode values = root.get("value");
+        assertNotNull(values, "value must appear in JSON under its plain local name");
+        assertTrue(values.isArray(), "an unbounded choice alternative must stay an array even with one occurrence");
+        assertEquals(1, values.size());
+        assertEquals(42L, values.get(0).longValue());
     }
 
     @Test

@@ -125,7 +125,7 @@ public class Soap2JsonTransformer {
             result.put("@" + attr.getLocalName(), convertLeaf(attr.getNodeValue(), properties.get("@" + attr.getLocalName())));
         }
 
-        var childGroups = new LinkedHashMap<String, List<Object>>();
+        var childGroups = new LinkedHashMap<String, ChildGroup>();
         NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
@@ -133,13 +133,8 @@ public class Soap2JsonTransformer {
             Element childElement = (Element) node;
             String localName = childElement.getLocalName();
 
+            Schema<?> childSchema = resolveChildSchema(properties, childElement, localName);
             // ArraySchema wraps the per-item schema; unwrap it so we type individual instances correctly
-            Schema<?> childSchema = properties.get(localName);
-            if (childSchema == null && childElement.getNamespaceURI() != null) {
-                // same-local-name choice alternatives from different namespaces are keyed by a
-                // namespace-qualified key in the schema (see XsdToSchema.addChoiceFields)
-                childSchema = properties.get(XsdDomUtil.qualifiedKey(childElement.getNamespaceURI(), localName));
-            }
             Schema<?> effectiveSchema = childSchema instanceof ArraySchema as ? as.getItems() : childSchema;
 
             Object value;
@@ -149,15 +144,34 @@ public class Soap2JsonTransformer {
                 value = convertLeaf(childElement.getTextContent(), effectiveSchema);
             }
 
-            childGroups.computeIfAbsent(localName, k -> new ArrayList<>()).add(value);
+            childGroups.computeIfAbsent(localName, k -> new ChildGroup(childSchema, new ArrayList<>()))
+                    .values().add(value);
         }
 
         for (var entry : childGroups.entrySet()) {
-            var values = entry.getValue();
-            Schema<?> propSchema = properties.get(entry.getKey());
-            result.put(entry.getKey(), propSchema instanceof ArraySchema || values.size() > 1 ? values : values.getFirst());
+            var group = entry.getValue();
+            result.put(entry.getKey(), group.schema() instanceof ArraySchema || group.values().size() > 1
+                    ? group.values()
+                    : group.values().getFirst());
         }
         return result;
+    }
+
+    /**
+     * The values of one child element name, together with the schema they were typed with. The
+     * schema has to travel with the group: it may have been found under a namespace-qualified key
+     * that the group's plain local name would not find again.
+     */
+    private record ChildGroup(Schema<?> schema, List<Object> values) {}
+
+    private static Schema<?> resolveChildSchema(Map<String, Schema<?>> properties, Element childElement, String localName) {
+        Schema<?> schema = properties.get(localName);
+        if (schema == null && childElement.getNamespaceURI() != null) {
+            // same-local-name choice alternatives from different namespaces are keyed by a
+            // namespace-qualified key in the schema (see XsdToSchema.addChoiceFields)
+            return properties.get(XsdDomUtil.qualifiedKey(childElement.getNamespaceURI(), localName));
+        }
+        return schema;
     }
 
     private Object convertLeaf(String text, Schema<?> schema) {

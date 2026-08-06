@@ -14,9 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import com.predic8.membrane.annot.*;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.MCOtherAttributes;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Named map of WSDL operations to expose via OpenAPI.
@@ -33,6 +36,6 @@ public class OperationsConfig {
     }
 
     public Map<String, OperationSettings> getMap() {
-        return map;
+        return Collections.unmodifiableMap(map);
     }
 }
