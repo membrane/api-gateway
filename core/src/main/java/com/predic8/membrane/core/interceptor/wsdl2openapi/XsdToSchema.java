@@ -307,8 +307,8 @@ public class XsdToSchema {
      * <p>Direct {@code xsd:element} alternatives are collected first so that same-local-name
      * collisions across namespaces can be detected and keyed with a namespace-qualified key
      * ({@link XsdDomUtil#qualifiedKey}) instead of silently overwriting each other.
-     * Nested {@code xsd:sequence} and {@code xsd:all} particles are expanded inline via
-     * {@link #addContainerFields}; nested {@code xsd:choice} particles recurse into this method.
+     * Every other alternative — a nested particle or a group reference — is expanded by
+     * {@link #addAlternativeFields}.
      */
     private void addChoiceFields(Element choice, ObjectSchema schema, XsdContext ctx) {
         var alternatives = new ArrayList<ChoiceAlternative>();
@@ -325,8 +325,7 @@ public class XsdToSchema {
                                 .ifPresent(alternatives::add);
                     }
                 }
-                case "sequence", "all" -> addContainerFields(el, schema, ctx);
-                case "choice"          -> addChoiceFields(el, schema, ctx);
+                case "sequence", "all", "choice", "group" -> addAlternativeFields(el, schema, ctx);
             }
         }
 
@@ -335,6 +334,20 @@ public class XsdToSchema {
             boolean collides = colliding.contains(alt.localName()) && alt.namespaceURI() != null;
             schema.addProperty(collides ? qualifiedKey(alt.namespaceURI(), alt.localName()) : alt.localName(), alt.fieldSchema());
             // intentionally not added to required
+        }
+    }
+
+    /**
+     * Expands a choice alternative that is not a direct {@code xsd:element} — a nested particle or
+     * an {@code xsd:group} reference — and merges its properties into {@code schema} <em>without</em>
+     * its required list: any sibling alternative may be the one chosen at runtime, so nothing a
+     * single branch declares can be globally required.
+     */
+    private void addAlternativeFields(Element particle, ObjectSchema schema, XsdContext ctx) {
+        var branch = new ObjectSchema();
+        addParticleFields(particle, branch, ctx);
+        if (branch.getProperties() != null) {
+            branch.getProperties().forEach(schema::addProperty);
         }
     }
 

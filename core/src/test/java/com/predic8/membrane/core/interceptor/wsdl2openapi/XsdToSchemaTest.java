@@ -302,6 +302,68 @@ class XsdToSchemaTest {
         assertNotNull(fieldOf(schema, "part1"),  "sequence-nested element part1 must be present");
         assertNotNull(fieldOf(schema, "part2"),  "sequence-nested element part2 must be present");
         assertInstanceOf(IntegerSchema.class, fieldOf(schema, "part2"));
+        // the "scalar" alternative may be the one chosen, so the sequence branch cannot be required
+        assertFalse(isRequired(schema, "part1"), "sequence-nested alternative must stay optional");
+        assertFalse(isRequired(schema, "part2"), "sequence-nested alternative must stay optional");
+    }
+
+    @Test
+    void groupAlternativeInsideChoiceExposesItsFieldsAsOptional() {
+        var schema = convert(converterFor("""
+                <xsd:group name="AddressGroup">
+                  <xsd:sequence>
+                    <xsd:element name="street" type="xsd:string"/>
+                    <xsd:element name="city"   type="xsd:string"/>
+                  </xsd:sequence>
+                </xsd:group>
+
+                <xsd:element name="contact">
+                  <xsd:complexType><xsd:choice>
+                    <xsd:element name="email" type="xsd:string"/>
+                    <xsd:group ref="tns:AddressGroup"/>
+                  </xsd:choice></xsd:complexType>
+                </xsd:element>
+                """), "contact");
+
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "email"));
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "street"), "group alternative must not be dropped");
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "city"),   "group alternative must not be dropped");
+        assertFalse(isRequired(schema, "street"), "group alternative must stay optional");
+        assertFalse(isRequired(schema, "city"),   "group alternative must stay optional");
+    }
+
+    @Test
+    void sequenceInsideChoiceInsideExtensionStaysOptional() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="Notification">
+                  <xsd:sequence>
+                    <xsd:element name="subject" type="xsd:string"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:complexType name="RoutedNotification">
+                  <xsd:complexContent>
+                    <xsd:extension base="tns:Notification">
+                      <xsd:choice>
+                        <xsd:element name="broadcast" type="xsd:boolean"/>
+                        <xsd:sequence>
+                          <xsd:element name="recipient" type="xsd:string"/>
+                          <xsd:element name="priority"  type="xsd:int"/>
+                        </xsd:sequence>
+                      </xsd:choice>
+                    </xsd:extension>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="notification" type="tns:RoutedNotification"/>
+                """), "notification");
+
+        assertNotNull(fieldOf(schema, "subject"),   "inherited base field");
+        assertNotNull(fieldOf(schema, "recipient"), "sequence branch of a choice in an extension");
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "priority"));
+        assertTrue(isRequired(schema, "subject"),    "a plain base field stays required");
+        assertFalse(isRequired(schema, "recipient"), "choice branch must stay optional");
+        assertFalse(isRequired(schema, "priority"),  "choice branch must stay optional");
     }
 
     // ── xsd:extension — field inheritance ────────────────────────────────
