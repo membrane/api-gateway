@@ -3,7 +3,7 @@
 # PartnerService Mock
 #
 # Start standalone:
-#   ./membrane.sh -c partner-service/partner-service.apis.yaml
+#   ./membrane.sh -c mocks/partner-service.apis.yaml
 #
 # Routes by SOAPAction and returns a static SOAP response for each operation.
 
@@ -23,11 +23,11 @@ api:
         src: |
           <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
             <s11:Body>
-              <getPartnersResponse xmlns="http://example.com/partner">
+              <p:getPartnersResponse xmlns:p="http://example.com/partner">
                 <partners><id>1</id><name>Alice</name></partners>
                 <partners><id>2</id><name>Bob</name></partners>
                 <partners><id>3</id><name>Carol</name></partners>
-              </getPartnersResponse>
+              </p:getPartnersResponse>
             </s11:Body>
           </s11:Envelope>
     - return:
@@ -50,7 +50,7 @@ api:
             src: |
               <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
                 <s11:Body>
-                  <getPartnerResponse xmlns="http://example.com/partner">
+                  <p:getPartnerResponse xmlns:p="http://example.com/partner">
                     <partner>
                       <id>${property.id}</id>
                       <name>Alice</name>
@@ -67,7 +67,7 @@ api:
                         <country>US</country>
                       </address>
                     </partner>
-                  </getPartnerResponse>
+                  </p:getPartnerResponse>
                 </s11:Body>
               </s11:Envelope>
     - return:
@@ -84,7 +84,7 @@ api:
         src: |
           <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
             <s11:Body>
-              <createPartnerResponse xmlns="http://example.com/partner"/>
+              <p:createPartnerResponse xmlns:p="http://example.com/partner"/>
             </s11:Body>
           </s11:Envelope>
     - return:
@@ -107,7 +107,7 @@ api:
             src: |
               <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
                 <s11:Body>
-                  <updatePartnerResponse xmlns="http://example.com/partner">
+                  <p:updatePartnerResponse xmlns:p="http://example.com/partner">
                     <partner>
                       <id>${property.id}</id>
                       <name>Alice Updated</name>
@@ -124,7 +124,7 @@ api:
                         <country>US</country>
                       </address>
                     </partner>
-                  </updatePartnerResponse>
+                  </p:updatePartnerResponse>
                 </s11:Body>
               </s11:Envelope>
     - return:
@@ -141,7 +141,7 @@ api:
         src: |
           <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
             <s11:Body>
-              <deletePartnerResponse xmlns="http://example.com/partner"/>
+              <p:deletePartnerResponse xmlns:p="http://example.com/partner"/>
             </s11:Body>
           </s11:Envelope>
     - return:

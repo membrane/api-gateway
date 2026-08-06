@@ -14,11 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.util.ConfigurationException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Per-operation settings for a WSDL operation exposed via OpenAPI.
@@ -44,7 +49,7 @@ public class OperationSettings {
     @MCAttribute
     public void setMethod(String method) {
         if (method == null) throw new ConfigurationException("HTTP method must not be null");
-        String upper = method.toUpperCase();
+        String upper = method.toUpperCase(Locale.ROOT);
         if (!ALLOWED_METHODS.contains(upper)) throw new ConfigurationException(
                 "Unsupported HTTP method: " + method + ". Allowed: " + ALLOWED_METHODS);
         this.method = upper;
