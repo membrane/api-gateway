@@ -52,7 +52,6 @@ Maven multi-module reactor (root `pom.xml`), Java 21 (`javac.source/target`):
   `tutorials/`, `examples/`). Also owns the tutorial/example integration tests.
 - `war` — packages `core` for deployment into a servlet container (Tomcat, Jetty).
 - `test` — shared test utilities (HTTP client helpers, fixtures), depended on as `test` scope.
-- `maven-plugin`, `openapi-parser-shaded` — not in the root reactor; build/inspect separately if touched.
 
 ## Build
 
@@ -63,7 +62,15 @@ mvn -pl core -am -DskipTests package   # one module + its dependencies
 
 ## Testing
 
-- Full unit test run: `mvn test`. Single module: `mvn -pl core -am test`.
+- **Default to running only the tests affected by a change** — the class(es)/package(s) touched,
+  not the whole suite. Never run a full unit test run (`mvn test` / `mvn -pl core -am test`) or
+  the full distribution IT suite without asking the user first; these are slow and often fail on
+  unrelated/network-dependent tests offline.
+- For a single `core` test class or package, use `test/scripts/run-core-test.sh <FQCN or package>`
+  — it drives `com.predic8.membrane.devtools.SingleTestRunner` (a permanent JUnit Platform
+  Launcher entry point under `core/src/test/java`, so it compiles with the normal test build —
+  no per-run codegen) and matches Surefire's `argLine`/CWD so results agree with a real Maven
+  run. For a single distribution/tutorial IT, use the `run-example-test` skill.
 - **`-Dtest=ClassName` does NOT isolate a class in `core`.** Surefire is bound to
   `UnitTests.java`, a JUnit Platform `@Suite` with `@SelectPackages("com.predic8")` — the suite
   engine ignores Surefire's class filter and runs the whole package regardless (including
@@ -88,6 +95,10 @@ mvn -pl core -am -DskipTests package   # one module + its dependencies
   misleading failures (`PortOccupiedException` inside a passing-looking suite, or a bare
   `TimeoutException` from `waitForMembrane()`). Check `lsof -nP -tiTCP:2000 -sTCP:LISTEN` (and
   `7007`) before assuming a config regression.
+- Every new function or feature must be covered by at least one test — before writing a new test class, check `<module>/src/test/java/<mirrored package>/` for an existing test class covering that production class and add a test method there; only create a new `<ClassName>Test` class if none exists yet.
+- Test observable behavior — inputs/outputs, edge cases (zero/identical values, boundaries), and any documented invariants. Do not write tests for record accessors, generated `equals`/`hashCode`/`toString`, or plain getters/setters — there's no behavior there to break.
+- Test classes mirror the package of the class under test (e.g. `com.predic8.membrane.core.util.URLUtil` → `com.predic8.membrane.core.util.URLUtilTest`).
+- Prefer a few tests that pin down real behavior (known-value checks, symmetry/round-trip properties) over exhaustive trivial cases.
 
 ## Configuration grammar (annotations)
 
@@ -125,6 +136,13 @@ example/tutorial discovery and scaffolding.
 - SLF4J everywhere; no `System.out` in production code.
 - Attack/validation-detection log lines (e.g. XXE/DOCTYPE detection) are intentionally `info`,
   not `warn` — that's an ops-tunable level, not a severity bug to flag in review.
+- Prefer pure methods where practical: same input → same output, minimal side effects; push I/O and mutation to the edges of a call chain.
+- Prefer `final` fields, parameters, and locals; a variable that must be reassigned is a signal to extract a helper method instead.
+- Treat data as immutable by default — prefer immutable collections (`List.of`, `Collections.unmodifiableList`) or defensive copies over mutating a caller-owned array/collection in place.
+- Use Streams only where they read more clearly than an equivalent loop; don't force a stream onto logic a plain loop expresses better.
+- Model control flow declaratively where it fits: pattern matching (`switch` over sealed types/records, pattern `instanceof`) over long `if`/`else` chains.
+- No hidden side effects in getter-like methods — anything that mutates state, logs, or does I/O should be named and called out explicitly, not buried in a computation.
+- Keep methods small and cohesive with a single responsibility; make result and exception behavior explicit — return a value (or `Optional`) for expected outcomes, reserve exceptions for actual failures, and declare checked exceptions rather than swallowing them.
 
 ## Git hygiene
 
@@ -141,5 +159,4 @@ about behavior, config, and capability changes only.
 ## `docs/SECURITY.md`
 
 The supported-versions table intentionally lists only the current minor line even though older
-lines (e.g. 6.5.x) still receive maintenance releases — that's a deliberate business decision
-steering older-version support toward commercial plans, not a doc bug.
+lines (e.g. 6.5.x) still receive maintenance releases sometimes.
