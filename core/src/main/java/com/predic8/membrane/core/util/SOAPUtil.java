@@ -168,8 +168,12 @@ public class SOAPUtil {
                         return NO_SOAP_RESULT;
                     }
                 }
-                if (event.isEndElement())
+                if (event.isEndElement()) {
+                    if (state == 2) {
+                        return new SOAPAnalysisResult(true, false, version, null);
+                    }
                     return NO_SOAP_RESULT;
+                }
             }
         } catch (Exception e) {
             log.info("Error parsing SOAP message: {}", e.getMessage());

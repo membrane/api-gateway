@@ -85,16 +85,23 @@ abstract class AbstractSoapDomInterceptor extends AbstractInterceptor {
         }
     }
 
+    // The Transformer has no way to emit a declaration without a standalone pseudo-attribute
+    // (OMIT_XML_DECLARATION=no always adds standalone="no"), so the declaration is prepended by
+    // hand instead.
+    private static final String XML_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
+
     /**
      * Replaces the request body with the (possibly modified) document. Serialization deliberately
      * does not re-indent: reformatting would insert whitespace into already-signed elements,
-     * invalidating their digests.
+     * invalidating their digests. The XML declaration is emitted (with its encoding), since it
+     * sits outside the document element and does not affect any digest.
      */
     protected static void writeBack(Exchange exc, Document doc) throws TransformerException {
         Transformer transformer = XMLUtil.newHardenedBestEffortTransformerFactory().newTransformer();
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
         StringWriter writer = new StringWriter();
         transformer.transform(new DOMSource(doc), new StreamResult(writer));
-        exc.getRequest().setBodyContent(writer.toString().getBytes(StandardCharsets.UTF_8));
+        exc.getRequest().setBodyContent((XML_DECLARATION + "\n" + writer).getBytes(StandardCharsets.UTF_8));
     }
 }

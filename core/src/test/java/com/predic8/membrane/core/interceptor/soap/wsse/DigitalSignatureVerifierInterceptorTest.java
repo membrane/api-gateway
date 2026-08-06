@@ -14,6 +14,8 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.core.config.security.TrustStore;
+import com.predic8.membrane.core.config.xml.Namespaces;
+import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -313,6 +315,106 @@ class DigitalSignatureVerifierInterceptorTest extends AbstractWsseInterceptorTes
         verifierTrusting(TRUSTSTORE_KEY2, BODY);
 
         assertAborts(verifier, 403);
+    }
+
+    @Test
+    void requiredReferenceWithCustomPrefixIsResolvedViaXmlConfig() throws Exception {
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body>
+                        <c:foo xmlns:c="https://predic8.de/custom">bar</c:foo>
+                    </soap:Body>
+                </soap:Envelope>
+                """);
+        DigitalSignatureInterceptor signer = signer(xpathReference("//c:foo"));
+        signer.setXmlConfig(xmlConfig("c", "https://predic8.de/custom"));
+        signer.init(router);
+        signer.handleRequest(exchange);
+
+        TrustStore trustStore = new TrustStore();
+        trustStore.setLocation(TRUSTSTORE);
+        trustStore.setPassword(KEYSTORE_PASSWORD);
+        verifier.setTrustStore(trustStore);
+        verifier.setRequiredReferences(List.of(xpathReference("//c:foo")));
+        verifier.setXmlConfig(xmlConfig("c", "https://predic8.de/custom"));
+        verifier.init(router);
+
+        assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
+    }
+
+    private static final String SOAP_BODY_WITH_TWO_FOOS = """
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                <soap:Body>
+                    <foo>bar</foo>
+                    <foo>baz</foo>
+                </soap:Body>
+            </soap:Envelope>
+            """;
+
+    private void verifierRequiring(SignatureReference... requiredReferences) {
+        TrustStore trustStore = new TrustStore();
+        trustStore.setLocation(TRUSTSTORE);
+        trustStore.setPassword(KEYSTORE_PASSWORD);
+        verifier.setTrustStore(trustStore);
+        verifier.setRequiredReferences(List.of(requiredReferences));
+        verifier.init(router);
+    }
+
+    @Test
+    void rejectsExplicitByCombinedWithXpath() {
+        SignatureReference reference = xpathReference("//*[local-name()='foo']");
+        reference.setBy(SignatureReference.By.XPATH);
+
+        assertThrows(RuntimeException.class, () -> verifierRequiring(reference));
+    }
+
+    @Test
+    void rejectsNonXpathByCombinedWithXpath() {
+        SignatureReference reference = xpathReference("//*[local-name()='foo']");
+        reference.setBy(BODY);
+
+        assertThrows(RuntimeException.class, () -> verifierRequiring(reference));
+    }
+
+    @Test
+    void rejectsXpathByWithoutXpath() {
+        assertThrows(RuntimeException.class, () -> verifierRequiring(reference(SignatureReference.By.XPATH)));
+    }
+
+    @Test
+    void requiredReferenceWithMultipleXPathMatchesIsAcceptedWhenAllAreSigned() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TWO_FOOS);
+        DigitalSignatureInterceptor signer = signer(xpathReference("//*[local-name()='foo']"));
+        signer.init(router);
+        signer.handleRequest(exchange);
+
+        verifierRequiring(xpathReference("//*[local-name()='foo']"));
+
+        assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
+    }
+
+    @Test
+    void requiredReferenceWithMultipleXPathMatchesIsRejectedWhenOnlyOneIsSigned() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TWO_FOOS);
+        // Only the first foo is signed explicitly; the second is left uncovered.
+        DigitalSignatureInterceptor signer = signer(xpathReference("(//*[local-name()='foo'])[1]"));
+        signer.init(router);
+        signer.handleRequest(exchange);
+
+        verifierRequiring(xpathReference("//*[local-name()='foo']"));
+
+        assertAborts(verifier, 403);
+    }
+
+    private static XmlConfig xmlConfig(String prefix, String uri) {
+        Namespaces.Namespace namespace = new Namespaces.Namespace();
+        namespace.setPrefix(prefix);
+        namespace.setUri(uri);
+        Namespaces namespaces = new Namespaces();
+        namespaces.setNamespaces(List.of(namespace));
+        XmlConfig xmlConfig = new XmlConfig();
+        xmlConfig.setNamespaces(namespaces);
+        return xmlConfig;
     }
 
     @Test

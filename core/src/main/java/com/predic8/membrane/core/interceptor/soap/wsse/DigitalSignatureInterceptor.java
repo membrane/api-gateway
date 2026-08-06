@@ -17,6 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.KeyStore;
+import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.security.KeyStoreUtil;
@@ -33,7 +34,10 @@ import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
 import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Stream;
@@ -79,6 +83,7 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
     private X509DataKeyInfo x509Data;
     private SecurityTokenReferenceKeyInfo securityTokenReference;
     private KeyIdentifierKeyInfo keyIdentifier;
+    private XmlConfig xmlConfig;
 
     private PrivateKey privateKey;
     private X509Certificate certificate;
@@ -89,6 +94,18 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
         validateConfiguration();
         loadSigningMaterial();
     }
+
+    private static final List<String> SUPPORTED_DIGEST_ALGORITHMS = List.of(
+            DigestMethod.SHA1, DigestMethod.SHA224, DigestMethod.SHA256, DigestMethod.SHA384,
+            DigestMethod.SHA512, DigestMethod.RIPEMD160, DigestMethod.SHA3_224, DigestMethod.SHA3_256,
+            DigestMethod.SHA3_384, DigestMethod.SHA3_512);
+    private static final List<String> SUPPORTED_SIGNATURE_ALGORITHMS = List.of(
+            SignatureMethod.RSA_SHA1, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512",
+            SignatureMethod.DSA_SHA1, SignatureMethod.HMAC_SHA1);
+    private static final List<String> SUPPORTED_CANONICALIZATION_ALGORITHMS = List.of(
+            CanonicalizationMethod.INCLUSIVE, CanonicalizationMethod.EXCLUSIVE,
+            CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS, CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
 
     private void validateConfiguration() {
         if (keyStore == null) {
@@ -101,6 +118,37 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
             throw new ConfigurationException(
                     "digitalSignature accepts at most one of <x509Data>, <securityTokenReference>, or <keyIdentifier>.");
         }
+        if (securityTokenReference == null && references.stream().anyMatch(r -> r.getBy() == SignatureReference.By.BST)) {
+            throw new ConfigurationException("reference by: BST requires a <securityTokenReference> KeyInfo mode.");
+        }
+        references.forEach(SignatureReference::validate);
+        validateAlgorithms();
+    }
+
+    private void validateAlgorithms() {
+        XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
+        try {
+            fac.newDigestMethod(digestAlgorithm, null);
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
+            throw unsupportedAlgorithm("digestAlgorithm", digestAlgorithm, SUPPORTED_DIGEST_ALGORITHMS, e);
+        }
+        try {
+            fac.newSignatureMethod(signatureAlgorithm, null);
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
+            throw unsupportedAlgorithm("signatureAlgorithm", signatureAlgorithm, SUPPORTED_SIGNATURE_ALGORITHMS, e);
+        }
+        try {
+            fac.newCanonicalizationMethod(canonicalizationAlgorithm, (C14NMethodParameterSpec) null);
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
+            throw unsupportedAlgorithm("canonicalizationAlgorithm", canonicalizationAlgorithm,
+                    SUPPORTED_CANONICALIZATION_ALGORITHMS, e);
+        }
+    }
+
+    private static ConfigurationException unsupportedAlgorithm(String attribute, String value,
+                                                                 List<String> supported, Exception cause) {
+        return new ConfigurationException("Unsupported " + attribute + " \"" + value +
+                "\" on digitalSignature. Supported values: " + String.join(", ", supported), cause);
     }
 
     private void loadSigningMaterial() {
@@ -156,10 +204,25 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
         Element security = getOrCreateSecurity(doc, getOrCreateHeader(doc, envelope, soapNs));
         ensureMustUnderstand(security, soapNs);
 
+        if (securityTokenReference != null && references.stream().anyMatch(r -> r.getBy() == SignatureReference.By.BST)) {
+            // Created here, before reference resolution, so a "by: BST" reference can pick it up
+            // and cover it with a ds:Reference; appendSecurityTokenReferenceKeyInfo() then reuses
+            // this same element instead of creating its own.
+            security.appendChild(createBinarySecurityToken(doc));
+        }
+
         List<String> referencedIds = new ArrayList<>();
         try {
             for (SignatureReference reference : references) {
-                referencedIds.add(ensureId(resolveReference(doc, envelope, security, soapNs, reference), reference));
+                List<Element> elements = resolveReference(doc, envelope, security, soapNs, reference, xmlConfig);
+                if (reference.getId() != null && elements.size() > 1) {
+                    throw new WsSecurityXml.ReferenceResolutionException(
+                            "reference \"" + reference.getId() + "\" has an explicit id but its xpath matched " +
+                                    elements.size() + " elements; an explicit id can only be used when exactly one element matches.");
+                }
+                for (Element element : elements) {
+                    referencedIds.add(ensureId(element, reference));
+                }
             }
         } catch (WsSecurityXml.ReferenceResolutionException e) {
             user(router.getConfiguration().isProduction(), getDisplayName())
@@ -203,7 +266,7 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
                 soapPrefix == null || soapPrefix.isEmpty() ? List.of() : List.of(soapPrefix));
 
         DigestMethod digestMethod = fac.newDigestMethod(digestAlgorithm, null);
-        Transform transform = fac.newTransform(canonicalizationAlgorithm, new ExcC14NParameterSpec(List.of()));
+        Transform transform = fac.newTransform(canonicalizationAlgorithm, (C14NMethodParameterSpec) null);
 
         List<Reference> refs = new ArrayList<>();
         for (String id : referencedIds) {
@@ -227,6 +290,7 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
             // so appending it afterwards doesn't affect what was just signed.
             fac.newXMLSignature(signedInfo, null, List.of(), signatureId, null).sign(dsc);
             Element signatureElement = (Element) security.getLastChild();
+            removeWhitespaceFromSignatureValue(signatureElement);
             if (keyIdentifier != null) {
                 appendKeyIdentifierKeyInfo(doc, signatureElement);
             } else {
@@ -237,23 +301,46 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
             X509Data x509DataStructure = kif.newX509Data(List.of(certificate));
             KeyInfo keyInfo = kif.newKeyInfo(List.of(x509DataStructure));
             fac.newXMLSignature(signedInfo, keyInfo, List.of(), signatureId, null).sign(dsc);
+            removeWhitespaceFromSignatureValue((Element) security.getLastChild());
         }
     }
 
+    /**
+     * The JDK's built-in JSR 105 {@code XMLSignatureFactory} (backed by Apache Santuario) wraps
+     * the Base64-encoded signature bytes it writes into {@code ds:SignatureValue} at a fixed line
+     * length (historically 76 characters), inserting newlines into the element's text content.
+     * That whitespace is harmless for signature validity - Base64 decoding ignores it - but some
+     * WS-Security consumers expect the value on a single line, so it is stripped here for
+     * compatibility.
+     */
+    private static void removeWhitespaceFromSignatureValue(Element signatureElement) {
+        Element signatureValue = (Element) signatureElement
+                .getElementsByTagNameNS(XMLSignature.XMLNS, "SignatureValue").item(0);
+        signatureValue.setTextContent(signatureValue.getTextContent().replaceAll("\\s+", ""));
+    }
+
     private void appendSecurityTokenReferenceKeyInfo(Document doc, Element security, Element signatureElement) throws Exception {
-        String tokenId = "X509-" + UUID.randomUUID();
-        Element binarySecurityToken = doc.createElementNS(WSSE_NS, "wsse:BinarySecurityToken");
-        binarySecurityToken.setAttribute("EncodingType", BASE64_BINARY_ENCODING_TYPE);
-        binarySecurityToken.setAttribute("ValueType", X509_V3_VALUE_TYPE);
-        declareWsuId(binarySecurityToken, tokenId);
-        binarySecurityToken.setTextContent(Base64.getEncoder().encodeToString(certificate.getEncoded()));
-        security.insertBefore(binarySecurityToken, signatureElement);
+        Element binarySecurityToken = getFirstChildByName(security, WSSE_NS, "BinarySecurityToken");
+        if (binarySecurityToken == null) {
+            binarySecurityToken = createBinarySecurityToken(doc);
+            security.insertBefore(binarySecurityToken, signatureElement);
+        }
+        String tokenId = binarySecurityToken.getAttributeNS(WSU_NS, "Id");
 
         Element reference = doc.createElementNS(WSSE_NS, "wsse:Reference");
         reference.setAttribute("URI", "#" + tokenId);
         reference.setAttribute("ValueType", X509_V3_VALUE_TYPE);
 
         appendKeyInfo(doc, signatureElement, reference);
+    }
+
+    private Element createBinarySecurityToken(Document doc) throws CertificateEncodingException {
+        Element binarySecurityToken = doc.createElementNS(WSSE_NS, "wsse:BinarySecurityToken");
+        binarySecurityToken.setAttribute("EncodingType", BASE64_BINARY_ENCODING_TYPE);
+        binarySecurityToken.setAttribute("ValueType", X509_V3_VALUE_TYPE);
+        declareWsuId(binarySecurityToken, "X509-" + UUID.randomUUID());
+        binarySecurityToken.setTextContent(Base64.getEncoder().encodeToString(certificate.getEncoded()));
+        return binarySecurityToken;
     }
 
     private void appendKeyIdentifierKeyInfo(Document doc, Element signatureElement) throws Exception {
@@ -329,7 +416,8 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
 
     /**
      * @description The elements to sign. Each becomes one <code>ds:Reference</code> inside the
-     * signature's <code>ds:SignedInfo</code>.
+     * signature's <code>ds:SignedInfo</code> - except an <code>XPATH</code> reference matching more
+     * than one element, which becomes one <code>ds:Reference</code> per matched element.
      */
     @MCChildElement(order = 2)
     public void setReferences(List<SignatureReference> references) {
@@ -417,5 +505,19 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
     @MCChildElement(order = 5)
     public void setKeyIdentifier(KeyIdentifierKeyInfo keyIdentifier) {
         this.keyIdentifier = keyIdentifier;
+    }
+
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
+    }
+
+    /**
+     * @description Declares additional XML namespace prefixes usable in the <code>xpath</code>
+     * attribute of an <code>XPATH</code> reference. <code>soap</code>, <code>wsse</code>, and
+     * <code>wsu</code> are always available, even when this is set.
+     */
+    @MCChildElement(allowForeign = true, order = 6)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
     }
 }

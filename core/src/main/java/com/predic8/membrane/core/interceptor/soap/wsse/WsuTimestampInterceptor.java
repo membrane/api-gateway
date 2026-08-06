@@ -23,6 +23,7 @@ import org.w3c.dom.Element;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
@@ -110,7 +111,14 @@ public class WsuTimestampInterceptor extends AbstractSoapDomInterceptor {
      */
     @MCAttribute
     public void setTtl(String ttl) {
-        Duration parsed = Duration.parse(ttl);
+        Duration parsed;
+        try {
+            parsed = Duration.parse(ttl);
+        } catch (DateTimeParseException e) {
+            throw new ConfigurationException("ttl \"" + ttl +
+                    "\" is not a valid ISO-8601 duration. Use time-based units (days, hours, minutes, " +
+                    "seconds), e.g. \"PT5M\" for 5 minutes; calendar units like months are not supported.", e);
+        }
         if (!parsed.isPositive()) {
             throw new ConfigurationException("ttl must be a positive duration.");
         }

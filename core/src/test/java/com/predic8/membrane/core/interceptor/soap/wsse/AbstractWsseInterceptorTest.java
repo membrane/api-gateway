@@ -84,6 +84,10 @@ abstract class AbstractWsseInterceptorTest {
         return factory.newDocumentBuilder().parse(exchange.getRequest().getBodyAsStream());
     }
 
+    String rawBody() throws Exception {
+        return exchange.getRequest().getBodyAsStringDecoded();
+    }
+
     void setBody(Document doc) throws Exception {
         exchange.getRequest().setBodyContent(XMLUtil.xmlNode2String(doc).getBytes(UTF_8));
     }
@@ -109,6 +113,11 @@ abstract class AbstractWsseInterceptorTest {
         return inclusiveNamespaces.getAttribute("PrefixList");
     }
 
+    static void assertNoInclusiveNamespaces(Element parent) {
+        assertEquals(0, parent.getElementsByTagNameNS(EXC_C14N_NS, "InclusiveNamespaces").getLength(),
+                "Expected no ec:InclusiveNamespaces below " + parent.getLocalName());
+    }
+
     static KeyStore signingKeyStore(String alias) {
         KeyStore keyStore = new KeyStore();
         keyStore.setLocation(KEYSTORE);
@@ -128,7 +137,7 @@ abstract class AbstractWsseInterceptorTest {
     }
 
     static SignatureReference xpathReference(String xpath) {
-        SignatureReference ref = reference(SignatureReference.By.XPATH);
+        SignatureReference ref = new SignatureReference();
         ref.setXpath(xpath);
         return ref;
     }

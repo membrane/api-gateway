@@ -124,4 +124,17 @@ class WsuTimestampInterceptorTest extends AbstractWsseInterceptorTest {
 
         assertAborts(interceptor, 400);
     }
+
+    @Test
+    void rejectsCalendarBasedTtl() {
+        // "P5M" is a valid ISO-8601 *period* (5 months) but not a valid *duration* - Duration only
+        // accepts time-based units (days, hours, minutes, seconds).
+        RuntimeException e = assertThrows(RuntimeException.class, () -> interceptor.setTtl("P5M"));
+        assertTrue(e.getMessage().contains("P5M"));
+    }
+
+    @Test
+    void rejectsMalformedTtl() {
+        assertThrows(RuntimeException.class, () -> interceptor.setTtl("not-a-duration"));
+    }
 }

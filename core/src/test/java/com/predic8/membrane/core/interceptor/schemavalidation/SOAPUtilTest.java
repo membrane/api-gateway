@@ -89,6 +89,40 @@ public class SOAPUtilTest {
     }
 
     @Test
+    void analyseSOAP12EmptyBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+                  <soap:Header></soap:Header>
+                  <soap:Body></soap:Body>
+                </soap:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP12, result.version());
+    }
+
+    @Test
+    void analyseSOAP11EmptyBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body></s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP11, result.version());
+    }
+
+    @Test
+    void analyseEnvelopeWithoutBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                </s11:Envelope>
+                """));
+        assertFalse(result.isSOAP());
+    }
+
+    @Test
     void analyseFault11() {
         SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
                 <s11:Envelope xmlns:s11= "http://schemas.xmlsoap.org/soap/envelope/" >

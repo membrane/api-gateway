@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
+import com.predic8.membrane.core.config.xml.XmlConfig;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -32,11 +33,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static javax.xml.XMLConstants.NULL_NS_URI;
+
 /**
  * SOAP/WS-Security XML helpers shared by {@link UsernameTokenInterceptor},
  * {@link DigitalSignatureInterceptor}, and {@link DigitalSignatureVerifierInterceptor}: locating
  * or creating the {@code soap:Header}/{@code wsse:Security} structure, and resolving a
- * {@link SignatureReference} to the element it selects.
+ * {@link SignatureReference} to the element(s) it selects.
  */
 final class WsSecurityXml {
 
@@ -82,6 +85,35 @@ final class WsSecurityXml {
     private WsSecurityXml() {
     }
 
+    /**
+     * The {@code soap}/{@code wsse}/{@code wsu} prefixes always resolve, even when {@code xmlConfig}
+     * declares its own namespaces - the interceptor's built-in structure still needs to be
+     * addressable from an XPath reference.
+     */
+    private static NamespaceContext mergedNamespaceContext(XmlConfig xmlConfig) {
+        if (xmlConfig == null || xmlConfig.getNamespaces() == null) {
+            return SOAP_WSSE_NAMESPACE_CONTEXT;
+        }
+        NamespaceContext configured = xmlConfig.getNamespaces().getNamespaceContext();
+        return new NamespaceContext() {
+            @Override
+            public String getNamespaceURI(String prefix) {
+                String uri = configured.getNamespaceURI(prefix);
+                return NULL_NS_URI.equals(uri) ? SOAP_WSSE_NAMESPACE_CONTEXT.getNamespaceURI(prefix) : uri;
+            }
+
+            @Override
+            public String getPrefix(String namespaceURI) {
+                return null;
+            }
+
+            @Override
+            public Iterator<String> getPrefixes(String namespaceURI) {
+                return null;
+            }
+        };
+    }
+
     static Element getOrCreateHeader(Document doc, Element envelope, String soapNs) {
         Element header = getFirstChildByName(envelope, soapNs, "Header");
         if (header != null) {
@@ -99,23 +131,27 @@ final class WsSecurityXml {
             return security;
         }
         security = doc.createElementNS(WSSE_NS, "wsse:Security");
-        header.appendChild(security);
+        header.insertBefore(security, header.getFirstChild());
         return security;
     }
 
     /**
-     * Resolves a {@link SignatureReference} to the element it selects (the SOAP body/header, an
-     * existing {@code wsu:Timestamp}, or an XPath match), for both signing and verification.
+     * Resolves a {@link SignatureReference} to the element(s) it selects (the SOAP body/header, an
+     * existing {@code wsu:Timestamp}, or the XPath's matches), for both signing and verification.
+     * {@code BODY}/{@code HEADER}/{@code TIMESTAMP} always resolve to exactly one element;
+     * {@code XPATH} resolves to every matched element, one or more.
      *
-     * @throws ReferenceResolutionException if the reference cannot be resolved to exactly one element
+     * @throws ReferenceResolutionException if the reference cannot be resolved to at least one element
      */
-    static Element resolveReference(Document doc, Element envelope, Element security, String soapNs, SignatureReference reference) {
+    static List<Element> resolveReference(Document doc, Element envelope, Element security, String soapNs, SignatureReference reference, XmlConfig xmlConfig) {
         return switch (reference.getBy()) {
-            case BODY -> requireElement(getFirstChildByName(envelope, soapNs, "Body"), "soap:Body is missing.");
-            case HEADER -> requireElement(getFirstChildByName(envelope, soapNs, "Header"), "soap:Header is missing.");
-            case TIMESTAMP -> requireElement(getFirstChildByName(security, WSU_NS, "Timestamp"),
-                    "No wsu:Timestamp found inside wsse:Security.");
-            case XPATH -> resolveByXPath(doc, reference.getXpath());
+            case BODY -> List.of(requireElement(getFirstChildByName(envelope, soapNs, "Body"), "soap:Body is missing."));
+            case HEADER -> List.of(requireElement(getFirstChildByName(envelope, soapNs, "Header"), "soap:Header is missing."));
+            case TIMESTAMP -> List.of(requireElement(getFirstChildByName(security, WSU_NS, "Timestamp"),
+                    "No wsu:Timestamp found inside wsse:Security."));
+            case BST -> List.of(requireElement(getFirstChildByName(security, WSSE_NS, "BinarySecurityToken"),
+                    "No wsse:BinarySecurityToken found inside wsse:Security."));
+            case XPATH -> resolveByXPath(doc, reference.getXpath(), xmlConfig);
         };
     }
 
@@ -138,24 +174,27 @@ final class WsSecurityXml {
         return factory;
     }
 
-    private static Element resolveByXPath(Document doc, String xpath) {
+    private static List<Element> resolveByXPath(Document doc, String xpath, XmlConfig xmlConfig) {
         if (xpath == null || xpath.isBlank()) {
             throw new ReferenceResolutionException("reference by=\"XPATH\" requires an xpath attribute.");
         }
         try {
             XPath xPath = XPATH_FACTORY.newXPath();
-            xPath.setNamespaceContext(SOAP_WSSE_NAMESPACE_CONTEXT);
+            xPath.setNamespaceContext(mergedNamespaceContext(xmlConfig));
             NodeList nodes = (NodeList) xPath.evaluate(xpath, doc, XPathConstants.NODESET);
-            if (nodes.getLength() != 1) {
-                throw new ReferenceResolutionException(
-                        "XPath \"" + xpath + "\" matched " + nodes.getLength() + " element(s), expected exactly 1.");
+            if (nodes.getLength() == 0) {
+                throw new ReferenceResolutionException("XPath \"" + xpath + "\" matched no elements.");
             }
-            Node node = nodes.item(0);
-            if (!(node instanceof Element element)) {
-                throw new ReferenceResolutionException(
-                        "XPath \"" + xpath + "\" matched a " + node.getNodeName() + " node, expected an element.");
+            List<Element> elements = new ArrayList<>();
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Node node = nodes.item(i);
+                if (!(node instanceof Element element)) {
+                    throw new ReferenceResolutionException(
+                            "XPath \"" + xpath + "\" matched a " + node.getNodeName() + " node, expected an element.");
+                }
+                elements.add(element);
             }
-            return element;
+            return elements;
         } catch (XPathExpressionException e) {
             throw new ReferenceResolutionException("Invalid XPath expression: " + xpath);
         }
@@ -220,10 +259,10 @@ final class WsSecurityXml {
     }
 
     /**
-     * Thrown when a {@link SignatureReference} cannot be resolved to exactly one element - either
-     * because the referenced element (body/header/timestamp) is absent, or its XPath didn't match
-     * exactly once. Callers decide the resulting HTTP status: a signer treats this as a bad
-     * request (400), a verifier treats it as a failed verification (403).
+     * Thrown when a {@link SignatureReference} cannot be resolved to at least one element - either
+     * because the referenced element (body/header/timestamp) is absent, or its XPath matched
+     * nothing. Callers decide the resulting HTTP status: a signer treats this as a bad request
+     * (400), a verifier treats it as a failed verification (403).
      */
     static class ReferenceResolutionException extends RuntimeException {
         ReferenceResolutionException(String message) {

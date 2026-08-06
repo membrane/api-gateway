@@ -96,14 +96,14 @@ class SignedUsernameTokenSampleShapeTest extends AbstractWsseInterceptorTest {
 
     /**
      * SignedInfo: exclusive c14n with InclusiveNamespaces="soapenv", RSA-SHA256, SHA-256 digest, and
-     * an empty InclusiveNamespaces on the per-reference transform.
+     * no InclusiveNamespaces on the per-reference transform.
      */
     @Test
     void signedInfoUsesTheExpectedAlgorithms() {
         Element canonicalizationMethod = firstByTag(result, DS_NS, "CanonicalizationMethod");
         assertEquals(EXC_C14N_NS, canonicalizationMethod.getAttribute("Algorithm"));
         assertEquals("soapenv", inclusiveNamespacesPrefixList(canonicalizationMethod));
-        assertEquals("", inclusiveNamespacesPrefixList(firstByTag(result, DS_NS, "Transform")));
+        assertNoInclusiveNamespaces(firstByTag(result, DS_NS, "Transform"));
 
         assertEquals("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
                 firstByTag(result, DS_NS, "SignatureMethod").getAttribute("Algorithm"));

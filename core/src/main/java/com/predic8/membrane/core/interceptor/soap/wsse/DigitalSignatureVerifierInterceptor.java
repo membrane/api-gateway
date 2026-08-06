@@ -17,6 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.TrustStore;
+import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
@@ -81,6 +82,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
     private TrustStore trustStore;
     private List<SignatureReference> requiredReferences = new ArrayList<>();
     private Duration clockSkew = DEFAULT_CLOCK_SKEW;
+    private XmlConfig xmlConfig;
 
     private java.security.KeyStore trustKeyStore;
 
@@ -93,6 +95,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         if (requiredReferences.isEmpty()) {
             throw new ConfigurationException("digitalSignatureVerifier requires at least one <requiredReferences> child element.");
         }
+        requiredReferences.forEach(SignatureReference::validate);
         try {
             trustKeyStore = StaticSSLContext.openKeyStore(
                     trustStore, null, router.getResolverMap(), getBeanBaseLocation());
@@ -336,7 +339,12 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
 
     private void checkRequiredReference(Document doc, Element envelope, Element security, String soapNs,
                                          XMLSignature signature, SignatureReference required) {
-        Element expected = resolveReference(doc, envelope, security, soapNs, required);
+        for (Element expected : resolveReference(doc, envelope, security, soapNs, required, xmlConfig)) {
+            checkRequiredElement(doc, signature, required, expected);
+        }
+    }
+
+    private void checkRequiredElement(Document doc, XMLSignature signature, SignatureReference required, Element expected) {
         if (required.getBy() == SignatureReference.By.TIMESTAMP) {
             checkTimestampFreshness(expected);
         }
@@ -473,5 +481,19 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
     @MCAttribute
     public void setClockSkew(String clockSkew) {
         this.clockSkew = Duration.parse(clockSkew);
+    }
+
+    public XmlConfig getXmlConfig() {
+        return xmlConfig;
+    }
+
+    /**
+     * @description Declares additional XML namespace prefixes usable in the <code>xpath</code>
+     * attribute of an <code>XPATH</code> reference. <code>soap</code>, <code>wsse</code>, and
+     * <code>wsu</code> are always available, even when this is set.
+     */
+    @MCChildElement(allowForeign = true, order = 3)
+    public void setXmlConfig(XmlConfig xmlConfig) {
+        this.xmlConfig = xmlConfig;
     }
 }

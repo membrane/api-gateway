@@ -15,37 +15,45 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.util.ConfigurationException;
 
 /**
  * @description One element to sign or verify, referenced from a <code>digitalSignature</code>
  * interceptor's <code>references</code> list, or a <code>digitalSignatureVerifier</code>
  * interceptor's <code>requiredReferences</code> list. Selects the target either by a well-known
- * name (<code>BODY</code>, <code>HEADER</code>, <code>TIMESTAMP</code>) or by an XPath expression.
+ * name (<code>BODY</code>, <code>HEADER</code>, <code>TIMESTAMP</code>, <code>BST</code>) or by an
+ * XPath expression (set <code>xpath</code>; <code>by</code> is then inferred and must be omitted).
  * {@link #setId(String)} only applies when signing; it's unused when verifying.
  */
 @MCElement(name = "reference", component = false, id = "digitalSignature-reference")
 public class SignatureReference {
 
-    public enum By {BODY, HEADER, TIMESTAMP, XPATH}
+    public enum By {BODY, HEADER, TIMESTAMP, XPATH, BST}
 
     private By by = By.BODY;
+    private boolean byExplicitlySet;
     private String xpath;
     private String id;
 
     public By getBy() {
-        return by;
+        return xpath != null ? By.XPATH : by;
     }
 
     /**
      * @description Which element to sign or verify. <code>BODY</code>/<code>HEADER</code> select
      * the SOAP body/header. <code>TIMESTAMP</code> selects an existing <code>wsu:Timestamp</code>
-     * inside <code>wsse:Security</code>. <code>XPATH</code> selects the element matched by
-     * {@link #setXpath(String)}.
+     * inside <code>wsse:Security</code>. <code>BST</code> selects the
+     * <code>wsse:BinarySecurityToken</code> created for the <code>securityTokenReference</code>
+     * KeyInfo mode, so it is itself covered by the signature; only valid when
+     * <code>securityTokenReference</code> is configured on the enclosing
+     * <code>digitalSignature</code> interceptor. Must be omitted when {@link #setXpath(String)} is
+     * set — in that case the reference is always resolved by XPath.
      * @default BODY
      */
     @MCAttribute
     public void setBy(By by) {
         this.by = by;
+        this.byExplicitlySet = true;
     }
 
     public String getXpath() {
@@ -53,8 +61,12 @@ public class SignatureReference {
     }
 
     /**
-     * @description XPath expression selecting the element. Must match exactly one element. Only
-     * used when {@link #setBy(By)} is <code>XPATH</code>.
+     * @description XPath expression selecting the element(s) to sign or verify. Must match at
+     * least one element; when it matches more than one, each matched element is signed/verified
+     * individually. Setting <code>xpath</code> implies {@link #setBy(By)} is <code>XPATH</code>;
+     * <code>by</code> must then be omitted. The <code>soap</code>, <code>wsse</code>, and
+     * <code>wsu</code> prefixes are always available; additional prefixes can be declared on the
+     * enclosing interceptor's <code>xmlConfig</code>.
      * @example //*[local-name()='Timestamp']
      */
     @MCAttribute
@@ -69,10 +81,21 @@ public class SignatureReference {
     /**
      * @description The <code>wsu:Id</code> to assign to the referenced element. If omitted, an
      * existing <code>wsu:Id</code>/<code>Id</code> attribute on the element is reused, otherwise
-     * one is generated.
+     * one is generated. Not allowed when an <code>XPATH</code> reference matches more than one
+     * element, since a single id can't apply to all of them.
      */
     @MCAttribute
     public void setId(String id) {
         this.id = id;
+    }
+
+    void validate() {
+        if (xpath != null && byExplicitlySet) {
+            throw new ConfigurationException(
+                    "reference: 'by' must be omitted when 'xpath' is set — it is inferred as XPATH.");
+        }
+        if (xpath == null && by == By.XPATH) {
+            throw new ConfigurationException("reference: by: XPATH requires an 'xpath' attribute.");
+        }
     }
 }

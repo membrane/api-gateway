@@ -14,11 +14,14 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.core.config.security.KeyStore;
+import com.predic8.membrane.core.config.xml.Namespaces;
+import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import java.security.MessageDigest;
 import java.util.Base64;
@@ -38,6 +41,18 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
                 </soap:Body>
             </soap:Envelope>
             """.formatted(WSU_NS);
+
+    private static final String SOAP_BODY_WITH_EXISTING_HEADER = """
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+                            xmlns:test="https://example.com/test">
+                <soap:Header>
+                    <test:Existing/>
+                </soap:Header>
+                <soap:Body>
+                    <foo>bar</foo>
+                </soap:Body>
+            </soap:Envelope>
+            """;
 
     DigitalSignatureInterceptor interceptor;
 
@@ -79,8 +94,24 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
     }
 
     @Test
+    void signatureValueHasNoEmbeddedWhitespace() throws Exception {
+        // The JDK's XML-DSig provider wraps SignatureValue's Base64 text at 76 characters by
+        // default; Membrane strips that for compatibility with consumers expecting one line.
+        String signatureValue = firstByTag(signBodyAndParse(), DS_NS, "SignatureValue").getTextContent();
+
+        assertFalse(signatureValue.matches("(?s).*\\s.*"));
+    }
+
+    @Test
     void signatureIsCryptographicallyVerifiable() throws Exception {
         assertSignatureIsValid(signBodyAndParse());
+    }
+
+    @Test
+    void signedBodyStartsWithXmlDeclaration() throws Exception {
+        signBodyAndParse();
+
+        assertTrue(rawBody().startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
     }
 
     @Test
@@ -97,7 +128,7 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
 
         assertTrue(firstByTag(result, DS_NS, "Signature").getAttribute("Id").startsWith("SIG-"));
         assertEquals("soap", inclusiveNamespacesPrefixList(firstByTag(result, DS_NS, "CanonicalizationMethod")));
-        assertEquals("", inclusiveNamespacesPrefixList(firstByTag(result, DS_NS, "Transform")));
+        assertNoInclusiveNamespaces(firstByTag(result, DS_NS, "Transform"));
 
         assertSignatureIsValid(result);
     }
@@ -107,6 +138,15 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
         Element security = firstByTag(signBodyAndParse(), WSSE_NS, "Security");
 
         assertEquals("1", security.getAttributeNS(SOAP_NS, "mustUnderstand"));
+    }
+
+    @Test
+    void securityIsInsertedAsFirstHeader() throws Exception {
+        Document result = signAndParse(SOAP_BODY_WITH_EXISTING_HEADER, bodyReference());
+
+        Element header = firstByTag(result, SOAP_NS, "Header");
+        assertEquals(WSSE_NS, header.getFirstChild().getNamespaceURI());
+        assertEquals("Security", header.getFirstChild().getLocalName());
     }
 
     @Test
@@ -124,19 +164,89 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
         assertAborts(interceptor, 400);
     }
 
+    private static final String SOAP_BODY_WITH_TWO_FOOS = """
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                <soap:Body>
+                    <foo>bar</foo>
+                    <foo>baz</foo>
+                </soap:Body>
+            </soap:Envelope>
+            """;
+
     @Test
-    void xpathMatchingMultipleElementsAborts() throws Exception {
-        exchangeWithBody("""
-                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                    <soap:Body>
-                        <foo>bar</foo>
-                        <foo>baz</foo>
-                    </soap:Body>
-                </soap:Envelope>
-                """);
-        initWith(xpathReference("//*[local-name()='foo']"));
+    void xpathMatchingMultipleElementsSignsEachOne() throws Exception {
+        Document result = signAndParse(SOAP_BODY_WITH_TWO_FOOS, xpathReference("//*[local-name()='foo']"));
+
+        NodeList foos = result.getElementsByTagNameNS("*", "foo");
+        assertEquals(2, foos.getLength());
+        assertFalse(((Element) foos.item(0)).getAttributeNS(WSU_NS, "Id").isEmpty());
+        assertFalse(((Element) foos.item(1)).getAttributeNS(WSU_NS, "Id").isEmpty());
+        assertNotEquals(((Element) foos.item(0)).getAttributeNS(WSU_NS, "Id"),
+                ((Element) foos.item(1)).getAttributeNS(WSU_NS, "Id"));
+
+        assertEquals(2, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        assertSignatureIsValid(result);
+    }
+
+    @Test
+    void explicitIdWithMultipleXPathMatchesAborts() throws Exception {
+        exchangeWithBody(SOAP_BODY_WITH_TWO_FOOS);
+        SignatureReference reference = xpathReference("//*[local-name()='foo']");
+        reference.setId("explicit-id");
+        initWith(reference);
 
         assertAborts(interceptor, 400);
+    }
+
+    @Test
+    void xpathWithBuiltInSoapPrefixResolvesWithoutXmlConfig() throws Exception {
+        Document result = signAndParse(SOAP_BODY, xpathReference("//soap:Body"));
+
+        assertEquals(1, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        assertSignatureIsValid(result);
+    }
+
+    @Test
+    void xpathWithCustomPrefixResolvesViaXmlConfig() throws Exception {
+        interceptor.setXmlConfig(xmlConfig("c", "https://predic8.de/custom"));
+
+        Document result = signAndParse("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body>
+                        <c:foo xmlns:c="https://predic8.de/custom">bar</c:foo>
+                    </soap:Body>
+                </soap:Envelope>
+                """, xpathReference("//c:foo"));
+
+        assertEquals(1, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        assertSignatureIsValid(result);
+    }
+
+    @Test
+    void xmlConfigMergesCustomPrefixesWithBuiltIns() throws Exception {
+        interceptor.setXmlConfig(xmlConfig("c", "https://predic8.de/custom"));
+
+        Document result = signAndParse("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body>
+                        <c:foo xmlns:c="https://predic8.de/custom">bar</c:foo>
+                    </soap:Body>
+                </soap:Envelope>
+                """, xpathReference("//soap:Body/c:foo"));
+
+        assertEquals(1, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        assertSignatureIsValid(result);
+    }
+
+    private static XmlConfig xmlConfig(String prefix, String uri) {
+        Namespaces.Namespace namespace = new Namespaces.Namespace();
+        namespace.setPrefix(prefix);
+        namespace.setUri(uri);
+        Namespaces namespaces = new Namespaces();
+        namespaces.setNamespaces(List.of(namespace));
+        XmlConfig xmlConfig = new XmlConfig();
+        xmlConfig.setNamespaces(namespaces);
+        return xmlConfig;
     }
 
     @Test
@@ -162,6 +272,7 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
 
         Element bst = firstByTag(result, WSSE_NS, "BinarySecurityToken");
         assertFalse(bst.getTextContent().isBlank());
+        assertFalse(bst.getTextContent().matches("(?s).*\\s.*"));
         assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary",
                 bst.getAttribute("EncodingType"));
         String bstId = bst.getAttributeNS(WSU_NS, "Id");
@@ -171,7 +282,44 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
         assertFalse(firstByTag(result, WSSE_NS, "SecurityTokenReference").getAttributeNS(WSU_NS, "Id").isEmpty());
         assertEquals("#" + bstId, firstByTag(result, WSSE_NS, "Reference").getAttribute("URI"));
 
+        // BST is not itself signed unless explicitly referenced via "by: BST".
+        assertEquals(1, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        assertNotEquals("#" + bstId, firstByTag(result, DS_NS, "Reference").getAttribute("URI"));
+
         assertSignatureIsValid(result);
+    }
+
+    @Test
+    void signsBinarySecurityTokenWhenReferenced() throws Exception {
+        interceptor.setSecurityTokenReference(new SecurityTokenReferenceKeyInfo());
+
+        Document result = signAndParse(SOAP_BODY, bodyReference(), reference(SignatureReference.By.BST));
+
+        Element bst = firstByTag(result, WSSE_NS, "BinarySecurityToken");
+        String bstId = bst.getAttributeNS(WSU_NS, "Id");
+        assertFalse(bstId.isEmpty());
+
+        NodeList dsReferences = result.getElementsByTagNameNS(DS_NS, "Reference");
+        assertEquals(2, dsReferences.getLength());
+        boolean bstIsSigned = false;
+        for (int i = 0; i < dsReferences.getLength(); i++) {
+            if (("#" + bstId).equals(((Element) dsReferences.item(i)).getAttribute("URI"))) {
+                bstIsSigned = true;
+            }
+        }
+        assertTrue(bstIsSigned, "Expected a ds:Reference pointing at the BST's wsu:Id");
+
+        // The wsse:Reference inside KeyInfo's SecurityTokenReference still points at the same BST.
+        assertEquals("#" + bstId, firstByTag(result, WSSE_NS, "Reference").getAttribute("URI"));
+
+        assertSignatureIsValid(result);
+    }
+
+    @Test
+    void rejectsBstReferenceWithoutSecurityTokenReference() {
+        // default KeyInfo mode (x509Data) - no BinarySecurityToken exists to reference.
+        assertThrows(RuntimeException.class,
+                () -> initWith(bodyReference(), reference(SignatureReference.By.BST)));
     }
 
     @Test
@@ -188,6 +336,27 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
         interceptor.setKeyIdentifier(new KeyIdentifierKeyInfo());
 
         assertThrows(RuntimeException.class, () -> initWith(bodyReference()));
+    }
+
+    @Test
+    void rejectsExplicitByCombinedWithXpath() {
+        SignatureReference reference = xpathReference("//*[local-name()='foo']");
+        reference.setBy(SignatureReference.By.XPATH);
+
+        assertThrows(RuntimeException.class, () -> initWith(reference));
+    }
+
+    @Test
+    void rejectsNonXpathByCombinedWithXpath() {
+        SignatureReference reference = xpathReference("//*[local-name()='foo']");
+        reference.setBy(SignatureReference.By.BODY);
+
+        assertThrows(RuntimeException.class, () -> initWith(reference));
+    }
+
+    @Test
+    void rejectsXpathByWithoutXpath() {
+        assertThrows(RuntimeException.class, () -> initWith(reference(SignatureReference.By.XPATH)));
     }
 
     @Test
@@ -235,6 +404,30 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
         interceptor.getKeyStore().setKeyAlias("nonexistent");
 
         assertThrows(RuntimeException.class, () -> initWith(bodyReference()));
+    }
+
+    @Test
+    void rejectsUnsupportedDigestAlgorithm() {
+        interceptor.setDigestAlgorithm("bogus");
+
+        RuntimeException e = assertThrows(RuntimeException.class, () -> initWith(bodyReference()));
+        assertTrue(e.getMessage().contains("bogus"));
+    }
+
+    @Test
+    void rejectsUnsupportedSignatureAlgorithm() {
+        interceptor.setSignatureAlgorithm("bogus");
+
+        RuntimeException e = assertThrows(RuntimeException.class, () -> initWith(bodyReference()));
+        assertTrue(e.getMessage().contains("bogus"));
+    }
+
+    @Test
+    void rejectsUnsupportedCanonicalizationAlgorithm() {
+        interceptor.setCanonicalizationAlgorithm("bogus");
+
+        RuntimeException e = assertThrows(RuntimeException.class, () -> initWith(bodyReference()));
+        assertTrue(e.getMessage().contains("bogus"));
     }
 
     @Test
