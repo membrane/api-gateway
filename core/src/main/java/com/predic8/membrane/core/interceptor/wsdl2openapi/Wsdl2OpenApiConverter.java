@@ -60,9 +60,20 @@ public class Wsdl2OpenApiConverter {
 
     public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationSettings> operations) {
         this.definitions = definitions;
-        this.basePath = basePath.endsWith("/") ? basePath.substring(0, basePath.length() - 1) : basePath;
+        this.basePath = stripTrailingSlash(basePath);
         this.converter = new XsdToSchema(definitions);
         this.operations = operations;
+    }
+
+    /**
+     * Strips one trailing slash from a base path, except from the root path {@code "/"}: an empty
+     * server url would make Swagger UI resolve requests relative to the /api-docs page instead of
+     * the API root.
+     */
+    static String stripTrailingSlash(String basePath) {
+        return basePath.length() > 1 && basePath.endsWith("/")
+                ? basePath.substring(0, basePath.length() - 1)
+                : basePath;
     }
 
     public OpenAPI generate() {

@@ -120,6 +120,16 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
                     It publishes an OpenAPI document at %s, which only an api can route to.""".formatted(proxy.getName(), PATH));
         }
 
+        // APIProxy.init() has already run and placed an OpenAPIPublisherInterceptor into the flow
+        // if the api declares openapi documents or an openapiPublisher — both publish at PATH,
+        // and this plugin's own publisher runs first, which would hide those documents.
+        if (!getInterceptors(proxy.getFlow(), OpenAPIPublisherInterceptor.class).isEmpty()) {
+            throw new ConfigurationException("""
+                    The wsdl2openapi plugin cannot be combined with openapi documents in the same api ('%s').
+                    Both publish at %s, and wsdl2openapi generates its document from the WSDL.
+                    Put the openapi documents into a separate api.""".formatted(proxy.getName(), PATH));
+        }
+
         if (getInterceptors(proxy.getFlow(), Wsdl2OpenapiInterceptor.class).size() > 1) {
             throw new ConfigurationException("""
                     Only one wsdl2openapi plugin is allowed per API, but API '%s' declares more than one.
@@ -139,7 +149,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             String resolvedWsdl = combine(router.getConfiguration().getUriFactory(), getBeanBaseLocation(), wsdl);
             definitions = parse(resolverMap, resolvedWsdl);
         } catch (Exception e) {
-            throw new ConfigurationException("Cannot parse WSDL '%s': %s".formatted(wsdl, e.getMessage()));
+            throw new ConfigurationException("Cannot parse WSDL '%s': %s".formatted(wsdl, e.getMessage()), e);
         }
 
         xsdToSchema = new XsdToSchema(definitions);

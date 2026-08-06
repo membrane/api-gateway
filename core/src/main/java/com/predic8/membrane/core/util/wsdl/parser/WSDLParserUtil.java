@@ -14,15 +14,19 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
-import javax.xml.namespace.*;
-import javax.xml.parsers.*;
-import java.io.*;
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class WSDLParserUtil {
 
-    public static Element parse(InputStream is) throws Exception {
+    public static Element parse(InputStream is) throws ParserConfigurationException, SAXException, IOException {
         var dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         return dbf.newDocumentBuilder().parse(is).getDocumentElement();

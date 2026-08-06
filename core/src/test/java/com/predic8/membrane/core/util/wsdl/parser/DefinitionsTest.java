@@ -16,6 +16,7 @@ package com.predic8.membrane.core.util.wsdl.parser;
 
 import com.predic8.membrane.core.resolver.ResolverMap;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,9 +31,22 @@ class DefinitionsTest {
     }
 
     @Test
-    void parseWsdlWithMissingImportContinues() throws Exception {
-        var defs = Definitions.parse(new ResolverMap(), "classpath:/ws/missing-import.wsdl");
+    void parseWsdlWithMissingImportThrows() {
+        var e = assertThrows(WSDLParserException.class,
+                () -> Definitions.parse(new ResolverMap(), "classpath:/ws/missing-import.wsdl"));
 
-        assertEquals(1, defs.getPortTypes().getFirst().getOperations().size());
+        assertTrue(e.getMessage().contains("does-not-exist.xsd"), e.getMessage());
+        assertNotNull(e.getCause());
+    }
+
+    @Test
+    void parseWsdlWithMalformedIncludedSchemaThrows() {
+        var e = assertThrows(WSDLParserException.class,
+                () -> Definitions.parse(new ResolverMap(), "classpath:/ws/malformed-include.wsdl"));
+
+        // The schema was found; it is broken. Reporting it as unresolvable would send the user
+        // looking for a wrong schemaLocation.
+        assertTrue(e.getMessage().contains("parse schema \"malformed.xsd\""), e.getMessage());
+        assertInstanceOf(SAXException.class, e.getCause());
     }
 }

@@ -19,6 +19,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
 import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.DummyTestRouter;
@@ -36,6 +37,7 @@ import java.util.stream.Stream;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.buildPathPattern;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.extractParamNames;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
+import static com.predic8.membrane.test.TestUtil.getPathFromResource;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -166,6 +168,34 @@ class Wsdl2OpenapiInterceptorTest {
         var e = assertThrows(ConfigurationException.class, () -> interceptor.init(router, proxy));
         assertTrue(e.getMessage().contains("wsdl2openapi"), "Message should name the plugin");
         assertTrue(e.getMessage().contains("api"), "Message should say an api is required");
+    }
+
+    @Test
+    void combiningWithOpenapiDocumentsIsRejected() {
+        var router = new DummyTestRouter();
+        var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/cities.wsdl"));
+        var spec = new OpenAPISpec();
+        spec.location = getPathFromResource("openapi/openapi-proxy/no-extensions.yml");
+        proxy.setOpenapi(List.of(spec));
+
+        // APIProxy.init() adds the OpenAPIPublisherInterceptor for the spec and then inits the
+        // flow, so the plugin sees the conflict; both would publish at /api-docs.
+        var e = assertThrows(ConfigurationException.class, () -> proxy.init(router));
+        assertTrue(e.getMessage().contains("wsdl2openapi"), "Message should name the plugin");
+        assertTrue(e.getMessage().contains("/api-docs"), "Message should name the conflicting path");
+    }
+
+    @Test
+    void wsdlWithUnresolvableImportIsRejected() {
+        var router = new DummyTestRouter();
+        var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/missing-import.wsdl"));
+        var interceptor = (Wsdl2OpenapiInterceptor) proxy.getFlow().getFirst();
+
+        // An unresolved schemaLocation leaves the element set incomplete, so no OpenAPI can be
+        // generated from it with any confidence.
+        var e = assertThrows(ConfigurationException.class, () -> interceptor.init(router, proxy));
+        assertTrue(e.getMessage().contains("does-not-exist.xsd"), e.getMessage());
+        assertNotNull(e.getCause());
     }
 
     @Test

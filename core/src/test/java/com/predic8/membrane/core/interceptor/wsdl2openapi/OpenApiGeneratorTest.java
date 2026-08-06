@@ -19,10 +19,15 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class OpenApiGeneratorTest {
 
@@ -68,6 +73,29 @@ class OpenApiGeneratorTest {
 
         assertTrue(yaml.contains("url: \"/purchasing\""));
         assertFalse(yaml.contains("url: \"/purchasing/\""));
+    }
+
+    @ParameterizedTest(name = "{0} → {1}")
+    @MethodSource
+    void stripTrailingSlash(String basePath, String expected) {
+        assertEquals(expected, Wsdl2OpenApiConverter.stripTrailingSlash(basePath));
+    }
+
+    static Stream<Arguments> stripTrailingSlash() {
+        return Stream.of(
+                arguments("/purchasing/", "/purchasing"),
+                arguments("/purchasing",  "/purchasing"),   // nothing to strip
+                arguments("/",            "/"),             // root path is kept, not emptied
+                arguments("/a//",         "/a/"),           // only one slash is stripped
+                arguments("",             "")               // no path at all: left alone
+        );
+    }
+
+    @Test
+    void rootBasePathStaysASlash() {
+        // An api without a path yields basePath "/". Stripping that to "" would leave an empty
+        // server url, which Swagger UI resolves against the /api-docs page, not the API root.
+        assertTrue(generator(citiesDefinitions, "/").contains("url: \"/\""));
     }
 
     @Test
