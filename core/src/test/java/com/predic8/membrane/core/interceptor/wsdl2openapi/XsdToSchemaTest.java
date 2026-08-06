@@ -366,6 +366,119 @@ class XsdToSchemaTest {
         assertNotNull(fieldOf(schema, "country"));
     }
 
+    // ── xsd:group in particle position ────────────────────────────────────
+
+    @Test
+    void groupRefAsSoleParticleOfComplexTypeExposesGroupFields() {
+        var schema = convert(converterFor("""
+                <xsd:group name="NameGroup">
+                  <xsd:sequence>
+                    <xsd:element name="firstName" type="xsd:string"/>
+                    <xsd:element name="lastName"  type="xsd:string"/>
+                  </xsd:sequence>
+                </xsd:group>
+
+                <xsd:element name="person">
+                  <xsd:complexType>
+                    <xsd:group ref="tns:NameGroup"/>
+                    <xsd:attribute name="id" type="xsd:int"/>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "person");
+
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "firstName"));
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "lastName"));
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "@id"), "attributes must survive the group particle");
+    }
+
+    @Test
+    void groupRefInsideExtensionExposesBaseAndGroupFields() {
+        var schema = convert(converterFor("""
+                <xsd:group name="AuditGroup">
+                  <xsd:sequence>
+                    <xsd:element name="createdBy" type="xsd:string"/>
+                  </xsd:sequence>
+                </xsd:group>
+
+                <xsd:complexType name="Document">
+                  <xsd:sequence>
+                    <xsd:element name="title" type="xsd:string"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:complexType name="AuditedDocument">
+                  <xsd:complexContent>
+                    <xsd:extension base="tns:Document">
+                      <xsd:group ref="tns:AuditGroup"/>
+                    </xsd:extension>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="document" type="tns:AuditedDocument"/>
+                """), "document");
+
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "title"),     "inherited base field");
+        assertInstanceOf(StringSchema.class, fieldOf(schema, "createdBy"), "field contributed by the group");
+    }
+
+    @Test
+    void mutuallyRecursiveGroupsCompleteWithoutStackOverflow() {
+        var schema = convert(converterFor("""
+                <xsd:group name="NodeGroup">
+                  <xsd:sequence>
+                    <xsd:element name="label" type="xsd:string"/>
+                    <xsd:group ref="tns:BranchGroup"/>
+                  </xsd:sequence>
+                </xsd:group>
+
+                <xsd:group name="BranchGroup">
+                  <xsd:sequence>
+                    <xsd:element name="depth" type="xsd:int"/>
+                    <xsd:group ref="tns:NodeGroup"/>
+                  </xsd:sequence>
+                </xsd:group>
+
+                <xsd:element name="tree">
+                  <xsd:complexType>
+                    <xsd:group ref="tns:NodeGroup"/>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "tree");
+
+        assertInstanceOf(StringSchema.class,  fieldOf(schema, "label"), "fields before the cycle must survive");
+        assertInstanceOf(IntegerSchema.class, fieldOf(schema, "depth"), "one level of the cycle is expanded");
+    }
+
+    @Test
+    void choiceInsideExtensionExposesAlternativesAsOptionalFields() {
+        var schema = convert(converterFor("""
+                <xsd:complexType name="Payment">
+                  <xsd:sequence>
+                    <xsd:element name="amount" type="xsd:decimal"/>
+                  </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:complexType name="CardOrTransferPayment">
+                  <xsd:complexContent>
+                    <xsd:extension base="tns:Payment">
+                      <xsd:choice>
+                        <xsd:element name="cardNumber" type="xsd:string"/>
+                        <xsd:element name="iban"       type="xsd:string"/>
+                      </xsd:choice>
+                    </xsd:extension>
+                  </xsd:complexContent>
+                </xsd:complexType>
+
+                <xsd:element name="payment" type="tns:CardOrTransferPayment"/>
+                """), "payment");
+
+        assertNotNull(fieldOf(schema, "amount"),     "inherited base field");
+        assertNotNull(fieldOf(schema, "cardNumber"), "choice alternative in an extension");
+        assertNotNull(fieldOf(schema, "iban"),       "choice alternative in an extension");
+        assertFalse(isRequired(schema, "cardNumber"), "a choice alternative must stay optional");
+        assertFalse(isRequired(schema, "iban"),       "a choice alternative must stay optional");
+    }
+
     // ── Named xsd:simpleType restriction ──────────────────────────────────
 
     @Test

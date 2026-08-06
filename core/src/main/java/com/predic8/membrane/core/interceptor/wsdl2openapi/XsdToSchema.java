@@ -36,6 +36,7 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  *   <li>Inline complexType and type-reference patterns</li>
  *   <li>xsd:sequence, xsd:all (treated identically)</li>
  *   <li>xsd:choice (all alternatives become optional properties)</li>
+ *   <li>xsd:group references (the referenced group's content model is expanded in place)</li>
  *   <li>xsd:attribute (mapped to a property named "@" + attribute name; required when use="required")</li>
  *   <li>xsd:complexContent/xsd:extension (base type fields are inherited)</li>
  *   <li>xsd:complexContent/xsd:restriction (treated as extension for field inheritance)</li>
@@ -54,13 +55,14 @@ public class XsdToSchema {
     private static final String MIN_OCCURS_OPTIONAL = "0";
 
     /**
-     * The schema document a reference is being resolved against, plus the complexTypes currently
-     * being expanded — the recursion guard that keeps self-referential types from looping.
+     * The schema document a reference is being resolved against, plus the complexType and group
+     * declarations currently being expanded — the recursion guard that keeps self-referential
+     * declarations from looping.
      */
-    private record XsdContext(Element schemaRoot, Set<Element> visitingTypes) {
+    private record XsdContext(Element schemaRoot, Set<Element> visiting) {
         /** The same traversal, continued in another schema document (an import or include). */
         XsdContext withRoot(Element root) {
-            return root == schemaRoot ? this : new XsdContext(root, visitingTypes);
+            return root == schemaRoot ? this : new XsdContext(root, visiting);
         }
     }
 
@@ -93,16 +95,16 @@ public class XsdToSchema {
         return convertParts(parts, new HashSet<>());
     }
 
-    private Schema<?> convertParts(List<Part> parts, Set<Element> visitingTypes) {
+    private Schema<?> convertParts(List<Part> parts, Set<Element> visiting) {
         if (parts.isEmpty()) return new ObjectSchema();
         if (parts.size() == 1 && parts.getFirst().getElementQName() != null) {
-            return convert(parts.getFirst().getElementQName(), visitingTypes);
+            return convert(parts.getFirst().getElementQName(), visiting);
         }
         var schema = new ObjectSchema();
         for (var part : parts) {
             QName elementQName = part.getElementQName();
             schema.addProperty(part.getName(),
-                    elementQName != null ? convert(elementQName, visitingTypes) : convertType(part.getTypeQName(), visitingTypes));
+                    elementQName != null ? convert(elementQName, visiting) : convertType(part.getTypeQName(), visiting));
         }
         return schema;
     }
@@ -114,13 +116,13 @@ public class XsdToSchema {
         return convert(qname, new HashSet<>());
     }
 
-    private Schema<?> convert(QName qname, Set<Element> visitingTypes) {
+    private Schema<?> convert(QName qname, Set<Element> visiting) {
         List<Element> roots = schemasByNamespace.get(qname.getNamespaceURI());
         if (roots == null) return new ObjectSchema();
         for (var schemaRoot : roots) {
             Element xsdElement = findXsdChildWithName(schemaRoot, "element", qname.getLocalPart());
             if (xsdElement != null) {
-                return convertElementType(xsdElement, new XsdContext(schemaRoot, visitingTypes));
+                return convertElementType(xsdElement, new XsdContext(schemaRoot, visiting));
             }
         }
         return new ObjectSchema();
@@ -150,7 +152,7 @@ public class XsdToSchema {
     private Schema<?> buildObjectSchema(Element complexTypeEl, XsdContext ctx) {
         var objectSchema = new ObjectSchema();
 
-        Element particle = firstXsdChild(complexTypeEl, "sequence", "all", "choice");
+        Element particle = firstXsdChild(complexTypeEl, "sequence", "all", "choice", "group");
         if (particle != null) {
             addParticleFields(particle, objectSchema, ctx);
             addAttributeFields(complexTypeEl, objectSchema, ctx);
@@ -172,13 +174,16 @@ public class XsdToSchema {
         return objectSchema;
     }
 
-    /** Expands one {@code <xsd:sequence>}, {@code <xsd:all>} or {@code <xsd:choice>} particle into {@code schema}. */
+    /**
+     * Expands one {@code <xsd:sequence>}, {@code <xsd:all>}, {@code <xsd:choice>} or
+     * {@code <xsd:group ref=.../>} particle into {@code schema}.
+     */
     private void addParticleFields(Element particle, ObjectSchema schema, XsdContext ctx) {
-        if ("choice".equals(particle.getLocalName())) {
-            addChoiceFields(particle, schema, ctx);
-            return;
+        switch (particle.getLocalName()) {
+            case "choice" -> addChoiceFields(particle, schema, ctx);
+            case "group"  -> addGroupFields(particle, schema, ctx);
+            default       -> addContainerFields(particle, schema, ctx);
         }
-        addContainerFields(particle, schema, ctx);
     }
 
     /**
@@ -200,7 +205,8 @@ public class XsdToSchema {
     /**
      * Resolves an {@code <xsd:group ref="prefix:name"/>} by looking up the named group
      * definition in the schema map and expanding its content model (sequence, all, or choice)
-     * into {@code schema}. Logs a debug message if the group cannot be resolved.
+     * into {@code schema}. A group that transitively references itself is expanded once and
+     * then skipped. Logs a debug message if the group cannot be resolved.
      */
     private void addGroupFields(Element groupRef, ObjectSchema schema, XsdContext ctx) {
         String ref = groupRef.getAttribute("ref");
@@ -209,12 +215,26 @@ public class XsdToSchema {
         for (var root : resolveTargetSchemaRoots(prefix(ref), groupRef, ctx.schemaRoot(), schemasByNamespace)) {
             Element groupDef = findXsdChildWithName(root, "group", local);
             if (groupDef != null) {
-                Element particle = firstXsdChild(groupDef, "sequence", "all", "choice");
-                if (particle != null) addParticleFields(particle, schema, ctx.withRoot(root));
+                expandGroupDefinition(groupDef, local, schema, ctx.withRoot(root));
                 return;
             }
         }
         log.debug("xsd:group ref='{}' could not be resolved, skipping", ref);
+    }
+
+    /** Expands a resolved {@code <xsd:group name=.../>} definition, guarding against reference cycles. */
+    private void expandGroupDefinition(Element groupDef, String name, ObjectSchema schema, XsdContext ctx) {
+        if (ctx.visiting().contains(groupDef)) {
+            log.debug("Recursive reference to group '{}', skipping", name);
+            return;
+        }
+        ctx.visiting().add(groupDef);
+        try {
+            Element particle = firstXsdChild(groupDef, "sequence", "all", "choice");
+            if (particle != null) addParticleFields(particle, schema, ctx);
+        } finally {
+            ctx.visiting().remove(groupDef);
+        }
     }
 
     private void addElementField(Element el, ObjectSchema schema, XsdContext ctx) {
@@ -369,10 +389,8 @@ public class XsdToSchema {
                 log.debug("Base type '{}' is not an object schema, skipping field inheritance", base);
             }
         }
-        Element seq = findXsdChild(extension, "sequence");
-        if (seq != null) addContainerFields(seq, schema, ctx);
-        Element all = findXsdChild(extension, "all");
-        if (all != null) addContainerFields(all, schema, ctx);
+        Element particle = firstXsdChild(extension, "sequence", "all", "choice", "group");
+        if (particle != null) addParticleFields(particle, schema, ctx);
         addAttributeFields(extension, schema, ctx);
     }
 
@@ -408,15 +426,15 @@ public class XsdToSchema {
         for (var targetRoot : targetRoots) {
             Element complexType = findXsdChildWithName(targetRoot, "complexType", local);
             if (complexType != null) {
-                if (ctx.visitingTypes().contains(complexType)) {
+                if (ctx.visiting().contains(complexType)) {
                     log.debug("Recursive reference to type '{}', returning empty schema", local);
                     return new ObjectSchema();
                 }
-                ctx.visitingTypes().add(complexType);
+                ctx.visiting().add(complexType);
                 try {
                     return buildObjectSchema(complexType, ctx.withRoot(targetRoot));
                 } finally {
-                    ctx.visitingTypes().remove(complexType);
+                    ctx.visiting().remove(complexType);
                 }
             }
         }
@@ -437,18 +455,18 @@ public class XsdToSchema {
         return convertType(qname, new HashSet<>());
     }
 
-    private Schema<?> convertType(QName qname, Set<Element> visitingTypes) {
+    private Schema<?> convertType(QName qname, Set<Element> visiting) {
         if (qname == null) return new StringSchema();
         if (XSD_NS.equals(qname.getNamespaceURI())) return mapPrimitive(qname.getLocalPart());
         List<Element> targetRoots = schemasByNamespace.get(qname.getNamespaceURI());
         if (targetRoots == null) return mapPrimitive(qname.getLocalPart());
         for (var root : targetRoots) {
             Element complexType = findXsdChildWithName(root, "complexType", qname.getLocalPart());
-            if (complexType != null) return buildObjectSchema(complexType, new XsdContext(root, visitingTypes));
+            if (complexType != null) return buildObjectSchema(complexType, new XsdContext(root, visiting));
         }
         for (var root : targetRoots) {
             Element simpleType = findXsdChildWithName(root, "simpleType", qname.getLocalPart());
-            if (simpleType != null) return buildSimpleTypeSchema(simpleType, new XsdContext(root, visitingTypes));
+            if (simpleType != null) return buildSimpleTypeSchema(simpleType, new XsdContext(root, visiting));
         }
         return mapPrimitive(qname.getLocalPart());
     }
