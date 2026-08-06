@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
@@ -165,10 +166,11 @@ public class Wsdl2OpenApiConverter {
     private static PathItem applyMethod(PathItem item, io.swagger.v3.oas.models.Operation op, String method) {
         return switch (method.toUpperCase()) {
             case "GET"    -> item.get(op);
+            case "POST"   -> item.post(op);
             case "PUT"    -> item.put(op);
             case "DELETE" -> item.delete(op);
             case "PATCH"  -> item.patch(op);
-            default       -> item.post(op);
+            default       -> throw new ConfigurationException("Unsupported HTTP method: " + method);
         };
     }
 

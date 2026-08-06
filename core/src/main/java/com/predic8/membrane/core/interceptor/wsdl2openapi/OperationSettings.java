@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.annot.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.ConfigurationException;
 
 import java.util.*;
 
@@ -24,6 +25,8 @@ import java.util.*;
  */
 @MCElement(name = "operationSettings", component = false)
 public class OperationSettings {
+
+    private static final Set<String> ALLOWED_METHODS = Set.of("GET", "POST", "PUT", "DELETE", "PATCH");
 
     private String method = "POST";
     private String path;
@@ -39,7 +42,11 @@ public class OperationSettings {
      */
     @MCAttribute
     public void setMethod(String method) {
-        this.method = method;
+        if (method == null) throw new ConfigurationException("HTTP method must not be null");
+        String upper = method.toUpperCase();
+        if (!ALLOWED_METHODS.contains(upper)) throw new ConfigurationException(
+                "Unsupported HTTP method: " + method + ". Allowed: " + ALLOWED_METHODS);
+        this.method = upper;
     }
 
     public String getPath() {

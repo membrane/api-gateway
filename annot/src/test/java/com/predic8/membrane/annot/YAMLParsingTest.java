@@ -843,6 +843,26 @@ public class YAMLParsingTest {
                                         entry("bar", clazz("EntryElement", property("attr", value("value2"))))
                                 )))))
         );
+
+        assertStructure(
+                parseYAML(result, """
+                        demo:
+                          wrapper: {}
+                        """),
+                clazz("DemoElement",
+                        property("wrapper", clazz("WrapperElement",
+                                property("map", mapContaining()))))
+        );
+
+        try {
+            parseYAML(result, """
+                    demo:
+                      wrapper:
+                        foo: scalar
+                    """);
+            throw new AssertionError("Parsing did not throw on scalar map entry value.");
+        } catch (RuntimeException ignored) {
+        }
     }
 
     private Throwable getCause(Throwable e) {

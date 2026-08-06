@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,5 +40,24 @@ class OperationSettingsTest {
         var s = new OperationSettings();
         s.setPath(null);
         assertNull(s.getPath());
+    }
+
+    @Test
+    void nullMethodThrowsConfigurationException() {
+        var s = new OperationSettings();
+        assertThrows(ConfigurationException.class, () -> s.setMethod(null));
+    }
+
+    @Test
+    void unsupportedMethodThrowsConfigurationException() {
+        var s = new OperationSettings();
+        assertThrows(ConfigurationException.class, () -> s.setMethod("TRACE"));
+    }
+
+    @Test
+    void methodIsNormalizedToUpperCase() {
+        var s = new OperationSettings();
+        s.setMethod("post");
+        assertEquals("POST", s.getMethod());
     }
 }

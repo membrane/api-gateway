@@ -328,6 +328,30 @@ class Json2SoapTransformerTest {
     }
 
     @Test
+    void nestedObjectChildrenCarryTargetNamespaceWhenElementFormDefaultIsQualified() throws Exception {
+        var transformer = new Json2SoapTransformer(qualifiedDefinitions, "createOrder");
+        var soapBytes = transformer.transform(
+                "{\"address\": {\"street\": \"Main St\", \"city\": \"Berlin\"}, \"amount\": 42}");
+
+        Document doc = parseXml(soapBytes);
+        NodeList bodies = doc.getElementsByTagNameNS("http://schemas.xmlsoap.org/soap/envelope/", "Body");
+        Element body = (Element) bodies.item(0);
+        Element createOrderEl = getFirstChildElement(body);
+
+        Element addressEl = getFirstChildElement(createOrderEl);
+        assertNotNull(addressEl);
+        assertEquals("address", addressEl.getLocalName());
+        assertEquals("https://example.com/qualified", addressEl.getNamespaceURI());
+
+        Element streetEl = getFirstChildElement(addressEl);
+        assertNotNull(streetEl, "address should have a street child element");
+        assertEquals("street", streetEl.getLocalName());
+        assertEquals("https://example.com/qualified", streetEl.getNamespaceURI(),
+                "Nested element must carry target namespace when elementFormDefault=qualified");
+        assertEquals("Main St", streetEl.getTextContent());
+    }
+
+    @Test
     void childElementsInSoapCarryTargetNamespaceWhenElementFormDefaultIsQualified() throws Exception {
         var transformer = new Json2SoapTransformer(qualifiedDefinitions, "sendMessage");
         var soapBytes = transformer.transform("{\"text\": \"hello\", \"priority\": 1}");
