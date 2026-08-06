@@ -483,7 +483,7 @@ class Soap2JsonTransformerTest {
                 </soap:Envelope>
                 """;
         JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, responseSchema));
-        JsonNode values = root.get("value");
+        JsonNode values = root.get(qualifiedKey("https://example.com/choice-type-b", "value"));
         assertNotNull(values);
         assertTrue(values.isArray(), "Single <b:value> must stay a JSON array when its qualified schema key is an ArraySchema");
         assertEquals(1, values.size());
@@ -564,11 +564,12 @@ class Soap2JsonTransformerTest {
     }
 
     @Test
-    void choiceRefsWithSameLocalNameAreTypedCorrectlyViaQualifiedSchemaKeyFallback() throws Exception {
+    void choiceRefsWithSameLocalNameAreEmittedUnderTheirQualifiedSchemaKey() throws Exception {
         // processAmbiguous has a choice of a:value (string) and b:value (int) — same local
         // name, different namespaces. The schema keys both alternatives with a namespace-qualified
-        // key (XsdToSchema.addChoiceFields); elementToMap must fall back to that qualified key to
-        // find the right type, since the actual SOAP element only carries the plain local name.
+        // key (XsdToSchema.addChoiceFields), so the JSON must use that same key: it is what the
+        // published OpenAPI schema advertises, and Json2SoapTransformer strips it back on the
+        // request side.
         var xsdToSchema = new XsdToSchema(crossNamespaceChoiceDefinitions);
         var outputMessages = crossNamespaceChoiceDefinitions.getPortTypes().stream()
                 .flatMap(pt -> pt.getOperations().stream())
@@ -593,10 +594,48 @@ class Soap2JsonTransformerTest {
         var json = new Soap2JsonTransformer().transform(soapXml, responseSchema);
         JsonNode root = mapper.readTree(json);
 
-        assertNotNull(root.get("value"), "value must appear in JSON under its plain local name");
-        assertTrue(root.get("value").isNumber(),
-                "qualified-schema-key fallback must type value as integer despite the plain output key");
-        assertEquals(42L, root.get("value").longValue());
+        String key = qualifiedKey("https://example.com/choice-type-b", "value");
+        assertNull(root.get("value"), "the ambiguous local name must not be used as the JSON key");
+        assertNotNull(root.get(key), "value must appear under the namespace-qualified schema key");
+        assertTrue(root.get(key).isNumber(), "the qualified schema key must type value as integer");
+        assertEquals(42L, root.get(key).longValue());
+    }
+
+    @Test
+    void bothChoiceAlternativesWithSameLocalNameStayDistinctProperties() throws Exception {
+        // Both alternatives present at once: keying by the bare local name would merge them into a
+        // single property (and silently type one of them with the other's schema).
+        var xsdToSchema = new XsdToSchema(crossNamespaceChoiceDefinitions);
+        var outputMessages = crossNamespaceChoiceDefinitions.getPortTypes().stream()
+                .flatMap(pt -> pt.getOperations().stream())
+                .filter(op -> "processAmbiguous".equals(op.getName()))
+                .findFirst()
+                .map(op -> op.getMessagesByDirection(Operation.Direction.OUTPUT))
+                .orElseThrow();
+        var responseSchema = xsdToSchema.convertMessageParts(outputMessages);
+
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <tns:processAmbiguous xmlns:tns="https://example.com/choice-service"
+                                          xmlns:a="https://example.com/choice-type-a"
+                                          xmlns:b="https://example.com/choice-type-b">
+                      <a:value>text</a:value>
+                      <b:value>42</b:value>
+                    </tns:processAmbiguous>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, responseSchema));
+
+        JsonNode a = root.get(qualifiedKey("https://example.com/choice-type-a", "value"));
+        JsonNode b = root.get(qualifiedKey("https://example.com/choice-type-b", "value"));
+        assertNotNull(a, "the choice-type-a alternative must keep its own property");
+        assertNotNull(b, "the choice-type-b alternative must keep its own property");
+        assertEquals("text", a.asText(), "each alternative must be typed by its own schema");
+        assertTrue(b.isNumber(), "each alternative must be typed by its own schema");
+        assertEquals(42L, b.longValue());
     }
 
     @Test
@@ -626,8 +665,8 @@ class Soap2JsonTransformerTest {
                 """;
         JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, responseSchema));
 
-        JsonNode values = root.get("value");
-        assertNotNull(values, "value must appear in JSON under its plain local name");
+        JsonNode values = root.get(qualifiedKey("https://example.com/choice-type-b", "value"));
+        assertNotNull(values, "value must appear under the namespace-qualified schema key");
         assertTrue(values.isArray(), "an unbounded choice alternative must stay an array even with one occurrence");
         assertEquals(1, values.size());
         assertEquals(42L, values.get(0).longValue());
