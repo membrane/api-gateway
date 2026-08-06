@@ -33,7 +33,7 @@ public class Wsdl2OpenAPIOperationsTutorialTest extends AbstractSOAPTutorialTest
         // @formatter:off
         given()
         .when()
-            .get("http://localhost:2000/get-partners")
+            .get("http://localhost:2000/partners")
         .then()
             .statusCode(200)
             .contentType(JSON)
@@ -94,7 +94,7 @@ public class Wsdl2OpenAPIOperationsTutorialTest extends AbstractSOAPTutorialTest
             .contentType(JSON)
             .body("{\"name\":\"Dave\",\"birthDate\":\"1990-01-01\",\"kind\":\"PERSON\",\"address\":{\"street\":\"Oak Ave\",\"houseNumber\":\"5\",\"postalCode\":\"54321\",\"city\":\"Portland\",\"country\":\"US\"}}")
         .when()
-            .post("http://localhost:2000/create-partner")
+            .post("http://localhost:2000/partners")
         .then()
             .statusCode(200)
             .contentType(JSON);
