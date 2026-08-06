@@ -154,7 +154,8 @@ public class Soap2JsonTransformer {
 
         for (var entry : childGroups.entrySet()) {
             var values = entry.getValue();
-            result.put(entry.getKey(), values.size() == 1 ? values.getFirst() : values);
+            Schema<?> propSchema = properties.get(entry.getKey());
+            result.put(entry.getKey(), propSchema instanceof ArraySchema || values.size() > 1 ? values : values.getFirst());
         }
         return result;
     }

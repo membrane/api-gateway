@@ -440,6 +440,29 @@ class Soap2JsonTransformerTest {
     }
 
     @Test
+    void singleElementRemainsArrayWhenSchemaIsArraySchema() throws Exception {
+        var itemSchema = new ObjectSchema().addProperty("id", new IntegerSchema());
+        var responseSchema = new ObjectSchema().addProperty("order", new ArraySchema().items(itemSchema));
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getOrdersResponse>
+                      <order><id>1</id></order>
+                    </getOrdersResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, responseSchema));
+        JsonNode orders = root.get("order");
+        assertNotNull(orders);
+        assertTrue(orders.isArray(), "Single <order> must stay a JSON array when schema is ArraySchema");
+        assertEquals(1, orders.size());
+        assertTrue(orders.get(0).get("id").isNumber());
+        assertEquals(1L, orders.get(0).get("id").longValue());
+    }
+
+    @Test
     void singleScalarElementRemainsScalarNotArray() throws Exception {
         var soapXml = """
                 <?xml version="1.0" encoding="UTF-8"?>
