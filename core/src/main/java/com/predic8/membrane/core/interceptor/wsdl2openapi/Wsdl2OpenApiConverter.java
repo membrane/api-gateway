@@ -20,26 +20,20 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.media.ComposedSchema;
-import io.swagger.v3.oas.models.media.Content;
-import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.Wsdl2OpenapiInterceptor.extractParamNames;
@@ -77,7 +71,20 @@ public class Wsdl2OpenApiConverter {
         openAPI.setInfo(buildInfo());
         openAPI.setServers(List.of(new Server().url(basePath)));
         openAPI.setPaths(buildPaths());
+        var topLevelTags = buildTopLevelTags();
+        if (!topLevelTags.isEmpty()) {
+            openAPI.setTags(topLevelTags);
+        }
         return openAPI;
+    }
+
+    private List<Tag> buildTopLevelTags() {
+        return operations.values().stream()
+                .map(OperationSettings::getTag)
+                .filter(Objects::nonNull)
+                .distinct()
+                .map(name -> new Tag().name(name))
+                .toList();
     }
 
     public String generateYaml() {

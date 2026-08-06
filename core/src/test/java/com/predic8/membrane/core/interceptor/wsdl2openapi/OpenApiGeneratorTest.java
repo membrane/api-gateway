@@ -215,6 +215,7 @@ class OpenApiGeneratorTest {
 
         assertTrue(yaml.contains("tags:"), "Should contain tags section");
         assertTrue(yaml.contains("MyService"), "Should contain configured tag value");
+        assertTrue(yaml.contains("- name: \"MyService\""), "Top-level tags section should declare the tag by name");
     }
 
     @Test

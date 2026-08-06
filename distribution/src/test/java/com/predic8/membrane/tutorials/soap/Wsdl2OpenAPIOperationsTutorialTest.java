@@ -37,10 +37,10 @@ public class Wsdl2OpenAPIOperationsTutorialTest extends AbstractSOAPTutorialTest
         .then()
             .statusCode(200)
             .contentType(JSON)
-            .body("partners.partner", hasSize(3))
-            .body("partners.partner[0].name", equalTo("Alice"))
-            .body("partners.partner[1].name", equalTo("Bob"))
-            .body("partners.partner[2].name", equalTo("Carol"));
+            .body("partners", hasSize(3))
+            .body("partners[0].name", equalTo("Alice"))
+            .body("partners[1].name", equalTo("Bob"))
+            .body("partners[2].name", equalTo("Carol"));
         // @formatter:on
     }
 
