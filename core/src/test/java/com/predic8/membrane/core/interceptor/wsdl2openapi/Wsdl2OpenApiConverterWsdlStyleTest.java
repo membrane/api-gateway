@@ -18,6 +18,8 @@ import com.predic8.membrane.core.resolver.StaticStringResolver;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -420,12 +422,8 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         assertTrue(yaml.contains("faultReason:"), "Second type-based part must appear in the 500 schema");
     }
 
-    @Test
-    void soapHeaderBecomesHeaderParameter() throws Exception {
-        // soap:header binds a message part that travels in the SOAP header, out-of-band from
-        // the body. It should surface as an OpenAPI "in: header" parameter on the operation,
-        // not as a body field, and not be dropped.
-        var wsdl = """
+    /** Shared by the two soap:header tests below: one operation, one header part, one body part. */
+    private static final String SECURE_SERVICE_WSDL = """
                 <definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
                              xmlns:xs="http://www.w3.org/2001/XMLSchema"
                              xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
@@ -500,10 +498,33 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
 
                 </definitions>""";
 
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+    @Test
+    void soapHeaderBecomesHeaderParameter() throws Exception {
+        // soap:header binds a message part that travels in the SOAP header, out-of-band from
+        // the body. It should surface as an OpenAPI "in: header" parameter on the operation,
+        // not as a body field, and not be dropped.
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/").generateYaml();
 
         assertTrue(yaml.contains("payload:"), "Body part is still converted");
         assertTrue(yaml.contains("in: \"header\""), "soap:header part should become an OpenAPI header parameter");
+        assertTrue(yaml.contains("name: \"token\""), "Header parameter should be named after its message part");
+    }
+
+    @Test
+    void pathAndHeaderParametersCoexist() throws Exception {
+        // A templated path plus a soap:header yields two parameter sources for the same
+        // operation. Both must end up in the parameter list — a path segment "{id}" without a
+        // declared path parameter is an invalid OpenAPI document.
+        var settings = new OperationSettings();
+        settings.setMethod("GET");
+        settings.setPath("work/{id}");
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), SECURE_SERVICE_WSDL), "/",
+                Map.of("doWork", settings)).generateYaml();
+
+        assertTrue(yaml.contains("/work/{id}:"), "Templated path should be used as the path key");
+        assertTrue(yaml.contains("in: \"path\""), "Path parameter must not be dropped");
+        assertTrue(yaml.contains("name: \"id\""), "Path parameter should be named after the template variable");
+        assertTrue(yaml.contains("in: \"header\""), "soap:header parameter must still be present");
         assertTrue(yaml.contains("name: \"token\""), "Header parameter should be named after its message part");
     }
 

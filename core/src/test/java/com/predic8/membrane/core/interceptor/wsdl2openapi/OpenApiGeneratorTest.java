@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -216,6 +217,17 @@ class OpenApiGeneratorTest {
         assertTrue(yaml.contains("tags:"), "Should contain tags section");
         assertTrue(yaml.contains("MyService"), "Should contain configured tag value");
         assertTrue(yaml.contains("- name: \"MyService\""), "Top-level tags section should declare the tag by name");
+    }
+
+    @Test
+    void configuredOperationNotInWsdlIsRejected() {
+        var ops = Map.of("getCitty", new OperationSettings());
+
+        var e = assertThrows(ConfigurationException.class,
+                () -> new Wsdl2OpenApiConverter(citiesDefinitions, "/", ops).generate());
+
+        assertTrue(e.getMessage().contains("getCitty"), "Message should name the unknown operation");
+        assertTrue(e.getMessage().contains("getCity"), "Message should list the available operations");
     }
 
     @Test

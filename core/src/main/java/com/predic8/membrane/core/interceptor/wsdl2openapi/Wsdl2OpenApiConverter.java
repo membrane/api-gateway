@@ -88,8 +88,9 @@ public class Wsdl2OpenApiConverter {
     }
 
     public String generateYaml() {
+        var openAPI = generate();
         try {
-            return createYaml().writeValueAsString(generate());
+            return createYaml().writeValueAsString(openAPI);
         } catch (Exception e) {
             throw new RuntimeException("Could not serialize OpenAPI model to YAML", e);
         }
@@ -123,8 +124,10 @@ public class Wsdl2OpenApiConverter {
             for (var entry : operations.entrySet()) {
                 var name = entry.getKey();
                 var opSettings = entry.getValue();
-                var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst().orElse(null);
-                if (wsdlOp == null) log.debug("Configured operation '{}' not found in WSDL definitions", name);
+                var wsdlOp = wsdlOps.stream().filter(op -> name.equals(op.getName())).findFirst()
+                        .orElseThrow(() -> new ConfigurationException(
+                                "Operation '%s' is not defined in the WSDL. Available operations: %s".formatted(
+                                        name, wsdlOps.stream().map(Operation::getName).toList())));
                 var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
                 var existing = paths.get(pathKey);
                 if (existing != null) {
@@ -154,19 +157,15 @@ public class Wsdl2OpenApiConverter {
             apiOp.addTagsItem(tag);
         }
 
-        List<String> pathParamNames = pathTemplate != null ? extractParamNames(pathTemplate) : List.of();
-        if (!pathParamNames.isEmpty()) {
-            pathParamNames.forEach(p ->
+        if (pathTemplate != null) {
+            extractParamNames(pathTemplate).forEach(p ->
                 apiOp.addParametersItem(new Parameter().name(p).in("path").required(true).schema(new StringSchema()))
             );
         }
         if (hasRequestBody(method)) {
             apiOp.requestBody(buildRequestBody(getBodyParts(inputParts, headerParts)));
         }
-        var headerParameters = buildHeaderParameters(headerParts);
-        if (!headerParameters.isEmpty()) {
-            apiOp.setParameters(headerParameters);
-        }
+        buildHeaderParameters(headerParts).forEach(apiOp::addParametersItem);
         return apiOp;
     }
 
