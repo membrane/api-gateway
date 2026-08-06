@@ -88,6 +88,22 @@ public class Wsdl2OpenAPIRestTutorialTest extends AbstractSOAPTutorialTest {
     }
 
     @Test
+    void unmappedMethodOnMappedPathReturns405() {
+        // /partners/{id} is mapped for GET, PUT and DELETE but not POST. Without a 405 the
+        // untransformed JSON body would be forwarded to the SOAP backend.
+        // @formatter:off
+        given()
+            .contentType(JSON)
+            .body("{\"name\":\"Dave\"}")
+        .when()
+            .post("http://localhost:2000/partners/1")
+        .then()
+            .statusCode(405)
+            .header("Allow", equalTo("GET, PUT, DELETE"));
+        // @formatter:on
+    }
+
+    @Test
     void createPartnerReturnsEmptyObject() {
         // @formatter:off
         given()

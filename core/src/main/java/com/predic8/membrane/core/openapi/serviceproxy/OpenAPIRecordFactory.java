@@ -148,7 +148,7 @@ public class OpenAPIRecordFactory {
      * @param rec        Record with an parsed OpenAPI
      * @return Guaranteed unique id within the provided apiRecords
      */
-    String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
+    static String getUniqueId(Map<String, OpenAPIRecord> apiRecords, OpenAPIRecord rec) {
         String id = getIdFromAPI(rec.api);
         if (apiRecords.get(id) != null) {
             log.warn("There are multiple OpenAPI documents with the id {}. The id is computed from the title {} and version {}. Please make sure that the documents are different or use the x-membrane-id field.",

@@ -14,21 +14,19 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.Required;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPIRecord;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
-import com.predic8.membrane.core.proxies.AbstractRuleKey;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.AbstractServiceProxy;
-import com.predic8.membrane.core.proxies.RuleKey;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ConfigurationException;
@@ -37,9 +35,6 @@ import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,11 +42,11 @@ import java.util.regex.Pattern;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
 import static com.predic8.membrane.core.http.MimeType.APPLICATION_JSON;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
-import static com.predic8.membrane.core.http.Response.statusCode;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.InterceptorUtil.getInterceptors;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.camelToKebab;
 import static com.predic8.membrane.core.openapi.serviceproxy.OpenAPIPublisherInterceptor.PATH;
-import static com.predic8.membrane.core.openapi.util.OpenAPIUtil.getIdFromAPI;
 import static com.predic8.membrane.core.resolver.ResolverMap.combine;
 import static com.predic8.membrane.core.util.wsdl.parser.Definitions.parse;
 import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
@@ -61,6 +56,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @description <p>
  * The <i>wsdl2openapi</i> interceptor exposes SOAP/WSDL services via HTTP/JSON/OpenAPI.
  * It automatically converts JSON requests to SOAP XML and SOAP XML responses back to JSON.
+ * </p>
+ * <p>
+ * Can only be used within an <i>api</i>, and only one <i>wsdl2openapi</i> is allowed per API: it
+ * owns the paths and the generated OpenAPI document of the API it is placed in. To expose several
+ * WSDLs, declare one API per WSDL.
  * </p>
  * @yaml <pre><code>
  * api:
@@ -114,7 +114,25 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     public void init() {
         super.init();
 
+        if (!(proxy instanceof APIProxy)) {
+            throw new ConfigurationException("""
+                    The wsdl2openapi plugin can only be used within an api, but '%s' is not one.
+                    It publishes an OpenAPI document at %s, which only an api can route to.""".formatted(proxy.getName(), PATH));
+        }
+
+        if (getInterceptors(proxy.getFlow(), Wsdl2OpenapiInterceptor.class).size() > 1) {
+            throw new ConfigurationException("""
+                    Only one wsdl2openapi plugin is allowed per API, but API '%s' declares more than one.
+                    Each wsdl2openapi owns the paths and the OpenAPI document of its API.
+                    Put each WSDL into its own api.""".formatted(proxy.getName()));
+        }
+
         basePath = getBasePath();
+
+        // init() can run more than once on the same instance: AbstractProxy.clone() and
+        // RuleManager.replaceRule both init, and the clone shares this interceptor.
+        routes.clear();
+        requestTransformers.clear();
 
         try {
             ResolverMap resolverMap = router.getResolverMap();
@@ -152,16 +170,9 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         var openApiModel = generator.generate();
         var record = new OpenAPIRecord(openApiModel, new OpenAPISpec());
 
-        publisher = proxy.getFlow().stream()
-                .filter(i -> i instanceof Wsdl2OpenapiInterceptor w && w.publisher != null)
-                .map(i -> ((Wsdl2OpenapiInterceptor) i).publisher)
-                .findFirst()
-                .orElseGet(() -> {
-                    var p = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());
-                    p.init(router);
-                    return p;
-                });
-        publisher.addRecord(getIdFromAPI(openApiModel), record);
+        publisher = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());
+        publisher.init(router);
+        publisher.addRecord(record);
 
         registerApiDocsPaths();
 
@@ -175,12 +186,42 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
             return outcome;
         }
 
-        var match = matchRoute(exc.getRequest().getUri(), exc.getRequest().getMethod());
+        String uri = exc.getRequest().getUri();
+        var match = matchRoute(uri, exc.getRequest().getMethod());
         if (match.isPresent() && isValidOperation(match.get().operationName())) {
             return handleOperation(exc, match.get().operationName(), match.get().pathParams());
         }
 
+        // The path is mapped, but not for this method: answer 405 instead of forwarding an
+        // untransformed JSON body to the SOAP backend.
+        var allowedMethods = allowedMethods(uri);
+        if (!allowedMethods.isEmpty()) {
+            return methodNotAllowed(exc, allowedMethods);
+        }
+
         return CONTINUE;
+    }
+
+    /** The methods registered for the route(s) matching {@code path}, in declaration order. */
+    List<String> allowedMethods(String path) {
+        String segment = pathSegment(path);
+        return routes.stream()
+                .filter(entry -> entry.pathPattern().matcher(segment).matches())
+                .map(RouteEntry::method)
+                .distinct()
+                .toList();
+    }
+
+    private Outcome methodNotAllowed(Exchange exc, List<String> allowedMethods) {
+        String allow = String.join(", ", allowedMethods);
+        Response response = user(router.getConfiguration().isProduction(), getDisplayName())
+                .status(405)
+                .title("Method not allowed")
+                .detail("The requested path does not support %s. Allowed: %s.".formatted(exc.getRequest().getMethod(), allow))
+                .build();
+        response.getHeader().add("Allow", allow);
+        exc.setResponse(response);
+        return ABORT;
     }
 
     @Override
@@ -234,16 +275,14 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return CONTINUE;
     }
 
+    /**
+     * Makes the OpenAPI document reachable next to the API's own path. Only base paths are added:
+     * the key's path itself is never rewritten, so this stays safe when init() runs again on the
+     * same proxy (APIProxy rebuilds its key on each init, so the list cannot accumulate either).
+     */
     private void registerApiDocsPaths() {
-        RuleKey key = proxy.getKey();
-        if (key instanceof APIProxyKey apiKey) {
+        if (proxy.getKey() instanceof APIProxyKey apiKey) {
             apiKey.addBasePaths(new ArrayList<>(List.of(PATH, basePath)));
-        } else if (key instanceof AbstractRuleKey ark && ark.isUsePathPattern()) {
-            String existing = ark.getPath();
-            if (existing != null) {
-                ark.setPathRegExp(true);
-                ark.setPath("(" + Pattern.quote(existing) + ".*|" + Pattern.quote(PATH) + ".*)");
-            }
         }
     }
 
@@ -266,10 +305,15 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
         return "/";
     }
 
-    Optional<RouteMatch> matchRoute(String path, String method) {
+    /** Strips the base path and any query string, leaving the segment the routes are matched against. */
+    private String pathSegment(String path) {
         String withoutBase = path.replaceFirst("^" + Pattern.quote(basePath), "");
         if (withoutBase.startsWith("/")) withoutBase = withoutBase.substring(1);
-        String segment = withoutBase.contains("?") ? withoutBase.substring(0, withoutBase.indexOf('?')) : withoutBase;
+        return withoutBase.contains("?") ? withoutBase.substring(0, withoutBase.indexOf('?')) : withoutBase;
+    }
+
+    Optional<RouteMatch> matchRoute(String path, String method) {
+        String segment = pathSegment(path);
         for (var entry : routes) {
             if (!entry.method().equalsIgnoreCase(method)) continue;
             Matcher m = entry.pathPattern().matcher(segment);
@@ -317,14 +361,6 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
 
     private Outcome handleOperation(Exchange exc, String operationName, Map<String, String> pathParams) {
         OperationSettings opSettings = operationsByName.get(operationName);
-        String expectedMethod = opSettings != null ? opSettings.getMethod().toUpperCase() : "POST";
-        if (!exc.getRequest().getMethod().equalsIgnoreCase(expectedMethod)) {
-            exc.setResponse(statusCode(405)
-                    .header("Allow", expectedMethod)
-                    .body("Method not allowed. Use " + expectedMethod + ".")
-                    .build());
-            return RETURN;
-        }
 
         try {
             if (opSettings != null && !opSettings.getFlow().isEmpty()) {

@@ -14,8 +14,15 @@
 
 package com.predic8.membrane.core.interceptor.wsdl2openapi;
 
+import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
+import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
+import com.predic8.membrane.core.proxies.ServiceProxy;
+import com.predic8.membrane.core.proxies.ServiceProxyKey;
+import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -102,6 +109,100 @@ class Wsdl2OpenapiInterceptorTest {
         assertEquals("fooBar", result.get().operationName());
         assertEquals("hello", result.get().pathParams().get("a"));
         assertEquals("world", result.get().pathParams().get("b"));
+    }
+
+    @Test
+    void allowedMethodsListsEveryMethodRegisteredForThePath() {
+        var interceptor = new Wsdl2OpenapiInterceptor("/", List.of(
+                new Wsdl2OpenapiInterceptor.RouteEntry(buildPathPattern("partners/{id}"), extractParamNames("partners/{id}"), "GET", "getPartner"),
+                new Wsdl2OpenapiInterceptor.RouteEntry(buildPathPattern("partners/{id}"), extractParamNames("partners/{id}"), "PUT", "updatePartner"),
+                new Wsdl2OpenapiInterceptor.RouteEntry(buildPathPattern("partners"), extractParamNames("partners"), "POST", "createPartner")
+        ));
+
+        // A path mapped for other methods must report them all, so the 405 carries a correct
+        // Allow header instead of the single method of whichever route happened to be found.
+        assertEquals(List.of("GET", "PUT"), interceptor.allowedMethods("/partners/42"));
+        assertEquals(List.of("POST"), interceptor.allowedMethods("/partners"));
+        // An unmapped path has no allowed methods at all — the request must fall through, not 405.
+        assertEquals(List.of(), interceptor.allowedMethods("/unmapped"));
+    }
+
+    @Test
+    void twoInstancesInOneFlowAreRejected() {
+        var router = new DummyTestRouter();
+        var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/cities.wsdl"), wsdl2openapi("classpath:/blz-service.wsdl"));
+        var first = (Wsdl2OpenapiInterceptor) proxy.getFlow().getFirst();
+        var second = (Wsdl2OpenapiInterceptor) proxy.getFlow().getLast();
+
+        var e = assertThrows(ConfigurationException.class, () -> first.init(router, proxy));
+        assertTrue(e.getMessage().contains("wsdl2openapi"), "Message should name the plugin");
+        assertTrue(e.getMessage().contains("TestAPI"), "Message should name the offending API");
+
+        // The whole flow is populated before any interceptor inits, so the rejection must not
+        // depend on which of the two initialises first.
+        assertThrows(ConfigurationException.class, () -> second.init(router, proxy));
+    }
+
+    @Test
+    void singleInstanceInitsAndRegistersRoutes() {
+        var router = new DummyTestRouter();
+        var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/cities.wsdl"));
+        var interceptor = (Wsdl2OpenapiInterceptor) proxy.getFlow().getFirst();
+
+        interceptor.init(router, proxy);
+
+        assertEquals(List.of("POST"), interceptor.allowedMethods("/get-city"));
+    }
+
+    @Test
+    void proxyThatIsNotAnApiIsRejected() {
+        var router = new DummyTestRouter();
+        var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");
+        var proxy = new ServiceProxy(new ServiceProxyKey(2000), "localhost", 2001);
+        proxy.setName("TestServiceProxy");
+        proxy.setPath(new Path(false, "/purchasing"));
+        proxy.getFlow().add(interceptor);
+
+        var e = assertThrows(ConfigurationException.class, () -> interceptor.init(router, proxy));
+        assertTrue(e.getMessage().contains("wsdl2openapi"), "Message should name the plugin");
+        assertTrue(e.getMessage().contains("api"), "Message should say an api is required");
+    }
+
+    @Test
+    void reInitDoesNotAccumulateRoutes() throws Exception {
+        var router = new DummyTestRouter();
+        var proxy = apiProxyWith(wsdl2openapi("classpath:/ws/cities.wsdl"));
+        var interceptor = (Wsdl2OpenapiInterceptor) proxy.getFlow().getFirst();
+
+        // AbstractProxy.clone() and RuleManager.replaceRule both call init on the same
+        // interceptor instance, so init must be repeatable without piling up state.
+        interceptor.init(router, proxy);
+        int routesAfterFirstInit = routeCount(interceptor);
+        interceptor.init(router, proxy);
+
+        assertEquals(routesAfterFirstInit, routeCount(interceptor), "Routes must not be registered twice");
+        assertTrue(interceptor.matchRoute("/get-city", "POST").isPresent(), "Route must still match after re-init");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static int routeCount(Wsdl2OpenapiInterceptor interceptor) throws Exception {
+        Field field = Wsdl2OpenapiInterceptor.class.getDeclaredField("routes");
+        field.setAccessible(true);
+        return ((List<Wsdl2OpenapiInterceptor.RouteEntry>) field.get(interceptor)).size();
+    }
+
+    private static Wsdl2OpenapiInterceptor wsdl2openapi(String wsdl) {
+        var interceptor = new Wsdl2OpenapiInterceptor();
+        interceptor.setWsdl(wsdl);
+        return interceptor;
+    }
+
+    private static APIProxy apiProxyWith(Wsdl2OpenapiInterceptor... interceptors) {
+        var proxy = new APIProxy();
+        proxy.setName("TestAPI");
+        proxy.setKey(new APIProxyKey(2000));
+        proxy.getFlow().addAll(List.of(interceptors));
+        return proxy;
     }
 
     @Test
