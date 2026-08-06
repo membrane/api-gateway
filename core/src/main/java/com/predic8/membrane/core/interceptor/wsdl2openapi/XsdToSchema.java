@@ -307,7 +307,8 @@ public class XsdToSchema {
                 case "element" -> {
                     String fieldName = el.getAttribute("name");
                     if (!fieldName.isEmpty()) {
-                        alternatives.add(new ChoiceAlternative(fieldName, null, convertElementType(el, schemaRoot, visitingTypes)));
+                        String ns = schemaRoot.getAttribute("targetNamespace");
+                        alternatives.add(new ChoiceAlternative(fieldName, ns.isEmpty() ? null : ns, convertElementType(el, schemaRoot, visitingTypes)));
                     } else {
                         resolveChoiceRefAlternative(el, schemaRoot, visitingTypes).ifPresent(alternatives::add);
                     }

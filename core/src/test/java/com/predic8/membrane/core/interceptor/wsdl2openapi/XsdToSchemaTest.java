@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.qualifiedKey;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -629,9 +630,37 @@ class XsdToSchemaTest {
         // instead of the ambiguous bare local name.
         assertNull(fieldOf(schema, "value"), "colliding local name must not be exposed unqualified");
         assertInstanceOf(StringSchema.class,
-                fieldOf(schema, XsdDomUtil.qualifiedKey("https://types-a.example.com", "value")));
+                fieldOf(schema, qualifiedKey("https://types-a.example.com", "value")));
         assertInstanceOf(IntegerSchema.class,
-                fieldOf(schema, XsdDomUtil.qualifiedKey("https://types-b.example.com", "value")));
+                fieldOf(schema, qualifiedKey("https://types-b.example.com", "value")));
+    }
+
+    @Test
+    void namedChoiceAlternativeCollidingWithRefAlternativeIsQualified() {
+        // A named element in the local schema and a ref element from another namespace share the
+        // local name "value". Both must receive namespace-qualified keys; neither may be bare.
+        var converter = converterForSchemas(Map.of(
+                NS, """
+                        <xsd:import namespace="https://other.example.com"/>
+                        <xsd:element name="request">
+                          <xsd:complexType><xsd:choice>
+                            <xsd:element name="value" type="xsd:string"/>
+                            <xsd:element ref="other:value" xmlns:other="https://other.example.com"/>
+                          </xsd:choice></xsd:complexType>
+                        </xsd:element>
+                        """,
+                "https://other.example.com", """
+                        <xsd:element name="value" type="xsd:int"/>
+                        """
+        ));
+
+        var schema = convert(converter, "request");
+
+        assertNull(fieldOf(schema, "value"), "colliding local name must not appear unqualified");
+        assertInstanceOf(StringSchema.class,
+                fieldOf(schema, qualifiedKey(NS, "value")), "local named alternative must be NS-qualified");
+        assertInstanceOf(IntegerSchema.class,
+                fieldOf(schema, qualifiedKey("https://other.example.com", "value")), "ref alternative must be NS-qualified");
     }
 
     @Test
