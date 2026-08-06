@@ -107,7 +107,7 @@ public class Wsdl2OpenApiConverter {
                         }
                         return true;
                     })
-                    .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp.getName(), wsdlOp, "POST", null)));
+                    .forEach(wsdlOp -> paths.addPathItem("/" + camelToKebab(wsdlOp.getName()), buildPathItem(wsdlOp.getName(), wsdlOp, "POST", null, null)));
         } else {
             var wsdlOps = definitions.getPortTypes().stream()
                     .flatMap(pt -> pt.getOperations().stream())
@@ -121,20 +121,20 @@ public class Wsdl2OpenApiConverter {
                 var pathKey = "/" + (opSettings.getPath() != null ? opSettings.getPath() : camelToKebab(name));
                 var existing = paths.get(pathKey);
                 if (existing != null) {
-                    applyMethod(existing, buildApiOperation(name, wsdlOp, opSettings.getMethod(), opSettings.getPath()), opSettings.getMethod());
+                    applyMethod(existing, buildApiOperation(name, wsdlOp, opSettings.getMethod(), opSettings.getPath(), opSettings.getTag()), opSettings.getMethod());
                 } else {
-                    paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings.getMethod(), opSettings.getPath()));
+                    paths.addPathItem(pathKey, buildPathItem(name, wsdlOp, opSettings.getMethod(), opSettings.getPath(), opSettings.getTag()));
                 }
             }
         }
         return paths;
     }
 
-    private PathItem buildPathItem(String name, Operation wsdlOp, String method, String pathTemplate) {
-        return applyMethod(new PathItem(), buildApiOperation(name, wsdlOp, method, pathTemplate), method);
+    private PathItem buildPathItem(String name, Operation wsdlOp, String method, String pathTemplate, String tag) {
+        return applyMethod(new PathItem(), buildApiOperation(name, wsdlOp, method, pathTemplate, tag), method);
     }
 
-    private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, String method, String pathTemplate) {
+    private io.swagger.v3.oas.models.Operation buildApiOperation(String name, Operation wsdlOp, String method, String pathTemplate, String tag) {
         var inputParts = getInputParts(wsdlOp);
         var headerParts = findBindingOperation(name).map(this::getHeaderParts).orElse(List.of());
 
@@ -142,6 +142,10 @@ public class Wsdl2OpenApiConverter {
                 .operationId(name)
                 .summary(name)
                 .responses(buildResponses(wsdlOp));
+
+        if (tag != null) {
+            apiOp.addTagsItem(tag);
+        }
 
         List<String> pathParamNames = pathTemplate != null ? extractParamNames(pathTemplate) : List.of();
         if (!pathParamNames.isEmpty()) {

@@ -30,6 +30,7 @@ public class OperationSettings {
 
     private String method = "POST";
     private String path;
+    private String tag;
     private List<Interceptor> flow = new ArrayList<>();
 
     public String getMethod() {
@@ -60,6 +61,19 @@ public class OperationSettings {
     @MCAttribute
     public void setPath(String path) {
         this.path = path != null && path.startsWith("/") ? path.substring(1) : path;
+    }
+
+    public String getTag() {
+        return tag;
+    }
+
+    /**
+     * @description OpenAPI tag assigned to this operation. Groups the operation under the given tag in API documentation.
+     * @example Partner
+     */
+    @MCAttribute
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
     public List<Interceptor> getFlow() {

@@ -38,18 +38,23 @@ api:
           getPartners:
             method: GET
             path: partners
+            tag: Partner
           getPartner:
             method: GET
             path: partners/{id}
+            tag: Partner
           createPartner:
             method: POST
             path: partners
+            tag: Partner
           updatePartner:
             method: PUT
             path: partners/{id}
+            tag: Partner
           deletePartner:
             method: DELETE
             path: partners/{id}
+            tag: Partner
   target:
     url: http://localhost:3000/partner-service
 

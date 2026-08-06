@@ -19,6 +19,8 @@ import com.predic8.membrane.core.util.wsdl.parser.Definitions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenApiGeneratorTest {
@@ -202,6 +204,22 @@ class OpenApiGeneratorTest {
         var yaml = generator(articleDefinitions, "/");
         assertTrue(yaml.contains("amount:"), "MoneyType.amount should be resolved from external XSD chain");
         assertTrue(yaml.contains("currency:"), "MoneyType.currency should be resolved from external XSD chain");
+    }
+
+    @Test
+    void operationTagAppearsInYaml() {
+        var settings = new OperationSettings();
+        settings.setTag("MyService");
+        var ops = Map.of("getCity", settings);
+        var yaml = new Wsdl2OpenApiConverter(citiesDefinitions, "/", ops).generateYaml();
+
+        assertTrue(yaml.contains("tags:"), "Should contain tags section");
+        assertTrue(yaml.contains("MyService"), "Should contain configured tag value");
+    }
+
+    @Test
+    void noTagWhenNotConfigured() {
+        assertFalse(generator(citiesDefinitions, "/").contains("tags:"), "Should have no tags when none configured");
     }
 
     private static String generator(Definitions defs, String basePath) {
