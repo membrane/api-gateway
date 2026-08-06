@@ -318,7 +318,8 @@ public class XsdToSchema {
                     String fieldName = el.getAttribute("name");
                     if (!fieldName.isEmpty()) {
                         String ns = ctx.schemaRoot().getAttribute("targetNamespace");
-                        alternatives.add(new ChoiceAlternative(fieldName, ns.isEmpty() ? null : ns, convertElementType(el, ctx)));
+                        alternatives.add(new ChoiceAlternative(fieldName, ns.isEmpty() ? null : ns,
+                                applyMaxOccurs(el, convertElementType(el, ctx))));
                     } else {
                         resolveRefAlternative(el, ctx)
                                 .map(alternative -> alternative.withSchema(applyMaxOccurs(el, alternative.fieldSchema())))

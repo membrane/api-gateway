@@ -229,6 +229,37 @@ class XsdToSchemaTest {
         assertFalse(fieldOf(schema, "item") instanceof ArraySchema);
     }
 
+    @Test
+    void repeatedNamedChoiceAlternativeProducesArraySchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="entry">
+                  <xsd:complexType><xsd:choice>
+                    <xsd:element name="tag"  type="xsd:string" maxOccurs="unbounded"/>
+                    <xsd:element name="note" type="xsd:string"/>
+                  </xsd:choice></xsd:complexType>
+                </xsd:element>
+                """), "entry");
+
+        var tag = assertInstanceOf(ArraySchema.class, fieldOf(schema, "tag"));
+        assertInstanceOf(StringSchema.class, tag.getItems());
+        assertFalse(fieldOf(schema, "note") instanceof ArraySchema, "the single-occurrence alternative stays scalar");
+        assertFalse(isRequired(schema, "tag"), "array wrapping must not make an alternative required");
+    }
+
+    @Test
+    void namedChoiceAlternativeWithNumericMaxOccursProducesArraySchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="entry">
+                  <xsd:complexType><xsd:choice>
+                    <xsd:element name="tag"  type="xsd:string" maxOccurs="3"/>
+                    <xsd:element name="note" type="xsd:string"/>
+                  </xsd:choice></xsd:complexType>
+                </xsd:element>
+                """), "entry");
+
+        assertInstanceOf(ArraySchema.class, fieldOf(schema, "tag"));
+    }
+
     // ── xsd:all treated same as xsd:sequence ─────────────────────────────
 
     @Test
