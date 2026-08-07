@@ -113,6 +113,18 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
+    void swagger2RelativeExternalRefResolved() {
+        OpenAPIRecord rec = getOpenAPIRecord("swagger2/external-ref/api.yaml", "swagger2-external-ref-v1-0-0");
+
+        // The external ref (user.yaml#/User) must be resolved into the model's components.
+        var user = rec.api.getComponents().getSchemas().get("User");
+        assertNotNull(user.getProperties());
+        assertTrue(user.getProperties().containsKey("email"));
+        assertEquals("#/components/schemas/User", rec.api.getPaths().get("/users").getGet()
+                .getResponses().get("200").getContent().get(APPLICATION_JSON).getSchema().get$ref());
+    }
+
+    @Test
     void openapi3NoConversionNoticeAdded() {
         OpenAPIRecord rec = getOpenAPIRecord("fruitshop-api-v2-openapi-3.yml", "fruit-shop-api-v2-0-0");
         assertFalse(rec.api.getInfo().getDescription().contains(
