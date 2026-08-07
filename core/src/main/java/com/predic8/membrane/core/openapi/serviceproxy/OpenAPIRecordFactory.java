@@ -20,13 +20,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.openapi.OpenAPIParsingException;
 import com.predic8.membrane.core.openapi.util.OpenAPI32Parser;
+import com.predic8.membrane.core.openapi.util.OpenAPIYamlLimits;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.router.Router;
 import com.predic8.membrane.core.util.ConfigurationException;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.parser.ObjectMapperFactory;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +54,7 @@ public class OpenAPIRecordFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAPIRecordFactory.class.getName());
 
-    private static final ObjectMapper omYaml = ObjectMapperFactory.createYaml();
+    private static final ObjectMapper omYaml = OpenAPIYamlLimits.createYamlMapper();
 
     private final Router router;
     private final String baseLocation;
