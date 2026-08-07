@@ -17,9 +17,7 @@ package com.predic8.membrane.core.interceptor.wsdl2openapi;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxy;
-import com.predic8.membrane.core.openapi.serviceproxy.APIProxyKey;
-import com.predic8.membrane.core.openapi.serviceproxy.OpenAPISpec;
+import com.predic8.membrane.core.openapi.serviceproxy.*;
 import com.predic8.membrane.core.proxies.ServiceProxy;
 import com.predic8.membrane.core.proxies.ServiceProxyKey;
 import com.predic8.membrane.core.router.DummyTestRouter;
@@ -214,11 +212,38 @@ class Wsdl2OpenapiInterceptorTest {
         assertTrue(interceptor.matchRoute("/get-city", "POST").isPresent(), "Route must still match after re-init");
     }
 
+    @Test
+    void titleComesFromTheEnclosingApiNameAndDescriptionIsApplied() throws Exception {
+        var router = new DummyTestRouter();
+        var interceptor = wsdl2openapi("classpath:/ws/cities.wsdl");
+        interceptor.setDescription("Custom description.");
+        var proxy = apiProxyWith(interceptor); // apiProxyWith names the proxy "TestAPI"
+
+        interceptor.init(router, proxy);
+
+        var info = generatedOpenApi(interceptor).getInfo();
+        assertEquals("TestAPI", info.getTitle(), "the OpenAPI title must be the enclosing api's name");
+        assertTrue(info.getDescription().startsWith("Custom description."),
+                "the configured description must appear at the start of info.description");
+    }
+
     @SuppressWarnings("unchecked")
     private static int routeCount(Wsdl2OpenapiInterceptor interceptor) throws Exception {
         Field field = Wsdl2OpenapiInterceptor.class.getDeclaredField("routes");
         field.setAccessible(true);
         return ((List<Wsdl2OpenapiInterceptor.RouteEntry>) field.get(interceptor)).size();
+    }
+
+    private static io.swagger.v3.oas.models.OpenAPI generatedOpenApi(Wsdl2OpenapiInterceptor interceptor) throws Exception {
+        Field publisherField = Wsdl2OpenapiInterceptor.class.getDeclaredField("publisher");
+        publisherField.setAccessible(true);
+        var publisher = (OpenAPIPublisherInterceptor) publisherField.get(interceptor);
+
+        Field apisField = OpenAPIPublisherInterceptor.class.getDeclaredField("apis");
+        apisField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        var apis = (Map<String, OpenAPIRecord>) apisField.get(publisher);
+        return apis.values().iterator().next().getApi();
     }
 
     private static Wsdl2OpenapiInterceptor wsdl2openapi(String wsdl) {

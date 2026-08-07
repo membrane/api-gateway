@@ -54,16 +54,25 @@ public class Wsdl2OpenApiConverter {
     private final String basePath;
     private final XsdToSchema converter;
     private final Map<String, OperationSettings> operations;
+    private final String title;
+    private final String description;
 
     public Wsdl2OpenApiConverter(Definitions definitions, String basePath) {
         this(definitions, basePath, Map.of());
     }
 
     public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationSettings> operations) {
+        this(definitions, basePath, operations, null, null);
+    }
+
+    public Wsdl2OpenApiConverter(Definitions definitions, String basePath, Map<String, OperationSettings> operations,
+                                  String title, String description) {
         this.definitions = definitions;
         this.basePath = stripTrailingSlash(basePath);
         this.converter = new XsdToSchema(definitions);
         this.operations = operations;
+        this.title = title;
+        this.description = description;
     }
 
     /**
@@ -108,10 +117,19 @@ public class Wsdl2OpenApiConverter {
         }
     }
 
+    /** CommonMark, per the OpenAPI spec — rendered as-is by Swagger UI, Redoc, etc. */
+    private static final String DESCRIPTION = """
+            ![Logo](https://raw.githubusercontent.com/membrane/api-gateway/master/docs/images/membrane-logo-128.png)
+
+            Auto-generated OpenAPI from WSDL by \
+            [Membrane](https://www.membrane-api.io/?oas=1), \
+            which turns legacy SOAP/WSDL services into modern REST APIs. \
+            Membrane is a modern and lightweight [open source API Gateway](https://github.com/membrane/api-gateway).""";
+
     private Info buildInfo() {
         return new Info()
-                .title(getServiceName())
-                .description("Auto-generated OpenAPI from WSDL")
+                .title(title != null ? title : getServiceName())
+                .description(description != null ? description + "\n\n" + DESCRIPTION : DESCRIPTION)
                 .version("1.0.0");
     }
 

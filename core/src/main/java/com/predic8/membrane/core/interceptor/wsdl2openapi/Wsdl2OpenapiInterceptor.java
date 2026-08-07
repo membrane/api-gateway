@@ -61,13 +61,18 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * owns the paths and the generated OpenAPI document of the API it is placed in. To expose several
  * WSDLs, declare one API per WSDL.
  * </p>
+ * <p>
+ * The generated OpenAPI document's title is the enclosing <i>api</i>'s <code>name</code>.
+ * </p>
  * @yaml <pre><code>
  * api:
+ *   name: Purchasing API
  *   port: 2000
  *   path: /purchasing
  *   flow:
  *     - wsdl2openapi:
  *         wsdl: http://backend-service/service.wsdl
+ *         description: Look up and create purchase orders.
  *         operations:
  *           getAll:
  *             method: GET
@@ -86,6 +91,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private String wsdl;
+    private String description;
     /** The api this plugin lives in. Set by init(), which rejects anything that is not an APIProxy. */
     private APIProxy apiProxy;
     private Definitions definitions;
@@ -204,7 +210,7 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     }
 
     private OpenAPIPublisherInterceptor createPublisher() {
-        var openApiModel = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName).generate();
+        var openApiModel = new Wsdl2OpenApiConverter(definitions, basePath, operationsByName, apiProxy.getName(), description).generate();
         var publisherInterceptor = new OpenAPIPublisherInterceptor(new LinkedHashMap<>());
         publisherInterceptor.init(router);
         publisherInterceptor.addRecord(new OpenAPIRecord(openApiModel, new OpenAPISpec()));
@@ -456,6 +462,20 @@ public class Wsdl2OpenapiInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setWsdl(String wsdl) {
         this.wsdl = wsdl;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * @description API-level description, shown above the auto-generated note about how this
+     * OpenAPI document was produced.
+     * @example Look up partner records by ID.
+     */
+    @MCAttribute
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public OperationsConfig getOperations() {

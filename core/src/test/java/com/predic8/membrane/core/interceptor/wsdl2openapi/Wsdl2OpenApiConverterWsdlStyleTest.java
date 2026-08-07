@@ -20,8 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Asserts the correct/expected handling of WSDL-namespace constructs (style, faults, headers,
@@ -33,78 +32,79 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class Wsdl2OpenApiConverterWsdlStyleTest {
 
+    /** Wrapped document style, service name "GreetingService" — shared by the Info-related tests below. */
+    private static final String GREETING_WSDL = """
+            <definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+                         xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                         xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                         xmlns:tns="http://example.com/greeting"
+                         targetNamespace="http://example.com/greeting"
+                         name="GreetingService">
+
+              <types>
+                <xs:schema targetNamespace="http://example.com/greeting"
+                           elementFormDefault="qualified">
+
+                  <!-- Wrapped document style: one element per message, wrapping all parameters -->
+                  <xs:element name="sayHello">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="name" type="xs:string"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+
+                  <xs:element name="sayHelloResponse">
+                    <xs:complexType>
+                      <xs:sequence>
+                        <xs:element name="greeting" type="xs:string"/>
+                      </xs:sequence>
+                    </xs:complexType>
+                  </xs:element>
+
+                </xs:schema>
+              </types>
+
+              <message name="SayHelloRequest">
+                <part name="parameters" element="tns:sayHello"/>
+              </message>
+
+              <message name="SayHelloResponse">
+                <part name="parameters" element="tns:sayHelloResponse"/>
+              </message>
+
+              <portType name="GreetingPortType">
+                <operation name="sayHello">
+                  <input message="tns:SayHelloRequest"/>
+                  <output message="tns:SayHelloResponse"/>
+                </operation>
+              </portType>
+
+              <binding name="GreetingBinding" type="tns:GreetingPortType">
+                <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+                <operation name="sayHello">
+                  <soap:operation soapAction="sayHello"/>
+                  <input>
+                    <soap:body use="literal"/>
+                  </input>
+                  <output>
+                    <soap:body use="literal"/>
+                  </output>
+                </operation>
+              </binding>
+
+              <service name="GreetingService">
+                <port name="GreetingPort" binding="tns:GreetingBinding">
+                  <soap:address location="http://example.com/greeting"/>
+                </port>
+              </service>
+
+            </definitions>""";
+
     @Test
     void documentLiteralWrappedStyle() throws Exception {
-        var wsdl = """
-                <definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
-                             xmlns:xs="http://www.w3.org/2001/XMLSchema"
-                             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
-                             xmlns:tns="http://example.com/greeting"
-                             targetNamespace="http://example.com/greeting"
-                             name="GreetingService">
-
-                  <types>
-                    <xs:schema targetNamespace="http://example.com/greeting"
-                               elementFormDefault="qualified">
-
-                      <!-- Wrapped document style: one element per message, wrapping all parameters -->
-                      <xs:element name="sayHello">
-                        <xs:complexType>
-                          <xs:sequence>
-                            <xs:element name="name" type="xs:string"/>
-                          </xs:sequence>
-                        </xs:complexType>
-                      </xs:element>
-
-                      <xs:element name="sayHelloResponse">
-                        <xs:complexType>
-                          <xs:sequence>
-                            <xs:element name="greeting" type="xs:string"/>
-                          </xs:sequence>
-                        </xs:complexType>
-                      </xs:element>
-
-                    </xs:schema>
-                  </types>
-
-                  <message name="SayHelloRequest">
-                    <part name="parameters" element="tns:sayHello"/>
-                  </message>
-
-                  <message name="SayHelloResponse">
-                    <part name="parameters" element="tns:sayHelloResponse"/>
-                  </message>
-
-                  <portType name="GreetingPortType">
-                    <operation name="sayHello">
-                      <input message="tns:SayHelloRequest"/>
-                      <output message="tns:SayHelloResponse"/>
-                    </operation>
-                  </portType>
-
-                  <binding name="GreetingBinding" type="tns:GreetingPortType">
-                    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
-
-                    <operation name="sayHello">
-                      <soap:operation soapAction="sayHello"/>
-                      <input>
-                        <soap:body use="literal"/>
-                      </input>
-                      <output>
-                        <soap:body use="literal"/>
-                      </output>
-                    </operation>
-                  </binding>
-
-                  <service name="GreetingService">
-                    <port name="GreetingPort" binding="tns:GreetingBinding">
-                      <soap:address location="http://example.com/greeting"/>
-                    </port>
-                  </service>
-
-                </definitions>""";
-
-        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), wsdl), "/").generateYaml();
+        var yaml = new Wsdl2OpenApiConverter(Definitions.parse(new StaticStringResolver(), GREETING_WSDL), "/").generateYaml();
 
         assertTrue(yaml.contains("/say-hello:"), "Operation name should be mapped to a kebab-case path");
         assertTrue(yaml.contains("operationId: \"sayHello\""), "operationId should match the WSDL operation name");
@@ -112,6 +112,56 @@ class Wsdl2OpenApiConverterWsdlStyleTest {
         assertTrue(yaml.contains("greeting:"), "Response body should expose the wrapped element's 'greeting' field");
         assertTrue(yaml.contains("\"200\":"), "Should contain a 200 response");
         assertTrue(yaml.contains("\"500\":"), "Should contain the generic 500 response");
+        assertTrue(yaml.contains("https://github.com/membrane/api-gateway"),
+                "info.description should link to the Membrane GitHub page");
+        assertTrue(yaml.contains("https://www.membrane-api.io/?oas=1"),
+                "info.description should link to the Membrane website");
+        assertTrue(yaml.contains("![Logo](https://raw.githubusercontent.com/membrane/api-gateway/master/docs/images/membrane-logo-128.png)"),
+                "info.description should embed the Membrane logo as a CommonMark image");
+    }
+
+    @Test
+    void titleOverrideReplacesServiceName() throws Exception {
+        var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
+        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), "Custom Title", null).generate();
+
+        assertEquals("Custom Title", openAPI.getInfo().getTitle(),
+                "an explicit title must override the WSDL service name");
+    }
+
+    @Test
+    void noTitleOverrideFallsBackToServiceName() throws Exception {
+        var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
+        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), null, null).generate();
+
+        assertEquals("GreetingService", openAPI.getInfo().getTitle());
+    }
+
+    @Test
+    void descriptionAppearsBeforeGeneratedAdText() throws Exception {
+        var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
+        var openAPI = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), null, "Say hello to the world.").generate();
+
+        String description = openAPI.getInfo().getDescription();
+        int userTextIndex = description.indexOf("Say hello to the world.");
+        int adIndex = description.indexOf("https://github.com/membrane/api-gateway");
+
+        assertTrue(userTextIndex >= 0, "the configured description must appear in info.description");
+        assertTrue(adIndex >= 0, "the generated ad text must still appear");
+        assertTrue(userTextIndex < adIndex,
+                "the configured description must come before the generated ad text, not after it");
+    }
+
+    @Test
+    void noDescriptionOverrideProducesOnlyGeneratedAdText() throws Exception {
+        var definitions = Definitions.parse(new StaticStringResolver(), GREETING_WSDL);
+        var withOverride = new Wsdl2OpenApiConverter(definitions, "/", Map.of(), null, null).generate();
+        var withoutAnyArgs = new Wsdl2OpenApiConverter(definitions, "/").generate();
+
+        assertEquals(withoutAnyArgs.getInfo().getDescription(), withOverride.getInfo().getDescription(),
+                "omitting the description (via either constructor) must produce identical, unchanged ad text");
+        assertFalse(withOverride.getInfo().getDescription().contains("\n\n\n"),
+                "no accidental extra blank line when there is no user description to separate from the ad");
     }
 
     @Test

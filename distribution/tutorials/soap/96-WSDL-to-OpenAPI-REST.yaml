@@ -29,6 +29,10 @@
 api:
   port: 2000
   name: Partner REST API
+  description: |
+    # The API for Managing Partners
+    This REST style API is automatically generated from a WSDL Web Service description. It transforms and routes
+    JSON API to a SOAP based Web Service mock backend.
   flow:
     - wsdl2openapi:
         wsdl: mocks/partner.wsdl
