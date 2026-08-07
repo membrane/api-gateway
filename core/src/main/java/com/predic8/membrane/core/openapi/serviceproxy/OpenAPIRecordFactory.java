@@ -163,7 +163,10 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        String content = readInputStream(getInputStreamForLocation(spec.location));
+        String content;
+        try (InputStream is = getInputStreamForLocation(spec.location)) {
+            content = readInputStream(is);
+        }
         JsonNode node = omYaml.readTree(content);
         String location = convertPathToFileUriPathIfNeeded(resolve(spec.location));
         OpenAPIRecord record;
@@ -182,7 +185,10 @@ public class OpenAPIRecordFactory {
     private OpenAPIRecord create(OpenAPISpec spec, File file) {
         OpenAPIRecord record;
         try {
-            String content = readInputStream(new FileInputStream(file));
+            String content;
+            try (InputStream is = new FileInputStream(file)) {
+                content = readInputStream(is);
+            }
             JsonNode node = omYaml.readTree(content);
             if (OpenAPI32Parser.isOpenAPI32(node)) {
                 OpenAPI api = parseOpenAPI32(node, file.toURI().toString(), file.getPath());
@@ -207,15 +213,17 @@ public class OpenAPIRecordFactory {
     }
 
     /**
-     * Parses an already-read document into the swagger {@link OpenAPI} model from the content
-     * string obtained for {@code node}, without re-reading/re-fetching the source. Swagger 2.0
-     * documents go through the {@link OpenAPIParser} facade for its {@code SwaggerConverter};
-     * OpenAPI 3.0/3.1 documents go directly through {@link OpenAPIV3Parser}, the same engine
-     * {@code OpenAPIParser.readLocation} delegates to, so $ref resolution behaves identically.
+     * Parses an already-read document into the swagger {@link OpenAPI} model. OpenAPI 3.0/3.1
+     * documents are parsed from the in-memory {@code content} directly through
+     * {@link OpenAPIV3Parser}, the same engine {@code OpenAPIParser.readLocation} delegates to,
+     * so $ref resolution behaves identically without re-reading the source. Swagger 2.0 documents
+     * go through the {@link OpenAPIParser} facade's {@code SwaggerConverter}, which only resolves
+     * relative external {@code $ref}s when given the document's location rather than its content,
+     * so that (legacy, rarely used) branch re-reads the source once, same as before this change.
      */
     private OpenAPI parseOpenAPI(JsonNode node, String content, String location) {
         if (isSwagger2(node)) {
-            return new OpenAPIParser().readContents(content, null, getParseOptions()).getOpenAPI();
+            return new OpenAPIParser().readLocation(location, null, getParseOptions()).getOpenAPI();
         }
         return new OpenAPIV3Parser().readContents(content, null, getParseOptions(), location).getOpenAPI();
     }
