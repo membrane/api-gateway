@@ -127,4 +127,21 @@ public class DiscriminatorTest extends AbstractValidatorTest {
         assertEquals(0,errors.size());
     }
 
+    /**
+     * A discriminator selects the subschema itself, so the oneOf next to it must not be brute
+     * forced on top of the dispatch. This payload satisfies both Car and Bike, which oneOf would
+     * reject for having more than one valid subschema even though the discriminator names Car.
+     */
+    @Test
+    public void discriminatorWinsOverOneOfWhenSeveralSubschemasMatch() {
+        Map<String,Object> privateTransport = new HashMap<>();
+        privateTransport.put("kind", "CAR");
+        privateTransport.put("name", "MyCar");
+        privateTransport.put("length", 5);
+        privateTransport.put("wheels", 4);
+
+        ValidationErrors errors = validator.validate(Request.post().path("/private-transports").body(mapToJson(privateTransport)));
+        assertEquals(0,errors.size());
+    }
+
 }
