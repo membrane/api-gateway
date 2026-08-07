@@ -14,23 +14,14 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.XmlDomBody;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.SOAPUtil;
-import com.predic8.membrane.core.util.xml.XMLUtil;
-import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -74,7 +65,7 @@ abstract class AbstractSoapDomInterceptor extends AbstractInterceptor {
             return ABORT;
         }
         try {
-            return handleDocument(exc, HardenedXmlParser.getInstance().parse(XMLUtil.getInputSource(exc.getRequest())));
+            return handleDocument(exc, XmlDomBody.documentOf(exc.getRequest()));
         } catch (Exception e) {
             log.warn(internalErrorDetail(), e);
             internal(router.getConfiguration().isProduction(), getDisplayName())
@@ -85,23 +76,10 @@ abstract class AbstractSoapDomInterceptor extends AbstractInterceptor {
         }
     }
 
-    // The Transformer has no way to emit a declaration without a standalone pseudo-attribute
-    // (OMIT_XML_DECLARATION=no always adds standalone="no"), so the declaration is prepended by
-    // hand instead.
-    private static final String XML_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-
     /**
-     * Replaces the request body with the (possibly modified) document. Serialization deliberately
-     * does not re-indent: reformatting would insert whitespace into already-signed elements,
-     * invalidating their digests. The XML declaration is emitted (with its encoding), since it
-     * sits outside the document element and does not affect any digest.
+     * Replaces the request body with the (possibly modified) document.
      */
-    protected static void writeBack(Exchange exc, Document doc) throws TransformerException {
-        Transformer transformer = XMLUtil.newHardenedBestEffortTransformerFactory().newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        StringWriter writer = new StringWriter();
-        transformer.transform(new DOMSource(doc), new StreamResult(writer));
-        exc.getRequest().setBodyContent((XML_DECLARATION + "\n" + writer).getBytes(StandardCharsets.UTF_8));
+    protected static void writeBack(Exchange exc, Document doc) {
+        XmlDomBody.replaceBody(exc.getRequest(), doc);
     }
 }

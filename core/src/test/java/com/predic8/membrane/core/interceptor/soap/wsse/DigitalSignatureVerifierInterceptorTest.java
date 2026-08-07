@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 import com.predic8.membrane.core.config.security.TrustStore;
 import com.predic8.membrane.core.config.xml.Namespaces;
 import com.predic8.membrane.core.config.xml.XmlConfig;
+import com.predic8.membrane.core.http.XmlDomBody;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -134,6 +135,27 @@ class DigitalSignatureVerifierInterceptorTest extends AbstractWsseInterceptorTes
         verifierTrusting(TRUSTSTORE, BODY);
 
         assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
+    }
+
+    /**
+     * A chain of interceptors shares one {@link Document} via the {@link XmlDomBody}. This asserts
+     * that a signature added in the middle of such a chain still validates afterwards — the case a
+     * re-indenting or otherwise byte-altering serialization would break.
+     */
+    @Test
+    void signatureOverASharedDocumentSurvivesTheChain() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        WsuTimestampInterceptor timestamp = new WsuTimestampInterceptor();
+        timestamp.init(router);
+        assertEquals(Outcome.CONTINUE, timestamp.handleRequest(exchange));
+
+        bodyAndTimestampSigner().handleRequest(exchange);
+        Document signed = XmlDomBody.documentOf(exchange.getRequest());
+
+        verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP);
+        assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
+        assertSame(signed, XmlDomBody.documentOf(exchange.getRequest()),
+                "The verifier must not have replaced the shared document");
     }
 
     @Test

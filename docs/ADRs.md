@@ -1,5 +1,74 @@
 # Architecture Decision Log
 
+## ADR-006 WS-Security Configuration Grammar
+
+Status: PROPOSED
+Date: 2026-08-07
+
+### Context
+
+WS-Security support started as separate flat interceptors: `wsuTimestamp`, `usernameToken`,
+`usernameTokenVerifier`, `digitalSignature`, `digitalSignatureVerifier`. XML Encryption and
+Decryption are still to come. Flat siblings duplicate the keystore/truststore/namespace
+configuration on every element, cannot validate constraints that span elements, and leave the
+lifecycle of the `wsse:Security` header unowned.
+
+Membrane is a gateway, so the common case is not "verify" or "sign" but both on the same message:
+validate what the client sent, then re-secure for the backend, and the mirror image on the way
+back.
+
+### Decision
+
+- One `wsSecurity` element, usable in both the request and the response flow. Direction is not
+  part of its grammar; it comes from the existing `request:` / `response:` flow containers.
+- It holds two optional, ordered child lists: `validate` (consume inbound security) and `secure`
+  (apply outbound security). The list order is the processing order.
+- Order is not hardcoded. WS-SecurityPolicy sanctions both `sp:SignBeforeEncrypting` and
+  `sp:EncryptBeforeSigning`, and a receiver must mirror whatever the sender did, so a fixed
+  sign-then-encrypt order would make legitimate peers unreachable.
+- The element fixes only the group boundary: `validate` runs before `secure`. That boundary is
+  where the `wsse:Security` header targeted at this element's actor/role is consumed and removed,
+  before `secure` creates a fresh one. Headers targeted at other actors pass through untouched.
+- `init()` enforces the constraints that are decidable at configuration time, in place of a fixed
+  order — most importantly, in `secure` a part referenced by a later part must appear earlier
+  (a `signature` with `by: TIMESTAMP` listed before its `timestamp` is a configuration error,
+  not a silently under-covered message).
+- The parent owns `actor`/role, `mustUnderstand`, and the shared keyStore/trustStore.
+- Splitting into several `wsSecurity` elements stays legal, and is how a body transformation is
+  interleaved between validating and re-securing.
+- The internal processor SPI is defined over a shared `org.w3c.dom.Document`. JSR-105 types
+  (`XMLSignatureFactory`, `KeyInfoFactory`, `Reference`) must not appear on `@MCElement` config
+  classes or in the SPI, so the encryption implementation (hand-rolled vs. WSS4J) stays an open
+  choice that does not affect the grammar.
+
+### Deviation from ADR-001 (ProblemDetails)
+
+WS-Security failures return a `soap:Fault`, not ProblemDetails. SOAP clients cannot consume
+RFC 7807, and the WS-Security specification defines the fault codes to use:
+
+- missing or malformed security header: `wsse:InvalidSecurity`
+- failed authentication, bad password or digest, replayed nonce: `wsse:FailedAuthentication`
+- signature verification failure, required reference not covered: `wsse:FailedCheck`
+- unresolvable or malformed token reference: `wsse:SecurityTokenUnavailable`,
+  `wsse:InvalidSecurityToken`
+
+The fault matches the envelope version of the offending message (SOAP 1.1 `faultcode` vs.
+SOAP 1.2 `Code`/`Subcode`), and honours the existing production-mode detail suppression.
+
+One exception stays on ProblemDetails: a request body that is not SOAP at all, where no fault
+envelope can be produced.
+
+### Consequences
+
+- The five flat elements are renamed into `validate` / `secure` list parts. They are unreleased,
+  with no tutorials or integration tests, so no deprecation cycle is needed — provided no release
+  ships them as public configuration first.
+- Message bodies gain a DOM-holding representation (`XmlDomBody`) so the parts share one parsed
+  `Document` instead of each interceptor re-parsing and re-serializing. This also removes the
+  duplicated `wsu:Id` re-marking, since marking an ID mutates the `Document` itself.
+- `writeBack` must stop hardcoding `exc.getRequest()` and act on the message for the current flow;
+  SpEL evaluation must follow the actual flow instead of pinning `Flow.REQUEST`.
+
 ## ADR-005 Log Levels
 
 Status: PROPOSED

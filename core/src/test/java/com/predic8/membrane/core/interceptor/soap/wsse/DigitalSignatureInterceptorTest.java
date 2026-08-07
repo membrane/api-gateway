@@ -107,11 +107,16 @@ class DigitalSignatureInterceptorTest extends AbstractWsseInterceptorTest {
         assertSignatureIsValid(signBodyAndParse());
     }
 
+    /**
+     * The declaration must name the encoding; whether it also carries a standalone
+     * pseudo-attribute does not matter, as none of it is part of any digest.
+     * Encoding is needed for the signing.
+     */
     @Test
     void signedBodyStartsWithXmlDeclaration() throws Exception {
         signBodyAndParse();
 
-        assertTrue(rawBody().startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+        assertTrue(rawBody().startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\""), rawBody());
     }
 
     @Test
