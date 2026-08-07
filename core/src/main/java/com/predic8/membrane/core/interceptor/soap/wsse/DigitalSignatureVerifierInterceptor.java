@@ -22,6 +22,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -74,6 +76,8 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
  */
 @MCElement(name = "digitalSignatureVerifier")
 public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomInterceptor {
+
+    private static final Logger log = LoggerFactory.getLogger(DigitalSignatureVerifierInterceptor.class);
 
     private static final String DS_NS = "http://www.w3.org/2000/09/xmldsig#";
 
@@ -139,6 +143,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
             verify(doc, envelope, security, soapNs, signatureElement);
             return CONTINUE;
         } catch (VerificationException | WsSecurityXml.ReferenceResolutionException e) {
+            log.info("Signature verification failed: {}", e.getMessage());
             security(router.getConfiguration().isProduction(), getDisplayName())
                     .title("Signature verification failed.")
                     .status(403)
@@ -339,9 +344,19 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
 
     private void checkRequiredReference(Document doc, Element envelope, Element security, String soapNs,
                                          XMLSignature signature, SignatureReference required) {
-        for (Element expected : resolveReference(doc, envelope, security, soapNs, required, xmlConfig)) {
-            checkRequiredElement(doc, signature, required, expected);
+        try {
+            for (Element expected : resolveReference(doc, envelope, security, soapNs, required, xmlConfig)) {
+                checkRequiredElement(doc, signature, required, expected);
+            }
+        } catch (VerificationException | WsSecurityXml.ReferenceResolutionException e) {
+            throw new VerificationException("[" + describe(required) + "] " + e.getMessage(), e);
         }
+    }
+
+    private static String describe(SignatureReference required) {
+        return required.getBy() == SignatureReference.By.XPATH
+                ? "XPATH " + required.getXpath()
+                : required.getBy().toString();
     }
 
     private void checkRequiredElement(Document doc, XMLSignature signature, SignatureReference required, Element expected) {

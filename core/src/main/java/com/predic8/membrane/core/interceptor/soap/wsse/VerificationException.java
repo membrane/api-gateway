@@ -21,4 +21,8 @@ class VerificationException extends RuntimeException {
     VerificationException(String message) {
         super(message);
     }
+
+    VerificationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
