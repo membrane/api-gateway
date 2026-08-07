@@ -50,9 +50,12 @@ where the only symptom is a rejected message with no obvious cause.
 - Recursion over a parsed document becomes a review item for XML-handling code, since the parser
   offers no backstop. The comment on `WsSecurityXmlUtil.forEachDescendantElement` records the reason
   at the one place it currently matters.
-- The JVM-wide entity limits in `start_router.sh`
-  (`jdk.xml.maxGeneralEntitySizeLimit`, `jdk.xml.totalEntitySizeLimit`) stay as they are. They cap
-  entity *expansion*, which no legitimate payload relies on, and are not affected by this decision.
+- The `jdk.xml.*` entity options in `start_router.sh` are a separate mechanism and are untouched by
+  this decision. Note they do the opposite of capping: both are set to `0`, which in JAXP means *no
+  limit*, so `jdk.xml.totalEntitySizeLimit=0` removes the JDK's default cap and
+  `jdk.xml.maxGeneralEntitySizeLimit=0` is a no-op. They also only apply when the shell launcher
+  starts the process, so a WAR or embedded deployment does not get them — see
+  [#3128](https://github.com/membrane/api-gateway/issues/3128).
 
 ## ADR-006 WS-Security Configuration Grammar
 
