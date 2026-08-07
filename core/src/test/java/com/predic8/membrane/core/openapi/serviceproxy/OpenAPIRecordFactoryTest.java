@@ -13,9 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,6 +30,9 @@ import static io.swagger.v3.oas.models.SpecVersion.V30;
 import static io.swagger.v3.oas.models.SpecVersion.V31;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class OpenAPIRecordFactoryTest {
 
@@ -184,6 +190,24 @@ class OpenAPIRecordFactoryTest {
         assertTrue(search.has("additionalOperations"));
         assertTrue(search.path("query").path("responses").path("200").path("content")
                 .path("application/jsonl").has("itemSchema"));
+    }
+
+    @Test
+    void readsLocationExactlyOnce() throws Exception {
+        DummyTestRouter router = new DummyTestRouter();
+        router.getConfiguration().setBaseLocation("src/test/resources/openapi/specs/");
+
+        ResolverMap spyResolverMap = Mockito.spy(router.getResolverMap());
+        Router spyRouter = Mockito.spy((Router) router);
+        Mockito.when(spyRouter.getResolverMap()).thenReturn(spyResolverMap);
+
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setLocation("oas31/request-reference.yaml");
+
+        new OpenAPIRecordFactory(spyRouter, router.getConfiguration().getBaseLocation())
+                .create(singletonList(spec));
+
+        verify(spyResolverMap, times(1)).resolve(anyString());
     }
 
     @Test
