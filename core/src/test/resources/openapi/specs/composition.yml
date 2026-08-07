@@ -56,6 +56,61 @@ paths:
                             - CN
                             - US
 
+  /composition-ref-allof:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefAllOfType"
+
+  /composition-ref-oneof:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefOneOfType"
+
+  /composition-ref-anyof:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefAnyOfType"
+
+  /composition-ref-not:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefNotType"
+
+  /composition-ref-cycle:
+    post:
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefCycleA"
+
 components:
   schemas:
     Address:
@@ -65,5 +120,49 @@ components:
           type: string
         city:
           type: string
+    RefAllOfType:
+      type: object
+      allOf:
+        - type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - SOME-VALUE
+    RefOneOfType:
+      oneOf:
+        - type: object
+          required: [ email ]
+          properties:
+            email:
+              type: string
+        - type: object
+          required: [ phone ]
+          properties:
+            phone:
+              type: string
+    RefAnyOfType:
+      anyOf:
+        - type: object
+          required: [ email ]
+          properties:
+            email:
+              type: string
+        - type: object
+          required: [ phone ]
+          properties:
+            phone:
+              type: string
+    RefNotType:
+      not:
+        type: object
+    RefCycleA:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/RefCycleB"
+    RefCycleB:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/RefCycleA"
 
 
