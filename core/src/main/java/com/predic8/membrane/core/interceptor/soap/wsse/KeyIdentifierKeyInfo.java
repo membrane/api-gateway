@@ -24,7 +24,7 @@ import com.predic8.membrane.annot.MCElement;
  * is embedded in the <code>wsse:KeyIdentifier</code>; with <code>THUMBPRINT_SHA1</code> only its
  * SHA-1 thumbprint is, and the verifier looks the matching certificate up in its truststore.
  */
-@MCElement(name = "keyIdentifier", component = false, id = "digitalSignature-keyIdentifier")
+@MCElement(name = "keyIdentifier", component = false, id = "wsSecurity-signature-keyIdentifier")
 public class KeyIdentifierKeyInfo {
 
     public enum ValueType {X509_V3, THUMBPRINT_SHA1}

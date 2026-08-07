@@ -23,6 +23,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,6 +34,10 @@ class XmlDomBodyTest {
             <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
               <s:Body><p:order xmlns:p="http://example.com/p"><p:id>  spaced  </p:id></p:order></s:Body>
             </s:Envelope>""";
+
+    private static final String LATIN1_XML = """
+            <?xml version="1.0" encoding="ISO-8859-1"?>
+            <greeting>Grüße</greeting>""";
 
     private static Request requestWith(byte[] content) {
         Request req = new Request();
@@ -88,6 +93,81 @@ class XmlDomBodyTest {
         assertEquals(req.getBody().getLength(), req.getHeader().getContentLength());
         assertNull(req.getHeader().getFirstValue(TRANSFER_ENCODING));
         assertNull(req.getHeader().getFirstValue(CONTENT_ENCODING));
+    }
+
+    /**
+     * A document that declared an encoding is written back in it, so a header claiming a different
+     * one has to be corrected to match: RFC 7303 gives the Content-Type charset precedence over the
+     * declaration, so leaving it would have a receiver misdecode the body - and a WS-Security peer
+     * digest bytes other than the signed ones.
+     */
+    @Test
+    void replaceBodyCorrectsAContentTypeCharsetThatContradictsTheBytes() {
+        Request req = requestWith(LATIN1_XML.getBytes(ISO_8859_1));
+        req.getHeader().setContentType("text/xml; charset=UTF-8");
+
+        XmlDomBody.replaceBody(req, XmlDomBody.documentOf(req));
+
+        assertEquals("ISO-8859-1", req.getHeader().getCharset());
+        assertTrue(req.getHeader().getContentType().startsWith("text/xml"), req.getHeader().getContentType());
+        // Read back as the corrected header now instructs: the character survives.
+        assertTrue(new String(req.getBody().getContent(), ISO_8859_1).contains("Grüße"),
+                new String(req.getBody().getContent(), ISO_8859_1));
+    }
+
+    /**
+     * The mirror image: a document with no declared encoding comes out UTF-8, so a header left
+     * saying ISO-8859-1 is the one that is wrong.
+     */
+    @Test
+    void replaceBodyCorrectsTheCharsetOfAnUndeclaredDocumentToUtf8() {
+        Request req = requestWith("<greeting>Grüße</greeting>".getBytes(UTF_8));
+        req.getHeader().setContentType("text/xml; charset=ISO-8859-1");
+
+        XmlDomBody.replaceBody(req, XmlDomBody.documentOf(req));
+
+        assertEquals("UTF-8", req.getHeader().getCharset());
+        assertTrue(new String(req.getBody().getContent(), UTF_8).contains("Grüße"),
+                new String(req.getBody().getContent(), UTF_8));
+    }
+
+    /**
+     * A charset the sender omitted stays omitted: with no parameter the XML declaration decides, so
+     * the two cannot contradict each other and there is nothing to correct.
+     */
+    @Test
+    void replaceBodyDoesNotAddACharsetThatWasNotThere() {
+        Request req = requestWith(LATIN1_XML.getBytes(ISO_8859_1));
+        req.getHeader().setContentType("text/xml");
+
+        XmlDomBody.replaceBody(req, XmlDomBody.documentOf(req));
+
+        assertEquals("text/xml", req.getHeader().getContentType());
+        assertNull(req.getHeader().getCharset());
+    }
+
+    /**
+     * An agreeing charset is left byte-identical rather than rewritten through the Content-Type
+     * parser, which would reorder or requote parameters for no reason.
+     */
+    @Test
+    void replaceBodyLeavesAnAgreeingCharsetUntouched() {
+        Request req = requestWith(LATIN1_XML.getBytes(ISO_8859_1));
+        req.getHeader().setContentType("text/xml; charset=iso-8859-1");
+
+        XmlDomBody.replaceBody(req, XmlDomBody.documentOf(req));
+
+        assertEquals("text/xml; charset=iso-8859-1", req.getHeader().getContentType());
+    }
+
+    @Test
+    void replaceBodyLeavesAnUnparseableContentTypeAlone() {
+        Request req = requestWith(SOAP.getBytes(UTF_8));
+        req.getHeader().setContentType("not a media type at all");
+
+        XmlDomBody.replaceBody(req, XmlDomBody.documentOf(req));
+
+        assertEquals("not a media type at all", req.getHeader().getContentType());
     }
 
     @Test

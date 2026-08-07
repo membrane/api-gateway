@@ -15,8 +15,6 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -25,63 +23,35 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.getChildrenByName;
 
 /**
- * @description Adds a WS-Security <code>wsu:Timestamp</code> (<code>Created</code>/<code>Expires</code>)
- * to the SOAP request's <code>wsse:Security</code> header, giving downstream signing/verification a
- * freshness window to defend against message replay. Place before <code>digitalSignature</code> in
- * the flow and reference it with <code>by: TIMESTAMP</code> to have it covered by the signature.
- * @topic 3. Security
- * @yaml <pre><code>
- * api:
- *   port: 2000
- *   flow:
- *     - wsuTimestamp:
- *         ttl: PT5M
- *     - digitalSignature:
- *         keystore:
- *           location: signing.p12
- *           password: secret
- *         references:
- *           - by: TIMESTAMP
- * </code></pre>
+ * @description Adds a <code>wsu:Timestamp</code> (<code>Created</code>/<code>Expires</code>) to the
+ * <code>wsse:Security</code> header, giving a signature a freshness window to defend against
+ * message replay. On its own it defends against nothing: list it before a <code>signature</code>
+ * that references it with <code>by: TIMESTAMP</code>, so the window itself is covered and cannot be
+ * rewritten in transit.
  */
-@MCElement(name = "wsuTimestamp")
-public class WsuTimestampInterceptor extends AbstractSoapDomInterceptor {
+@MCElement(name = "timestamp", component = false, id = "wsSecurity-timestamp")
+public class TimestampSecurePart extends SecurePart {
 
     private static final Duration DEFAULT_TTL = Duration.ofMinutes(5);
 
     private Duration ttl = DEFAULT_TTL;
 
     @Override
-    protected String notSoapDetail() {
-        return "no wsu:Timestamp could be added.";
-    }
-
-    @Override
-    protected String internalErrorDetail() {
-        return "Could not add wsu:Timestamp to SOAP body.";
-    }
-
-    @Override
-    protected Outcome handleDocument(Exchange exc, Document doc) throws Exception {
-        Element envelope = doc.getDocumentElement();
-        String soapNs = envelope.getNamespaceURI();
-
-        Element security = getOrCreateSecurity(doc, getOrCreateHeader(doc, envelope, soapNs));
-        removeExistingTimestamps(security);
-        security.insertBefore(createTimestamp(doc), security.getFirstChild());
-
-        writeBack(exc, doc);
-        return CONTINUE;
-    }
-
-    private static void removeExistingTimestamps(Element security) {
-        for (Element timestamp : getChildrenByName(security, WSU_NS, "Timestamp")) {
-            security.removeChild(timestamp);
+    void process(WsSecurityContext ctx) {
+        Element security = ctx.security();
+        // The header may be one the message already carried (nothing consumed it), in which case its
+        // stale wsu:Timestamp is replaced rather than joined by a second one - WS-Security allows
+        // only one per header.
+        for (Element existing : getChildrenByName(security, WSU_NS, "Timestamp")) {
+            security.removeChild(existing);
         }
+        // wsu:Timestamp is defined to be the first child of wsse:Security, so a receiver can
+        // establish freshness before spending work on the rest of the header.
+        security.insertBefore(createTimestamp(ctx.document()), security.getFirstChild());
     }
 
     private Element createTimestamp(Document doc) {
@@ -105,8 +75,8 @@ public class WsuTimestampInterceptor extends AbstractSoapDomInterceptor {
 
     /**
      * @description How long the timestamp stays fresh, i.e. <code>Expires</code> minus
-     * <code>Created</code>, as an ISO-8601 duration. A <code>digitalSignatureVerifier</code>
-     * checking a required <code>TIMESTAMP</code> reference rejects requests outside this window.
+     * <code>Created</code>, as an ISO-8601 duration. A validating <code>signature</code> with a
+     * required <code>TIMESTAMP</code> reference rejects messages outside this window.
      * @default PT5M
      */
     @MCAttribute

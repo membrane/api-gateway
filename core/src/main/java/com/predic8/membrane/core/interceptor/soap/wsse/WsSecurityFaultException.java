@@ -14,15 +14,26 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 /**
- * Thrown when a WS-Security check on an incoming request fails, i.e. the request is
- * well-formed but not acceptable. Verifiers turn this into a 403 Problem Details response.
+ * Thrown when a WS-Security check on a message fails, i.e. the message is well-formed SOAP but not
+ * acceptable. {@link WsSecurityInterceptor} turns this into the {@code soap:Fault} named by
+ * {@link #getCode()}; the exception's message becomes the fault detail, which production mode
+ * suppresses.
  */
-class VerificationException extends RuntimeException {
-    VerificationException(String message) {
+class WsSecurityFaultException extends RuntimeException {
+
+    private final WsSecurityFaultCode code;
+
+    WsSecurityFaultException(WsSecurityFaultCode code, String message) {
         super(message);
+        this.code = code;
     }
 
-    VerificationException(String message, Throwable cause) {
+    WsSecurityFaultException(WsSecurityFaultCode code, String message, Throwable cause) {
         super(message, cause);
+        this.code = code;
+    }
+
+    WsSecurityFaultCode getCode() {
+        return code;
     }
 }

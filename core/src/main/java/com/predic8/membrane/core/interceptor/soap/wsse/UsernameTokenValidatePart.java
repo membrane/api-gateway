@@ -15,12 +15,9 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import com.predic8.membrane.core.util.ConfigurationException;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.nio.charset.StandardCharsets;
@@ -33,33 +30,23 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.FAILED_AUTHENTICATION;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY_TOKEN;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
 
 /**
- * @description Verifies a WS-Security <code>wsse:UsernameToken</code> on an incoming SOAP request,
- * as added by e.g. the <code>usernameToken</code> interceptor. Checks the username and, depending
- * on the token's <code>Password</code> type, either the plain-text password or the WS-Security
- * digest against the expected values. When the token carries a <code>wsu:Created</code>/
- * <code>wsse:Nonce</code>, this also rejects stale tokens and replayed nonces - the standard
- * WS-Security anti-replay mechanism for UsernameToken. A missing token returns 401; an invalid,
- * stale, or replayed one returns 403, both as Problem Details. Only acts on requests.
- * @topic 3. Security
- * @yaml <pre><code>
- * api:
- *   port: 2000
- *   flow:
- *     - usernameTokenVerifier:
- *         username: ${property.apiUser}
- *         password: ${property.apiPassword}
- * </code></pre>
+ * @description Verifies a <code>wsse:UsernameToken</code> in the inbound
+ * <code>wsse:Security</code> header. Checks the username and, depending on the token's
+ * <code>Password</code> type, either the plain-text password or the WS-Security digest against the
+ * expected values. When the token carries a <code>wsu:Created</code>/<code>wsse:Nonce</code>, this
+ * also rejects stale tokens and replayed nonces — the standard WS-Security anti-replay mechanism
+ * for UsernameToken. A missing or malformed token answers <code>wsse:InvalidSecurityToken</code>,
+ * a wrong, stale or replayed credential <code>wsse:FailedAuthentication</code>.
  */
-@MCElement(name = "usernameTokenVerifier")
-public class UsernameTokenVerifierInterceptor extends AbstractSoapDomInterceptor {
+@MCElement(name = "usernameToken", component = false, id = "wsSecurity-validate-usernameToken")
+public class UsernameTokenValidatePart extends ValidatePart {
 
     private static final Duration DEFAULT_FRESHNESS_WINDOW = Duration.ofMinutes(5);
 
@@ -78,62 +65,29 @@ public class UsernameTokenVerifierInterceptor extends AbstractSoapDomInterceptor
     private final AtomicLong lastPurgeEpochSecond = new AtomicLong();
 
     @Override
-    public void init() {
-        super.init();
+    protected void init() {
         if (username == null || username.isBlank()) {
-            throw new ConfigurationException("usernameTokenVerifier requires a username attribute.");
+            throw new ConfigurationException("wsSecurity validate/usernameToken requires a username attribute.");
         }
         if (password == null || password.isBlank()) {
-            throw new ConfigurationException("usernameTokenVerifier requires a password attribute.");
+            throw new ConfigurationException("wsSecurity validate/usernameToken requires a password attribute.");
         }
-        usernameExpression = TemplateExchangeExpression.newInstance(this, SPEL, username, router, TEXT_SERIALIZATION);
-        passwordExpression = TemplateExchangeExpression.newInstance(this, SPEL, password, router, TEXT_SERIALIZATION);
+        usernameExpression = TemplateExchangeExpression.newInstance(
+                parent, SPEL, username, parent.getRouter(), TEXT_SERIALIZATION);
+        passwordExpression = TemplateExchangeExpression.newInstance(
+                parent, SPEL, password, parent.getRouter(), TEXT_SERIALIZATION);
     }
 
     @Override
-    protected String notSoapDetail() {
-        return "no wsse:UsernameToken could be verified.";
-    }
-
-    @Override
-    protected String internalErrorDetail() {
-        return "Could not verify wsse:UsernameToken on SOAP message.";
-    }
-
-    @Override
-    protected Outcome handleDocument(Exchange exc, Document doc) throws Exception {
-        Element usernameToken = findUsernameToken(doc);
+    void process(WsSecurityContext ctx) throws Exception {
+        Element usernameToken = getFirstChildByName(ctx.security(), WSSE_NS, "UsernameToken");
         if (usernameToken == null) {
-            security(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("UsernameToken missing.")
-                    .status(401)
-                    .detail("Request has no wsse:Security/wsse:UsernameToken to verify.")
-                    .buildAndSetResponse(exc);
-            return ABORT;
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "wsse:Security carries no wsse:UsernameToken.");
         }
-        try {
-            verify(exc, usernameToken);
-            return CONTINUE;
-        } catch (VerificationException e) {
-            security(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("UsernameToken verification failed.")
-                    .status(403)
-                    .detail(e.getMessage())
-                    .buildAndSetResponse(exc);
-            return ABORT;
-        }
-    }
 
-    private static Element findUsernameToken(Document doc) {
-        Element envelope = doc.getDocumentElement();
-        Element header = getFirstChildByName(envelope, envelope.getNamespaceURI(), "Header");
-        Element securityHeader = header == null ? null : getFirstChildByName(header, WSSE_NS, "Security");
-        return securityHeader == null ? null : getFirstChildByName(securityHeader, WSSE_NS, "UsernameToken");
-    }
-
-    private void verify(Exchange exc, Element usernameToken) throws Exception {
-        String expectedUsername = usernameExpression.evaluate(exc, Flow.REQUEST, String.class);
-        String expectedPassword = passwordExpression.evaluate(exc, Flow.REQUEST, String.class);
+        String expectedUsername = usernameExpression.evaluate(ctx.exchange(), ctx.flow(), String.class);
+        String expectedPassword = passwordExpression.evaluate(ctx.exchange(), ctx.flow(), String.class);
         // A template expression whose value doesn't resolve (e.g. ${property.apiUser} when nothing
         // set that property) renders as the literal string "null" - see
         // TemplateExchangeExpression.evaluateMultiple. Comparing against that would authenticate
@@ -161,7 +115,7 @@ public class UsernameTokenVerifierInterceptor extends AbstractSoapDomInterceptor
     private static void checkUsername(Element usernameToken, String expectedUsername) {
         Element usernameEl = getFirstChildByName(usernameToken, WSSE_NS, "Username");
         if (!constantTimeEquals(expectedUsername, usernameEl == null ? "" : usernameEl.getTextContent())) {
-            throw new VerificationException("Unknown username.");
+            throw new WsSecurityFaultException(FAILED_AUTHENTICATION, "Unknown username.");
         }
     }
 
@@ -169,29 +123,31 @@ public class UsernameTokenVerifierInterceptor extends AbstractSoapDomInterceptor
                                       Element nonceEl, String created) throws Exception {
         Element passwordEl = getFirstChildByName(usernameToken, WSSE_NS, "Password");
         if (passwordEl == null) {
-            throw new VerificationException("wsse:UsernameToken has no wsse:Password.");
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "wsse:UsernameToken has no wsse:Password.");
         }
         if (!PASSWORD_DIGEST_TYPE.equals(passwordEl.getAttribute("Type"))) {
             if (!constantTimeEquals(expectedPassword, passwordEl.getTextContent())) {
-                throw new VerificationException("Password does not match.");
+                throw new WsSecurityFaultException(FAILED_AUTHENTICATION, "Password does not match.");
             }
             return;
         }
         if (nonceEl == null || created == null) {
-            throw new VerificationException("wsse:Password of type PasswordDigest requires wsse:Nonce and wsu:Created.");
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "wsse:Password of type PasswordDigest requires wsse:Nonce and wsu:Created.");
         }
         String expectedDigest = usernameTokenDigest(decodeNonce(nonceEl.getTextContent()), created, expectedPassword);
         if (!constantTimeEquals(expectedDigest, passwordEl.getTextContent())) {
-            throw new VerificationException("Password digest does not match.");
+            throw new WsSecurityFaultException(FAILED_AUTHENTICATION, "Password digest does not match.");
         }
     }
 
-    // Not a VerificationException: this is a misconfigured gateway, not a bad request - it must
-    // surface as an internal error (500) rather than as a plain authentication failure.
+    // Not a fault: this is a misconfigured gateway, not a bad message - it must surface as an
+    // internal error (500 Problem Details) rather than as a plain authentication failure.
     private static void requireResolved(String value, String attribute) {
         if (value == null || value.isBlank() || "null".equals(value)) {
             throw new ConfigurationException(
-                    "usernameTokenVerifier: the " + attribute + " expression did not resolve to a value.");
+                    "wsSecurity validate/usernameToken: the " + attribute + " expression did not resolve to a value.");
         }
     }
 
@@ -199,14 +155,16 @@ public class UsernameTokenVerifierInterceptor extends AbstractSoapDomInterceptor
         try {
             return Instant.parse(value);
         } catch (DateTimeParseException e) {
-            throw new VerificationException("wsu:Created is not a valid xs:dateTime: " + value);
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "wsu:Created is not a valid xs:dateTime: " + value);
         }
     }
 
     private void checkFreshness(Instant created) {
         Instant now = Instant.now();
         if (created.isBefore(now.minus(freshnessWindow)) || created.isAfter(now.plus(freshnessWindow))) {
-            throw new VerificationException("wsu:Created (" + created + ") is outside the allowed freshness window.");
+            throw new WsSecurityFaultException(FAILED_AUTHENTICATION,
+                    "wsu:Created (" + created + ") is outside the allowed freshness window.");
         }
     }
 
@@ -216,11 +174,13 @@ public class UsernameTokenVerifierInterceptor extends AbstractSoapDomInterceptor
         if (seenNonces.size() >= MAX_REMEMBERED_NONCES) {
             purgeExpiredNonces();
             if (seenNonces.size() >= MAX_REMEMBERED_NONCES) {
-                throw new VerificationException("Replay cache is full; rejecting the request.");
+                throw new WsSecurityFaultException(FAILED_AUTHENTICATION,
+                        "Replay cache is full; rejecting the message.");
             }
         }
         if (seenNonces.putIfAbsent(key, created.plus(freshnessWindow)) != null) {
-            throw new VerificationException("Nonce has already been used; rejecting as a replay.");
+            throw new WsSecurityFaultException(FAILED_AUTHENTICATION,
+                    "Nonce has already been used; rejecting as a replay.");
         }
     }
 
@@ -241,7 +201,7 @@ public class UsernameTokenVerifierInterceptor extends AbstractSoapDomInterceptor
         try {
             return Base64.getDecoder().decode(nonce);
         } catch (IllegalArgumentException e) {
-            throw new VerificationException("wsse:Nonce is not valid Base64.");
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN, "wsse:Nonce is not valid Base64.");
         }
     }
 

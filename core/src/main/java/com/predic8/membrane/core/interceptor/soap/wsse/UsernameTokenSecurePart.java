@@ -15,8 +15,6 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
 import org.w3c.dom.Document;
@@ -26,20 +24,17 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
 
 /**
- * @description Adds a WS-Security <code>UsernameToken</code> to the SOAP header of the request.
- * Reuses an existing <code>soap:Header</code>/<code>wsse:Security</code> element if present,
- * otherwise creates them. Username and password are evaluated as SpEL template expressions,
- * so both static values and dynamic values (e.g. <code>${property.apiUser}</code>) are supported.
- * @topic 3. Security
+ * @description Adds a <code>wsse:UsernameToken</code> to the <code>wsse:Security</code> header.
+ * Username and password are evaluated as SpEL template expressions, so both static values and
+ * values taken from the exchange (e.g. <code>${property.apiUser}</code>) are supported.
  */
-@MCElement(name = "usernameToken")
-public class UsernameTokenInterceptor extends AbstractSoapDomInterceptor {
+@MCElement(name = "usernameToken", component = false, id = "wsSecurity-usernameToken")
+public class UsernameTokenSecurePart extends SecurePart {
 
     public enum PasswordType {PLAIN_TEXT, DIGEST}
 
@@ -51,35 +46,21 @@ public class UsernameTokenInterceptor extends AbstractSoapDomInterceptor {
     private ExchangeExpression passwordExpression;
 
     @Override
-    public void init() {
-        super.init();
-        usernameExpression = TemplateExchangeExpression.newInstance(this, SPEL, username, router, TEXT_SERIALIZATION);
-        passwordExpression = TemplateExchangeExpression.newInstance(this, SPEL, password, router, TEXT_SERIALIZATION);
+    protected void init() {
+        usernameExpression = TemplateExchangeExpression.newInstance(
+                parent, SPEL, username, parent.getRouter(), TEXT_SERIALIZATION);
+        passwordExpression = TemplateExchangeExpression.newInstance(
+                parent, SPEL, password, parent.getRouter(), TEXT_SERIALIZATION);
     }
 
     @Override
-    protected String notSoapDetail() {
-        return "no wsse:UsernameToken could be added.";
-    }
+    void process(WsSecurityContext ctx) throws Exception {
+        // The flow comes from the context, not a hardcoded REQUEST: on the response flow the
+        // expressions have to see the response.
+        String user = usernameExpression.evaluate(ctx.exchange(), ctx.flow(), String.class);
+        String pass = passwordExpression.evaluate(ctx.exchange(), ctx.flow(), String.class);
 
-    @Override
-    protected String internalErrorDetail() {
-        return "Could not add wsse:UsernameToken to SOAP body.";
-    }
-
-    @Override
-    protected Outcome handleDocument(Exchange exc, Document doc) throws Exception {
-        String user = usernameExpression.evaluate(exc, Flow.REQUEST, String.class);
-        String pass = passwordExpression.evaluate(exc, Flow.REQUEST, String.class);
-
-        Element envelope = doc.getDocumentElement();
-        String soapNs = envelope.getNamespaceURI();
-
-        Element security = getOrCreateSecurity(doc, getOrCreateHeader(doc, envelope, soapNs));
-        security.appendChild(createUsernameToken(doc, user, pass));
-
-        writeBack(exc, doc);
-        return CONTINUE;
+        ctx.security().appendChild(createUsernameToken(ctx.document(), user, pass));
     }
 
     private Element createUsernameToken(Document doc, String user, String pass) throws Exception {

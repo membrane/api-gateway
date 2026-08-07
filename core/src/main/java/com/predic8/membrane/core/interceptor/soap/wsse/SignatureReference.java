@@ -18,14 +18,14 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.util.ConfigurationException;
 
 /**
- * @description One element to sign or verify, referenced from a <code>digitalSignature</code>
- * interceptor's <code>references</code> list, or a <code>digitalSignatureVerifier</code>
- * interceptor's <code>requiredReferences</code> list. Selects the target either by a well-known
+ * @description One element to sign or verify, referenced from a <code>secure</code>/<code>signature</code>'s
+ * <code>references</code> list, or a <code>validate</code>/<code>signature</code>'s
+ * <code>requiredReferences</code> list. Selects the target either by a well-known
  * name (<code>BODY</code>, <code>HEADER</code>, <code>TIMESTAMP</code>, <code>BST</code>) or by an
  * XPath expression (set <code>xpath</code>; <code>by</code> is then inferred and must be omitted).
  * {@link #setId(String)} only applies when signing; it's unused when verifying.
  */
-@MCElement(name = "reference", component = false, id = "digitalSignature-reference")
+@MCElement(name = "reference", component = false, id = "wsSecurity-signature-reference")
 public class SignatureReference {
 
     public enum By {BODY, HEADER, TIMESTAMP, XPATH, BST}
@@ -46,7 +46,7 @@ public class SignatureReference {
      * <code>wsse:BinarySecurityToken</code> created for the <code>securityTokenReference</code>
      * KeyInfo mode, so it is itself covered by the signature; only valid when
      * <code>securityTokenReference</code> is configured on the enclosing
-     * <code>digitalSignature</code> interceptor. Must be omitted when {@link #setXpath(String)} is
+     * <code>signature</code>. Must be omitted when {@link #setXpath(String)} is
      * set — in that case the reference is always resolved by XPath.
      * @default BODY
      */
@@ -66,7 +66,7 @@ public class SignatureReference {
      * individually. Setting <code>xpath</code> implies {@link #setBy(By)} is <code>XPATH</code>;
      * <code>by</code> must then be omitted. The <code>soap</code>, <code>wsse</code>, and
      * <code>wsu</code> prefixes are always available; additional prefixes can be declared on the
-     * enclosing interceptor's <code>xmlConfig</code>.
+     * enclosing <code>wsSecurity</code> element's <code>xmlConfig</code>.
      * @example //*[local-name()='Timestamp']
      */
     @MCAttribute

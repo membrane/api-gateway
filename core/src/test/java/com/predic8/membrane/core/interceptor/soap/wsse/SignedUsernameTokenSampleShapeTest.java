@@ -19,14 +19,12 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.util.List;
-
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Verifies that chaining {@code usernameToken} and {@code digitalSignature} (with
+ * Verifies that a {@code secure} list of {@code usernameToken} and {@code signature} (with
  * {@code securityTokenReference}) reproduces the WS-Security shape a CXF/WSS4J-based service
  * commonly produces: a signed {@code wsse:UsernameToken}, with the signing certificate referenced
  * via a {@code wsse:BinarySecurityToken} + {@code wsse:SecurityTokenReference} rather than inlined,
@@ -34,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@code ec:InclusiveNamespaces} prefix lists, and {@code mustUnderstand} that such an
  * implementation typically emits. All values here (username, password, certificate) are synthetic.
  */
-class SignedUsernameTokenSampleShapeTest extends AbstractWsseInterceptorTest {
+class SignedUsernameTokenSampleShapeTest extends AbstractWsSecurityTest {
 
     private static final String X509_V3_VALUE_TYPE =
             "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
@@ -55,20 +53,19 @@ class SignedUsernameTokenSampleShapeTest extends AbstractWsseInterceptorTest {
 
     @BeforeEach
     void signUsernameToken() throws Exception {
-        UsernameTokenInterceptor usernameTokenInterceptor = new UsernameTokenInterceptor();
-        usernameTokenInterceptor.setUsername(USERNAME);
-        usernameTokenInterceptor.setPassword(PASSWORD);
-        usernameTokenInterceptor.init(router);
+        UsernameTokenSecurePart usernameToken = new UsernameTokenSecurePart();
+        usernameToken.setUsername(USERNAME);
+        usernameToken.setPassword(PASSWORD);
 
-        DigitalSignatureInterceptor digitalSignatureInterceptor = new DigitalSignatureInterceptor();
-        digitalSignatureInterceptor.setKeyStore(signingKeyStore(ALIAS_1));
-        digitalSignatureInterceptor.setSecurityTokenReference(new SecurityTokenReferenceKeyInfo());
-        digitalSignatureInterceptor.setReferences(List.of(xpathReference("//*[local-name()='UsernameToken']")));
-        digitalSignatureInterceptor.init(router);
+        SignatureSecurePart signature = signature(xpathReference("//*[local-name()='UsernameToken']"));
+        signature.setSecurityTokenReference(new SecurityTokenReferenceKeyInfo());
+
+        WsSecurityInterceptor wsSecurity = securing(usernameToken, signature);
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        wsSecurity.init(router);
 
         exchangeWithBody(SAMPLE_SOAP_BODY);
-        assertEquals(Outcome.CONTINUE, usernameTokenInterceptor.handleRequest(exchange));
-        assertEquals(Outcome.CONTINUE, digitalSignatureInterceptor.handleRequest(exchange));
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
 
         result = parseBody();
     }

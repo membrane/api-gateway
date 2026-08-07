@@ -16,14 +16,8 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.security.TrustStore;
-import com.predic8.membrane.core.config.xml.XmlConfig;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.ConfigurationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -40,117 +34,62 @@ import java.security.cert.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
 
 /**
  * @description Verifies the XML Signature (<a href="http://www.w3.org/2000/09/xmldsig#">XML-DSig</a>)
- * on an incoming SOAP request, as added by e.g. the <code>digitalSignature</code> interceptor.
- * Beyond checking that the signature is cryptographically valid, this validates the signing
- * certificate against the configured truststore, and confirms the signature actually covers every
- * element listed in <code>requiredReferences</code> - the defense against XML Signature Wrapping
- * attacks, where an attacker leaves a validly-signed but irrelevant fragment in the message while
- * the element downstream logic actually reads is unsigned or swapped. A missing signature returns
- * 401; an invalid, untrusted, or incomplete one returns 403, both as Problem Details. Freshness of a
- * <code>wsu:Timestamp</code> is only enforced when <code>requiredReferences</code> contains a
- * <code>TIMESTAMP</code> entry; without one, a captured signed request stays replayable. Only acts
- * on requests.
- * @topic 3. Security
- * @yaml <pre><code>
- * api:
- *   port: 2000
- *   flow:
- *     - digitalSignatureVerifier:
- *         truststore:
- *           location: partner-ca.p12
- *           password: secret
- *         requiredReferences:
- *           - by: BODY
- *           - by: TIMESTAMP
- * </code></pre>
+ * in the inbound <code>wsse:Security</code> header. Beyond checking that the signature is
+ * cryptographically valid, this validates the signing certificate against the enclosing
+ * <code>wsSecurity</code> element's <code>truststore</code>, and confirms the signature actually
+ * covers every element listed in <code>requiredReferences</code> — the defense against XML
+ * Signature Wrapping attacks, where an attacker leaves a validly-signed but irrelevant fragment in
+ * the message while the element downstream logic actually reads is unsigned or swapped. Freshness of
+ * a <code>wsu:Timestamp</code> is only enforced when <code>requiredReferences</code> contains a
+ * <code>TIMESTAMP</code> entry; without one, a captured signed message stays replayable.
  */
-@MCElement(name = "digitalSignatureVerifier")
-public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomInterceptor {
-
-    private static final Logger log = LoggerFactory.getLogger(DigitalSignatureVerifierInterceptor.class);
+@MCElement(name = "signature", component = false, id = "wsSecurity-validate-signature")
+public class SignatureValidatePart extends ValidatePart {
 
     private static final String DS_NS = "http://www.w3.org/2000/09/xmldsig#";
 
     private static final Duration DEFAULT_CLOCK_SKEW = Duration.ofMinutes(5);
 
-    private TrustStore trustStore;
     private List<SignatureReference> requiredReferences = new ArrayList<>();
     private Duration clockSkew = DEFAULT_CLOCK_SKEW;
-    private XmlConfig xmlConfig;
 
     private java.security.KeyStore trustKeyStore;
 
     @Override
-    public void init() {
-        super.init();
-        if (trustStore == null) {
-            throw new ConfigurationException("digitalSignatureVerifier requires a <truststore> child element.");
+    protected void init() {
+        if (parent.getTrustStore() == null) {
+            throw new ConfigurationException(
+                    "wsSecurity validate/signature requires a <truststore> on the enclosing wsSecurity element.");
         }
         if (requiredReferences.isEmpty()) {
-            throw new ConfigurationException("digitalSignatureVerifier requires at least one <requiredReferences> child element.");
+            throw new ConfigurationException(
+                    "wsSecurity validate/signature requires at least one <requiredReferences> child element.");
         }
         requiredReferences.forEach(SignatureReference::validate);
         try {
             trustKeyStore = StaticSSLContext.openKeyStore(
-                    trustStore, null, router.getResolverMap(), getBeanBaseLocation());
+                    parent.getTrustStore(), null, parent.getRouter().getResolverMap(), parent.beanBaseLocation());
         } catch (Exception e) {
-            throw new ConfigurationException("Could not load truststore for digitalSignatureVerifier interceptor.", e);
+            throw new ConfigurationException("Could not load the wsSecurity truststore.", e);
         }
     }
 
     @Override
-    protected String notSoapDetail() {
-        return "it could not be verified.";
-    }
-
-    @Override
-    protected String internalErrorDetail() {
-        return "Could not verify signature on SOAP message.";
-    }
-
-    @Override
-    protected Outcome handleDocument(Exchange exc, Document doc) throws Exception {
-        Element envelope = doc.getDocumentElement();
-        // A freshly (DTD-less) parsed document doesn't know which attribute is an XML ID, so
-        // same-document "#id" dereferencing - both the JSR-105 signature validation below and
-        // getElementById-style lookups - would otherwise fail to resolve anything.
-        markWsuIdAttributes(envelope);
-
-        String soapNs = envelope.getNamespaceURI();
-        Element header = getFirstChildByName(envelope, soapNs, "Header");
-        Element security = header == null ? null : getFirstChildByName(header, WSSE_NS, "Security");
-
-        try {
-            Element signatureElement = security == null ? null : findSingleSignature(security);
-            if (signatureElement == null) {
-                security(router.getConfiguration().isProduction(), getDisplayName())
-                        .title("Signature missing.")
-                        .status(401)
-                        .detail("Request has no wsse:Security/ds:Signature to verify.")
-                        .buildAndSetResponse(exc);
-                return ABORT;
-            }
-            verify(doc, envelope, security, soapNs, signatureElement);
-            return CONTINUE;
-        } catch (VerificationException | WsSecurityXml.ReferenceResolutionException e) {
-            log.info("Signature verification failed: {}", e.getMessage());
-            security(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Signature verification failed.")
-                    .status(403)
-                    .detail(e.getMessage())
-                    .buildAndSetResponse(exc);
-            return ABORT;
+    void process(WsSecurityContext ctx) throws Exception {
+        Element security = ctx.security();
+        Element signatureElement = findSingleSignature(security);
+        if (signatureElement == null) {
+            throw new WsSecurityFaultException(INVALID_SECURITY,
+                    "wsse:Security carries no ds:Signature to verify.");
         }
+        verify(ctx.document(), ctx.envelope(), security, ctx.soapNs(), signatureElement);
     }
 
     /**
@@ -162,7 +101,8 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
             return null;
         }
         if (signatureNodes.getLength() > 1) {
-            throw new VerificationException("More than one ds:Signature element found; rejecting as ambiguous.");
+            throw new WsSecurityFaultException(INVALID_SECURITY,
+                    "More than one ds:Signature element found; rejecting as ambiguous.");
         }
         return (Element) signatureNodes.item(0);
     }
@@ -176,7 +116,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         DOMValidateContext valContext = new DOMValidateContext(chain[0].getPublicKey(), signatureElement);
         XMLSignature signature = XMLSignatureFactory.getInstance("DOM").unmarshalXMLSignature(valContext);
         if (!signature.validate(valContext)) {
-            throw new VerificationException("Signature is not cryptographically valid.");
+            throw new WsSecurityFaultException(FAILED_CHECK, "Signature is not cryptographically valid.");
         }
 
         checkTrusted(chain);
@@ -202,7 +142,8 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
                     CertificateFactory.getInstance("X.509").generateCertPath(path), params);
         } catch (CertPathValidatorException | InvalidAlgorithmParameterException | KeyStoreException
                  | CertificateException | NoSuchAlgorithmException e) {
-            throw new VerificationException("Signing certificate is not trusted: " + e.getMessage());
+            throw new WsSecurityFaultException(FAILED_CHECK,
+                    "Signing certificate is not trusted: " + e.getMessage());
         }
     }
 
@@ -228,7 +169,8 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
     private X509Certificate[] resolveCertificateChain(Document doc, Element signatureElement) throws Exception {
         Element keyInfo = getFirstChildByName(signatureElement, DS_NS, "KeyInfo");
         if (keyInfo == null) {
-            throw new VerificationException("ds:Signature has no ds:KeyInfo; cannot resolve the signing certificate.");
+            throw new WsSecurityFaultException(INVALID_SECURITY,
+                    "ds:Signature has no ds:KeyInfo; cannot resolve the signing certificate.");
         }
 
         Element x509Data = getFirstChildByName(keyInfo, DS_NS, "X509Data");
@@ -241,13 +183,14 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
             return new X509Certificate[]{certificateFromSecurityTokenReference(doc, str)};
         }
 
-        throw new VerificationException("Unsupported ds:KeyInfo shape: expected ds:X509Data or wsse:SecurityTokenReference.");
+        throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                "Unsupported ds:KeyInfo shape: expected ds:X509Data or wsse:SecurityTokenReference.");
     }
 
     private static X509Certificate[] chainFromX509Data(Element x509Data) throws Exception {
         List<Element> certElements = getChildrenByName(x509Data, DS_NS, "X509Certificate");
         if (certElements.isEmpty()) {
-            throw new VerificationException("ds:X509Data has no ds:X509Certificate.");
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN, "ds:X509Data has no ds:X509Certificate.");
         }
         X509Certificate[] chain = new X509Certificate[certElements.size()];
         for (int i = 0; i < certElements.size(); i++) {
@@ -264,15 +207,18 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
 
         Element strReference = getFirstChildByName(str, WSSE_NS, "Reference");
         if (strReference == null) {
-            throw new VerificationException("wsse:SecurityTokenReference has no wsse:Reference or wsse:KeyIdentifier.");
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "wsse:SecurityTokenReference has no wsse:Reference or wsse:KeyIdentifier.");
         }
         String uri = strReference.getAttribute("URI");
         if (!uri.startsWith("#")) {
-            throw new VerificationException("wsse:Reference URI must be a same-document reference.");
+            throw new WsSecurityFaultException(SECURITY_TOKEN_UNAVAILABLE,
+                    "wsse:Reference URI must be a same-document reference.");
         }
-        Element token = resolveUniqueElementById(doc, uri.substring(1));
+        Element token = resolveUniqueElementById(doc, uri.substring(1), SECURITY_TOKEN_UNAVAILABLE);
         if (!(WSSE_NS.equals(token.getNamespaceURI()) && "BinarySecurityToken".equals(token.getLocalName()))) {
-            throw new VerificationException("wsse:Reference does not point at a wsse:BinarySecurityToken.");
+            throw new WsSecurityFaultException(SECURITY_TOKEN_UNAVAILABLE,
+                    "wsse:Reference does not point at a wsse:BinarySecurityToken.");
         }
         return decodeCertificate(token.getTextContent());
     }
@@ -284,11 +230,11 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         String valueType = keyIdentifier.getAttribute("ValueType");
         String content = keyIdentifier.getTextContent().replaceAll("\\s", "");
         if (THUMBPRINT_SHA1_VALUE_TYPE.equals(valueType)) {
-            byte[] thumbprint = decodeBase64(content);
-            return findCertificateByThumbprint(thumbprint);
+            return findCertificateByThumbprint(decodeBase64(content));
         }
         if (!X509_V3_VALUE_TYPE.equals(valueType)) {
-            throw new VerificationException("Unsupported wsse:KeyIdentifier ValueType: \"" + valueType + "\".");
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "Unsupported wsse:KeyIdentifier ValueType: \"" + valueType + "\".");
         }
         return decodeCertificate(content);
     }
@@ -298,11 +244,12 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         while (aliases.hasMoreElements()) {
             String alias = aliases.nextElement();
             if (trustKeyStore.getCertificate(alias) instanceof X509Certificate cert
-                    && Arrays.equals(thumbprint, sha1Thumbprint(cert))) {
+                && Arrays.equals(thumbprint, sha1Thumbprint(cert))) {
                 return cert;
             }
         }
-        throw new VerificationException("No certificate in the truststore matches the wsse:KeyIdentifier thumbprint.");
+        throw new WsSecurityFaultException(SECURITY_TOKEN_UNAVAILABLE,
+                "No certificate in the truststore matches the wsse:KeyIdentifier thumbprint.");
     }
 
     private static X509Certificate decodeCertificate(String base64) throws CertificateException {
@@ -314,42 +261,45 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
     }
 
     // Base64.getDecoder() signals malformed input with IllegalArgumentException. That content is
-    // attacker-supplied, so it has to end up in the 403 verification-failure path rather than
-    // escaping as an internal error.
+    // attacker-supplied, so it has to end up in the fault path rather than escaping as an internal
+    // error.
     private static byte[] decodeBase64(String base64) {
         try {
             return Base64.getDecoder().decode(base64);
         } catch (IllegalArgumentException e) {
-            throw new VerificationException("Malformed base64 content in wsse:Security.");
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "Malformed base64 content in wsse:Security.");
         }
     }
 
     // Only ds:SignedInfo is protected by ds:SignatureValue. Everything else inside ds:Signature -
     // ds:Object and its ds:Manifest children in particular - is unsigned, so an attacker can add,
-    // remove or rewrite it at will while the signature still validates. Since this verifier
-    // supports no legitimate use for such content, it is refused outright rather than ignored:
-    // that removes the "park the genuinely signed element in a ds:Object" half of an XML Signature
-    // Wrapping attack (the reference half is handled in checkRequiredReference).
-    private void rejectUnsignedSignatureContent(Element signatureElement) {
+    // remove or rewrite it at will while the signature still validates. Since this part supports no
+    // legitimate use for such content, it is refused outright rather than ignored: that removes the
+    // "park the genuinely signed element in a ds:Object" half of an XML Signature Wrapping attack
+    // (the reference half is handled in checkRequiredElement).
+    private static void rejectUnsignedSignatureContent(Element signatureElement) {
         NodeList children = signatureElement.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             if (children.item(i) instanceof Element child
-                    && DS_NS.equals(child.getNamespaceURI())
-                    && ("Object".equals(child.getLocalName()) || "Manifest".equals(child.getLocalName()))) {
-                throw new VerificationException(
+                && DS_NS.equals(child.getNamespaceURI())
+                && ("Object".equals(child.getLocalName()) || "Manifest".equals(child.getLocalName()))) {
+                throw new WsSecurityFaultException(FAILED_CHECK,
                         "ds:Signature carries unsigned ds:" + child.getLocalName() + " content; rejecting.");
             }
         }
     }
 
     private void checkRequiredReference(Document doc, Element envelope, Element security, String soapNs,
-                                         XMLSignature signature, SignatureReference required) {
+                                        XMLSignature signature, SignatureReference required) {
         try {
-            for (Element expected : resolveReference(doc, envelope, security, soapNs, required, xmlConfig)) {
+            for (Element expected : resolveReference(doc, envelope, security, soapNs, required, parent.getXmlConfig())) {
                 checkRequiredElement(doc, signature, required, expected);
             }
-        } catch (VerificationException | WsSecurityXml.ReferenceResolutionException e) {
-            throw new VerificationException("[" + describe(required) + "] " + e.getMessage(), e);
+        } catch (WsSecurityXmlUtil.ReferenceResolutionException e) {
+            throw new WsSecurityFaultException(FAILED_CHECK, "[" + describe(required) + "] " + e.getMessage(), e);
+        } catch (WsSecurityFaultException e) {
+            throw new WsSecurityFaultException(e.getCode(), "[" + describe(required) + "] " + e.getMessage(), e);
         }
     }
 
@@ -365,7 +315,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         }
         String expectedId = idOf(expected);
         if (expectedId.isEmpty()) {
-            throw new VerificationException(
+            throw new WsSecurityFaultException(FAILED_CHECK,
                     "Required element (" + required.getBy() + ") has no wsu:Id/Id, so it cannot be covered by the signature.");
         }
 
@@ -374,7 +324,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         // signed element aside and plants a decoy at the real structural position, giving it the
         // same Id to "borrow" the existing signature's coverage, makes the Id ambiguous - which
         // resolveUniqueElementById refuses to accept.
-        resolveUniqueElementById(doc, expectedId);
+        resolveUniqueElementById(doc, expectedId, FAILED_CHECK);
 
         // Second half: a decoy carrying a fresh, different Id is caught here, because that Id
         // appears in no ds:Reference of the signature. Crucially, the references are taken from the
@@ -384,7 +334,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         // ds:Reference sitting in unsigned ds:Object/ds:Manifest content, letting a wrapped message
         // declare its own decoy as "covered".
         if (!isCoveredBy(signature, expectedId)) {
-            throw new VerificationException(
+            throw new WsSecurityFaultException(FAILED_CHECK,
                     "Required element (" + required.getBy() + ", Id=" + expectedId + ") is not covered by any ds:Reference.");
         }
     }
@@ -395,7 +345,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
     }
 
     // Signed-Timestamp is the standard WS-Security defense against replaying a captured,
-    // validly-signed request: without checking Created/Expires here, a signature covering the
+    // validly-signed message: without checking Created/Expires here, a signature covering the
     // Timestamp is only proof the message existed at some point, not that it is still fresh.
     private void checkTimestampFreshness(Element timestamp) {
         Instant created = parseTimestampInstant(timestamp, "Created");
@@ -404,34 +354,37 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
         // Created itself must be recent - this is what catches a stale Timestamp with no Expires
         // at all, not just one whose Expires has passed.
         if (created.isBefore(now.minus(clockSkew)) || created.isAfter(now.plus(clockSkew))) {
-            throw new VerificationException("wsu:Timestamp Created (" + created + ") is outside the allowed clock skew.");
+            throw new WsSecurityFaultException(FAILED_CHECK,
+                    "wsu:Timestamp Created (" + created + ") is outside the allowed clock skew.");
         }
         if (expires != null && expires.isBefore(now.minus(clockSkew))) {
-            throw new VerificationException("wsu:Timestamp has expired (Expires=" + expires + ").");
+            throw new WsSecurityFaultException(FAILED_CHECK,
+                    "wsu:Timestamp has expired (Expires=" + expires + ").");
         }
     }
 
-    private Instant parseTimestampInstant(Element timestamp, String localName) {
+    private static Instant parseTimestampInstant(Element timestamp, String localName) {
         Element el = getFirstChildByName(timestamp, WSU_NS, localName);
         if (el == null) {
             if ("Created".equals(localName)) {
-                throw new VerificationException("wsu:Timestamp has no wsu:Created.");
+                throw new WsSecurityFaultException(FAILED_CHECK, "wsu:Timestamp has no wsu:Created.");
             }
             return null;
         }
         try {
             return OffsetDateTime.parse(el.getTextContent().trim()).toInstant();
-        } catch (DateTimeParseException e) {
-            throw new VerificationException("wsu:Timestamp/wsu:" + localName + " is not a valid xs:dateTime: " + el.getTextContent());
+        } catch (java.time.format.DateTimeParseException e) {
+            throw new WsSecurityFaultException(FAILED_CHECK,
+                    "wsu:Timestamp/wsu:" + localName + " is not a valid xs:dateTime: " + el.getTextContent());
         }
     }
 
-    private static String idOf(Element element) {
-        String wsuId = element.getAttributeNS(WSU_NS, "Id");
-        return !wsuId.isEmpty() ? wsuId : element.getAttribute("Id");
-    }
-
-    private static Element resolveUniqueElementById(Document doc, String id) {
+    /**
+     * @param ambiguityCode the fault to report when the id is missing or used more than once - a
+     *                      failed check when it is a required reference, an unavailable token when
+     *                      it is a {@code wsse:Reference} target
+     */
+    private static Element resolveUniqueElementById(Document doc, String id, WsSecurityFaultCode ambiguityCode) {
         List<Element> matches = new ArrayList<>();
         forEachDescendantElement(doc.getDocumentElement(), element -> {
             if (id.equals(idOf(element))) {
@@ -439,33 +392,13 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
             }
         });
         if (matches.isEmpty()) {
-            throw new VerificationException("No element found with Id \"" + id + "\".");
+            throw new WsSecurityFaultException(ambiguityCode, "No element found with Id \"" + id + "\".");
         }
         if (matches.size() > 1) {
-            throw new VerificationException("Id \"" + id + "\" is used by more than one element; rejecting as ambiguous.");
+            throw new WsSecurityFaultException(ambiguityCode,
+                    "Id \"" + id + "\" is used by more than one element; rejecting as ambiguous.");
         }
         return matches.getFirst();
-    }
-
-    private static void markWsuIdAttributes(Element root) {
-        forEachDescendantElement(root, element -> {
-            if (!element.getAttributeNS(WSU_NS, "Id").isEmpty()) {
-                element.setIdAttributeNS(WSU_NS, "Id", true);
-            }
-        });
-    }
-
-    public TrustStore getTrustStore() {
-        return trustStore;
-    }
-
-    /**
-     * @description The truststore holding the CA certificates used to validate the signing
-     * certificate's chain of trust.
-     */
-    @MCChildElement(order = 1)
-    public void setTrustStore(TrustStore trustStore) {
-        this.trustStore = trustStore;
     }
 
     public List<SignatureReference> getRequiredReferences() {
@@ -477,7 +410,7 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
      * of these is not referenced by the signature, or if the referenced element is not the same
      * element found by structural navigation (the defense against signature wrapping attacks).
      */
-    @MCChildElement(order = 2)
+    @MCChildElement(order = 1)
     public void setRequiredReferences(List<SignatureReference> requiredReferences) {
         this.requiredReferences = requiredReferences;
     }
@@ -489,26 +422,16 @@ public class DigitalSignatureVerifierInterceptor extends AbstractSoapDomIntercep
     /**
      * @description Tolerance, as an ISO-8601 duration, applied when checking a required
      * <code>TIMESTAMP</code> reference's <code>Created</code>/<code>Expires</code> against the
-     * current time. Only relevant when <code>requiredReferences</code> includes a <code>TIMESTAMP</code>
-     * entry.
+     * current time. Only relevant when <code>requiredReferences</code> includes a
+     * <code>TIMESTAMP</code> entry.
      * @default PT5M
      */
     @MCAttribute
     public void setClockSkew(String clockSkew) {
-        this.clockSkew = Duration.parse(clockSkew);
-    }
-
-    public XmlConfig getXmlConfig() {
-        return xmlConfig;
-    }
-
-    /**
-     * @description Declares additional XML namespace prefixes usable in the <code>xpath</code>
-     * attribute of an <code>XPATH</code> reference. <code>soap</code>, <code>wsse</code>, and
-     * <code>wsu</code> are always available, even when this is set.
-     */
-    @MCChildElement(allowForeign = true, order = 3)
-    public void setXmlConfig(XmlConfig xmlConfig) {
-        this.xmlConfig = xmlConfig;
+        Duration parsed = Duration.parse(clockSkew);
+        if (parsed.isNegative()) {
+            throw new ConfigurationException("clockSkew must not be negative.");
+        }
+        this.clockSkew = parsed;
     }
 }

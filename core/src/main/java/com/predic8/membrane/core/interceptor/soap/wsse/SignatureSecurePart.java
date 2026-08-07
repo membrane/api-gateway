@@ -17,16 +17,12 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.KeyStore;
-import com.predic8.membrane.core.config.xml.XmlConfig;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.security.KeyStoreUtil;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.xml.XMLConstants;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
@@ -42,40 +38,23 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static com.predic8.membrane.annot.Constants.SOAP12_NS;
-import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
-import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
-import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.*;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
 
 /**
- * @description Adds an XML Signature (<a href="http://www.w3.org/2000/09/xmldsig#">XML-DSig</a>)
- * to a SOAP request's header, signing the elements listed in <code>references</code>. Follows the
- * WS-Security convention used by Apache CXF: the <code>ds:Signature</code> is placed inside
- * <code>wsse:Security</code>, and each signed element receives a <code>wsu:Id</code> that a
- * detached <code>ds:Reference</code> points at. A non-SOAP body or an unresolvable reference
- * returns 400 as Problem Details. Only acts on requests.
- * @topic 3. Security
- * @yaml <pre><code>
- * api:
- *   port: 2000
- *   flow:
- *     - digitalSignature:
- *         keystore:
- *           location: signing.p12
- *           password: secret
- *         references:
- *           - by: BODY
- * </code></pre>
+ * @description Adds an XML Signature (<a href="http://www.w3.org/2000/09/xmldsig#">XML-DSig</a>) to
+ * the <code>wsse:Security</code> header, signing the elements listed in <code>references</code>.
+ * Follows the WS-Security convention used by Apache CXF: each signed element receives a
+ * <code>wsu:Id</code> that a detached <code>ds:Reference</code> points at. Signs with the enclosing
+ * <code>wsSecurity</code> element's <code>keystore</code>.
  */
-@MCElement(name = "digitalSignature")
-public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
+@MCElement(name = "signature", component = false, id = "wsSecurity-signature")
+public class SignatureSecurePart extends SecurePart {
 
     private static final String DEFAULT_SIGNATURE_ALGORITHM = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
     private static final String DEFAULT_DIGEST_ALGORITHM = "http://www.w3.org/2001/04/xmlenc#sha256";
     private static final String DEFAULT_CANONICALIZATION_ALGORITHM = CanonicalizationMethod.EXCLUSIVE;
 
-    private KeyStore keyStore;
     private List<SignatureReference> references = new ArrayList<>();
     private String signatureAlgorithm = DEFAULT_SIGNATURE_ALGORITHM;
     private String digestAlgorithm = DEFAULT_DIGEST_ALGORITHM;
@@ -83,17 +62,9 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
     private X509DataKeyInfo x509Data;
     private SecurityTokenReferenceKeyInfo securityTokenReference;
     private KeyIdentifierKeyInfo keyIdentifier;
-    private XmlConfig xmlConfig;
 
     private PrivateKey privateKey;
     private X509Certificate certificate;
-
-    @Override
-    public void init() {
-        super.init();
-        validateConfiguration();
-        loadSigningMaterial();
-    }
 
     private static final List<String> SUPPORTED_DIGEST_ALGORITHMS = List.of(
             DigestMethod.SHA1, DigestMethod.SHA224, DigestMethod.SHA256, DigestMethod.SHA384,
@@ -107,16 +78,30 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
             CanonicalizationMethod.INCLUSIVE, CanonicalizationMethod.EXCLUSIVE,
             CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS, CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
 
+    @Override
+    protected void init() {
+        validateConfiguration();
+        loadSigningMaterial();
+    }
+
+    /**
+     * Whether this signature covers the {@code wsu:Timestamp}, which the enclosing element needs to
+     * know to check that a {@code timestamp} part is listed before this one.
+     */
+    boolean referencesTimestamp() {
+        return references.stream().anyMatch(r -> r.getBy() == SignatureReference.By.TIMESTAMP);
+    }
+
     private void validateConfiguration() {
-        if (keyStore == null) {
-            throw new ConfigurationException("digitalSignature requires a <keystore> child element.");
+        if (parent.getKeyStore() == null) {
+            throw new ConfigurationException("wsSecurity secure/signature requires a <keystore> on the enclosing wsSecurity element.");
         }
         if (references.isEmpty()) {
-            throw new ConfigurationException("digitalSignature requires at least one <reference> child element.");
+            throw new ConfigurationException("wsSecurity secure/signature requires at least one <reference> child element.");
         }
         if (Stream.of(x509Data, securityTokenReference, keyIdentifier).filter(Objects::nonNull).count() > 1) {
             throw new ConfigurationException(
-                    "digitalSignature accepts at most one of <x509Data>, <securityTokenReference>, or <keyIdentifier>.");
+                    "wsSecurity secure/signature accepts at most one of <x509Data>, <securityTokenReference>, or <keyIdentifier>.");
         }
         if (securityTokenReference == null && references.stream().anyMatch(r -> r.getBy() == SignatureReference.By.BST)) {
             throw new ConfigurationException("reference by: BST requires a <securityTokenReference> KeyInfo mode.");
@@ -146,16 +131,17 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
     }
 
     private static ConfigurationException unsupportedAlgorithm(String attribute, String value,
-                                                                 List<String> supported, Exception cause) {
+                                                               List<String> supported, Exception cause) {
         return new ConfigurationException("Unsupported " + attribute + " \"" + value +
-                "\" on digitalSignature. Supported values: " + String.join(", ", supported), cause);
+                "\" on wsSecurity secure/signature. Supported values: " + String.join(", ", supported), cause);
     }
 
     private void loadSigningMaterial() {
+        KeyStore keyStore = parent.getKeyStore();
         try {
-            char[] keyPassword = resolveKeyPassword();
+            char[] keyPassword = resolveKeyPassword(keyStore);
             java.security.KeyStore ks = StaticSSLContext.openKeyStore(
-                    keyStore, keyPassword, router.getResolverMap(), getBeanBaseLocation());
+                    keyStore, keyPassword, parent.getRouter().getResolverMap(), parent.beanBaseLocation());
 
             String alias = keyStore.getKeyAlias() != null
                     ? KeyStoreUtil.aliasOrThrow(ks, keyStore.getKeyAlias())
@@ -170,13 +156,13 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
                 throw new ConfigurationException("Keystore alias \"" + alias + "\" holds no X.509 certificate.");
             }
         } catch (Exception e) {
-            throw new ConfigurationException("Could not load signing key from keystore for digitalSignature interceptor.", e);
+            throw new ConfigurationException("Could not load signing key from the wsSecurity keystore.", e);
         }
     }
 
     // For a PKCS12 keystore, the key is commonly protected by the same password as the store
     // itself; fall back to it when no distinct keyPassword is configured.
-    private char[] resolveKeyPassword() {
+    private static char[] resolveKeyPassword(KeyStore keyStore) {
         if (keyStore.getKeyPassword() != null) {
             return keyStore.getKeyPassword().toCharArray();
         }
@@ -187,72 +173,55 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
     }
 
     @Override
-    protected String notSoapDetail() {
-        return "it could not be signed.";
-    }
+    void process(WsSecurityContext ctx) throws Exception {
+        Document doc = ctx.document();
+        Element security = ctx.security();
 
-    @Override
-    protected String internalErrorDetail() {
-        return "Could not sign SOAP message.";
-    }
-
-    @Override
-    protected Outcome handleDocument(Exchange exc, Document doc) throws Exception {
-        Element envelope = doc.getDocumentElement();
-        String soapNs = envelope.getNamespaceURI();
-
-        Element security = getOrCreateSecurity(doc, getOrCreateHeader(doc, envelope, soapNs));
-        ensureMustUnderstand(security, soapNs);
-
-        if (securityTokenReference != null && references.stream().anyMatch(r -> r.getBy() == SignatureReference.By.BST)) {
-            // Created here, before reference resolution, so a "by: BST" reference can pick it up
-            // and cover it with a ds:Reference; appendSecurityTokenReferenceKeyInfo() then reuses
-            // this same element instead of creating its own.
-            security.appendChild(createBinarySecurityToken(doc));
+        if (securityTokenReference != null) {
+            // This part owns the wsse:BinarySecurityToken in this mode, so a token the peer sent in
+            // a header nothing consumed has to go first: it is looked up by name below, and both
+            // lookups take the FIRST match while ours is appended last. Left in place, the peer's
+            // token would be the one signed and the one ds:KeyInfo points at - advertising the
+            // peer's certificate for a signature made with the gateway key.
+            for (Element peerToken : getChildrenByName(security, WSSE_NS, "BinarySecurityToken")) {
+                security.removeChild(peerToken);
+            }
+            if (references.stream().anyMatch(r -> r.getBy() == SignatureReference.By.BST)) {
+                // Created here, before reference resolution, so a "by: BST" reference can pick it up
+                // and cover it with a ds:Reference; appendSecurityTokenReferenceKeyInfo() then reuses
+                // this same element instead of creating its own.
+                security.appendChild(createBinarySecurityToken(doc));
+            }
         }
 
         List<String> referencedIds = new ArrayList<>();
         try {
             for (SignatureReference reference : references) {
-                List<Element> elements = resolveReference(doc, envelope, security, soapNs, reference, xmlConfig);
+                List<Element> elements = resolveReference(doc, ctx.envelope(), security, ctx.soapNs(), reference,
+                        parent.getXmlConfig());
                 if (reference.getId() != null && elements.size() > 1) {
-                    throw new WsSecurityXml.ReferenceResolutionException(
+                    throw new WsSecurityXmlUtil.ReferenceResolutionException(
                             "reference \"" + reference.getId() + "\" has an explicit id but its xpath matched " +
-                                    elements.size() + " elements; an explicit id can only be used when exactly one element matches.");
+                            elements.size() + " elements; an explicit id can only be used when exactly one element matches.");
                 }
                 for (Element element : elements) {
                     referencedIds.add(ensureId(element, reference));
                 }
             }
-        } catch (WsSecurityXml.ReferenceResolutionException e) {
-            user(router.getConfiguration().isProduction(), getDisplayName())
-                    .title("Could not resolve signature reference.")
-                    .detail(e.getMessage())
-                    .buildAndSetResponse(exc);
-            return ABORT;
+        } catch (WsSecurityXmlUtil.ReferenceResolutionException e) {
+            throw new WsSecurityFaultException(INVALID_SECURITY,
+                    "Could not resolve signature reference: " + e.getMessage(), e);
         }
 
-        sign(doc, envelope, security, referencedIds);
-
-        writeBack(exc, doc);
-        return CONTINUE;
+        sign(doc, ctx.envelope(), security, referencedIds);
     }
 
     private static String ensureId(Element target, SignatureReference reference) {
-        String id = reference.getId() != null ? reference.getId()
-                : existingId(target).orElseGet(() -> "sig-" + UUID.randomUUID());
-        // declareWsuId's namespace declaration matters here too: it would otherwise only be added
-        // as a namespace-fixup by the serializer, i.e. after the signature's digests are computed,
-        // so canonicalization at signing time must already see it.
+        String configured = reference.getId() != null ? reference.getId() : idOf(target);
+        String id = configured.isEmpty() ? "sig-" + UUID.randomUUID() : configured;
         declareWsuId(target, id);
         target.setIdAttributeNS(WSU_NS, "Id", true);
         return id;
-    }
-
-    private static Optional<String> existingId(Element target) {
-        String wsuId = target.getAttributeNS(WSU_NS, "Id");
-        String id = !wsuId.isEmpty() ? wsuId : target.getAttribute("Id");
-        return id.isEmpty() ? Optional.empty() : Optional.of(id);
     }
 
     private void sign(Document doc, Element envelope, Element security, List<String> referencedIds) throws Exception {
@@ -373,43 +342,6 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
         signatureElement.appendChild(keyInfo);
     }
 
-    private static void declareWsuId(Element element, String id) {
-        element.setAttributeNS(WSU_NS, "wsu:Id", id);
-        if (element.lookupNamespaceURI("wsu") == null) {
-            element.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:wsu", WSU_NS);
-        }
-    }
-
-    private static void ensureMustUnderstand(Element security, String soapNs) {
-        if (!security.getAttributeNS(soapNs, "mustUnderstand").isEmpty()) {
-            return;
-        }
-        security.setAttributeNS(soapNs, soapPrefixOrDeclare(security, soapNs) + ":mustUnderstand",
-                SOAP12_NS.equals(soapNs) ? "true" : "1");
-    }
-
-    private static String soapPrefixOrDeclare(Element security, String soapNs) {
-        String soapPrefix = security.lookupPrefix(soapNs);
-        if (soapPrefix != null) {
-            return soapPrefix;
-        }
-        security.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:soapenv", soapNs);
-        return "soapenv";
-    }
-
-    public KeyStore getKeyStore() {
-        return keyStore;
-    }
-
-    /**
-     * @description The keystore holding the private key and certificate used to sign the
-     * referenced elements.
-     */
-    @MCChildElement(order = 1)
-    public void setKeyStore(KeyStore keyStore) {
-        this.keyStore = keyStore;
-    }
-
     public List<SignatureReference> getReferences() {
         return references;
     }
@@ -419,7 +351,7 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
      * signature's <code>ds:SignedInfo</code> - except an <code>XPATH</code> reference matching more
      * than one element, which becomes one <code>ds:Reference</code> per matched element.
      */
-    @MCChildElement(order = 2)
+    @MCChildElement(order = 1)
     public void setReferences(List<SignatureReference> references) {
         this.references = references;
     }
@@ -472,7 +404,7 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
      * default when none of this, <code>securityTokenReference</code>, or <code>keyIdentifier</code>
      * is set.
      */
-    @MCChildElement(order = 3)
+    @MCChildElement(order = 2)
     public void setX509Data(X509DataKeyInfo x509Data) {
         this.x509Data = x509Data;
     }
@@ -487,7 +419,7 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
      * instead of embedding it inline. Mutually exclusive with <code>x509Data</code> and
      * <code>keyIdentifier</code>.
      */
-    @MCChildElement(order = 4)
+    @MCChildElement(order = 3)
     public void setSecurityTokenReference(SecurityTokenReferenceKeyInfo securityTokenReference) {
         this.securityTokenReference = securityTokenReference;
     }
@@ -502,22 +434,8 @@ public class DigitalSignatureInterceptor extends AbstractSoapDomInterceptor {
      * embedding it inline or via a separate <code>wsse:BinarySecurityToken</code>. Mutually
      * exclusive with <code>x509Data</code> and <code>securityTokenReference</code>.
      */
-    @MCChildElement(order = 5)
+    @MCChildElement(order = 4)
     public void setKeyIdentifier(KeyIdentifierKeyInfo keyIdentifier) {
         this.keyIdentifier = keyIdentifier;
-    }
-
-    public XmlConfig getXmlConfig() {
-        return xmlConfig;
-    }
-
-    /**
-     * @description Declares additional XML namespace prefixes usable in the <code>xpath</code>
-     * attribute of an <code>XPATH</code> reference. <code>soap</code>, <code>wsse</code>, and
-     * <code>wsu</code> are always available, even when this is set.
-     */
-    @MCChildElement(allowForeign = true, order = 6)
-    public void setXmlConfig(XmlConfig xmlConfig) {
-        this.xmlConfig = xmlConfig;
     }
 }

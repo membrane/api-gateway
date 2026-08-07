@@ -24,13 +24,15 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Base64;
 
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.FAILED_AUTHENTICATION;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY_TOKEN;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UsernameTokenVerifierInterceptorTest extends AbstractWsseInterceptorTest {
+class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
 
     private static final String PASSWORD_TEXT_TYPE =
             "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText";
@@ -54,18 +56,20 @@ class UsernameTokenVerifierInterceptorTest extends AbstractWsseInterceptorTest {
             </soap:Envelope>
             """.formatted(WSSE_NS);
 
-    UsernameTokenVerifierInterceptor verifier;
+    UsernameTokenValidatePart usernameToken;
+    WsSecurityInterceptor wsSecurity;
 
     @BeforeEach
     void setUp() {
-        verifier = new UsernameTokenVerifierInterceptor();
-        verifier.setUsername("alice");
-        verifier.setPassword("secret");
+        usernameToken = new UsernameTokenValidatePart();
+        usernameToken.setUsername("alice");
+        usernameToken.setPassword("secret");
+        wsSecurity = validating(usernameToken);
     }
 
     private void exchangeWithToken(String token) throws Exception {
         exchangeWithBody(SOAP_TEMPLATE.formatted(token));
-        verifier.init(router);
+        wsSecurity.init(router);
     }
 
     private void exchangeWithPlainTextToken(String username, String password) throws Exception {
@@ -101,70 +105,79 @@ class UsernameTokenVerifierInterceptorTest extends AbstractWsseInterceptorTest {
     void correctPlainTextTokenIsAccepted() throws Exception {
         exchangeWithPlainTextToken("alice", "secret");
 
-        assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
     }
 
     @Test
     void unresolvedCredentialExpressionDoesNotAuthenticateLiteralNull() throws Exception {
         // An unresolved template expression renders as the literal string "null"; a client sending
-        // "null"/"null" must not be authenticated by it.
-        verifier.setUsername("${property.missingUser}");
-        verifier.setPassword("${property.missingPassword}");
+        // "null"/"null" must not be authenticated by it. A misconfigured gateway is an internal
+        // error, not a WS-Security fault.
+        usernameToken.setUsername("${property.missingUser}");
+        usernameToken.setPassword("${property.missingPassword}");
         exchangeWithPlainTextToken("null", "null");
 
-        assertAborts(verifier, 500);
+        assertAborts(wsSecurity, 500);
     }
 
     @Test
     void missingUsernameConfigurationIsRejected() {
-        verifier.setUsername("  ");
+        usernameToken.setUsername("  ");
 
-        assertThrows(ConfigurationException.class, () -> verifier.init(router));
+        assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
     }
 
     @Test
     void missingPasswordConfigurationIsRejected() {
-        verifier.setPassword("  ");
+        usernameToken.setPassword("  ");
 
-        assertThrows(ConfigurationException.class, () -> verifier.init(router));
+        assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
     }
 
     @Test
     void wrongPasswordIsRejected() throws Exception {
         exchangeWithPlainTextToken("alice", "wrong");
 
-        assertAborts(verifier, 403);
+        assertFault(wsSecurity, FAILED_AUTHENTICATION);
     }
 
     @Test
     void wrongUsernameIsRejected() throws Exception {
         exchangeWithPlainTextToken("mallory", "secret");
 
-        assertAborts(verifier, 403);
+        assertFault(wsSecurity, FAILED_AUTHENTICATION);
     }
 
     @Test
-    void missingTokenIsRejected() throws Exception {
+    void securityHeaderWithoutAUsernameTokenIsRejected() throws Exception {
         exchangeWithBody("""
                 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Header><wsse:Security xmlns:wsse="%s"/></soap:Header>
                     <soap:Body><foo>bar</foo></soap:Body>
                 </soap:Envelope>
-                """);
-        verifier.init(router);
+                """.formatted(WSSE_NS));
+        wsSecurity.init(router);
 
-        assertAborts(verifier, 401);
+        assertFault(wsSecurity, INVALID_SECURITY_TOKEN);
+    }
+
+    @Test
+    void missingPasswordElementIsRejected() throws Exception {
+        exchangeWithToken("<wsse:Username>alice</wsse:Username>");
+
+        assertFault(wsSecurity, INVALID_SECURITY_TOKEN);
     }
 
     @Test
     void nonSoapMessageIsRejected() throws Exception {
         exchangeWithBody("<foo>bar</foo>");
-        verifier.init(router);
+        wsSecurity.init(router);
 
-        assertAborts(verifier, 400);
+        assertAborts(wsSecurity, 400);
     }
 
     @Test
-    void malformedNonceIsRejectedAsVerificationFailure() throws Exception {
+    void malformedNonceIsRejectedAsInvalidToken() throws Exception {
         exchangeWithToken("""
                 <wsse:Username>alice</wsse:Username>
                 <wsse:Password Type="%s">irrelevant</wsse:Password>
@@ -172,21 +185,21 @@ class UsernameTokenVerifierInterceptorTest extends AbstractWsseInterceptorTest {
                 <wsu:Created xmlns:wsu="%s">%s</wsu:Created>
                 """.formatted(PASSWORD_DIGEST_TYPE, WSU_NS, Instant.now()));
 
-        assertAborts(verifier, 403);
+        assertFault(wsSecurity, INVALID_SECURITY_TOKEN);
     }
 
     @Test
     void correctDigestTokenIsAccepted() throws Exception {
         exchangeWithToken(freshDigestTokenForAlice("secret"));
 
-        assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
     }
 
     @Test
     void wrongDigestIsRejected() throws Exception {
         exchangeWithToken(freshDigestTokenForAlice("wrongpassword"));
 
-        assertAborts(verifier, 403);
+        assertFault(wsSecurity, FAILED_AUTHENTICATION);
     }
 
     @Test
@@ -194,7 +207,7 @@ class UsernameTokenVerifierInterceptorTest extends AbstractWsseInterceptorTest {
         exchangeWithToken(digestTokenForAlice(
                 "secret", Instant.now().minus(Duration.ofHours(1)).toString(), NONCE));
 
-        assertAborts(verifier, 403);
+        assertFault(wsSecurity, FAILED_AUTHENTICATION);
     }
 
     @Test
@@ -203,25 +216,25 @@ class UsernameTokenVerifierInterceptorTest extends AbstractWsseInterceptorTest {
                 Base64.getEncoder().encodeToString("replayed-nonce-1".getBytes(UTF_8)));
 
         exchangeWithToken(token);
-        assertEquals(Outcome.CONTINUE, verifier.handleRequest(exchange));
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
 
         // Same nonce+created replayed in a second, otherwise-identical request.
         exchangeWithToken(token);
-        assertAborts(verifier, 403);
+        assertFault(wsSecurity, FAILED_AUTHENTICATION);
     }
 
     @Test
     void zeroFreshnessWindowIsRejected() {
-        assertThrows(ConfigurationException.class, () -> verifier.setFreshnessWindow("PT0S"));
+        assertThrows(ConfigurationException.class, () -> usernameToken.setFreshnessWindow("PT0S"));
     }
 
     @Test
     void negativeFreshnessWindowIsRejected() {
-        assertThrows(ConfigurationException.class, () -> verifier.setFreshnessWindow("PT-5M"));
+        assertThrows(ConfigurationException.class, () -> usernameToken.setFreshnessWindow("PT-5M"));
     }
 
     @Test
     void malformedFreshnessWindowIsRejected() {
-        assertThrows(DateTimeParseException.class, () -> verifier.setFreshnessWindow("not-a-duration"));
+        assertThrows(DateTimeParseException.class, () -> usernameToken.setFreshnessWindow("not-a-duration"));
     }
 }

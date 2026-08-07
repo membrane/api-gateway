@@ -27,21 +27,18 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static javax.xml.XMLConstants.NULL_NS_URI;
 
 /**
- * SOAP/WS-Security XML helpers shared by {@link UsernameTokenInterceptor},
- * {@link DigitalSignatureInterceptor}, and {@link DigitalSignatureVerifierInterceptor}: locating
- * or creating the {@code soap:Header}/{@code wsse:Security} structure, and resolving a
+ * SOAP/WS-Security XML helpers shared by {@link WsSecurityInterceptor} and its parts: locating,
+ * creating and addressing the {@code soap:Header}/{@code wsse:Security} structure, and resolving a
  * {@link SignatureReference} to the element(s) it selects.
  */
-final class WsSecurityXml {
+final class WsSecurityXmlUtil {
 
     public static final String WSSE_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
     public static final String WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
@@ -82,7 +79,7 @@ final class WsSecurityXml {
         }
     };
 
-    private WsSecurityXml() {
+    private WsSecurityXmlUtil() {
     }
 
     /**
@@ -125,14 +122,113 @@ final class WsSecurityXml {
         return header;
     }
 
-    static Element getOrCreateSecurity(Document doc, Element header) {
-        Element security = getFirstChildByName(header, WSSE_NS, "Security");
-        if (security != null) {
-            return security;
+    /**
+     * The {@code wsse:Security} header targeted at {@code actor}, or null if the message carries
+     * none. A null {@code actor} selects the header with no {@code actor}/{@code role} attribute,
+     * i.e. the one addressed to the ultimate receiver; headers targeted at any other actor are
+     * invisible here and therefore pass through untouched.
+     */
+    static Element findSecurity(Element envelope, String soapNs, String actor) {
+        Element header = getFirstChildByName(envelope, soapNs, "Header");
+        if (header == null) {
+            return null;
         }
-        security = doc.createElementNS(WSSE_NS, "wsse:Security");
-        header.insertBefore(security, header.getFirstChild());
+        for (Element security : getChildrenByName(header, WSSE_NS, "Security")) {
+            if (Objects.equals(actor, actorOf(security, soapNs))) {
+                return security;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @return the header's {@code actor} (SOAP 1.1) or {@code role} (SOAP 1.2) attribute, or null
+     * when it carries neither
+     */
+    private static String actorOf(Element security, String soapNs) {
+        String actor = security.getAttributeNS(soapNs, actorAttributeName(soapNs));
+        return actor.isEmpty() ? null : actor;
+    }
+
+    /**
+     * SOAP 1.2 renamed {@code actor} to {@code role}; both mean the node a header block is targeted
+     * at.
+     */
+    private static String actorAttributeName(String soapNs) {
+        return SOAP12_NS.equals(soapNs) ? "role" : "actor";
+    }
+
+    /**
+     * The {@code wsse:Security} header for {@code actor} that {@code secure} parts add to, created
+     * if the message does not already carry one. Reused rather than always created because
+     * WS-Security allows at most one {@code wsse:Security} block per actor - and after a
+     * {@code validate} group consumed the inbound one there is none left to reuse anyway, so the
+     * common gateway case still gets a fresh header.
+     * <p>
+     * Appended rather than inserted first so header blocks the message already carried - including
+     * ones targeted at other actors - keep their relative order.
+     */
+    static Element getOrCreateSecurity(Document doc, Element envelope, String soapNs, String actor, boolean mustUnderstand) {
+        Element security = findSecurity(envelope, soapNs, actor);
+        if (security == null) {
+            security = doc.createElementNS(WSSE_NS, "wsse:Security");
+            getOrCreateHeader(doc, envelope, soapNs).appendChild(security);
+            if (actor != null) {
+                security.setAttributeNS(soapNs,
+                        soapPrefixOrDeclare(security, soapNs) + ":" + actorAttributeName(soapNs), actor);
+            }
+        }
+        if (mustUnderstand && security.getAttributeNS(soapNs, "mustUnderstand").isEmpty()) {
+            // SOAP 1.1 spells the boolean "1"/"0", SOAP 1.2 "true"/"false".
+            security.setAttributeNS(soapNs, soapPrefixOrDeclare(security, soapNs) + ":mustUnderstand",
+                    SOAP12_NS.equals(soapNs) ? "true" : "1");
+        }
         return security;
+    }
+
+    private static String soapPrefixOrDeclare(Element element, String soapNs) {
+        String soapPrefix = element.lookupPrefix(soapNs);
+        if (soapPrefix != null) {
+            return soapPrefix;
+        }
+        element.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:soapenv", soapNs);
+        return "soapenv";
+    }
+
+    /**
+     * Sets {@code wsu:Id} on {@code element}, declaring the {@code wsu} prefix if it is not already
+     * in scope. The explicit declaration matters for signing: left to the serializer's namespace
+     * fixup it would only appear <i>after</i> the digests were computed, so canonicalization at
+     * signing time has to see it here.
+     */
+    static void declareWsuId(Element element, String id) {
+        element.setAttributeNS(WSU_NS, "wsu:Id", id);
+        if (element.lookupNamespaceURI("wsu") == null) {
+            element.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:wsu", WSU_NS);
+        }
+    }
+
+    /**
+     * Declares every {@code wsu:Id} in the tree to be an XML ID attribute. A freshly (DTD-less)
+     * parsed document knows of no IDs at all, so without this same-document {@code "#id"}
+     * dereferencing - JSR-105 signature validation and {@code getElementById}-style lookups alike -
+     * resolves nothing.
+     */
+    static void markWsuIdAttributes(Element root) {
+        forEachDescendantElement(root, element -> {
+            if (!element.getAttributeNS(WSU_NS, "Id").isEmpty()) {
+                element.setIdAttributeNS(WSU_NS, "Id", true);
+            }
+        });
+    }
+
+    /**
+     * @return the element's {@code wsu:Id}, falling back to an unqualified {@code Id}, or the empty
+     * string when it has neither
+     */
+    static String idOf(Element element) {
+        String wsuId = element.getAttributeNS(WSU_NS, "Id");
+        return !wsuId.isEmpty() ? wsuId : element.getAttribute("Id");
     }
 
     /**
@@ -232,13 +328,27 @@ final class WsSecurityXml {
 
     /**
      * Applies {@code action} to {@code element} and, depth-first, to every descendant element.
+     * <p>
+     * Iterative rather than recursive because the document is attacker-supplied and nothing caps its
+     * nesting depth - neither the hardened parser nor secure processing sets
+     * {@code jdk.xml.maxElementDepth}, and per ADR-007 Membrane deliberately applies no depth limit
+     * of its own. A recursive walk over a deeply nested body would raise {@link StackOverflowError},
+     * which is an {@link Error} and so escapes the {@code catch (Exception)} that is supposed to turn
+     * a bad message into a fault response.
      */
     static void forEachDescendantElement(Element element, Consumer<Element> action) {
-        action.accept(element);
-        NodeList children = element.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            if (children.item(i) instanceof Element child) {
-                forEachDescendantElement(child, action);
+        Deque<Element> pending = new ArrayDeque<>();
+        pending.push(element);
+        while (!pending.isEmpty()) {
+            Element current = pending.pop();
+            action.accept(current);
+            NodeList children = current.getChildNodes();
+            // Pushed back to front so siblings come off the stack in document order, keeping the
+            // pre-order traversal the recursive version had.
+            for (int i = children.getLength() - 1; i >= 0; i--) {
+                if (children.item(i) instanceof Element child) {
+                    pending.push(child);
+                }
             }
         }
     }
@@ -261,8 +371,8 @@ final class WsSecurityXml {
     /**
      * Thrown when a {@link SignatureReference} cannot be resolved to at least one element - either
      * because the referenced element (body/header/timestamp) is absent, or its XPath matched
-     * nothing. Callers decide the resulting HTTP status: a signer treats this as a bad request
-     * (400), a verifier treats it as a failed verification (403).
+     * nothing. Callers decide which fault this becomes: a {@code secure} signature reports
+     * {@code wsse:InvalidSecurity}, a {@code validate} one {@code wsse:FailedCheck}.
      */
     static class ReferenceResolutionException extends RuntimeException {
         ReferenceResolutionException(String message) {

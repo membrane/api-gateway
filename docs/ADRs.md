@@ -1,8 +1,62 @@
 # Architecture Decision Log
 
-## ADR-006 WS-Security Configuration Grammar
+## ADR-007 No XML Nesting-Depth Limit in XML Processing
 
 Status: PROPOSED
+Date: 2026-08-07
+
+### Context
+
+A deeply nested XML document is a resource-exhaustion vector against any *recursive* consumer of the
+parsed tree. Membrane has several: the identity `Transformer` that re-serializes a DOM
+(`XmlDomBody.serialize`), the JSR-105 XML Signature implementation behind `wsSecurity`, XSLT, and
+until recently a recursive DOM walk in `WsSecurityXmlUtil`. The failure mode is worse than a rejected
+message: nesting overflows the JVM stack, and `StackOverflowError` is an `Error`, so it escapes the
+`catch (Exception ...)` blocks that turn a bad message into a clean error response.
+
+Nothing in Membrane caps depth today. `HardenedXmlParser` does not set `jdk.xml.maxElementDepth`, and
+`FEATURE_SECURE_PROCESSING` does not set it either — the JAXP default is `0`, i.e. unlimited — so a
+hostile document reaches a DOM unimpeded. The obvious reflex is to set that property, either on the
+hardened parser or as a JVM-wide system property next to the entity limits already in
+`start_router.sh`.
+
+That reflex is wrong for a gateway. Membrane does not own the XML it forwards. A depth that is
+absurd for one API is ordinary for another: industry schemas nest far deeper than hand-written
+payloads, and the limit that makes an attack impossible is well above any value that would catch one
+cheaply. A global limit therefore buys little and silently breaks legitimate traffic, on a code path
+where the only symptom is a rejected message with no obvious cause.
+
+### Decision
+
+- **No nesting-depth limit is applied in XML processing, and none is set globally.** Neither
+  `HardenedXmlParser` nor any launcher script sets `jdk.xml.maxElementDepth`. XML handling stays
+  agnostic about how deep the documents it forwards are.
+- Code that walks a parsed document is responsible for not recursing over attacker-controlled depth.
+  `WsSecurityXmlUtil.forEachDescendantElement` is iterative for this reason, and new traversals
+  should be too. This is the part Membrane can guarantee without knowing anything about the payload.
+- A user who needs a depth limit configures one, per API, where the cost is theirs to judge:
+  - `xmlProtection` with `maxDepth` — the natural place, since it already screens XML in a streaming
+    StAX loop and so rejects before any DOM is built. The attribute does not exist yet; see
+    [#3127](https://github.com/membrane/api-gateway/issues/3127).
+  - `limit` with `maxBodyLength`, which bounds depth indirectly: nesting costs bytes, so a body cap
+    caps depth. Coarser, but available today and useful whatever the payload format.
+
+### Consequences
+
+- Membrane forwards arbitrarily deep XML by default. That is deliberate: the gateway does not decide
+  what is too deep for a backend.
+- Until `xmlProtection` gains `maxDepth`, `limit` is the only configurable defense, and it is
+  indirect.
+- Recursion over a parsed document becomes a review item for XML-handling code, since the parser
+  offers no backstop. The comment on `WsSecurityXmlUtil.forEachDescendantElement` records the reason
+  at the one place it currently matters.
+- The JVM-wide entity limits in `start_router.sh`
+  (`jdk.xml.maxGeneralEntitySizeLimit`, `jdk.xml.totalEntitySizeLimit`) stay as they are. They cap
+  entity *expansion*, which no legitimate payload relies on, and are not affected by this decision.
+
+## ADR-006 WS-Security Configuration Grammar
+
+Status: ACCEPTED
 Date: 2026-08-07
 
 ### Context

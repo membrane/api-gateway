@@ -21,18 +21,19 @@ import org.w3c.dom.Document;
 import java.time.Duration;
 import java.time.Instant;
 
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
 import static org.junit.jupiter.api.Assertions.*;
 
-class WsuTimestampInterceptorTest extends AbstractWsseInterceptorTest {
+class TimestampSecurePartTest extends AbstractWsSecurityTest {
 
-    WsuTimestampInterceptor interceptor;
+    TimestampSecurePart timestamp;
+    WsSecurityInterceptor wsSecurity;
 
     @BeforeEach
     void setUp() {
-        interceptor = new WsuTimestampInterceptor();
-        interceptor.init(router);
+        timestamp = new TimestampSecurePart();
+        wsSecurity = securing(timestamp);
     }
 
     private static String envelopeWithTimestamps(String... timestamps) {
@@ -60,7 +61,8 @@ class WsuTimestampInterceptorTest extends AbstractWsseInterceptorTest {
 
     private Document addTimestampAndParse(String body) throws Exception {
         exchangeWithBody(body);
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        wsSecurity.init(router);
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
         return parseBody();
     }
 
@@ -84,7 +86,7 @@ class WsuTimestampInterceptorTest extends AbstractWsseInterceptorTest {
 
     @Test
     void ttlIsConfigurable() throws Exception {
-        interceptor.setTtl("PT1M");
+        timestamp.setTtl("PT1M");
 
         Document result = addTimestampAndParse(SOAP_BODY);
 
@@ -93,11 +95,19 @@ class WsuTimestampInterceptorTest extends AbstractWsseInterceptorTest {
     }
 
     @Test
+    void timestampIsTheFirstChildOfSecurity() throws Exception {
+        Document result = addTimestampAndParse(SOAP_BODY);
+
+        assertEquals("Timestamp", firstByTag(result, WSSE_NS, "Security").getFirstChild().getLocalName());
+    }
+
+    @Test
     void replacesExistingTimestampInsteadOfDuplicatingIt() throws Exception {
         exchangeWithBody(envelopeWithTimestamps(timestamp("2000-01-01T00:00:00Z", "2000-01-01T00:05:00Z")));
+        wsSecurity.init(router);
 
         Instant before = Instant.now();
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
         Instant after = Instant.now();
 
         Document result = parseBody();
@@ -121,20 +131,21 @@ class WsuTimestampInterceptorTest extends AbstractWsseInterceptorTest {
     @Test
     void nonSoapMessageAborts() throws Exception {
         exchangeWithBody("<foo>bar</foo>");
+        wsSecurity.init(router);
 
-        assertAborts(interceptor, 400);
+        assertAborts(wsSecurity, 400);
     }
 
     @Test
     void rejectsCalendarBasedTtl() {
         // "P5M" is a valid ISO-8601 *period* (5 months) but not a valid *duration* - Duration only
         // accepts time-based units (days, hours, minutes, seconds).
-        RuntimeException e = assertThrows(RuntimeException.class, () -> interceptor.setTtl("P5M"));
+        RuntimeException e = assertThrows(RuntimeException.class, () -> timestamp.setTtl("P5M"));
         assertTrue(e.getMessage().contains("P5M"));
     }
 
     @Test
     void rejectsMalformedTtl() {
-        assertThrows(RuntimeException.class, () -> interceptor.setTtl("not-a-duration"));
+        assertThrows(RuntimeException.class, () -> timestamp.setTtl("not-a-duration"));
     }
 }

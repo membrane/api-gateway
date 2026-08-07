@@ -13,22 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.soap.wsse.UsernameTokenInterceptor.PasswordType;
+import com.predic8.membrane.core.interceptor.soap.wsse.UsernameTokenSecurePart.PasswordType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.security.MessageDigest;
 import java.util.Base64;
 
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSSE_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXml.WSU_NS;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class UsernameTokenInterceptorTest extends AbstractWsseInterceptorTest {
+class UsernameTokenSecurePartTest extends AbstractWsSecurityTest {
 
     private static final String PASSWORD_TEXT_TYPE =
             "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText";
@@ -46,30 +49,28 @@ class UsernameTokenInterceptorTest extends AbstractWsseInterceptorTest {
             </soap:Envelope>
             """;
 
-    UsernameTokenInterceptor interceptor;
+    UsernameTokenSecurePart usernameToken;
+    WsSecurityInterceptor wsSecurity;
 
     @BeforeEach
     void setUp() {
-        interceptor = new UsernameTokenInterceptor();
-    }
-
-    private void exchangeWithCredentialProperties(String body) throws Exception {
-        exchangeWithBody(body);
-        exchange.setProperty("apiUser", "spelUser");
-        exchange.setProperty("apiPassword", "spelPass");
+        usernameToken = new UsernameTokenSecurePart();
+        wsSecurity = securing(usernameToken);
     }
 
     private Document addTokenAndParse(String body) throws Exception {
-        exchangeWithCredentialProperties(body);
-        interceptor.init(router);
-        assertEquals(Outcome.CONTINUE, interceptor.handleRequest(exchange));
+        exchangeWithBody(body);
+        exchange.setProperty("apiUser", "spelUser");
+        exchange.setProperty("apiPassword", "spelPass");
+        wsSecurity.init(router);
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
         return parseBody();
     }
 
     @Test
     void staticCredentialsPlainTextCreatesHeaderAndSecurity() throws Exception {
-        interceptor.setUsername("bob");
-        interceptor.setPassword("secret");
+        usernameToken.setUsername("bob");
+        usernameToken.setPassword("secret");
 
         Document result = addTokenAndParse(SOAP_BODY);
 
@@ -81,8 +82,8 @@ class UsernameTokenInterceptorTest extends AbstractWsseInterceptorTest {
 
     @Test
     void spelExpressionsAreEvaluated() throws Exception {
-        interceptor.setUsername("${property.apiUser}");
-        interceptor.setPassword("${property.apiPassword}");
+        usernameToken.setUsername("${property.apiUser}");
+        usernameToken.setPassword("${property.apiPassword}");
 
         Document result = addTokenAndParse(SOAP_BODY);
 
@@ -90,11 +91,35 @@ class UsernameTokenInterceptorTest extends AbstractWsseInterceptorTest {
         assertEquals("spelPass", firstByTag(result, WSSE_NS, "Password").getTextContent());
     }
 
+    /**
+     * In the response flow the element secures the response, not the request - a request body that
+     * isn't even SOAP has to stay untouched rather than being rejected.
+     */
+    @Test
+    void securesTheResponseWhenRunInTheResponseFlow() throws Exception {
+        usernameToken.setUsername("bob");
+        usernameToken.setPassword("secret");
+
+        exchangeWithBody("not xml at all, and must stay untouched");
+        exchange.setResponse(Response.ok().contentType(TEXT_XML).body(SOAP_BODY).build());
+        wsSecurity.init(router);
+
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleResponse(exchange),
+                () -> exchange.getResponse().toString());
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        Document result = factory.newDocumentBuilder().parse(exchange.getResponse().getBodyAsStream());
+
+        assertEquals("bob", firstByTag(result, WSSE_NS, "Username").getTextContent());
+        assertEquals("not xml at all, and must stay untouched", rawBody());
+    }
+
     @Test
     void digestPasswordTypeIsVerifiable() throws Exception {
-        interceptor.setUsername("bob");
-        interceptor.setPassword("secret");
-        interceptor.setPasswordType(PasswordType.DIGEST);
+        usernameToken.setUsername("bob");
+        usernameToken.setPassword("secret");
+        usernameToken.setPasswordType(PasswordType.DIGEST);
 
         Document result = addTokenAndParse(SOAP_BODY);
 
@@ -116,8 +141,8 @@ class UsernameTokenInterceptorTest extends AbstractWsseInterceptorTest {
 
     @Test
     void existingHeaderContentIsPreserved() throws Exception {
-        interceptor.setUsername("bob");
-        interceptor.setPassword("secret");
+        usernameToken.setUsername("bob");
+        usernameToken.setPassword("secret");
 
         Document result = addTokenAndParse(SOAP_BODY_WITH_HEADER);
 
@@ -137,11 +162,11 @@ class UsernameTokenInterceptorTest extends AbstractWsseInterceptorTest {
     }
 
     private void assertTokenCreationAborts(String body) throws Exception {
-        interceptor.setUsername("bob");
-        interceptor.setPassword("secret");
+        usernameToken.setUsername("bob");
+        usernameToken.setPassword("secret");
         exchangeWithBody(body);
-        interceptor.init(router);
+        wsSecurity.init(router);
 
-        assertAborts(interceptor, 400);
+        assertAborts(wsSecurity, 400);
     }
 }

@@ -16,6 +16,10 @@ package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.xml.XMLUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import jakarta.mail.internet.ContentType;
+import jakarta.mail.internet.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -28,6 +32,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A message body that additionally carries the already parsed XML {@link Document}, so that a chain
@@ -43,6 +49,8 @@ import java.io.InputStream;
  * arrived with, which for a gzipped or XOP body is not what was parsed.
  */
 public class XmlDomBody extends AbstractBody {
+
+    private static final Logger log = LoggerFactory.getLogger(XmlDomBody.class);
 
     private final Document document;
 
@@ -78,6 +86,47 @@ public class XmlDomBody extends AbstractBody {
      */
     public static void replaceBody(Message msg, Document doc) {
         msg.setBodyContent(new XmlDomBody(doc, serialize(doc)));
+        correctContentTypeCharset(msg, encodingOf(doc));
+    }
+
+    /**
+     * The encoding {@link #serialize(Document)} writes the document in.
+     * <p>
+     * Not simply UTF-8: the identity {@code Transformer} passes the document's own
+     * {@link Document#getXmlEncoding()} to the serializer, which overrides the
+     * {@link OutputKeys#ENCODING} property that {@code serialize} sets. So a document parsed from
+     * an {@code encoding="ISO-8859-1"} declaration is written back as ISO-8859-1, and only a
+     * document that never declared one comes out UTF-8.
+     */
+    private static String encodingOf(Document doc) {
+        return doc.getXmlEncoding() != null ? doc.getXmlEncoding() : UTF_8.name();
+    }
+
+    /**
+     * Makes the {@code Content-Type} charset agree with the bytes just written. RFC 7303 gives that
+     * parameter precedence over the XML declaration, so a charset that says something else makes a
+     * receiver misdecode every non-ASCII character - and makes a receiving WS-Security stack digest
+     * bytes other than the ones that were signed.
+     * <p>
+     * Only a charset that is already there is corrected. One the sender omitted stays omitted,
+     * because then the declaration decides and the two cannot contradict each other; adding a
+     * parameter would rewrite the header of messages this does not affect.
+     */
+    private static void correctContentTypeCharset(Message msg, String writtenEncoding) {
+        String declared = msg.getHeader().getCharset();
+        if (declared == null || declared.equalsIgnoreCase(writtenEncoding)) {
+            return;
+        }
+        try {
+            ContentType contentType = msg.getHeader().getContentTypeObject();
+            contentType.setParameter("charset", writtenEncoding);
+            msg.getHeader().setContentType(contentType.toString());
+        } catch (ParseException e) {
+            // An unparseable Content-Type is not this method's problem to report: leave the header
+            // as it stands rather than failing a body replacement over it.
+            log.warn("Not correcting the charset of unparseable Content-Type \"{}\".",
+                    msg.getHeader().getContentType());
+        }
     }
 
     private static Document parse(byte[] content) {
@@ -89,14 +138,19 @@ public class XmlDomBody extends AbstractBody {
      * already-signed elements, invalidating their digests. The declaration the Transformer emits
      * carries a <tt>standalone</tt> pseudo-attribute, which is harmless — like the rest of the
      * declaration it sits outside the document element and is part of no digest.
+     * <p>
+     * {@link OutputKeys#ENCODING} is only the fallback, not a guarantee: the identity transform
+     * hands the serializer the document's own {@link Document#getXmlEncoding()}, which wins whenever
+     * the document was parsed from a declaration that named one. {@link #encodingOf(Document)} is
+     * what actually gets written.
      */
     private static byte[] serialize(Document doc) {
         try {
             Transformer transformer = XMLUtil.newHardenedBestEffortTransformerFactory().newTransformer();
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            // Writing to a stream rather than a Writer lets the Transformer apply ENCODING itself,
-            // so the declared encoding and the actual bytes cannot disagree.
+            transformer.setOutputProperty(OutputKeys.ENCODING, UTF_8.name());
+            // Writing to a stream rather than a Writer lets the Transformer apply the encoding
+            // itself, so the declared encoding and the actual bytes cannot disagree.
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             transformer.transform(new DOMSource(doc), new StreamResult(out));
             return out.toByteArray();

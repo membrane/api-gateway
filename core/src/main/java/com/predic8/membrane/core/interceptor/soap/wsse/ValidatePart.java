@@ -13,15 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
-import com.predic8.membrane.annot.MCElement;
-
 /**
- * @description References the signing certificate from <code>ds:KeyInfo</code> via a
- * <code>wsse:SecurityTokenReference</code>/<code>wsse:Reference</code> pointing at a
- * <code>wsse:BinarySecurityToken</code> that is inserted into <code>wsse:Security</code>.
- * This is the WS-Security "Direct Reference" convention used by Apache CXF, as an alternative
- * to embedding the certificate inline via <code>x509Data</code>.
+ * A part of a {@code wsSecurity} element's {@code validate} list: it consumes inbound security,
+ * checking what the peer sent and rejecting the message if it does not hold up.
+ * <p>
+ * A separate type from {@link SecurePart} because the two lists accept different element sets even
+ * where the names coincide - a {@code signature} under {@code validate} verifies against a
+ * truststore, one under {@code secure} signs with a keystore.
  */
-@MCElement(name = "securityTokenReference", component = false, id = "wsSecurity-signature-securityTokenReference")
-public class SecurityTokenReferenceKeyInfo {
+public abstract class ValidatePart extends WsSecurityPart {
 }
