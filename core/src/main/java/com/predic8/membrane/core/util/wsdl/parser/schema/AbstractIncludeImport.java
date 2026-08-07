@@ -20,13 +20,12 @@ import com.predic8.membrane.core.util.wsdl.parser.WSDLElement;
 import com.predic8.membrane.core.util.wsdl.parser.WSDLParserContext;
 import com.predic8.membrane.core.util.wsdl.parser.WSDLParserException;
 import com.predic8.membrane.core.util.wsdl.parser.WSDLParserUtil;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 
 import static com.predic8.membrane.core.util.URIUtil.getNormalizedAbsolutePathOrUri;
@@ -60,9 +59,9 @@ public abstract class AbstractIncludeImport extends WSDLElement {
             return new Schema(ctx.basePath(resolved), WSDLParserUtil.parse(is));
         } catch (ResourceRetrievalException e) {
             throw logAndFail("retrieve", ctx, e);
-        } catch (SAXException e) {
+        } catch (XmlParseException e) {
             throw logAndFail("parse", ctx, e);
-        } catch (IOException | ParserConfigurationException e) {
+        } catch (IOException e) {
             throw logAndFail("read", ctx, e);
         }
     }

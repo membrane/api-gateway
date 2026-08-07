@@ -15,8 +15,8 @@
 package com.predic8.membrane.core.util.wsdl.parser;
 
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.xml.parser.XmlParseException;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,6 +47,6 @@ class DefinitionsTest {
         // The schema was found; it is broken. Reporting it as unresolvable would send the user
         // looking for a wrong schemaLocation.
         assertTrue(e.getMessage().contains("parse schema \"malformed.xsd\""), e.getMessage());
-        assertInstanceOf(SAXException.class, e.getCause());
+        assertInstanceOf(XmlParseException.class, e.getCause());
     }
 }
