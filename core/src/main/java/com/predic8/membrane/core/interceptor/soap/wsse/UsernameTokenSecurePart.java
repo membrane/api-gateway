@@ -17,6 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.lang.ExchangeExpression;
 import com.predic8.membrane.core.lang.TemplateExchangeExpression;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -47,6 +48,12 @@ public class UsernameTokenSecurePart extends SecurePart {
 
     @Override
     protected void init() {
+        if (username == null || username.isBlank()) {
+            throw new ConfigurationException("wsSecurity secure/usernameToken requires a username attribute.");
+        }
+        if (password == null || password.isBlank()) {
+            throw new ConfigurationException("wsSecurity secure/usernameToken requires a password attribute.");
+        }
         usernameExpression = TemplateExchangeExpression.newInstance(
                 parent, SPEL, username, parent.getRouter(), TEXT_SERIALIZATION);
         passwordExpression = TemplateExchangeExpression.newInstance(

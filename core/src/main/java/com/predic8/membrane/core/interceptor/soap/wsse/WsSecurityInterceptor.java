@@ -169,7 +169,23 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
             return ABORT;
         }
 
-        Document doc = XmlDomBody.documentOf(msg);
+        // Not inside the try below: that one answers with a soap:Fault, and the envelope version a
+        // fault would have to use is exactly what an unparseable body does not tell us. The sniff
+        // above is the lenient one, so it can pass a body that strict parsing still rejects.
+        final Document doc;
+        try {
+            doc = XmlDomBody.documentOf(msg);
+        } catch (Exception e) {
+            log.info("Could not parse the {} body as XML: {}", flow.name().toLowerCase(), e.getMessage());
+            user(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Not a SOAP message.")
+                    .detail("The %s body could not be parsed as XML, so WS-Security could not be applied."
+                            .formatted(flow.name().toLowerCase()))
+                    .exception(e)
+                    .buildAndSetResponse(exc);
+            return ABORT;
+        }
+
         Element envelope = doc.getDocumentElement();
         String soapNs = envelope.getNamespaceURI();
         try {

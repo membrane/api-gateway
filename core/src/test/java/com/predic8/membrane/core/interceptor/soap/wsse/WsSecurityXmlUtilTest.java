@@ -17,11 +17,16 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import org.xml.sax.InputSource;
+
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.forEachDescendantElement;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.markWsuIdAttributes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class WsSecurityXmlUtilTest extends AbstractWsSecurityTest {
@@ -86,5 +91,32 @@ class WsSecurityXmlUtilTest extends AbstractWsSecurityTest {
         forEachDescendantElement(root, element -> visited.add(element.getLocalName()));
 
         assertEquals(List.of("root", "first", "firstChild", "second", "third"), visited);
+    }
+
+    /**
+     * Both spellings have to become real XML IDs, because that is what JSR-105 same-document
+     * {@code #id} dereferencing looks up: other WS-Security stacks put an unqualified {@code Id} on
+     * {@code ds:Signature}, {@code ds:Object} and token elements, and an unregistered one makes an
+     * otherwise sound inbound signature fail to resolve its reference.
+     */
+    @Test
+    void marksBothWsuIdAndUnqualifiedIdAsXmlIds() throws Exception {
+        Document doc = parse("""
+                <root xmlns:wsu="%s">
+                    <qualified wsu:Id="q"/>
+                    <unqualified Id="u"/>
+                </root>
+                """.formatted(WSU_NS));
+
+        markWsuIdAttributes(doc.getDocumentElement());
+
+        assertEquals("qualified", doc.getElementById("q").getLocalName());
+        assertEquals("unqualified", doc.getElementById("u").getLocalName());
+    }
+
+    private static Document parse(String xml) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        return factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
     }
 }

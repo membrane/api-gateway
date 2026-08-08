@@ -17,6 +17,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.flow.RequestInterceptor;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.DefaultRouter;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -38,6 +39,15 @@ class WsSecurityYamlGrammarTest {
 
     @TempDir
     Path tempDir;
+
+    private DefaultRouter router;
+
+    @AfterEach
+    void tearDown() {
+        if (router != null) {
+            router.stop();
+        }
+    }
 
     private static final String CONFIG = """
             api:
@@ -76,7 +86,7 @@ class WsSecurityYamlGrammarTest {
         Path file = tempDir.resolve("apis.yaml");
         Files.writeString(file, config);
 
-        DefaultRouter router = new DefaultRouter();
+        router = new DefaultRouter();
         loadIntoRouter(router, file.toString());
 
         Proxy proxy = router.getRuleManager().getRules().getFirst();
@@ -122,7 +132,7 @@ class WsSecurityYamlGrammarTest {
      */
     @Test
     void timestampIsNotAValidatePart() {
-        assertThrows(Exception.class, () -> parse("""
+        Exception e = assertThrows(Exception.class, () -> parse("""
                 api:
                   port: 2000
                   flow:
@@ -132,5 +142,18 @@ class WsSecurityYamlGrammarTest {
                               - timestamp:
                                   ttl: PT2M
                 """));
+        // Not just "some exception": this config also omits keystore/truststore, so an unrelated
+        // bootstrap failure would satisfy a bare assertThrows and the test would keep passing if
+        // timestamp ever became a valid validate part.
+        assertTrue(messageChainOf(e).contains("timestamp"),
+                () -> "Expected the error to name the rejected element, but was: " + messageChainOf(e));
+    }
+
+    private static String messageChainOf(Throwable t) {
+        StringBuilder messages = new StringBuilder();
+        for (Throwable current = t; current != null; current = current.getCause()) {
+            messages.append(current.getMessage()).append('\n');
+        }
+        return messages.toString();
     }
 }

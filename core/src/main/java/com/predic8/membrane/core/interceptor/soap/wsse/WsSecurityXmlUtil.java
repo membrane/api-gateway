@@ -213,11 +213,18 @@ final class WsSecurityXmlUtil {
      * parsed document knows of no IDs at all, so without this same-document {@code "#id"}
      * dereferencing - JSR-105 signature validation and {@code getElementById}-style lookups alike -
      * resolves nothing.
+     * <p>
+     * An unqualified {@code Id} counts too, matching what {@link #idOf(Element)} accepts: other
+     * WS-Security stacks put one on {@code ds:Signature}, {@code ds:Object} and token elements, and
+     * leaving it unregistered would fail an inbound signature whose {@code ds:SignedInfo} is sound.
+     * {@code wsu:Id} wins where an element carries both.
      */
     static void markWsuIdAttributes(Element root) {
         forEachDescendantElement(root, element -> {
             if (!element.getAttributeNS(WSU_NS, "Id").isEmpty()) {
                 element.setIdAttributeNS(WSU_NS, "Id", true);
+            } else if (!element.getAttribute("Id").isEmpty()) {
+                element.setIdAttribute("Id", true);
             }
         });
     }

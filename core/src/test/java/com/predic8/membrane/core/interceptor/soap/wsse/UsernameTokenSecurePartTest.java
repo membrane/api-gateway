@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.soap.wsse.UsernameTokenSecurePart.PasswordType;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -29,7 +30,7 @@ import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class UsernameTokenSecurePartTest extends AbstractWsSecurityTest {
 
@@ -78,6 +79,28 @@ class UsernameTokenSecurePartTest extends AbstractWsSecurityTest {
         Element password = firstByTag(result, WSSE_NS, "Password");
         assertEquals("secret", password.getTextContent());
         assertEquals(PASSWORD_TEXT_TYPE, password.getAttribute("Type"));
+    }
+
+    /**
+     * Both credentials are turned into template expressions at init time, and the template parser
+     * dereferences the string it is handed - so without a check here a missing attribute surfaces
+     * as a NullPointerException from deep inside the expression machinery instead of as a
+     * configuration error naming what is missing.
+     */
+    @Test
+    void missingUsernameIsRejectedAtConfigurationTime() {
+        usernameToken.setPassword("secret");
+
+        ConfigurationException e = assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
+        assertTrue(e.getMessage().contains("username"), e.getMessage());
+    }
+
+    @Test
+    void missingPasswordIsRejectedAtConfigurationTime() {
+        usernameToken.setUsername("bob");
+
+        ConfigurationException e = assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
+        assertTrue(e.getMessage().contains("password"), e.getMessage());
     }
 
     @Test

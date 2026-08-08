@@ -140,7 +140,8 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
         assertEquals(CONTINUE, wsSecurity.handleRequest(exchange));
 
         Document result = parseBody();
-        // The consumed default-actor header, the untouched gateway one, and the fresh one.
+        // The consumed default-actor header was removed; the untouched gateway one and the fresh
+        // one remain.
         assertEquals(2, securityHeaderCount(result));
         Element fresh = (Element) result.getElementsByTagNameNS(WSSE_NS, "Security").item(1);
         assertTrue(fresh.getAttributeNS(SOAP_NS, "actor").isEmpty());
@@ -148,6 +149,26 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
         assertEquals(2, result.getElementsByTagNameNS(WSSE_NS, "Username").getLength());
         assertEquals("backendUser", ((Element) result.getElementsByTagNameNS(WSSE_NS, "Username").item(1))
                 .getTextContent());
+    }
+
+    /**
+     * The SOAP sniff stops reading at the first body element, so it accepts a message whose tail is
+     * malformed - which strict DOM parsing then rejects. That parse failure has to end the exchange
+     * like any other rejection rather than escaping the element as an unhandled exception. It
+     * answers with Problem Details, not a soap:Fault: an unparseable body is precisely what does
+     * not tell us which envelope version a fault would have to use.
+     */
+    @Test
+    void bodyThatPassesTheSoapSniffButNotStrictParsingIsRejected() throws Exception {
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body><foo>bar</soap:Body>
+                </soap:Envelope>
+                """);
+        WsSecurityInterceptor wsSecurity = securing(new TimestampSecurePart());
+        wsSecurity.init(router);
+
+        assertAborts(wsSecurity, 400);
     }
 
     @Test
