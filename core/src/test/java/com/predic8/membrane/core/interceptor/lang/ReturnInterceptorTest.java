@@ -19,7 +19,6 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.flow.ReturnInterceptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
 
 import java.net.URISyntaxException;
 
@@ -84,9 +83,7 @@ public class ReturnInterceptorTest {
     @Test
     void requestWithXmlDomBodyIsReturned() throws Exception {
         Exchange xml = Request.post("/shop").contentType(TEXT_XML).body("<a><b/></a>").buildExchange();
-        Document doc = XmlDomBody.documentOf(xml.getRequest());
-        doc.getDocumentElement().appendChild(doc.createElement("c"));
-        XmlDomBody.replaceBody(xml.getRequest(), doc);
+        XmlDomBody.modify(xml.getRequest(), doc -> doc.getDocumentElement().appendChild(doc.createElement("c")));
 
         interceptor.handleRequest(xml);
 

@@ -187,12 +187,13 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
             return ABORT;
         }
 
-        // Not inside the try below: that one answers with a soap:Fault, and the envelope version a
-        // fault would have to use is exactly what an unparseable body does not tell us. The sniff
-        // above is the lenient one, so it can pass a body that strict parsing still rejects.
-        final Document doc;
+        // Parsing is what can still fail here: the sniff above is the lenient one, so it passes
+        // bodies that strict parsing rejects. Everything the document itself causes is answered
+        // inside handleParsed, so an exception escaping the read is a malformed body - and that one
+        // cannot be answered with a soap:Fault, because an unparseable body does not tell us which
+        // envelope version the fault would have to use.
         try {
-            doc = XmlDomBody.documentOf(msg);
+            return XmlDomBody.read(msg, doc -> handleParsed(exc, flow, msg, doc));
         } catch (Exception e) {
             log.info("Could not parse the {} body as XML: {}", flow.name().toLowerCase(), e.getMessage());
             user(router.getConfiguration().isProduction(), getDisplayName())
@@ -203,7 +204,9 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+    }
 
+    private Outcome handleParsed(Exchange exc, Flow flow, Message msg, Document doc) {
         Element envelope = doc.getDocumentElement();
         String soapNs = envelope.getNamespaceURI();
         try {
@@ -221,6 +224,8 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
                     .buildAndSetResponse(exc);
             return ABORT;
         }
+        // Not modify(): the document is published only when the checks passed, an aborted message
+        // keeps the body it arrived with.
         XmlDomBody.replaceBody(msg, doc);
         return CONTINUE;
     }

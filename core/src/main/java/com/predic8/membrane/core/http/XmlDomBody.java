@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.http;
 
 import com.predic8.membrane.core.util.xml.XMLUtil;
+import com.predic8.membrane.core.util.xml.XPathUtil;
 import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import jakarta.mail.internet.ContentType;
 import jakarta.mail.internet.ParseException;
@@ -23,15 +24,21 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.namespace.QName;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPathEvaluationResult;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -42,11 +49,17 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * reference wholesale, any byte level write by a non XML aware interceptor discards the document
  * along with it: a stale document is impossible by construction.
  * <p>
- * The bytes of an instance never change. Mutating the {@link Document} returned by
- * {@link #getDocument()} therefore does <b>not</b> update the message; call
- * {@link #replaceBody(Message, Document)} to publish the modified document. Nor are the bytes
- * necessarily the document's serialization: {@link #documentOf(Message)} keeps the body a message
- * arrived with, which for a gzipped or XOP body is not what was parsed.
+ * The bytes of an instance never change, so a change to the document has to be published to take
+ * effect. Which entry point to use follows from what the caller does with the document:
+ * <ul>
+ *   <li>reading it — {@link #xpath(Message, String, NamespaceContext, QName)}, or
+ *       {@link #read(Message, Function)} for a caller that needs the tree itself;</li>
+ *   <li>changing it in place — {@link #modify(Message, Consumer)}, which publishes on return;</li>
+ *   <li>producing a different document, as an XSLT transformation does —
+ *       {@link #replaceBody(Message, Document)}.</li>
+ * </ul>
+ * Nor are the bytes necessarily the document's serialization: {@link #documentOf(Message)} keeps
+ * the body a message arrived with, which for a gzipped or XOP body is not what was parsed.
  */
 public class XmlDomBody extends AbstractBody {
 
@@ -71,13 +84,68 @@ public class XmlDomBody extends AbstractBody {
      * Publishing a decoded body is {@link #replaceBody(Message, Document)}'s job, not this
      * method's.
      */
-    public static Document documentOf(Message msg) {
+    static Document documentOf(Message msg) {
         if (msg.getBody() instanceof XmlDomBody xmlDomBody)
             return xmlDomBody.getDocument();
         byte[] content = msg.getBody().getContent();
         Document doc = msg.isEncoded() ? parseDecoded(msg) : parse(content);
         msg.setBody(new XmlDomBody(doc, content)); // Bytes unchanged, so the header still fits
         return doc;
+    }
+
+    /**
+     * Evaluates an XPath expression against the message's document, parsing it only if no earlier
+     * consumer already did. So a chain of XPath using interceptors costs one parse rather than one
+     * per expression, which is what this body exists for.
+     * <p>
+     * The namespace bindings are the caller's, not the body's: two interceptors may query the same
+     * cached document through different prefix mappings.
+     *
+     * @param namespaces the prefix bindings of the expression, or null if it uses none
+     * @param type       the {@code XPathConstants} type to coerce the result to
+     */
+    public static Object xpath(Message msg, String expression, NamespaceContext namespaces, QName type)
+            throws XPathExpressionException {
+        return XPathUtil.newXPath(namespaces).evaluate(expression, documentOf(msg), type);
+    }
+
+    /**
+     * Evaluates an XPath expression against the message's document, leaving the result in whatever
+     * type the expression itself yields.
+     *
+     * @see #xpath(Message, String, NamespaceContext, QName)
+     */
+    public static XPathEvaluationResult<?> xpath(Message msg, String expression, NamespaceContext namespaces)
+            throws XPathExpressionException {
+        return XPathUtil.newXPath(namespaces).evaluateExpression(expression, documentOf(msg));
+    }
+
+    /**
+     * Hands the message's document to a reader and returns what it made of it, without publishing
+     * anything. For a caller whose work is not an XPath expression: WS-Security walks and rewrites
+     * the tree itself.
+     * <p>
+     * The document is borrowed, not owned. A reader that changes it has to publish the change with
+     * {@link #replaceBody(Message, Document)}, or use {@link #modify(Message, Consumer)} instead.
+     * <p>
+     * Parsing happens here, so an exception the reader does not throw itself is a malformed body.
+     */
+    public static <T> T read(Message msg, Function<Document, T> reader) {
+        return reader.apply(documentOf(msg));
+    }
+
+    /**
+     * Hands the message's document to a mutation and publishes the result, so that an interceptor
+     * changing the XML in place cannot forget to. The document is the shared one: any consumer that
+     * parsed before sees the change, and any that parses after gets the changed tree rather than a
+     * re-parse.
+     * <p>
+     * A mutation that throws leaves the message's body as it was.
+     */
+    public static void modify(Message msg, Consumer<Document> mutation) {
+        Document doc = documentOf(msg);
+        mutation.accept(doc);
+        replaceBody(msg, doc);
     }
 
     /**
@@ -173,10 +241,10 @@ public class XmlDomBody extends AbstractBody {
     }
 
     /**
-     * Returns the live document. Mutating it does not change this body; publish the changes with
-     * {@link #replaceBody(Message, Document)}.
+     * Returns the live document. Mutating it does not change this body; mutate through
+     * {@link #modify(Message, Consumer)}, which publishes the change.
      */
-    public Document getDocument() {
+    Document getDocument() {
         return document;
     }
 

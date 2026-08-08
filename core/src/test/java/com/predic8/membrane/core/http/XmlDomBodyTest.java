@@ -17,14 +17,20 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
 import static com.predic8.membrane.core.http.Header.CONTENT_ENCODING;
 import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static javax.xml.XMLConstants.NULL_NS_URI;
+import static javax.xml.xpath.XPathConstants.STRING;
 import static org.junit.jupiter.api.Assertions.*;
 
 class XmlDomBodyTest {
@@ -217,6 +223,140 @@ class XmlDomBodyTest {
 
         assertArrayEquals(original, req.getBody().getContent(), "must be forwarded as received");
         assertTrue(req.getHeader().isMultipart());
+    }
+
+    /**
+     * A reader borrows the document: what it does to the tree stays unpublished until it says so,
+     * so the message still forwards the bytes it arrived with.
+     */
+    @Test
+    void readDoesNotPublish() {
+        byte[] original = SOAP.getBytes(UTF_8);
+        Request req = requestWith(original);
+
+        String name = XmlDomBody.read(req, doc -> {
+            doc.getDocumentElement().setAttribute("unpublished", "yes");
+            return doc.getDocumentElement().getLocalName();
+        });
+
+        assertEquals("Envelope", name);
+        assertArrayEquals(original, req.getBody().getContent());
+    }
+
+    @Test
+    void modifyPublishesTheMutation() {
+        Request req = requestWith(SOAP.getBytes(UTF_8));
+
+        XmlDomBody.modify(req, doc -> {
+            Element added = doc.createElementNS("http://example.com/p", "p:note");
+            added.setTextContent("hi");
+            doc.getDocumentElement().appendChild(added);
+        });
+
+        assertTrue(req.getBodyAsStringDecoded().contains(">hi</p:note>"), req.getBodyAsStringDecoded());
+        assertEquals(req.getBody().getLength(), req.getHeader().getContentLength());
+    }
+
+    /**
+     * The mutation works on the shared document, so a consumer that parsed before it ran sees the
+     * change rather than a detached copy.
+     */
+    @Test
+    void modifyMutatesTheSharedDocument() {
+        Request req = requestWith(SOAP.getBytes(UTF_8));
+        Document before = XmlDomBody.documentOf(req);
+
+        XmlDomBody.modify(req, doc -> doc.getDocumentElement().setAttribute("marked", "yes"));
+
+        assertEquals("yes", before.getDocumentElement().getAttribute("marked"));
+    }
+
+    @Test
+    void modifyLeavesTheBodyAloneWhenTheMutationThrows() {
+        byte[] original = SOAP.getBytes(UTF_8);
+        Request req = requestWith(original);
+
+        assertThrows(IllegalStateException.class, () -> XmlDomBody.modify(req, doc -> {
+            throw new IllegalStateException("no");
+        }));
+
+        assertArrayEquals(original, req.getBody().getContent());
+        assertEquals(original.length, req.getHeader().getContentLength());
+    }
+
+    @Test
+    void xpathEvaluatesAgainstTheDocument() throws XPathExpressionException {
+        Request req = requestWith(SOAP.getBytes(UTF_8));
+
+        assertEquals("  spaced  ", XmlDomBody.xpath(req, "//*[local-name()='id']", null, STRING));
+    }
+
+    @Test
+    void xpathResolvesThePrefixesOfTheCaller() throws XPathExpressionException {
+        Request req = requestWith(SOAP.getBytes(UTF_8));
+
+        assertEquals("  spaced  ", XmlDomBody.xpath(req, "//p:id", prefix("p", "http://example.com/p"), STRING));
+        // A different caller may bind the same prefix elsewhere against the same cached document.
+        assertEquals("", XmlDomBody.xpath(req, "//p:id", prefix("p", "http://example.com/other"), STRING));
+    }
+
+    @Test
+    void xpathWithoutATypeYieldsTheExpressionsOwnType() throws XPathExpressionException {
+        Request req = requestWith(SOAP.getBytes(UTF_8));
+
+        assertEquals(1.0, XmlDomBody.xpath(req, "count(//*[local-name()='id'])", null).value());
+    }
+
+    /**
+     * The point of the class: a chain of XPath using interceptors parses once, and the bytes stay
+     * the ones that arrived.
+     */
+    @Test
+    void xpathParsesOnlyOnce() throws XPathExpressionException {
+        byte[] original = SOAP.getBytes(UTF_8);
+        Request req = requestWith(original);
+
+        XmlDomBody.xpath(req, "//*[local-name()='id']", null, STRING);
+        Document first = XmlDomBody.documentOf(req);
+        XmlDomBody.xpath(req, "//*[local-name()='order']", null, STRING);
+
+        assertSame(first, XmlDomBody.documentOf(req));
+        assertArrayEquals(original, req.getBody().getContent());
+    }
+
+    /**
+     * The document a gzipped message is queried through is the decoded one, while the compressed
+     * bytes stay on the message.
+     */
+    @Test
+    void xpathOnAGzippedBodyQueriesTheDecodedDocument() throws IOException, XPathExpressionException {
+        byte[] compressed = gzip(SOAP.getBytes(UTF_8));
+        Request req = requestWith(compressed);
+        req.getHeader().setValue(CONTENT_ENCODING, "gzip");
+
+        assertEquals("  spaced  ", XmlDomBody.xpath(req, "//*[local-name()='id']", null, STRING));
+
+        assertArrayEquals(compressed, req.getBody().getContent(), "must be forwarded as received");
+        assertEquals("gzip", req.getHeader().getFirstValue(CONTENT_ENCODING));
+    }
+
+    private static NamespaceContext prefix(String prefix, String uri) {
+        return new NamespaceContext() {
+            @Override
+            public String getNamespaceURI(String p) {
+                return prefix.equals(p) ? uri : NULL_NS_URI;
+            }
+
+            @Override
+            public String getPrefix(String namespaceURI) {
+                return uri.equals(namespaceURI) ? prefix : null;
+            }
+
+            @Override
+            public Iterator<String> getPrefixes(String namespaceURI) {
+                return List.of(prefix).iterator();
+            }
+        };
     }
 
     @Test

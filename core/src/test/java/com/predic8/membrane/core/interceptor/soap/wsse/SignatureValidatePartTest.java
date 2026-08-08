@@ -194,10 +194,10 @@ class SignatureValidatePartTest extends AbstractWsSecurityTest {
         secure.setKeyStore(signingKeyStore(ALIAS_1));
         secure.init(router);
         assertEquals(Outcome.CONTINUE, secure.handleRequest(exchange));
-        Document signed = XmlDomBody.documentOf(exchange.getRequest());
+        Document signed = XmlDomBody.read(exchange.getRequest(), doc -> doc);
 
         assertEquals(Outcome.CONTINUE, verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP).handleRequest(exchange));
-        assertSame(signed, XmlDomBody.documentOf(exchange.getRequest()),
+        assertSame(signed, XmlDomBody.read(exchange.getRequest(), doc -> doc),
                 "The parts must all have worked on the same shared document");
     }
 
