@@ -16,10 +16,13 @@ package com.predic8.membrane.core.interceptor.soap.wsse;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.interceptor.Outcome;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import javax.xml.crypto.dsig.CanonicalizationMethod;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -514,6 +517,27 @@ class SignatureSecurePartTest extends AbstractWsSecurityTest {
         signature.setCanonicalizationAlgorithm("bogus");
 
         assertTrue(assertThrows(RuntimeException.class, () -> signer(signature)).getMessage().contains("bogus"));
+    }
+
+    /**
+     * Every advertised canonicalization algorithm has to survive an actual signing run, not just
+     * init: the inclusive ones take no ExcC14NParameterSpec, so a spec applied unconditionally
+     * would let a configuration pass validation and then fail on the first message.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {CanonicalizationMethod.INCLUSIVE, CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS,
+            CanonicalizationMethod.EXCLUSIVE, CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS})
+    void signsWithEverySupportedCanonicalizationAlgorithm(String algorithm) throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        SignatureSecurePart signature = signature(bodyReference());
+        signature.setCanonicalizationAlgorithm(algorithm);
+
+        assertEquals(Outcome.CONTINUE, signer(signature).handleRequest(exchange));
+
+        Document result = parseBody();
+        assertEquals(algorithm,
+                firstByTag(result, DS_NS, "CanonicalizationMethod").getAttribute("Algorithm"));
+        assertSignatureIsValid(result);
     }
 
     @Test

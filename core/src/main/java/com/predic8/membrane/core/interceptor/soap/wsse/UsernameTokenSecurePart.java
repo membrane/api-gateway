@@ -106,9 +106,12 @@ public class UsernameTokenSecurePart extends SecurePart {
         return element;
     }
 
+    // Thread-safe, and constructing one per message would repeat provider lookup and seeding.
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private static byte[] generateNonce() {
         byte[] nonce = new byte[16];
-        new SecureRandom().nextBytes(nonce);
+        SECURE_RANDOM.nextBytes(nonce);
         return nonce;
     }
 

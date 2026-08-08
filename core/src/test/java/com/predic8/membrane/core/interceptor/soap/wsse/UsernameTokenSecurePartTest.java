@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.security.MessageDigest;
 import java.util.Base64;
 
@@ -130,9 +129,7 @@ class UsernameTokenSecurePartTest extends AbstractWsSecurityTest {
         assertEquals(Outcome.CONTINUE, wsSecurity.handleResponse(exchange),
                 () -> exchange.getResponse().toString());
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        Document result = factory.newDocumentBuilder().parse(exchange.getResponse().getBodyAsStream());
+        Document result = parseResponseBody();
 
         assertEquals("bob", firstByTag(result, WSSE_NS, "Username").getTextContent());
         assertEquals("not xml at all, and must stay untouched", rawBody());

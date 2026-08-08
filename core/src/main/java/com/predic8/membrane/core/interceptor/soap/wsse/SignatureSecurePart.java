@@ -74,6 +74,9 @@ public class SignatureSecurePart extends SecurePart {
             SignatureMethod.RSA_SHA1, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
             "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512",
             SignatureMethod.DSA_SHA1, SignatureMethod.HMAC_SHA1);
+    private static final List<String> EXCLUSIVE_CANONICALIZATION_ALGORITHMS = List.of(
+            CanonicalizationMethod.EXCLUSIVE, CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
+
     private static final List<String> SUPPORTED_CANONICALIZATION_ALGORITHMS = List.of(
             CanonicalizationMethod.INCLUSIVE, CanonicalizationMethod.EXCLUSIVE,
             CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS, CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
@@ -227,12 +230,7 @@ public class SignatureSecurePart extends SecurePart {
     private void sign(Document doc, Element envelope, Element security, List<String> referencedIds) throws Exception {
         XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
 
-        // Guards SignedInfo's own canonical form against the ancestor SOAP envelope prefix being
-        // rewritten in transit (WSS4J/CXF convention); the per-reference Transform below instead
-        // uses an empty prefix list, i.e. pure exclusive c14n for just the referenced element.
-        String soapPrefix = envelope.getPrefix();
-        ExcC14NParameterSpec signedInfoC14nSpec = new ExcC14NParameterSpec(
-                soapPrefix == null || soapPrefix.isEmpty() ? List.of() : List.of(soapPrefix));
+        C14NMethodParameterSpec signedInfoC14nSpec = signedInfoC14nSpec(envelope);
 
         DigestMethod digestMethod = fac.newDigestMethod(digestAlgorithm, null);
         Transform transform = fac.newTransform(canonicalizationAlgorithm, (C14NMethodParameterSpec) null);
@@ -243,7 +241,7 @@ public class SignatureSecurePart extends SecurePart {
         }
 
         SignedInfo signedInfo = fac.newSignedInfo(
-                fac.newCanonicalizationMethod(canonicalizationAlgorithm, (C14NMethodParameterSpec) signedInfoC14nSpec),
+                fac.newCanonicalizationMethod(canonicalizationAlgorithm, signedInfoC14nSpec),
                 fac.newSignatureMethod(signatureAlgorithm, null),
                 refs);
 
@@ -272,6 +270,28 @@ public class SignatureSecurePart extends SecurePart {
             fac.newXMLSignature(signedInfo, keyInfo, List.of(), signatureId, null).sign(dsc);
             removeWhitespaceFromSignatureValue((Element) security.getLastChild());
         }
+    }
+
+    /**
+     * The parameters for {@code ds:SignedInfo}'s own canonicalization.
+     * <p>
+     * For exclusive c14n that is the ancestor SOAP envelope prefix (the WSS4J/CXF convention),
+     * which guards SignedInfo's canonical form against the prefix being rewritten in transit. The
+     * per-reference {@code Transform} in {@code sign} deliberately gets none, i.e. pure exclusive
+     * c14n for just the referenced element.
+     * <p>
+     * Inclusive c14n takes no {@code ExcC14NParameterSpec} at all - it has no prefix list, and
+     * passing one is rejected by the factory. Since {@code INCLUSIVE} and
+     * {@code INCLUSIVE_WITH_COMMENTS} are both advertised as supported, an unconditional spec would
+     * make a configuration that passes {@code validateAlgorithms} fail at signing time instead.
+     */
+    private C14NMethodParameterSpec signedInfoC14nSpec(Element envelope) {
+        if (!EXCLUSIVE_CANONICALIZATION_ALGORITHMS.contains(canonicalizationAlgorithm)) {
+            return null;
+        }
+        String soapPrefix = envelope.getPrefix();
+        // An empty prefix list is what exclusive c14n does by default, so there is nothing to say.
+        return soapPrefix == null || soapPrefix.isEmpty() ? null : new ExcC14NParameterSpec(List.of(soapPrefix));
     }
 
     /**
@@ -353,7 +373,7 @@ public class SignatureSecurePart extends SecurePart {
      */
     @MCChildElement(order = 1)
     public void setReferences(List<SignatureReference> references) {
-        this.references = references;
+        this.references = references == null ? List.of() : List.copyOf(references);
     }
 
     public String getSignatureAlgorithm() {

@@ -113,13 +113,18 @@ public class SignatureValidatePart extends ValidatePart {
 
         X509Certificate[] chain = resolveCertificateChain(doc, signatureElement);
 
+        // Before, not after, validating the signature: the chain comes from the message, so until
+        // it is trusted every input below is attacker-chosen. Validating first would let an
+        // unauthenticated caller drive reference resolution, transforms and canonicalization with a
+        // key and algorithms of their own picking. The accept/reject outcome is the same either
+        // way - both paths fault with FAILED_CHECK - but the work is no longer done on spec.
+        checkTrusted(chain);
+
         DOMValidateContext valContext = new DOMValidateContext(chain[0].getPublicKey(), signatureElement);
         XMLSignature signature = XMLSignatureFactory.getInstance("DOM").unmarshalXMLSignature(valContext);
         if (!signature.validate(valContext)) {
             throw new WsSecurityFaultException(FAILED_CHECK, "Signature is not cryptographically valid.");
         }
-
-        checkTrusted(chain);
 
         for (SignatureReference required : requiredReferences) {
             checkRequiredReference(doc, envelope, security, soapNs, signature, required);

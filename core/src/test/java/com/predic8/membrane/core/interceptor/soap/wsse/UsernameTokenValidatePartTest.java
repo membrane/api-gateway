@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.Base64;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.FAILED_AUTHENTICATION;
@@ -29,8 +28,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCod
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
 
@@ -235,6 +233,8 @@ class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
 
     @Test
     void malformedFreshnessWindowIsRejected() {
-        assertThrows(DateTimeParseException.class, () -> usernameToken.setFreshnessWindow("not-a-duration"));
+        ConfigurationException e = assertThrows(ConfigurationException.class,
+                () -> usernameToken.setFreshnessWindow("not-a-duration"));
+        assertTrue(e.getMessage().contains("not-a-duration"));
     }
 }

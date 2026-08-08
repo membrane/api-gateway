@@ -248,12 +248,21 @@ public class UsernameTokenValidatePart extends ValidatePart {
     /**
      * @description Tolerance, as an ISO-8601 duration, applied to a token's <code>wsu:Created</code>
      * and to how long its <code>wsse:Nonce</code> is remembered for replay detection. Only checked
-     * when the token actually carries <code>wsu:Created</code>/<code>wsse:Nonce</code>.
+     * when the token actually carries <code>wsu:Created</code>/<code>wsse:Nonce</code>. Nonces are
+     * remembered per gateway instance, so a replay is caught once per instance rather than across a
+     * cluster.
      * @default PT5M
      */
     @MCAttribute
     public void setFreshnessWindow(String freshnessWindow) {
-        Duration parsed = Duration.parse(freshnessWindow);
+        Duration parsed;
+        try {
+            parsed = Duration.parse(freshnessWindow);
+        } catch (DateTimeParseException e) {
+            throw new ConfigurationException("freshnessWindow \"" + freshnessWindow +
+                    "\" is not a valid ISO-8601 duration. Use time-based units (days, hours, minutes, " +
+                    "seconds), e.g. \"PT5M\" for 5 minutes; calendar units like months are not supported.", e);
+        }
         if (!parsed.isPositive()) {
             throw new ConfigurationException("freshnessWindow must be a positive duration.");
         }

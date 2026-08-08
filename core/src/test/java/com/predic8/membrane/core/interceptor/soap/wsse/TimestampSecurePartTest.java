@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -140,12 +141,19 @@ class TimestampSecurePartTest extends AbstractWsSecurityTest {
     void rejectsCalendarBasedTtl() {
         // "P5M" is a valid ISO-8601 *period* (5 months) but not a valid *duration* - Duration only
         // accepts time-based units (days, hours, minutes, seconds).
-        RuntimeException e = assertThrows(RuntimeException.class, () -> timestamp.setTtl("P5M"));
+        ConfigurationException e = assertThrows(ConfigurationException.class, () -> timestamp.setTtl("P5M"));
         assertTrue(e.getMessage().contains("P5M"));
     }
 
     @Test
     void rejectsMalformedTtl() {
-        assertThrows(RuntimeException.class, () -> timestamp.setTtl("not-a-duration"));
+        assertThrows(ConfigurationException.class, () -> timestamp.setTtl("not-a-duration"));
+    }
+
+    /** A timestamp that expires at or before it is created would reject every message. */
+    @Test
+    void rejectsNonPositiveTtl() {
+        assertThrows(ConfigurationException.class, () -> timestamp.setTtl("PT0S"));
+        assertThrows(ConfigurationException.class, () -> timestamp.setTtl("PT-5M"));
     }
 }

@@ -18,6 +18,7 @@ import com.predic8.membrane.core.config.security.TrustStore;
 import com.predic8.membrane.core.config.xml.Namespaces;
 import com.predic8.membrane.core.config.xml.XmlConfig;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DefaultRouter;
@@ -86,9 +87,18 @@ abstract class AbstractWsSecurityTest {
     }
 
     Document parseBody() throws Exception {
+        return parse(exchange.getRequest());
+    }
+
+    /** The response counterpart of {@link #parseBody()}, for tests running the response flow. */
+    Document parseResponseBody() throws Exception {
+        return parse(exchange.getResponse());
+    }
+
+    private static Document parse(Message msg) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
-        return factory.newDocumentBuilder().parse(exchange.getRequest().getBodyAsStream());
+        return factory.newDocumentBuilder().parse(msg.getBodyAsStream());
     }
 
     String rawBody() throws Exception {
@@ -225,9 +235,7 @@ abstract class AbstractWsSecurityTest {
     }
 
     Document faultBody() throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        return factory.newDocumentBuilder().parse(exchange.getResponse().getBodyAsStream());
+        return parseResponseBody();
     }
 
     static Element firstByTag(Document doc, String namespace, String localName) {
