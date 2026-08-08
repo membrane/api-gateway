@@ -14,54 +14,56 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.lang.ExchangeExpression;
-import com.predic8.membrane.core.lang.TemplateExchangeExpression;
+import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
-import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.security.HttpSecurityScheme.BASIC;
-import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
 
 /**
  * @description Verifies a <code>wsse:UsernameToken</code> in the inbound
- * <code>wsse:Security</code> header. Checks the username and, depending on the token's
- * <code>Password</code> type, either the plain-text password or the WS-Security digest against the
- * expected values. When the token carries a <code>wsu:Created</code>/<code>wsse:Nonce</code>, this
- * also rejects stale tokens and replayed nonces — the standard WS-Security anti-replay mechanism
- * for UsernameToken. A missing or malformed token answers <code>wsse:InvalidSecurityToken</code>,
- * a wrong, stale or replayed credential <code>wsse:FailedAuthentication</code>. On success, the
- * username is exposed to the rest of the exchange the same way a <code>basicAuthentication</code>
- * login is, so <code>user()</code> in a later <code>template</code> or <code>groovy</code> step
- * returns it.
+ * <code>wsse:Security</code> header against a pluggable {@link UserDataProvider} (the same
+ * abstraction <code>basicAuthentication</code> uses - a static list, an htpasswd file, JDBC, or
+ * LDAP), so hashed passwords (bcrypt, crypt(3), argon2id) are supported the same way they are
+ * there. When the token carries a <code>wsu:Created</code>/<code>wsse:Nonce</code>, this also
+ * rejects stale tokens and replayed nonces - the standard WS-Security anti-replay mechanism for
+ * UsernameToken. A missing or malformed token answers <code>wsse:InvalidSecurityToken</code>, a
+ * wrong or replayed credential <code>wsse:FailedAuthentication</code>. On success, the username is
+ * exposed to the rest of the exchange the same way a <code>basicAuthentication</code> login is, so
+ * <code>user()</code> in a later <code>template</code> or <code>groovy</code> step returns it.
+ * <p>
+ * <code>wsse:Password</code> of type <code>PasswordDigest</code> is not supported yet: verifying it
+ * requires the literal plaintext password on the gateway's side to recompute the digest, which a
+ * pluggable, hash-friendly provider cannot hand back out. A digest token is rejected with
+ * <code>wsse:UnsupportedSecurityToken</code>.
+ * </p>
  */
 @MCElement(name = "usernameToken", component = false, id = "wsSecurity-validate-usernameToken")
 public class UsernameTokenValidatePart extends ValidatePart {
 
+    private static final Logger log = LoggerFactory.getLogger(UsernameTokenValidatePart.class);
+
     private static final Duration DEFAULT_FRESHNESS_WINDOW = Duration.ofMinutes(5);
 
-    private String username;
-    private String password;
+    private UserDataProvider userDataProvider;
     private Duration freshnessWindow = DEFAULT_FRESHNESS_WINDOW;
-
-    private ExchangeExpression usernameExpression;
-    private ExchangeExpression passwordExpression;
 
     // A nonce only needs to be remembered for as long as its Created timestamp is still inside the
     // freshness window, but that's a rate, not a constant - so growth is additionally capped here.
@@ -72,48 +74,58 @@ public class UsernameTokenValidatePart extends ValidatePart {
 
     @Override
     protected void init() {
-        if (username == null || username.isBlank()) {
-            throw new ConfigurationException("wsSecurity validate/usernameToken requires a username attribute.");
+        if (userDataProvider == null) {
+            throw new ConfigurationException("wsSecurity validate/usernameToken requires a userDataProvider.");
         }
-        if (password == null || password.isBlank()) {
-            throw new ConfigurationException("wsSecurity validate/usernameToken requires a password attribute.");
-        }
-        usernameExpression = TemplateExchangeExpression.newInstance(
-                parent, SPEL, username, parent.getRouter(), TEXT_SERIALIZATION);
-        passwordExpression = TemplateExchangeExpression.newInstance(
-                parent, SPEL, password, parent.getRouter(), TEXT_SERIALIZATION);
+        userDataProvider.init(parent.getRouter());
     }
 
     @Override
     void process(WsSecurityContext ctx) throws Exception {
         Element usernameToken = findSingleUsernameToken(ctx.security());
 
-        String expectedUsername = usernameExpression.evaluate(ctx.exchange(), ctx.flow(), String.class);
-        String expectedPassword = passwordExpression.evaluate(ctx.exchange(), ctx.flow(), String.class);
-        // A template expression whose value doesn't resolve (e.g. ${property.apiUser} when nothing
-        // set that property) renders as the literal string "null" - see
-        // TemplateExchangeExpression.evaluateMultiple. Comparing against that would authenticate
-        // anyone sending Username/Password "null", so an unresolved expected credential must fail
-        // closed as a configuration error instead of being treated as the secret.
-        requireResolved(expectedUsername, "username");
-        requireResolved(expectedPassword, "password");
+        Element passwordEl = getFirstChildByName(usernameToken, WSSE_NS, "Password");
+        if (passwordEl == null) {
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "wsse:UsernameToken has no wsse:Password.");
+        }
+        String passwordType = passwordEl.getAttribute("Type");
+        if (PASSWORD_DIGEST_TYPE.equals(passwordType)) {
+            log.info("Rejecting wsse:UsernameToken with an unsupported PasswordDigest.");
+            throw new WsSecurityFaultException(UNSUPPORTED_SECURITY_TOKEN,
+                    "wsse:Password of type PasswordDigest is not supported.");
+        }
+        // An absent Type defaults to PasswordText per the UsernameToken profile. An unrecognized one
+        // is refused rather than treated as text: the sender said the content is something this part
+        // does not compute, so comparing it to the expected password would be testing the wrong value
+        // - and would report a mismatch as a wrong password rather than as an unsupported token.
+        if (!passwordType.isEmpty() && !PASSWORD_TEXT_TYPE.equals(passwordType)) {
+            throw new WsSecurityFaultException(UNSUPPORTED_SECURITY_TOKEN,
+                    "Unsupported wsse:Password Type \"" + passwordType + "\".");
+        }
 
-        checkUsername(usernameToken, expectedUsername);
+        Element usernameEl = getFirstChildByName(usernameToken, WSSE_NS, "Username");
+        String username = usernameEl == null ? "" : usernameEl.getTextContent();
+        String password = passwordEl.getTextContent();
+
+        try {
+            userDataProvider.verify(Map.of("username", username, "password", password));
+        } catch (NoSuchElementException e) {
+            throw new WsSecurityFaultException(FAILED_AUTHENTICATION, "Unknown username or wrong password.");
+        }
 
         Element nonceEl = getFirstChildByName(usernameToken, WSSE_NS, "Nonce");
         Element createdEl = getFirstChildByName(usernameToken, WSU_NS, "Created");
         Instant created = createdEl == null ? null : parseCreated(createdEl.getTextContent());
 
-        checkPassword(usernameToken, expectedPassword, nonceEl, createdEl == null ? null : createdEl.getTextContent());
-
         if (created != null) {
             checkFreshness(created);
         }
         if (nonceEl != null && created != null) {
-            checkNonceNotReplayed(expectedUsername, nonceEl.getTextContent(), created);
+            checkNonceNotReplayed(username, nonceEl.getTextContent(), created);
         }
 
-        ctx.exchange().setProperty(SECURITY_SCHEMES, List.of(BASIC().username(expectedUsername)));
+        ctx.exchange().setProperty(SECURITY_SCHEMES, List.of(BASIC().username(username)));
     }
 
     /**
@@ -132,56 +144,6 @@ public class UsernameTokenValidatePart extends ValidatePart {
                     "More than one wsse:UsernameToken found; rejecting as ambiguous.");
         }
         return tokens.getFirst();
-    }
-
-    private static void checkUsername(Element usernameToken, String expectedUsername) {
-        Element usernameEl = getFirstChildByName(usernameToken, WSSE_NS, "Username");
-        if (!constantTimeEquals(expectedUsername, usernameEl == null ? "" : usernameEl.getTextContent())) {
-            throw new WsSecurityFaultException(FAILED_AUTHENTICATION, "Unknown username.");
-        }
-    }
-
-    private static void checkPassword(Element usernameToken, String expectedPassword,
-                                      Element nonceEl, String created) throws Exception {
-        Element passwordEl = getFirstChildByName(usernameToken, WSSE_NS, "Password");
-        if (passwordEl == null) {
-            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
-                    "wsse:UsernameToken has no wsse:Password.");
-        }
-        // An absent Type defaults to PasswordText per the UsernameToken profile. An unrecognized one
-        // is refused rather than treated as text: the sender said the content is something this part
-        // does not compute, so comparing it to the expected password would be testing the wrong value
-        // - and would report a mismatch as a wrong password rather than as an unsupported token.
-        String passwordType = passwordEl.getAttribute("Type");
-        if (!passwordType.isEmpty()
-            && !PASSWORD_TEXT_TYPE.equals(passwordType)
-            && !PASSWORD_DIGEST_TYPE.equals(passwordType)) {
-            throw new WsSecurityFaultException(UNSUPPORTED_SECURITY_TOKEN,
-                    "Unsupported wsse:Password Type \"" + passwordType + "\".");
-        }
-        if (!PASSWORD_DIGEST_TYPE.equals(passwordType)) {
-            if (!constantTimeEquals(expectedPassword, passwordEl.getTextContent())) {
-                throw new WsSecurityFaultException(FAILED_AUTHENTICATION, "Password does not match.");
-            }
-            return;
-        }
-        if (nonceEl == null || created == null) {
-            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
-                    "wsse:Password of type PasswordDigest requires wsse:Nonce and wsu:Created.");
-        }
-        String expectedDigest = usernameTokenDigest(decodeNonce(nonceEl.getTextContent()), created, expectedPassword);
-        if (!constantTimeEquals(expectedDigest, passwordEl.getTextContent())) {
-            throw new WsSecurityFaultException(FAILED_AUTHENTICATION, "Password digest does not match.");
-        }
-    }
-
-    // Not a fault: this is a misconfigured gateway, not a bad message - it must surface as an
-    // internal error (500 Problem Details) rather than as a plain authentication failure.
-    private static void requireResolved(String value, String attribute) {
-        if (value == null || value.isBlank() || "null".equals(value)) {
-            throw new ConfigurationException(
-                    "wsSecurity validate/usernameToken: the " + attribute + " expression did not resolve to a value.");
-        }
     }
 
     // OffsetDateTime, not Instant.parse: the latter only accepts a "Z" offset, while xs:dateTime
@@ -233,48 +195,18 @@ public class UsernameTokenValidatePart extends ValidatePart {
         seenNonces.values().removeIf(expiry -> expiry.isBefore(now));
     }
 
-    private static byte[] decodeNonce(String nonce) {
-        try {
-            return Base64.getDecoder().decode(nonce);
-        } catch (IllegalArgumentException e) {
-            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN, "wsse:Nonce is not valid Base64.");
-        }
-    }
-
-    private static boolean constantTimeEquals(String expected, String actual) {
-        if (expected == null || actual == null) {
-            return expected == actual;
-        }
-        return MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), actual.getBytes(StandardCharsets.UTF_8));
-    }
-
-    public String getUsername() {
-        return username;
+    public UserDataProvider getUserDataProvider() {
+        return userDataProvider;
     }
 
     /**
-     * @description Expected username, evaluated as a SpEL template expression, so both static
-     * values and expressions (e.g. <code>${property.apiUser}</code>) are supported.
-     * @example ${property.apiUser}
+     * @description Source that verifies the token's username/password, such as a static list, a
+     * file, a JDBC database, or an LDAP directory. Only <code>PasswordText</code> tokens can be
+     * checked this way; a <code>PasswordDigest</code> token is rejected.
      */
-    @MCAttribute
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    /**
-     * @description Expected password, evaluated as a SpEL template expression. Compared directly
-     * against a <code>PasswordText</code> token, or used to recompute the digest for a
-     * <code>PasswordDigest</code> token.
-     * @example ${property.apiPassword}
-     */
-    @MCAttribute
-    public void setPassword(String password) {
-        this.password = password;
+    @MCChildElement
+    public void setUserDataProvider(UserDataProvider userDataProvider) {
+        this.userDataProvider = userDataProvider;
     }
 
     public String getFreshnessWindow() {

@@ -1,5 +1,63 @@
 # Architecture Decision Log
 
+## ADR-009 PasswordDigest Support for wsSecurity UsernameToken Validation
+
+Status: PROPOSED
+Date: 2026-08-08
+
+### Context
+
+`validate/usernameToken` (`UsernameTokenValidatePart`) now authenticates
+callers through a pluggable `UserDataProvider`, the same abstraction
+`basicAuthentication` uses (static list, htpasswd, JDBC, LDAP, ...). That
+covers `wsse:UsernameToken` with a `PasswordText` password, including hashed
+storage (bcrypt/crypt(3)/argon2id), because the provider only ever needs to
+compare a client-supplied plaintext candidate against a stored value.
+
+`PasswordDigest` cannot be checked that way. The digest a client sends is
+`Base64(SHA1(nonce + created + password))` — verifying it means recomputing
+the same digest, which requires the literal plaintext password on the
+gateway's side. `UserDataProvider.verify(Map)` is a yes/no check (plus
+returned attributes on success); it never exposes the stored password back
+to the caller, by design — and for hashed storage the plaintext is not
+recoverable at all, regardless of the interface.
+
+So digest support and "pluggable, hash-friendly" storage are in tension:
+digest can only ever work against a source of recoverable plaintext
+passwords, not arbitrary providers.
+
+### Options
+
+1. **Do not support PasswordDigest.** Reject it, document it as unsupported.
+   Simplest, keeps `UserDataProvider` untouched, but leaves an interoperability
+   gap for peers that only offer digest.
+2. **Add a plaintext-lookup method to `UserDataProvider`** (e.g.
+   `lookupPassword(username)` returning the stored value if recoverable, empty
+   otherwise). Digest verification uses it when available. Only providers
+   backed by recoverable plaintext (e.g. `staticUserDataProvider` configured
+   without a hash, a JDBC column storing plaintext) can serve it; hashed
+   entries and LDAP (which never returns a password) answer "unavailable" and
+   digest fails closed for those users. Widens the `UserDataProvider` contract
+   for a WS-Security-specific need that most implementations can't satisfy.
+3. **A separate, narrower interface just for digest-capable lookups**, only
+   implemented by providers that genuinely hold recoverable plaintext, kept
+   out of the general `UserDataProvider` contract. Avoids polluting the main
+   interface but adds a second SPI to document and wire up for one feature.
+
+### Decision
+
+Not yet made — this ADR records the tradeoff for discussion. Current
+implementation ships option 1 (reject and log); `UsernameTokenValidatePart`
+rejects `PasswordDigest` tokens at `info` level and documents the limitation.
+
+### Consequences
+
+- WS-Security peers that only send `PasswordDigest` cannot authenticate
+  against this interceptor until a decision above is made and implemented.
+- Whichever of options 2/3 is chosen later, it only ever helps providers with
+  recoverable plaintext; hashed-password stores stay incompatible with
+  digest by construction, not by a gap in Membrane's implementation.
+
 ## ADR-008 Character Encoding of Inbound XML
 
 Status: FOR DISCUSSION

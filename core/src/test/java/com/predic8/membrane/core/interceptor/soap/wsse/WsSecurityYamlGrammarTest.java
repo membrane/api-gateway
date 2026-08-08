@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.flow.RequestInterceptor;
 import com.predic8.membrane.core.proxies.Proxy;
 import com.predic8.membrane.core.router.DefaultRouter;
@@ -67,8 +68,10 @@ class WsSecurityYamlGrammarTest {
                           password: secret
                         validate:
                           - usernameToken:
-                              username: alice
-                              password: secret
+                              staticUserDataProvider:
+                                users:
+                                  - username: alice
+                                    password: secret
                           - signature:
                               clockSkew: PT1M
                               requiredReferences:
@@ -108,8 +111,9 @@ class WsSecurityYamlGrammarTest {
 
         List<ValidatePart> validate = wsSecurity.getValidateParts();
         assertEquals(2, validate.size());
-        assertInstanceOf(UsernameTokenValidatePart.class, validate.getFirst());
-        assertEquals("alice", ((UsernameTokenValidatePart) validate.getFirst()).getUsername());
+        UsernameTokenValidatePart usernameToken = assertInstanceOf(UsernameTokenValidatePart.class, validate.getFirst());
+        StaticUserDataProvider provider = assertInstanceOf(StaticUserDataProvider.class, usernameToken.getUserDataProvider());
+        assertEquals("alice", provider.getUsers().getFirst().getUsername());
         SignatureValidatePart validation = assertInstanceOf(SignatureValidatePart.class, validate.getLast());
         assertEquals("PT1M", validation.getClockSkew());
         assertEquals(List.of(SignatureReference.By.BODY),
@@ -186,8 +190,10 @@ class WsSecurityYamlGrammarTest {
                               password: secret
                             validate:
                               - usernameToken:
-                                  username: alice
-                                  password: secret
+                                  staticUserDataProvider:
+                                    users:
+                                      - username: alice
+                                        password: secret
                               - signature:
                                   requiredReferences:
                                     - by: BODY

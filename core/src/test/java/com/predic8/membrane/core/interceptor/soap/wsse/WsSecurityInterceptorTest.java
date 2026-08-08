@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
@@ -60,8 +62,9 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
 
     private static UsernameTokenValidatePart expecting(String username, String password) {
         UsernameTokenValidatePart part = new UsernameTokenValidatePart();
-        part.setUsername(username);
-        part.setPassword(password);
+        StaticUserDataProvider provider = new StaticUserDataProvider();
+        provider.setUsers(List.of(new UserConfig(username, password)));
+        part.setUserDataProvider(provider);
         return part;
     }
 

@@ -14,15 +14,17 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.UserConfig;
 import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
 import com.predic8.membrane.core.security.SecurityScheme;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.List;
 
@@ -63,9 +65,14 @@ class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
     @BeforeEach
     void setUp() {
         usernameToken = new UsernameTokenValidatePart();
-        usernameToken.setUsername("alice");
-        usernameToken.setPassword("secret");
+        usernameToken.setUserDataProvider(staticProviderWithAlice());
         wsSecurity = validating(usernameToken);
+    }
+
+    private static StaticUserDataProvider staticProviderWithAlice() {
+        StaticUserDataProvider provider = new StaticUserDataProvider();
+        provider.setUsers(List.of(new UserConfig("alice", "secret")));
+        return provider;
     }
 
     private void exchangeWithToken(String token) throws Exception {
@@ -81,29 +88,35 @@ class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
     }
 
     /**
-     * A digest token for user {@code alice}, with the digest computed over the given password - so a
-     * password other than the configured one yields a token that must be rejected.
+     * A PasswordText token for user {@code alice} that also carries {@code wsse:Nonce}/
+     * {@code wsu:Created}, so freshness/replay checking (independent of the password type) can be
+     * exercised without a PasswordDigest token, which is rejected outright.
      */
-    private static String digestTokenForAlice(String password, String created, String nonceBase64) throws Exception {
-        MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-        sha1.update(Base64.getDecoder().decode(nonceBase64));
-        sha1.update(created.getBytes(UTF_8));
-        sha1.update(password.getBytes(UTF_8));
+    private static String plainTextTokenForAliceWithNonce(String created, String nonceBase64) {
         return """
                 <wsse:Username>alice</wsse:Username>
-                <wsse:Password Type="%s">%s</wsse:Password>
+                <wsse:Password Type="%s">secret</wsse:Password>
                 <wsse:Nonce>%s</wsse:Nonce>
                 <wsu:Created xmlns:wsu="%s">%s</wsu:Created>
-                """.formatted(PASSWORD_DIGEST_TYPE, Base64.getEncoder().encodeToString(sha1.digest()),
-                nonceBase64, WSU_NS, created);
-    }
-
-    private static String freshDigestTokenForAlice(String password) throws Exception {
-        return digestTokenForAlice(password, Instant.now().toString(), NONCE);
+                """.formatted(PASSWORD_TEXT_TYPE, nonceBase64, WSU_NS, created);
     }
 
     @Test
     void correctPlainTextTokenIsAccepted() throws Exception {
+        exchangeWithPlainTextToken("alice", "secret");
+
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
+    }
+
+    @Test
+    void hashedPasswordInProviderIsAccepted() throws Exception {
+        // SecurityUtils.verifyPassword compares the client's plaintext against a stored bcrypt hash -
+        // the same mechanism basicAuthentication relies on.
+        StaticUserDataProvider provider = new StaticUserDataProvider();
+        provider.setUsers(List.of(new UserConfig("alice",
+                "$2y$10$rP1v09TbZ4EiDmyYSCDk6.XxerJ.Ifn4ugDGyPUTRG09aEIz0P3ui"))); // bcrypt("secret")
+        usernameToken.setUserDataProvider(provider);
+
         exchangeWithPlainTextToken("alice", "secret");
 
         assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
@@ -121,27 +134,8 @@ class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
     }
 
     @Test
-    void unresolvedCredentialExpressionDoesNotAuthenticateLiteralNull() throws Exception {
-        // An unresolved template expression renders as the literal string "null"; a client sending
-        // "null"/"null" must not be authenticated by it. A misconfigured gateway is an internal
-        // error, not a WS-Security fault.
-        usernameToken.setUsername("${property.missingUser}");
-        usernameToken.setPassword("${property.missingPassword}");
-        exchangeWithPlainTextToken("null", "null");
-
-        assertAborts(wsSecurity, 500);
-    }
-
-    @Test
-    void missingUsernameConfigurationIsRejected() {
-        usernameToken.setUsername("  ");
-
-        assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
-    }
-
-    @Test
-    void missingPasswordConfigurationIsRejected() {
-        usernameToken.setPassword("  ");
+    void missingUserDataProviderConfigurationIsRejected() {
+        usernameToken.setUserDataProvider(null);
 
         assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
     }
@@ -189,42 +183,44 @@ class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
     }
 
     @Test
-    void malformedNonceIsRejectedAsInvalidToken() throws Exception {
+    void nonBase64NonceIsAcceptedAsAnOpaqueReplayToken() throws Exception {
+        // A wsse:Nonce is not decoded for a PasswordText token - it is only ever compared as a
+        // string for replay detection - so a value that isn't valid Base64 is not itself a fault.
         exchangeWithToken("""
                 <wsse:Username>alice</wsse:Username>
-                <wsse:Password Type="%s">irrelevant</wsse:Password>
+                <wsse:Password Type="%s">secret</wsse:Password>
                 <wsse:Nonce>not-valid-base64!!</wsse:Nonce>
                 <wsu:Created xmlns:wsu="%s">%s</wsu:Created>
-                """.formatted(PASSWORD_DIGEST_TYPE, WSU_NS, Instant.now()));
-
-        assertFault(wsSecurity, INVALID_SECURITY_TOKEN);
-    }
-
-    @Test
-    void correctDigestTokenIsAccepted() throws Exception {
-        exchangeWithToken(freshDigestTokenForAlice("secret"));
+                """.formatted(PASSWORD_TEXT_TYPE, WSU_NS, Instant.now()));
 
         assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
     }
 
     @Test
-    void wrongDigestIsRejected() throws Exception {
-        exchangeWithToken(freshDigestTokenForAlice("wrongpassword"));
+    void passwordDigestTokenIsRejectedAsUnsupported() throws Exception {
+        // Digest verification would need the literal plaintext password back from the provider,
+        // which a pluggable, hash-friendly UserDataProvider cannot give out - see ADR-009.
+        exchangeWithToken("""
+                <wsse:Username>alice</wsse:Username>
+                <wsse:Password Type="%s">irrelevant</wsse:Password>
+                <wsse:Nonce>%s</wsse:Nonce>
+                <wsu:Created xmlns:wsu="%s">%s</wsu:Created>
+                """.formatted(PASSWORD_DIGEST_TYPE, NONCE, WSU_NS, Instant.now()));
 
-        assertFault(wsSecurity, FAILED_AUTHENTICATION);
+        assertFault(wsSecurity, UNSUPPORTED_SECURITY_TOKEN);
     }
 
     @Test
     void staleCreatedIsRejected() throws Exception {
-        exchangeWithToken(digestTokenForAlice(
-                "secret", Instant.now().minus(Duration.ofHours(1)).toString(), NONCE));
+        exchangeWithToken(plainTextTokenForAliceWithNonce(
+                Instant.now().minus(Duration.ofHours(1)).toString(), NONCE));
 
         assertFault(wsSecurity, FAILED_AUTHENTICATION);
     }
 
     @Test
     void replayedNonceIsRejectedOnSecondUse() throws Exception {
-        String token = digestTokenForAlice("secret", Instant.now().toString(),
+        String token = plainTextTokenForAliceWithNonce(Instant.now().toString(),
                 Base64.getEncoder().encodeToString("replayed-nonce-1".getBytes(UTF_8)));
 
         exchangeWithToken(token);
@@ -239,8 +235,8 @@ class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
     void createdWithANonZuluOffsetIsAccepted() throws Exception {
         // xs:dateTime permits any offset, not only "Z". Rejecting "+02:00" as malformed would fault a
         // conformant peer - and would disagree with the wsu:Timestamp parsing in validate/signature.
-        String created = Instant.now().atOffset(java.time.ZoneOffset.ofHours(2)).toString();
-        exchangeWithToken(digestTokenForAlice("secret", created, NONCE));
+        String created = Instant.now().atOffset(ZoneOffset.ofHours(2)).toString();
+        exchangeWithToken(plainTextTokenForAliceWithNonce(created, NONCE));
 
         assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
     }
@@ -249,8 +245,8 @@ class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
     void createdWithANonZuluOffsetOutsideTheWindowIsStillRejected() throws Exception {
         // The offset is honoured rather than ignored: the same wall-clock text at a different offset is
         // a different instant, and a stale one must not slip through as fresh.
-        String created = Instant.now().minus(Duration.ofHours(1)).atOffset(java.time.ZoneOffset.ofHours(2)).toString();
-        exchangeWithToken(digestTokenForAlice("secret", created, NONCE));
+        String created = Instant.now().minus(Duration.ofHours(1)).atOffset(ZoneOffset.ofHours(2)).toString();
+        exchangeWithToken(plainTextTokenForAliceWithNonce(created, NONCE));
 
         assertFault(wsSecurity, FAILED_AUTHENTICATION);
     }
