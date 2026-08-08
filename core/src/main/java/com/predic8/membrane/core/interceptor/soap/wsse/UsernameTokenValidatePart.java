@@ -32,9 +32,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
+import static com.predic8.membrane.core.security.HttpSecurityScheme.BASIC;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
 
 /**
@@ -44,7 +46,10 @@ import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SER
  * expected values. When the token carries a <code>wsu:Created</code>/<code>wsse:Nonce</code>, this
  * also rejects stale tokens and replayed nonces — the standard WS-Security anti-replay mechanism
  * for UsernameToken. A missing or malformed token answers <code>wsse:InvalidSecurityToken</code>,
- * a wrong, stale or replayed credential <code>wsse:FailedAuthentication</code>.
+ * a wrong, stale or replayed credential <code>wsse:FailedAuthentication</code>. On success, the
+ * username is exposed to the rest of the exchange the same way a <code>basicAuthentication</code>
+ * login is, so <code>user()</code> in a later <code>template</code> or <code>groovy</code> step
+ * returns it.
  */
 @MCElement(name = "usernameToken", component = false, id = "wsSecurity-validate-usernameToken")
 public class UsernameTokenValidatePart extends ValidatePart {
@@ -107,6 +112,8 @@ public class UsernameTokenValidatePart extends ValidatePart {
         if (nonceEl != null && created != null) {
             checkNonceNotReplayed(expectedUsername, nonceEl.getTextContent(), created);
         }
+
+        ctx.exchange().setProperty(SECURITY_SCHEMES, List.of(BASIC().username(expectedUsername)));
     }
 
     /**

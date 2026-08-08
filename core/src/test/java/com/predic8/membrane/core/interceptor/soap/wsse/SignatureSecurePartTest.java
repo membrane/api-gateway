@@ -603,4 +603,22 @@ class SignatureSecurePartTest extends AbstractWsSecurityTest {
         assertEquals(EXC_C14N_NS,
                 firstByTag(result, DS_NS, "CanonicalizationMethod").getAttribute("Algorithm"));
     }
+
+    /**
+     * A wsu:Timestamp this same secure list just created has no xmlns:wsu declaration of its own -
+     * only a prefix. Canonicalization at signing time sees no declaration to emit, while the
+     * serializer adds one on the way out, so the receiver digests different bytes than were signed.
+     * Only a real serialize/re-parse round trip catches that.
+     */
+    @Test
+    void referenceToAFreshlyCreatedTimestampSurvivesSerialization() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        WsSecurityInterceptor wsSecurity = securing(
+                new TimestampSecurePart(), signature(bodyReference(), reference(SignatureReference.By.TIMESTAMP)));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        wsSecurity.init(router);
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
+
+        assertSignatureIsValid(parseBody());
+    }
 }

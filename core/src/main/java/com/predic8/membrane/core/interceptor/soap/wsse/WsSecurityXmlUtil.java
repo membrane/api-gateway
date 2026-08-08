@@ -219,12 +219,28 @@ final class WsSecurityXmlUtil {
      * in scope. The explicit declaration matters for signing: left to the serializer's namespace
      * fixup it would only appear <i>after</i> the digests were computed, so canonicalization at
      * signing time has to see it here.
+     * <p>
+     * "In scope" means an actual {@code xmlns:wsu} declaration on the element or an ancestor -
+     * deliberately not {@code lookupNamespaceURI}, which also resolves the prefix from the element's
+     * own qualified name. A {@code wsu:Timestamp} this gateway just created carries the prefix but no
+     * declaration, so that check would report it in scope and skip the declaration, and the element
+     * would canonicalize without it at signing time but with it once serialized and re-parsed.
      */
     static void declareWsuId(Element element, String id) {
         element.setAttributeNS(WSU_NS, "wsu:Id", id);
-        if (element.lookupNamespaceURI("wsu") == null) {
+        if (!isWsuPrefixDeclared(element)) {
             element.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:wsu", WSU_NS);
         }
+    }
+
+    /** Whether {@code element} or one of its ancestors declares {@code xmlns:wsu} as {@link #WSU_NS}. */
+    private static boolean isWsuPrefixDeclared(Element element) {
+        for (Node node = element; node instanceof Element current; node = current.getParentNode()) {
+            if (WSU_NS.equals(current.getAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "wsu"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

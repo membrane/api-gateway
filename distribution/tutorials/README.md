@@ -45,6 +45,11 @@ Issue signed JSON Web Tokens and protect an API by validating them. Covers the O
 If you need to integrate legacy SOAP Web Services, this tutorial provides examples and practical guidance.
 
 
+## [Web Services Security](web-services-security)
+
+Secure SOAP messages with WS-Security: validate a `wsse:UsernameToken` on incoming requests before they reach the backend.
+
+
 ## [OpenAPI](openapi)
 
 Validate requests against an OpenAPI description and learn the features added in OpenAPI 3.2, such as the QUERY method.

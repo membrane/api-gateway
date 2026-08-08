@@ -14,6 +14,8 @@
 package com.predic8.membrane.core.interceptor.soap.wsse;
 
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.security.BasicHttpSecurityScheme;
+import com.predic8.membrane.core.security.SecurityScheme;
 import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +24,9 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 
+import static com.predic8.membrane.core.exchange.Exchange.SECURITY_SCHEMES;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
@@ -103,6 +107,17 @@ class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
         exchangeWithPlainTextToken("alice", "secret");
 
         assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
+    }
+
+    @Test
+    void successfulValidationExposesTheUsernameAsBasicSecurityScheme() throws Exception {
+        exchangeWithPlainTextToken("alice", "secret");
+
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
+
+        List<SecurityScheme> schemes = exchange.getProperty(SECURITY_SCHEMES, List.class);
+        assertEquals(1, schemes.size());
+        assertEquals("alice", ((BasicHttpSecurityScheme) schemes.getFirst()).getUsername());
     }
 
     @Test
