@@ -241,6 +241,96 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
     }
 
     @Test
+    void secureWithoutValidateDiscardsTheTokensThePeerSent() throws Exception {
+        // Nothing checked the client's UsernameToken, so forwarding it would present it to the backend
+        // alongside the security this element adds - as if the gateway had vouched for it.
+        exchangeWithBody(TWO_SECURITY_HEADERS);
+        WsSecurityInterceptor wsSecurity = securing(new TimestampSecurePart());
+        wsSecurity.init(router);
+
+        assertEquals(CONTINUE, wsSecurity.handleRequest(exchange));
+
+        Document result = parseBody();
+        // Only the token in the header addressed to the ultimate receiver goes: the one targeted at
+        // GATEWAY_ACTOR belongs to another node and is none of this element's business.
+        assertEquals(1, result.getElementsByTagNameNS(WSSE_NS, "UsernameToken").getLength());
+        assertEquals("gatewayUser",
+                firstByTag(result, WSSE_NS, "Username").getTextContent());
+    }
+
+    @Test
+    void secureWithoutValidateKeepsATimestampASignatureMayCover() throws Exception {
+        // The one thing an unvalidated header may keep: it asserts nothing on its own, and by: TIMESTAMP
+        // exists precisely to cover a freshness window the message already carried.
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Header>
+                        <wsse:Security xmlns:wsse="%s">
+                            <wsu:Timestamp xmlns:wsu="%s"><wsu:Created>%s</wsu:Created></wsu:Timestamp>
+                            <wsse:UsernameToken><wsse:Username>alice</wsse:Username></wsse:UsernameToken>
+                        </wsse:Security>
+                    </soap:Header>
+                    <soap:Body><foo>bar</foo></soap:Body>
+                </soap:Envelope>
+                """.formatted(WSSE_NS, WSU_NS, java.time.Instant.now()));
+        WsSecurityInterceptor wsSecurity = securing(signature(bodyReference(), reference(TIMESTAMP)));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        wsSecurity.init(router);
+
+        assertEquals(CONTINUE, wsSecurity.handleRequest(exchange));
+
+        Document result = parseBody();
+        assertEquals(1, result.getElementsByTagNameNS(WSU_NS, "Timestamp").getLength());
+        assertEquals(0, result.getElementsByTagNameNS(WSSE_NS, "UsernameToken").getLength());
+        assertEquals(2, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+    }
+
+    @Test
+    void soapPrefixInAnXPathReferenceResolvesForSoap12() throws Exception {
+        // Bound to the envelope namespace of the message, not to SOAP 1.1: bound to a fixed one this
+        // would match nothing here and fault, blaming the XPath rather than the envelope version.
+        exchangeWithBody("""
+                <env:Envelope xmlns:env="%s">
+                    <env:Body><foo>bar</foo></env:Body>
+                </env:Envelope>
+                """.formatted(SOAP12_NS));
+        WsSecurityInterceptor wsSecurity = securing(signature(xpathReference("//soap:Body")));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+        wsSecurity.init(router);
+
+        assertEquals(CONTINUE, wsSecurity.handleRequest(exchange));
+        assertEquals(1, parseBody().getElementsByTagNameNS(DS_NS, "Reference").getLength());
+    }
+
+    @Test
+    void signatureCoveringTheUsernameTokenBeforeItIsAConfigurationError() {
+        // Same rule as for the timestamp: the part that creates what a signature covers has to be listed
+        // first, or the message goes out silently under-covered.
+        WsSecurityInterceptor wsSecurity = securing(
+                signature(bodyReference(), reference(SignatureReference.By.USERNAME_TOKEN)), usernameTokenSecuring());
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+
+        ConfigurationException e = assertThrows(ConfigurationException.class, () -> wsSecurity.init(router));
+        assertTrue(e.getMessage().contains("USERNAME_TOKEN"));
+    }
+
+    @Test
+    void signatureCoveringTheUsernameTokenIsAcceptedAfterIt() {
+        WsSecurityInterceptor wsSecurity = securing(
+                usernameTokenSecuring(), signature(bodyReference(), reference(SignatureReference.By.USERNAME_TOKEN)));
+        wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
+
+        assertDoesNotThrow(() -> wsSecurity.init(router));
+    }
+
+    private static UsernameTokenSecurePart usernameTokenSecuring() {
+        UsernameTokenSecurePart usernameToken = new UsernameTokenSecurePart();
+        usernameToken.setUsername("alice");
+        usernameToken.setPassword("secret");
+        return usernameToken;
+    }
+
+    @Test
     void signatureCoveringTheTimestampIsAcceptedAfterIt() {
         WsSecurityInterceptor wsSecurity = securing(
                 new TimestampSecurePart(), signature(bodyReference(), reference(TIMESTAMP)));

@@ -31,8 +31,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Pins down the configuration grammar of {@code wsSecurity}: that {@code validate} and
  * {@code secure} are two distinct, ordered lists, and that the same element name means a different
- * thing in each - a {@code signature} under {@code validate} verifies, one under {@code secure}
- * signs. Nothing else asserts that, because the two element sets are only kept apart by
+ * thing in each - a {@code signature} under {@code validate} verifies, one under {@code secure} signs;
+ * a {@code timestamp} under {@code validate} enforces a window, one under {@code secure} creates it.
+ * Nothing else asserts that, because the two element sets are only kept apart by
  * {@code validate}/{@code secure} being separate declared types.
  */
 class WsSecurityYamlGrammarTest {
@@ -127,11 +128,34 @@ class WsSecurityYamlGrammarTest {
     }
 
     /**
-     * {@code timestamp} only exists under {@code secure}: there is nothing to validate about a
-     * timestamp on its own, freshness is checked by the {@code signature} that covers it.
+     * {@code timestamp} means a different thing in each list, like {@code signature} does: under
+     * {@code secure} it creates a window and takes a {@code ttl}, under {@code validate} it enforces one
+     * and takes a {@code clockSkew}.
      */
     @Test
-    void timestampIsNotAValidatePart() {
+    void timestampBindsToADifferentTypeInEachList() throws Exception {
+        WsSecurityInterceptor wsSecurity = parse("""
+                api:
+                  port: 2000
+                  flow:
+                    - request:
+                        - wsSecurity:
+                            validate:
+                              - timestamp:
+                                  clockSkew: PT30S
+                            secure:
+                              - timestamp:
+                                  ttl: PT2M
+                """);
+
+        assertEquals("PT30S",
+                assertInstanceOf(TimestampValidatePart.class, wsSecurity.getValidateParts().getFirst()).getClockSkew());
+        assertEquals("PT2M",
+                assertInstanceOf(TimestampSecurePart.class, wsSecurity.getSecureParts().getFirst()).getTtl());
+    }
+
+    @Test
+    void secureOnlyTtlIsRejectedOnAValidateTimestamp() {
         Exception e = assertThrows(Exception.class, () -> parse("""
                 api:
                   port: 2000
@@ -142,11 +166,38 @@ class WsSecurityYamlGrammarTest {
                               - timestamp:
                                   ttl: PT2M
                 """));
-        // Not just "some exception": this config also omits keystore/truststore, so an unrelated
-        // bootstrap failure would satisfy a bare assertThrows and the test would keep passing if
-        // timestamp ever became a valid validate part.
-        assertTrue(messageChainOf(e).contains("timestamp"),
-                () -> "Expected the error to name the rejected element, but was: " + messageChainOf(e));
+        // Naming the offending attribute, not just "some exception": the two same-named elements are
+        // only kept apart by their own attribute sets, so a bare assertThrows would keep passing if
+        // validate/timestamp ever started accepting a ttl.
+        assertTrue(messageChainOf(e).contains("ttl"),
+                () -> "Expected the error to name the rejected attribute, but was: " + messageChainOf(e));
+    }
+
+    @Test
+    void usernameTokenIsAvailableAsASignatureReferenceTarget() throws Exception {
+        WsSecurityInterceptor wsSecurity = parse("""
+                api:
+                  port: 2000
+                  flow:
+                    - request:
+                        - wsSecurity:
+                            truststore:
+                              location: classpath:/alias-truststore.p12
+                              password: secret
+                            validate:
+                              - usernameToken:
+                                  username: alice
+                                  password: secret
+                              - signature:
+                                  requiredReferences:
+                                    - by: BODY
+                                    - by: USERNAME_TOKEN
+                """);
+
+        SignatureValidatePart validation =
+                assertInstanceOf(SignatureValidatePart.class, wsSecurity.getValidateParts().getLast());
+        assertEquals(List.of(SignatureReference.By.BODY, SignatureReference.By.USERNAME_TOKEN),
+                validation.getRequiredReferences().stream().map(SignatureReference::getBy).toList());
     }
 
     private static String messageChainOf(Throwable t) {

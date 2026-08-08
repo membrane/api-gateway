@@ -28,11 +28,20 @@ enum WsSecurityFaultCode {
     /** A security token that is present and resolvable, but not well-formed or not of a usable kind. */
     INVALID_SECURITY_TOKEN("InvalidSecurityToken", "An invalid security token was provided."),
 
+    /** A security token of a kind this gateway does not process. */
+    UNSUPPORTED_SECURITY_TOKEN("UnsupportedSecurityToken", "An unsupported token was provided."),
+
+    /** A signature, digest or canonicalization algorithm this gateway declines to process. */
+    UNSUPPORTED_ALGORITHM("UnsupportedAlgorithm", "An unsupported signature or encryption algorithm was used."),
+
     /** A token reference that cannot be resolved to the token it names. */
     SECURITY_TOKEN_UNAVAILABLE("SecurityTokenUnavailable", "Referenced security token could not be retrieved."),
 
     /** A credential that does not authenticate: wrong password or digest, stale or replayed nonce. */
     FAILED_AUTHENTICATION("FailedAuthentication", "The security token could not be authenticated or authorized."),
+
+    /** A {@code wsu:Timestamp} whose freshness window has passed, i.e. a possible replay. */
+    MESSAGE_EXPIRED("MessageExpired", "The message has expired."),
 
     /** A signature that does not verify, or that fails to cover a required element. */
     FAILED_CHECK("FailedCheck", "The signature or decryption was invalid.");

@@ -23,8 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.FAILED_AUTHENTICATION;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY_TOKEN;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -219,6 +218,75 @@ class UsernameTokenValidatePartTest extends AbstractWsSecurityTest {
         // Same nonce+created replayed in a second, otherwise-identical request.
         exchangeWithToken(token);
         assertFault(wsSecurity, FAILED_AUTHENTICATION);
+    }
+
+    @Test
+    void createdWithANonZuluOffsetIsAccepted() throws Exception {
+        // xs:dateTime permits any offset, not only "Z". Rejecting "+02:00" as malformed would fault a
+        // conformant peer - and would disagree with the wsu:Timestamp parsing in validate/signature.
+        String created = Instant.now().atOffset(java.time.ZoneOffset.ofHours(2)).toString();
+        exchangeWithToken(digestTokenForAlice("secret", created, NONCE));
+
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
+    }
+
+    @Test
+    void createdWithANonZuluOffsetOutsideTheWindowIsStillRejected() throws Exception {
+        // The offset is honoured rather than ignored: the same wall-clock text at a different offset is
+        // a different instant, and a stale one must not slip through as fresh.
+        String created = Instant.now().minus(Duration.ofHours(1)).atOffset(java.time.ZoneOffset.ofHours(2)).toString();
+        exchangeWithToken(digestTokenForAlice("secret", created, NONCE));
+
+        assertFault(wsSecurity, FAILED_AUTHENTICATION);
+    }
+
+    @Test
+    void moreThanOneUsernameTokenIsRejected() throws Exception {
+        // Taking the first would let the choice of token decide whether the message authenticates, and
+        // would forward the other one to the backend unchecked.
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Header>
+                        <wsse:Security xmlns:wsse="%s">
+                            <wsse:UsernameToken>
+                                <wsse:Username>alice</wsse:Username>
+                                <wsse:Password Type="%s">secret</wsse:Password>
+                            </wsse:UsernameToken>
+                            <wsse:UsernameToken>
+                                <wsse:Username>mallory</wsse:Username>
+                                <wsse:Password Type="%s">whatever</wsse:Password>
+                            </wsse:UsernameToken>
+                        </wsse:Security>
+                    </soap:Header>
+                    <soap:Body><foo>bar</foo></soap:Body>
+                </soap:Envelope>
+                """.formatted(WSSE_NS, PASSWORD_TEXT_TYPE, PASSWORD_TEXT_TYPE));
+        wsSecurity.init(router);
+
+        assertFault(wsSecurity, INVALID_SECURITY_TOKEN);
+    }
+
+    @Test
+    void passwordWithAnUnsupportedTypeIsRejected() throws Exception {
+        // Not compared as plain text: the sender said the content is something else, so a match would
+        // be an accident and a mismatch would be reported as a wrong password.
+        exchangeWithToken("""
+                <wsse:Username>alice</wsse:Username>
+                <wsse:Password Type="http://example.com/PasswordSomethingElse">secret</wsse:Password>
+                """);
+
+        assertFault(wsSecurity, UNSUPPORTED_SECURITY_TOKEN);
+    }
+
+    @Test
+    void passwordWithoutATypeIsTreatedAsPlainText() throws Exception {
+        // The UsernameToken profile's default when Type is absent.
+        exchangeWithToken("""
+                <wsse:Username>alice</wsse:Username>
+                <wsse:Password>secret</wsse:Password>
+                """);
+
+        assertEquals(Outcome.CONTINUE, wsSecurity.handleRequest(exchange));
     }
 
     @Test

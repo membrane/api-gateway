@@ -24,14 +24,15 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.FAILED_AUTHENTICATION;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY_TOKEN;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
 import static com.predic8.membrane.core.lang.ExchangeExpression.Language.SPEL;
 import static com.predic8.membrane.core.util.text.SerializationFunction.TEXT_SERIALIZATION;
@@ -80,11 +81,7 @@ public class UsernameTokenValidatePart extends ValidatePart {
 
     @Override
     void process(WsSecurityContext ctx) throws Exception {
-        Element usernameToken = getFirstChildByName(ctx.security(), WSSE_NS, "UsernameToken");
-        if (usernameToken == null) {
-            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
-                    "wsse:Security carries no wsse:UsernameToken.");
-        }
+        Element usernameToken = findSingleUsernameToken(ctx.security());
 
         String expectedUsername = usernameExpression.evaluate(ctx.exchange(), ctx.flow(), String.class);
         String expectedPassword = passwordExpression.evaluate(ctx.exchange(), ctx.flow(), String.class);
@@ -112,6 +109,24 @@ public class UsernameTokenValidatePart extends ValidatePart {
         }
     }
 
+    /**
+     * The one {@code wsse:UsernameToken} of the header. More than one is refused rather than resolved
+     * by taking the first: which token a receiver picks would then decide whether the message
+     * authenticates, and the ones this part ignored would still be forwarded to the backend.
+     */
+    private static Element findSingleUsernameToken(Element security) {
+        List<Element> tokens = getChildrenByName(security, WSSE_NS, "UsernameToken");
+        if (tokens.isEmpty()) {
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "wsse:Security carries no wsse:UsernameToken.");
+        }
+        if (tokens.size() > 1) {
+            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+                    "More than one wsse:UsernameToken found; rejecting as ambiguous.");
+        }
+        return tokens.getFirst();
+    }
+
     private static void checkUsername(Element usernameToken, String expectedUsername) {
         Element usernameEl = getFirstChildByName(usernameToken, WSSE_NS, "Username");
         if (!constantTimeEquals(expectedUsername, usernameEl == null ? "" : usernameEl.getTextContent())) {
@@ -126,7 +141,18 @@ public class UsernameTokenValidatePart extends ValidatePart {
             throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
                     "wsse:UsernameToken has no wsse:Password.");
         }
-        if (!PASSWORD_DIGEST_TYPE.equals(passwordEl.getAttribute("Type"))) {
+        // An absent Type defaults to PasswordText per the UsernameToken profile. An unrecognized one
+        // is refused rather than treated as text: the sender said the content is something this part
+        // does not compute, so comparing it to the expected password would be testing the wrong value
+        // - and would report a mismatch as a wrong password rather than as an unsupported token.
+        String passwordType = passwordEl.getAttribute("Type");
+        if (!passwordType.isEmpty()
+            && !PASSWORD_TEXT_TYPE.equals(passwordType)
+            && !PASSWORD_DIGEST_TYPE.equals(passwordType)) {
+            throw new WsSecurityFaultException(UNSUPPORTED_SECURITY_TOKEN,
+                    "Unsupported wsse:Password Type \"" + passwordType + "\".");
+        }
+        if (!PASSWORD_DIGEST_TYPE.equals(passwordType)) {
             if (!constantTimeEquals(expectedPassword, passwordEl.getTextContent())) {
                 throw new WsSecurityFaultException(FAILED_AUTHENTICATION, "Password does not match.");
             }
@@ -151,9 +177,12 @@ public class UsernameTokenValidatePart extends ValidatePart {
         }
     }
 
+    // OffsetDateTime, not Instant.parse: the latter only accepts a "Z" offset, while xs:dateTime
+    // permits any (e.g. "+02:00") and SignatureValidatePart already accepts those on wsu:Timestamp.
+    // Only the parsed value is normalized - the digest is computed over the original text.
     private Instant parseCreated(String value) {
         try {
-            return Instant.parse(value);
+            return OffsetDateTime.parse(value.trim()).toInstant();
         } catch (DateTimeParseException e) {
             throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
                     "wsu:Created is not a valid xs:dateTime: " + value);

@@ -43,9 +43,9 @@ public class TimestampSecurePart extends SecurePart {
     @Override
     void process(WsSecurityContext ctx) {
         Element security = ctx.security();
-        // The header may be one the message already carried (nothing consumed it), in which case its
-        // stale wsu:Timestamp is replaced rather than joined by a second one - WS-Security allows
-        // only one per header.
+        // WS-Security allows only one wsu:Timestamp per header, so an existing one is replaced rather
+        // than joined by a second. The header is always a fresh one, so this only matters when a
+        // configuration lists two timestamp parts - the last one wins.
         for (Element existing : getChildrenByName(security, WSU_NS, "Timestamp")) {
             security.removeChild(existing);
         }

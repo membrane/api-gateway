@@ -23,6 +23,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.XMLConstants;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
@@ -30,8 +31,6 @@ import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
 import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -70,10 +69,21 @@ public class SignatureSecurePart extends SecurePart {
             DigestMethod.SHA1, DigestMethod.SHA224, DigestMethod.SHA256, DigestMethod.SHA384,
             DigestMethod.SHA512, DigestMethod.RIPEMD160, DigestMethod.SHA3_224, DigestMethod.SHA3_256,
             DigestMethod.SHA3_384, DigestMethod.SHA3_512);
+    // HMAC is deliberately absent: signing here always uses the keystore's PrivateKey, which a MAC
+    // algorithm cannot accept, so advertising one would only move the failure from init() to the
+    // first message. RSA-SHA1 stays for legacy backends that require it - note that validate/signature
+    // refuses SHA-1 on the way in, by design.
     private static final List<String> SUPPORTED_SIGNATURE_ALGORITHMS = List.of(
-            SignatureMethod.RSA_SHA1, "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
-            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512",
-            SignatureMethod.DSA_SHA1, SignatureMethod.HMAC_SHA1);
+            SignatureMethod.RSA_SHA1,
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384",
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512",
+            "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1",
+            "http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1",
+            "http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1",
+            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256",
+            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384",
+            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512");
     private static final List<String> EXCLUSIVE_CANONICALIZATION_ALGORITHMS = List.of(
             CanonicalizationMethod.EXCLUSIVE, CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
 
@@ -88,11 +98,11 @@ public class SignatureSecurePart extends SecurePart {
     }
 
     /**
-     * Whether this signature covers the {@code wsu:Timestamp}, which the enclosing element needs to
-     * know to check that a {@code timestamp} part is listed before this one.
+     * Whether this signature covers what {@code by} names, which the enclosing element needs to know to
+     * check that the part creating it is listed before this one.
      */
-    boolean referencesTimestamp() {
-        return references.stream().anyMatch(r -> r.getBy() == SignatureReference.By.TIMESTAMP);
+    boolean references(SignatureReference.By by) {
+        return references.stream().anyMatch(r -> r.getBy() == by);
     }
 
     private void validateConfiguration() {
@@ -113,30 +123,23 @@ public class SignatureSecurePart extends SecurePart {
         validateAlgorithms();
     }
 
+    /**
+     * The lists are the authority, not the {@code XMLSignatureFactory}. Asking the factory whether it
+     * knows an algorithm accepts more than this part can actually use - a MAC algorithm, most
+     * obviously, which it constructs happily and then cannot sign a message with - so a configuration
+     * would pass {@code init()} and fail on the first message instead.
+     */
     private void validateAlgorithms() {
-        XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
-        try {
-            fac.newDigestMethod(digestAlgorithm, null);
-        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
-            throw unsupportedAlgorithm("digestAlgorithm", digestAlgorithm, SUPPORTED_DIGEST_ALGORITHMS, e);
-        }
-        try {
-            fac.newSignatureMethod(signatureAlgorithm, null);
-        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
-            throw unsupportedAlgorithm("signatureAlgorithm", signatureAlgorithm, SUPPORTED_SIGNATURE_ALGORITHMS, e);
-        }
-        try {
-            fac.newCanonicalizationMethod(canonicalizationAlgorithm, (C14NMethodParameterSpec) null);
-        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
-            throw unsupportedAlgorithm("canonicalizationAlgorithm", canonicalizationAlgorithm,
-                    SUPPORTED_CANONICALIZATION_ALGORITHMS, e);
-        }
+        requireSupported("digestAlgorithm", digestAlgorithm, SUPPORTED_DIGEST_ALGORITHMS);
+        requireSupported("signatureAlgorithm", signatureAlgorithm, SUPPORTED_SIGNATURE_ALGORITHMS);
+        requireSupported("canonicalizationAlgorithm", canonicalizationAlgorithm, SUPPORTED_CANONICALIZATION_ALGORITHMS);
     }
 
-    private static ConfigurationException unsupportedAlgorithm(String attribute, String value,
-                                                               List<String> supported, Exception cause) {
-        return new ConfigurationException("Unsupported " + attribute + " \"" + value +
-                "\" on wsSecurity secure/signature. Supported values: " + String.join(", ", supported), cause);
+    private static void requireSupported(String attribute, String value, List<String> supported) {
+        if (!supported.contains(value)) {
+            throw new ConfigurationException("Unsupported " + attribute + " \"" + value +
+                    "\" on wsSecurity secure/signature. Supported values: " + String.join(", ", supported));
+        }
     }
 
     private void loadSigningMaterial() {
@@ -180,21 +183,18 @@ public class SignatureSecurePart extends SecurePart {
         Document doc = ctx.document();
         Element security = ctx.security();
 
-        if (securityTokenReference != null) {
-            // This part owns the wsse:BinarySecurityToken in this mode, so a token the peer sent in
-            // a header nothing consumed has to go first: it is looked up by name below, and both
-            // lookups take the FIRST match while ours is appended last. Left in place, the peer's
-            // token would be the one signed and the one ds:KeyInfo points at - advertising the
-            // peer's certificate for a signature made with the gateway key.
-            for (Element peerToken : getChildrenByName(security, WSSE_NS, "BinarySecurityToken")) {
-                security.removeChild(peerToken);
-            }
-            if (references.stream().anyMatch(r -> r.getBy() == SignatureReference.By.BST)) {
-                // Created here, before reference resolution, so a "by: BST" reference can pick it up
-                // and cover it with a ds:Reference; appendSecurityTokenReferenceKeyInfo() then reuses
-                // this same element instead of creating its own.
-                security.appendChild(createBinarySecurityToken(doc));
-            }
+        if (securityTokenReference != null
+            && references.stream().anyMatch(r -> r.getBy() == SignatureReference.By.BST)
+            && getFirstChildByName(security, WSSE_NS, "BinarySecurityToken") == null) {
+            // Created here, before reference resolution, so a "by: BST" reference can pick it up and
+            // cover it with a ds:Reference; appendSecurityTokenReferenceKeyInfo() then reuses this
+            // same element instead of creating its own.
+            //
+            // No token the peer sent can be in the way: the enclosing element removes the inbound
+            // wsse:Security header it owns before any secure part runs. An existing one is therefore
+            // this gateway's own, put there by an earlier signature part in the same list, and holds
+            // the same certificate - so it is reused rather than duplicated.
+            security.appendChild(createBinarySecurityToken(doc));
         }
 
         List<String> referencedIds = new ArrayList<>();
@@ -219,9 +219,26 @@ public class SignatureSecurePart extends SecurePart {
         sign(doc, ctx.envelope(), security, referencedIds);
     }
 
+    /**
+     * The id the {@code ds:Reference} for {@code target} points at, put on the element if it does not
+     * already carry one.
+     * <p>
+     * An id the element already has is reused as it stands, including an unqualified {@code Id}: adding
+     * a {@code wsu:Id} of the same value next to it would leave the element with two ID attributes
+     * holding one value, which some consumers read as an ID collision.
+     */
     private static String ensureId(Element target, SignatureReference reference) {
-        String configured = reference.getId() != null ? reference.getId() : idOf(target);
-        String id = configured.isEmpty() ? "sig-" + UUID.randomUUID() : configured;
+        if (reference.getId() == null) {
+            String existing = idOf(target);
+            if (!existing.isEmpty()) {
+                // Re-marked rather than assumed: the interceptor marks the ids of the document it
+                // received, but an element created by an earlier secure part in this same list - a
+                // wsse:BinarySecurityToken, say - came after that, and "#id" would not dereference.
+                markIdAttribute(target);
+                return existing;
+            }
+        }
+        String id = reference.getId() != null ? reference.getId() : "sig-" + UUID.randomUUID();
         declareWsuId(target, id);
         target.setIdAttributeNS(WSU_NS, "Id", true);
         return id;
@@ -353,6 +370,12 @@ public class SignatureSecurePart extends SecurePart {
     private static void appendKeyInfo(Document doc, Element signatureElement, Element tokenReference) {
         Element securityTokenReferenceElement = doc.createElementNS(WSSE_NS, "wsse:SecurityTokenReference");
         declareWsuId(securityTokenReferenceElement, "STR-" + UUID.randomUUID());
+        // WSS 1.1's TokenType says what kind of token the reference names. It is redundant next to a
+        // wsse:Reference/KeyIdentifier that already carries a ValueType, but a ThumbprintSHA1
+        // KeyIdentifier names the token by hash alone, and WSS4J/CXF read TokenType to learn what that
+        // hash identifies. Set for every mode so the STR looks the same whichever one is configured.
+        securityTokenReferenceElement.setAttributeNS(WSSE11_NS, "wsse11:TokenType", X509_V3_VALUE_TYPE);
+        securityTokenReferenceElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:wsse11", WSSE11_NS);
         securityTokenReferenceElement.appendChild(tokenReference);
 
         Element keyInfo = doc.createElementNS(XMLSignature.XMLNS, "ds:KeyInfo");

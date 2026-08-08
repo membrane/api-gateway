@@ -1,5 +1,79 @@
 # Architecture Decision Log
 
+## ADR-008 Character Encoding of Inbound XML
+
+Status: FOR DISCUSSION
+Date: 2026-08-08
+
+### Context
+
+Deciding which charset an inbound XML body is in has three answers in Membrane today, depending on
+which code path reaches the body first:
+
+| Path | What decides the charset | Ignores |
+|---|---|---|
+| `XmlDomBody.documentOf` — hands the parser a byte stream | BOM, then the `encoding=` declaration, else UTF-8 | the `Content-Type` `charset` |
+| `XMLUtil.getInputSource` — wraps the body in `new InputStreamReader(...)` with no charset | `Charset.defaultCharset()` | both the header **and** the declaration |
+| `Message.getBodyAsStringDecoded` | the `Content-Type` `charset`, else UTF-8 (`TextUtil.getCharset`) | the declaration |
+
+RFC 7303 §3.1/§8.5 is unambiguous for `application/xml` and `text/xml`: when the `charset` parameter
+is present it is authoritative and overrides the internal declaration. None of the three paths
+implements that.
+
+The second row is a defect on its own terms, independent of RFC 7303. Handing a parser a `Reader`
+means the XML declaration can no longer be honoured — the XML specification says an encoding
+declaration is ignored on a character stream, because by then the decoding has already happened. So
+`XPathExchangeExpression` and everything else built on `getInputSource` decodes by JVM default
+charset. Since JEP 400 that is UTF-8 unless `-Dfile.encoding` says otherwise, which is why this has
+not been noticed; a body that correctly declares `ISO-8859-1` is nonetheless misdecoded today, and the
+behaviour is platform- and flag-dependent, which no decoding rule should be.
+
+Membrane's *outbound* side already assumes RFC 7303 precedence. `XmlDomBody.correctContentTypeCharset`
+rewrites the `charset` parameter to match the bytes it just wrote, precisely because a parameter that
+says something else makes a receiver misdecode — and makes a receiving WS-Security stack digest bytes
+other than the ones that were signed. Inbound and outbound therefore disagree with each other.
+
+For SOAP specifically, header precedence is also what the stacks on the other end of the wire do:
+CXF takes the encoding from the `Content-Type`.
+
+This is an interoperability and correctness problem, not a vulnerability. A misdecode changes the
+characters that canonicalization sees, so a signature over the affected content fails to verify —
+loudly, rather than being accepted as something it is not.
+
+### Decision
+
+- **RFC 7303 precedence is the rule for inbound XML:** the `Content-Type` `charset` when present,
+  otherwise the BOM or `encoding=` declaration, otherwise UTF-8. One rule, all XML entry points.
+- **It lives in one place.** The resolution belongs in a single helper that every XML entry point uses
+  (`XMLUtil.getInputSource` and `XmlDomBody` being the two that matter), rather than each parse site
+  deciding for itself. The three-way split above is what happens otherwise.
+- **No `Reader` without an explicit charset, ever.** Where the declaration is to be honoured, the
+  parser gets bytes; where the header wins, the charset is passed explicitly. `new
+  InputStreamReader(stream)` in XML handling is a defect, not a shortcut.
+- **No per-API override is added.** There is no evidence yet that anyone needs to opt out, and a
+  configuration switch on message decoding would be a lasting cost; revisit if a real deployment
+  produces one.
+
+### Consequences
+
+- A body whose header and declaration disagree changes behaviour. That is the point of the change, but
+  it is a behaviour change on a path with no obvious symptom, so it belongs in a minor release with a
+  release note rather than a patch.
+- Membrane now trusts the sender's `charset` over the sender's declaration. Where an intermediary
+  stamps a blanket `charset=utf-8` onto traffic that is really ISO-8859-1 with a correct declaration,
+  this makes Membrane misdecode a body that previously parsed. RFC 7303 says the header wins, and CXF
+  agrees, so conforming is the right default — but the failure mode moves, it does not vanish.
+- Bodies that declare an encoding other than UTF-8 and carry no `charset` parameter start decoding
+  correctly on the two `getInputSource` callers, where they are currently decoded by JVM default:
+  `XPathExchangeExpression` (every `xpath` in a configuration) and `CommonBuiltInFunctions`. The
+  `xpath` references inside `wsSecurity` are not among them — those evaluate against the `Document`
+  `XmlDomBody` already parsed, so they follow the byte path and change only through the
+  header-precedence half of this decision.
+- `XmlDomBody`'s outbound correction stays as it is: it is the mirror of this decision, and the two now
+  agree.
+- Applies to XML only. JSON has its own rules (RFC 8259: UTF-8, no `charset` parameter) and is not in
+  scope.
+
 ## ADR-007 No XML Nesting-Depth Limit in XML Processing
 
 Status: PROPOSED
@@ -98,12 +172,40 @@ back.
   classes or in the SPI, so the encryption implementation (hand-rolled vs. WSS4J) stays an open
   choice that does not affect the grammar.
 
+### Accepted algorithms are stricter than produced ones
+
+`validate/signature` fixes its accepted algorithms instead of taking whatever the peer chose:
+SHA-256 or better for both digest and signature, and canonicalization as the only permitted
+`ds:Transform`. `secure/signature` stays configurable and still offers `rsa-sha1`, because a legacy
+backend may require it.
+
+The asymmetry is the point. Accepting what we can emit would let any peer downgrade a message to
+SHA-1 whatever this gateway signs with. The transform allowlist is not a capability limit but a
+correctness one: `Reference.getURI()` says which element a reference names, while the transform chain
+decides what was actually digested, so an XPath transform can satisfy a `requiredReferences` check
+against `#body-id` while covering none of the body. The JDK's secure validation mode is also enabled
+explicitly rather than relied on by default — it is what refuses `file`/`http` reference URIs.
+
+### An unvalidated header is not forwarded
+
+The header targeted at this element's actor is consumed at the group boundary even when there is no
+`validate` list. Without that, a `secure`-only element appends its own tokens to the header the peer
+sent, and the backend receives the client's `UsernameToken` and signature as if the gateway had
+vouched for them.
+
+The `wsu:Timestamp` is the one child that survives: it asserts nothing on its own, and
+`secure/signature` may reference it (`by: TIMESTAMP`) to cover a freshness window the message already
+carried. Everything else is dropped — an allowlist, since every other child of a `wsse:Security`
+header is a claim.
+
 ### Deviation from ADR-001 (ProblemDetails)
 
 WS-Security failures return a `soap:Fault`, not ProblemDetails. SOAP clients cannot consume
 RFC 7807, and the WS-Security specification defines the fault codes to use:
 
 - missing or malformed security header: `wsse:InvalidSecurity`
+- a refused algorithm or transform: `wsse:UnsupportedAlgorithm`
+- a token kind or `Password` type not processed here: `wsse:UnsupportedSecurityToken`
 - failed authentication, bad password or digest, replayed nonce: `wsse:FailedAuthentication`
 - signature verification failure, required reference not covered: `wsse:FailedCheck`
 - unresolvable or malformed token reference: `wsse:SecurityTokenUnavailable`,
@@ -117,6 +219,12 @@ envelope can be produced.
 
 ### Consequences
 
+- `timestamp` exists in both lists, like `signature` does: under `secure` it creates a freshness window
+  and takes a `ttl`, under `validate` it enforces one and takes a `clockSkew`. The `validate` one is
+  what makes a window enforceable without a signature — useful when the channel is authenticated some
+  other way — while `signature` with a `TIMESTAMP` required reference is what makes the window
+  trustworthy. `SignatureReference.By.USERNAME_TOKEN` exists for the same reason on the credential side:
+  the signed-UsernameToken policy is not expressible without it.
 - The five flat elements are renamed into `validate` / `secure` list parts. They are unreleased,
   with no tutorials or integration tests, so no deprecation cycle is needed — provided no release
   ships them as public configuration first.

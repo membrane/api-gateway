@@ -22,9 +22,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import javax.xml.crypto.dsig.Reference;
-import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.crypto.dsig.XMLSignatureFactory;
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMValidateContext;
 import java.io.ByteArrayInputStream;
 import java.security.InvalidAlgorithmParameterException;
@@ -32,8 +31,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.*;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.*;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
@@ -48,14 +45,59 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
  * Signature Wrapping attacks, where an attacker leaves a validly-signed but irrelevant fragment in
  * the message while the element downstream logic actually reads is unsigned or swapped. Freshness of
  * a <code>wsu:Timestamp</code> is only enforced when <code>requiredReferences</code> contains a
- * <code>TIMESTAMP</code> entry; without one, a captured signed message stays replayable.
+ * <code>TIMESTAMP</code> entry; without one, a captured signed message stays replayable. Requiring a
+ * <code>USERNAME_TOKEN</code> entry likewise is what binds a <code>usernameToken</code> credential to
+ * this message rather than leaving it replayable on its own.
+ * <p>Accepted algorithms are fixed and deliberately stricter than what <code>secure</code> can be
+ * configured to produce: SHA-256 or better for both digest and signature, and canonicalization as the
+ * only permitted <code>ds:Transform</code>. A message using anything else — a SHA-1 downgrade, or a
+ * transform that digests a node-set other than the element its <code>ds:Reference</code> names — is
+ * answered with <code>wsse:UnsupportedAlgorithm</code>.</p>
  */
 @MCElement(name = "signature", component = false, id = "wsSecurity-validate-signature")
 public class SignatureValidatePart extends ValidatePart {
 
-    private static final String DS_NS = "http://www.w3.org/2000/09/xmldsig#";
-
     private static final Duration DEFAULT_CLOCK_SKEW = Duration.ofMinutes(5);
+
+    /**
+     * The only transforms a {@code ds:Reference} may apply. This is a security check, not a
+     * capability limit: {@code Reference.getURI()} says which element a reference names, but the
+     * transform chain decides what was actually digested. An XPath or XPath-Filter-2 transform can
+     * digest an entirely different node-set while the URI still reads {@code #body-id}, so
+     * {@code checkRequiredElement} would accept a reference that covers none of the element it
+     * names - the reference half of a signature-wrapping attack, wearing a valid URI.
+     * <p>
+     * Canonicalization is all that a WS-Security signature legitimately needs here. An empty
+     * transform chain is fine too, and means the same thing.
+     */
+    private static final Set<String> ALLOWED_TRANSFORMS = Set.of(
+            CanonicalizationMethod.EXCLUSIVE, CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS,
+            CanonicalizationMethod.INCLUSIVE, CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS,
+            "http://www.w3.org/2006/12/xml-c14n11", "http://www.w3.org/2006/12/xml-c14n11#WithComments");
+
+    /**
+     * The digest algorithms accepted on an inbound {@code ds:Reference}. SHA-1 is deliberately absent:
+     * the JDK's secure validation mode does not reject it, so without this a peer could downgrade a
+     * message to SHA-1 digests whatever this gateway signs with.
+     */
+    private static final Set<String> ALLOWED_DIGEST_ALGORITHMS = Set.of(
+            DigestMethod.SHA256, DigestMethod.SHA384, DigestMethod.SHA512,
+            DigestMethod.SHA3_256, DigestMethod.SHA3_384, DigestMethod.SHA3_512);
+
+    /**
+     * The signature algorithms accepted on an inbound {@code ds:SignedInfo}. SHA-1 based and
+     * symmetric (HMAC) methods are absent by intent - see {@link #ALLOWED_DIGEST_ALGORITHMS}.
+     */
+    private static final Set<String> ALLOWED_SIGNATURE_ALGORITHMS = Set.of(
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384",
+            "http://www.w3.org/2001/04/xmldsig-more#rsa-sha512",
+            "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1",
+            "http://www.w3.org/2007/05/xmldsig-more#sha384-rsa-MGF1",
+            "http://www.w3.org/2007/05/xmldsig-more#sha512-rsa-MGF1",
+            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256",
+            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384",
+            "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha512");
 
     private List<SignatureReference> requiredReferences = new ArrayList<>();
     private Duration clockSkew = DEFAULT_CLOCK_SKEW;
@@ -93,23 +135,31 @@ public class SignatureValidatePart extends ValidatePart {
     }
 
     /**
-     * @return the single {@code ds:Signature} inside {@code wsse:Security}, or null if there is none
+     * @return the single {@code ds:Signature} child of {@code wsse:Security}, or null if there is none
      */
     private static Element findSingleSignature(Element security) {
-        NodeList signatureNodes = security.getElementsByTagNameNS(DS_NS, "Signature");
-        if (signatureNodes.getLength() == 0) {
+        // Direct children only: a ds:Signature nested deeper - inside a token the header carries, say -
+        // is not this header's signature, and a descendant search would report a message with one as
+        // ambiguous.
+        List<Element> signatures = getChildrenByName(security, DS_NS, "Signature");
+        if (signatures.isEmpty()) {
             return null;
         }
-        if (signatureNodes.getLength() > 1) {
+        if (signatures.size() > 1) {
             throw new WsSecurityFaultException(INVALID_SECURITY,
                     "More than one ds:Signature element found; rejecting as ambiguous.");
         }
-        return (Element) signatureNodes.item(0);
+        return signatures.getFirst();
     }
 
     private void verify(Document doc, Element envelope, Element security, String soapNs, Element signatureElement)
             throws Exception {
         rejectUnsignedSignatureContent(signatureElement);
+
+        // Read off the DOM, before JSR-105 sees the signature at all: a rejected algorithm must not be
+        // constructed, let alone run. ds:SignedInfo is what gets canonicalized and verified, so its
+        // algorithm attributes here are the ones that will be used.
+        checkAlgorithms(signatureElement);
 
         X509Certificate[] chain = resolveCertificateChain(doc, signatureElement);
 
@@ -121,9 +171,24 @@ public class SignatureValidatePart extends ValidatePart {
         checkTrusted(chain);
 
         DOMValidateContext valContext = new DOMValidateContext(chain[0].getPublicKey(), signatureElement);
-        XMLSignature signature = XMLSignatureFactory.getInstance("DOM").unmarshalXMLSignature(valContext);
-        if (!signature.validate(valContext)) {
-            throw new WsSecurityFaultException(FAILED_CHECK, "Signature is not cryptographically valid.");
+        // Set explicitly rather than left to the JDK's default: it caps transform and reference
+        // counts, refuses a RetrievalMethod loop, enforces minimum key sizes, and - the part that
+        // matters most here - disallows file/http/https ds:Reference URIs, which would otherwise be
+        // dereferenced, digesting content this gateway never saw.
+        valContext.setProperty("org.jcp.xml.dsig.secureValidation", Boolean.TRUE);
+
+        XMLSignature signature;
+        try {
+            signature = XMLSignatureFactory.getInstance("DOM").unmarshalXMLSignature(valContext);
+            if (!signature.validate(valContext)) {
+                throw new WsSecurityFaultException(FAILED_CHECK, "Signature is not cryptographically valid.");
+            }
+        } catch (MarshalException | XMLSignatureException e) {
+            // A ds:Signature JSR-105 cannot even process - malformed structure, a reference it refuses
+            // to dereference, an algorithm its own secure validation mode disallows. That is a bad
+            // message, so it has to answer with a fault rather than escape as an internal error.
+            throw new WsSecurityFaultException(FAILED_CHECK,
+                    "Signature could not be processed: " + e.getMessage(), e);
         }
 
         for (SignatureReference required : requiredReferences) {
@@ -131,10 +196,63 @@ public class SignatureValidatePart extends ValidatePart {
         }
     }
 
+    /**
+     * Checks the signature's own algorithms and every reference's digest algorithm and transform chain
+     * against the allowlists. Everything checked here is attacker-chosen, so an accepted signature says
+     * nothing until this passes: a SHA-1 digest is not evidence, and a reference whose transform
+     * rewrites the node-set does not cover the element its URI names.
+     */
+    private static void checkAlgorithms(Element signatureElement) {
+        Element signedInfo = getFirstChildByName(signatureElement, DS_NS, "SignedInfo");
+        if (signedInfo == null) {
+            throw new WsSecurityFaultException(INVALID_SECURITY, "ds:Signature has no ds:SignedInfo.");
+        }
+        requireAllowed("ds:CanonicalizationMethod", algorithmOf(signedInfo, "CanonicalizationMethod"),
+                ALLOWED_TRANSFORMS);
+        requireAllowed("ds:SignatureMethod", algorithmOf(signedInfo, "SignatureMethod"),
+                ALLOWED_SIGNATURE_ALGORITHMS);
+
+        List<Element> references = getChildrenByName(signedInfo, DS_NS, "Reference");
+        if (references.isEmpty()) {
+            throw new WsSecurityFaultException(INVALID_SECURITY, "ds:SignedInfo has no ds:Reference.");
+        }
+        for (Element reference : references) {
+            requireAllowed("ds:DigestMethod", algorithmOf(reference, "DigestMethod"), ALLOWED_DIGEST_ALGORITHMS);
+            Element transforms = getFirstChildByName(reference, DS_NS, "Transforms");
+            if (transforms == null) {
+                continue; // No transform at all means the element as it stands - nothing to check.
+            }
+            for (Element transform : getChildrenByName(transforms, DS_NS, "Transform")) {
+                requireAllowed("ds:Transform", transform.getAttribute("Algorithm"), ALLOWED_TRANSFORMS);
+            }
+        }
+    }
+
+    /**
+     * @return the {@code Algorithm} of {@code parent}'s named {@code ds:} child, or the empty string
+     * when the child is absent - which no allowlist contains, so it is refused like any other
+     * unusable value
+     */
+    private static String algorithmOf(Element parent, String localName) {
+        Element element = getFirstChildByName(parent, DS_NS, localName);
+        return element == null ? "" : element.getAttribute("Algorithm");
+    }
+
+    private static void requireAllowed(String what, String algorithm, Set<String> allowed) {
+        if (!allowed.contains(algorithm)) {
+            throw new WsSecurityFaultException(UNSUPPORTED_ALGORITHM,
+                    "Unsupported " + what + " algorithm \"" + algorithm + "\".");
+        }
+    }
+
     // Validated as a plain PKIX certificate path, not via X509TrustManager.checkServerTrusted:
     // the latter additionally enforces the TLS server-authentication constraints (serverAuth EKU,
     // key-exchange-specific key usage), which a signing certificate has no reason to carry.
     private void checkTrusted(X509Certificate[] chain) {
+        // Independent of the path below: PKIX checks these on the certificates in the path, but the
+        // signing certificate is not in it when it is itself a trust anchor - and an expired pinned
+        // certificate, or one whose key may not sign, must not be accepted just because it is pinned.
+        checkUsableForSigning(chain[0]);
         try {
             List<X509Certificate> path = pathBelowTrustAnchors(chain);
             if (path.isEmpty()) {
@@ -149,6 +267,27 @@ public class SignatureValidatePart extends ValidatePart {
                  | CertificateException | NoSuchAlgorithmException e) {
             throw new WsSecurityFaultException(FAILED_CHECK,
                     "Signing certificate is not trusted: " + e.getMessage());
+        }
+    }
+
+    /**
+     * The two checks on the signing certificate that a certificate path validation would not make on
+     * this gateway's behalf: that it is currently valid, and that its key usage - when it declares one
+     * at all - permits signing. A certificate with no {@code keyUsage} extension is unconstrained, so
+     * it passes.
+     */
+    private static void checkUsableForSigning(X509Certificate certificate) {
+        try {
+            certificate.checkValidity();
+        } catch (CertificateExpiredException | CertificateNotYetValidException e) {
+            throw new WsSecurityFaultException(FAILED_CHECK,
+                    "Signing certificate is not valid at this time: " + e.getMessage());
+        }
+        boolean[] keyUsage = certificate.getKeyUsage();
+        // Index 0 is digitalSignature, 1 nonRepudiation - either one permits signing a message.
+        if (keyUsage != null && keyUsage.length > 1 && !keyUsage[0] && !keyUsage[1]) {
+            throw new WsSecurityFaultException(FAILED_CHECK,
+                    "Signing certificate's keyUsage permits neither digitalSignature nor nonRepudiation.");
         }
     }
 
@@ -188,7 +327,7 @@ public class SignatureValidatePart extends ValidatePart {
             return new X509Certificate[]{certificateFromSecurityTokenReference(doc, str)};
         }
 
-        throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+        throw new WsSecurityFaultException(UNSUPPORTED_SECURITY_TOKEN,
                 "Unsupported ds:KeyInfo shape: expected ds:X509Data or wsse:SecurityTokenReference.");
     }
 
@@ -238,7 +377,7 @@ public class SignatureValidatePart extends ValidatePart {
             return findCertificateByThumbprint(decodeBase64(content));
         }
         if (!X509_V3_VALUE_TYPE.equals(valueType)) {
-            throw new WsSecurityFaultException(INVALID_SECURITY_TOKEN,
+            throw new WsSecurityFaultException(UNSUPPORTED_SECURITY_TOKEN,
                     "Unsupported wsse:KeyIdentifier ValueType: \"" + valueType + "\".");
         }
         return decodeCertificate(content);
@@ -315,9 +454,6 @@ public class SignatureValidatePart extends ValidatePart {
     }
 
     private void checkRequiredElement(Document doc, XMLSignature signature, SignatureReference required, Element expected) {
-        if (required.getBy() == SignatureReference.By.TIMESTAMP) {
-            checkTimestampFreshness(expected);
-        }
         String expectedId = idOf(expected);
         if (expectedId.isEmpty()) {
             throw new WsSecurityFaultException(FAILED_CHECK,
@@ -342,46 +478,20 @@ public class SignatureValidatePart extends ValidatePart {
             throw new WsSecurityFaultException(FAILED_CHECK,
                     "Required element (" + required.getBy() + ", Id=" + expectedId + ") is not covered by any ds:Reference.");
         }
+
+        // After the coverage checks, not before: an uncovered wsu:Timestamp can be rewritten in transit,
+        // so its window says nothing and "not covered" is the honest reason to reject. Once it is known
+        // to be covered, checking Created/Expires is what turns the signature from proof that the
+        // message existed at some point into proof that it is still fresh - the standard WS-Security
+        // defense against replaying a captured, validly-signed message.
+        if (required.getBy() == SignatureReference.By.TIMESTAMP) {
+            WsuTimestamps.checkFreshness(expected, clockSkew);
+        }
     }
 
     private static boolean isCoveredBy(XMLSignature signature, String expectedId) {
         return signature.getSignedInfo().getReferences().stream()
                 .anyMatch(reference -> reference instanceof Reference ref && ("#" + expectedId).equals(ref.getURI()));
-    }
-
-    // Signed-Timestamp is the standard WS-Security defense against replaying a captured,
-    // validly-signed message: without checking Created/Expires here, a signature covering the
-    // Timestamp is only proof the message existed at some point, not that it is still fresh.
-    private void checkTimestampFreshness(Element timestamp) {
-        Instant created = parseTimestampInstant(timestamp, "Created");
-        Instant expires = parseTimestampInstant(timestamp, "Expires");
-        Instant now = Instant.now();
-        // Created itself must be recent - this is what catches a stale Timestamp with no Expires
-        // at all, not just one whose Expires has passed.
-        if (created.isBefore(now.minus(clockSkew)) || created.isAfter(now.plus(clockSkew))) {
-            throw new WsSecurityFaultException(FAILED_CHECK,
-                    "wsu:Timestamp Created (" + created + ") is outside the allowed clock skew.");
-        }
-        if (expires != null && expires.isBefore(now.minus(clockSkew))) {
-            throw new WsSecurityFaultException(FAILED_CHECK,
-                    "wsu:Timestamp has expired (Expires=" + expires + ").");
-        }
-    }
-
-    private static Instant parseTimestampInstant(Element timestamp, String localName) {
-        Element el = getFirstChildByName(timestamp, WSU_NS, localName);
-        if (el == null) {
-            if ("Created".equals(localName)) {
-                throw new WsSecurityFaultException(FAILED_CHECK, "wsu:Timestamp has no wsu:Created.");
-            }
-            return null;
-        }
-        try {
-            return OffsetDateTime.parse(el.getTextContent().trim()).toInstant();
-        } catch (java.time.format.DateTimeParseException e) {
-            throw new WsSecurityFaultException(FAILED_CHECK,
-                    "wsu:Timestamp/wsu:" + localName + " is not a valid xs:dateTime: " + el.getTextContent());
-        }
     }
 
     /**

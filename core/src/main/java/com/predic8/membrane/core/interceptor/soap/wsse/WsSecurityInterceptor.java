@@ -33,6 +33,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -46,8 +47,10 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
  * <code>validate</code> list consumes the security the peer sent, the <code>secure</code> list
  * applies fresh security for the next hop. Both lists are optional and run in the order they are
  * written; the whole <code>validate</code> list runs first, and the inbound header is removed at
- * that boundary before <code>secure</code> creates a new one. Header blocks targeted at a different
- * <code>actor</code> are left untouched.</p>
+ * that boundary before <code>secure</code> creates a new one. With no <code>validate</code> list the
+ * header is emptied of the tokens the peer sent instead of being forwarded unchecked; only its
+ * <code>wsu:Timestamp</code> is kept, since a <code>secure</code> signature may cover it. Header blocks
+ * targeted at a different <code>actor</code> are left untouched.</p>
  * <p>Direction is not part of this element: nest it in <code>request</code> or <code>response</code>
  * to say which message it applies to. A gateway commonly validates what a client sent and
  * re-secures for the backend in one element, and mirrors that on the way back. Use two elements
@@ -71,6 +74,8 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
  *               location: partner-ca.p12
  *               password: secret
  *             validate:
+ *               - timestamp:
+ *                   clockSkew: PT1M
  *               - usernameToken:
  *                   username: ${property.apiUser}
  *                   password: ${property.apiPassword}
@@ -78,6 +83,7 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
  *                   requiredReferences:
  *                     - by: BODY
  *                     - by: TIMESTAMP
+ *                     - by: USERNAME_TOKEN
  *             secure:
  *               - timestamp:
  *                   ttl: PT5M
@@ -113,11 +119,20 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
     }
 
     /**
+     * The element names of the {@code secure} parts that create what a {@code signature} reference can
+     * name, so that "listed before" can be checked for each.
+     */
+    private static final Map<SignatureReference.By, Class<? extends SecurePart>> CREATED_BY = Map.of(
+            SignatureReference.By.TIMESTAMP, TimestampSecurePart.class,
+            SignatureReference.By.USERNAME_TOKEN, UsernameTokenSecurePart.class);
+
+    /**
      * WS-SecurityPolicy sanctions both sign-before-encrypt and encrypt-before-sign, and a receiver
      * has to mirror whatever the sender did, so the processing order is the configured order rather
      * than a fixed one. What is checkable up front is that a part cannot cover something that does
-     * not exist yet: a <code>signature</code> covering the <code>TIMESTAMP</code> has to be listed
-     * after the <code>timestamp</code> that creates it, or it would silently under-cover the message.
+     * not exist yet: a <code>signature</code> covering the <code>TIMESTAMP</code> or the
+     * <code>USERNAME_TOKEN</code> has to be listed after the part that creates it, or it would
+     * silently under-cover the message.
      * <p>
      * Only the relative order is a configuration error. A <code>signature</code> referencing
      * <code>TIMESTAMP</code> without any <code>timestamp</code> part is legitimate - it covers a
@@ -126,22 +141,25 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
      */
     private void checkSecureOrder() {
         List<SecurePart> parts = getSecureParts();
-        int timestampIndex = indexOfTimestamp(parts);
-        if (timestampIndex < 0) {
-            return;
-        }
-        for (SecurePart part : parts.subList(0, timestampIndex)) {
-            if (part instanceof SignatureSecurePart signature && signature.referencesTimestamp()) {
-                throw new ConfigurationException(
-                        "wsSecurity: a secure/signature referencing by: TIMESTAMP must be listed after the " +
-                        "secure/timestamp that creates it, otherwise there is no wsu:Timestamp to sign.");
+        CREATED_BY.forEach((by, creator) -> {
+            int creatorIndex = indexOf(parts, creator);
+            if (creatorIndex < 0) {
+                return;
             }
-        }
+            for (SecurePart part : parts.subList(0, creatorIndex)) {
+                if (part instanceof SignatureSecurePart signature && signature.references(by)) {
+                    throw new ConfigurationException(
+                            ("wsSecurity: a secure/signature referencing by: %s must be listed after the " +
+                             "secure part that creates it, otherwise there is nothing there to sign.")
+                                    .formatted(by));
+                }
+            }
+        });
     }
 
-    private static int indexOfTimestamp(List<SecurePart> parts) {
+    private static int indexOf(List<SecurePart> parts, Class<? extends SecurePart> type) {
         for (int i = 0; i < parts.size(); i++) {
-            if (parts.get(i) instanceof TimestampSecurePart) {
+            if (type.isInstance(parts.get(i))) {
                 return i;
             }
         }
@@ -212,8 +230,9 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
         // part downstream sees it, and #id dereferencing works for all of them.
         markWsuIdAttributes(envelope);
 
+        Element inbound = findSecurity(envelope, soapNs, actor);
+
         if (!getValidateParts().isEmpty()) {
-            Element inbound = findSecurity(envelope, soapNs, actor);
             if (inbound == null) {
                 throw new WsSecurityFaultException(INVALID_SECURITY, actor == null
                         ? "Message has no wsse:Security header."
@@ -223,11 +242,37 @@ public class WsSecurityInterceptor extends AbstractInterceptor {
             // The group boundary: this element understood the header, so SOAP requires it to be
             // removed rather than forwarded to a next hop that would have to understand it again.
             inbound.getParentNode().removeChild(inbound);
+        } else if (inbound != null) {
+            // Nothing here was checked, but this element still owns the header, and the tokens in it are
+            // the peer's claims. Forwarded, they would reach the backend as if this gateway had vouched
+            // for them: a UsernameToken the backend authenticates, a signature it trusts, next to the
+            // security this element is about to add. So they are dropped.
+            discardUncheckedClaims(inbound);
         }
 
         if (!getSecureParts().isEmpty()) {
             Element outbound = getOrCreateSecurity(doc, envelope, soapNs, actor, mustUnderstand);
             runAll(getSecureParts(), new WsSecurityContext(exc, flow, doc, envelope, soapNs, outbound));
+        }
+    }
+
+    /**
+     * Empties an unvalidated {@code wsse:Security} header of everything but its {@code wsu:Timestamp}.
+     * <p>
+     * An allowlist rather than a list of the token names to drop: every child of a
+     * {@code wsse:Security} header is security content by definition, so anything this element did not
+     * check is something it cannot forward. {@code wsu:Timestamp} is the one exception, because it
+     * asserts nothing on its own and a {@code secure/signature} may reference it (<code>by:
+     * TIMESTAMP</code>) to cover a freshness window the message already carried.
+     */
+    private static void discardUncheckedClaims(Element security) {
+        for (Element child : childElementsOf(security)) {
+            if (WSU_NS.equals(child.getNamespaceURI()) && "Timestamp".equals(child.getLocalName())) {
+                continue;
+            }
+            log.info("Discarding an unvalidated {} from the inbound wsse:Security header: this " +
+                     "wsSecurity element owns the header but has no <validate> list.", child.getNodeName());
+            security.removeChild(child);
         }
     }
 

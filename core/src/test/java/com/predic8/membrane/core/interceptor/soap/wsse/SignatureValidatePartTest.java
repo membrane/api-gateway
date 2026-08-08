@@ -19,12 +19,14 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+import javax.xml.crypto.dsig.DigestMethod;
+import javax.xml.crypto.dsig.SignatureMethod;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 
-import static com.predic8.membrane.core.interceptor.soap.wsse.SignatureReference.By.BODY;
-import static com.predic8.membrane.core.interceptor.soap.wsse.SignatureReference.By.TIMESTAMP;
+import static com.predic8.membrane.core.interceptor.soap.wsse.SignatureReference.By.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
@@ -104,6 +106,73 @@ class SignatureValidatePartTest extends AbstractWsSecurityTest {
     }
 
     // ---- tests ---------------------------------------------------------------------------------
+
+    @Test
+    void referenceWithAnXPathTransformIsRejected() throws Exception {
+        // The reference half of a signature-wrapping attack that a URI check alone cannot see: the
+        // ds:Reference still names #body-id, so the required-BODY check is satisfied, while the XPath
+        // transform means the digest was computed over an entirely different node-set. Only an
+        // allowlist of transforms catches this.
+        exchangeWithBody(SOAP_BODY);
+        Document signed = signedAndParsed();
+
+        Element transforms = firstByTag(signed, DS_NS, "Transforms");
+        Element xpathTransform = signed.createElementNS(DS_NS, "ds:Transform");
+        xpathTransform.setAttribute("Algorithm", "http://www.w3.org/TR/1999/REC-xpath-19991116");
+        Element xpath = signed.createElementNS(DS_NS, "ds:XPath");
+        xpath.setTextContent("//*[local-name()='foo']");
+        xpathTransform.appendChild(xpath);
+        transforms.appendChild(xpathTransform);
+        setBody(signed);
+
+        assertFault(verifierTrusting(TRUSTSTORE, BODY), UNSUPPORTED_ALGORITHM);
+    }
+
+    @Test
+    void referenceWithAnXsltTransformIsRejected() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        Document signed = signedAndParsed();
+
+        Element transform = firstByTag(signed, DS_NS, "Transform");
+        transform.setAttribute("Algorithm", "http://www.w3.org/TR/1999/REC-xslt-19991116");
+        setBody(signed);
+
+        assertFault(verifierTrusting(TRUSTSTORE, BODY), UNSUPPORTED_ALGORITHM);
+    }
+
+    @Test
+    void sha1SignatureAlgorithmIsRejected() throws Exception {
+        // secure/signature can still be configured to produce this for a legacy backend; accepting it
+        // on the way in would let any peer downgrade the message to SHA-1.
+        exchangeWithBody(SOAP_BODY);
+        SignatureSecurePart signature = signature(bodyReference());
+        signature.setSignatureAlgorithm(SignatureMethod.RSA_SHA1);
+        signer(signature).handleRequest(exchange);
+
+        assertFault(verifierTrusting(TRUSTSTORE, BODY), UNSUPPORTED_ALGORITHM);
+    }
+
+    @Test
+    void sha1DigestAlgorithmIsRejected() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        SignatureSecurePart signature = signature(bodyReference());
+        signature.setDigestAlgorithm(DigestMethod.SHA1);
+        signer(signature).handleRequest(exchange);
+
+        assertFault(verifierTrusting(TRUSTSTORE, BODY), UNSUPPORTED_ALGORITHM);
+    }
+
+    @Test
+    void inclusiveCanonicalizationIsStillAccepted() throws Exception {
+        // The transform allowlist rejects transforms that rewrite the node-set, not canonicalization
+        // this gateway can itself be configured to produce.
+        exchangeWithBody(SOAP_BODY);
+        SignatureSecurePart signature = signature(bodyReference());
+        signature.setCanonicalizationAlgorithm(CanonicalizationMethod.INCLUSIVE);
+        signer(signature).handleRequest(exchange);
+
+        assertEquals(Outcome.CONTINUE, verifierTrusting(TRUSTSTORE, BODY).handleRequest(exchange));
+    }
 
     @Test
     void validSignatureWithX509DataIsAccepted() throws Exception {
@@ -395,7 +464,7 @@ class SignatureValidatePartTest extends AbstractWsSecurityTest {
         exchangeWithBody(soapBodyWithTimestamp(Instant.now().minus(Duration.ofHours(1))));
         signBodyAndTimestamp();
 
-        assertFault(verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP), FAILED_CHECK);
+        assertFault(verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP), MESSAGE_EXPIRED);
     }
 
     @Test
@@ -404,6 +473,53 @@ class SignatureValidatePartTest extends AbstractWsSecurityTest {
         signBodyAndTimestamp();
 
         assertFault(verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP), FAILED_CHECK);
+    }
+
+    @Test
+    void signedUsernameTokenIsAcceptedWhenRequired() throws Exception {
+        // The signed-UsernameToken policy: the signature is what binds the credential to this message,
+        // so a captured token cannot be replayed against a different body.
+        exchangeWithBody(SOAP_BODY);
+        UsernameTokenSecurePart usernameToken = new UsernameTokenSecurePart();
+        usernameToken.setUsername("alice");
+        usernameToken.setPassword("secret");
+        WsSecurityInterceptor signer = securing(usernameToken,
+                signature(bodyReference(), reference(USERNAME_TOKEN)));
+        signer.setKeyStore(signingKeyStore(ALIAS_1));
+        signer.init(router);
+        assertEquals(Outcome.CONTINUE, signer.handleRequest(exchange));
+
+        assertEquals(Outcome.CONTINUE,
+                verifierTrusting(TRUSTSTORE, BODY, USERNAME_TOKEN).handleRequest(exchange));
+    }
+
+    @Test
+    void unsignedUsernameTokenIsRejectedWhenRequired() throws Exception {
+        // Only the Body is signed, so the token could have been swapped in transit.
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Header>
+                        <wsse:Security xmlns:wsse="%s">
+                            <wsse:UsernameToken>
+                                <wsse:Username>alice</wsse:Username>
+                                <wsse:Password>secret</wsse:Password>
+                            </wsse:UsernameToken>
+                        </wsse:Security>
+                    </soap:Header>
+                    <soap:Body><foo>bar</foo></soap:Body>
+                </soap:Envelope>
+                """.formatted(WSSE_NS));
+        signBody();
+
+        assertFault(verifierTrusting(TRUSTSTORE, BODY, USERNAME_TOKEN), FAILED_CHECK);
+    }
+
+    @Test
+    void requiredUsernameTokenReferenceWithNoTokenAtAllIsRejected() throws Exception {
+        exchangeWithBody(SOAP_BODY);
+        signBody();
+
+        assertFault(verifierTrusting(TRUSTSTORE, BODY, USERNAME_TOKEN), FAILED_CHECK);
     }
 
     @Test

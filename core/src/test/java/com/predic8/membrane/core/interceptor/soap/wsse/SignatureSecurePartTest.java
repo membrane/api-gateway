@@ -23,14 +23,14 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import javax.xml.crypto.dsig.CanonicalizationMethod;
+import javax.xml.crypto.dsig.SignatureMethod;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.INVALID_SECURITY;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSSE_NS;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SignatureSecurePartTest extends AbstractWsSecurityTest {
@@ -509,6 +509,53 @@ class SignatureSecurePartTest extends AbstractWsSecurityTest {
         signature.setSignatureAlgorithm("bogus");
 
         assertTrue(assertThrows(RuntimeException.class, () -> signer(signature)).getMessage().contains("bogus"));
+    }
+
+    @Test
+    void rejectsMacSignatureAlgorithmAtInitRatherThanOnTheFirstMessage() {
+        // The XMLSignatureFactory constructs an HMAC SignatureMethod happily, but signing here always
+        // uses the keystore's PrivateKey, which no MAC can accept - so accepting the configuration
+        // would only move the failure to the first message.
+        SignatureSecurePart signature = signature(bodyReference());
+        signature.setSignatureAlgorithm(SignatureMethod.HMAC_SHA1);
+
+        assertTrue(assertThrows(RuntimeException.class, () -> signer(signature))
+                .getMessage().contains("hmac-sha1"));
+    }
+
+    @Test
+    void securityTokenReferenceCarriesTheWss11TokenType() throws Exception {
+        // A ThumbprintSHA1 KeyIdentifier names the certificate by hash alone; WSS4J/CXF read TokenType
+        // to learn what that hash identifies.
+        KeyIdentifierKeyInfo keyIdentifier = new KeyIdentifierKeyInfo();
+        keyIdentifier.setValueType(KeyIdentifierKeyInfo.ValueType.THUMBPRINT_SHA1);
+        SignatureSecurePart signature = signature(bodyReference());
+        signature.setKeyIdentifier(keyIdentifier);
+
+        exchangeWithBody(SOAP_BODY);
+        assertEquals(Outcome.CONTINUE, signer(signature).handleRequest(exchange));
+
+        Element str = firstByTag(parseBody(), WSSE_NS, "SecurityTokenReference");
+        assertEquals("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3",
+                str.getAttributeNS(WSSE11_NS, "TokenType"));
+    }
+
+    @Test
+    void anExistingUnqualifiedIdIsReusedWithoutAddingASecondIdAttribute() throws Exception {
+        // Two ID attributes on one element holding the same value read as an ID collision to some
+        // consumers, so the id that is already there is referenced as it stands.
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Body Id="body-1"><foo>bar</foo></soap:Body>
+                </soap:Envelope>
+                """);
+        assertEquals(Outcome.CONTINUE, signer(signature(bodyReference())).handleRequest(exchange));
+
+        Document result = parseBody();
+        Element body = firstByTag(result, SOAP_NS, "Body");
+        assertEquals("body-1", body.getAttribute("Id"));
+        assertTrue(body.getAttributeNS(WSU_NS, "Id").isEmpty(), "Expected no second, wsu-qualified Id");
+        assertEquals("#body-1", firstByTag(result, DS_NS, "Reference").getAttribute("URI"));
     }
 
     @Test

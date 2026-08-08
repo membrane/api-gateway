@@ -28,7 +28,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 @MCElement(name = "reference", component = false, id = "wsSecurity-signature-reference")
 public class SignatureReference {
 
-    public enum By {BODY, HEADER, TIMESTAMP, XPATH, BST}
+    public enum By {BODY, HEADER, TIMESTAMP, USERNAME_TOKEN, XPATH, BST}
 
     private By by = By.BODY;
     private boolean byExplicitlySet;
@@ -42,7 +42,10 @@ public class SignatureReference {
     /**
      * @description Which element to sign or verify. <code>BODY</code>/<code>HEADER</code> select
      * the SOAP body/header. <code>TIMESTAMP</code> selects an existing <code>wsu:Timestamp</code>
-     * inside <code>wsse:Security</code>. <code>BST</code> selects the
+     * inside <code>wsse:Security</code>. <code>USERNAME_TOKEN</code> selects the
+     * <code>wsse:UsernameToken</code> there — required for the common signed-UsernameToken policy,
+     * where the signature is what binds the credential to this message instead of leaving it
+     * replayable on its own. <code>BST</code> selects the
      * <code>wsse:BinarySecurityToken</code> created for the <code>securityTokenReference</code>
      * KeyInfo mode, so it is itself covered by the signature; only valid when
      * <code>securityTokenReference</code> is configured on the enclosing

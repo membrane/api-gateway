@@ -30,6 +30,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Consumer;
 
+import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
 import static javax.xml.XMLConstants.NULL_NS_URI;
 
@@ -42,6 +43,9 @@ final class WsSecurityXmlUtil {
 
     public static final String WSSE_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
     public static final String WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
+    /** WS-Security 1.1's own namespace, which is where {@code TokenType} lives. */
+    static final String WSSE11_NS = "http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd";
+    static final String DS_NS = "http://www.w3.org/2000/09/xmldsig#";
 
     static final String X509_V3_VALUE_TYPE =
             "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
@@ -57,46 +61,61 @@ final class WsSecurityXmlUtil {
     static final String PASSWORD_TEXT_TYPE = USERNAME_TOKEN_PROFILE_NS + "#PasswordText";
     static final String PASSWORD_DIGEST_TYPE = USERNAME_TOKEN_PROFILE_NS + "#PasswordDigest";
 
-    static final NamespaceContext SOAP_WSSE_NAMESPACE_CONTEXT = new NamespaceContext() {
-        @Override
-        public String getNamespaceURI(String prefix) {
-            return switch (prefix) {
-                case "soap" -> "http://schemas.xmlsoap.org/soap/envelope/";
-                case "wsse" -> WSSE_NS;
-                case "wsu" -> WSU_NS;
-                default -> null;
-            };
-        }
+    /**
+     * The prefixes an XPath reference can always use, whatever {@code xmlConfig} declares.
+     * <p>
+     * {@code soap} is bound to the envelope namespace of the message being processed, not to a fixed
+     * one: bound to SOAP 1.1 unconditionally it would silently match nothing in a SOAP 1.2 message,
+     * turning a correct configuration into a fault whose reason points at the XPath instead of at the
+     * envelope version. {@code soap11}/{@code soap12} stay available for a configuration that has to
+     * address one specific version.
+     */
+    static NamespaceContext builtInNamespaceContext(String soapNs) {
+        return new NamespaceContext() {
+            @Override
+            public String getNamespaceURI(String prefix) {
+                return switch (prefix) {
+                    case "soap" -> soapNs;
+                    case "soap11" -> SOAP11_NS;
+                    case "soap12" -> SOAP12_NS;
+                    case "wsse" -> WSSE_NS;
+                    case "wsse11" -> WSSE11_NS;
+                    case "wsu" -> WSU_NS;
+                    case "ds" -> DS_NS;
+                    default -> null;
+                };
+            }
 
-        @Override
-        public String getPrefix(String namespaceURI) {
-            return null;
-        }
+            @Override
+            public String getPrefix(String namespaceURI) {
+                return null;
+            }
 
-        @Override
-        public Iterator<String> getPrefixes(String namespaceURI) {
-            return null;
-        }
-    };
+            @Override
+            public Iterator<String> getPrefixes(String namespaceURI) {
+                return null;
+            }
+        };
+    }
 
     private WsSecurityXmlUtil() {
     }
 
     /**
-     * The {@code soap}/{@code wsse}/{@code wsu} prefixes always resolve, even when {@code xmlConfig}
-     * declares its own namespaces - the interceptor's built-in structure still needs to be
-     * addressable from an XPath reference.
+     * The built-in prefixes always resolve, even when {@code xmlConfig} declares its own namespaces -
+     * the interceptor's built-in structure still needs to be addressable from an XPath reference.
      */
-    private static NamespaceContext mergedNamespaceContext(XmlConfig xmlConfig) {
+    private static NamespaceContext mergedNamespaceContext(XmlConfig xmlConfig, String soapNs) {
+        NamespaceContext builtIn = builtInNamespaceContext(soapNs);
         if (xmlConfig == null || xmlConfig.getNamespaces() == null) {
-            return SOAP_WSSE_NAMESPACE_CONTEXT;
+            return builtIn;
         }
         NamespaceContext configured = xmlConfig.getNamespaces().getNamespaceContext();
         return new NamespaceContext() {
             @Override
             public String getNamespaceURI(String prefix) {
                 String uri = configured.getNamespaceURI(prefix);
-                return NULL_NS_URI.equals(uri) ? SOAP_WSSE_NAMESPACE_CONTEXT.getNamespaceURI(prefix) : uri;
+                return NULL_NS_URI.equals(uri) ? builtIn.getNamespaceURI(prefix) : uri;
             }
 
             @Override
@@ -160,10 +179,10 @@ final class WsSecurityXmlUtil {
 
     /**
      * The {@code wsse:Security} header for {@code actor} that {@code secure} parts add to, created
-     * if the message does not already carry one. Reused rather than always created because
-     * WS-Security allows at most one {@code wsse:Security} block per actor - and after a
-     * {@code validate} group consumed the inbound one there is none left to reuse anyway, so the
-     * common gateway case still gets a fresh header.
+     * if the message does not already carry one. In practice it is always created: the enclosing
+     * element removes the header targeted at its actor before any {@code secure} part runs, whether or
+     * not it had a {@code validate} list. The reuse branch is what keeps that a single
+     * {@code wsse:Security} block per actor even so, which is all WS-Security allows.
      * <p>
      * Appended rather than inserted first so header blocks the message already carried - including
      * ones targeted at other actors - keep their relative order.
@@ -220,13 +239,21 @@ final class WsSecurityXmlUtil {
      * {@code wsu:Id} wins where an element carries both.
      */
     static void markWsuIdAttributes(Element root) {
-        forEachDescendantElement(root, element -> {
-            if (!element.getAttributeNS(WSU_NS, "Id").isEmpty()) {
-                element.setIdAttributeNS(WSU_NS, "Id", true);
-            } else if (!element.getAttribute("Id").isEmpty()) {
-                element.setIdAttribute("Id", true);
-            }
-        });
+        forEachDescendantElement(root, WsSecurityXmlUtil::markIdAttribute);
+    }
+
+    /**
+     * Declares the element's {@code wsu:Id} - or its unqualified {@code Id} - to be an XML ID
+     * attribute, so that {@code "#id"} dereferences to it. Does nothing when it carries neither.
+     *
+     * @see #markWsuIdAttributes(Element)
+     */
+    static void markIdAttribute(Element element) {
+        if (!element.getAttributeNS(WSU_NS, "Id").isEmpty()) {
+            element.setIdAttributeNS(WSU_NS, "Id", true);
+        } else if (!element.getAttribute("Id").isEmpty()) {
+            element.setIdAttribute("Id", true);
+        }
     }
 
     /**
@@ -252,9 +279,11 @@ final class WsSecurityXmlUtil {
             case HEADER -> List.of(requireElement(getFirstChildByName(envelope, soapNs, "Header"), "soap:Header is missing."));
             case TIMESTAMP -> List.of(requireElement(getFirstChildByName(security, WSU_NS, "Timestamp"),
                     "No wsu:Timestamp found inside wsse:Security."));
+            case USERNAME_TOKEN -> List.of(requireElement(getFirstChildByName(security, WSSE_NS, "UsernameToken"),
+                    "No wsse:UsernameToken found inside wsse:Security."));
             case BST -> List.of(requireElement(getFirstChildByName(security, WSSE_NS, "BinarySecurityToken"),
                     "No wsse:BinarySecurityToken found inside wsse:Security."));
-            case XPATH -> resolveByXPath(doc, reference.getXpath(), xmlConfig);
+            case XPATH -> resolveByXPath(doc, reference.getXpath(), xmlConfig, soapNs);
         };
     }
 
@@ -277,13 +306,13 @@ final class WsSecurityXmlUtil {
         return factory;
     }
 
-    private static List<Element> resolveByXPath(Document doc, String xpath, XmlConfig xmlConfig) {
+    private static List<Element> resolveByXPath(Document doc, String xpath, XmlConfig xmlConfig, String soapNs) {
         if (xpath == null || xpath.isBlank()) {
             throw new ReferenceResolutionException("reference by=\"XPATH\" requires an xpath attribute.");
         }
         try {
             XPath xPath = XPATH_FACTORY.newXPath();
-            xPath.setNamespaceContext(mergedNamespaceContext(xmlConfig));
+            xPath.setNamespaceContext(mergedNamespaceContext(xmlConfig, soapNs));
             NodeList nodes = (NodeList) xPath.evaluate(xpath, doc, XPathConstants.NODESET);
             if (nodes.getLength() == 0) {
                 throw new ReferenceResolutionException("XPath \"" + xpath + "\" matched no elements.");
@@ -317,6 +346,21 @@ final class WsSecurityXmlUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * The element children of {@code parent}, as a snapshot - so a caller may remove them while
+     * iterating, which a live {@code NodeList} would not survive.
+     */
+    static List<Element> childElementsOf(Element parent) {
+        List<Element> result = new ArrayList<>();
+        NodeList children = parent.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            if (children.item(i) instanceof Element el) {
+                result.add(el);
+            }
+        }
+        return result;
     }
 
     static List<Element> getChildrenByName(Element parent, String namespace, String localName) {
