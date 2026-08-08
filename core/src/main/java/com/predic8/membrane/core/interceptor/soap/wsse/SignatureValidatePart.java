@@ -18,6 +18,8 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -56,6 +58,8 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
  */
 @MCElement(name = "signature", component = false, id = "wsSecurity-validate-signature")
 public class SignatureValidatePart extends ValidatePart {
+
+    private static final Logger log = LoggerFactory.getLogger(SignatureValidatePart.class);
 
     private static final Duration DEFAULT_CLOCK_SKEW = Duration.ofMinutes(5);
 
@@ -265,6 +269,18 @@ public class SignatureValidatePart extends ValidatePart {
                     CertificateFactory.getInstance("X.509").generateCertPath(path), params);
         } catch (CertPathValidatorException | InvalidAlgorithmParameterException | KeyStoreException
                  | CertificateException | NoSuchAlgorithmException e) {
+            // A CertPathValidatorException here is almost always a missing intermediate CA rather
+            // than an actual forgery: the message-supplied chain (see resolveCertificateChain) may
+            // be leaf-only, and the truststore then has to already hold every intermediate up to a
+            // trust anchor. Logging what was actually presented turns "not trusted" into an
+            // actionable diff against the configured truststore instead of a guessing game.
+            if (e instanceof CertPathValidatorException) {
+                for (X509Certificate cert : chain) {
+                    log.info("Untrusted certificate in the signing chain - subject: \"{}\", issuer: \"{}\". " +
+                             "If this issuer is missing from the truststore, that is why the chain does not " +
+                             "validate.", cert.getSubjectX500Principal(), cert.getIssuerX500Principal());
+                }
+            }
             throw new WsSecurityFaultException(FAILED_CHECK,
                     "Signing certificate is not trusted: " + e.getMessage());
         }

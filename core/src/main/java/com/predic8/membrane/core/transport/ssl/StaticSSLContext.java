@@ -14,23 +14,27 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.predic8.membrane.core.config.security.*;
-import com.predic8.membrane.core.resolver.*;
-import com.predic8.membrane.core.transport.*;
-import com.predic8.membrane.core.transport.http2.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.security.Store;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.TrustManagerWrapper;
+import com.predic8.membrane.core.transport.http2.Http2TlsSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.*;
-import javax.crypto.*;
+import javax.annotation.Nullable;
+import javax.crypto.Cipher;
 import javax.net.ssl.*;
-import javax.validation.constraints.*;
-import java.io.*;
-import java.net.*;
-import java.security.Key;
-import java.security.KeyStore;
+import javax.validation.constraints.NotNull;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.*;
+import java.security.cert.Certificate;
 import java.util.*;
 
 import static com.predic8.membrane.core.security.KeyStoreUtil.*;
@@ -41,6 +45,7 @@ public class StaticSSLContext extends SSLContext {
     private static final String DEFAULT_CERTIFICATE_SHA256 = "5f:61:dc:8e:0b:5d:a4:50:65:d7:59:c9:d5:c3:22:49:5e:aa:91:c6:5a:c8:13:ac:51:6a:06:40:13:43:e8:f3";
     private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
     public static final String PKCS_12 = "PKCS12";
+    private static final String PEM_TYPE = "PEM";
     private static boolean defaultCertificateWarned = false;
 
     static {
@@ -310,9 +315,38 @@ public class StaticSSLContext extends SSLContext {
     }
 
     public static KeyStore openKeyStore(Store store, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException {
+        if (PEM_TYPE.equalsIgnoreCase(store.getType()))
+            return loadPemCertificateStore(store, resourceResolver, baseLocation);
         KeyStore ks = getAndLoadKeyStore(store, resourceResolver, baseLocation, getStoreTypeOrDefault(store), getPassword(store, keyPass));
         if (ks.getCertificate("membrane") != null)
             warnOfOldCertificate(ks.getCertificate("membrane"));
+        return ks;
+    }
+
+    /**
+     * Loads {@code store.getLocation()} as one or more bare X.509 certificates - PEM blocks or
+     * raw DER certificates, either one alone or concatenated back to back, {@link CertificateFactory}
+     * accepts all of it - and wraps them into a synthetic in-memory PKCS12 {@link KeyStore}, the
+     * same representation {@link #getStore} builds for inline {@code <trust><certificate>} entries.
+     * Every certificate becomes its own trust anchor, which is how a truststore ends up trusting a
+     * whole CA chain (root plus intermediates) from one file. This keeps {@code java.security.KeyStore}
+     * the uniform type every caller of {@link #openKeyStore} deals with, whether the config
+     * pointed at a real keystore file or a bare certificate.
+     * <p>
+     * There is no password to open a bare certificate with, so {@code store.getPassword()} is
+     * ignored rather than required, unlike the keystore-file path.
+     */
+    private static KeyStore loadPemCertificateStore(Store store, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException {
+        if (store.getPassword() != null)
+            log.info("Ignoring password on a truststore with type: PEM - a bare certificate file has none.");
+        KeyStore ks = KeyStore.getInstance(PKCS_12);
+        ks.load(null, "".toCharArray());
+        try (InputStream is = resourceResolver.resolve(ResolverMap.combine(baseLocation, store.getLocation()))) {
+            Collection<? extends Certificate> certificates = CertificateFactory.getInstance("X.509").generateCertificates(is);
+            int i = 0;
+            for (Certificate certificate : certificates)
+                ks.setCertificateEntry("cert-" + i++, certificate);
+        }
         return ks;
     }
 
