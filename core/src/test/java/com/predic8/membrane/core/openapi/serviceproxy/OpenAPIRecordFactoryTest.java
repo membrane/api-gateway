@@ -13,9 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.openapi.serviceproxy;
 
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.router.DummyTestRouter;
+import com.predic8.membrane.core.router.Router;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,6 +30,9 @@ import static io.swagger.v3.oas.models.SpecVersion.V30;
 import static io.swagger.v3.oas.models.SpecVersion.V31;
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 class OpenAPIRecordFactoryTest {
 
@@ -104,6 +110,18 @@ class OpenAPIRecordFactoryTest {
         String description = rec.api.getInfo().getDescription();
         assertTrue(description.startsWith("This is a showcase"));
         assertTrue(description.contains("Membrane API Gateway"));
+    }
+
+    @Test
+    void swagger2RelativeExternalRefResolved() {
+        OpenAPIRecord rec = getOpenAPIRecord("swagger2/external-ref/api.yaml", "swagger2-external-ref-v1-0-0");
+
+        // The external ref (user.yaml#/User) must be resolved into the model's components.
+        var user = rec.api.getComponents().getSchemas().get("User");
+        assertNotNull(user.getProperties());
+        assertTrue(user.getProperties().containsKey("email"));
+        assertEquals("#/components/schemas/User", rec.api.getPaths().get("/users").getGet()
+                .getResponses().get("200").getContent().get(APPLICATION_JSON).getSchema().get$ref());
     }
 
     @Test
@@ -187,6 +205,24 @@ class OpenAPIRecordFactoryTest {
     }
 
     @Test
+    void readsLocationExactlyOnce() throws Exception {
+        DummyTestRouter router = new DummyTestRouter();
+        router.getConfiguration().setBaseLocation("src/test/resources/openapi/specs/");
+
+        ResolverMap spyResolverMap = Mockito.spy(router.getResolverMap());
+        Router spyRouter = Mockito.spy((Router) router);
+        Mockito.when(spyRouter.getResolverMap()).thenReturn(spyResolverMap);
+
+        OpenAPISpec spec = new OpenAPISpec();
+        spec.setLocation("oas31/request-reference.yaml");
+
+        new OpenAPIRecordFactory(spyRouter, router.getConfiguration().getBaseLocation())
+                .create(singletonList(spec));
+
+        verify(spyResolverMap, times(1)).resolve(anyString());
+    }
+
+    @Test
     void readsDirectoryRelativeToBaseLocation() {
         OpenAPISpec spec = new OpenAPISpec();
         spec.setDir("paths");
@@ -200,13 +236,13 @@ class OpenAPIRecordFactoryTest {
 
     @Test
     void getUniqueIdNoCollision() {
-        assertEquals("customers-api-v1-0", factory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), null)));
+        assertEquals("customers-api-v1-0", OpenAPIRecordFactory.getUniqueId(new HashMap<>(), new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), null)));
     }
 
     @Test
     void getUniqueIdCollision() {
         HashMap<String, OpenAPIRecord> recs = new HashMap<>();
         recs.put("customers-api-v1-0", new OpenAPIRecord());
-        assertEquals("customers-api-v1-0-0", factory.getUniqueId(recs, new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), null)));
+        assertEquals("customers-api-v1-0-0", OpenAPIRecordFactory.getUniqueId(recs, new OpenAPIRecord(getApi(this, "/openapi/specs/customers.yml"), null)));
     }
 }

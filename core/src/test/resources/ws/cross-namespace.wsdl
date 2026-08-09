@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tests: cross-namespace type lookup with two embedded schemas -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/service"
+                  xmlns:types="https://example.com/types"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/service">
+    <wsdl:types>
+
+        <!-- Service schema: references types from the second schema -->
+        <xsd:schema targetNamespace="https://example.com/service">
+            <xsd:import namespace="https://example.com/types"/>
+            <xsd:element name="getItemRequest">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="item" type="types:ItemType"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="getItemResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="result" type="types:ItemType"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+
+        <!-- Shared types schema embedded in the same WSDL, different namespace -->
+        <xsd:schema targetNamespace="https://example.com/types">
+            <xsd:complexType name="ItemType">
+                <xsd:sequence>
+                    <xsd:element name="itemName" type="xsd:string"/>
+                    <xsd:element name="itemCount" type="xsd:int"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+
+    </wsdl:types>
+
+    <wsdl:message name="GetItemRequest">
+        <wsdl:part name="parameters" element="tns:getItemRequest"/>
+    </wsdl:message>
+    <wsdl:message name="GetItemResponse">
+        <wsdl:part name="parameters" element="tns:getItemResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="ItemPort">
+        <wsdl:operation name="getItem">
+            <wsdl:input message="tns:GetItemRequest"/>
+            <wsdl:output message="tns:GetItemResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="ItemBinding" type="tns:ItemPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="getItem">
+            <s:operation soapAction="getItem"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="ItemService">
+        <wsdl:port name="ItemPort" binding="tns:ItemBinding">
+            <s:address location="http://localhost:8080/item"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
