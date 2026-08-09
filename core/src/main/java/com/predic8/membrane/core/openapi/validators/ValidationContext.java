@@ -74,6 +74,7 @@ public class ValidationContext {
         this.statusCode = ctx.statusCode;
         this.parameter = ctx.parameter;
         this.visitedRefs = ctx.visitedRefs;
+        this.content = ctx.content;
     }
 
     public ValidationContext() {

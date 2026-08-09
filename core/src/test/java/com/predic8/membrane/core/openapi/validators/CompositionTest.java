@@ -21,6 +21,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -361,6 +362,21 @@ protected String getOpenAPIFileName() {
         m.put("any","value");
 
         ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-cycle").body(mapToJson(m)));
+        assertEquals(0,errors.size());
+    }
+
+    /**
+     * Resolving a $ref before reading allOf calls {@link ValidationContext#complexType} and
+     * {@link ValidationContext#visitRef}, both of which deepCopy() the context. deepCopy() used to
+     * drop the XML content marker, so a valid XML body behind a $ref+allOf schema was misread as
+     * JSON on the recursive allOf validation.
+     */
+    @Test
+    public void refAllOfXmlValid() throws jakarta.mail.internet.ParseException {
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-allof-xml").mediaType(APPLICATION_XML).body("""
+                <order><id>4711</id><customer>Anna</customer></order>
+                """));
         assertEquals(0,errors.size());
     }
 }
