@@ -20,6 +20,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.security.InvalidParameterException;
 import java.security.KeyStore;
 
 import static com.predic8.membrane.core.transport.ssl.StaticSSLContext.openKeyStore;
@@ -75,5 +76,36 @@ class StaticSSLContextTest {
         store.setPassword("irrelevant");
 
         assertDoesNotThrow(() -> openKeyStore(store, null, router.getResolverMap(), router.getConfiguration().getBaseLocation()));
+    }
+
+    @Test
+    void openKeyStoreLoadsMultiCertificatePemAsTruststore() throws Exception {
+        TrustStore store = new TrustStore();
+        store.setType("PEM");
+        store.setLocation("classpath:/multi-cert-chain.pem");
+
+        KeyStore ks = openKeyStore(store, null, router.getResolverMap(), router.getConfiguration().getBaseLocation());
+
+        assertEquals(2, ks.size());
+    }
+
+    @Test
+    void openKeyStoreRejectsEmptyPemTruststore() {
+        TrustStore store = new TrustStore();
+        store.setType("PEM");
+        store.setLocation("classpath:/empty.pem");
+
+        assertThrows(RuntimeException.class, () ->
+                openKeyStore(store, null, router.getResolverMap(), router.getConfiguration().getBaseLocation()));
+    }
+
+    @Test
+    void openKeyStoreRejectsPemTypeForSigningKeystore() {
+        com.predic8.membrane.core.config.security.KeyStore store = new com.predic8.membrane.core.config.security.KeyStore();
+        store.setType("PEM");
+        store.setLocation("classpath:/alias-cert.pem");
+
+        assertThrows(InvalidParameterException.class, () ->
+                openKeyStore(store, "irrelevant".toCharArray(), router.getResolverMap(), router.getConfiguration().getBaseLocation()));
     }
 }

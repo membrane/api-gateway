@@ -460,6 +460,24 @@ class SignatureValidatePartTest extends AbstractWsSecurityTest {
     }
 
     @Test
+    void signatureBeforeTheTimestampItReferencesIsRejected() throws Exception {
+        // A ds:Signature cannot possibly have digested a wsu:Timestamp that is only added to the
+        // header afterward - the reference is legitimate content but wrong order, which the
+        // producer-ordering check must catch regardless of what the coverage check would say.
+        exchangeWithBody(soapBodyWithTimestamp(Instant.now()));
+        signBodyAndTimestamp();
+
+        Document doc = parseBody();
+        Element security = firstByTag(doc, WSSE_NS, "Security");
+        Element signatureElement = firstByTag(doc, DS_NS, "Signature");
+        Element timestampElement = firstByTag(doc, WSU_NS, "Timestamp");
+        security.insertBefore(signatureElement, timestampElement);
+        setBody(doc);
+
+        assertFault(verifierTrusting(TRUSTSTORE, BODY, TIMESTAMP), FAILED_CHECK);
+    }
+
+    @Test
     void expiredTimestampIsRejected() throws Exception {
         exchangeWithBody(soapBodyWithTimestamp(Instant.now().minus(Duration.ofHours(1))));
         signBodyAndTimestamp();
@@ -495,23 +513,32 @@ class SignatureValidatePartTest extends AbstractWsSecurityTest {
 
     @Test
     void unsignedUsernameTokenIsRejectedWhenRequired() throws Exception {
-        // Only the Body is signed, so the token could have been swapped in transit.
-        exchangeWithBody("""
-                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                    <soap:Header>
-                        <wsse:Security xmlns:wsse="%s">
-                            <wsse:UsernameToken>
-                                <wsse:Username>alice</wsse:Username>
-                                <wsse:Password>secret</wsse:Password>
-                            </wsse:UsernameToken>
-                        </wsse:Security>
-                    </soap:Header>
-                    <soap:Body><foo>bar</foo></soap:Body>
-                </soap:Envelope>
-                """.formatted(WSSE_NS));
+        // The token is added after signing, not present when the signature was computed - the
+        // token a message-in-transit swap would produce - so the signature only ever covered the
+        // Body and this must be caught by the coverage check, not by the token being absent.
+        exchangeWithBody(SOAP_BODY);
         signBody();
 
+        Document doc = parseBody();
+        Element security = firstByTag(doc, WSSE_NS, "Security");
+        // Inserted before the ds:Signature, not appended after: the ordering check that requires a
+        // referenced element to precede the signature must not be what rejects this - it is the
+        // coverage check (no ds:Reference names this token) that this test targets.
+        security.insertBefore(unsignedUsernameToken(doc), firstByTag(doc, DS_NS, "Signature"));
+        setBody(doc);
+
         assertFault(verifierTrusting(TRUSTSTORE, BODY, USERNAME_TOKEN), FAILED_CHECK);
+    }
+
+    private static Element unsignedUsernameToken(Document doc) {
+        Element token = doc.createElementNS(WSSE_NS, "wsse:UsernameToken");
+        Element username = doc.createElementNS(WSSE_NS, "wsse:Username");
+        username.setTextContent("alice");
+        Element password = doc.createElementNS(WSSE_NS, "wsse:Password");
+        password.setTextContent("secret");
+        token.appendChild(username);
+        token.appendChild(password);
+        return token;
     }
 
     @Test

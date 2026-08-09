@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.xml.crypto.MarshalException;
@@ -196,7 +197,7 @@ public class SignatureValidatePart extends ValidatePart {
         }
 
         for (SignatureReference required : requiredReferences) {
-            checkRequiredReference(doc, envelope, security, soapNs, signature, required);
+            checkRequiredReference(doc, envelope, security, soapNs, signatureElement, signature, required);
         }
     }
 
@@ -451,10 +452,10 @@ public class SignatureValidatePart extends ValidatePart {
     }
 
     private void checkRequiredReference(Document doc, Element envelope, Element security, String soapNs,
-                                        XMLSignature signature, SignatureReference required) {
+                                        Element signatureElement, XMLSignature signature, SignatureReference required) {
         try {
             for (Element expected : resolveReference(doc, envelope, security, soapNs, required, parent.getXmlConfig())) {
-                checkRequiredElement(doc, signature, required, expected);
+                checkRequiredElement(doc, signatureElement, signature, required, expected);
             }
         } catch (WsSecurityXmlUtil.ReferenceResolutionException e) {
             throw new WsSecurityFaultException(FAILED_CHECK, "[" + describe(required) + "] " + e.getMessage(), e);
@@ -469,11 +470,22 @@ public class SignatureValidatePart extends ValidatePart {
                 : required.getBy().toString();
     }
 
-    private void checkRequiredElement(Document doc, XMLSignature signature, SignatureReference required, Element expected) {
+    private void checkRequiredElement(Document doc, Element signatureElement, XMLSignature signature,
+                                       SignatureReference required, Element expected) {
         String expectedId = idOf(expected);
         if (expectedId.isEmpty()) {
             throw new WsSecurityFaultException(FAILED_CHECK,
                     "Required element (" + required.getBy() + ") has no wsu:Id/Id, so it cannot be covered by the signature.");
+        }
+
+        // A TIMESTAMP/USERNAME_TOKEN reference names something a wsSecurity secure part produces,
+        // and WS-Security requires the ds:Signature to follow whatever it covers in document order -
+        // a signature listed before its own subject could not possibly have digested it. Checked
+        // ahead of coverage: "wrong order" is the more specific and more actionable fault.
+        if ((required.getBy() == SignatureReference.By.TIMESTAMP || required.getBy() == SignatureReference.By.USERNAME_TOKEN)
+                && (expected.compareDocumentPosition(signatureElement) & Node.DOCUMENT_POSITION_FOLLOWING) == 0) {
+            throw new WsSecurityFaultException(FAILED_CHECK,
+                    "Required element (" + required.getBy() + ") must precede the ds:Signature that covers it.");
         }
 
         // First half of the signature-wrapping defense: reject outright if expectedId is used by

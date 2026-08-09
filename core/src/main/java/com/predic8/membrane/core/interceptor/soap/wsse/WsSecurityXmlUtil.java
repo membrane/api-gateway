@@ -146,18 +146,30 @@ final class WsSecurityXmlUtil {
      * none. A null {@code actor} selects the header with no {@code actor}/{@code role} attribute,
      * i.e. the one addressed to the ultimate receiver; headers targeted at any other actor are
      * invisible here and therefore pass through untouched.
+     *
+     * @throws WsSecurityFaultException if more than one {@code wsse:Security} header targets
+     *                                  {@code actor} - WS-Security allows only one per actor, and
+     *                                  which of two a receiver honoured would decide which claims
+     *                                  it acted on
      */
     static Element findSecurity(Element envelope, String soapNs, String actor) {
         Element header = getFirstChildByName(envelope, soapNs, "Header");
         if (header == null) {
             return null;
         }
+        List<Element> matches = new ArrayList<>();
         for (Element security : getChildrenByName(header, WSSE_NS, "Security")) {
             if (Objects.equals(actor, actorOf(security, soapNs))) {
-                return security;
+                matches.add(security);
             }
         }
-        return null;
+        if (matches.size() > 1) {
+            throw new WsSecurityFaultException(WsSecurityFaultCode.INVALID_SECURITY, actor == null
+                    ? "More than one wsse:Security header with no actor/role found; rejecting as ambiguous."
+                    : "More than one wsse:Security header targeted at actor \"" + actor
+                      + "\" found; rejecting as ambiguous.");
+        }
+        return matches.isEmpty() ? null : matches.getFirst();
     }
 
     /**

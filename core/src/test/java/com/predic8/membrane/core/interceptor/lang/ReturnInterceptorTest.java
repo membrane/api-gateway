@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 
 import static com.predic8.membrane.core.http.MimeType.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -89,6 +90,6 @@ public class ReturnInterceptorTest {
 
         String body = xml.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("<c/>"), "Expected the DOM-mutated body, got: " + body);
-        assertEquals(body.getBytes().length, xml.getResponse().getHeader().getContentLength());
+        assertEquals(body.getBytes(StandardCharsets.UTF_8).length, xml.getResponse().getHeader().getContentLength());
     }
 }

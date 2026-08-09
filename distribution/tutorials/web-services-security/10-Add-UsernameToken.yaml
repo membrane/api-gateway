@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+#
+# Tutorial: WS-Security - Add a UsernameToken and Timestamp
+#
+# Adds a wsu:Timestamp and a wsse:UsernameToken to an incoming SOAP request.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 10-Add-UsernameToken.yaml
+#    Windows:
+#      membrane.cmd -c 10-Add-UsernameToken.yaml
+#
+# 2.) Send a SOAP request
+#    curl @request.xml -H "Content-Type: text/xml" http://localhost:2000
+#
+#    Expected: same request, with a wsse:Security header carrying a Timestamp and a
+#    UsernameToken.
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - wsSecurity:
+            secure:
+              - usernameToken:
+                  username: alice
+                  password: secret
+              - timestamp: {}
+        - beautifier: {}
+        - return:
+            status: 200
+
+# Notice that this is a deliberate simple example.
+#
+# - Make sure to protect your credentials with encryption (TLS or XML Encryption)
+# - See the following tutorials on protecting the token with a signature.

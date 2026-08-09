@@ -22,7 +22,8 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityFaultCode.*;
-import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.*;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
+import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.getChildrenByName;
 
 /**
  * Reading and checking the {@code wsu:Timestamp} of a {@code wsse:Security} header.
@@ -84,11 +85,18 @@ final class WsuTimestamps {
 
     /**
      * @return the named child's instant, or null when the child is absent and optional
-     * @throws WsSecurityFaultException if {@code Created} is absent, or either value is not an
-     *                                  {@code xs:dateTime}
+     * @throws WsSecurityFaultException if {@code Created} is absent, either value is not an
+     *                                  {@code xs:dateTime}, or the timestamp carries more than
+     *                                  one of the named element - which of two a receiver honoured
+     *                                  would otherwise decide whether the message is fresh
      */
     private static Instant parse(Element timestamp, String localName) {
-        Element el = getFirstChildByName(timestamp, WSU_NS, localName);
+        List<Element> matches = getChildrenByName(timestamp, WSU_NS, localName);
+        if (matches.size() > 1) {
+            throw new WsSecurityFaultException(FAILED_CHECK,
+                    "More than one wsu:Timestamp/wsu:" + localName + " found; rejecting as ambiguous.");
+        }
+        Element el = matches.isEmpty() ? null : matches.getFirst();
         if (el == null) {
             if ("Created".equals(localName)) {
                 throw new WsSecurityFaultException(FAILED_CHECK, "wsu:Timestamp has no wsu:Created.");

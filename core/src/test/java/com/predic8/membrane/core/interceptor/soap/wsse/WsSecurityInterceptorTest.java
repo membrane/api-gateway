@@ -78,6 +78,35 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
     }
 
     @Test
+    void duplicateSameActorSecurityHeaderIsRejected() throws Exception {
+        // Two wsse:Security headers for the same actor - which of two a receiver honoured would
+        // decide which claims it acted on, so this must not silently pick the first.
+        exchangeWithBody("""
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                    <soap:Header>
+                        <wsse:Security xmlns:wsse="%s">
+                            <wsse:UsernameToken>
+                                <wsse:Username>alice</wsse:Username>
+                                <wsse:Password>secret</wsse:Password>
+                            </wsse:UsernameToken>
+                        </wsse:Security>
+                        <wsse:Security xmlns:wsse="%s">
+                            <wsse:UsernameToken>
+                                <wsse:Username>bob</wsse:Username>
+                                <wsse:Password>alsosecret</wsse:Password>
+                            </wsse:UsernameToken>
+                        </wsse:Security>
+                    </soap:Header>
+                    <soap:Body><foo>bar</foo></soap:Body>
+                </soap:Envelope>
+                """.formatted(WSSE_NS, WSSE_NS));
+        WsSecurityInterceptor wsSecurity = validating(expecting("alice", "secret"));
+        wsSecurity.init(router);
+
+        assertFault(wsSecurity, INVALID_SECURITY);
+    }
+
+    @Test
     void validateConsumesTheSecurityHeader() throws Exception {
         exchangeWithBody(TWO_SECURITY_HEADERS);
         WsSecurityInterceptor wsSecurity = validating(expecting("alice", "secret"));
@@ -265,6 +294,7 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
     void secureWithoutValidateKeepsATimestampASignatureMayCover() throws Exception {
         // The one thing an unvalidated header may keep: it asserts nothing on its own, and by: TIMESTAMP
         // exists precisely to cover a freshness window the message already carried.
+        String created = "2026-01-01T00:00:00Z";
         exchangeWithBody("""
                 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                     <soap:Header>
@@ -275,7 +305,7 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
                     </soap:Header>
                     <soap:Body><foo>bar</foo></soap:Body>
                 </soap:Envelope>
-                """.formatted(WSSE_NS, WSU_NS, java.time.Instant.now()));
+                """.formatted(WSSE_NS, WSU_NS, created));
         WsSecurityInterceptor wsSecurity = securing(signature(bodyReference(), reference(TIMESTAMP)));
         wsSecurity.setKeyStore(signingKeyStore(ALIAS_1));
         wsSecurity.init(router);
@@ -286,6 +316,10 @@ class WsSecurityInterceptorTest extends AbstractWsSecurityTest {
         assertEquals(1, result.getElementsByTagNameNS(WSU_NS, "Timestamp").getLength());
         assertEquals(0, result.getElementsByTagNameNS(WSSE_NS, "UsernameToken").getLength());
         assertEquals(2, result.getElementsByTagNameNS(DS_NS, "Reference").getLength());
+        // The retained wsu:Timestamp must be the one the message already carried, not a
+        // freshly-generated one - a signature/by: TIMESTAMP would otherwise cover a window that
+        // was never actually asserted by the sender.
+        assertEquals(created, firstByTag(result, WSU_NS, "Created").getTextContent());
     }
 
     @Test

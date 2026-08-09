@@ -23,15 +23,16 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.router.DefaultRouter;
 import com.predic8.membrane.core.util.xml.XMLUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 import javax.xml.crypto.dsig.dom.DOMValidateContext;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.security.cert.Certificate;
 import java.util.List;
 
@@ -96,9 +97,7 @@ abstract class AbstractWsSecurityTest {
     }
 
     private static Document parse(Message msg) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        return factory.newDocumentBuilder().parse(msg.getBodyAsStream());
+        return HardenedXmlParser.getInstance().parse(new InputSource(msg.getBodyAsStream()));
     }
 
     String rawBody() throws Exception {

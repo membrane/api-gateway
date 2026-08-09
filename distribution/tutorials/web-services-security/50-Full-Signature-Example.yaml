@@ -1,0 +1,90 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+#
+# Tutorial: WS-Security - All Features
+#
+# Everything wsSecurity offers, combined: port 2000 adds a timestamp, a UsernameToken and a
+# signature (covering the body, the timestamp, the username token, and one XPath-selected element,
+# referencing the certificate via a BinarySecurityToken instead of an inline X509Data) and forwards
+# the request to port 2001, which validates all three before passing it on to the SOAP backend.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 50-Full-Signature-Example.yaml
+#    Windows:
+#      membrane.cmd -c 50-Full-Signature-Example.yaml
+#
+# 2.) Send a plain SOAP request to port 2000
+#    curl -d @request.xml -H "Content-Type: text/xml" http://localhost:2000
+#
+#    Expected: a getCityResponse. The log shows the wsse:Security header.
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - wsSecurity:
+            mustUnderstand: false
+            keystore:
+              location: signer.p12
+              password: secret
+              keyAlias: signer
+            # Lets the signature's XPath reference below use the "cit" prefix from request.xml
+            # instead of the more awkward //*[local-name()='getCity'].
+            xmlConfig:
+              namespaces:
+                - prefix: cit
+                  uri: https://predic8.de/cities
+            secure:
+              - timestamp:
+                  ttl: PT10M
+              - usernameToken:
+                  username: alice
+                  password: secret
+              - signature:
+                  # signatureAlgorithm/digestAlgorithm/canonicalizationAlgorithm are all
+                  # configurable too (exclusive c14n is the default and left as-is here).
+                  securityTokenReference: {}
+                  references:
+                    - by: BODY
+                    - by: TIMESTAMP
+                    - by: USERNAME_TOKEN
+                    - by: BST
+                    - xpath: //cit:getCity
+        - log: {}
+  target:
+    url: http://localhost:2001
+
+---
+api:
+  port: 2001
+  flow:
+    - request:
+        - wsSecurity:
+            truststore:
+              location: signer.p12
+              password: secret
+            xmlConfig:
+              namespaces:
+                - prefix: cit
+                  uri: https://predic8.de/cities
+            validate:
+              - timestamp:
+                  clockSkew: PT2M
+              - usernameToken:
+                  staticUserDataProvider:
+                    users:
+                      - username: alice
+                        password: secret
+                  freshnessWindow: PT2M
+              - signature:
+                  requiredReferences:
+                    - by: BODY
+                    - by: TIMESTAMP
+                    - by: USERNAME_TOKEN
+                    - by: BST
+                    - xpath: //cit:getCity
+        - log:
+            message: |
+              Notice that the wsSecurity header was removed after validation.
+              %{body}
+    - sampleSoapService: {}

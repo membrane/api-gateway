@@ -106,6 +106,27 @@ class TimestampValidatePartTest extends AbstractWsSecurityTest {
     }
 
     @Test
+    void duplicateCreatedIsRejected() throws Exception {
+        // Same ambiguity as two wsu:Timestamp elements, one level down: which of two a receiver
+        // honoured would decide whether the message counts as fresh.
+        Instant now = Instant.now();
+        exchangeWithTimestamp(("<wsu:Timestamp><wsu:Created>%s</wsu:Created><wsu:Created>%s</wsu:Created></wsu:Timestamp>")
+                .formatted(now, now.minus(Duration.ofHours(1))));
+
+        assertFault(wsSecurity, FAILED_CHECK);
+    }
+
+    @Test
+    void duplicateExpiresIsRejected() throws Exception {
+        Instant now = Instant.now();
+        exchangeWithTimestamp(("<wsu:Timestamp><wsu:Created>%s</wsu:Created>" +
+                               "<wsu:Expires>%s</wsu:Expires><wsu:Expires>%s</wsu:Expires></wsu:Timestamp>")
+                .formatted(now, now.plus(Duration.ofMinutes(5)), now.minus(Duration.ofMinutes(5))));
+
+        assertFault(wsSecurity, FAILED_CHECK);
+    }
+
+    @Test
     void timestampWithoutCreatedIsRejected() throws Exception {
         exchangeWithTimestamp("<wsu:Timestamp><wsu:Expires>%s</wsu:Expires></wsu:Timestamp>"
                 .formatted(Instant.now().plus(Duration.ofMinutes(5))));

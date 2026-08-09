@@ -315,8 +315,15 @@ public class StaticSSLContext extends SSLContext {
     }
 
     public static KeyStore openKeyStore(Store store, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException, NoSuchProviderException {
-        if (PEM_TYPE.equalsIgnoreCase(store.getType()))
+        if (PEM_TYPE.equalsIgnoreCase(store.getType())) {
+            // keyPass is only ever non-null when the caller is opening a signing keystore (the
+            // truststore/trust callers all pass null) - a bare PEM certificate carries no private
+            // key, so it can never work there.
+            if (keyPass != null)
+                throw new InvalidParameterException("A <keystore type=\"PEM\"> cannot be used for signing: " +
+                        "a bare certificate has no private key. PEM is only valid for a <truststore>.");
             return loadPemCertificateStore(store, resourceResolver, baseLocation);
+        }
         KeyStore ks = getAndLoadKeyStore(store, resourceResolver, baseLocation, getStoreTypeOrDefault(store), getPassword(store, keyPass));
         if (ks.getCertificate("membrane") != null)
             warnOfOldCertificate(ks.getCertificate("membrane"));
@@ -324,16 +331,16 @@ public class StaticSSLContext extends SSLContext {
     }
 
     /**
-     * Loads {@code store.getLocation()} as one or more bare X.509 certificates - PEM blocks or
+     * Loads <code>store.getLocation()</code> as one or more bare X.509 certificates - PEM blocks or
      * raw DER certificates, either one alone or concatenated back to back, {@link CertificateFactory}
      * accepts all of it - and wraps them into a synthetic in-memory PKCS12 {@link KeyStore}, the
-     * same representation {@link #getStore} builds for inline {@code <trust><certificate>} entries.
-     * Every certificate becomes its own trust anchor, which is how a truststore ends up trusting a
-     * whole CA chain (root plus intermediates) from one file. This keeps {@code java.security.KeyStore}
-     * the uniform type every caller of {@link #openKeyStore} deals with, whether the config
-     * pointed at a real keystore file or a bare certificate.
+     * same representation {@link #getStore} builds for inline <code>&lt;trust&gt;&lt;certificate&gt;</code>
+     * entries. Every certificate becomes its own trust anchor, which is how a truststore ends up
+     * trusting a whole CA chain (root plus intermediates) from one file. This keeps
+     * <code>java.security.KeyStore</code> the uniform type every caller of {@link #openKeyStore} deals
+     * with, whether the config pointed at a real keystore file or a bare certificate.
      * <p>
-     * There is no password to open a bare certificate with, so {@code store.getPassword()} is
+     * There is no password to open a bare certificate with, so <code>store.getPassword()</code> is
      * ignored rather than required, unlike the keystore-file path.
      */
     private static KeyStore loadPemCertificateStore(Store store, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, IOException, KeyStoreException {
@@ -346,6 +353,8 @@ public class StaticSSLContext extends SSLContext {
             int i = 0;
             for (Certificate certificate : certificates)
                 ks.setCertificateEntry("cert-" + i++, certificate);
+            if (i == 0)
+                throw new RuntimeException("PEM store at " + store.getLocation() + " contains no certificates.");
         }
         return ks;
     }

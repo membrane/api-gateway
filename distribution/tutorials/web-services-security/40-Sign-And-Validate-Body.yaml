@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+#
+# Tutorial: WS-Security - Sign and Validate the Body
+#
+# Two APIs in one gateway: the one on port 2000 signs the SOAP body and forwards the request to
+# the one on port 2001, which verifies the signature before passing the request on to the SOAP
+# backend. Both sides use the same self-signed keypair (signer.p12) - once as a keystore to sign
+# with, once as a truststore to verify against.
+#
+# 1.) Start Membrane (starts both APIs)
+#    Linux/Mac:
+#      ./membrane.sh -c 30-Sign-And-Validate-Body.yaml
+#    Windows:
+#      membrane.cmd -c 30-Sign-And-Validate-Body.yaml
+#
+# 2.) Send a plain SOAP request to port 2000
+#    curl -d @request.xml -H "Content-Type: text/xml" http://localhost:2000
+#
+#    Expected: a getCityResponse. Port 2000 signed the body, port 2001 verified the
+#    signature and forwarded the request to the service. The log shows the
+#    full SOAP message as it leaves port 2000, ds:Signature and all.
+#
+# 3.) Send a signed request whose body was tampered with after signing, directly to port 2001
+#    curl -d @request-tampered.xml -H "Content-Type: text/xml" http://localhost:2001
+#
+#    Expected: a soap:Fault. The signature doesn't match the body it was supposed to cover.
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - wsSecurity:
+            keystore:
+              location: signer.p12
+              password: secret
+              keyAlias: signer
+            secure:
+              - signature:
+                  references:
+                    - by: BODY
+        - log: {}
+  target:
+    url: http://localhost:2001
+
+---
+api:
+  port: 2001
+  flow:
+    - request:
+        - wsSecurity:
+            truststore:
+              location: signer.p12
+              password: secret
+            validate:
+              - signature:
+                  requiredReferences:
+                    - by: BODY
+        - log:
+            message: |
+              Notice that the wsSecurity header was removed after validation.
+              %{body}
+    - sampleSoapService: {}
+
+# Notice that this is a deliberate simple example.
+#
+# - Do not use the same keystore and truststore for both signing and validating
+# - The sample does not address confidentiality. If required, combine with TLS or XML Encryption.
