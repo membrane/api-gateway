@@ -27,6 +27,7 @@ import com.predic8.membrane.core.util.ConfigurationException;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.parser.ObjectMapperFactory;
+import io.swagger.v3.parser.OpenAPIV3Parser;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
@@ -162,13 +163,18 @@ public class OpenAPIRecordFactory {
     }
 
     private OpenAPIRecord create(OpenAPISpec spec) throws IOException {
-        JsonNode node = omYaml.readTree(getInputStreamForLocation(spec.location));
+        String content;
+        try (InputStream is = getInputStreamForLocation(spec.location)) {
+            content = readInputStream(is);
+        }
+        JsonNode node = omYaml.readTree(content);
+        String location = convertPathToFileUriPathIfNeeded(resolve(spec.location));
         OpenAPIRecord record;
         if (OpenAPI32Parser.isOpenAPI32(node)) {
-            OpenAPI api = parseOpenAPI32(node, convertPathToFileUriPathIfNeeded(resolve(spec.location)), spec.location);
+            OpenAPI api = parseOpenAPI32(node, location, spec.location);
             record = new OpenAPIRecord(api, node, spec);
         } else {
-            OpenAPI api = parseFromLocation(spec);
+            OpenAPI api = parseOpenAPI(node, content, location);
             addConversionNoticeIfSwagger2(api, node);
             record = new OpenAPIRecord(api, spec);
         }
@@ -179,12 +185,18 @@ public class OpenAPIRecordFactory {
     private OpenAPIRecord create(OpenAPISpec spec, File file) {
         OpenAPIRecord record;
         try {
-            JsonNode node = omYaml.readTree(file);
+            String content;
+            try (InputStream is = new FileInputStream(file)) {
+                content = readInputStream(is);
+            }
+            JsonNode node = omYaml.readTree(content);
             if (OpenAPI32Parser.isOpenAPI32(node)) {
                 OpenAPI api = parseOpenAPI32(node, file.toURI().toString(), file.getPath());
                 record = new OpenAPIRecord(api, node, spec);
             } else {
-                record = new OpenAPIRecord(parseFileAsOpenAPI(file), spec);
+                OpenAPI api = parseOpenAPI(node, content, file.toURI().toString());
+                addConversionNoticeIfSwagger2(api, node);
+                record = new OpenAPIRecord(api, spec);
             }
         } catch (IOException e) {
             throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), file.getPath());
@@ -200,8 +212,20 @@ public class OpenAPIRecordFactory {
         return api;
     }
 
-    private OpenAPI parseFromLocation(OpenAPISpec spec) {
-        return new OpenAPIParser().readLocation(convertPathToFileUriPathIfNeeded(resolve(spec.location)), null, getParseOptions()).getOpenAPI();
+    /**
+     * Parses an already-read document into the swagger {@link OpenAPI} model. OpenAPI 3.0/3.1
+     * documents are parsed from the in-memory {@code content} directly through
+     * {@link OpenAPIV3Parser}, the same engine {@code OpenAPIParser.readLocation} delegates to,
+     * so $ref resolution behaves identically without re-reading the source. Swagger 2.0 documents
+     * go through the {@link OpenAPIParser} facade's {@code SwaggerConverter}, which only resolves
+     * relative external {@code $ref}s when given the document's location rather than its content,
+     * so that (legacy, rarely used) branch re-reads the source once, same as before this change.
+     */
+    private OpenAPI parseOpenAPI(JsonNode node, String content, String location) {
+        if (isSwagger2(node)) {
+            return new OpenAPIParser().readLocation(location, null, getParseOptions()).getOpenAPI();
+        }
+        return new OpenAPIV3Parser().readContents(content, null, getParseOptions(), location).getOpenAPI();
     }
 
     private static @NotNull String convertPathToFileUriPathIfNeeded(String path) {
@@ -214,22 +238,6 @@ public class OpenAPIRecordFactory {
 
     private InputStream getInputStreamForLocation(String location) throws ResourceRetrievalException {
         return router.getResolverMap().resolve(ResolverMap.combine(baseLocation, location));
-    }
-
-    private OpenAPI parseFileAsOpenAPI(File oaFile) {
-        try {
-            JsonNode node = omYaml.readTree(oaFile);
-            OpenAPI api = new OpenAPIParser().readContents(
-                    readInputStream(new FileInputStream(oaFile)),
-                    null,
-                    getParseOptions()
-            ).getOpenAPI();
-
-            addConversionNoticeIfSwagger2(api, node);
-            return api;
-        } catch (IOException e) {
-            throw new OpenAPIParsingException("Could not read OpenAPI file: " + e.getMessage(), oaFile.getPath());
-        }
     }
 
     private void addConversionNoticeIfSwagger2(OpenAPI api, JsonNode node) {

@@ -1,0 +1,15 @@
+swagger: "2.0"
+info:
+  title: Swagger2 External Ref
+  version: "1.0.0"
+paths:
+  /users:
+    get:
+      summary: List users
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: A user
+          schema:
+            $ref: 'user.yaml#/User'
