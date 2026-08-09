@@ -51,9 +51,9 @@ public class OpenAPIYamlLimits {
     /**
      * Read by swagger-parser as well, so one setting covers Membrane and the parser. Read once when
      * this class is loaded, so it has to be set at JVM startup:
-     * {@code JAVA_OPTS="-DmaxYamlCodePoints=..."}.
+     * {@code JAVA_OPTS="-Dmembrane.core.maxyamlcodepoints=..."}.
      */
-    public static final String CODE_POINT_LIMIT_PROPERTY = "maxYamlCodePoints";
+    public static final String CODE_POINT_LIMIT_PROPERTY = "membrane.core.maxyamlcodepoints";
 
     private static final int codePointLimit = readCodePointLimit();
 
