@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tests: JSON-to-SOAP mapping of @-prefixed JSON keys to XML attributes -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/attributes"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/attributes">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/attributes">
+            <xsd:element name="record">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="name" type="xsd:string"/>
+                    </xsd:sequence>
+                    <xsd:attribute name="id" type="xsd:string"/>
+                    <xsd:attribute name="type" type="xsd:string"/>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="recordResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="status" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+
+    <wsdl:message name="RecordRequest">
+        <wsdl:part name="parameters" element="tns:record"/>
+    </wsdl:message>
+    <wsdl:message name="RecordResponse">
+        <wsdl:part name="parameters" element="tns:recordResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="RecordPort">
+        <wsdl:operation name="record">
+            <wsdl:input message="tns:RecordRequest"/>
+            <wsdl:output message="tns:RecordResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="RecordBinding" type="tns:RecordPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="record">
+            <s:operation soapAction="record"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="RecordService">
+        <wsdl:port name="RecordPort" binding="tns:RecordBinding">
+            <s:address location="http://localhost:8080/record"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

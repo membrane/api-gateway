@@ -101,7 +101,7 @@ public class APIProxyKey extends ServiceProxyKey {
         return exchangeExpression.evaluate(exc, REQUEST, Boolean.class);
     }
 
-    void addBasePaths(ArrayList<String> paths) {
+    public void addBasePaths(ArrayList<String> paths) {
         basePaths.addAll(paths);
     }
 
