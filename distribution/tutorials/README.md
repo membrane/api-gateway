@@ -47,7 +47,7 @@ If you need to integrate legacy SOAP Web Services, this tutorial provides exampl
 
 ## [Web Services Security](web-services-security)
 
-Secure SOAP messages with WS-Security: validate a `wsse:UsernameToken` on incoming requests before they reach the backend.
+Secure SOAP messages with WS-Security: add and validate a `wsse:UsernameToken`, a `wsu:Timestamp`, and a `ds:Signature`.
 
 
 ## [OpenAPI](openapi)

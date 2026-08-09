@@ -45,3 +45,5 @@ api:
 # # Notice that this is a deliberately simple example.
 #
 # If you have multiple user there are additional UserDataProviders for LDAP, JDBC, file, ... available.
+#
+# Continue with file 30-Add-And-Validate-Timestamp.yaml

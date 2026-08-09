@@ -2,9 +2,8 @@
 #
 # Tutorial: WS-Security - Add and Validate a Timestamp
 #
-# To show how client and server can interact we put two APIs in one gateway: the one on port 2000
-# adds a wsu:Timestamp and forwards the request to the one on port 2001, which validates it
-# before passing the request on to the SOAP service.
+# The API on port 2000 adds a wsu:Timestamp and forwards the request to the
+# one on port 2001, which validates it before passing the request on to the SOAP service.
 #
 # 1.) Start Membrane (starts both APIs)
 #    Linux/Mac:
@@ -25,20 +24,22 @@
 #    Expected: a soap:Fault
 
 api:
+  name: Adder
   port: 2000
   flow:
     - request:
         - wsSecurity:
             secure:
               - timestamp: {}
-        # The wsse:Security header the client never sees again once port 2001 has validated and
-        # stripped it, so the full message is logged here instead.
+        # logs the body with the wsse:Security header before the validator on port 2001 removes it.
+        - beautifier: {}
         - log: {}
   target:
     url: http://localhost:2001
 
 ---
 api:
+  name: Validator
   port: 2001
   flow:
     - request:
@@ -48,3 +49,5 @@ api:
     - sampleSoapService: {}
 
 # Notice that this is a deliberately simple example.
+#
+# Continue with file 40-Validate-Signed-Body.yaml

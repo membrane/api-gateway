@@ -1,3 +1,4 @@
+<!-- A wsu:Timestamp that expired in the past (2020), for testing timestamp validation. -->
 <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/" xmlns:cit="https://predic8.de/cities">
     <s11:Header>
         <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">

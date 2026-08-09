@@ -34,3 +34,5 @@ api:
 #
 # - Make sure to protect your credentials with encryption (TLS or XML Encryption)
 # - See the following tutorials on protecting the token with a signature.
+#
+# Continue with file 20-Validate-UsernameToken.yaml

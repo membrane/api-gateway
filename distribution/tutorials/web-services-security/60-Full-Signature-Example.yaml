@@ -9,9 +9,9 @@
 #
 # 1.) Start Membrane
 #    Linux/Mac:
-#      ./membrane.sh -c 50-Full-Signature-Example.yaml
+#      ./membrane.sh -c 60-Full-Signature-Example.yaml
 #    Windows:
-#      membrane.cmd -c 50-Full-Signature-Example.yaml
+#      membrane.cmd -c 60-Full-Signature-Example.yaml
 #
 # 2.) Send a plain SOAP request to port 2000
 #    curl -d @request.xml -H "Content-Type: text/xml" http://localhost:2000
@@ -19,6 +19,7 @@
 #    Expected: a getCityResponse. The log shows the wsse:Security header.
 
 api:
+  name: Signer
   port: 2000
   flow:
     - request:
@@ -50,12 +51,15 @@ api:
                     - by: USERNAME_TOKEN
                     - by: BST
                     - xpath: //cit:getCity
+        # No beautifier here - it would re-indent the just-signed body and invalidate the
+        # signature before port 2001 gets to validate it.
         - log: {}
   target:
     url: http://localhost:2001
 
 ---
 api:
+  name: Validator
   port: 2001
   flow:
     - request:
@@ -86,5 +90,5 @@ api:
         - log:
             message: |
               Notice that the wsSecurity header was removed after validation.
-              %{body}
+              ${body}
     - sampleSoapService: {}
