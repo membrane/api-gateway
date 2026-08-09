@@ -21,6 +21,8 @@ import org.w3c.dom.Element;
 
 import java.time.Duration;
 import java.time.Instant;
+    import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.WSU_NS;
@@ -37,6 +39,13 @@ import static com.predic8.membrane.core.interceptor.soap.wsse.WsSecurityXmlUtil.
 public class TimestampSecurePart extends SecurePart {
 
     private static final Duration DEFAULT_TTL = Duration.ofMinutes(5);
+
+    // Millisecond precision (fixed 3 fractional digits), not Instant#toString()'s variable-width
+    // output (0, 3, 6 or 9 digits) - old/other WS-Security stacks like Axis1 or .NET 3.5 are strict
+    // about the timestamp format, and millisecond precision is the safe interoperable convention.
+    private static final DateTimeFormatter TIMESTAMP_FORMAT = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            .withZone(ZoneOffset.UTC);
 
     private Duration ttl = DEFAULT_TTL;
 
@@ -59,11 +68,11 @@ public class TimestampSecurePart extends SecurePart {
         Element timestamp = doc.createElementNS(WSU_NS, "wsu:Timestamp");
 
         Element created = doc.createElementNS(WSU_NS, "wsu:Created");
-        created.setTextContent(now.toString());
+        created.setTextContent(TIMESTAMP_FORMAT.format(now));
         timestamp.appendChild(created);
 
         Element expires = doc.createElementNS(WSU_NS, "wsu:Expires");
-        expires.setTextContent(now.plus(ttl).toString());
+        expires.setTextContent(TIMESTAMP_FORMAT.format(now.plus(ttl)));
         timestamp.appendChild(expires);
 
         return timestamp;

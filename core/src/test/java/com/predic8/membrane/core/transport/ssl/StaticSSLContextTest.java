@@ -95,8 +95,9 @@ class StaticSSLContextTest {
         store.setType("PEM");
         store.setLocation("classpath:/empty.pem");
 
-        assertThrows(RuntimeException.class, () ->
+        RuntimeException e = assertThrows(RuntimeException.class, () ->
                 openKeyStore(store, null, router.getResolverMap(), router.getConfiguration().getBaseLocation()));
+        assertEquals("PEM store at " + store.getLocation() + " contains no certificates.", e.getMessage());
     }
 
     @Test

@@ -284,6 +284,24 @@ class XmlDomBodyTest {
         assertEquals(original.length, req.getHeader().getContentLength());
     }
 
+    /**
+     * A mutation that fails halfway must not leave its half behind: the cached document goes, so
+     * the next consumer sees the bytes the message arrived with rather than the failed change.
+     */
+    @Test
+    void modifyDiscardsAPartialMutationWhenTheMutationThrows() {
+        byte[] original = SOAP.getBytes(UTF_8);
+        Request req = requestWith(original);
+
+        assertThrows(IllegalStateException.class, () -> XmlDomBody.modify(req, doc -> {
+            doc.getDocumentElement().setAttribute("half", "applied");
+            throw new IllegalStateException("no");
+        }));
+
+        assertArrayEquals(original, req.getBody().getContent());
+        assertEquals("", XmlDomBody.documentOf(req).getDocumentElement().getAttribute("half"));
+    }
+
     @Test
     void xpathEvaluatesAgainstTheDocument() throws XPathExpressionException {
         Request req = requestWith(SOAP.getBytes(UTF_8));

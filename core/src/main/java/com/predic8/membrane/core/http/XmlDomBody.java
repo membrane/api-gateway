@@ -140,11 +140,23 @@ public class XmlDomBody extends AbstractBody {
      * parsed before sees the change, and any that parses after gets the changed tree rather than a
      * re-parse.
      * <p>
-     * A mutation that throws leaves the message's body as it was.
+     * A mutation that throws leaves the message's body as it was: nothing is published, and the
+     * half-mutated document is dropped from the cache, so the next consumer parses the bytes the
+     * message arrived with rather than inheriting the failed change. Only the cache is rolled back —
+     * a caller still holding the {@link Document} of an earlier {@link #documentOf(Message)} keeps
+     * the partially mutated tree it shares, now detached from the message.
      */
     public static void modify(Message msg, Consumer<Document> mutation) {
         Document doc = documentOf(msg);
-        mutation.accept(doc);
+        try {
+            mutation.accept(doc);
+        } catch (RuntimeException e) {
+            // The bytes were never published, so they still fit the header: only the cached
+            // document has to go.
+            log.debug("Mutation failed, dropping the cached document so the body is re-parsed.", e);
+            msg.setBody(new Body(msg.getBody().getContent()));
+            throw e;
+        }
         replaceBody(msg, doc);
     }
 

@@ -47,4 +47,4 @@ api:
               - timestamp: {}
     - sampleSoapService: {}
 
-# Notice that this is a deliberate simple example.
+# Notice that this is a deliberately simple example.

@@ -86,6 +86,14 @@ class TimestampSecurePartTest extends AbstractWsSecurityTest {
     }
 
     @Test
+    void timestampHasMillisecondPrecision() throws Exception {
+        Document result = addTimestampAndParse(SOAP_BODY);
+
+        String created = firstByTag(result, WSU_NS, "Created").getTextContent();
+        assertTrue(created.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z"));
+    }
+
+    @Test
     void ttlIsConfigurable() throws Exception {
         timestamp.setTtl("PT1M");
 

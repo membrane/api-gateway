@@ -14,8 +14,8 @@
 # 2.) Send a request with the correct credentials
 #    curl -d @request-valid.xml -H "Content-Type: text/xml" http://localhost:2000
 #
-#    Expected: a normal getCityResponse from the sample SOAP service, and a line in Membrane's
-#    log reading "Authenticated user: alice".
+#    Expected: a normal getCityResponse from the sample SOAP service, and a log output
+#    with the user "alice" and the SOAP without the wsse:Security header.
 #
 # 3.) Send a request with a wrong password
 #    curl -d @request-invalid.xml -H "Content-Type: text/xml" http://localhost:2000
@@ -33,10 +33,15 @@ api:
                     users:
                       - username: alice
                         password: secret
+        - beautifier: {}
         - log:
-            message: "Authenticated user: ${user()}"
+            message: |
+              *** After WS-Security ***
+              User: ${user()}
+              Notice that wsse:Security header was removed from the request: 
+              ${body}
     - sampleSoapService: {}
 
-# # Notice that this is a deliberate simple example.
+# # Notice that this is a deliberately simple example.
 #
 # If you have multiple user there are additional UserDataProviders for LDAP, JDBC, file, ... available.
