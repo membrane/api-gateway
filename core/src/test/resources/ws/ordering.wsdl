@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tests: JSON-to-SOAP field ordering follows WSDL sequence order -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/ordering"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/ordering">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/ordering">
+            <xsd:element name="createPerson">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="firstName" type="xsd:string"/>
+                        <xsd:element name="lastName" type="xsd:string"/>
+                        <xsd:element name="age" type="xsd:int"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="createPersonResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="id" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+
+    <wsdl:message name="CreatePersonRequest">
+        <wsdl:part name="parameters" element="tns:createPerson"/>
+    </wsdl:message>
+    <wsdl:message name="CreatePersonResponse">
+        <wsdl:part name="parameters" element="tns:createPersonResponse"/>
+    </wsdl:message>
+
+    <wsdl:portType name="PersonPort">
+        <wsdl:operation name="createPerson">
+            <wsdl:input message="tns:CreatePersonRequest"/>
+            <wsdl:output message="tns:CreatePersonResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="PersonBinding" type="tns:PersonPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="createPerson">
+            <s:operation soapAction="createPerson"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="PersonService">
+        <wsdl:port name="PersonPort" binding="tns:PersonBinding">
+            <s:address location="http://localhost:8080/person"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

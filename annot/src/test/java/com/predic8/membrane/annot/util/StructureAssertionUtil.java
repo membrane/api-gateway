@@ -18,6 +18,7 @@ import com.predic8.membrane.annot.beanregistry.BeanRegistry;
 import org.junit.jupiter.api.Assertions;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -108,6 +109,24 @@ public class StructureAssertionUtil {
                 asserter.assertStructure(bean.getClass().getMethod("get" + Character.toUpperCase(name.charAt(0)) + name.substring(1)).invoke(bean));
             } catch (NoSuchMethodException | IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
                 throw new RuntimeException(e);
+            }
+        };
+    }
+
+    public record MapEntry(String key, Asserter value) {}
+
+    public static MapEntry entry(String key, Asserter value) {
+        return new MapEntry(key, value);
+    }
+
+    public static Asserter mapContaining(MapEntry... entries) {
+        return bean -> {
+            assertInstanceOf(Map.class, bean);
+            Map<?, ?> map = (Map<?, ?>) bean;
+            assertEquals(entries.length, map.size());
+            for (MapEntry e : entries) {
+                assertTrue(map.containsKey(e.key()), "Map missing key: " + e.key());
+                e.value().assertStructure(map.get(e.key()));
             }
         };
     }

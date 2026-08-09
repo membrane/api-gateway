@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tests: a complex child declared via ref= into another namespace — the referenced element's
+     field order and target namespace must govern the subtree it produces -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/ref-service"
+                  xmlns:d="https://example.com/ref-detail"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/ref-service">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/ref-detail"
+                    xmlns="https://example.com/ref-detail"
+                    elementFormDefault="qualified">
+            <!-- unprefixed type= so the type only resolves against THIS schema document:
+                 whoever resolves it must carry the referenced element's own root, not the referrer's -->
+            <xsd:element name="shipment" type="ShipmentType"/>
+            <xsd:complexType name="ShipmentType">
+                <xsd:sequence>
+                    <xsd:element name="street" type="xsd:string"/>
+                    <xsd:element name="city" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+
+        <xsd:schema targetNamespace="https://example.com/ref-service"
+                    elementFormDefault="qualified"
+                    xmlns:d="https://example.com/ref-detail">
+            <xsd:import namespace="https://example.com/ref-detail"/>
+            <xsd:element name="placeOrder">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <!-- referenced child first, locally declared child second -->
+                        <xsd:element ref="d:shipment"/>
+                        <xsd:element name="orderId" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+
+    <wsdl:message name="PlaceOrderRequest">
+        <wsdl:part name="parameters" element="tns:placeOrder"/>
+    </wsdl:message>
+
+    <wsdl:portType name="OrderPort">
+        <wsdl:operation name="placeOrder">
+            <wsdl:input message="tns:PlaceOrderRequest"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="OrderBinding" type="tns:OrderPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="placeOrder">
+            <s:operation soapAction="placeOrder"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="OrderService">
+        <wsdl:port name="OrderPort" binding="tns:OrderBinding">
+            <s:address location="http://localhost:8080/orders"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
