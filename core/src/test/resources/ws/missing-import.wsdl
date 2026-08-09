@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/missing-import"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/missing-import">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/missing-import">
+            <xsd:import namespace="https://example.com/external" schemaLocation="does-not-exist.xsd"/>
+            <xsd:element name="doSomething">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="input" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="doSomethingResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="output" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="DoSomethingRequest">
+        <wsdl:part name="parameters" element="tns:doSomething"/>
+    </wsdl:message>
+    <wsdl:message name="DoSomethingResponse">
+        <wsdl:part name="parameters" element="tns:doSomethingResponse"/>
+    </wsdl:message>
+    <wsdl:portType name="DoSomethingPort">
+        <wsdl:operation name="doSomething">
+            <wsdl:input message="tns:DoSomethingRequest"/>
+            <wsdl:output message="tns:DoSomethingResponse"/>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="DoSomethingBinding" type="tns:DoSomethingPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="doSomething">
+            <s:operation soapAction="doSomething"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+            <wsdl:output><s:body use="literal"/></wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="DoSomethingService">
+        <wsdl:port name="DoSomethingPort" binding="tns:DoSomethingBinding">
+            <s:address location="http://localhost:8080/doSomething"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

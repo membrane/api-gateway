@@ -14,12 +14,19 @@
 
 package com.predic8.membrane.core.util.wsdl.parser;
 
-public class WSDLParserException extends RuntimeException {
-    public WSDLParserException(String message) {
-        super(message);
+import org.w3c.dom.Node;
+
+public class SoapHeader extends WSDLElement {
+
+    public SoapHeader(WSDLParserContext ctx, Node node) {
+        super(ctx, node);
     }
 
-    public WSDLParserException(String message, Throwable cause) {
-        super(message, cause);
+    public String getPart() {
+        return getAttribute("part");
+    }
+
+    public String getMessage() {
+        return getAttribute("message");
     }
 }

@@ -1,0 +1,10 @@
+User:
+  type: object
+  required:
+    - email
+  properties:
+    id:
+      type: integer
+    email:
+      type: string
+      format: email
