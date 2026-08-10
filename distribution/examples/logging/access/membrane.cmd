@@ -4,7 +4,7 @@ setlocal EnableExtensions
 set "SCRIPT_DIR=%~dp0"
 if "%SCRIPT_DIR:~-1%"=="\" set "SCRIPT_DIR=%SCRIPT_DIR:~0,-1%"
 
-set "JAVA_OPTS=-Dlog4j.configurationFile=%SCRIPT_DIR%\log4j2_access.xml %JAVA_OPTS%"
+set "JAVA_OPTS="-Dlog4j.configurationFile=%SCRIPT_DIR%\log4j2_access.xml" %JAVA_OPTS%"
 
 set "dir=%SCRIPT_DIR%"
 
