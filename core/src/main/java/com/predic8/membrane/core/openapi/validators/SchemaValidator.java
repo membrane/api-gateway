@@ -94,24 +94,38 @@ public class SchemaValidator implements JsonSchemaValidator {
             return errors.add(new ValidationError(ctx.statusCode(400).entityType(BODY).entity("REQUEST"), "Request body cannot be parsed as JSON"));
         }
 
-        if (schema.getAllOf() != null)
-            errors.add(new AllOfValidator(api, schema).validate(ctx, obj));
+        // The $ref has to be resolved before the composition keywords are read: a schema object that
+        // is just a $ref carries none of them, they belong to the schema it points at. See #3119.
+        if (schema.get$ref() != null) {
+            String name = getSchemaNameFromRef(schema);
 
-        if (schema.getAnyOf() != null)
-            errors.add(new AnyOfValidator(api, schema).validate(ctx, obj));
+            // Already on this branch: stop descending instead of recursing forever. Recursive
+            // schemas are legal, so the truncated branch contributes no errors.
+            if (ctx.hasVisited(name))
+                return errors;
 
-        if (schema.getOneOf() != null)
-            errors.add(new OneOfValidator(api, schema).validate(ctx, obj));
-
-        if (schema.getNot() != null)
-            errors.add(new NotValidator(api, schema).validate(ctx, obj));
-
-        if (schema.get$ref() != null && !getSchemaNameFromRef(schema).equals(ctx.getComplexType())) {
-            ctx = ctx.complexType(getSchemaNameFromRef(schema));
+            ctx = ctx.complexType(name).visitRef(name);
             schema = SchemaUtil.getSchemaFromRef(api, schema.get$ref());
             if (schema == null)
                 throw new RuntimeException("Should not happen!");
         }
+
+        if (schema.getAllOf() != null)
+            errors.add(new AllOfValidator(api, schema).validate(ctx, obj));
+
+        // A discriminator selects the subschema itself, so brute forcing anyOf/oneOf on top of it
+        // would only produce spurious "more than one subschema is valid" errors. ObjectValidator
+        // does the dispatch.
+        if (schema.getDiscriminator() == null) {
+            if (schema.getAnyOf() != null)
+                errors.add(new AnyOfValidator(api, schema).validate(ctx, obj));
+
+            if (schema.getOneOf() != null)
+                errors.add(new OneOfValidator(api, schema).validate(ctx, obj));
+        }
+
+        if (schema.getNot() != null)
+            errors.add(new NotValidator(api, schema).validate(ctx, obj));
 
         if ((value == null || value instanceof NullNode) && isNullable())
             return errors;

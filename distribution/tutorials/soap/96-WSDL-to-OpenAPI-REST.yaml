@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+#
+# Tutorial: WSDL to OpenAPI — Exposing SOAP Services as REST APIs
+#
+# Configure each WSDL operation individually and map it to REST
+# endpoints such as GET /partners/{id}.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 96-WSDL-to-OpenAPI-REST.yaml
+#    Windows:
+#      membrane.cmd -c 96-WSDL-to-OpenAPI-REST.yaml
+#
+# 2.) List all partners (GET, no body)
+#     curl -v http://localhost:2000/partners
+#
+# 3.) Get a single partner by id (GET, no body)
+#     curl -v http://localhost:2000/partners/1
+#
+# 4.) Create a partner (POST, body required)
+#     curl -d @partner.json -H "Content-Type: application/json" http://localhost:2000/partners
+#
+# 5.) Update a partner — ID from URL, fields in body (PUT)
+#     curl -X PUT -d @partner.json -H "Content-Type: application/json" http://localhost:2000/partners/1
+#
+# 6.) Delete a partner — ID from URL (DELETE, no body)
+#     curl -X DELETE http://localhost:2000/partners/1
+
+api:
+  port: 2000
+  name: Partner REST API
+  description: |
+    # The API for Managing Partners
+    This REST style API is automatically generated from a WSDL Web Service description. It transforms and routes
+    JSON API to a SOAP based Web Service mock backend.
+  flow:
+    - wsdl2openapi:
+        wsdl: mocks/partner.wsdl
+        operations:
+          getPartners:
+            method: GET
+            path: partners
+            tag: Partner
+          getPartner:
+            method: GET
+            path: partners/{id}
+            tag: Partner
+          createPartner:
+            method: POST
+            path: partners
+            tag: Partner
+          updatePartner:
+            method: PUT
+            path: partners/{id}
+            tag: Partner
+          deletePartner:
+            method: DELETE
+            path: partners/{id}
+            tag: Partner
+  target:
+    url: http://localhost:3000/partner-service
+
+---
+# Mock Web Service with static responses
+include:
+  - mocks/partner-service.apis.yaml
