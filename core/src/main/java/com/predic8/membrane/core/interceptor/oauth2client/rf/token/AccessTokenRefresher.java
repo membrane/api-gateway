@@ -34,7 +34,8 @@ import static com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2
 public class AccessTokenRefresher {
     private static final Logger log = LoggerFactory.getLogger(AccessTokenRefresher.class);
 
-    private final Cache<String, Object> synchronizers = CacheBuilder.newBuilder()
+    private final Cache<Session, Object> synchronizers = CacheBuilder.newBuilder()
+            .weakKeys()
             .expireAfterAccess(1, TimeUnit.MINUTES)
             .build();
 
@@ -107,12 +108,8 @@ public class AccessTokenRefresher {
     }
 
     private Object getTokenSynchronizer(Session session) {
-        var refreshToken = session.getOAuth2AnswerParameters().getRefreshToken();
-
         try {
-            return refreshToken == null
-                    ? new Object()
-                    : synchronizers.get(refreshToken, Object::new);
+            return synchronizers.get(session, Object::new);
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }

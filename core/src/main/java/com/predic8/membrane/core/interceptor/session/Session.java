@@ -18,6 +18,7 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AnswerParameters;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.ACCESS_TOKEN;
@@ -44,19 +45,21 @@ public class Session {
     protected final static String AUTHORIZATION_LEVEL = "auth_level";
 
     private String usernameKeyName;
-    Map<String, Object> content;
+    ConcurrentHashMap<String, Object> content;
 
     boolean isDirty;
 
     public Session(String usernameKeyName, Map<String, Object> content) {
         this.usernameKeyName = usernameKeyName;
-        this.content = content;
+        this.content = new ConcurrentHashMap<>(content);
         if(getInternal(AUTHORIZATION_LEVEL) == null)
             setAuthorization(AuthorizationLevel.ANONYMOUS);
         isDirty = false;
     }
 
-    public Session(){};
+    public Session() {
+        this.content = new ConcurrentHashMap<>();
+    }
 
     public Session(Map<String, Object> content) {
         this("username",content);
@@ -80,12 +83,7 @@ public class Session {
     }
 
     public void remove(String... keys) {
-        Set<String> keysUnique = new HashSet<>(Arrays.asList(keys));
-        content = content
-                .entrySet()
-                .stream()
-                .filter(entry -> !keysUnique.contains(entry.getKey()))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Arrays.stream(keys).forEach(content::remove);
         dirty();
     }
 
@@ -233,7 +231,9 @@ public class Session {
     }
 
     public void setContent(Map<String, Object> content) {
-        this.content = content;
+        this.content = content instanceof ConcurrentHashMap<?,?>
+                ? (ConcurrentHashMap<String, Object>) content
+                : new ConcurrentHashMap<>(content);
     }
 
     public String getUsernameKeyName() {
