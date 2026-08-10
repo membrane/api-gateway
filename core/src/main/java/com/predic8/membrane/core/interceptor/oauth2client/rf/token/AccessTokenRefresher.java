@@ -56,6 +56,11 @@ public class AccessTokenRefresher {
         }
 
         synchronized (getTokenSynchronizer(session)) {
+            // a concurrent caller may have already refreshed the token
+            // while this thread waited for the monitor.
+            if (!refreshingOfAccessTokenIsNeeded(session, wantedScope)) {
+                return;
+            }
             try {
                 exc.setProperty(OAUTH2, refreshAccessToken(session, wantedScope));
             } catch (Exception e) {
