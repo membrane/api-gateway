@@ -51,7 +51,7 @@ public class Session {
 
     public Session(String usernameKeyName, Map<String, Object> content) {
         this.usernameKeyName = usernameKeyName;
-        this.content = new ConcurrentHashMap<>(content);
+        this.content = withoutNullEntries(content);
         if(getInternal(AUTHORIZATION_LEVEL) == null)
             setAuthorization(AuthorizationLevel.ANONYMOUS);
         isDirty = false;
@@ -70,6 +70,8 @@ public class Session {
     }
 
     public <T> void put(String key, T value) {
+        if (key == null) throw new IllegalArgumentException("Session key must not be null");
+        if (value == null) return; // null value = absent; treat as no-op
         put(Collections.singletonMap(key, value));
     }
 
@@ -83,12 +85,20 @@ public class Session {
     }
 
     public void remove(String... keys) {
+        for (String key : keys)
+            if (key == null) throw new IllegalArgumentException("Session key must not be null");
         Arrays.stream(keys).forEach(content::remove);
         dirty();
     }
 
     public void put(Map<String, Object> map) {
-        content.putAll(map);
+        // ConcurrentHashMap rejects null keys and values. Filter them here so that batch
+        // operations and Jackson deserialization (which may produce null values from JSON null)
+        // remain backward compatible. Null keys are still a programming error when passed to
+        // the single-entry put(String, T), which throws explicitly.
+        map.forEach((k, v) -> {
+            if (k != null && v != null) content.put(k, v);
+        });
         dirty();
     }
 
@@ -231,9 +241,18 @@ public class Session {
     }
 
     public void setContent(Map<String, Object> content) {
+        // ConcurrentHashMap never holds null keys/values, so an existing ConcurrentHashMap is
+        // already safe to use directly. Any other Map (e.g. from Jackson deserialization) is
+        // copied with nulls filtered out.
         this.content = content instanceof ConcurrentHashMap<?,?>
                 ? (ConcurrentHashMap<String, Object>) content
-                : new ConcurrentHashMap<>(content);
+                : withoutNullEntries(content);
+    }
+
+    private static ConcurrentHashMap<String, Object> withoutNullEntries(Map<String, Object> source) {
+        ConcurrentHashMap<String, Object> result = new ConcurrentHashMap<>();
+        source.forEach((k, v) -> { if (k != null && v != null) result.put(k, v); });
+        return result;
     }
 
     public String getUsernameKeyName() {
