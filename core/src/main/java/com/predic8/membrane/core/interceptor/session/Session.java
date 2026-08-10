@@ -241,12 +241,10 @@ public class Session {
     }
 
     public void setContent(Map<String, Object> content) {
-        // ConcurrentHashMap never holds null keys/values, so an existing ConcurrentHashMap is
-        // already safe to use directly. Any other Map (e.g. from Jackson deserialization) is
-        // copied with nulls filtered out.
-        this.content = content instanceof ConcurrentHashMap<?,?>
-                ? (ConcurrentHashMap<String, Object>) content
-                : withoutNullEntries(content);
+        // Always make a defensive copy so the Session owns its map exclusively.
+        // External mutations to the source map and sharing between Session instances
+        // cannot then bypass put() or dirty().
+        this.content = withoutNullEntries(content);
     }
 
     private static ConcurrentHashMap<String, Object> withoutNullEntries(Map<String, Object> source) {
