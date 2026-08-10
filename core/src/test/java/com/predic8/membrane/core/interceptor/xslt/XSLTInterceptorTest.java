@@ -26,6 +26,7 @@ import static com.predic8.membrane.core.http.Request.get;
 import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class XSLTInterceptorTest {
@@ -98,6 +99,19 @@ public class XSLTInterceptorTest {
         var body = exc.getResponse().getBodyAsStringDecoded();
         assertTrue(body.contains("XML parsing failed"));
         assertTrue(body.contains("delimiter"));
+    }
+
+    @Test
+    void stylesheetErrorIsNotMislabeledAsParsingError() throws Exception {
+        exc = get("http://localhost/").body("<customer/>").buildExchange();
+
+        var i = new XSLTInterceptor();
+        i.setXslt("classpath:/terminate.xsl");
+        i.init(new DummyTestRouter());
+        assertEquals(ABORT, i.handleRequest(exc));
+        var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("Error transforming message!"));
+        assertFalse(body.contains("XML parsing failed"));
     }
 
     private void assertXPath(String xpathExpr, String expected)

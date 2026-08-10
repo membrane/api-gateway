@@ -30,6 +30,7 @@ import org.xml.sax.SAXException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamSource;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static com.predic8.membrane.core.exceptions.ProblemDetails.internal;
 import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
@@ -140,7 +141,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * If the cause chain of {@code e} contains a SAX parse error - directly as a
+     * If the cause chain of the given exception contains a SAX parse error - directly as a
      * {@link SAXException}, or as an underlying Xalan "WrappedRuntimeException" - builds a
      * problem details response from its message. Well-known SAX messages (content in the XML
      * prolog/trailing section) get a tailored title and hint; anything else falls back to a
@@ -179,20 +180,30 @@ public class XSLTInterceptor extends AbstractInterceptor {
         return true;
     }
 
+    // Best-effort markers for the English-language Xerces/Xalan messages that indicate an XML
+    // well-formedness error, as opposed to some other exception Xalan's internal
+    // "WrappedRuntimeException" (see below) happens to carry.
+    private static final Pattern XML_SYNTAX_ERROR = Pattern.compile(
+            "rolog|trailing section|end-tag|end tag|must end with|well-formed|must be terminated|quotation mark",
+            Pattern.CASE_INSENSITIVE);
+
     /**
      * Walks the cause chain of a {@link TransformerException} looking for the message of the
      * underlying {@link SAXException}. JAXP processors (e.g. Xalan) don't consistently chain the
      * SAX parse error as a {@link SAXException} via {@link Throwable#getCause()} - Xalan nests it
      * one level deeper inside an internal, non-exported "WrappedRuntimeException" that can't be
      * unwrapped via reflection (JPMS blocks access to its getException() method even on the
-     * classpath), but its {@link Throwable#getMessage()} already delegates to the wrapped
-     * SAXException's message, so that's used directly instead.
+     * classpath), and its {@link Throwable#getMessage()} delegates to whatever it wraps - not
+     * necessarily a SAXException, since that wrapper can carry any exception. Its message is
+     * therefore only trusted as an XML parse error when it also matches a known well-formedness
+     * error phrase; otherwise it's treated as an unrelated transformation failure.
      */
     private static String findSAXExceptionMessage(Throwable t) {
         while (t != null) {
             if (t instanceof SAXException saxException)
                 return saxException.getMessage();
-            if (t.getClass().getName().endsWith("WrappedRuntimeException"))
+            if (t.getClass().getName().endsWith("WrappedRuntimeException")
+                    && t.getMessage() != null && XML_SYNTAX_ERROR.matcher(t.getMessage()).find())
                 return t.getMessage();
             t = t instanceof TransformerException te ? te.getException() : t.getCause();
         }
