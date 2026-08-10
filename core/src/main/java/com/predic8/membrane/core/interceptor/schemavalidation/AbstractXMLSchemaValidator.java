@@ -99,13 +99,40 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             return CONTINUE;
         }
         // Reached only when the message matched none of the (possibly several) embedded schemas.
+        return abort(exc, flow, exceptions);
+    }
+
+    /**
+     * Rejects a message that matched none of the schemas, reporting the errors collected per
+     * schema.
+     */
+    protected Outcome abort(Exchange exc, Interceptor.Flow flow, List<Exception> exceptions) {
         var errorMsg = getErrorMsg(exceptions); // Errors als simple String
-        log.info("{} message did not validate against any schema of {}: {}", flow, location, errorMsg);
+        setErrorResponse(exc, flow, exceptions);
+        return finishAbort(exc, flow, "message did not validate against any schema of %s: %s".formatted(location, errorMsg), errorMsg);
+    }
+
+    /**
+     * Rejects a message for a reason other than schema validation - because it is not SOAP at all,
+     * say, or carries an element the WSDL does not describe.
+     */
+    protected Outcome abort(Exchange exc, Interceptor.Flow flow, String message) {
+        setErrorResponse(exc, message);
+        return finishAbort(exc, flow, "message rejected: " + message, message);
+    }
+
+    /**
+     * The steps every rejection takes, whatever was wrong with the message: log it, notify the
+     * configured failure handler, expose the reason on the exchange, mark the response with the
+     * flow the message was rejected in and count it as invalid. Rejections must go through
+     * {@link #abort} so that none of this is left out.
+     */
+    private Outcome finishAbort(Exchange exc, Interceptor.Flow flow, String logMessage, String errorMsg) {
+        log.info("{} {}", flow, logMessage);
         if (failureHandler != null) {
             failureHandler.handleFailure(errorMsg, exc);
         }
         exc.setProperty("error", errorMsg); // TODO Search for usage. If it is used rename property. See properties in class Exchange
-        setErrorResponse(exc, flow, exceptions);
         exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
         invalid.incrementAndGet();
         return ABORT;
@@ -123,8 +150,11 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
      *
      * @param exceptions collects one exception per schema the source failed against
      * @return {@code true} if the source matched at least one embedded schema
+     * @throws InterruptedException if interrupted while waiting for a validator from the pool.
+     *                             Validation failures are collected in {@code exceptions} instead
+     *                             of being thrown.
      */
-    protected boolean validateAgainstSchemas(Supplier<Source> source, List<Exception> exceptions) throws Exception {
+    protected boolean validateAgainstSchemas(Supplier<Source> source, List<Exception> exceptions) throws InterruptedException {
         var vals = validators.take();
         try {
             // the message must be valid for one schema embedded into WSDL

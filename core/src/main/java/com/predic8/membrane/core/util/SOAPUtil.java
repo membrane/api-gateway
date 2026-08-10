@@ -39,6 +39,8 @@ import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.predic8.membrane.annot.Constants.*;
@@ -205,32 +207,42 @@ public class SOAPUtil {
     }
 
     /**
-     * Extracts the QName of the single element inside a SOAP fault's {@code detail} (SOAP 1.1,
-     * unqualified) or {@code Detail} (SOAP 1.2, {@link com.predic8.membrane.annot.Constants#SOAP12_NS})
-     * element, if present.
+     * Extracts the QNames of the detail entries - the direct children of a SOAP fault's
+     * {@code detail} (SOAP 1.1, unqualified) or {@code Detail} (SOAP 1.2,
+     * {@link com.predic8.membrane.annot.Constants#SOAP12_NS}) element. Descendants below the
+     * entries themselves are not reported.
      *
-     * @return the fault detail payload's QName, or {@code null} if the fault carries no detail
-     *         (or the detail element has no child).
+     * @return the detail entries in document order; empty if the fault carries no detail, the
+     *         detail element is empty, or the message could not be parsed.
      */
-    public static QName extractFaultDetailElement(XOPReconstitutor xopr, Message msg, SoapVersion version) {
+    public static List<QName> extractFaultDetailElements(XOPReconstitutor xopr, Message msg, SoapVersion version) {
+        var entries = new ArrayList<QName>();
         try {
             var parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
-            boolean inDetail = false;
+            int depth = -1; // -1 outside detail, 0 on the detail element, n when n levels inside it
             while (parser.hasNext()) {
                 var event = parser.nextEvent();
-                if (!event.isStartElement())
-                    continue;
-                var name = ((StartElement) event).getName();
-                if (!inDetail) {
-                    inDetail = isDetailElement(name, version);
+                if (event.isStartElement()) {
+                    var name = ((StartElement) event).getName();
+                    if (depth < 0) {
+                        if (isDetailElement(name, version))
+                            depth = 0;
+                        continue;
+                    }
+                    if (++depth == 1)
+                        entries.add(name);
                     continue;
                 }
-                return name;
+                if (event.isEndElement() && depth >= 0) {
+                    if (depth == 0)
+                        return entries; // detail closed
+                    depth--;
+                }
             }
         } catch (Exception e) {
-            log.debug("Could not extract fault detail element: {}", e.getMessage());
+            log.debug("Could not extract fault detail elements: {}", e.getMessage());
         }
-        return null;
+        return entries;
     }
 
     private static boolean isDetailElement(QName name, SoapVersion version) {

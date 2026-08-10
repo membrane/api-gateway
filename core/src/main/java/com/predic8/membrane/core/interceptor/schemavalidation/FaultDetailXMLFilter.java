@@ -26,11 +26,22 @@ import static com.predic8.membrane.annot.Constants.SOAP12_NS;
  * or {@code Detail} (SOAP 1.2, {@link com.predic8.membrane.annot.Constants#SOAP12_NS}) element, so
  * that only the WSDL-typed fault payload is passed on. Mirrors {@link SOAPXMLFilter}, which does
  * the same for {@code soap:Body}.
+ * <p>
+ * Unlike {@link SOAPXMLFilter}, the boundary is tracked by element depth, not by matching the
+ * name a second time on the closing tag: a fault payload may well contain an element of its own
+ * named {@code detail} (fault schemas usually leave {@code elementFormDefault} at its
+ * {@code unqualified} default), which would otherwise end the payload halfway through and emit
+ * an unbalanced document.
  */
 public class FaultDetailXMLFilter extends XMLFilterImpl {
 
     private final SoapVersion version;
-    private boolean inDetail;
+
+    /**
+     * {@code -1} outside the detail element, {@code 0} on the detail element itself, {@code n}
+     * when {@code n} levels deep inside its content.
+     */
+    private int depth = -1;
 
     public FaultDetailXMLFilter(XMLReader reader, SoapVersion version) {
         super(reader);
@@ -47,23 +58,38 @@ public class FaultDetailXMLFilter extends XMLFilterImpl {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
-        if (isDetail(uri, localName)) {
-            inDetail = true;
+        if (depth < 0) {
+            if (isDetail(uri, localName))
+                depth = 0;
             return;
         }
-        if (!inDetail)
-            return;
+        depth++;
         super.startElement(uri, localName, qName, atts);
     }
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        if (isDetail(uri, localName)) {
-            inDetail = false;
+        if (depth < 0)
+            return;
+        if (depth == 0) {
+            depth = -1; // the detail element itself: consumed, not forwarded
             return;
         }
-        if (!inDetail)
-            return;
+        depth--;
         super.endElement(uri, localName, qName);
+    }
+
+    @Override
+    public void characters(char[] ch, int start, int length) throws SAXException {
+        if (depth <= 0)
+            return; // envelope text (faultcode/faultstring, whitespace) must not leak into the prolog
+        super.characters(ch, start, length);
+    }
+
+    @Override
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+        if (depth <= 0)
+            return;
+        super.ignorableWhitespace(ch, start, length);
     }
 }

@@ -14,16 +14,22 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.ConfigurationException;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
+import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
@@ -41,6 +47,8 @@ public class WSDLValidatorTest {
     public static final String ABSTRACT_SERVICE_NO_BINDING_WSDL = "src/test/resources/ws/abstract-service-no-binding.wsdl";
     public static final String CITIES_WITH_FAULT_WSDL = "src/test/resources/ws/cities-with-fault.wsdl";
     public static final String HELLO_SOAP12_WSDL = "src/test/resources/ws/hello-soap12.wsdl";
+    public static final String RPC_WITH_FAULT_WSDL = "src/test/resources/ws/rpc-with-fault.wsdl";
+    public static final String TWO_FAULTS_PER_OPERATION_WSDL = "src/test/resources/ws/two-faults-per-operation.wsdl";
 
     @Test
     void invalidRequestElement() throws Exception {
@@ -232,6 +240,104 @@ public class WSDLValidatorTest {
         dumpResonseBody(exc);
     }
 
+    /**
+     * SOAP permits several detail entries, but a WSDL fault message has a single part, so a
+     * described fault carries exactly one. Without an explicit check the second entry reaches the
+     * validator as if it were a child of the first, which reports a misleading schema error.
+     */
+    @Test
+    void faultDetailWithSeveralEntries() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                    <detail>
+                        <cit:cityNotFound xmlns:cit="https://predic8.de/cities"><name>Springfield</name></cit:cityNotFound>
+                        <cit:cityNotFound xmlns:cit="https://predic8.de/cities"><name>Shelbyville</name></cit:cityNotFound>
+                    </detail>
+                </s11:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_FAULT_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("must contain exactly one element"));
+    }
+
+    /**
+     * An empty detail element carries no payload to validate.
+     */
+    @Test
+    void faultWithEmptyDetail() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                    <detail/>
+                </s11:Fault>
+                """));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_FAULT_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+    }
+
+    /**
+     * Under an RPC binding the fault detail element must still be taken from the fault message's
+     * part - deriving it like an RPC request/response wrapper would name it after the operation
+     * and reject every legitimate fault.
+     */
+    @Test
+    void faultDetailUnderRpcBinding() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>Division by zero</faultstring>
+                    <detail>
+                        <c:divByZero xmlns:c="http://example.com/calc">
+                            <message>divisor was 0</message>
+                        </c:divByZero>
+                    </detail>
+                </s11:Fault>
+                """));
+
+        assertEquals(CONTINUE, createValidator(RPC_WITH_FAULT_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+    }
+
+    /**
+     * A WSDL declares faults as service output only, so a fault arriving as a request describes
+     * nothing the backend could handle and must not be forwarded.
+     */
+    @Test
+    void faultAsRequest() throws Exception {
+        Exchange exc = getRequestExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                </s11:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_FAULT_WSDL, null, false).validateMessage(exc, REQUEST));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("A SOAP Fault is not a valid request"));
+    }
+
+    /**
+     * skipFaults tolerates the faults a backend returns; it must not open the request direction.
+     */
+    @Test
+    void faultAsRequestWithSkipFaults() throws Exception {
+        Exchange exc = getRequestExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                </s11:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_FAULT_WSDL, null, true).validateMessage(exc, REQUEST));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("A SOAP Fault is not a valid request"));
+    }
+
     @Test
     void skipFaults() throws Exception {
         var exc = getResponseExchange(soap11("""
@@ -279,6 +385,103 @@ public class WSDLValidatorTest {
         dumpResonseBody(exc);
         assertEquals(ABORT, outcome);
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("is not a valid request element"));
+    }
+
+    /**
+     * An operation may declare several faults. Each of them is a valid fault detail, and each is
+     * validated against its own declaration - matching one declared element must not let another
+     * element's content through.
+     */
+    @Test
+    void firstOfTwoDeclaredFaults() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                    <detail>
+                        <cit:cityNotFound xmlns:cit="https://predic8.de/cities">
+                            <name>Springfield</name>
+                        </cit:cityNotFound>
+                    </detail>
+                </s11:Fault>
+                """));
+
+        assertEquals(CONTINUE, createValidator(TWO_FAULTS_PER_OPERATION_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+    }
+
+    @Test
+    void secondOfTwoDeclaredFaults() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>Too many requests</faultstring>
+                    <detail>
+                        <cit:rateLimited xmlns:cit="https://predic8.de/cities">
+                            <retryAfter>30</retryAfter>
+                        </cit:rateLimited>
+                    </detail>
+                </s11:Fault>
+                """));
+
+        assertEquals(CONTINUE, createValidator(TWO_FAULTS_PER_OPERATION_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+    }
+
+    /**
+     * The detail element is declared, but carries the content model of the operation's other
+     * fault - so membership alone must not be enough to pass.
+     */
+    @Test
+    void declaredFaultElementWithTheOtherFaultsContent() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                    <detail>
+                        <cit:cityNotFound xmlns:cit="https://predic8.de/cities">
+                            <retryAfter>30</retryAfter>
+                        </cit:cityNotFound>
+                    </detail>
+                </s11:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(TWO_FAULTS_PER_OPERATION_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("retryAfter"));
+    }
+
+    /**
+     * A fault the validator could never check must fail at startup, not silently disable fault
+     * validation for a route that looks configured for it.
+     */
+    @Test
+    void wsdlWithUnvalidatableFaultIsRejectedAtStartup() {
+        var e = assertThrows(ConfigurationException.class,
+                () -> createValidator("src/test/resources/ws/fault-part-with-type.wsdl", null, false));
+        assertTrue(e.getMessage().contains("names a type instead of an element"), e.getMessage());
+    }
+
+    /**
+     * Every rejection - not just a schema mismatch - must mark the response with the flow it was
+     * rejected in, notify the configured failure handler and count as invalid.
+     */
+    @Test
+    void rejectionReportsFlowAndNotifiesFailureHandler() throws Exception {
+        var handled = new ArrayList<String>();
+        var validator = new WSDLValidator(new ResolverMap(), CITIES_WSDL, null, (msg, exc) -> handled.add(msg), false);
+        validator.init();
+
+        Exchange exc = getRequestExchange(soap11("""
+                <foo:notInWsdl xmlns:foo="http://membrane-api.io/foo"/>
+                """));
+
+        assertEquals(ABORT, validator.validateMessage(exc, REQUEST));
+        assertEquals(List.of("REQUEST"), exc.getResponse().getHeader().getValues(new HeaderName(VALIDATION_ERROR_SOURCE))
+                .stream().map(HeaderField::getValue).toList());
+        assertEquals(1, handled.size(), handled.toString());
+        assertTrue(handled.getFirst().contains("not a valid request element"), handled.toString());
+        assertEquals(1, validator.getInvalid());
     }
 
     private static Exchange getRequestExchange(String body) throws URISyntaxException {
