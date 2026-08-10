@@ -92,12 +92,10 @@ public class B2CMembrane {
         oauth2Resource.add(sp3_flowInitiator_noLogout);
         oauth2Resource.add(sp2_flowInitiator_logoutBeforeFlow);
         oauth2Resource.add(sp1_oauth2resource2);
-        oauth2Resource.start();
-
-        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(10000);
         oauth2Resource.getTransport().setBacklog(10000);
         oauth2Resource.getTransport().setSocketTimeout(10000);
         oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(tc.limit * 100);
+        oauth2Resource.start();
 
     }
 
