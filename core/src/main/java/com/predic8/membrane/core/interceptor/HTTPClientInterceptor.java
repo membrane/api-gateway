@@ -234,5 +234,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     @MCChildElement
     public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
         this.httpClientConfig = httpClientConfig;
+        this.httpClient = null;
     }
 }
