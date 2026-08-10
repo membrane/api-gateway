@@ -17,12 +17,17 @@ package com.predic8.membrane.core.util;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.ReadingBodyException;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.schemavalidation.FaultDetailXMLFilter;
+import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.xml.parser.HardenedSaxParser;
 import com.predic8.membrane.core.util.xml.parser.HardenedStaxInputFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -31,6 +36,9 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
+import java.io.InputStream;
 import java.util.Map;
 
 import static com.predic8.membrane.annot.Constants.*;
@@ -194,6 +202,66 @@ public class SOAPUtil {
 
     public static boolean isSOAP11Element(QName name) {
         return SOAP11_NS.equals(name.getNamespaceURI());
+    }
+
+    /**
+     * Extracts the QName of the single element inside a SOAP fault's {@code detail} (SOAP 1.1,
+     * unqualified) or {@code Detail} (SOAP 1.2, {@link com.predic8.membrane.annot.Constants#SOAP12_NS})
+     * element, if present.
+     *
+     * @return the fault detail payload's QName, or {@code null} if the fault carries no detail
+     *         (or the detail element has no child).
+     */
+    public static QName extractFaultDetailElement(XOPReconstitutor xopr, Message msg, SoapVersion version) {
+        try {
+            var parser = HardenedStaxInputFactory.inputFactory().createXMLEventReader(xopr.reconstituteIfNecessary(msg));
+            boolean inDetail = false;
+            while (parser.hasNext()) {
+                var event = parser.nextEvent();
+                if (!event.isStartElement())
+                    continue;
+                var name = ((StartElement) event).getName();
+                if (!inDetail) {
+                    inDetail = isDetailElement(name, version);
+                    continue;
+                }
+                return name;
+            }
+        } catch (Exception e) {
+            log.debug("Could not extract fault detail element: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private static boolean isDetailElement(QName name, SoapVersion version) {
+        return switch (version) {
+            case SOAP11 -> "detail".equals(name.getLocalPart()) && name.getNamespaceURI().isEmpty();
+            case SOAP12 -> "Detail".equals(name.getLocalPart()) && SOAP12_NS.equals(name.getNamespaceURI());
+            default -> false;
+        };
+    }
+
+    /**
+     * Strips the SOAP envelope so that only the payload below {@code <soap:Body>} is passed on.
+     */
+    public static Source getSOAPBody(InputStream stream) {
+        try {
+            return new SAXSource(new SOAPXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader()), new InputSource(stream));
+        } catch (SAXException e) {
+            throw new RuntimeException("Error initializing SAXSource", e);
+        }
+    }
+
+    /**
+     * Narrows a SOAP fault message down to the content of its {@code detail}/{@code Detail}
+     * element, for schema-validating a fault's payload separately from its envelope structure.
+     */
+    public static Source getFaultDetailBody(InputStream stream, SoapVersion version) {
+        try {
+            return new SAXSource(new FaultDetailXMLFilter(HardenedSaxParser.newSAXParser().getXMLReader(), version), new InputSource(stream));
+        } catch (SAXException e) {
+            throw new RuntimeException("Error initializing SAXSource", e);
+        }
     }
 
     private static void readUntilEndTag(XMLEventReader parser) throws XMLStreamException {

@@ -13,19 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.resolver.*;
-import org.junit.jupiter.api.*;
-import org.slf4j.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.net.*;
+import java.net.URISyntaxException;
 
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WSDLValidatorTest {
@@ -36,6 +39,8 @@ public class WSDLValidatorTest {
     public static final String TWO_SEPARATED_SERVICES_WSDL = "src/test/resources/ws/two-separated-services.wsdl";
     public static final String MULTIPLE_PORTS_WSDL = "src/test/resources/ws/multiple-ports-in-a-service.wsdl";
     public static final String ABSTRACT_SERVICE_NO_BINDING_WSDL = "src/test/resources/ws/abstract-service-no-binding.wsdl";
+    public static final String CITIES_WITH_FAULT_WSDL = "src/test/resources/ws/cities-with-fault.wsdl";
+    public static final String HELLO_SOAP12_WSDL = "src/test/resources/ws/hello-soap12.wsdl";
 
     @Test
     void invalidRequestElement() throws Exception {
@@ -129,6 +134,102 @@ public class WSDLValidatorTest {
         dumpResonseBody(exc);
         assertNotNull(exc.getResponse());
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("validation failed"));
+    }
+
+    @Test
+    void malformedFault11() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                </s11:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("faultstring"));
+    }
+
+    @Test
+    void malformedFault12() throws Exception {
+        Exchange exc = getResponseExchange(soap12("""
+                <s12:Fault xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                    <s12:Code><s12:Value>Receiver</s12:Value></s12:Code>
+                </s12:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Reason"));
+    }
+
+    @Test
+    void wellFormedFaultWithoutDetail() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                </s11:Fault>
+                """));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+    }
+
+    @Test
+    void faultDetailNotDeclaredAsWsdlFault() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                    <detail>
+                        <cit:getCityResponse xmlns:cit="https://predic8.de/cities">
+                            <country>France</country>
+                            <population>2000000</population>
+                        </cit:getCityResponse>
+                    </detail>
+                </s11:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_FAULT_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("not a valid fault detail element"));
+    }
+
+    @Test
+    void faultDetailMatchesWsdlFaultButFailsSchema() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                    <detail>
+                        <cit:cityNotFound xmlns:cit="https://predic8.de/cities">
+                            <wrongElement>Springfield</wrongElement>
+                        </cit:cityNotFound>
+                    </detail>
+                </s11:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(CITIES_WITH_FAULT_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("validation failed"));
+    }
+
+    @Test
+    void faultDetailMatchesWsdlFaultAndSchema() throws Exception {
+        Exchange exc = getResponseExchange(soap11("""
+                <s11:Fault>
+                    <faultcode>Server</faultcode>
+                    <faultstring>City not found</faultstring>
+                    <detail>
+                        <cit:cityNotFound xmlns:cit="https://predic8.de/cities">
+                            <name>Springfield</name>
+                        </cit:cityNotFound>
+                    </detail>
+                </s11:Fault>
+                """));
+
+        assertEquals(CONTINUE, createValidator(CITIES_WITH_FAULT_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
     }
 
     @Test

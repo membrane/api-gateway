@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Structural shape of a SOAP 1.2 Fault element, used by WSDLValidator to check that a fault
+  response/request is a well-formed SOAP 1.2 fault before validating its <Detail> content
+  against the WSDL's own embedded schemas. This is not the full SOAP 1.2 envelope schema —
+  only the Fault element is modeled, since that's the only part WSDLValidator validates
+  structurally. xml:lang on Reason/Text is intentionally left unconstrained (##any attribute)
+  to avoid pulling in the xml.xsd import for a purely structural check.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://www.w3.org/2003/05/soap-envelope"
+           targetNamespace="http://www.w3.org/2003/05/soap-envelope"
+           elementFormDefault="qualified">
+
+    <xs:element name="Fault" type="tns:Fault"/>
+
+    <xs:complexType name="Fault">
+        <xs:sequence>
+            <xs:element name="Code" type="tns:faultcode"/>
+            <xs:element name="Reason" type="tns:faultreason"/>
+            <xs:element name="Node" type="xs:anyURI" minOccurs="0"/>
+            <xs:element name="Role" type="xs:anyURI" minOccurs="0"/>
+            <xs:element name="Detail" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:any namespace="##any" minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+                    </xs:sequence>
+                    <xs:anyAttribute namespace="##any" processContents="lax"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="faultcode">
+        <xs:sequence>
+            <xs:element name="Value" type="xs:QName"/>
+            <xs:element name="Subcode" type="tns:faultcode" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="faultreason">
+        <xs:sequence>
+            <xs:element name="Text" type="tns:reasontext" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="reasontext">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:anyAttribute namespace="##any" processContents="lax"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+</xs:schema>

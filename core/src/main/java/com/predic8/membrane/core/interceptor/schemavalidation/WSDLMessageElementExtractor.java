@@ -24,8 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.RPC;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
 import static java.util.stream.Collectors.toSet;
 
 public class WSDLMessageElementExtractor {
@@ -36,6 +35,15 @@ public class WSDLMessageElementExtractor {
 
     public static Set<QName> getPossibleResponseElements(Definitions definitions, String serviceName) {
         return getPossibleElements(definitions, OUTPUT, serviceName);
+    }
+
+    /**
+     * Elements that may legitimately appear as the payload of a SOAP fault's
+     * {@code detail}/{@code Detail}, as declared via {@code wsdl:fault} on the service's
+     * operations.
+     */
+    public static Set<QName> getPossibleFaultDetailElements(Definitions definitions, String serviceName) {
+        return getPossibleElements(definitions, FAULT, serviceName);
     }
 
     public static Set<QName> getPossibleElements(Definitions definitions, Direction direction, String serviceName) {

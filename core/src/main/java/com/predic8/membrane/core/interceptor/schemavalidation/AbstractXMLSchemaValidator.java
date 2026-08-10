@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
 import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
@@ -87,30 +88,15 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         var msg = exc.getMessage(flow);
         var exceptions = new ArrayList<Exception>();
         var preliminaryError = getPreliminaryError(xopr, msg);
+        boolean isValid = false;
         if (preliminaryError == null) {
-            var vals = validators.take();
-            try {
-                // the message must be valid for one schema embedded into WSDL
-                for (var validator : vals) {
-                    var handler = (SchemaValidatorErrorHandler) validator.getErrorHandler();
-                    try {
-                        validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
-                        if (handler.noErrors()) {
-                            valid.incrementAndGet();
-                            return CONTINUE;
-                        }
-                        exceptions.add(handler.getException());
-                    } finally {
-                        handler.reset();
-                    }
-                }
-            } catch (Exception e) {
-                exceptions.add(e);
-            } finally {
-                validators.put(vals);
-            }
+            isValid = validateAgainstSchemas(() -> getMessageBody(xopr.reconstituteIfNecessary(msg)), exceptions);
         } else {
             exceptions.add(new Exception(preliminaryError));
+        }
+        if (isValid) {
+            valid.incrementAndGet();
+            return CONTINUE;
         }
         // Reached only when the message matched none of the (possibly several) embedded schemas.
         var errorMsg = getErrorMsg(exceptions); // Errors als simple String
@@ -123,6 +109,43 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         exc.getResponse().getHeader().add(VALIDATION_ERROR_SOURCE, flow.name());
         invalid.incrementAndGet();
         return ABORT;
+    }
+
+    /**
+     * Validates a {@link Source} against every schema embedded in the WSDL, succeeding if it
+     * matches any one of them. Exposed as {@code protected} so subclasses can run schema
+     * validation against a narrower source than the whole message body (e.g. {@link WSDLValidator}
+     * validates a SOAP fault's {@code detail} content this way).
+     * <p>
+     * Takes a {@link Supplier} rather than a single {@link Source} because a {@code Source}
+     * backed by a stream is consumed after one {@code validate()} call - a fresh one is needed
+     * for each of the (possibly several) embedded schemas tried.
+     *
+     * @param exceptions collects one exception per schema the source failed against
+     * @return {@code true} if the source matched at least one embedded schema
+     */
+    protected boolean validateAgainstSchemas(Supplier<Source> source, List<Exception> exceptions) throws Exception {
+        var vals = validators.take();
+        try {
+            // the message must be valid for one schema embedded into WSDL
+            for (var validator : vals) {
+                var handler = (SchemaValidatorErrorHandler) validator.getErrorHandler();
+                try {
+                    validator.validate(source.get());
+                    if (handler.noErrors()) {
+                        return true;
+                    }
+                    exceptions.add(handler.getException());
+                } finally {
+                    handler.reset();
+                }
+            }
+        } catch (Exception e) {
+            exceptions.add(e);
+        } finally {
+            validators.put(vals);
+        }
+        return false;
     }
 
     protected List<Validator> createValidators() {
