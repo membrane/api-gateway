@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
@@ -65,6 +66,27 @@ public class WSDLValidatorTest {
                 <faultcode>Server</faultcode>
             </s11:Fault>
             """);
+
+    private static final String WELL_FORMED_FAULT_12 = soap12("""
+            <s12:Fault xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                <s12:Code><s12:Value>s12:Receiver</s12:Value></s12:Code>
+                <s12:Reason><s12:Text xml:lang="en">Something went wrong</s12:Text></s12:Reason>
+            </s12:Fault>
+            """);
+
+    private static final String MALFORMED_FAULT_12 = soap12("""
+            <s12:Fault xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                <s12:Code><s12:Value>s12:Receiver</s12:Value></s12:Code>
+            </s12:Fault>
+            """);
+
+    /**
+     * Cycled through by the concurrency test: index parity decides well-formedness, the pair
+     * decides the SOAP version - so every version sees both outcomes.
+     */
+    private static final String[] FAULTS_BY_VERSION_AND_WELLFORMEDNESS = {
+            WELL_FORMED_FAULT_11, MALFORMED_FAULT_11, WELL_FORMED_FAULT_12, MALFORMED_FAULT_12
+    };
 
     @Test
     void invalidRequestElement() throws Exception {
@@ -556,21 +578,32 @@ public class WSDLValidatorTest {
     }
 
     /**
-     * More concurrent faults than the pool holds: every message must get its own validator, and
-     * the abort path must return its validator to the pool like the success path does.
+     * More concurrent faults per SOAP version than that version's pool holds, all released at
+     * once: every message must get its own validator, callers that find the pool empty must block
+     * on take() rather than fail, and the abort path must return its validator to the pool like
+     * the success path does. Uses a WSDL declaring both SOAP versions so both pools are exercised
+     * by one validator instance.
      */
     @Test
     void faultValidationIsConcurrencySafe() throws Exception {
-        var validator = createValidator(CITIES_WSDL, null, false);
-        int tasks = Runtime.getRuntime().availableProcessors() * 2 + 4;
+        var validator = createValidator(MULTIPLE_PORTS_WSDL, "Service", false);
+        // Two more tasks per version than that version's pool has validators, so at least two
+        // take() calls per pool find it empty.
+        int tasksPerVersion = AbstractXMLSchemaValidator.poolConcurrency() + 2;
+        int tasks = tasksPerVersion * 2;
+        var start = new CountDownLatch(1);
 
-        try (var executor = Executors.newFixedThreadPool(8)) {
+        // A thread per task: fewer would serialise the tasks and the pools would never run dry.
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var futures = new ArrayList<Future<Outcome>>();
             for (int i = 0; i < tasks; i++) {
-                boolean wellFormed = i % 2 == 0;
-                futures.add(executor.submit(() -> validator.validateMessage(
-                        getResponseExchange(wellFormed ? WELL_FORMED_FAULT_11 : MALFORMED_FAULT_11), RESPONSE)));
+                String fault = FAULTS_BY_VERSION_AND_WELLFORMEDNESS[i % 4];
+                futures.add(executor.submit(() -> {
+                    start.await();
+                    return validator.validateMessage(getResponseExchange(fault), RESPONSE);
+                }));
             }
+            start.countDown();
             for (int i = 0; i < tasks; i++) {
                 assertEquals(i % 2 == 0 ? CONTINUE : ABORT, futures.get(i).get(30, SECONDS), "task " + i);
             }
