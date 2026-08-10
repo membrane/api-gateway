@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Structural shape of a SOAP 1.1 Fault element, used by WSDLValidator to check that a fault
+  response/request is a well-formed SOAP 1.1 fault before validating its <detail> content
+  against the WSDL's own embedded schemas. This is not the full SOAP 1.1 envelope schema —
+  only the Fault element is modeled, since that's the only part WSDLValidator validates
+  structurally.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://schemas.xmlsoap.org/soap/envelope/"
+           targetNamespace="http://schemas.xmlsoap.org/soap/envelope/"
+           elementFormDefault="unqualified">
+
+    <xs:element name="Fault" type="tns:Fault"/>
+
+    <xs:complexType name="Fault">
+        <xs:sequence>
+            <xs:element name="faultcode" type="xs:QName"/>
+            <xs:element name="faultstring" type="xs:string"/>
+            <xs:element name="faultactor" type="xs:anyURI" minOccurs="0"/>
+            <xs:element name="detail" minOccurs="0">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:any namespace="##any" minOccurs="0" maxOccurs="unbounded" processContents="lax"/>
+                    </xs:sequence>
+                    <xs:anyAttribute namespace="##any" processContents="lax"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>

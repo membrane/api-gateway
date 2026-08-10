@@ -14,21 +14,24 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import com.predic8.membrane.core.util.ConfigurationException;
 import com.predic8.membrane.core.util.wsdl.parser.*;
 import com.predic8.membrane.core.util.wsdl.parser.Operation.Direction;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.namespace.QName;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.predic8.membrane.core.util.wsdl.parser.Binding.Style.RPC;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INPUT;
-import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.OUTPUT;
+import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.*;
 import static java.util.stream.Collectors.toSet;
 
 public class WSDLMessageElementExtractor {
+
+    private static final Logger log = LoggerFactory.getLogger(WSDLMessageElementExtractor.class.getName());
 
     public static Set<QName> getPossibleRequestElements(Definitions definitions, String serviceName) {
         return getPossibleElements(definitions, INPUT, serviceName);
@@ -36,6 +39,64 @@ public class WSDLMessageElementExtractor {
 
     public static Set<QName> getPossibleResponseElements(Definitions definitions, String serviceName) {
         return getPossibleElements(definitions, OUTPUT, serviceName);
+    }
+
+    /**
+     * Elements that may legitimately appear as the payload of a SOAP fault's
+     * {@code detail}/{@code Detail}, as declared via {@code wsdl:fault} on the service's
+     * operations.
+     * <p>
+     * Unlike request and response elements, fault elements are read from the fault message's part
+     * for RPC and document bindings alike: a {@code soap:fault} is never RPC-wrapped (WSDL 1.1
+     * &sect;3.6), so there is no operation-named wrapper element to derive.
+     *
+     * @throws ConfigurationException if the WSDL declares a fault whose detail element cannot be
+     *         determined - a fault message without a part, or with a part naming a type instead of
+     *         an element. Such a fault is not validatable, and dropping it silently would leave an
+     *         empty result indistinguishable from a WSDL that declares no faults at all, so fault
+     *         validation would look active while doing nothing.
+     */
+    public static Set<QName> getPossibleFaultDetailElements(Definitions definitions, String serviceName) {
+        var result = new HashSet<QName>();
+        for (var portType : getAllPortTypes(getTypesByStyle(definitions, serviceName))) {
+            for (var operation : portType.getOperations()) {
+                for (var message : operation.getMessagesByDirection(FAULT)) {
+                    result.add(getFaultDetailElement(operation, message));
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * The element a {@code wsdl:fault}'s message declares as its detail payload.
+     */
+    private static QName getFaultDetailElement(Operation operation, Message message) {
+        var parts = message.getParts();
+        if (parts.isEmpty()) {
+            throw new ConfigurationException("Fault message %s of operation %s has no part, so the fault's detail content cannot be validated. A wsdl:fault must reference a message with a single part naming an element."
+                    .formatted(message.getName(), operation.getName()));
+        }
+        // A wsdl:fault message has exactly one part (WSDL 1.1 3.6), and only one detail entry is
+        // validated at runtime. Extra parts are silently unused, so warn once here at startup
+        // rather than letting the WSDL look fully covered while most of it is ignored. Not a
+        // ConfigurationException: the first part still describes a validatable fault detail, so
+        // refusing to start would be harsher than the defect warrants.
+        if (parts.size() > 1) {
+            log.warn("Fault message {} of operation {} declares {} parts, but a wsdl:fault must have a single part. Only the first one ({}) is used to validate the fault detail; the others are ignored.",
+                    message.getName(), operation.getName(), parts.size(), parts.getFirst().getName());
+        }
+        var part = parts.getFirst();
+        var element = part.getElementQName();
+        if (element == null) {
+            throw new ConfigurationException("Part %s of fault message %s (operation %s) names a type instead of an element, so the fault's detail content cannot be validated. A wsdl:fault's part must use part/@element, not part/@type."
+                    .formatted(part.getName(), message.getName(), operation.getName()));
+        }
+        return element;
+    }
+
+    private static @NotNull List<PortType> getAllPortTypes(PortTypesByStyle portTypes) {
+        return Stream.concat(portTypes.portTypesDocument().stream(), portTypes.portTypesRPC().stream()).toList();
     }
 
     public static Set<QName> getPossibleElements(Definitions definitions, Direction direction, String serviceName) {
@@ -57,7 +118,7 @@ public class WSDLMessageElementExtractor {
         return getParts(direction, portTypes.portTypesDocument())
                 .map(Part::getElementQName)
                 .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
+                .collect(toSet());
     }
 
     private static @NotNull PortTypesByStyle getTypesByStyle(Definitions definitions, String serviceName) {

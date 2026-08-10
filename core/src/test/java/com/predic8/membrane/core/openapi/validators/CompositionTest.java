@@ -21,6 +21,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.*;
 
+import static com.predic8.membrane.core.http.MimeType.APPLICATION_XML;
 import static com.predic8.membrane.core.openapi.util.JsonTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -260,5 +261,122 @@ protected String getOpenAPIFileName() {
         assertEquals("/inheritance", allOf.getContext().getJSONpointer());
         assertTrue(allOf.getMessage().contains("subschemas"));
 
+    }
+
+    /**
+     * https://github.com/membrane/api-gateway/issues/3119
+     * <p>
+     * A schema object that is just a $ref carries none of the composition keywords, they belong to
+     * the schema it points at. SchemaValidator used to read them before resolving the $ref, so an
+     * allOf behind a $ref never ran and enum violations inside its subschemas were accepted.
+     */
+    @Test
+    public void refAllOfEnumInvalid() {
+
+        Map<String,String> m = new HashMap<>();
+        m.put("type","OTHER-VALUE");
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-allof").body(mapToJson(m)));
+        assertEquals(2,errors.size());
+
+        ValidationError enumError = errors.stream().filter(e -> e.getMessage().contains("enum")).findAny().get();
+        assertEquals("/type", enumError.getContext().getJSONpointer());
+
+        ValidationError allOf = errors.stream().filter(e -> e.getMessage().contains("allOf")).findAny().get();
+        assertTrue(allOf.getMessage().contains("subschemas"));
+    }
+
+    /**
+     * Same as {@link #refAllOfEnumInvalid()} for oneOf: matches neither subschema.
+     */
+    @Test
+    public void refOneOfInvalid() {
+
+        Map<String,String> m = new HashMap<>();
+        m.put("other","x");
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-oneof").body(mapToJson(m)));
+        assertEquals(1,errors.size());
+        assertTrue(errors.get(0).getMessage().contains("neOf"));
+    }
+
+    @Test
+    public void refOneOfValid() {
+
+        Map<String,String> m = new HashMap<>();
+        m.put("email","membrane@predic8.de");
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-oneof").body(mapToJson(m)));
+        assertEquals(0,errors.size());
+    }
+
+    /**
+     * Same as {@link #refAllOfEnumInvalid()} for anyOf: matches neither subschema.
+     */
+    @Test
+    public void refAnyOfInvalid() {
+
+        Map<String,String> m = new HashMap<>();
+        m.put("other","x");
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-anyof").body(mapToJson(m)));
+        assertEquals(1,errors.size());
+        assertTrue(errors.get(0).getMessage().contains("anyOf"));
+    }
+
+    @Test
+    public void refAnyOfValid() {
+
+        Map<String,String> m = new HashMap<>();
+        m.put("phone","123");
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-anyof").body(mapToJson(m)));
+        assertEquals(0,errors.size());
+    }
+
+    /**
+     * Same as {@link #refAllOfEnumInvalid()} for not: the object does validate against the
+     * subschema, which is exactly what not forbids.
+     */
+    @Test
+    public void refNotInvalid() {
+
+        Map<String,String> m = new HashMap<>();
+        m.put("any","value");
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-not").body(mapToJson(m)));
+        assertEquals(1,errors.size());
+        assertTrue(errors.get(0).getMessage().contains("not"));
+    }
+
+    /**
+     * Resolving $refs before reading the composition keywords makes reference cycles reachable, so
+     * the validator has to remember which schemas it already resolved on the branch. RefCycleA and
+     * RefCycleB reference each other through allOf, which the previous single-slot guard could not
+     * break.
+     */
+    @Test
+    public void refCycleTerminates() {
+
+        Map<String,String> m = new HashMap<>();
+        m.put("any","value");
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-cycle").body(mapToJson(m)));
+        assertEquals(0,errors.size());
+    }
+
+    /**
+     * Resolving a $ref before reading allOf calls {@link ValidationContext#complexType} and
+     * {@link ValidationContext#visitRef}, both of which deepCopy() the context. deepCopy() used to
+     * drop the XML content marker, so a valid XML body behind a $ref+allOf schema was misread as
+     * JSON on the recursive allOf validation.
+     */
+    @Test
+    public void refAllOfXmlValid() throws jakarta.mail.internet.ParseException {
+
+        ValidationErrors errors = validator.validate(Request.post().path("/composition-ref-allof-xml").mediaType(APPLICATION_XML).body("""
+                <order><id>4711</id><customer>Anna</customer></order>
+                """));
+        assertEquals(0,errors.size());
     }
 }
