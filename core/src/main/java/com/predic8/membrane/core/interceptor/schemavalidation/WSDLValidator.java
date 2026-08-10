@@ -33,11 +33,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -119,6 +121,20 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     private static Schema compileFaultStructureSchema(String resourceName) {
         try {
             var sf = HardenedSchemaFactory.newInstance(XSD_NS);
+            // soap12-fault.xsd imports the XML namespace for xml:lang; serve it from the bundled
+            // xml.xsd instead of letting the (hardened, network-blocked) factory fetch it.
+            sf.setResourceResolver((type, namespaceURI, publicId, systemId, baseURI) -> {
+                if (!XMLConstants.XML_NS_URI.equals(namespaceURI)) {
+                    return null;
+                }
+                try {
+                    return new LSInputImpl(publicId, systemId,
+                            Objects.requireNonNull(WSDLValidator.class.getResourceAsStream("xml.xsd"),
+                                    "Bundled schema resource not found: xml.xsd"));
+                } catch (IOException e) {
+                    throw new RuntimeException("Cannot load bundled xml.xsd.", e);
+                }
+            });
             return sf.newSchema(new StreamSource(
                     Objects.requireNonNull(WSDLValidator.class.getResourceAsStream(resourceName),
                             "Bundled schema resource not found: " + resourceName)));
@@ -238,6 +254,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         if (!validateAgainstSchemas(() -> getFaultDetailBody(xopr.reconstituteIfNecessary(message), version), exceptions)) {
             return abort(exc, Interceptor.Flow.RESPONSE, exceptions);
         }
+        valid.incrementAndGet();
         return CONTINUE;
     }
 

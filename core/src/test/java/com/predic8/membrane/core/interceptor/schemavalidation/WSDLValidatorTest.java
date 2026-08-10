@@ -161,13 +161,54 @@ public class WSDLValidatorTest {
     void malformedFault12() throws Exception {
         Exchange exc = getResponseExchange(soap12("""
                 <s12:Fault xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
-                    <s12:Code><s12:Value>Receiver</s12:Value></s12:Code>
+                    <s12:Code><s12:Value>s12:Receiver</s12:Value></s12:Code>
                 </s12:Fault>
                 """));
 
         assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, RESPONSE));
         dumpResonseBody(exc);
         assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("Reason"));
+    }
+
+    @Test
+    void wellFormedFault12() throws Exception {
+        Exchange exc = getResponseExchange(soap12("""
+                <s12:Fault xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                    <s12:Code><s12:Value>s12:Receiver</s12:Value></s12:Code>
+                    <s12:Reason><s12:Text xml:lang="en">Something went wrong</s12:Text></s12:Reason>
+                </s12:Fault>
+                """));
+
+        assertEquals(CONTINUE, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+    }
+
+    @Test
+    void fault12ReasonTextWithoutLanguage() throws Exception {
+        Exchange exc = getResponseExchange(soap12("""
+                <s12:Fault xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                    <s12:Code><s12:Value>s12:Receiver</s12:Value></s12:Code>
+                    <s12:Reason><s12:Text>Something went wrong</s12:Text></s12:Reason>
+                </s12:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("validation failed"));
+    }
+
+    @Test
+    void fault12InvalidTopLevelCode() throws Exception {
+        Exchange exc = getResponseExchange(soap12("""
+                <s12:Fault xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                    <s12:Code><s12:Value>s12:NotARealFaultCode</s12:Value></s12:Code>
+                    <s12:Reason><s12:Text xml:lang="en">Something went wrong</s12:Text></s12:Reason>
+                </s12:Fault>
+                """));
+
+        assertEquals(ABORT, createValidator(HELLO_SOAP12_WSDL, null, false).validateMessage(exc, RESPONSE));
+        dumpResonseBody(exc);
+        assertTrue(exc.getResponse().getBodyAsStringDecoded().contains("validation failed"));
     }
 
     @Test

@@ -95,7 +95,7 @@ public class SOAPUtil {
         Element body = doc.createElementNS(SOAP11_NS, "soap:Body");
         env.appendChild(body);
 
-        Element fault = doc.createElement("Fault");
+        Element fault = doc.createElementNS(SOAP11_NS, "soap:Fault");
         body.appendChild(fault);
 
         Element faultCode = doc.createElement("faultcode");

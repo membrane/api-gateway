@@ -127,6 +127,18 @@ public class SOAPUtilTest {
         assertEquals(SOAP11, result.version());
     }
 
+    /**
+     * createSOAP11Fault's Fault element must carry the SOAP 1.1 envelope namespace, matching the
+     * bundled soap11-fault.xsd - otherwise Membrane-generated faults fail their own structural
+     * validation.
+     */
+    @Test
+    void createSOAP11FaultQualifiesFaultElement() throws Exception {
+        var fault = SOAPUtil.createSOAP11Fault(SOAPUtil.FaultCode.Client, "failed", null)
+                .getElementsByTagNameNS("*", "Fault").item(0);
+        assertEquals("http://schemas.xmlsoap.org/soap/envelope/", fault.getNamespaceURI());
+    }
+
     @Test
     void faultDetailEntries() {
         assertEquals(List.of(new QName(TB_NS, "notFound"), new QName(MEMBRANE_NS, "hint")),
