@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.xml.namespace.QName;
 import java.io.FileInputStream;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
@@ -31,6 +32,7 @@ import static com.predic8.membrane.core.http.Response.ok;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.freePort;
 import static com.predic8.membrane.core.util.RecordingServerTestUtil.startRecordingServer;
 import static com.predic8.membrane.core.util.SOAPUtil.analyseSOAPMessage;
+import static com.predic8.membrane.core.util.SOAPUtil.extractFaultDetailElements;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -123,6 +125,89 @@ public class SOAPUtilTest {
         assertTrue(result.isSOAP());
         assertTrue(result.isFault());
         assertEquals(SOAP11, result.version());
+    }
+
+    /**
+     * createSOAP11Fault's Fault element must carry the SOAP 1.1 envelope namespace, matching the
+     * bundled soap11-fault.xsd - otherwise Membrane-generated faults fail their own structural
+     * validation.
+     */
+    @Test
+    void createSOAP11FaultQualifiesFaultElement() throws Exception {
+        var fault = SOAPUtil.createSOAP11Fault(SOAPUtil.FaultCode.Client, "failed", null)
+                .getElementsByTagNameNS("*", "Fault").item(0);
+        assertEquals("http://schemas.xmlsoap.org/soap/envelope/", fault.getNamespaceURI());
+    }
+
+    @Test
+    void faultDetailEntries() {
+        assertEquals(List.of(new QName(TB_NS, "notFound"), new QName(MEMBRANE_NS, "hint")),
+                extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                          <s11:Body>
+                            <s11:Fault>
+                              <faultcode>Server</faultcode>
+                              <faultstring>Not found</faultstring>
+                              <detail>
+                                <ns1:notFound xmlns:ns1="http://thomas-bayer.com/blz/">
+                                  <nested/>
+                                </ns1:notFound>
+                                <ns2:hint xmlns:ns2="http://membrane-api.io/"/>
+                              </detail>
+                            </s11:Fault>
+                          </s11:Body>
+                        </s11:Envelope>
+                        """), SOAP11));
+    }
+
+    @Test
+    void faultDetailEntriesEmptyWithoutDetail() {
+        assertTrue(extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>
+                    <s11:Fault>
+                      <faultcode>Server</faultcode>
+                      <faultstring>Not found</faultstring>
+                    </s11:Fault>
+                  </s11:Body>
+                </s11:Envelope>
+                """), SOAP11).isEmpty());
+    }
+
+    /**
+     * Nothing after the closing detail tag may be reported as an entry.
+     */
+    @Test
+    void faultDetailEntriesStopAtEndOfDetail() {
+        assertEquals(List.of(new QName(TB_NS, "notFound")),
+                extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                        <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                          <s11:Body>
+                            <s11:Fault>
+                              <detail>
+                                <ns1:notFound xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                              </detail>
+                              <faultactor>http://example.com/actor</faultactor>
+                            </s11:Fault>
+                          </s11:Body>
+                        </s11:Envelope>
+                        """), SOAP11));
+    }
+
+    @Test
+    void faultDetailEntriesSoap12() {
+        assertEquals(List.of(new QName(MEMBRANE_NS, "hint")),
+                extractFaultDetailElements(new XOPReconstitutor(), getMessageFromString("""
+                        <s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+                          <s12:Body>
+                            <s12:Fault>
+                              <s12:Code><s12:Value>Receiver</s12:Value></s12:Code>
+                              <s12:Reason><s12:Text>Not found</s12:Text></s12:Reason>
+                              <s12:Detail><ns2:hint xmlns:ns2="http://membrane-api.io/"/></s12:Detail>
+                            </s12:Fault>
+                          </s12:Body>
+                        </s12:Envelope>
+                        """), SOAP12));
     }
 
     @Test
