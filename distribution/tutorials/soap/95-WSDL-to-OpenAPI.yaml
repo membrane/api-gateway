@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+#
+# Tutorial: WSDL to OpenAPI — Web Service to API Converter
+#
+# Automatically exposes a SOAP web service as an API. The WSDL
+# is converted into an OpenAPI specification. Incoming JSON requests are
+# transformed into SOAP XML, and SOAP XML responses are converted back to JSON.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 95-WSDL-to-OpenAPI.yaml
+#    Windows:
+#      membrane.cmd -c 95-WSDL-to-OpenAPI.yaml
+#
+# 2.) Look at the generated OpenAPI and the Swagger UI
+#     http://localhost:2000/api-docs
+#
+# 3.) Call the API
+#    curl -d '{"name":"Berlin"}' -H "Content-Type: application/json" http://localhost:2000/service/get-city
+#
+#    Body is transformed to SOAP and routed to the web service. The address is taken from the WSDL:
+#    <s:address location="http://localhost:2001/city-service"/>
+#
+# 4.) Look at the SOAP messages in the log
+
+api:
+  name: SOAP to API Converter
+  path:
+    uri: /service
+  port: 2000
+  flow:
+    - wsdl2openapi:
+        wsdl: cities.wsdl
+
+---
+api:
+  port: 2001
+  name: City SOAP Service Backend
+  path:
+    uri: /city-service
+  flow:
+    - beautifier: {}
+    - log:
+        label: "****** SOAP Message *******"
+    - sampleSoapService: {}

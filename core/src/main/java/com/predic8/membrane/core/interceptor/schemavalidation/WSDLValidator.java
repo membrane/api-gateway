@@ -89,7 +89,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
             throw new ConfigurationException("""
                     Could not parse WSDL as XML document at location %s.
                     Error Message: %s
-                    """.formatted(location, e.getMessage()));
+                    """.formatted(location, e.getMessage()), e);
         }
 
         requestElements = getPossibleRequestElements(definitions, serviceName);
