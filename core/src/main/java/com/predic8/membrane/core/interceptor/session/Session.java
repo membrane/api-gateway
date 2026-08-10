@@ -45,9 +45,9 @@ public class Session {
     protected final static String AUTHORIZATION_LEVEL = "auth_level";
 
     private String usernameKeyName;
-    ConcurrentHashMap<String, Object> content;
+    volatile ConcurrentHashMap<String, Object> content;
 
-    boolean isDirty;
+    volatile boolean isDirty;
 
     public Session(String usernameKeyName, Map<String, Object> content) {
         this.usernameKeyName = usernameKeyName;
