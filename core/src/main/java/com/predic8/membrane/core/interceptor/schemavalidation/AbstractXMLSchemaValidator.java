@@ -34,12 +34,14 @@ import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -78,10 +80,18 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
 
     public void init() {
         super.init();
-        int concurrency = Runtime.getRuntime().availableProcessors() * 2;
+        int concurrency = poolConcurrency();
         validators = new ArrayBlockingQueue<>(concurrency);
         for (int i = 0; i < concurrency; i++)
             validators.add(createValidators());
+    }
+
+    /**
+     * Size of a validator pool. Exposed so subclasses that keep an additional pool of their own
+     * (e.g. {@link WSDLValidator}'s SOAP fault structure validators) size it identically.
+     */
+    protected static int poolConcurrency() {
+        return Runtime.getRuntime().availableProcessors() * 2;
     }
 
     public Outcome validateMessage(Exchange exc, Interceptor.Flow flow) throws Exception {
@@ -159,15 +169,8 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
         try {
             // the message must be valid for one schema embedded into WSDL
             for (var validator : vals) {
-                var handler = (SchemaValidatorErrorHandler) validator.getErrorHandler();
-                try {
-                    validator.validate(source.get());
-                    if (handler.noErrors()) {
-                        return true;
-                    }
-                    exceptions.add(handler.getException());
-                } finally {
-                    handler.reset();
+                if (validateOnce(validator, source.get(), exceptions)) {
+                    return true;
                 }
             }
         } catch (Exception e) {
@@ -176,6 +179,48 @@ public abstract class AbstractXMLSchemaValidator extends AbstractMessageValidato
             validators.put(vals);
         }
         return false;
+    }
+
+    /**
+     * Validates a {@link Source} against the single schema a borrowed validator was compiled for.
+     * For pools whose validators are not interchangeable alternatives but are each the one right
+     * validator for a given kind of message - e.g. {@link WSDLValidator}'s SOAP fault structure
+     * schemas, one per SOAP version.
+     *
+     * @param exceptions collects the validation error if the source did not validate
+     * @return {@code true} if the source validated
+     * @throws InterruptedException if interrupted while waiting for a validator from the pool.
+     *                             Validation failures are collected in {@code exceptions} instead
+     *                             of being thrown.
+     */
+    protected boolean validateWith(BlockingQueue<Validator> pool, Source source, List<Exception> exceptions) throws InterruptedException {
+        var validator = pool.take();
+        try {
+            return validateOnce(validator, source, exceptions);
+        } catch (Exception e) {
+            exceptions.add(e);
+            return false;
+        } finally {
+            pool.put(validator);
+        }
+    }
+
+    /**
+     * Runs one validator over one source and resets its error handler afterwards, so that the
+     * validator can be returned to its pool ready for the next use.
+     */
+    private boolean validateOnce(Validator validator, Source source, List<Exception> exceptions) throws IOException, SAXException {
+        var handler = (SchemaValidatorErrorHandler) validator.getErrorHandler();
+        try {
+            validator.validate(source);
+            if (handler.noErrors()) {
+                return true;
+            }
+            exceptions.add(handler.getException());
+            return false;
+        } finally {
+            handler.reset();
+        }
     }
 
     protected List<Validator> createValidators() {

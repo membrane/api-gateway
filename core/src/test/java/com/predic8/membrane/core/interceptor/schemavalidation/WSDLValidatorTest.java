@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static com.predic8.membrane.core.http.Header.VALIDATION_ERROR_SOURCE;
 import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
@@ -35,6 +37,7 @@ import static com.predic8.membrane.core.interceptor.Interceptor.Flow.REQUEST;
 import static com.predic8.membrane.core.interceptor.Interceptor.Flow.RESPONSE;
 import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
 import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class WSDLValidatorTest {
@@ -49,6 +52,19 @@ public class WSDLValidatorTest {
     public static final String HELLO_SOAP12_WSDL = "src/test/resources/ws/hello-soap12.wsdl";
     public static final String RPC_WITH_FAULT_WSDL = "src/test/resources/ws/rpc-with-fault.wsdl";
     public static final String TWO_FAULTS_PER_OPERATION_WSDL = "src/test/resources/ws/two-faults-per-operation.wsdl";
+
+    private static final String WELL_FORMED_FAULT_11 = soap11("""
+            <s11:Fault>
+                <faultcode>Server</faultcode>
+                <faultstring>City not found</faultstring>
+            </s11:Fault>
+            """);
+
+    private static final String MALFORMED_FAULT_11 = soap11("""
+            <s11:Fault>
+                <faultcode>Server</faultcode>
+            </s11:Fault>
+            """);
 
     @Test
     void invalidRequestElement() throws Exception {
@@ -523,6 +539,42 @@ public class WSDLValidatorTest {
         assertEquals(1, handled.size(), handled.toString());
         assertTrue(handled.getFirst().contains("not a valid request element"), handled.toString());
         assertEquals(1, validator.getInvalid());
+    }
+
+    /**
+     * Fault structure validators come from a pool and are reused, so a failed validation must not
+     * leave error state behind that makes the next - valid - fault fail too.
+     */
+    @Test
+    void faultValidatorsAreReusedAcrossCalls() throws Exception {
+        var validator = createValidator(CITIES_WSDL, null, false);
+
+        assertEquals(CONTINUE, validator.validateMessage(getResponseExchange(WELL_FORMED_FAULT_11), RESPONSE));
+        assertEquals(CONTINUE, validator.validateMessage(getResponseExchange(WELL_FORMED_FAULT_11), RESPONSE));
+        assertEquals(ABORT, validator.validateMessage(getResponseExchange(MALFORMED_FAULT_11), RESPONSE));
+        assertEquals(CONTINUE, validator.validateMessage(getResponseExchange(WELL_FORMED_FAULT_11), RESPONSE));
+    }
+
+    /**
+     * More concurrent faults than the pool holds: every message must get its own validator, and
+     * the abort path must return its validator to the pool like the success path does.
+     */
+    @Test
+    void faultValidationIsConcurrencySafe() throws Exception {
+        var validator = createValidator(CITIES_WSDL, null, false);
+        int tasks = Runtime.getRuntime().availableProcessors() * 2 + 4;
+
+        try (var executor = Executors.newFixedThreadPool(8)) {
+            var futures = new ArrayList<Future<Outcome>>();
+            for (int i = 0; i < tasks; i++) {
+                boolean wellFormed = i % 2 == 0;
+                futures.add(executor.submit(() -> validator.validateMessage(
+                        getResponseExchange(wellFormed ? WELL_FORMED_FAULT_11 : MALFORMED_FAULT_11), RESPONSE)));
+            }
+            for (int i = 0; i < tasks; i++) {
+                assertEquals(i % 2 == 0 ? CONTINUE : ABORT, futures.get(i).get(30, SECONDS), "task " + i);
+            }
+        }
     }
 
     private static Exchange getRequestExchange(String body) throws URISyntaxException {

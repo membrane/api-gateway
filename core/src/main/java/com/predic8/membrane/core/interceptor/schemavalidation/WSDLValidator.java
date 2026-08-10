@@ -38,10 +38,13 @@ import javax.xml.namespace.QName;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
+import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP11;
 import static com.predic8.membrane.annot.Constants.SoapVersion.SOAP12;
@@ -87,6 +90,14 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
     private final Map<SoapVersion, Schema> faultStructureSchemas;
 
     /**
+     * One pool of ready-to-use validators per SOAP version, filled in {@link #init()}. Kept apart
+     * from the pool of the WSDL's embedded schemas: that one is iterated looking for <i>any</i>
+     * schema the message matches, whereas exactly one fault schema applies, selected by SOAP
+     * version.
+     */
+    private Map<SoapVersion, BlockingQueue<Validator>> faultStructureValidators;
+
+    /**
      * Parsed WSDL document
      */
     private final com.predic8.membrane.core.util.wsdl.parser.Definitions definitions;
@@ -116,6 +127,26 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         faultStructureSchemas = new EnumMap<>(SoapVersion.class);
         faultStructureSchemas.put(SOAP11, compileFaultStructureSchema("soap11-fault.xsd"));
         faultStructureSchemas.put(SOAP12, compileFaultStructureSchema("soap12-fault.xsd"));
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        int concurrency = poolConcurrency();
+        faultStructureValidators = new EnumMap<>(SoapVersion.class);
+        faultStructureSchemas.forEach((version, schema) -> {
+            var pool = new ArrayBlockingQueue<Validator>(concurrency);
+            for (int i = 0; i < concurrency; i++)
+                pool.add(newHardenedValidator(schema));
+            faultStructureValidators.put(version, pool);
+        });
+    }
+
+    private static Validator newHardenedValidator(Schema schema) {
+        var validator = schema.newValidator();
+        HardenedSchemaFactory.hardenValidator(validator);
+        validator.setErrorHandler(new SchemaValidatorErrorHandler());
+        return validator;
     }
 
     private static Schema compileFaultStructureSchema(String resourceName) {
@@ -211,25 +242,13 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
         // Only SOAP 1.1 and 1.2 fault shapes are bundled. analyseSOAPMessage cannot currently
         // report any other version for a message it accepted as SOAP, so this is a guard against
         // an invariant three classes away - not a reachable state.
-        var faultStructureSchema = faultStructureSchemas.get(version);
-        if (faultStructureSchema == null) {
+        var structureValidators = faultStructureValidators.get(version);
+        if (structureValidators == null) {
             return abort(exc, Interceptor.Flow.RESPONSE, "Cannot validate a fault of SOAP version %s. Only SOAP 1.1 and SOAP 1.2 faults are supported.".formatted(version));
         }
 
-        // A fresh validator per fault, deliberately not from the validators pool: the expensive
-        // artifact is the compiled Schema, and that is already cached in faultStructureSchemas.
-        // Schema is immutable and thread-safe, so newValidator() is a cheap allocation off an
-        // already-compiled grammar - and a fresh instance has no handler state to reset. These
-        // schemas must not join the validators pool: that pool holds the WSDL's embedded schemas,
-        // which validateAgainstSchemas iterates looking for *any* match, whereas exactly one fault
-        // schema applies, selected by SOAP version.
-        var structureValidator = faultStructureSchema.newValidator();
-        HardenedSchemaFactory.hardenValidator(structureValidator);
-        var handler = new SchemaValidatorErrorHandler();
-        structureValidator.setErrorHandler(handler);
-        structureValidator.validate(getMessageBody(xopr.reconstituteIfNecessary(message)));
-        if (!handler.noErrors()) {
-            return abort(exc, Interceptor.Flow.RESPONSE, List.of(handler.getException()));
+        if (!validateWith(structureValidators, getMessageBody(xopr.reconstituteIfNecessary(message)), exceptions)) {
+            return abort(exc, Interceptor.Flow.RESPONSE, exceptions);
         }
 
         var detailEntries = extractFaultDetailElements(xopr, message, version);
