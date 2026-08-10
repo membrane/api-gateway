@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import static com.predic8.membrane.core.interceptor.oauth2.ParamNames.ACCESS_TOKEN;
 import static com.predic8.membrane.core.interceptor.oauth2client.temp.OAuth2Constants.OAUTH2_ANSWER;
+import static java.util.Collections.unmodifiableMap;
 
 public class Session {
     @JsonIgnore  // we don't want this utility method to show up in JSON representations
@@ -107,7 +108,7 @@ public class Session {
     }
 
     public Map<String, Object> get() {
-        return content;
+        return unmodifiableMap(content);
     }
 
     public void clear() {
@@ -237,7 +238,7 @@ public class Session {
     }
 
     public Map<String, Object> getContent() {
-        return content;
+        return unmodifiableMap(content);
     }
 
     public void setContent(Map<String, Object> content) {
