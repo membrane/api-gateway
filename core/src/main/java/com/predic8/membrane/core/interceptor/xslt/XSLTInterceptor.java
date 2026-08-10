@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.xml.sax.SAXException;
+
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.stream.StreamSource;
 import java.util.Map;
@@ -114,26 +116,10 @@ public class XSLTInterceptor extends AbstractInterceptor {
         } catch (TransformerException e) {
             log.debug("", e);
             var cause = getRootCause(e);
-            // rolog matches Prolog and prolog
-            if (cause.getMessage() != null && cause.getMessage().contains("rolog")) {
-                user(router.getConfiguration().isProduction(), getDisplayName())
-                        .title("Content not allowed in prolog of XML input.")
-                        .detail("Check for extra characters before the XML declaration <?xml ... ?>")
-                        .internal("offendingInput", truncateAfter(msg.getBodyAsStringDecoded() + "...", 50))
-                        .stacktrace(false)
-                        .buildAndSetResponse(exc);
-                return ABORT;
-            }
-            if (cause.getMessage() != null && cause.getMessage().contains("is not allowed in trailing section")) {
-                user(router.getConfiguration().isProduction(), getDisplayName())
-                        .title("Content not allowed in trailing section of XML input.")
-                        .detail("Check for extra characters after the XML root element (after the final closing tag like </root>).")
-                        .internal("offendingInput", tail(msg.getBodyAsStringDecoded(), 50))
-                        .stacktrace(false)
-                        .buildAndSetResponse(exc);
-                return ABORT;
-            }
             if (cause.getMessage() != null && cause.getMessage().contains("No such file")) {
+                  // Missing file (e.g. the stylesheet itself, or one referenced via document()) is
+                  // a Membrane configuration error, not client/server input.
+                  log.error(cause.getMessage());
                   internal(router.getConfiguration().isProduction(), getDisplayName())
                         .title("XSLT transformation failed")
                         .detail(cause.getMessage())
@@ -141,12 +127,76 @@ public class XSLTInterceptor extends AbstractInterceptor {
                         .buildAndSetResponse(exc);
                 return ABORT;
             }
+            if (handleSAXException(e, exc, msg))
+                return ABORT;
             return createErrorResponse(exc, cause, flow);
         } catch (Exception e) {
             log.info("", e);
+            if (handleSAXException(e, exc, msg))
+                return ABORT;
             return createErrorResponse(exc, e, flow);
         }
         return CONTINUE;
+    }
+
+    /**
+     * If the cause chain of {@code e} contains a SAX parse error - directly as a
+     * {@link SAXException}, or as an underlying Xalan "WrappedRuntimeException" - builds a
+     * problem details response from its message. Well-known SAX messages (content in the XML
+     * prolog/trailing section) get a tailored title and hint; anything else falls back to a
+     * generic "XML parsing failed" title with the SAX message as detail.
+     *
+     * @return true if such a response was built, false otherwise
+     */
+    private boolean handleSAXException(Throwable e, Exchange exc, Message msg) {
+        var message = findSAXExceptionMessage(e);
+        if (message == null)
+            return false;
+        // rolog matches Prolog and prolog
+        if (message.contains("rolog")) {
+            user(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Content not allowed in prolog of XML input.")
+                    .detail("Check for extra characters before the XML declaration <?xml ... ?>")
+                    .internal("offendingInput", truncateAfter(msg.getBodyAsStringDecoded() + "...", 50))
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return true;
+        }
+        if (message.contains("is not allowed in trailing section")) {
+            user(router.getConfiguration().isProduction(), getDisplayName())
+                    .title("Content not allowed in trailing section of XML input.")
+                    .detail("Check for extra characters after the XML root element (after the final closing tag like </root>).")
+                    .internal("offendingInput", tail(msg.getBodyAsStringDecoded(), 50))
+                    .stacktrace(false)
+                    .buildAndSetResponse(exc);
+            return true;
+        }
+        user(router.getConfiguration().isProduction(), getDisplayName())
+                .title("XML parsing failed")
+                .detail(message)
+                .stacktrace(false)
+                .buildAndSetResponse(exc);
+        return true;
+    }
+
+    /**
+     * Walks the cause chain of a {@link TransformerException} looking for the message of the
+     * underlying {@link SAXException}. JAXP processors (e.g. Xalan) don't consistently chain the
+     * SAX parse error as a {@link SAXException} via {@link Throwable#getCause()} - Xalan nests it
+     * one level deeper inside an internal, non-exported "WrappedRuntimeException" that can't be
+     * unwrapped via reflection (JPMS blocks access to its getException() method even on the
+     * classpath), but its {@link Throwable#getMessage()} already delegates to the wrapped
+     * SAXException's message, so that's used directly instead.
+     */
+    private static String findSAXExceptionMessage(Throwable t) {
+        while (t != null) {
+            if (t instanceof SAXException saxException)
+                return saxException.getMessage();
+            if (t.getClass().getName().endsWith("WrappedRuntimeException"))
+                return t.getMessage();
+            t = t instanceof TransformerException te ? te.getException() : t.getCause();
+        }
+        return null;
     }
 
     private @NotNull Outcome createErrorResponse(Exchange exc, Throwable e, Flow flow) {

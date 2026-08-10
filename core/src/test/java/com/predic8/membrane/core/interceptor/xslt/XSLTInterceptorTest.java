@@ -86,6 +86,20 @@ public class XSLTInterceptorTest {
         assertTrue(body.contains("not allowed in prolog"));
     }
 
+    @Test
+    void mismatchedClosingTag() throws Exception {
+        exc = get("http://localhost/").body("<customer><name>Rick</name1></customer>").buildExchange();
+
+        var i = new XSLTInterceptor();
+        i.setXslt("classpath:/customer2person.xsl");
+        i.init(new DummyTestRouter());
+        assertEquals(ABORT, i.handleRequest(exc));
+        assertEquals(400, exc.getResponse().getStatusCode());
+        var body = exc.getResponse().getBodyAsStringDecoded();
+        assertTrue(body.contains("XML parsing failed"));
+        assertTrue(body.contains("delimiter"));
+    }
+
     private void assertXPath(String xpathExpr, String expected)
             throws XPathExpressionException {
         assertEquals(expected, xpath.evaluate(xpathExpr, new InputSource(exc
