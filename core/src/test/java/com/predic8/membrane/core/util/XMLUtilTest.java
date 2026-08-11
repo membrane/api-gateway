@@ -13,16 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.xml.*;
-import com.predic8.membrane.core.util.xml.parser.*;
-import org.junit.jupiter.api.*;
-import org.w3c.dom.*;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.util.xml.XMLUtil;
+import com.predic8.membrane.core.util.xml.parser.HardenedXmlParser;
+import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
 
-import javax.xml.namespace.*;
+import javax.xml.namespace.QName;
 
-import static java.nio.charset.StandardCharsets.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class XMLUtilTest {
 
@@ -50,7 +50,7 @@ public class XMLUtilTest {
     void getInputSourceHonorsTheMessagesCharset() throws Exception {
         Request req = new Request();
         req.setBodyContent("""
-                <?xml version="1.0" encoding="ISO-8859-1"?>
+                <?xml version="1.0"?>
                 <order><city>Bönnigheim</city></order>""".getBytes(ISO_8859_1));
         req.getHeader().setContentType("text/xml; charset=ISO-8859-1");
 
