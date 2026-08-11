@@ -1,5 +1,57 @@
 # Architecture Decision Log
 
+## ADR-010 Default for `uriFactory`'s `allowIllegalCharacters`
+
+Status: PROPOSED
+Date: 2026-08-11
+
+### Context
+
+`URIFactory.allowIllegalCharacters` (`core/.../util/URIFactory.java`) controls whether Membrane
+enforces RFC 3986 character rules on incoming request URIs. With the default (`false`), a path or
+query containing an off-spec character (e.g. `{`, `}`, an unencoded backslash after
+`autoEscapeBackslashes` fails to help, or other characters some backends tolerate) is rejected with
+a 400 Problem Details response before it ever reaches a route (`DispatchingInterceptor`, see
+`IllegalCharactersInURLTest`).
+
+This is deliberate hardening: off-spec characters are exactly the kind of thing that produces
+parsing disagreements between Membrane and a backend (request-smuggling-adjacent ambiguity), so
+rejecting them by default is the safer posture. In practice this also means the *first* time
+someone points Membrane at a real-world backend that emits or expects such URLs (the `URI` class's
+own comment cites "some Microsoft products"), or replays a captured request during a quickstart or
+PoC, they hit an opaque 400 with no visible knob unless they already know `uriFactory` exists and
+go find it in the docs.
+
+### Options
+
+1. **Keep the default `false` (status quo).** Safe by default; the cost is a support/onboarding
+   speed bump for anyone whose first request happens to contain an off-spec character.
+2. **Flip the default to `true`.** Removes that speed bump entirely — no configuration needed to
+   get an experiment or a real-world backend past this check. Trades away a hardening measure
+   that is on by default for every Membrane instance today, including ones that never got a
+   chance to opt in deliberately.
+3. **Keep the default `false`, but make the rejection's fix obvious.** E.g. have the 400 Problem
+   Details response's `detail` field name `uriFactory`/`allowIllegalCharacters` directly, so the
+   obstacle is discoverable in the same second it's hit, without touching the default.
+
+### Decision
+
+Not yet made. Recorded here because option 2 was proposed to reduce onboarding friction, but it
+changes a security-relevant default for every deployment, not just quickstart/PoC ones — Membrane
+has no separate "quickstart mode" today to scope it to. That tradeoff needs a deliberate call, not
+a default flip made for convenience during trials.
+
+### Consequences (if option 2 is chosen)
+
+- Every Membrane instance would accept off-spec URI characters unless an operator explicitly
+  locks it down again — the inverse of today, where accepting them is the opt-in.
+- Removes one specific defense against parsing-discrepancy attacks between Membrane and backends
+  for all users, not just the ones experimenting. Existing deployments that never touched
+  `uriFactory` and relied on the default would silently become more permissive on upgrade.
+- Would need a release note and a migration path (e.g. document how to restore strict parsing)
+  since it is a behavior change with security relevance, not a bugfix.
+- Does not by itself fix discoverability for *other* onboarding obstacles — only this one.
+
 ## ADR-009 PasswordDigest Support for wsSecurity UsernameToken Validation
 
 Status: PROPOSED
