@@ -87,6 +87,10 @@ public class ConcurrentConnectionLimitTest {
                 countDownLatchStart.countDown();
                 countDownLatchStart.await();
                 HttpURLConnection con = (HttpURLConnection) new URL("http://localhost:" + port).openConnection();
+                // Finite timeouts, well above the backend's 1s delay, so a hung/rejected
+                // connection fails fast instead of blocking a worker (and the shutdown await) forever.
+                con.setConnectTimeout(5000);
+                con.setReadTimeout(5000);
                 int code = 429; // default to "rejected" if the connection fails outright (e.g. reset)
                 try {
                     code = con.getResponseCode();
