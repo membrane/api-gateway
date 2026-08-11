@@ -57,7 +57,9 @@ public class XMLProtector {
     private final XMLEventWriter writer;
     private final int maxAttributeCount;
     private final int maxElementNameLength;
+    private final int maxDepth;
     private final boolean removeDTD;
+    private int depth;
 
     /**
      * Use own XMLInputFactory with settings that might be insecure for other applications.
@@ -65,11 +67,12 @@ public class XMLProtector {
      */
     private final ThreadLocal<XMLInputFactory> xmlInputFactoryFactory;
 
-    public XMLProtector(OutputStreamWriter osw, boolean removeDTD, int maxElementNameLength, int maxAttributeCount) throws Exception {
+    public XMLProtector(OutputStreamWriter osw, boolean removeDTD, int maxElementNameLength, int maxAttributeCount, int maxDepth) throws Exception {
         this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
         this.removeDTD = removeDTD;
         this.maxElementNameLength = maxElementNameLength;
         this.maxAttributeCount = maxAttributeCount;
+        this.maxDepth = maxDepth;
         xmlInputFactoryFactory = ThreadLocal.withInitial(this::getXmlInputFactory);
     }
 
@@ -147,6 +150,11 @@ public class XMLProtector {
                         return false;
                     if (!checkNumberOfAttributes(startElement))
                         return false;
+                    if (!checkDepth())
+                        return false;
+                }
+                if (event.isEndElement()) {
+                    depth--;
                 }
                 if (event instanceof javax.xml.stream.events.DTD dtd) {
                     checkExternalEntities(dtd);
@@ -187,6 +195,15 @@ public class XMLProtector {
         return true;
     }
 
+    private boolean checkDepth() {
+        depth++;
+        if (maxDepth != -1 && depth > maxDepth) {
+            log.warn("Element nesting depth {} exceeds limit of {}", depth, maxDepth);
+            return false;
+        }
+        return true;
+    }
+
     private boolean checkElementNameLength(StartElement startElement) {
         var elementLenght = startElement.getName().getLocalPart().length();
         if (maxElementNameLength != -1 &&
@@ -211,6 +228,12 @@ public class XMLProtector {
 
         f.setProperty(IS_NAMESPACE_AWARE, TRUE);
         f.setProperty(IS_REPLACING_ENTITY_REFERENCES, FALSE);
+        // JAXP defaults jdk.xml.maxElementDepth to 100; align it with our own, explicitly
+        // configurable limit so maxDepth=-1 (unlimited) isn't silently overridden by the JDK.
+        try {
+            f.setProperty("jdk.xml.maxElementDepth", maxDepth <= 0 ? 0 : maxDepth);
+        } catch (IllegalArgumentException ignored) {
+        }
         try {
             f.setProperty(JAVAX_XML_STREAM_IS_SUPPORTING_EXTERNAL_ENTITIES, FALSE);
         } catch (IllegalArgumentException ignored) {

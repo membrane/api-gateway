@@ -38,6 +38,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     private int maxAttributeCount = 1000;
     private int maxElementNameLength = 1000;
+    private int maxDepth = 1000;
     private boolean removeDTD = true;
 
     public XMLProtectionInterceptor() {
@@ -102,7 +103,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
         try (ByteArrayOutputStream stream = new ByteArrayOutputStream();
              OutputStreamWriter out = new OutputStreamWriter(stream, charset);
              InputStreamReader in = new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), charset)) {
-            XMLProtector protector = new XMLProtector(out, removeDTD, maxElementNameLength, maxAttributeCount);
+            XMLProtector protector = new XMLProtector(out, removeDTD, maxElementNameLength, maxAttributeCount, maxDepth);
             if (!protector.protect(in))
                 return false;
             out.flush(); // ensure all bytes are written before reading
@@ -135,6 +136,20 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     public int getMaxElementNameLength() {
         return maxElementNameLength;
+    }
+
+    /**
+     * @description Maximum nesting depth of XML elements. If an incoming request exceeds this limit, it will be
+     * discarded. Set to -1 to disable the limit.
+     * @default 1000
+     */
+    @MCAttribute
+    public void setMaxDepth(int maxDepth) {
+        this.maxDepth = maxDepth;
+    }
+
+    public int getMaxDepth() {
+        return maxDepth;
     }
 
     /**
