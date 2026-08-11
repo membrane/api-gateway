@@ -141,7 +141,10 @@ public class SOAPUtil {
                         return NO_SOAP_RESULT;
                     }
 
-                    if ("Header".equals(name.getLocalPart())) {
+                    // Only before the Body opens: this test is on the local name alone, so inside the
+                    // Body (state 2) it would swallow a payload element that happens to be named
+                    // "Header" and report a non-empty body as empty.
+                    if (state < 2 && "Header".equals(name.getLocalPart())) {
                         // skip header
                         readUntilEndTag(parser);
                         continue;
@@ -178,8 +181,18 @@ public class SOAPUtil {
                         return NO_SOAP_RESULT;
                     }
                 }
-                if (event.isEndElement())
-                    return NO_SOAP_RESULT;
+                if (event.isEndElement()) {
+                    if (state < 2) {
+                        // Closed before a Body ever opened, e.g. an envelope carrying only a header.
+                        return NO_SOAP_RESULT;
+                    }
+                    // Specifically </Body>, not just any end element at this state: reaching it means
+                    // the Body held no element at all, which is reported with a null soapElement.
+                    // Anything else keeps the scan going rather than being read as an empty body.
+                    if ("Body".equals(event.asEndElement().getName().getLocalPart())) {
+                        return new SOAPAnalysisResult(true, false, version, null);
+                    }
+                }
             }
         } catch (Exception e) {
             log.info("Error parsing SOAP message: {}", e.getMessage());
