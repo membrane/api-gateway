@@ -14,16 +14,23 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import com.predic8.membrane.annot.*;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.interceptor.*;
-import org.slf4j.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 
-import static com.predic8.membrane.core.exceptions.ProblemDetails.*;
-import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.*;
-import static com.predic8.membrane.core.interceptor.Outcome.*;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.security;
+import static com.predic8.membrane.core.exceptions.ProblemDetails.user;
+import static com.predic8.membrane.core.interceptor.Interceptor.Flow.Set.REQUEST_FLOW;
+import static com.predic8.membrane.core.interceptor.Outcome.ABORT;
+import static com.predic8.membrane.core.interceptor.Outcome.CONTINUE;
 
 /**
  * @description Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
@@ -38,7 +45,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     private int maxAttributeCount = 1000;
     private int maxElementNameLength = 1000;
-    private int maxDepth = 1000;
+    private int maxDepth = -1;
     private boolean removeDTD = true;
 
     public XMLProtectionInterceptor() {
@@ -140,8 +147,8 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
     /**
      * @description Maximum nesting depth of XML elements. If an incoming request exceeds this limit, it will be
-     * discarded. Set to -1 to disable the limit.
-     * @default 1000
+     * discarded. A value of -1 disables the limit.
+     * @default -1 (unlimited)
      */
     @MCAttribute
     public void setMaxDepth(int maxDepth) {
