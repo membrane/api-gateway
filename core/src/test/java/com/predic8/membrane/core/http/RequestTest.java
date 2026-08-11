@@ -14,19 +14,25 @@
 
 package com.predic8.membrane.core.http;
 
-import com.predic8.membrane.core.util.*;
-import org.junit.jupiter.api.*;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 
-import static com.predic8.membrane.annot.Constants.*;
-import static com.predic8.membrane.core.http.MimeType.*;
+import static com.predic8.membrane.annot.Constants.CRLF;
+import static com.predic8.membrane.core.http.MimeType.TEXT_XML;
 import static com.predic8.membrane.core.http.Request.*;
-import static com.predic8.membrane.core.util.HttpTestUtil.*;
-import static com.predic8.membrane.core.util.StringTestUtil.*;
-import static com.predic8.membrane.test.TestUtil.*;
-import static java.nio.charset.StandardCharsets.*;
+import static com.predic8.membrane.core.util.HttpTestUtil.convertMessage;
+import static com.predic8.membrane.core.util.StringTestUtil.inputStreamFrom;
+import static com.predic8.membrane.test.TestUtil.getResourceAsStream;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class RequestTest {
@@ -361,6 +367,15 @@ public class RequestTest {
         assertTrue(post("/foo").contentType(TEXT_XML).build().isXML());
         assertTrue(post("/foo").contentType("text/xml; charset=utf-8").build().isXML());
         assertTrue(post("/foo").header("Content-Type", "text/xml; charset=utf-8").build().isXML());
+    }
+
+    @Test
+    void isEncoded() throws URISyntaxException {
+        assertFalse(post("/foo").contentType(TEXT_XML).build().isEncoded());
+        assertTrue(post("/foo").header("Content-Encoding", "gzip").build().isEncoded());
+        // Not one of the codecs MessageUtil can decode, but still not plain bytes.
+        assertTrue(post("/foo").header("Content-Encoding", "zstd").build().isEncoded());
+        assertTrue(post("/foo").contentType("multipart/related; boundary=b").build().isEncoded());
     }
 
     @Nested

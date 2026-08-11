@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+#
+# Tutorial: WS-Security - Validate a UsernameToken
+#
+# Requires a valid wsse:UsernameToken on every incoming SOAP request before it reaches
+# the backend; anything else is rejected with a soap:Fault.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 20-Validate-UsernameToken.yaml
+#    Windows:
+#      membrane.cmd -c 20-Validate-UsernameToken.yaml
+#
+# 2.) Send a request with the correct credentials
+#    curl -d @request-valid.xml -H "Content-Type: text/xml" http://localhost:2000
+#
+#    Expected: a normal getCityResponse from the sample SOAP service, and a log output
+#    with the user "alice" and the SOAP without the wsse:Security header.
+#
+# 3.) Send a request with a wrong password
+#    curl -d @request-invalid.xml -H "Content-Type: text/xml" http://localhost:2000
+#
+#    Expected: Rejection with a soap:Fault
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - wsSecurity:
+            validate:
+              - usernameToken:
+                  staticUserDataProvider:
+                    users:
+                      - username: alice
+                        password: secret
+        - beautifier: {}
+        - log:
+            message: |
+              *** After WS-Security ***
+              User: ${user()}
+              Notice that wsse:Security header was removed from the request: 
+              ${body}
+    - sampleSoapService: {}
+
+# # Notice that this is a deliberately simple example.
+#
+# If you have multiple user there are additional UserDataProviders for LDAP, JDBC, file, ... available.
+#
+# Continue with file 30-Add-And-Validate-Timestamp.yaml
