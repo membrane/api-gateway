@@ -57,7 +57,7 @@ public class XmlProtectionTutorialTest extends AbstractSecurityTutorialTest {
         .when()
             .post("http://localhost:2000")
         .then()
-            .statusCode(anyOf(is(500), is(400)))
+            .statusCode(400)
             .header("X-Protection", containsString("XML security policy"))
             .body(anyOf(
                     containsString("Content violates XML security policy"),
