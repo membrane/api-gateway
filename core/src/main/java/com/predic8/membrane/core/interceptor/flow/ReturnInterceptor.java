@@ -19,7 +19,7 @@ package com.predic8.membrane.core.interceptor.flow;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -106,7 +106,8 @@ public class ReturnInterceptor extends AbstractInterceptor {
             builder.contentType(reqContentType);
         }
         Response response = builder.build();
-        if (exc.getRequest().getBody() instanceof Body body) {
+        AbstractBody body = exc.getRequest().getBody();
+        if (body != null) {
             response.setBody(body);
             response.getHeader().setContentLength(body.getLength());
         }

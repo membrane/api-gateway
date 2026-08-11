@@ -50,6 +50,10 @@ Maven multi-module reactor (root `pom.xml`), Java 21 (`javac.source/target`):
 - `core` — the router engine and all built-in interceptors/plugins. Primary library code.
 - `distribution` — assembles the runnable `.zip` (`membrane.sh`/`membrane.cmd`, `conf/proxies.xml`,
   `tutorials/`, `examples/`). Also owns the tutorial/example integration tests.
+  `distribution/router/conf/` is what actually ships as the zip's `conf/` (see
+  `src/assembly/distribution.xml`); `distribution/conf/` is a separate, unpackaged scratch
+  directory for the programmer's own local testing — never treat it as shipped config or
+  reference it from tutorials/examples/docs.
 - `war` — packages `core` for deployment into a servlet container (Tomcat, Jetty).
 - `test` — shared test utilities (HTTP client helpers, fixtures), depended on as `test` scope.
 

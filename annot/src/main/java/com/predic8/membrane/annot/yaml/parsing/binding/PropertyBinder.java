@@ -21,6 +21,7 @@ import com.predic8.membrane.annot.yaml.parsing.MethodSetter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import java.util.List;
@@ -44,9 +45,13 @@ public final class PropertyBinder {
             } catch (ConfigurationParsingException e) {
                 throw e;
             } catch (Throwable cause) {
+                // Reflection wraps the setter's real exception in InvocationTargetException,
+                // whose own getMessage() is null - unwrap it so the real message surfaces.
+                if (cause instanceof InvocationTargetException && cause.getCause() != null) {
+                    cause = cause.getCause();
+                }
                 log.debug("", cause);
-                var e = new ConfigurationParsingException(cause.getMessage());
-                e.setParsingContext(ctx.key(key));
+                var e = new ConfigurationParsingException(cause.getMessage(), cause, ctx.key(key));
                 throw e;
             }
         }

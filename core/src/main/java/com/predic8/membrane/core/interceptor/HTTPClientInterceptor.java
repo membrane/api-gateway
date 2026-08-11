@@ -234,5 +234,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
     @MCChildElement
     public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
         this.httpClientConfig = httpClientConfig;
+        // Force init() to rebuild httpClient from the new config instead of keeping a stale one.
+        this.httpClient = null;
     }
 }
