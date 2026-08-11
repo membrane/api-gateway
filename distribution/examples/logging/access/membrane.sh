@@ -1,7 +1,7 @@
 #!/bin/sh
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 
-JAVA_OPTS="-Dlog4j.configurationFile=${SCRIPT_DIR}/log4j2_access.xml ${JAVA_OPTS:-}"
+JAVA_OPTS="-Dlog4j.configurationFile=examples/logging/access/log4j2_access.xml ${JAVA_OPTS:-}"
 export JAVA_OPTS
 
 dir="$SCRIPT_DIR"
