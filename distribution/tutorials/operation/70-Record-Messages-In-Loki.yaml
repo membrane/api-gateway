@@ -11,8 +11,8 @@
 #       docker compose -f loki/docker-compose.yml up -d
 #
 # 2.) Start Membrane:
-#       Linux/Mac:  ./membrane.sh -c 70-Loki.yaml
-#       Windows:    membrane.cmd  -c 70-Loki.yaml
+#       Linux/Mac:  ./membrane.sh -c 70-Record-Messages-In-Loki.yaml
+#       Windows:    membrane.cmd  -c 70-Record-Messages-In-Loki.yaml
 #
 # 3.) Generate traffic on the two APIs:
 #       curl http://localhost:2001
@@ -22,14 +22,14 @@
 #     Go to Explore (compass icon), pick the Loki datasource, switch the query
 #     editor to "Code" and run:
 #
-#       {job="membrane"}
+#       {job="membrane-instance-1"}
 #
 #     You should see one log line per call, each holding a complete exchange
 #     as JSON.
 #
 # 5.) Unpack that JSON with the 'json' stage and pick out single fields:
 #
-#       {job="membrane"} | json | line_format "{{.request_method}} {{.request_uri}} -> {{.response_statusCode}}"
+#       {job="membrane-instance-1"} | json | line_format "{{.request_method}} {{.request_uri}} -> {{.response_statusCode}}"
 #
 #     You should see one line per call:
 #
@@ -39,7 +39,7 @@
 # 6.) Every line also carries an 'api' label with the name of the API the
 #     exchange passed through, so you can narrow the search to one API:
 #
-#       {job="membrane", api="Backend B"} | json
+#       {job="membrane-instance-1", api="Backend B"} | json
 #
 #     Labels are indexed by Loki, so filtering on 'api' or 'job' is much cheaper
 #     than filtering on a field inside the JSON.
@@ -73,9 +73,7 @@ components:
   exchangeStore:
     lokiExchangeStore:
       url: http://localhost:3100
-      # Attached to every log line as the 'job' label. Give each gateway its own
-      # value to tell several Membrane instances apart in Grafana.
-      job: membrane
+      job: membrane-instance-1
 
 ---
 # The API name becomes the 'api' label in Loki, so name your APIs.

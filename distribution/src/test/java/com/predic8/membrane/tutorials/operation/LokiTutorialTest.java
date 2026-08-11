@@ -34,12 +34,12 @@ import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Verifies tutorial step 70-Loki.yaml: lokiExchangeStore pushes every finished exchange to
+ * Verifies tutorial step 70-Record-Messages-In-Loki.yaml: lokiExchangeStore pushes every finished exchange to
  * <code>/loki/api/v1/push</code>, labelled with <code>job</code> and the name of the API.
  *
  * <p>A local Membrane router stands in for Loki on the port the tutorial configures, so the
  * lesson is verified end-to-end without a Loki container. What the tutorial's LogQL steps
- * promise — a <code>job="membrane"</code> stream per API, and lines whose JSON carries method,
+ * promise — a <code>job="membrane-instance-1"</code> stream per API, and lines whose JSON carries method,
  * URI and status code — is exactly what is asserted here.
  */
 public class LokiTutorialTest extends AbstractOperationTutorialTest {
@@ -53,7 +53,7 @@ public class LokiTutorialTest extends AbstractOperationTutorialTest {
 
     @Override
     protected String getTutorialYaml() {
-        return "70-Loki.yaml";
+        return "70-Record-Messages-In-Loki.yaml";
     }
 
     /**
@@ -117,7 +117,7 @@ public class LokiTutorialTest extends AbstractOperationTutorialTest {
             for (JsonNode push : pushes)
                 for (JsonNode stream : push.get("streams")) {
                     JsonNode labels = stream.get("stream");
-                    if (!"membrane".equals(labels.get("job").textValue()))
+                    if (!"membrane-instance-1".equals(labels.get("job").textValue()))
                         continue;
                     if (!api.equals(labels.get("api").textValue()))
                         continue;
