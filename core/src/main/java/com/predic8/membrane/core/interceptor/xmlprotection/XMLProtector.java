@@ -198,7 +198,7 @@ public class XMLProtector {
     private boolean checkDepth() {
         depth++;
         if (maxDepth != -1 && depth > maxDepth) {
-            log.warn("Element nesting depth {} exceeds limit of {}", depth, maxDepth);
+            log.info("Element nesting depth {} exceeds limit of {}", depth, maxDepth);
             return false;
         }
         return true;

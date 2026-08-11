@@ -49,6 +49,25 @@ public class XmlProtectionTutorialTest extends AbstractSecurityTutorialTest {
     }
 
     @Test
+    void deeplyNestedXmlIsBlocked() {
+        // @formatter:off
+        given()
+            .body("<a><b><c><d>x</d></c></b></a>")
+            .contentType(XML)
+        .when()
+            .post("http://localhost:2000")
+        .then()
+            .statusCode(anyOf(is(500), is(400)))
+            .header("X-Protection", containsString("XML security policy"))
+            .body(anyOf(
+                    containsString("Content violates XML security policy"),
+                    containsString("xml-protection"),
+                    containsString("<problem-details>")
+            ));
+        // @formatter:on
+    }
+
+    @Test
     void dtdIsAllowed() throws IOException {
         // @formatter:off
         given()
