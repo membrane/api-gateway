@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.4.0.json
+#
+# Tutorial: WS-Security - Validate a Signed Body
+#
+# Requires a valid ds:Signature over the SOAP body on every incoming request before it reaches
+# the backend; anything else is rejected with a soap:Fault.
+#
+# 1.) Start Membrane
+#    Linux/Mac:
+#      ./membrane.sh -c 40-Validate-Signed-Body.yaml
+#    Windows:
+#      membrane.cmd -c 40-Validate-Signed-Body.yaml
+#
+# 2.) Send a request with a valid signature
+#    curl -d @request-signed.xml -H "Content-Type: text/xml" http://localhost:2000
+#
+#    Expected: a normal getCityResponse from the sample SOAP service, and a log output
+#    with the SOAP body and the wsse:Security header removed.
+#
+#    request-signed.xml is a static fixture here - the next tutorial, 50, shows how to
+#    produce a request like this yourself.
+#
+# 3.) Send a request whose body was tampered with after signing
+#    curl -d @request-tampered.xml -H "Content-Type: text/xml" http://localhost:2000
+#
+#    Expected: Rejection with a soap:Fault
+
+api:
+  port: 2000
+  flow:
+    - request:
+        - wsSecurity:
+            truststore:
+              location: signer.p12
+              password: secret
+            validate:
+              - signature:
+                  requiredReferences:
+                    - by: BODY
+        # Safe here because it runs after validate - never beautify a signed body beforehand,
+        # since re-indenting changes the canonicalized content and invalidates the signature.
+        - beautifier: {}
+        - log:
+            message: |
+              *** After WS-Security ***
+              Notice that the wsse:Security header was removed from the request:
+              ${body}
+    - sampleSoapService: {}
+
+# Notice that this is a deliberately simple example.
+#
+# request-signed.xml was produced once with the signing half of 50-Sign-And-Validate-Body.yaml
+# (same signer.p12 keypair, key alias "signer") and is used here as a static fixture.
+#
+# Continue with file 50-Sign-And-Validate-Body.yaml

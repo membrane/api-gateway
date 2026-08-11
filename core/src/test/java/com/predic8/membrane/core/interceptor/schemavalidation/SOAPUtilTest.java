@@ -90,6 +90,100 @@ public class SOAPUtilTest {
         assertEquals(new QName(MEMBRANE_NS, "Bar"), result.soapElement());
     }
 
+    /**
+     * The header-skipping test is on the local name alone, so a payload element that happens to be
+     * named <code>Header</code> must not be swallowed by it - that would report a non-empty body as
+     * empty, and WSDLValidator rejects a request whose soapElement is null.
+     */
+    @Test
+    void analyseBodyElementNamedHeader() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body>
+                    <ns1:Header xmlns:ns1="http://membrane-api.io/">
+                      <ns1:value>42</ns1:value>
+                    </ns1:Header>
+                  </s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP11, result.version());
+        assertEquals(new QName(MEMBRANE_NS, "Header"), result.soapElement());
+    }
+
+    /**
+     * The case the skip must still handle: a real soap:Header ahead of a non-empty Body.
+     */
+    @Test
+    void analyseSOAP11WithHeaderAndNonEmptyBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header>
+                    <ns1:tracking xmlns:ns1="http://membrane-api.io/">abc</ns1:tracking>
+                  </s11:Header>
+                  <s11:Body>
+                    <ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/"/>
+                  </s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP11, result.version());
+        assertEquals(new QName(TB_NS, "getBank"), result.soapElement());
+    }
+
+    /**
+     * A header-only envelope is not a usable SOAP message: there is no Body, so nothing reports a
+     * payload element.
+     */
+    @Test
+    void analyseEnvelopeWithHeaderButNoBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Header/>
+                </s11:Envelope>
+                """));
+        assertFalse(result.isSOAP());
+    }
+
+    @Test
+    void analyseSOAP12EmptyBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+                  <soap:Header></soap:Header>
+                  <soap:Body></soap:Body>
+                </soap:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP12, result.version());
+        // Null soapElement is what WSDLValidator uses to reject an empty body: keep it pinned.
+        assertNull(result.soapElement());
+    }
+
+    @Test
+    void analyseSOAP11EmptyBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                  <s11:Body></s11:Body>
+                </s11:Envelope>
+                """));
+        assertTrue(result.isSOAP());
+        assertFalse(result.isFault());
+        assertEquals(SOAP11, result.version());
+        assertNull(result.soapElement());
+    }
+
+    @Test
+    void analyseEnvelopeWithoutBody() {
+        SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
+                <s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+                </s11:Envelope>
+                """));
+        assertFalse(result.isSOAP());
+    }
+
     @Test
     void analyseFault11() {
         SOAPUtil.SOAPAnalysisResult result = analyseSOAPMessage(new XOPReconstitutor(), getMessageFromString("""
