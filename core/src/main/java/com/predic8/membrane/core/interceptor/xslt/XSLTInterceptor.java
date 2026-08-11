@@ -120,7 +120,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
             if (cause.getMessage() != null && cause.getMessage().contains("No such file")) {
                   // Missing file (e.g. the stylesheet itself, or one referenced via document()) is
                   // a Membrane configuration error, not client/server input.
-                  log.error(cause.getMessage());
+                  log.error("There are problems reading {} or a file that is referenced from the stylesheet, e.g. by include or the document() function: {}", xslt, cause.getMessage());
                   internal(router.getConfiguration().isProduction(), getDisplayName())
                         .title("XSLT transformation failed")
                         .detail(cause.getMessage())
