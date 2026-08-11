@@ -2,7 +2,7 @@
 
 ## ADR-010 Default for `uriFactory`'s `allowIllegalCharacters`
 
-Status: PROPOSED
+Status: FOR DISCUSSION
 Date: 2026-08-11
 
 ### Context
