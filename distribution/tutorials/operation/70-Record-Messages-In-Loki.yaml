@@ -1,0 +1,93 @@
+# yaml-language-server: $schema=https://www.membrane-api.io/v7.3.1.json
+#
+# Tutorial: Sending Exchanges to Grafana Loki
+#
+# The prometheus plugin (50-Prometheus.yaml) gives you counters and timings, but it
+# cannot tell you what a single call looked like. lokiExchangeStore fills that gap:
+# it pushes every finished exchange - request and response, headers and bodies - to
+# Grafana Loki as one JSON log line, where you can search it with LogQL.
+#
+# 1.) Start Loki and Grafana:
+#       docker compose -f loki/docker-compose.yml up -d
+#
+# 2.) Start Membrane:
+#       Linux/Mac:  ./membrane.sh -c 70-Record-Messages-In-Loki.yaml
+#       Windows:    membrane.cmd  -c 70-Record-Messages-In-Loki.yaml
+#
+# 3.) Generate traffic on the two APIs:
+#       curl http://localhost:2001
+#       curl http://localhost:2002
+#
+# 4.) Open Grafana at http://localhost:3000 and log in with admin / admin.
+#     Go to Explore (compass icon), pick the Loki datasource, switch the query
+#     editor to "Code" and run:
+#
+#       {job="membrane-instance-1"}
+#
+#     You should see one log line per call, each holding a complete exchange
+#     as JSON.
+#
+# 5.) Unpack that JSON with the 'json' stage and pick out single fields:
+#
+#       {job="membrane-instance-1"} | json | line_format "{{.request_method}} {{.request_uri}} -> {{.response_statusCode}}"
+#
+#     You should see one line per call:
+#
+#       GET / -> 200
+#       GET / -> 404
+#
+# 6.) Every line also carries an 'api' label with the name of the API the
+#     exchange passed through, so you can narrow the search to one API:
+#
+#       {job="membrane-instance-1", api="Backend B"} | json
+#
+#     Labels are indexed by Loki, so filtering on 'api' or 'job' is much cheaper
+#     than filtering on a field inside the JSON.
+#
+# Notes:
+#     Only finished exchanges are pushed. Loki cannot update a log line that has
+#     already been written, so Membrane waits until an exchange is complete and
+#     then writes it once. Exchanges are batched and sent every second; set
+#     updateIntervalMs to change that.
+#
+#     Request and response bodies are byte arrays and therefore Base64-encoded
+#     inside the JSON. Bodies larger than maxBodySize (100000 by default) are
+#     truncated.
+#
+#     The store is write-only: the Membrane admin console cannot browse exchanges
+#     that live in Loki. Use Grafana for that.
+#
+# Troubleshooting:
+#     "While pushing N exchanges to Loki" in the Membrane log means Loki was not
+#     reachable at the configured url. Membrane keeps serving requests and keeps
+#     trying, so once Loki is back up later exchanges arrive. Check the containers:
+#       docker compose -f loki/docker-compose.yml ps
+#
+#     This Grafana also uses port 3000. If you still have the one from
+#     60-Grafana.yaml running, stop it first:
+#       docker compose -f grafana/docker-compose.yml down
+
+components:
+  # A single exchangeStore declared here is picked up automatically: every
+  # exchange passing through the gateway is handed to it.
+  exchangeStore:
+    lokiExchangeStore:
+      url: http://localhost:3100
+      job: membrane-instance-1
+
+---
+# The API name becomes the 'api' label in Loki, so name your APIs.
+api:
+  name: Backend A
+  port: 2001
+  flow:
+    - return:
+        status: 200
+
+---
+api:
+  name: Backend B
+  port: 2002
+  flow:
+    - return:
+        status: 404

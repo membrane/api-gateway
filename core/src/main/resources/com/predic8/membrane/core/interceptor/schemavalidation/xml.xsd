@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Minimal stand-in for the W3C xml.xsd (http://www.w3.org/2001/xml.xsd), declaring only the
+  xml:lang attribute soap12-fault.xsd needs on Reason/Text. Bundled locally and served via
+  WSDLValidator's resource resolver so compiling the fault structure schema never fetches an
+  external resource.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.w3.org/XML/1998/namespace"
+           elementFormDefault="qualified">
+
+    <xs:attribute name="lang" type="xs:language"/>
+</xs:schema>
