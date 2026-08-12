@@ -832,4 +832,106 @@ class Soap2JsonTransformerTest {
         assertThrows(XmlParseException.class, () -> transformer.transform(xmlWithDoctype),
                 "DOCTYPE should be rejected to prevent XXE");
     }
+
+    // --- xsi:nil ---
+
+    private static final String NIL_RESPONSE = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+                           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+              <soap:Body>
+                <getAccountResponse>
+                  <iban>DE89370400440532013000</iban>
+                  <closedAt xsi:nil="true"/>
+                </getAccountResponse>
+              </soap:Body>
+            </soap:Envelope>
+            """;
+
+    @Test
+    void nilElementBecomesJsonNull() throws Exception {
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(NIL_RESPONSE));
+
+        assertTrue(root.hasNonNull("iban"), "the ordinary field is unaffected");
+        assertTrue(root.has("closedAt"), "a nil element still appears as a property");
+        assertTrue(root.get("closedAt").isNull(), "xsi:nil should become JSON null");
+    }
+
+    @Test
+    void nilAttributeIsNotExposedAsProperty() throws Exception {
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(NIL_RESPONSE));
+
+        assertFalse(root.get("closedAt").has("@nil"), "xsi:nil must not surface as an @nil property");
+    }
+
+    @Test
+    void nilElementBecomesJsonNullEvenWhenSchemaGivesItAType() throws Exception {
+        var responseSchema = new ObjectSchema()
+                .addProperty("iban", new StringSchema())
+                .addProperty("closedAt", new IntegerSchema());
+
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(NIL_RESPONSE, responseSchema));
+
+        assertTrue(root.get("closedAt").isNull(),
+                "a nil element carries no value to coerce, so the schema type must not turn it into 0 or \"\"");
+    }
+
+    @Test
+    void nilIsRecognisedInItsOneAlternativeLexicalForm() throws Exception {
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+                               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                  <soap:Body>
+                    <getAccountResponse><closedAt xsi:nil="1"/></getAccountResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml));
+
+        assertTrue(root.get("closedAt").isNull(), "xsd:boolean also permits 1 for true");
+    }
+
+    @Test
+    void nilFalseKeepsTheElementValue() throws Exception {
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+                               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                  <soap:Body>
+                    <getAccountResponse><currency xsi:nil="false">EUR</currency></getAccountResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(soapXml));
+
+        assertEquals("EUR", root.get("currency").asText());
+    }
+
+    @Test
+    void nilElementInsideRepeatedElementsBecomesNullItem() throws Exception {
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+                               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                  <soap:Body>
+                    <getTagsResponse>
+                      <tag>java</tag>
+                      <tag xsi:nil="true"/>
+                      <tag>api</tag>
+                    </getTagsResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+
+        JsonNode tags = mapper.readTree(new Soap2JsonTransformer().transform(soapXml)).get("tag");
+
+        assertTrue(tags.isArray());
+        assertEquals(3, tags.size(), "a nil occurrence must still count as an item");
+        assertEquals("java", tags.get(0).asText());
+        assertTrue(tags.get(1).isNull());
+        assertEquals("api", tags.get(2).asText());
+    }
 }

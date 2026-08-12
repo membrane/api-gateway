@@ -44,6 +44,8 @@ import static com.predic8.membrane.core.util.wsdl.parser.Operation.Direction.INP
 /**
  * Transforms JSON request to SOAP XML envelope.
  * JSON keys prefixed with "@" are mapped to XML attributes instead of child elements.
+ * A {@code null} value becomes an element marked {@code xsi:nil="true"}, or, for an attribute,
+ * no attribute at all.
  */
 public class Json2SoapTransformer {
 
@@ -339,13 +341,16 @@ public class Json2SoapTransformer {
                 }
             }
         } else if (jsonNode.isValueNode()) {
-            parent.setTextContent(jsonNode.asText());
+            setLeafValue(parent, jsonNode);
         }
     }
 
     private void emitField(String fieldName, JsonNode fieldValue, Element parent, Document doc, FieldContext context) {
         if (fieldName.startsWith(ATTRIBUTE_PREFIX)) {
-            parent.setAttribute(fieldName.substring(ATTRIBUTE_PREFIX.length()), fieldValue.asText());
+            // An XML attribute has no way to say "no value" — a null is an absent attribute
+            if (!fieldValue.isNull()) {
+                parent.setAttribute(fieldName.substring(ATTRIBUTE_PREFIX.length()), fieldValue.asText());
+            }
             return;
         }
         String ns = context.fieldNamespaces().get(fieldName);
@@ -356,7 +361,7 @@ public class Json2SoapTransformer {
             for (JsonNode arrayItem : fieldValue) {
                 Element arrayElement = makeElement(doc, ns, xmlLocalName);
                 if (arrayItem.isValueNode()) {
-                    arrayElement.setTextContent(arrayItem.asText());
+                    setLeafValue(arrayElement, arrayItem);
                 } else {
                     mapJsonToElement(arrayItem, arrayElement, doc, childContext);
                 }
@@ -368,9 +373,22 @@ public class Json2SoapTransformer {
             if (fieldValue.isObject()) {
                 mapJsonToElement(fieldValue, childElement, doc, childContext);
             } else {
-                childElement.setTextContent(fieldValue.asText());
+                setLeafValue(childElement, fieldValue);
             }
         }
+    }
+
+    /**
+     * Writes a JSON scalar as the element's value. A JSON {@code null} becomes an empty element
+     * marked {@code xsi:nil="true"} — the XML way of saying "present but no value" — rather than
+     * the text "null", which a service would read as an ordinary string.
+     */
+    private static void setLeafValue(Element element, JsonNode value) {
+        if (value.isNull()) {
+            element.setAttributeNS(XSI_NS, "xsi:" + NIL_ATTRIBUTE, "true");
+            return;
+        }
+        element.setTextContent(value.asText());
     }
 
     /** The XSD declaration of the named child field, or {@code null} if it cannot be resolved. */

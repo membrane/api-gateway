@@ -28,14 +28,15 @@ import java.util.Map;
 
 import static com.predic8.membrane.annot.Constants.SOAP11_NS;
 import static com.predic8.membrane.annot.Constants.SOAP12_NS;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.attributeKey;
-import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.childElements;
+import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
 import static com.predic8.membrane.core.util.xml.parser.HardenedXmlParser.getInstance;
 
 /**
  * Transforms SOAP XML response to JSON.
  * XML attributes are mapped to "@"-prefixed properties; xmlns declarations and xml: namespace
  * attributes (e.g. xml:lang) are excluded.
+ * An element marked {@code xsi:nil="true"} becomes JSON {@code null}, matching the
+ * {@code nullable} that {@code XsdToSchema} derives from {@code nillable="true"}.
  */
 public class Soap2JsonTransformer {
 
@@ -108,7 +109,8 @@ public class Soap2JsonTransformer {
             // ArraySchema wraps the per-item schema; unwrap it so we type individual instances correctly
             Schema<?> effectiveSchema = child.schema() instanceof ArraySchema as ? as.getItems() : child.schema();
 
-            Object value = hasChildElements(childElement)
+            Object value = isNil(childElement) ? null
+                    : hasChildElements(childElement)
                     ? elementToMap(childElement, effectiveSchema)
                     : convertLeaf(childElement.getTextContent(), effectiveSchema);
 
@@ -128,7 +130,11 @@ public class Soap2JsonTransformer {
         return Map.of();
     }
 
-    /** Copies the element's attributes into {@code result} as {@code @}-prefixed properties. */
+    /**
+     * Copies the element's attributes into {@code result} as {@code @}-prefixed properties.
+     * {@code xsi:nil} is left out: it is carried by the JSON value being {@code null}, so exposing
+     * it as a property too would state the same thing twice.
+     */
     private void putAttributes(Element element, Map<String, Schema<?>> properties, Map<String, Object> result) {
         NamedNodeMap attributes = element.getAttributes();
         for (int i = 0; i < attributes.getLength(); i++) {
@@ -137,9 +143,20 @@ public class Soap2JsonTransformer {
             if (XMLConstants.XMLNS_ATTRIBUTE_NS_URI.equals(ns) || XMLConstants.XML_NS_URI.equals(ns)) {
                 continue;
             }
+            if (XSI_NS.equals(ns) && NIL_ATTRIBUTE.equals(attr.getLocalName())) {
+                continue;
+            }
             String key = attributeKey(attr.getLocalName());
             result.put(key, convertLeaf(attr.getNodeValue(), properties.get(key)));
         }
+    }
+
+    /**
+     * Whether the element declares itself as carrying no value via {@code xsi:nil}. A nil element
+     * must be empty, so this is checked before any text content or children are looked at.
+     */
+    private static boolean isNil(Element element) {
+        return isTrue(element.getAttributeNS(XSI_NS, NIL_ATTRIBUTE));
     }
 
     /** A group stays a JSON array if its schema says so or it holds more than one value. */

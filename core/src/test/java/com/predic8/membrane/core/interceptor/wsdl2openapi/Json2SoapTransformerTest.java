@@ -406,6 +406,47 @@ class Json2SoapTransformerTest {
                 "Child element must carry target namespace when elementFormDefault=qualified");
     }
 
+    // --- null values / xsi:nil ---
+
+    private static final String XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";
+
+    @Test
+    void nullValueBecomesNilElementRatherThanTheTextNull() throws Exception {
+        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+                .transform("{\"name\": null}");
+
+        Element nameEl = getFirstChildElement(getFirstChildElement(bodyOf(parseXml(soapBytes))));
+
+        assertNotNull(nameEl, "a null value must still emit the element");
+        assertEquals("name", nameEl.getLocalName());
+        assertEquals("true", nameEl.getAttributeNS(XSI_NS, "nil"), "a null must be marked xsi:nil");
+        assertEquals("", nameEl.getTextContent(), "a nil element must be empty, not carry the text \"null\"");
+    }
+
+    @Test
+    void nullAttributeIsOmitted() throws Exception {
+        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+                .transform("{\"name\": \"Berlin\", \"@id\": null, \"@type\": \"city\"}");
+
+        Element recordEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
+
+        assertFalse(recordEl.hasAttribute("id"), "an attribute cannot be nil, so a null omits it");
+        assertEquals("city", recordEl.getAttribute("type"), "the other attribute is unaffected");
+    }
+
+    @Test
+    void nullArrayItemBecomesNilElement() throws Exception {
+        var soapBytes = new Json2SoapTransformer(attributesDefinitions, "record")
+                .transform("{\"name\": [\"Berlin\", null, \"Bonn\"]}");
+
+        var names = getChildElements(getFirstChildElement(bodyOf(parseXml(soapBytes))));
+
+        assertEquals(3, names.size(), "a null occurrence must still emit an element");
+        assertEquals("Berlin", names.get(0).getTextContent());
+        assertEquals("true", names.get(1).getAttributeNS(XSI_NS, "nil"));
+        assertEquals("Bonn", names.get(2).getTextContent());
+    }
+
     private static Document parseXml(byte[] bytes) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
