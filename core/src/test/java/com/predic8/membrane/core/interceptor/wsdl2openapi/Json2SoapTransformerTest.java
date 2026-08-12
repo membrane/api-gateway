@@ -26,6 +26,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,6 +41,8 @@ class Json2SoapTransformerTest {
     static Definitions qualifiedDefinitions;
     static Definitions crossNamespaceChoiceDefinitions;
     static Definitions refChildDefinitions;
+    static Definitions inheritedDefinitions;
+    static Definitions extendedTypesDefinitions;
 
     @BeforeAll
     static void setup() throws Exception {
@@ -51,6 +54,8 @@ class Json2SoapTransformerTest {
         qualifiedDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/qualified-elements.wsdl");
         crossNamespaceChoiceDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/cross-namespace-choice.wsdl");
         refChildDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/ref-child.wsdl");
+        inheritedDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/inherited-content-model.wsdl");
+        extendedTypesDefinitions = Definitions.parse(new ResolverMap(), "classpath:/ws/extended-types.wsdl");
     }
 
     private static final String REF_DETAIL_NS = "https://example.com/ref-detail";
@@ -404,6 +409,69 @@ class Json2SoapTransformerTest {
         assertEquals("text", textEl.getLocalName());
         assertEquals("https://example.com/qualified", textEl.getNamespaceURI(),
                 "Child element must carry target namespace when elementFormDefault=qualified");
+    }
+
+    // --- inherited and grouped content models ---
+
+    private static final String BASE_NS = "https://example.com/inherit-base";
+    private static final String SERVICE_NS = "https://example.com/inherit-service";
+
+    /** Deliberately reversed at both levels, so only the XSD can produce the right order. */
+    private static final String PRIORITY_ORDER_JSON = """
+            {"createdBy": "bob", "priority": "high", \
+            "address": {"city": "Berlin", "street": "Main St"}, "orderId": "A-1"}""";
+
+    @Test
+    void inheritedFieldsPrecedeDerivedOnesInSchemaOrder() throws Exception {
+        var soapBytes = new Json2SoapTransformer(inheritedDefinitions, "placeOrder")
+                .transform(PRIORITY_ORDER_JSON);
+
+        Element placeOrderEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
+        var children = getChildElements(placeOrderEl).stream().map(Element::getLocalName).toList();
+
+        assertEquals(List.of("orderId", "address", "priority", "createdBy"), children,
+                "the base type's content model comes first, then the extension's, with the group expanded in place");
+    }
+
+    @Test
+    void inheritedFieldsCarryTheNamespaceOfTheSchemaDeclaringThem() throws Exception {
+        var soapBytes = new Json2SoapTransformer(inheritedDefinitions, "placeOrder")
+                .transform(PRIORITY_ORDER_JSON);
+
+        var byName = new HashMap<String, String>();
+        for (Element el : getChildElements(getFirstChildElement(bodyOf(parseXml(soapBytes))))) {
+            byName.put(el.getLocalName(), el.getNamespaceURI());
+        }
+
+        assertEquals(BASE_NS, byName.get("orderId"), "a field declared in the base type's schema takes its namespace");
+        assertEquals(BASE_NS, byName.get("createdBy"), "so does a field pulled in from a group in that schema");
+        assertEquals(SERVICE_NS, byName.get("priority"), "the derived type's own field keeps the deriving schema's namespace");
+    }
+
+    @Test
+    void descendingIntoAnInheritedComplexChildUsesItsOwnSchema() throws Exception {
+        var soapBytes = new Json2SoapTransformer(inheritedDefinitions, "placeOrder")
+                .transform(PRIORITY_ORDER_JSON);
+
+        Element addressEl = getChildElements(getFirstChildElement(bodyOf(parseXml(soapBytes)))).get(1);
+        var addressChildren = getChildElements(addressEl).stream().map(Element::getLocalName).toList();
+
+        assertEquals("address", addressEl.getLocalName());
+        assertEquals(List.of("street", "city"), addressChildren,
+                "a complex child of the base type must still order its own fields from the XSD");
+        assertEquals(BASE_NS, addressEl.getNamespaceURI());
+    }
+
+    @Test
+    void fieldsInsideANestedChoiceAreOrderedFromTheXsd() throws Exception {
+        var soapBytes = new Json2SoapTransformer(extendedTypesDefinitions, "search")
+                .transform("{\"code\": \"A\", \"byName\": \"Berlin\"}");
+
+        Element searchEl = getFirstChildElement(bodyOf(parseXml(soapBytes)));
+        var children = getChildElements(searchEl).stream().map(Element::getLocalName).toList();
+
+        assertEquals(List.of("byName", "code"), children,
+                "an element inside a choice nested in the sequence must take its declared position");
     }
 
     // --- null values / xsi:nil ---

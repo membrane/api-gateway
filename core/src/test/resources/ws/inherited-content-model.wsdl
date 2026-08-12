@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tests: a request element whose type inherits its content model via xsd:complexContent/xsd:extension
+     and pulls further fields in through an xsd:group ref. The base type and the group live in a second
+     schema document, so the fields they contribute must follow THAT document's elementFormDefault and
+     targetNamespace, while the derived type's own field follows the referring document's. -->
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:tns="https://example.com/inherit-service"
+                  xmlns:b="https://example.com/inherit-base"
+                  xmlns:s="http://schemas.xmlsoap.org/wsdl/soap/"
+                  targetNamespace="https://example.com/inherit-service">
+    <wsdl:types>
+        <xsd:schema targetNamespace="https://example.com/inherit-base"
+                    elementFormDefault="qualified">
+            <xsd:group name="AuditGroup">
+                <xsd:sequence>
+                    <xsd:element name="createdBy" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:group>
+
+            <xsd:complexType name="OrderBase">
+                <xsd:sequence>
+                    <xsd:element name="orderId" type="xsd:string"/>
+                    <!-- a complex child of the BASE type: descending into it must keep the base's schema -->
+                    <xsd:element name="address">
+                        <xsd:complexType>
+                            <xsd:sequence>
+                                <xsd:element name="street" type="xsd:string"/>
+                                <xsd:element name="city" type="xsd:string"/>
+                            </xsd:sequence>
+                        </xsd:complexType>
+                    </xsd:element>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+
+        <xsd:schema targetNamespace="https://example.com/inherit-service"
+                    elementFormDefault="qualified"
+                    xmlns:b="https://example.com/inherit-base">
+            <xsd:import namespace="https://example.com/inherit-base"/>
+
+            <xsd:complexType name="PriorityOrder">
+                <xsd:complexContent>
+                    <xsd:extension base="b:OrderBase">
+                        <xsd:sequence>
+                            <xsd:element name="priority" type="xsd:string"/>
+                            <xsd:group ref="b:AuditGroup"/>
+                        </xsd:sequence>
+                    </xsd:extension>
+                </xsd:complexContent>
+            </xsd:complexType>
+
+            <xsd:element name="placeOrder" type="tns:PriorityOrder"/>
+        </xsd:schema>
+    </wsdl:types>
+
+    <wsdl:message name="PlaceOrderRequest">
+        <wsdl:part name="parameters" element="tns:placeOrder"/>
+    </wsdl:message>
+
+    <wsdl:portType name="OrderPort">
+        <wsdl:operation name="placeOrder">
+            <wsdl:input message="tns:PlaceOrderRequest"/>
+        </wsdl:operation>
+    </wsdl:portType>
+
+    <wsdl:binding name="OrderBinding" type="tns:OrderPort">
+        <s:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="placeOrder">
+            <s:operation soapAction="placeOrder"/>
+            <wsdl:input><s:body use="literal"/></wsdl:input>
+        </wsdl:operation>
+    </wsdl:binding>
+
+    <wsdl:service name="OrderService">
+        <wsdl:port name="OrderPort" binding="tns:OrderBinding">
+            <s:address location="http://localhost:8080/orders"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

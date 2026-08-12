@@ -146,22 +146,98 @@ public class Json2SoapTransformer {
      */
     private List<FieldBinding> extractFieldBindings(XsdContext context) {
         if (context == null) return List.of();
-        Element complexType = complexTypeOf(context);
-        if (complexType == null) return List.of();
+        return bindFields(contentModelFields(complexTypeOf(context)));
+    }
 
-        Element container = firstXsdChild(complexType, "sequence", "all", "choice");
-        if (container == null) return List.of();
+    /**
+     * Every {@code <xsd:element>} declaration in the type's content model, in the order an instance
+     * must present them. Nested {@code sequence}/{@code all}/{@code choice} particles and
+     * {@code xsd:group} references are flattened in place, and an inherited content model
+     * ({@code complexContent}) contributes its base type's fields ahead of the derived ones —
+     * mirroring how {@code XsdToSchema} builds the published schema, so the JSON keys this expects
+     * are the ones the OpenAPI document advertises.
+     *
+     * <p>Each declaration travels with the schema document it was found in, because a base type or
+     * group may live in another document whose {@code elementFormDefault} and {@code targetNamespace}
+     * decide the namespace its locally-declared fields carry.
+     */
+    private List<FieldDecl> contentModelFields(ResolvedType type) {
+        var fields = new ArrayList<FieldDecl>();
+        collectComplexTypeFields(type, fields, new HashSet<>());
+        return fields;
+    }
 
-        return bindFields(container, context.schemaRoot(), defaultNamespace(context.schemaRoot()));
+    private void collectComplexTypeFields(ResolvedType type, List<FieldDecl> fields, Set<Element> visiting) {
+        if (type == null || !visiting.add(type.complexType())) return;
+        try {
+            // xsd:restriction is treated like xsd:extension, as XsdToSchema does for field inheritance
+            Element derivation = derivationOf(type.complexType());
+            if (derivation != null) {
+                collectComplexTypeFields(baseTypeOf(derivation, type.schemaRoot()), fields, visiting);
+            }
+            Element particle = firstXsdChild(derivation != null ? derivation : type.complexType(),
+                    "sequence", "all", "choice", "group");
+            if (particle != null) collectParticleFields(particle, type.schemaRoot(), fields, visiting);
+        } finally {
+            visiting.remove(type.complexType());
+        }
+    }
+
+    /** Flattens one particle — a {@code sequence}/{@code all}/{@code choice} container or a group reference. */
+    private void collectParticleFields(Element particle, Element schemaRoot, List<FieldDecl> fields, Set<Element> visiting) {
+        if ("group".equals(particle.getLocalName())) {
+            collectGroupFields(particle, schemaRoot, fields, visiting);
+            return;
+        }
+        for (Element el : xsdChildren(particle)) {
+            switch (el.getLocalName()) {
+                case "element" -> fields.add(new FieldDecl(el, schemaRoot));
+                case "sequence", "all", "choice", "group" -> collectParticleFields(el, schemaRoot, fields, visiting);
+                // xsd:any: skip - a wildcard declares no field to bind
+            }
+        }
+    }
+
+    /** Expands an {@code <xsd:group ref=.../>} in place, skipping a group that references itself. */
+    private void collectGroupFields(Element groupRef, Element schemaRoot, List<FieldDecl> fields, Set<Element> visiting) {
+        String ref = groupRef.getAttribute("ref");
+        if (ref.isEmpty()) return;
+        String local = localName(ref);
+        for (var root : resolveTargetSchemaRoots(prefix(ref), groupRef, schemaRoot, schemasByNamespace)) {
+            Element groupDef = findXsdChildWithName(root, "group", local);
+            if (groupDef == null) continue;
+            if (!visiting.add(groupDef)) return;
+            try {
+                Element particle = firstXsdChild(groupDef, "sequence", "all", "choice");
+                if (particle != null) collectParticleFields(particle, root, fields, visiting);
+            } finally {
+                visiting.remove(groupDef);
+            }
+            return;
+        }
+    }
+
+    /** The {@code xsd:extension} or {@code xsd:restriction} of a derived type, or {@code null} if it is not derived. */
+    private static Element derivationOf(Element complexType) {
+        Element complexContent = findXsdChild(complexType, "complexContent");
+        if (complexContent == null) return null;
+        Element extension = findXsdChild(complexContent, "extension");
+        return extension != null ? extension : findXsdChild(complexContent, "restriction");
+    }
+
+    /** The complexType a derivation's {@code base=} points at, or {@code null} if it cannot be resolved. */
+    private ResolvedType baseTypeOf(Element derivation, Element schemaRoot) {
+        String base = derivation.getAttribute("base");
+        return base.isEmpty() ? null : resolveComplexType(base, derivation, schemaRoot);
     }
 
     /**
      * The complexType defining the content of the context's xsd:element — either declared inline
      * or referenced by its {@code type=} attribute. Returns {@code null} if there is none.
      */
-    private Element complexTypeOf(XsdContext context) {
+    private ResolvedType complexTypeOf(XsdContext context) {
         Element inline = findXsdChild(context.xsdElement(), "complexType");
-        if (inline != null) return inline;
+        if (inline != null) return new ResolvedType(inline, context.schemaRoot());
         String typeAttr = context.xsdElement().getAttribute("type");
         if (typeAttr.isEmpty()) return null;
         return resolveComplexType(typeAttr, context.xsdElement(), context.schemaRoot());
@@ -170,13 +246,13 @@ public class Json2SoapTransformer {
     /**
      * Resolves a {@code type="prefix:local"} reference to a named {@code xsd:complexType} element.
      */
-    private Element resolveComplexType(String typeRef, Element contextElement, Element currentSchemaRoot) {
+    private ResolvedType resolveComplexType(String typeRef, Element contextElement, Element currentSchemaRoot) {
         String prefix = prefix(typeRef);
         String local = localName(typeRef);
         List<Element> targetRoots = resolveTargetSchemaRoots(prefix, contextElement, currentSchemaRoot, schemasByNamespace);
         for (var root : targetRoots) {
             Element complexType = findXsdChildWithName(root, "complexType", local);
-            if (complexType != null) return complexType;
+            if (complexType != null) return new ResolvedType(complexType, root);
         }
         return null;
     }
@@ -206,6 +282,12 @@ public class Json2SoapTransformer {
     /** A content-model field: the JSON key addressing it, and the namespace it carries ({@code null} = none). */
     private record FieldBinding(String key, String namespaceURI) {}
 
+    /** An {@code xsd:element} declaration found in a content model, with the schema document holding it. */
+    private record FieldDecl(Element declaration, Element schemaRoot) {}
+
+    /** A resolved {@code xsd:complexType} and the schema document it was found in. */
+    private record ResolvedType(Element complexType, Element schemaRoot) {}
+
     /** The XSD element declaration and its containing schema root, used to resolve child field metadata. */
     private record XsdContext(Element xsdElement, Element schemaRoot) {}
 
@@ -232,28 +314,17 @@ public class Json2SoapTransformer {
      * Returns {@code null} if the parent has no complexType or no matching child.
      */
     private XsdContext findChildXsdContext(XsdContext context, String childLocalName) {
-        Element complexType = complexTypeOf(context);
-        if (complexType == null) return null;
-        Element container = firstXsdChild(complexType, "sequence", "all", "choice");
-        if (container == null) return null;
-
-        Element declared = findXsdChildWithName(container, "element", childLocalName);
-        if (declared != null) return new XsdContext(declared, context.schemaRoot());
-
-        return resolveReferencedChild(container, childLocalName, context.schemaRoot());
-    }
-
-    /**
-     * Resolves an {@code <xsd:element ref="prefix:local"/>} child whose local name is
-     * {@code childLocalName} to the global element it points at, in the schema that declares it.
-     */
-    private XsdContext resolveReferencedChild(Element container, String childLocalName, Element schemaRoot) {
-        for (Element el : xsdChildren(container)) {
-            if (!"element".equals(el.getLocalName())) continue;
+        for (var field : contentModelFields(complexTypeOf(context))) {
+            Element el = field.declaration();
+            String name = el.getAttribute("name");
+            if (!name.isEmpty()) {
+                if (name.equals(childLocalName)) return new XsdContext(el, field.schemaRoot());
+                continue;
+            }
+            // a ref= child: the declaration lives in the schema the ref points at
             String ref = el.getAttribute("ref");
             if (ref.isEmpty() || !childLocalName.equals(localName(ref))) continue;
-
-            for (var root : resolveTargetSchemaRoots(prefix(ref), el, schemaRoot, schemasByNamespace)) {
+            for (var root : resolveTargetSchemaRoots(prefix(ref), el, field.schemaRoot(), schemasByNamespace)) {
                 Element referenced = findXsdChildWithName(root, "element", childLocalName);
                 if (referenced != null) return new XsdContext(referenced, root);
             }
@@ -262,28 +333,17 @@ public class Json2SoapTransformer {
     }
 
     /**
-     * Binds every field in {@code container} — locally declared and {@code ref}'d alike — to the
-     * JSON key that addresses it, in declaration order. Fields whose local name collides across
+     * Binds every declared field — locally declared and {@code ref}'d alike — to the JSON key that
+     * addresses it, keeping content-model order. Fields whose local name collides across
      * namespaces (e.g. two {@code ref}'d elements both named {@code value}, from different
      * namespaces) are keyed with a namespace-qualified key ({@link XsdDomUtil#qualifiedKey})
      * instead of silently overwriting each other — mirrors {@code XsdToSchema.addChoiceFields}.
      */
-    private List<FieldBinding> bindFields(Element container, Element schemaRoot, String defaultNs) {
+    private List<FieldBinding> bindFields(List<FieldDecl> fields) {
         var refs = new ArrayList<FieldRef>();
-        for (Element el : xsdChildren(container)) {
-            if (!"element".equals(el.getLocalName())) continue;
-
-            String name = el.getAttribute("name");
-            if (!name.isEmpty()) {
-                // locally declared: use defaultNs (non-null only when elementFormDefault="qualified")
-                refs.add(new FieldRef(name, defaultNs));
-            } else {
-                // ref= element: resolve the ref'd element's namespace
-                String ref = el.getAttribute("ref");
-                if (ref.isEmpty()) continue;
-                String refNs = referencedNamespace(ref, el, schemaRoot);
-                if (refNs != null && !refNs.isEmpty()) refs.add(new FieldRef(localName(ref), refNs));
-            }
+        for (var field : fields) {
+            FieldRef ref = fieldRefOf(field);
+            if (ref != null) refs.add(ref);
         }
 
         var occurrences = new HashMap<String, Integer>();
@@ -298,6 +358,25 @@ public class Json2SoapTransformer {
                     r.namespaceURI()));
         }
         return bindings;
+    }
+
+    /**
+     * The name and namespace one declaration contributes, or {@code null} if it declares neither a
+     * {@code name=} nor a resolvable {@code ref=}. The namespace is derived from the declaration's
+     * own schema document, so an inherited or grouped-in field follows the
+     * {@code elementFormDefault} of the document declaring it rather than the referring one.
+     */
+    private static FieldRef fieldRefOf(FieldDecl field) {
+        Element el = field.declaration();
+        String name = el.getAttribute("name");
+        if (!name.isEmpty()) {
+            // locally declared: namespaced only when its own schema is elementFormDefault="qualified"
+            return new FieldRef(name, defaultNamespace(field.schemaRoot()));
+        }
+        String ref = el.getAttribute("ref");
+        if (ref.isEmpty()) return null;
+        String refNs = referencedNamespace(ref, el, field.schemaRoot());
+        return refNs == null || refNs.isEmpty() ? null : new FieldRef(localName(ref), refNs);
     }
 
     /** The target namespace of the element a {@code ref="prefix:local"} points at. */
