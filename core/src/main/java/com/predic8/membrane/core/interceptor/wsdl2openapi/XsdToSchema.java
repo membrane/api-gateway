@@ -45,11 +45,21 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  *   <li>Named and inline xsd:simpleType restrictions (resolved to the base primitive)</li>
  *   <li>xsd:restriction facets: enumeration, pattern, length, minLength, maxLength,
  *       minInclusive, maxInclusive, minExclusive, maxExclusive</li>
- *   <li>default= and fixed= values on elements and attributes</li>
  *   <li>nillable="true" (produces a nullable schema)</li>
  *   <li>maxOccurs="unbounded" or > 1 (produces ArraySchema)</li>
  *   <li>Cross-namespace type references (resolved via the full import graph)</li>
  * </ul>
+ *
+ * <p>The features above are constraints: they describe which messages are valid, and are enforced
+ * wherever the generated schema is validated against.
+ *
+ * <p>{@code default=} and {@code fixed=} values on elements and attributes are also carried over,
+ * but as the OpenAPI {@code default} keyword, which is an annotation rather than a constraint. It
+ * documents the value for clients, Swagger UI and code generators; it is deliberately neither
+ * enforced during validation nor applied to messages during SOAP/JSON conversion. Supplying a
+ * missing value is the SOAP service's own responsibility — and in XSD an element's default only
+ * applies to an element that is present but empty, never to an absent one, so filling in omitted
+ * fields here would not even match what the service does.
  */
 public class XsdToSchema {
 
@@ -281,6 +291,11 @@ public class XsdToSchema {
      * field to — onto the schema. The literal stays a string here; each typed Schema casts it to
      * its own type on the way in, and silently drops a literal that does not fit, so a numeric
      * default is emitted unquoted and a malformed one is left out rather than emitted as invalid.
+     *
+     * <p>This documents the value and nothing more. It is intentionally not used to fill in a
+     * field a message left out: the SOAP service applies its own defaults, and a gateway that
+     * invented payload values would leave the backend unable to tell a client's explicit choice
+     * from the gateway's guess.
      */
     @SuppressWarnings("unchecked")
     private static void applyDefaultValue(Element declaration, Schema<?> schema) {
