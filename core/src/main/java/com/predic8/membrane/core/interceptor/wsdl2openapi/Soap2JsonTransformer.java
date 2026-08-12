@@ -122,12 +122,17 @@ public class Soap2JsonTransformer {
         return result;
     }
 
+    /**
+     * The child schemas of {@code schema}, keyed by property name, or an empty map if it declares
+     * none. Any schema carrying properties qualifies — not only {@link ObjectSchema} — because an
+     * object arriving as a plain {@code Schema} with {@code type: "object"}, as a parsed OpenAPI
+     * document produces, describes its children just as well. Narrowing to {@code ObjectSchema}
+     * here would silently drop value typing and arrayness for every child of such a parent.
+     */
     @SuppressWarnings("unchecked")
     private static Map<String, Schema<?>> propertiesOf(Schema<?> schema) {
-        if (schema instanceof ObjectSchema os && os.getProperties() != null) {
-            return (Map<String, Schema<?>>) (Map<?, ?>) os.getProperties();
-        }
-        return Map.of();
+        if (schema == null || schema.getProperties() == null) return Map.of();
+        return (Map<String, Schema<?>>) (Map<?, ?>) schema.getProperties();
     }
 
     /**

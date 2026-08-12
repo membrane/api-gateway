@@ -833,6 +833,44 @@ class Soap2JsonTransformerTest {
                 "DOCTYPE should be rejected to prevent XXE");
     }
 
+    // --- parents that are not an ObjectSchema instance ---
+
+    @Test
+    void plainObjectSchemaStillTypesItsChildren() throws Exception {
+        // what a parsed OpenAPI document yields for `type: object` — a Schema, not an ObjectSchema
+        Schema<Object> responseSchema = new Schema<>().type("object");
+        responseSchema.addProperty("country", new StringSchema());
+        responseSchema.addProperty("population", new IntegerSchema());
+
+        JsonNode root = mapper.readTree(new Soap2JsonTransformer().transform(CITIES_SOAP11_RESPONSE, responseSchema));
+
+        assertTrue(root.get("population").isNumber(),
+                "a parent carrying properties must type its children even if it is not an ObjectSchema");
+        assertEquals(3645000L, root.get("population").longValue());
+        assertTrue(root.get("country").isTextual());
+    }
+
+    @Test
+    void plainObjectSchemaStillDrivesArrayness() throws Exception {
+        // a single occurrence, so only the schema can decide this is an array
+        var soapXml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                  <soap:Body>
+                    <getTagsResponse><tag>java</tag></getTagsResponse>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        Schema<Object> responseSchema = new Schema<>().type("object");
+        responseSchema.addProperty("tag", new ArraySchema().items(new StringSchema()));
+
+        JsonNode tags = mapper.readTree(new Soap2JsonTransformer().transform(soapXml, responseSchema)).get("tag");
+
+        assertTrue(tags.isArray(), "arrayness must survive a non-ObjectSchema parent too");
+        assertEquals(1, tags.size());
+        assertEquals("java", tags.get(0).asText());
+    }
+
     // --- xsi:nil ---
 
     private static final String NIL_RESPONSE = """
