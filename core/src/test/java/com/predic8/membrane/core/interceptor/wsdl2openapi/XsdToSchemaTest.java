@@ -25,6 +25,7 @@ import org.xml.sax.InputSource;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -614,6 +615,250 @@ class XsdToSchemaTest {
         Schema<?> phoneSchema = fieldOf(schema, "phoneNumber");
         assertInstanceOf(StringSchema.class, phoneSchema);
         assertEquals("\\+?[0-9]{7,15}", phoneSchema.getPattern());
+    }
+
+    // ── xsd:restriction facets ────────────────────────────────────────────
+
+    @Test
+    void lengthFacetsPropagatedToSchema() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="Iban">
+                  <xsd:restriction base="xsd:string">
+                    <xsd:minLength value="15"/>
+                    <xsd:maxLength value="34"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="account">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="iban" type="tns:Iban"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "account");
+
+        Schema<?> iban = fieldOf(schema, "iban");
+        assertEquals(15, iban.getMinLength());
+        assertEquals(34, iban.getMaxLength());
+    }
+
+    @Test
+    void lengthFacetPinsBothBounds() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="CountryCode">
+                  <xsd:restriction base="xsd:string">
+                    <xsd:length value="2"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="address">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="country" type="tns:CountryCode"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "address");
+
+        Schema<?> country = fieldOf(schema, "country");
+        assertEquals(2, country.getMinLength());
+        assertEquals(2, country.getMaxLength());
+    }
+
+    @Test
+    void inclusiveRangeFacetsPropagatedToSchema() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="Percentage">
+                  <xsd:restriction base="xsd:int">
+                    <xsd:minInclusive value="0"/>
+                    <xsd:maxInclusive value="100"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="rating">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="score" type="tns:Percentage"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "rating");
+
+        Schema<?> score = fieldOf(schema, "score");
+        assertEquals(new BigDecimal("0"), score.getMinimum());
+        assertEquals(new BigDecimal("100"), score.getMaximum());
+        assertNull(score.getExclusiveMinimum(), "an inclusive bound must not be marked exclusive");
+        assertNull(score.getExclusiveMaximum(), "an inclusive bound must not be marked exclusive");
+    }
+
+    @Test
+    void exclusiveRangeFacetsMarkedExclusive() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="PositiveAmount">
+                  <xsd:restriction base="xsd:decimal">
+                    <xsd:minExclusive value="0"/>
+                    <xsd:maxExclusive value="1000.50"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="payment">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="amount" type="tns:PositiveAmount"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "payment");
+
+        Schema<?> amount = fieldOf(schema, "amount");
+        assertEquals(new BigDecimal("0"), amount.getMinimum());
+        assertEquals(new BigDecimal("1000.50"), amount.getMaximum());
+        assertTrue(amount.getExclusiveMinimum());
+        assertTrue(amount.getExclusiveMaximum());
+    }
+
+    @Test
+    void facetsOnInlineSimpleTypePropagatedToSchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="account">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="iban">
+                      <xsd:simpleType>
+                        <xsd:restriction base="xsd:string">
+                          <xsd:minLength value="15"/>
+                          <xsd:maxLength value="34"/>
+                        </xsd:restriction>
+                      </xsd:simpleType>
+                    </xsd:element>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "account");
+
+        Schema<?> iban = fieldOf(schema, "iban");
+        assertEquals(15, iban.getMinLength());
+        assertEquals(34, iban.getMaxLength());
+    }
+
+    @Test
+    void unparsableFacetValueIsIgnoredWithoutFailingTheConversion() {
+        var schema = convert(converterFor("""
+                <xsd:simpleType name="Weird">
+                  <xsd:restriction base="xsd:int">
+                    <xsd:minInclusive value="abc"/>
+                    <xsd:maxInclusive value="100"/>
+                  </xsd:restriction>
+                </xsd:simpleType>
+
+                <xsd:element name="rating">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="score" type="tns:Weird"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "rating");
+
+        Schema<?> score = fieldOf(schema, "score");
+        assertNull(score.getMinimum(), "the unparsable bound is dropped");
+        assertEquals(new BigDecimal("100"), score.getMaximum(), "the valid bound still applies");
+    }
+
+    // ── nillable ──────────────────────────────────────────────────────────
+
+    @Test
+    void nillableElementProducesNullableSchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="account">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="closedAt" type="xsd:date" nillable="true"/>
+                    <xsd:element name="openedAt" type="xsd:date"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "account");
+
+        assertTrue(fieldOf(schema, "closedAt").getNullable());
+        assertNull(fieldOf(schema, "openedAt").getNullable(), "a plain element must not be nullable");
+    }
+
+    @Test
+    void nillableRepeatedElementMarksTheItemsNullableNotTheArray() {
+        var schema = convert(converterFor("""
+                <xsd:element name="account">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="note" type="xsd:string" nillable="true" maxOccurs="unbounded"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "account");
+
+        var notes = assertInstanceOf(ArraySchema.class, fieldOf(schema, "note"));
+        assertNull(notes.getNullable(), "nillable describes each occurrence, not the list");
+        assertTrue(notes.getItems().getNullable());
+    }
+
+    // ── default= / fixed= ─────────────────────────────────────────────────
+
+    @Test
+    void defaultValueOnStringElementKeptAsString() {
+        var schema = convert(converterFor("""
+                <xsd:element name="account">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="currency" type="xsd:string" default="EUR"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "account");
+
+        assertEquals("EUR", fieldOf(schema, "currency").getDefault());
+    }
+
+    @Test
+    void defaultValueOnNumericElementCoercedToNumber() {
+        var schema = convert(converterFor("""
+                <xsd:element name="paging">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="pageSize" type="xsd:int" default="25"/>
+                    <xsd:element name="factor"   type="xsd:decimal" default="1.5"/>
+                    <xsd:element name="verbose"  type="xsd:boolean" default="true"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "paging");
+
+        assertEquals(25, fieldOf(schema, "pageSize").getDefault());
+        assertEquals(new BigDecimal("1.5"), fieldOf(schema, "factor").getDefault());
+        assertEquals(true, fieldOf(schema, "verbose").getDefault());
+    }
+
+    @Test
+    void defaultValueThatDoesNotFitTheTypeIsDropped() {
+        var schema = convert(converterFor("""
+                <xsd:element name="paging">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="pageSize" type="xsd:int" default="many"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "paging");
+
+        assertNull(fieldOf(schema, "pageSize").getDefault(),
+                "a default that is not a valid value for the type must not reach the document");
+    }
+
+    @Test
+    void fixedValueTreatedAsDefault() {
+        var schema = convert(converterFor("""
+                <xsd:element name="envelope">
+                  <xsd:complexType><xsd:sequence>
+                    <xsd:element name="version" type="xsd:string" fixed="1.0"/>
+                  </xsd:sequence></xsd:complexType>
+                </xsd:element>
+                """), "envelope");
+
+        assertEquals("1.0", fieldOf(schema, "version").getDefault());
+    }
+
+    @Test
+    void defaultValueOnAttributePropagatedToSchema() {
+        var schema = convert(converterFor("""
+                <xsd:element name="account">
+                  <xsd:complexType>
+                    <xsd:sequence>
+                      <xsd:element name="iban" type="xsd:string"/>
+                    </xsd:sequence>
+                    <xsd:attribute name="currency" type="xsd:string" default="EUR"/>
+                  </xsd:complexType>
+                </xsd:element>
+                """), "account");
+
+        assertEquals("EUR", fieldOf(schema, "@currency").getDefault());
     }
 
     // ── xsd:simpleContent ─────────────────────────────────────────────────

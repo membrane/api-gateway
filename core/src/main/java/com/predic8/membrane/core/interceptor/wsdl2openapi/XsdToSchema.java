@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
 import javax.xml.namespace.QName;
+import java.math.BigDecimal;
 import java.util.*;
 
 import static com.predic8.membrane.annot.Constants.XSD_NS;
@@ -41,7 +42,11 @@ import static com.predic8.membrane.core.interceptor.wsdl2openapi.XsdDomUtil.*;
  *   <li>xsd:complexContent/xsd:extension (base type fields are inherited)</li>
  *   <li>xsd:complexContent/xsd:restriction (treated as extension for field inheritance)</li>
  *   <li>xsd:simpleContent (approximated as string)</li>
- *   <li>Named xsd:simpleType restrictions (resolved to the base primitive)</li>
+ *   <li>Named and inline xsd:simpleType restrictions (resolved to the base primitive)</li>
+ *   <li>xsd:restriction facets: enumeration, pattern, length, minLength, maxLength,
+ *       minInclusive, maxInclusive, minExclusive, maxExclusive</li>
+ *   <li>default= and fixed= values on elements and attributes</li>
+ *   <li>nillable="true" (produces a nullable schema)</li>
  *   <li>maxOccurs="unbounded" or > 1 (produces ArraySchema)</li>
  *   <li>Cross-namespace type references (resolved via the full import graph)</li>
  * </ul>
@@ -255,12 +260,34 @@ public class XsdToSchema {
                 .ifPresent(alternative -> addField(schema, alternative.localName(), refEl, alternative.fieldSchema()));
     }
 
-    /** Adds {@code fieldSchema} as a property, applying the declaration's maxOccurs and minOccurs. */
+    /**
+     * Adds {@code fieldSchema} as a property, applying the declaration's nillable, default/fixed
+     * value, maxOccurs and minOccurs. Nullability and the default value are applied before the
+     * maxOccurs wrapping, because in XSD they describe each occurrence rather than the list.
+     */
     private static void addField(ObjectSchema schema, String fieldName, Element declaration, Schema<?> fieldSchema) {
+        if ("true".equals(declaration.getAttribute("nillable"))) {
+            fieldSchema.setNullable(true);
+        }
+        applyDefaultValue(declaration, fieldSchema);
         schema.addProperty(fieldName, applyMaxOccurs(declaration, fieldSchema));
         if (!MIN_OCCURS_OPTIONAL.equals(declaration.getAttribute("minOccurs"))) {
             schema.addRequiredItem(fieldName);
         }
+    }
+
+    /**
+     * Copies an {@code xsd:default} — or an {@code xsd:fixed}, the value the declaration pins the
+     * field to — onto the schema. The literal stays a string here; each typed Schema casts it to
+     * its own type on the way in, and silently drops a literal that does not fit, so a numeric
+     * default is emitted unquoted and a malformed one is left out rather than emitted as invalid.
+     */
+    @SuppressWarnings("unchecked")
+    private static void applyDefaultValue(Element declaration, Schema<?> schema) {
+        String value = declaration.getAttribute("default");
+        if (value.isEmpty()) value = declaration.getAttribute("fixed");
+        if (value.isEmpty()) return;
+        ((Schema<Object>) schema).setDefault(value);
     }
 
     /** Wraps {@code fieldSchema} in an ArraySchema if the declaration allows more than one occurrence. */
@@ -285,7 +312,9 @@ public class XsdToSchema {
             if (fieldName.isEmpty()) continue; // ref= attributes: not supported
 
             String key = attributeKey(fieldName);
-            schema.addProperty(key, convertElementType(el, ctx));
+            Schema<?> attributeSchema = convertElementType(el, ctx);
+            applyDefaultValue(el, attributeSchema);
+            schema.addProperty(key, attributeSchema);
             if ("required".equals(el.getAttribute("use"))) {
                 schema.addRequiredItem(key);
             }
@@ -413,17 +442,58 @@ public class XsdToSchema {
         if (restriction == null) return new StringSchema();
         String base = restriction.getAttribute("base");
         Schema<?> schema = base.isEmpty() ? new StringSchema() : resolveTypeRef(base, restriction, ctx);
-        addEnumValues(restriction, schema);
+        applyFacets(restriction, schema);
         return schema;
     }
 
+    /**
+     * Applies the {@code <xsd:restriction>} facets that have a JSON Schema equivalent.
+     * Facets without one ({@code totalDigits}, {@code fractionDigits}, {@code whiteSpace}) and
+     * facet values that do not parse as numbers are ignored, so an unusable constraint costs the
+     * constraint rather than the whole conversion.
+     */
     @SuppressWarnings("unchecked")
-    private void addEnumValues(Element restriction, Schema<?> schema) {
+    private void applyFacets(Element restriction, Schema<?> schema) {
         for (Element el : xsdChildren(restriction)) {
+            String value = el.getAttribute("value");
             switch (el.getLocalName()) {
-                case "enumeration" -> ((Schema<Object>) schema).addEnumItemObject(el.getAttribute("value"));
-                case "pattern"     -> schema.setPattern(el.getAttribute("value"));
+                case "enumeration" -> ((Schema<Object>) schema).addEnumItemObject(value);
+                case "pattern"     -> schema.setPattern(value);
+                case "minLength"   -> parseInteger(el, value).ifPresent(schema::setMinLength);
+                case "maxLength"   -> parseInteger(el, value).ifPresent(schema::setMaxLength);
+                case "length"      -> parseInteger(el, value).ifPresent(length -> {
+                    schema.setMinLength(length);
+                    schema.setMaxLength(length);
+                });
+                case "minInclusive" -> parseDecimal(el, value).ifPresent(schema::setMinimum);
+                case "maxInclusive" -> parseDecimal(el, value).ifPresent(schema::setMaximum);
+                case "minExclusive" -> parseDecimal(el, value).ifPresent(min -> {
+                    schema.setMinimum(min);
+                    schema.setExclusiveMinimum(true);
+                });
+                case "maxExclusive" -> parseDecimal(el, value).ifPresent(max -> {
+                    schema.setMaximum(max);
+                    schema.setExclusiveMaximum(true);
+                });
             }
+        }
+    }
+
+    private static Optional<Integer> parseInteger(Element facet, String value) {
+        try {
+            return Optional.of(Integer.valueOf(value));
+        } catch (NumberFormatException e) {
+            log.debug("Ignoring xsd:{} facet with non-integer value '{}'", facet.getLocalName(), value);
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<BigDecimal> parseDecimal(Element facet, String value) {
+        try {
+            return Optional.of(new BigDecimal(value));
+        } catch (NumberFormatException e) {
+            log.debug("Ignoring xsd:{} facet with non-numeric value '{}'", facet.getLocalName(), value);
+            return Optional.empty();
         }
     }
 
